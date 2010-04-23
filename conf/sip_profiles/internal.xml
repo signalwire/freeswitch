@@ -207,6 +207,11 @@
     <param name="force-subscription-domain" value="$${domain}"/>
     <!--all inbound reg will stored in the db using this domain -->
     <param name="force-register-db-domain" value="$${domain}"/>
+
+    <!-- enable rtcp on every channel also can be done per leg basis with rtcp_audio_interval_msec variable set to passthru to pass it across a call-->
+    <!--<param name="rtcp-audio-interval-msec" value="5000"/>-->
+    <!--<param name="rtcp-video-interval-msec" value="5000"/>-->
+
     <!--force suscription expires to a lower value than requested-->
     <!--<param name="force-subscription-expires" value="60"/>-->
     <!-- disable register and transfer which may be undesirable in a public switch -->

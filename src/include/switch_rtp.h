@@ -41,6 +41,7 @@
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_MAX_BUF_LEN 16384
+#define SWITCH_RTCP_MAX_BUF_LEN 16384
 #define SWITCH_RTP_MAX_CRYPTO_LEN 64
 #define SWITCH_RTP_KEY_LEN 30
 #define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
@@ -167,7 +168,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
   \param port the remote port
   \param err pointer for error messages
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port,
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, switch_port_t remote_rtcp_port,
 															  switch_bool_t change_adv_addr, const char **err);
 
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session);
@@ -212,6 +213,13 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
   \return SWITCH_STATUS_SUCCESS
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin);
+
+/*! 
+  \brief Activate sending RTCP Sender Reports (SR's)
+  \param send_rate interval in milliseconds to send at
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate, switch_port_t remote_port);
 
 /*! 
   \brief Acvite a jitter buffer on an RTP session
@@ -346,6 +354,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flags);
+
+
+/*! 
+  \brief Read RTCP data from a given RTP session without copying
+  \param rtp_session the RTP session to read from
+  \param frame an RTCP frame to populate with information
+  \return the number of bytes read
+*/
+SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_rtcp_frame_t *frame);
 
 SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp_flush_t flush);
 

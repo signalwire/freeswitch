@@ -48,6 +48,11 @@
 /opt/freeswitch/conf/dialplan/features.xml
 /opt/freeswitch/conf/dialplan/public/00_inbound_did.xml
 /opt/freeswitch/conf/dialplan/public.xml
+/opt/freeswitch/conf/dialplan/skinny-patterns/20-Demo.xml
+/opt/freeswitch/conf/dialplan/skinny-patterns/99-Default_Drop.xml
+/opt/freeswitch/conf/dialplan/skinny-patterns/20-Local_extension.xml
+/opt/freeswitch/conf/dialplan/skinny-patterns/90-External.xml
+/opt/freeswitch/conf/dialplan/skinny-patterns.xml
 /opt/freeswitch/conf/directory/default/1000.xml
 /opt/freeswitch/conf/directory/default/1001.xml
 /opt/freeswitch/conf/directory/default/1002.xml
@@ -87,6 +92,7 @@
 /opt/freeswitch/conf/sip_profiles/internal/example.xml
 /opt/freeswitch/conf/sip_profiles/internal-ipv6.xml
 /opt/freeswitch/conf/sip_profiles/internal.xml
+/opt/freeswitch/conf/skinny_profiles/internal.xml
 /opt/freeswitch/conf/tetris.ttml
 /opt/freeswitch/conf/tones.conf
 /opt/freeswitch/conf/vars.xml

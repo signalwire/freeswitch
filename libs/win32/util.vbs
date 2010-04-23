@@ -308,23 +308,44 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	Const ForReading       =  1
 
 	if strVerRev = "" Then
-	    VersionCmd="fs_svnversion " & quote & VersionDir & "." & quote &  " -n"
-	    Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
-	    MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
-	    MyFile.WriteLine("@" & VersionCmd)
-	    MyFile.Close
-	    Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
-	    Do
-		    strFromProc = OExec.StdOut.ReadLine()
-		    VERSION=strFromProc
-	    Loop While Not OExec.StdOut.atEndOfStream
-	    sLastVersion = ""
-	    Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
-	    If Not sLastFile.atEndOfStream Then
-		    sLastVersion = sLastFile.ReadLine()
-	    End If
-	    sLastFile.Close
-    End If
+		if FSO.FolderExists(VersionDir & ".svn") Then
+			VersionCmd="fs_svnversion " & quote & VersionDir & "." & quote &  " -n"
+			Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
+			MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
+			MyFile.WriteLine("@" & VersionCmd)
+			MyFile.Close
+			Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
+			Do
+				strFromProc = OExec.StdOut.ReadLine()
+				VERSION="svn-" & strFromProc
+			Loop While Not OExec.StdOut.atEndOfStream
+			sLastVersion = ""
+			Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+			If Not sLastFile.atEndOfStream Then
+				sLastVersion = sLastFile.ReadLine()
+			End If
+			sLastFile.Close
+		End If
+
+		if FSO.FolderExists(VersionDir & ".git") Then
+			VersionCmd="git log --format=" & quote & "%%h %%ci" & quote & " -1 HEAD"
+			Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
+			MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
+			MyFile.WriteLine("@" & VersionCmd)
+			MyFile.Close
+			Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
+			Do
+				strFromProc = Trim(OExec.StdOut.ReadLine())
+				VERSION="git-" & strFromProc
+			Loop While Not OExec.StdOut.atEndOfStream
+			sLastVersion = ""
+			Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+			If Not sLastFile.atEndOfStream Then
+				sLastVersion = sLastFile.ReadLine()
+			End If
+			sLastFile.Close
+		End If
+	End If
 	
 	if strVerRev <> "" Then
 	    VERSION = strVerRev

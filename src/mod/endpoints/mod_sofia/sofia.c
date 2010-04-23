@@ -1371,6 +1371,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ALLOW("INFO"),
 				   NUTAG_ALLOW("NOTIFY"),
 				   NUTAG_ALLOW_EVENTS("talk"),
+				   NUTAG_ALLOW_EVENTS("hold"),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
@@ -2458,6 +2459,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "outbound-proxy")) {
 						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtcp-audio-interval-msec")) {
+						profile->rtcp_audio_interval_msec = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtcp-video-interval-msec")) {
+						profile->rtcp_video_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "session-timeout")) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
@@ -2995,6 +3000,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "outbound-proxy")) {
 						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtcp-audio-interval-msec")) {
+						profile->rtcp_audio_interval_msec = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtcp-video-interval-msec")) {
+						profile->rtcp_video_interval_msec = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "session-timeout")) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
@@ -3743,6 +3752,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			char *full_contact = NULL;
 			char *invite_contact;
 			const char *br;
+			const char *v;
+			
+			if ((v = switch_channel_get_variable(channel, "outbound_redirect_fatal")) && switch_true(v)) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
+				goto end;
+			}
 
 			if (!p_contact) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missing contact header in redirect request\n");

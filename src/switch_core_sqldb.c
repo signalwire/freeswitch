@@ -311,7 +311,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 
 				if ((odbc_dbh = switch_odbc_handle_new(connection_options->odbc_options.dsn,
 													   connection_options->odbc_options.user, connection_options->odbc_options.pass))) {
-					if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_STATUS_SUCCESS) {
+					if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_ODBC_SUCCESS) {
 						switch_odbc_handle_destroy(&odbc_dbh);
 					}
 				}
@@ -386,7 +386,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	case SCDB_TYPE_ODBC:
 		{
 			switch_odbc_statement_handle_t stmt = NULL;
-			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt, NULL)) != SWITCH_ODBC_SUCCESS) {
+			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt, NULL)) != SWITCH_STATUS_SUCCESS) {
 				errmsg = switch_odbc_handle_get_error(dbh->native_handle.odbc_dbh, stmt);
 			}
 			switch_odbc_statement_handle_free(&stmt);
@@ -809,6 +809,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	int lc = 0;
 	uint32_t loops = 0, sec = 0;
 	uint32_t l1 = 1000;
+	uint32_t sanity = 120;
 
 	switch_assert(sqlbuf);
 
@@ -816,9 +817,18 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		l1 = 10;
 	}
 
-	if (!sql_manager.event_db) {
-		switch_core_db_handle(&sql_manager.event_db);
+	while (!sql_manager.event_db) {
+		if (switch_core_db_handle(&sql_manager.event_db) == SWITCH_STATUS_SUCCESS && sql_manager.event_db) break;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error getting core db, Retrying\n");
+		switch_yield(500000);
+		sanity--;
 	}
+
+	if (!sql_manager.event_db) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error getting core db Disabling core sql functionality\n");
+		return NULL;
+	}
+
 
 	sql_manager.thread_running = 1;
 

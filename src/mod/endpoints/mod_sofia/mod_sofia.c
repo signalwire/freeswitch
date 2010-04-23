@@ -657,7 +657,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 		if (sofia_use_soa(tech_pvt)) {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
@@ -802,6 +802,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int payload = 0;
 	uint32_t sanity = 1000;
+	switch_rtcp_frame_t rtcp_frame;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -858,6 +859,50 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
 				return status;
+			}
+			
+			/* Try to read an RTCP frame, if successful raise an event */
+			if (switch_rtcp_zerocopy_read_frame(tech_pvt->rtp_session, &rtcp_frame) == SWITCH_STATUS_SUCCESS) {
+				switch_event_t *event;
+
+				if (switch_event_create(&event, SWITCH_EVENT_RECV_RTCP_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					char buf[30];
+
+					char* uuid = switch_core_session_get_uuid(session);
+					if (uuid) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+					}
+
+					snprintf(buf, sizeof(buf), "%.8x", rtcp_frame.ssrc);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SSRC", buf);
+
+					snprintf(buf, sizeof(buf), "%u", rtcp_frame.ntp_msw);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", buf);
+
+					snprintf(buf, sizeof(buf), "%u", rtcp_frame.ntp_lsw);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", buf);
+
+					snprintf(buf, sizeof(buf), "%u", rtcp_frame.timestamp);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", buf);
+
+					snprintf(buf,  sizeof(buf), "%u", rtcp_frame.packet_count);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", buf);
+
+					snprintf(buf,  sizeof(buf), "%u", rtcp_frame.octect_count);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", buf);
+
+					snprintf(buf, sizeof(buf), "%" SWITCH_SIZE_T_FMT, tech_pvt->read_frame.timestamp);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", buf);
+
+					snprintf(buf, sizeof(buf), "%u", tech_pvt->read_frame.rate);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Rate", buf);
+
+					snprintf(buf, sizeof(buf), "%" SWITCH_TIME_T_FMT, switch_time_now());
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", buf);
+
+					switch_event_fire(&event);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Dispatched RTCP event\n");
+				}
 			}
 
 			/* Fast PASS! */
@@ -1496,6 +1541,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
+		{
+			const char *event = "talk";
+			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
+				if (!strcasecmp(msg->string_arg, "hold")) {
+					event = "hold";
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid event.\n");
+				}
+			}
+			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
 		{
 			char *ref_to, *ref_by;

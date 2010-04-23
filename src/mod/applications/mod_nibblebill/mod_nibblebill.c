@@ -337,9 +337,10 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 	switch_odbc_statement_handle_free(&stmt);
 
 end:
-	if (sql != globals.custom_sql_save) {
+	if (sql != globals.custom_sql_lookup && sql != sql_stream.data) {
 		switch_safe_free(sql);
 	}
+	switch_safe_free(sql_stream.data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -385,9 +386,10 @@ static float get_balance(const char *billaccount, switch_channel_t *channel)
 	}
 	
 end:
-	if (sql != globals.custom_sql_lookup) {
+	if (sql != globals.custom_sql_lookup && sql != sql_stream.data) {
 		switch_safe_free(sql);
 	}
+	switch_safe_free(sql_stream.data);
 	return balance;
 }
 
@@ -942,7 +944,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nibblebill_load)
 	/* Add dialplan applications */
 	SWITCH_ADD_APP(app_interface, "nibblebill", "Handle billing for the current channel/call",
 				   "Pause, resume, reset, adjust, flush, heartbeat commands to handle billing.", nibblebill_app_function, APP_SYNTAX,
-				   SAF_NONE | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 	/* register state handlers for billing */
 	switch_core_add_state_handler(&nibble_state_handler);
@@ -963,6 +965,18 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nibblebill_shutdown)
 	switch_event_unbind(&globals.node);
 	switch_core_remove_state_handler(&nibble_state_handler);
 	switch_odbc_handle_disconnect(globals.master_odbc);
+
+	switch_safe_free(globals.db_username);
+	switch_safe_free(globals.db_password);
+	switch_safe_free(globals.db_dsn);
+	switch_safe_free(globals.db_table);
+	switch_safe_free(globals.db_column_cash);
+	switch_safe_free(globals.db_column_account);
+	switch_safe_free(globals.custom_sql_save);
+	switch_safe_free(globals.custom_sql_lookup);
+	switch_safe_free(globals.percall_action);
+	switch_safe_free(globals.lowbal_action);
+	switch_safe_free(globals.nobal_action);
 
 	return SWITCH_STATUS_UNLOAD;
 }

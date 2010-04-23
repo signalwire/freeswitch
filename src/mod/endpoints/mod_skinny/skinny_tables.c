@@ -47,6 +47,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"ConfigStatReqMessage", CONFIG_STAT_REQ_MESSAGE},
     {"TimeDateReqMessage", TIME_DATE_REQ_MESSAGE},
     {"ButtonTemplateReqMessage", BUTTON_TEMPLATE_REQ_MESSAGE},
+    {"VersionReqMessage", VERSION_REQ_MESSAGE},
     {"CapabilitiesReqMessage", CAPABILITIES_RES_MESSAGE},
     {"AlarmMessage", ALARM_MESSAGE},
     {"OpenReceiveChannelAckMessage", OPEN_RECEIVE_CHANNEL_ACK_MESSAGE},
@@ -72,6 +73,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"ConfigStatResMessage", CONFIG_STAT_RES_MESSAGE},
     {"DefineTimeDateMessage", DEFINE_TIME_DATE_MESSAGE},
     {"ButtonTemplateResMessage", BUTTON_TEMPLATE_RES_MESSAGE},
+    {"VersionMessage", VERSION_MESSAGE},
     {"CapabilitiesReqMessage", CAPABILITIES_REQ_MESSAGE},
     {"RegisterRejectMessage", REGISTER_REJECT_MESSAGE},
     {"ResetMessage", RESET_MESSAGE},
@@ -95,6 +97,24 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 };
 SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")
 SKINNY_DECLARE_STR2ID(skinny_str2message_type, SKINNY_MESSAGE_TYPES, -1)
+
+struct skinny_table SKINNY_DEVICE_TYPES[] = {
+    {"Cisco 30 SP+", 0x0001},
+    {"Cisco 12 SP+", 0x0002},
+    {"Cisco 12 SP", 0x0003},
+    {"Cisco 12", 0x0004},
+    {"Cisco 30 VIP", 0x0005},
+    {"Cisco IP Phone 7910", 0x0006},
+    {"Cisco IP Phone 7960", 0x0007},
+    {"Cisco IP Phone 7940", 0x0008},
+    {"Cisco IP Phone 7935", 0x0009},
+    {"Cisco ATA 186", 0x000c},
+    {"Cisco IP Phone 7961", 0x4275},
+    {"Cisco IP Phone 7936", 0x4276},
+    {NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_device_type2str, SKINNY_DEVICE_TYPES, "UnknownDeviceType")
+SKINNY_DECLARE_STR2ID(skinny_str2device_type, SKINNY_DEVICE_TYPES, -1)
 
 struct skinny_table SKINNY_RING_TYPES[] = {
     {"RingOff", SKINNY_RING_OFF},

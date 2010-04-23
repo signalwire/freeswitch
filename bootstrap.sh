@@ -4,7 +4,7 @@ echo "bootstrap: checking installation..."
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="ilbc curl iksemel js js/nsprpub libdingaling libedit libsndfile pcre sofia-sip \
-        speex sqlite srtp openzap spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk";
+        speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk";
 
 if [ ! -f modules.conf ]; then 
     cp build/modules.conf.in modules.conf
@@ -22,7 +22,7 @@ ac_version=`${AUTOCONF:-autoconf} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[
 if test -z "$ac_version"; then
 echo "bootstrap: autoconf not found."
 echo "           You need autoconf version 2.59 or newer installed"
-echo "           to build FreeSWITCH from SVN."
+echo "           to build FreeSWITCH from source."
 exit 1
 fi
 
@@ -37,7 +37,7 @@ IFS=.; set $ac_version; IFS=' '
 if test "$1" = "2" -a "$2" -lt "59" || test "$1" -lt "2"; then
 echo "bootstrap: autoconf version $ac_version found."
 echo "           You need autoconf version 2.59 or newer installed"
-echo "           to build FreeSWITCH from SVN."
+echo "           to build FreeSWITCH from source."
 exit 1
 else
 echo "bootstrap: autoconf version $ac_version (ok)"
@@ -50,7 +50,7 @@ am_version=`${AUTOMAKE:-automake} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[
 if test -z "$am_version"; then
 echo "bootstrap: automake not found."
 echo "           You need automake version 1.7 or newer installed"
-echo "           to build FreeSWITCH from SVN."
+echo "           to build FreeSWITCH from source."
 exit 1
 fi
 IFS=_; set $am_version; IFS=' '
@@ -59,7 +59,7 @@ IFS=.; set $am_version; IFS=' '
 if test "$1" = "1" -a "$2" -lt "7"; then
 echo "bootstrap: automake version $am_version found."
 echo "           You need automake version 1.7 or newer installed"
-echo "           to build FreeSWITCH from SVN."
+echo "           to build FreeSWITCH from source."
 exit 1
 else
 echo "bootstrap: automake version $am_version (ok)"
@@ -71,7 +71,7 @@ acl_version=`${ACLOCAL:-aclocal} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a
 if test -z "$acl_version"; then
 echo "bootstrap: aclocal not found."
 echo "           You need aclocal version 1.7 or newer installed"
-echo "           to build FreeSWITCH from SVN."
+echo "           to build FreeSWITCH from source."
 exit 1
 fi
 IFS=_; set $acl_version; IFS=' '
@@ -80,7 +80,7 @@ IFS=.; set $acl_version; IFS=' '
 if test "$1" = "1" -a "$2" -lt "7"; then
 echo "bootstrap: aclocal version $acl_version found."
 echo "           You need aclocal version 1.7 or newer installed"
-echo "           to build FreeSWITCH from SVN."
+echo "           to build FreeSWITCH from source."
 exit 1
 else
 echo "bootstrap: aclocal version $acl_version (ok)"
@@ -96,7 +96,7 @@ libtool=${LIBTOOL:-`${LIBDIR}/apr/build/PrintPath glibtool libtool libtool22 lib
 lt_pversion=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'`
 if test -z "$lt_pversion"; then
    echo "bootstrap: libtool not found."
-   echo "           You need libtool version 1.5.14 or newer to build FreeSWITCH from SVN."
+   echo "           You need libtool version 1.5.14 or newer to build FreeSWITCH from source."
    exit 1
 fi
 lt_version=`echo $lt_pversion|sed -e 's/\([a-z]*\)$/.\1/'`
@@ -121,7 +121,7 @@ if test $lt_status = "good"; then
    echo "bootstrap: libtool version $lt_pversion (ok)"
 else
    echo "bootstrap: libtool version $lt_pversion found."
-   echo "           You need libtool version 1.5.14 or newer to build FreeSWITCH from SVN."
+   echo "           You need libtool version 1.5.14 or newer to build FreeSWITCH from source."
    exit 1
 fi
 

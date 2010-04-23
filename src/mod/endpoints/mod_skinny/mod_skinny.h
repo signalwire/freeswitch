@@ -64,9 +64,12 @@ struct skinny_profile {
     unsigned int port;
     char *dialplan;
     char *context;
+    char *patterns_dialplan;
+    char *patterns_context;
     uint32_t keep_alive;
     char date_format[6];
     int debug;
+    switch_hash_t *device_type_params_hash;
     /* db */
     char *dbname;
     char *odbc_dsn;
@@ -93,6 +96,16 @@ struct skinny_profile {
 };
 typedef struct skinny_profile skinny_profile_t;
 
+struct skinny_device_type_params {
+	char firmware_version[16];
+};
+typedef struct skinny_device_type_params skinny_device_type_params_t;
+
+typedef enum {
+	SKINNY_ACTION_ROUTE,
+	SKINNY_ACTION_DROP,
+	SKINNY_ACTION_WAIT
+} skinny_action_t;
 
 /*****************************************************************************/
 /* LISTENERS TYPES */
@@ -107,6 +120,9 @@ struct listener {
     skinny_profile_t *profile;
     char device_name[16];
     uint32_t device_instance;
+    uint32_t device_type;
+    
+	char firmware_version[16];
 
     switch_socket_t *sock;
     switch_memory_pool_t *pool;
@@ -147,36 +163,40 @@ typedef enum {
 } GFLAGS;
 
 struct private_object {
-    unsigned int flags;
-    switch_frame_t read_frame;
-    unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-    switch_core_session_t *session;
-    switch_caller_profile_t *caller_profile;
-    switch_mutex_t *mutex;
-    switch_mutex_t *flag_mutex;
-    /* identification */
-    uint32_t call_id;
-    uint32_t party_id;
+	unsigned int flags;
+	switch_frame_t read_frame;
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_core_session_t *session;
+	switch_caller_profile_t *caller_profile;
+	switch_mutex_t *mutex;
+	switch_mutex_t *flag_mutex;
 
-    skinny_profile_t *profile;
+	/* identification */
+	skinny_profile_t *profile;
+	uint32_t call_id;
+	uint32_t party_id;
 
-    /* codec */
-    char *iananame;	
-    switch_codec_t read_codec;
-    switch_codec_t write_codec;
-    switch_codec_implementation_t read_impl;
-    switch_codec_implementation_t write_impl;
-    unsigned long rm_rate;
-    uint32_t codec_ms;
-    char *rm_encoding;
-    char *rm_fmtp;
-    switch_payload_t agreed_pt;
-    /* RTP */
-    switch_rtp_t *rtp_session;
-    char *local_sdp_audio_ip;
-    switch_port_t local_sdp_audio_port;
-    char *remote_sdp_audio_ip;
-    switch_port_t remote_sdp_audio_port;
+	/* related calls */
+	uint32_t transfer_to_call_id;
+	uint32_t transfer_from_call_id;
+
+	/* codec */
+	char *iananame;	
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
+	unsigned long rm_rate;
+	uint32_t codec_ms;
+	char *rm_encoding;
+	char *rm_fmtp;
+	switch_payload_t agreed_pt;
+	/* RTP */
+	switch_rtp_t *rtp_session;
+	char *local_sdp_audio_ip;
+	switch_port_t local_sdp_audio_port;
+	char *remote_sdp_audio_ip;
+	switch_port_t remote_sdp_audio_port;
 };
 
 typedef struct private_object private_t;

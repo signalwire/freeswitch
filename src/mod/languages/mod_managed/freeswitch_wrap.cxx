@@ -3244,6 +3244,140 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtp_hdr_t(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_hdr_t_version_set(void * jarg1, unsigned int jarg2) {
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->version = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_rtcp_hdr_t_version_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  result = (unsigned int) ((arg1)->version);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_hdr_t_p_set(void * jarg1, unsigned int jarg2) {
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->p = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_rtcp_hdr_t_p_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  result = (unsigned int) ((arg1)->p);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_hdr_t_count_set(void * jarg1, unsigned int jarg2) {
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->count = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_rtcp_hdr_t_count_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  result = (unsigned int) ((arg1)->count);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_hdr_t_type_set(void * jarg1, unsigned int jarg2) {
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->type = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_rtcp_hdr_t_type_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  result = (unsigned int) ((arg1)->type);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_hdr_t_length_set(void * jarg1, unsigned int jarg2) {
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->length = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_rtcp_hdr_t_length_get(void * jarg1) {
+  unsigned int jresult ;
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  result = (unsigned int) ((arg1)->length);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_rtcp_hdr_t() {
+  void * jresult ;
+  switch_rtcp_hdr_t *result = 0 ;
+  
+  result = (switch_rtcp_hdr_t *)new switch_rtcp_hdr_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtcp_hdr_t(void * jarg1) {
+  switch_rtcp_hdr_t *arg1 = (switch_rtcp_hdr_t *) 0 ;
+  
+  arg1 = (switch_rtcp_hdr_t *)jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38MaxBitRate_set(void * jarg1, unsigned long jarg2) {
   switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
   uint32_t arg2 ;
@@ -25900,6 +26034,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_MAX_BUF_LEN_get() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTCP_MAX_BUF_LEN_get() {
+  int jresult ;
+  int result;
+  
+  result = (int) 16384;
+  
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get() {
   int jresult ;
   int result;
@@ -26288,21 +26433,23 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_new(char * jarg1, unsigned short
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_set_remote_address(void * jarg1, char * jarg2, unsigned short jarg3, int jarg4, void * jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_set_remote_address(void * jarg1, char * jarg2, unsigned short jarg3, unsigned short jarg4, int jarg5, void * jarg6) {
   int jresult ;
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   char *arg2 = (char *) 0 ;
   switch_port_t arg3 ;
-  switch_bool_t arg4 ;
-  char **arg5 = (char **) 0 ;
+  switch_port_t arg4 ;
+  switch_bool_t arg5 ;
+  char **arg6 = (char **) 0 ;
   switch_status_t result;
   
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (switch_port_t)jarg3; 
-  arg4 = (switch_bool_t)jarg4; 
-  arg5 = (char **)jarg5; 
-  result = (switch_status_t)switch_rtp_set_remote_address(arg1,(char const *)arg2,arg3,arg4,(char const **)arg5);
+  arg4 = (switch_port_t)jarg4; 
+  arg5 = (switch_bool_t)jarg5; 
+  arg6 = (char **)jarg6; 
+  result = (switch_status_t)switch_rtp_set_remote_address(arg1,(char const *)arg2,arg3,arg4,arg5,(char const **)arg6);
   jresult = result; 
   return jresult;
 }
@@ -26415,6 +26562,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_ice(void * jarg1, char * j
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   result = (switch_status_t)switch_rtp_activate_ice(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_rtcp(void * jarg1, int jarg2, unsigned short jarg3) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  int arg2 ;
+  switch_port_t arg3 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (switch_port_t)jarg3; 
+  result = (switch_status_t)switch_rtp_activate_rtcp(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
@@ -26633,6 +26796,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_zerocopy_read_frame(void * jarg1, v
   arg2 = (switch_frame_t *)jarg2; 
   arg3 = (switch_io_flag_t)jarg3; 
   result = (switch_status_t)switch_rtp_zerocopy_read_frame(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtcp_zerocopy_read_frame(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_rtcp_frame_t *arg2 = (switch_rtcp_frame_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (switch_rtcp_frame_t *)jarg2; 
+  result = (switch_status_t)switch_rtcp_zerocopy_read_frame(arg1,arg2);
   jresult = result; 
   return jresult;
 }

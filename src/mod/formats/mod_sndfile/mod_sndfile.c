@@ -36,7 +36,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sndfile_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sndfile, mod_sndfile_load, mod_sndfile_shutdown, NULL);
 
-static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
 	switch_hash_t *format_hash;
@@ -415,12 +414,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 {
 	switch_file_interface_t *file_interface;
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
-
-	switch_core_hash_init(&globals.format_hash, module_pool);
+	switch_core_hash_init(&globals.format_hash, pool);
 
 	if (setup_formats() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -447,6 +441,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sndfile_shutdown)
 {
 	switch_core_hash_destroy(&globals.format_hash);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -116,6 +116,7 @@
 #include "switch_utils.h"
 #include "switch_caller.h"
 #include "switch_frame.h"
+#include "switch_rtcp_frame.h"
 #include "switch_module_interfaces.h"
 #include "switch_channel.h"
 #include "switch_buffer.h"

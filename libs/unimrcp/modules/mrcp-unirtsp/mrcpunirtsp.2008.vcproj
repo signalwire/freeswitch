@@ -135,6 +135,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unirelease.vsprops;$(ProjectDir)..\..\build\vsprops\mrcpsignaling.vsprops;$(ProjectDir)..\..\build\vsprops\unirtsp.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
 			CharacterSet="1"

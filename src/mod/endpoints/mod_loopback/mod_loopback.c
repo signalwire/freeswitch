@@ -44,8 +44,6 @@ SWITCH_MODULE_DEFINITION(mod_loopback, mod_loopback_load, mod_loopback_shutdown,
 
 static switch_endpoint_interface_t *loopback_endpoint_interface = NULL;
 
-static switch_memory_pool_t *module_pool = NULL;
-
 typedef enum {
 	TFLAG_LINKED = (1 << 0),
 	TFLAG_OUTBOUND = (1 << 1),
@@ -887,10 +885,6 @@ static switch_io_routines_t channel_io_routines = {
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
 
 	memset(&globals, 0, sizeof(globals));
 

@@ -1366,6 +1366,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		int argc;
 		char *argv[256];
 
+		switch_event_del_header(var_event, SWITCH_EXPORT_VARS_VARIABLE);
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, SWITCH_EXPORT_VARS_VARIABLE, export_vars);
+
 		if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			int x;
 

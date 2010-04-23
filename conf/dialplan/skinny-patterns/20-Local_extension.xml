@@ -1,0 +1,8 @@
+<include>
+  <extension name="Local_Extension">
+    <condition field="destination_number" expression="^(10[01][0-9])$">
+      <action application="skinny-route"/>
+    </condition>
+  </extension>
+</include>
+

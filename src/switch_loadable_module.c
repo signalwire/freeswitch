@@ -788,7 +788,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	switch_loadable_module_interface_t *module_interface = NULL;
 	char *derr = NULL;
 	const char *err = NULL;
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = NULL;
 	switch_bool_t load_global = global;
 
 	switch_assert(path != NULL);
@@ -1349,6 +1349,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.management_hash);
 	switch_core_hash_destroy(&loadable_modules.dialplan_hash);
 
+	switch_core_destroy_memory_pool(&loadable_modules.pool);
 }
 
 SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(const char *name)
