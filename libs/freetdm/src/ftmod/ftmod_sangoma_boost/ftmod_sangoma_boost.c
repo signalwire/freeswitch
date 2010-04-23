@@ -1312,6 +1312,8 @@ static int parse_sangoma_event(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 		if (event->call_setup_id) {
 			nack_map[event->call_setup_id] = 0;
 			release_request_id(event->call_setup_id);
+		} else {
+			handle_call_done(span, mcon, event);
 		}
 		break;
     case SIGBOOST_EVENT_INSERT_CHECK_LOOP:
@@ -1923,11 +1925,15 @@ static void ftdm_cli_span_state_cmd(ftdm_span_t *span, char *state)
 {
 	unsigned j;
 	int cnt=0;
+	ftdm_channel_state_t state_e = ftdm_str2ftdm_channel_state(state);
+	if (state_e == FTDM_CHANNEL_STATE_INVALID) {
+		ftdm_log(FTDM_LOG_CRIT, "Checking for channels not in the INVALID state is probably not waht you want\n");
+	}
 	for(j = 1; j <= span->chan_count; j++) {
-		if (span->channels[j]->state != FTDM_CHANNEL_STATE_DOWN) {
+		if (span->channels[j]->state != state_e) {
 			ftdm_channel_t *ftdmchan = span->channels[j];
 			ftdm_log(FTDM_LOG_CRIT, "Channel %i s%dc%d State=%s\n",
-				j,ftdmchan->physical_span_id-1,ftdmchan->physical_chan_id-1,ftdm_channel_state2str(ftdmchan->state));
+				j, ftdmchan->physical_span_id-1, ftdmchan->physical_chan_id-1, ftdm_channel_state2str(ftdmchan->state));
 			cnt++;
 		}
 	}
