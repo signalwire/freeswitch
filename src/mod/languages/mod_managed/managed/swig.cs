@@ -4056,8 +4056,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_rtp_set_remote_address(SWIGTYPE_p_switch_rtp rtp_session, string host, ushort port, switch_bool_t change_adv_addr, ref string err) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_remote_address(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), host, port, (int)change_adv_addr, ref err);
+  public static switch_status_t switch_rtp_set_remote_address(SWIGTYPE_p_switch_rtp rtp_session, string host, ushort port, ushort remote_rtcp_port, switch_bool_t change_adv_addr, ref string err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_remote_address(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), host, port, remote_rtcp_port, (int)change_adv_addr, ref err);
     return ret;
   }
 
@@ -4103,6 +4103,11 @@ public class freeswitch {
 
   public static switch_status_t switch_rtp_activate_ice(SWIGTYPE_p_switch_rtp rtp_session, string login, string rlogin) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_ice(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), login, rlogin);
+    return ret;
+  }
+
+  public static switch_status_t switch_rtp_activate_rtcp(SWIGTYPE_p_switch_rtp rtp_session, int send_rate, ushort remote_port) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_rtcp(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), send_rate, remote_port);
     return ret;
   }
 
@@ -4180,6 +4185,11 @@ public class freeswitch {
 
   public static switch_status_t switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp rtp_session, switch_frame frame, uint io_flags) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), switch_frame.getCPtr(frame), io_flags);
+    return ret;
+  }
+
+  public static switch_status_t switch_rtcp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_switch_rtcp_frame frame) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtcp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_switch_rtcp_frame.getCPtr(frame));
     return ret;
   }
 
@@ -4914,6 +4924,7 @@ public class freeswitch {
   public static readonly int SWITCH_SMIN = freeswitchPINVOKE.SWITCH_SMIN_get();
   public static readonly int SWITCH_RESAMPLE_QUALITY = freeswitchPINVOKE.SWITCH_RESAMPLE_QUALITY_get();
   public static readonly int SWITCH_RTP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_get();
+  public static readonly int SWITCH_RTCP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTCP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTP_MAX_CRYPTO_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_CRYPTO_LEN_get();
   public static readonly int SWITCH_RTP_KEY_LEN = freeswitchPINVOKE.SWITCH_RTP_KEY_LEN_get();
   public static readonly string SWITCH_RTP_CRYPTO_KEY_32 = freeswitchPINVOKE.SWITCH_RTP_CRYPTO_KEY_32_get();
@@ -5865,6 +5876,42 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_hdr_t")]
   public static extern void delete_switch_rtp_hdr_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_version_set")]
+  public static extern void switch_rtcp_hdr_t_version_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_version_get")]
+  public static extern uint switch_rtcp_hdr_t_version_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_p_set")]
+  public static extern void switch_rtcp_hdr_t_p_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_p_get")]
+  public static extern uint switch_rtcp_hdr_t_p_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_count_set")]
+  public static extern void switch_rtcp_hdr_t_count_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_count_get")]
+  public static extern uint switch_rtcp_hdr_t_count_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_type_set")]
+  public static extern void switch_rtcp_hdr_t_type_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_type_get")]
+  public static extern uint switch_rtcp_hdr_t_type_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_length_set")]
+  public static extern void switch_rtcp_hdr_t_length_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_length_get")]
+  public static extern uint switch_rtcp_hdr_t_length_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtcp_hdr_t")]
+  public static extern IntPtr new_switch_rtcp_hdr_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtcp_hdr_t")]
+  public static extern void delete_switch_rtcp_hdr_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38MaxBitRate_set")]
   public static extern void switch_t38_options_t_T38MaxBitRate_set(HandleRef jarg1, uint jarg2);
@@ -11152,6 +11199,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_BUF_LEN_get")]
   public static extern int SWITCH_RTP_MAX_BUF_LEN_get();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTCP_MAX_BUF_LEN_get")]
+  public static extern int SWITCH_RTCP_MAX_BUF_LEN_get();
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get")]
   public static extern int SWITCH_RTP_MAX_CRYPTO_LEN_get();
 
@@ -11240,7 +11290,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_rtp_new(string jarg1, ushort jarg2, string jarg3, ushort jarg4, byte jarg5, uint jarg6, uint jarg7, uint jarg8, string jarg9, ref string jarg10, HandleRef jarg11);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_remote_address")]
-  public static extern int switch_rtp_set_remote_address(HandleRef jarg1, string jarg2, ushort jarg3, int jarg4, ref string jarg5);
+  public static extern int switch_rtp_set_remote_address(HandleRef jarg1, string jarg2, ushort jarg3, ushort jarg4, int jarg5, ref string jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_remote_host")]
   public static extern string switch_rtp_get_remote_host(HandleRef jarg1);
@@ -11271,6 +11321,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_ice")]
   public static extern int switch_rtp_activate_ice(HandleRef jarg1, string jarg2, string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_rtcp")]
+  public static extern int switch_rtp_activate_rtcp(HandleRef jarg1, int jarg2, ushort jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_jitter_buffer")]
   public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2);
@@ -11319,6 +11372,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_zerocopy_read_frame")]
   public static extern int switch_rtp_zerocopy_read_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_zerocopy_read_frame")]
+  public static extern int switch_rtcp_zerocopy_read_frame(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_rtp_flush_read_buffer")]
   public static extern void rtp_flush_read_buffer(HandleRef jarg1, int jarg2);
@@ -16855,6 +16911,36 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class SWIGTYPE_p_switch_rtcp_frame {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_switch_rtcp_frame(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_switch_rtcp_frame() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_switch_rtcp_frame obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class SWIGTYPE_p_switch_rtp {
   private HandleRef swigCPtr;
 
@@ -21473,6 +21559,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_PROXY_MEDIA,
   SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC,
   SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE,
+  SWITCH_MESSAGE_INDICATE_PHONE_EVENT,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -22861,6 +22948,7 @@ public enum switch_event_types_t {
   SWITCH_EVENT_SERVER_DISCONNECTED,
   SWITCH_EVENT_SEND_INFO,
   SWITCH_EVENT_RECV_INFO,
+  SWITCH_EVENT_RECV_RTCP_MESSAGE,
   SWITCH_EVENT_CALL_SECURE,
   SWITCH_EVENT_NAT,
   SWITCH_EVENT_RECORD_START,
@@ -25770,6 +25858,103 @@ public enum switch_priority_t {
 
 namespace FreeSWITCH.Native {
 
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_rtcp_hdr_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_rtcp_hdr_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_rtcp_hdr_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_rtcp_hdr_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_rtcp_hdr_t(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint version {
+    set {
+      freeswitchPINVOKE.switch_rtcp_hdr_t_version_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_hdr_t_version_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint p {
+    set {
+      freeswitchPINVOKE.switch_rtcp_hdr_t_p_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_hdr_t_p_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint count {
+    set {
+      freeswitchPINVOKE.switch_rtcp_hdr_t_count_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_hdr_t_count_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint type {
+    set {
+      freeswitchPINVOKE.switch_rtcp_hdr_t_type_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_hdr_t_type_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint length {
+    set {
+      freeswitchPINVOKE.switch_rtcp_hdr_t_length_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_hdr_t_length_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_rtcp_hdr_t() : this(freeswitchPINVOKE.new_switch_rtcp_hdr_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
 public enum switch_rtp_bug_flag_t {
   RTP_BUG_NONE = 0,
   RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
@@ -25953,7 +26138,9 @@ namespace FreeSWITCH.Native {
   SWITCH_ZRTP_FLAG_SECURE_MITM_RECV = (1 << 26),
   SWITCH_RTP_FLAG_DEBUG_RTP_READ = (1 << 27),
   SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28),
-  SWITCH_RTP_FLAG_VIDEO = (1 << 29)
+  SWITCH_RTP_FLAG_VIDEO = (1 << 29),
+  SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30),
+  SWITCH_RTP_FLAG_RTCP_PASSTHRU = (1 << 31)
 }
 
 }
