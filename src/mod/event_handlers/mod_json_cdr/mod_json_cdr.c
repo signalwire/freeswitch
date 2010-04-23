@@ -178,7 +178,7 @@ static switch_status_t set_json_cdr_log_dirs()
 }
 
 #define JSON_ENSURE_SUCCESS(obj) if (is_error(obj)) { return; }
-SWITCH_DECLARE(void) set_json_profile_data(struct json_object *json, switch_caller_profile_t *caller_profile)
+static void set_json_profile_data(struct json_object *json, switch_caller_profile_t *caller_profile)
 {
 	struct json_object *param = NULL;
 
@@ -236,7 +236,7 @@ SWITCH_DECLARE(void) set_json_profile_data(struct json_object *json, switch_call
 
 }
 
-SWITCH_DECLARE(void) set_json_chan_vars(struct json_object *json, switch_channel_t *channel)
+static void set_json_chan_vars(struct json_object *json, switch_channel_t *channel)
 {
 	struct json_object *variable = NULL;
 	switch_event_header_t *hi = switch_channel_variable_first(channel);
@@ -268,7 +268,7 @@ SWITCH_DECLARE(void) set_json_chan_vars(struct json_object *json, switch_channel
 
 
 
-SWITCH_DECLARE(switch_status_t) generate_json_cdr(switch_core_session_t *session, struct json_object **json_cdr)
+static switch_status_t generate_json_cdr(switch_core_session_t *session, struct json_object **json_cdr)
 {
 
 	struct json_object *cdr = json_object_new_object();

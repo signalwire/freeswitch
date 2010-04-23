@@ -3571,6 +3571,18 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					match = 0;
 					got_audio = 0;
 				}
+				
+				for (map = m->m_rtpmaps; map; map = map->rm_next) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+						match = (map->rm_pt == tech_pvt->agreed_pt) ? 1 : 0;
+					} else {
+						match = strcasecmp(map->rm_encoding, tech_pvt->rm_encoding) ? 0 : 1;
+					}					
+				}
+
+				if (match) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing codec is already acceptable, using that.\n");
+				}
 			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
@@ -4247,7 +4259,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			}
 
 			if ((tmp = switch_channel_get_variable(channel, "sip_use_pt"))) {
-				tech_pvt->agreed_pt = atoi(tmp);
+				tech_pvt->pt = tech_pvt->agreed_pt = atoi(tmp);
 			}
 
 			sofia_glue_tech_set_codec(tech_pvt, 1);

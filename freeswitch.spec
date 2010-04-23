@@ -9,8 +9,8 @@ Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      1.0.4
-Release:      1
+Version:      1.0.7
+Release:      trunk
 URL:          http://www.freeswitch.org/
 Packager:     	Michal Bielicki
 Vendor:       	http://www.freeswitch.org/
@@ -355,6 +355,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/skinny-patterns
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory/default
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang
@@ -430,6 +431,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/default/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/skinny-patterns
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/default/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/ivr_menus/*.xml
@@ -614,6 +616,9 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 
 %changelog
+* Fr Apr 23 2010 - michal.bielicki@seventhsignal.de
+- bumped spec file vrersion up to 1.0.7-trunk for trunk
+- added skinny dialplan stuff to specfile
 * Sun Mar 28 2010 - michal.bielicki@seventhsignal.de
 - added sangoma codec config file
 * Wed Dec 02 2009 - michal.bielicki@seventhsignal.de
