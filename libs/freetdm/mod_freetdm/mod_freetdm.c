@@ -1324,7 +1324,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (ftdm_channel_add_token(ftdmchan, switch_core_session_get_uuid(*new_session), ftdm_channel_get_token_count(ftdmchan)) != FTDM_SUCCESS) {
 			switch_core_session_destroy(new_session);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-            goto fail;
+            		goto fail;
 		}
 
 
@@ -1337,8 +1337,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				switch_core_codec_destroy(&tech_pvt->write_codec);
 			}
 			switch_core_session_destroy(new_session);
-            cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-            goto fail;
+			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+            		goto fail;
 		}
 
 		ftdm_channel_init(ftdmchan);
@@ -1346,10 +1346,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
- fail:
+fail:
 
 	if (ftdmchan) {
-		ftdm_channel_done(ftdmchan);
+		ftdm_channel_call_hangup_with_cause(ftdmchan, FTDM_CAUSE_SWITCH_CONGESTION);
 	}
 
 	return cause;

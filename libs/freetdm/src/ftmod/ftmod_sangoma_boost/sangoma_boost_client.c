@@ -82,8 +82,8 @@ static void sangomabc_print_event_call(sangomabc_connection_t *mcon, sangomabc_e
 			priority ? "P":"N",
 			sangomabc_event_id_name(event->event_id),
 			event->event_id,
-			event->span,
-			event->chan,
+			BOOST_EVENT_SPAN(mcon->sigmod, event),
+			BOOST_EVENT_CHAN(mcon->sigmod, event),
 			event->call_setup_id,
 			event->fseqno,
 			strlen(event->calling_name)?event->calling_name:"N/A",
@@ -101,8 +101,8 @@ static void sangomabc_print_event_short(sangomabc_connection_t *mcon, sangomabc_
 			   priority ? "P":"N",
                            sangomabc_event_id_name(event->event_id), 
                            event->event_id, 
-                           event->span, 
-                           event->chan, 
+		           BOOST_EVENT_SPAN(mcon->sigmod, event),
+			   BOOST_EVENT_CHAN(mcon->sigmod, event),
                            event->release_cause, 
                            event->call_setup_id, 
                            event->fseqno);
@@ -247,7 +247,7 @@ int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int
             return -1;
         } else {
             ftdm_log(FTDM_LOG_WARNING, "Failed to tx on boost socket: %s :retry %i\n", strerror(errno), retry);
-			ftdm_sleep(1);
+	    ftdm_sleep(1);
         }
     }
 

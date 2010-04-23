@@ -634,7 +634,6 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_create(const char *name, ftdm_conf_node
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const char *param, const char *val);
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node);
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char *str, ftdm_channel_config_t *chan_config, unsigned *configured);
-FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel(const ftdm_span_t *span, uint32_t chanid);
 FT_DECLARE(uint32_t) ftdm_span_get_chan_count(const ftdm_span_t *span);

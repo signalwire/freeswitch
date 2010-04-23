@@ -69,9 +69,6 @@ static ftdm_status_t ftdm_sangoma_boost_list_sigmods(ftdm_stream_handle_t *strea
 #define BOOST_SPAN(ftdmchan) ((ftdm_sangoma_boost_data_t*)(ftdmchan)->span->signal_data)->sigmod ? ftdmchan->physical_span_id : ftdmchan->physical_span_id-1
 #define BOOST_CHAN(ftdmchan) ((ftdm_sangoma_boost_data_t*)(ftdmchan)->span->signal_data)->sigmod ? ftdmchan->physical_chan_id : ftdmchan->physical_chan_id-1
 
-#define BOOST_EVENT_SPAN(sigmod, event) ((sigmod)? event->span:event->span+1)
-#define BOOST_EVENT_CHAN(sigmod, event) ((sigmod)? event->chan:event->chan+1)
-
 /**
  * \brief SANGOMA boost notification flag
  */
@@ -957,7 +954,8 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 
 			/* NC: Do nothing here because we are in process
 				of stopping the call. So ignore the ANSWER. */
-			ftdm_log(FTDM_LOG_CRIT, "ANSWER BUT CALL IS HANGUP %d:%d\n", event->span+1,event->chan+1);
+			ftdm_log(FTDM_LOG_DEBUG, "ANSWER BUT CALL IS HANGUP %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), 
+					BOOST_EVENT_CHAN(mcon->sigmod, event));
 
 		} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HOLD) {
 			ftdmchan->init_state = FTDM_CHANNEL_STATE_UP;
@@ -968,7 +966,7 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 		}
 		ftdm_mutex_unlock(ftdmchan->mutex);
 	} else {
-		ftdm_log(FTDM_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon, event), BOOST_EVENT_CHAN(mcon, event));
+		ftdm_log(FTDM_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		sangomabc_exec_command(mcon,
 							   event->span,
 							   event->chan,
@@ -1234,7 +1232,7 @@ static ftdm_channel_t* event_process_states(ftdm_span_t *span, sangomabc_short_e
         case SIGBOOST_EVENT_CALL_RELEASED:
             if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
                 ftdm_log(FTDM_LOG_DEBUG, "PROCESS STATES  CANT FIND CHAN %d:%d\n",
-																							BOOST_EVENT_SPAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event),
+			BOOST_EVENT_SPAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event),
 																							BOOST_EVENT_CHAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event));
                 return NULL;
             }
@@ -1733,7 +1731,7 @@ static ftdm_status_t ftdm_boost_connection_open(ftdm_span_t *span)
 							  ++sangoma_boost_data->pcon.cfg.remote_port) < 0) {
 		ftdm_log(FTDM_LOG_ERROR, "Error: Opening PCON Socket [%d] %s\n", sangoma_boost_data->pcon.socket, strerror(errno));
 		return FTDM_FAIL;
-    }
+	}
 
 	/* try to create the boost sockets interrupt objects */
 	if (ftdm_interrupt_create(&sangoma_boost_data->pcon.sock_interrupt, sangoma_boost_data->pcon.socket) != FTDM_SUCCESS) {
@@ -1924,7 +1922,7 @@ static void ftdm_cli_span_state_cmd(ftdm_span_t *span, char *state)
 	int cnt=0;
 	ftdm_channel_state_t state_e = ftdm_str2ftdm_channel_state(state);
 	if (state_e == FTDM_CHANNEL_STATE_INVALID) {
-		ftdm_log(FTDM_LOG_CRIT, "Checking for channels not in the INVALID state is probably not waht you want\n");
+		ftdm_log(FTDM_LOG_CRIT, "Checking for channels not in the INVALID state is probably not what you want\n");
 	}
 	for(j = 1; j <= span->chan_count; j++) {
 		if (span->channels[j]->state != state_e) {
@@ -2187,7 +2185,7 @@ static ftdm_state_map_t boost_state_map = {
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_HOLD, FTDM_END},
 			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, 
-			 FTDM_CHANNEL_STATE_IDLE, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END}
+			 FTDM_CHANNEL_STATE_IDLE, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_CHANNEL_STATE_HANGUP, FTDM_END}
 		},
 		{
 			ZSD_OUTBOUND,

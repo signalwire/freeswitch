@@ -559,6 +559,7 @@ FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t
 FT_DECLARE(int) ftdm_load_module(const char *name);
 FT_DECLARE(int) ftdm_load_module_assume(const char *name);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
+FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 FIO_CODEC_FUNCTION(fio_slin2ulaw);
 FIO_CODEC_FUNCTION(fio_ulaw2slin);

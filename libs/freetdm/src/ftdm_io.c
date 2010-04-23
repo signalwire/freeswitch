@@ -1428,8 +1428,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 		ftdm_span_channel_use_count(span, &count);
 
 		if (count >= span->chan_count) {
-			ftdm_log(FTDM_LOG_CRIT, "All circuits are busy: active=%i max=%i.\n",
-				count, span->chan_count);
+			ftdm_log(FTDM_LOG_ERROR, "All circuits are busy: active=%i max=%i.\n", count, span->chan_count);
 			*ftdmchan = NULL;
 			return FTDM_FAIL;
 		}
@@ -1808,16 +1807,36 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_call_answer(ftdm_channel_t *ftdmchan)
 	return FTDM_SUCCESS;
 }
 
+
+static ftdm_status_t call_hangup(ftdm_channel_t *chan)
+{
+	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
+		ftdm_set_state_wait(chan, FTDM_CHANNEL_STATE_HANGUP);
+	} else {
+		/* the signaling stack did not touch the state, 
+		 * core is responsible from clearing flags and stuff */
+		ftdm_channel_done(chan);
+	}
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup_with_cause(ftdm_channel_t *ftdmchan, ftdm_call_cause_t cause)
 {
+	ftdm_channel_lock(ftdmchan);
+
 	ftdmchan->caller_data.hangup_cause = cause;
-	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+	
+	call_hangup(ftdmchan);
+
+	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup(ftdm_channel_t *ftdmchan)
 {
-	ftdm_set_state_locked_wait(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+	ftdm_channel_lock(ftdmchan);
+	call_hangup(ftdmchan);
+	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
 }
 
