@@ -1279,9 +1279,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 		if (!(check = group->channels[i])) {
 			status = FTDM_FAIL;
 			break;
-		}
+		} 
 
-		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && 
+		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) &&
+			ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) &&
 			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) &&
@@ -1401,7 +1402,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			break;
 		}
 			
-		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && 
+		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) &&
+			ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) &&
 			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
 			!ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) && 

@@ -1950,6 +1950,16 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
 			}
 		}
+		break;
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		{
+			if (*((ftdm_signaling_status_t*)(sigmsg->raw_data)) == FTDM_SIG_STATE_UP) {
+				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+			} else {
+				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+			}
+		}
+		break;
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
@@ -2992,6 +3002,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "chan_id: %u\n"
 						   "physical_span_id: %u\n"
 						   "physical_chan_id: %u\n"
+						   "physical_state: %s\n"
+						   "signaling_state: %s\n"
 						   "type: %s\n"
 						   "state: %s\n"
 						   "last_state: %s\n"
@@ -3009,6 +3021,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   span->channels[chan_id]->chan_id,
 						   span->channels[chan_id]->physical_span_id,
 						   span->channels[chan_id]->physical_chan_id,
+					  	 (span->channels[chan_id]->alarm_flags) ? "DOWN" : "UP",
+					     ftdm_test_flag(span->channels[chan_id], FTDM_CHANNEL_SIG_UP) ? "UP" : "DOWN",
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
@@ -3037,6 +3051,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <chan-id>%u</chan-id>>\n"
 						   "  <physical-span-id>%u</physical-span-id>\n"
 						   "  <physical-chan-id>%u</physical-chan-id>\n"
+						   "  <physical-state>%s</physical-state>\n"
+						   "  <signaling-state>%s</signaling-state>\n"
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
 						   "  <last-state>%s</last-state>\n"
@@ -3055,6 +3071,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   span->channels[chan_id]->chan_id,
 						   span->channels[chan_id]->physical_span_id,
 						   span->channels[chan_id]->physical_chan_id,
+						   (span->channels[chan_id]->alarm_flags) ? "DOWN" : "UP",
+					     ftdm_test_flag(span->channels[chan_id], FTDM_CHANNEL_SIG_UP) ? "UP" : "DOWN",
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
