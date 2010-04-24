@@ -131,7 +131,7 @@ void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err)
 		dlerror();
 
 		if (!(addr = dlsym(lib, sym))) {
-			err_str = dlerror();
+			err_str = (char *)dlerror();
 		}
 
 		if (err_str) {
