@@ -2601,6 +2601,107 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 	return xml;
 }
 
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
+
+	const char *xyear = switch_xml_attr(xcond, "year");
+	const char *xyday = switch_xml_attr(xcond, "yday");
+	const char *xmon = switch_xml_attr(xcond, "mon");
+	const char *xmday = switch_xml_attr(xcond, "mday");
+	const char *xweek = switch_xml_attr(xcond, "week");
+	const char *xmweek = switch_xml_attr(xcond, "mweek");
+	const char *xwday = switch_xml_attr(xcond, "wday");
+	const char *xhour = switch_xml_attr(xcond, "hour");
+	const char *xminute = switch_xml_attr(xcond, "minute");
+	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
+
+	switch_time_t ts = switch_micro_time_now();
+	int time_match = -1;
+	switch_time_exp_t tm;
+
+	switch_time_exp_lt(&tm, ts);
+
+	if (time_match && xyear) {
+		int test = tm.tm_year + 1900;
+		time_match = switch_number_cmp(xyear, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: year[%d] =~ %s (%s)\n", test, xyear, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xyday) {
+		int test = tm.tm_yday + 1;
+		time_match = switch_number_cmp(xyday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: day of year[%d] =~ %s (%s)\n", test, xyday, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xmon) {
+		int test = tm.tm_mon + 1;
+		time_match = switch_number_cmp(xmon, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: month[%d] =~ %s (%s)\n", test, xmon, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xmday) {
+		int test = tm.tm_mday;
+		time_match = switch_number_cmp(xmday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: day of month[%d] =~ %s (%s)\n", test, xmday, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xweek) {
+		int test = (int) (tm.tm_yday / 7 + 1);
+		time_match = switch_number_cmp(xweek, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
+	}
+	if (time_match && xweek) {
+		int test = (int) (tm.tm_yday / 7 + 1);
+		time_match = switch_number_cmp(xweek, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xmweek) {
+		/* calculate the day of the week of the first of the month (0-6) */
+		int firstdow = (int) (7 - (tm.tm_mday - (tm.tm_wday + 1)) % 7) % 7;
+		/* calculate the week of the month (1-6)*/
+		int test = (int) ceil((tm.tm_mday + firstdow) / 7.0);
+		time_match = switch_number_cmp(xmweek, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime: week of month[%d] =~ %s (%s)\n", test, xmweek, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xwday) {
+		int test = tm.tm_wday + 1;
+		time_match = switch_number_cmp(xwday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: day of week[%d] =~ %s (%s)\n", test, xwday, time_match ? "PASS" : "FAIL");
+	}
+	if (time_match && xhour) {
+		int test = tm.tm_hour;
+		time_match = switch_number_cmp(xhour, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: hour[%d] =~ %s (%s)\n", test, xhour, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xminute) {
+		int test = tm.tm_min;
+		time_match = switch_number_cmp(xminute, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: minute[%d] =~ %s (%s)\n", test, xminute, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xminday) {
+		int test = (tm.tm_hour * 60) + (tm.tm_min + 1);
+		time_match = switch_number_cmp(xminday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: minute of day[%d] =~ %s (%s)\n", test, xminday, time_match ? "PASS" : "FAIL");
+	}
+
+	return time_match;
+}
+
+
 #ifdef WIN32
 /* 
  * globbing functions for windows, part of libc on unix, this code was cut and paste from  

@@ -413,6 +413,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(_In_ switc
 ///\return the section mask
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(_In_opt_z_ const char *str);
 
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond);
+
 SWITCH_END_EXTERN_C
 ///\}
 #endif // _SWITCH_XML_H
