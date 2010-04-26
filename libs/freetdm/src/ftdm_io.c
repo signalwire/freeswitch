@@ -3163,21 +3163,20 @@ static struct {
 } interfaces;
 
 
-FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd)
+FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 {
 	ftdm_io_interface_t *fio = NULL;
 	char *dup = NULL, *p;
 	char *rval = NULL;
+	char *type = NULL;
 
-	if (type && !cmd) {
-		dup = ftdm_strdup(type);
-		if ((p = strchr(dup, ' '))) {
-			*p++ = '\0';
-			cmd = p;
-		}
-
-		type = dup;
+	dup = ftdm_strdup(cmd);
+	if ((p = strchr(dup, ' '))) {
+		*p++ = '\0';
+		cmd = p;
 	}
+
+	type = dup;
 	
 	ftdm_mutex_lock(globals.mutex);
 	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {

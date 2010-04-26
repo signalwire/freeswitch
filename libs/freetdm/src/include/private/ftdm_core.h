@@ -263,6 +263,13 @@ extern "C" {
 */
 #define ftdm_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
 
+/*! \brief channel state change result */
+typedef enum {
+	FTDM_STATE_CHANGE_FAIL,
+	FTDM_STATE_CHANGE_SUCCESS,
+	FTDM_STATE_CHANGE_SAME,
+} ftdm_state_change_result_t;
+
 struct ftdm_stream_handle {
 	ftdm_stream_handle_write_function_t write_function;
 	ftdm_stream_handle_raw_write_function_t raw_write_function;
@@ -556,17 +563,16 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t len);
 
+FT_DECLARE(void) ftdm_channel_clear_needed_tones(ftdm_channel_t *ftdmchan);
+FT_DECLARE(void) ftdm_channel_rotate_tokens(ftdm_channel_t *ftdmchan);
+
 FT_DECLARE(int) ftdm_load_module(const char *name);
 FT_DECLARE(int) ftdm_load_module_assume(const char *name);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
 FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
-FIO_CODEC_FUNCTION(fio_slin2ulaw);
-FIO_CODEC_FUNCTION(fio_ulaw2slin);
-FIO_CODEC_FUNCTION(fio_slin2alaw);
-FIO_CODEC_FUNCTION(fio_alaw2slin);
-FIO_CODEC_FUNCTION(fio_ulaw2alaw);
-FIO_CODEC_FUNCTION(fio_alaw2ulaw);
+FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void);
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);
 
 /*!
   \brief Assert condition
