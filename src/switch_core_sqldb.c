@@ -958,6 +958,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_DESTROY:
 		sql = switch_mprintf("delete from channels where uuid='%q' and hostname='%q'",
 							 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+		printf("%s\n", sql);
 		break;
 	case SWITCH_EVENT_CHANNEL_UUID:
 		{
@@ -1143,7 +1144,7 @@ static void core_event_handler(switch_event_t *event)
 	}
 
 	if (sql) {
-		if (switch_stristr("update channels", sql)) {
+		if (switch_stristr("update channels", sql) || switch_stristr("delete from channels", sql)) {
 			switch_queue_push(sql_manager.sql_queue[1], sql);
 		} else {
 			switch_queue_push(sql_manager.sql_queue[0], sql);
