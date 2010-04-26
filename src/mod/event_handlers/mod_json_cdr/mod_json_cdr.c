@@ -620,7 +620,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	is_b = channel && switch_channel_get_originator_caller_profile(channel);
 	if (!globals.log_b && is_b) {
-		return SWITCH_STATUS_SUCCESS;
+		const char *force_cdr = switch_channel_get_variable(channel, SWITCH_FORCE_PROCESS_CDR_VARIABLE);
+		if (!switch_true(force_cdr)) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 	if (!is_b && globals.prefix_a)
 		a_prefix = "a_";
