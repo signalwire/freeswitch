@@ -2179,7 +2179,11 @@ ldl_status ldl_session_get_payloads(ldl_session_t *session, ldl_payload_t **payl
 
 ldl_status ldl_global_terminate(void)
 {
-	ldl_clear_flag_locked((&globals), LDL_FLAG_READY);
+	if (globals.flag_mutex) {
+		ldl_clear_flag_locked((&globals), LDL_FLAG_READY);
+	} else {
+		ldl_clear_flag((&globals), LDL_FLAG_READY);
+	}
 	return LDL_STATUS_SUCCESS;
 }
 
