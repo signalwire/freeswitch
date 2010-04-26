@@ -2111,6 +2111,7 @@ struct cb_helper_sql2str {
 };
 
 struct cb_helper {
+	uint32_t row_process;
 	sofia_profile_t *profile;
 	switch_stream_handle_t *stream;
 };
@@ -2121,12 +2122,17 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 {
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char exp_buf[128] = "";
+	int exp_secs = 0;
 	switch_time_exp_t tm;
 
+	cb->row_process++;
+
 	if (argv[6]) {
+		time_t now = switch_epoch_time_now(NULL);
 		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
-
+		
+		exp_secs = etime - now;
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
@@ -2136,7 +2142,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "User:       \t%s@%s\n"
 							   "Contact:    \t%s\n"
 							   "Agent:      \t%s\n"
-							   "Status:     \t%s(%s) EXP(%s)\n"
+							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d)\n"
 							   "Host:       \t%s\n"
 							   "IP:         \t%s\n"
 							   "Port:       \t%s\n"
@@ -2144,7 +2150,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Auth-Realm: \t%s\n"
 							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[11]),
 							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]),
 							   switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
@@ -2157,11 +2163,16 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	switch_time_exp_t tm;
 	const int buflen = 2048;
 	char xmlbuf[2048];
+	int exp_secs = 0;
+
+	cb->row_process++;
 
 	if (argv[6]) {
+		time_t now = switch_epoch_time_now(NULL);
 		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
 
+		exp_secs = etime - now;
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
@@ -2171,7 +2182,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	cb->stream->write_function(cb->stream,"        <user>%s@%s</user>\n", switch_str_nil(argv[1]), switch_str_nil(argv[2]));
 	cb->stream->write_function(cb->stream,"        <contact>%s</contact>\n", switch_amp_encode(switch_str_nil(argv[3]), xmlbuf, buflen));
 	cb->stream->write_function(cb->stream,"        <agent>%s</agent>\n", switch_str_nil(argv[7]));
-	cb->stream->write_function(cb->stream,"        <status>%s(%s) exp(%s)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf);
+	cb->stream->write_function(cb->stream,"        <status>%s(%s) exp(%s) expsecs(%d)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs);
 	cb->stream->write_function(cb->stream,"        <host>%s</host>\n", switch_str_nil(argv[11]));
 	cb->stream->write_function(cb->stream,"        <network-ip>%s</network-ip>\n", switch_str_nil(argv[12]));
 	cb->stream->write_function(cb->stream,"        <network-port>%s</network-port>\n", switch_str_nil(argv[13]));
@@ -2288,7 +2299,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
-
+			cb.row_process = 0;
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				if (!argv[2] || (strcasecmp(argv[2], "reg") && strcasecmp(argv[2], "user"))) {
 					stream->write_function(stream, "%s\n", line);
@@ -2409,6 +2420,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback, &cb);
 				switch_safe_free(sql);
 
+				stream->write_function(stream, "Total items returned: %d\n", cb.row_process);
 				stream->write_function(stream, "%s\n", line);
 
 				sofia_glue_release_profile(profile);
@@ -2564,6 +2576,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
+			cb.row_process = 0;
 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", header);
@@ -2982,6 +2995,8 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char *contact;
 
+	cb->row_process++;
+
 	if (!zstr(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1))) {
 		cb->stream->write_function(cb->stream, "%ssofia/%s/sip:%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
 		free(contact);
@@ -3162,6 +3177,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		if (profile) {
 			struct cb_helper cb;
 			switch_stream_handle_t mystream = { 0 };
+
+			cb.row_process = 0;
 
 			if (!domain || (!strchr(domain, '.') && strcmp(profile_name, domain))) {
 				domain = profile->name;
