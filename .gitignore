@@ -87,3 +87,8 @@ src/mod/say/mod_say_nl/Makefile
 src/mod/say/mod_say_th/Makefile
 src/mod/say/mod_say_zh/Makefile
 libs/curl/lib/ca-bundle.h
+libs/g729/
+src/mod/codecs/mod_com_g729/
+src/mod/languages/mod_lua/mod_lua_wrap.cpp.orig
+src/mod/languages/mod_perl/mod_perl_wrap.cpp.orig
+src/mod/languages/mod_python/mod_python_wrap.cpp.orig
