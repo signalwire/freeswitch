@@ -337,7 +337,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_yield(globals.delay * 1000000);
 			}
 
-			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], switch_core_session_get_uuid(session));
+			destUrl = switch_mprintf("%s?uuid=%s&leg=%c", globals.urls[globals.url_index], switch_core_session_get_uuid(session), 
+				is_b ? 'b' : 'a');
 			curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
 			if (!strncasecmp(destUrl, "https", 5)) {
