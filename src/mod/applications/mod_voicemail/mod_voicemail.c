@@ -1524,7 +1524,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
 					goto get_exten;
 				}
-			} else if (!strcmp(input, profile->delete_file_key) || !strcmp(input, profile->email_key)) {
+			} else if (!strcmp(input, profile->delete_file_key) || (!strcmp(input, profile->email_key) && !zstr(cbt->email))) {
 				char *sql = switch_mprintf("update voicemail_msgs set flags='delete' where uuid='%s'", cbt->uuid);
 				vm_execute_sql(profile, sql, profile->mutex);
 				switch_safe_free(sql);
