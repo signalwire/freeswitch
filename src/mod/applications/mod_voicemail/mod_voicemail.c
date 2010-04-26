@@ -1681,7 +1681,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 }
 
 
-#define FREE_DOMAIN_ROOT() if (x_domain_root) switch_xml_free(x_domain_root); x_user = x_domain = x_domain_root = NULL
+#define FREE_DOMAIN_ROOT() if (x_user) switch_xml_free(x_user); x_user = NULL
 
 
 static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *profile, const char *domain_name, const char *id, int auth)
@@ -1689,7 +1689,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	vm_check_state_t vm_check_state = VM_CHECK_START;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
-	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
+	switch_xml_t x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
 	const char *thepass = NULL, *myid = id, *thehash = NULL, *vmhash = NULL;
@@ -2083,18 +2083,37 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_event_t *params;
 					int ok = 1;
 
-
 					switch_event_create(&params, SWITCH_EVENT_GENERAL);
 					switch_assert(params);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
 
-
-					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
-											   &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
+					if (switch_xml_locate_user_merged("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
+											   &x_user, params) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
 					} else {
+						switch_bool_t vm_enabled = SWITCH_TRUE;
+
+						x_params = switch_xml_child(x_user, "params");
+
+						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+							const char *var = switch_xml_attr_soft(x_param, "name");
+							const char *val = switch_xml_attr_soft(x_param, "value");
+
+							if (zstr(var) || zstr(val)) {
+								continue; /* Ignore empty entires */
+							}
+
+							if (!strcasecmp(var, "vm-enabled")) {
+								vm_enabled = !switch_false(val);
+							}
+						}
+
+						if (!vm_enabled) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "User [%s@%s] have voicemail disabled\n", myid, domain_name);
+							ok = 0;
+						}
 						myid = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 					}
 
@@ -2261,9 +2280,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 	}
 
-	if (x_domain_root) {
-		switch_xml_free(x_domain_root);
-		x_domain_root = NULL;
+	if (x_user) {
+		switch_xml_free(x_user);
+		x_user = NULL;
 	}
 }
 
@@ -2836,6 +2855,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	int disk_quota = 0;
 	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
 	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
+	switch_bool_t vm_enabled = SWITCH_TRUE;
 
 	switch_channel_set_variable(channel, "skip_greeting", NULL);
 	switch_channel_set_variable(channel, "skip_instructions", NULL);
@@ -2888,10 +2908,17 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						disk_quota = atoi(val);
 					} else if (!strcasecmp(var, "vm-alternate-greet-id")) {
 						read_id = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-enabled")) {
+						vm_enabled = !switch_false(val);
 					} else if (!strcasecmp(var, "vm-message-ext")) {
 						vm_ext = switch_core_session_strdup(session, val);
 					}
 				}
+			}
+
+			if (!vm_enabled) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "User [%s@%s] have voicemail disabled\n", id, domain_name);
+				ok = 0;
 			}
 
 			if (send_main && zstr(vm_email) && !zstr(email_addr)) {
