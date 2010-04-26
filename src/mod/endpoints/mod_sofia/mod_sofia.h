@@ -402,6 +402,8 @@ struct sofia_gateway {
 	switch_event_t *ob_vars;
 	uint32_t ib_calls;
 	uint32_t ob_calls;
+	uint32_t ib_failed_calls;
+	uint32_t ob_failed_calls;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int failures;
 	struct sofia_gateway *next;

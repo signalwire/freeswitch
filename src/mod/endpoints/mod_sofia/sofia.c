@@ -1758,6 +1758,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->ping_max = 0;
 			gateway->ping_min = 0;
 			gateway->ping_count = 0;
+			gateway->ib_calls = 0;
+			gateway->ob_calls = 0;
+			gateway->ib_failed_calls = 0;
+			gateway->ob_failed_calls = 0;
 
 			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
 				param = switch_xml_child(x_params, "variable");
