@@ -336,6 +336,7 @@ struct conference_member {
 	int32_t energy_level;
 	int32_t volume_in_level;
 	int32_t volume_out_level;
+	switch_time_t last_talking;
 	uint32_t native_rate;
 	switch_audio_resampler_t *read_resampler;
 	int16_t *resample_out;
@@ -1912,6 +1913,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 				if (diff >= diff_level || ++hangunder_hits >= hangunder) {
 					hangover_hits = hangunder_hits = 0;
+					member->last_talking = switch_epoch_time_now(NULL);
 
 					if (!switch_test_flag(member, MFLAG_TALKING)) {
 						switch_event_t *event;
@@ -3615,6 +3617,9 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		add_x_tag(x_member, "caller_id_name", profile->caller_id_name, toff++);
 		add_x_tag(x_member, "caller_id_number", profile->caller_id_number, toff++);
 
+
+                switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->last_talking);
+                add_x_tag(x_member, "last_talking", member->last_talking ? i : "N/A", toff++);
 
 		x_flags = switch_xml_add_child_d(x_member, "flags", count++);
 		switch_assert(x_flags);
