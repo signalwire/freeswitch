@@ -353,10 +353,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	time_t to = 0;
+	char *ext;
+	const char *prefix;
 	displace_helper_t *dh;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
+	if (zstr(file)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -376,6 +381,34 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	if (!(prefix = switch_channel_get_variable(channel, "sound_prefix"))) {
+		prefix = SWITCH_GLOBAL_dirs.base_dir;
+	}
+
+	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
+		if (!switch_is_file_path(file)) {
+			char *tfile = NULL;
+			char *e;
+
+			if (*file == '[') {
+				tfile = switch_core_session_strdup(session, file);
+				if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+					*e = '\0';
+					file = e + 1;
+				} else {
+					tfile = NULL;
+				}
+			}
+
+			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+		}
+		if ((ext = strrchr(file, '.'))) {
+			ext++;
+		} else {
+			ext = read_impl.iananame;
+			file = switch_core_session_sprintf(session, "%s.%s", file, ext);
+		}
+	}
 
 	dh->fh.channels = read_impl.number_of_channels;
 	dh->fh.samplerate = read_impl.actual_samples_per_second;
