@@ -403,6 +403,10 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 		return NULL;
 	}
 
+	if (!root->attr) {
+		return NULL;
+	}
+	
 	for (i = 0; root->attr[i] && xml->name && strcmp(xml->name, root->attr[i][0]); i++);
 	if (!root->attr[i])
 		return NULL;			/* no matching default attributes */
@@ -451,6 +455,9 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 		return (const char **) SWITCH_XML_NIL;
 	while (root->xml.parent)
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
+	if (!root || !root->pi) {
+		return (const char **) SWITCH_XML_NIL;
+	}
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
 		i++;					/* find target */
 	return (const char **) ((root->pi[i]) ? root->pi[i] + 1 : SWITCH_XML_NIL);
@@ -462,6 +469,10 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 	va_list ap;
 	int line = 1;
 	char *t, fmt[SWITCH_XML_ERRL];
+
+	if (!root || !root->s) {
+		return NULL;
+	}
 
 	for (t = root->s; t && t < s; t++)
 		if (*t == '\n')
@@ -578,7 +589,13 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 /* called when parser finds start of new tag */
 static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 {
-	switch_xml_t xml = root->cur;
+	switch_xml_t xml;
+
+	if (!root || !root->cur) {
+		return;
+	}
+
+	xml = root->cur;
 
 	if (xml->name)
 		xml = switch_xml_add_child(xml, name, strlen(xml->txt));
@@ -592,9 +609,15 @@ static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 /* called when parser finds character content between open and closing tag */
 static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size_t len, char t)
 {
-	switch_xml_t xml = root->cur;
+	switch_xml_t xml;
 	char *m = s;
 	switch_size_t l;
+
+	if (!root || !root->cur) {
+		return;
+	}
+
+	xml = root->cur;
 
 	if (!xml || !xml->name || !len)
 		return;					/* sanity check */
@@ -632,7 +655,7 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 /* called when parser finds closing tag */
 static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, char *s)
 {
-	if (!root->cur || !root->cur->name || strcmp(name, root->cur->name))
+	if (!root || !root->cur || !root->cur->name || strcmp(name, root->cur->name))
 		return switch_xml_err(root, s, "unexpected closing tag </%s>", name);
 
 	root->cur = root->cur->parent;
@@ -681,7 +704,7 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		return;
 	}
 
-	if (!root->pi[0]) {
+	if (!root->pi || !root->pi[0]) {
 		root->pi = (char ***) malloc(sizeof(char **));
 		if (!root->pi)
 			return;
