@@ -128,15 +128,16 @@ SWITCH_STANDARD_API(dump_hash)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void event_handler(switch_event_t *event)
+static switch_status_t process_event(switch_event_t *event)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
-	char *username[2] = { 0 };
-	char *domain[2] = { 0 };
+	char *username[3] = { 0 };
+	char *domain[3] = { 0 };
 	char key[512];
 	char *uuid = NULL, *my_uuid = NULL;
 	int i;
+
 
 	switch_thread_rwlock_rdlock(globals.spy_hash_lock);
 
@@ -146,10 +147,15 @@ static void event_handler(switch_event_t *event)
 
 	username[0] = switch_event_get_header(event, "Caller-Username");
 	domain[0] = switch_event_get_header(event, "variable_domain_name");
+
 	domain[1] = switch_event_get_header(event, "variable_dialed_domain");
 	username[1] = switch_event_get_header(event, "variable_dialed_user");
 
-	for (i = 0; i < 2; i++) {
+	username[2] = switch_event_get_header(event, "variable_user_name");
+	domain[2] = switch_event_get_header(event, "variable_domain_name");
+
+	for (i = 0; i < 3; i++) {
+
 		if (username[i] && domain[i]) {
 			switch_snprintf(key, sizeof(key), "%s@%s", username[i], domain[i]);
 
@@ -159,11 +165,11 @@ static void event_handler(switch_event_t *event)
 		}
 	}
 
-  done:
+ done:
 	switch_thread_rwlock_unlock(globals.spy_hash_lock);
 
 	if (!uuid) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	session = switch_core_session_locate(uuid);
@@ -178,7 +184,44 @@ static void event_handler(switch_event_t *event)
 	switch_channel_set_flag(channel, CF_BREAK);
 
 	switch_core_session_rwunlock(session);
+	return SWITCH_STATUS_SUCCESS;
 
+}
+
+static void event_handler(switch_event_t *event)
+{
+	if (process_event(event) != SWITCH_STATUS_SUCCESS) {
+		const char *peer_uuid = switch_event_get_header(event, "variable_signal_bond");
+		switch_core_session_t *peer_session = NULL;
+		switch_channel_t *peer_channel = NULL;
+		switch_event_t *peer_event = NULL;
+		
+		if (!peer_uuid) {
+			return;
+		}
+
+		if (!(peer_session = switch_core_session_locate(peer_uuid))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant locate peer session for uuid %s\n", peer_uuid);
+			return;
+		}
+
+		peer_channel = switch_core_session_get_channel(peer_session);
+		
+		if (switch_event_create(&peer_event, SWITCH_EVENT_CHANNEL_BRIDGE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant create bridge event for peer channel %s\n", peer_uuid);
+			goto end;
+		}
+
+		switch_channel_event_set_data(peer_channel, peer_event);
+
+	end:
+		switch_core_session_rwunlock(peer_session);
+
+		if (peer_event) {
+			process_event(peer_event);
+			switch_event_destroy(&peer_event);
+		}
+	}
 }
 
 #define USERSPY_SYNTAX "<user@domain> [uuid]"
