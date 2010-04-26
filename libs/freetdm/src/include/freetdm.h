@@ -568,8 +568,6 @@ typedef enum {
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
 
-/*! \brief Call control APIs*/
-
 /*! \brief Answer call */
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_answer(ftdm_channel_t *ftdmchan);
 
@@ -579,8 +577,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_call_place(ftdm_channel_t *ftdmchan);
 /*! \brief Indicate a new condition in an incoming call */
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_indicate(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication);
 
-/*! \brief Hangup the call without and with cause */
+/*! \brief Hangup the call without cause */
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup(ftdm_channel_t *ftdmchan);
+
+/*! \brief Hangup the call with cause */
 FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup_with_cause(ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
 
 /*! \brief Put a call on hold (if supported by the signaling stack) */
