@@ -1661,7 +1661,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		}
 		
 		if (state->ringback->asis && datalen) {
-			uint16_t flen = datalen;
+			uint16_t flen = (uint16_t)datalen;
 			switch_mutex_lock(state->mutex);
 			switch_buffer_write(state->buffer, &flen, sizeof(uint16_t));
 			switch_buffer_write(state->buffer, read_frame->data, datalen);

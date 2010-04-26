@@ -2130,7 +2130,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 								  "Sender Packet Count = %u, " \
 								  "Sender Octet Count = %u\n",
 								  rtp_session->rtcp_recv_msg.header.count,
-								  ntohs(rtp_session->rtcp_recv_msg.header.length),
+								  ntohs((uint16_t)rtp_session->rtcp_recv_msg.header.length),
 								  ntohl(sr->ssrc),
 								  ntohl(sr->ntp_msw),
 								  ntohl(sr->ntp_lsw),
@@ -2907,7 +2907,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 		rtp_session->rtcp_fresh_frame = 0;
 
 		frame->ssrc = ntohl(sr->ssrc);
-		frame->packet_type = rtp_session->rtcp_recv_msg.header.type;
+		frame->packet_type = (uint16_t)rtp_session->rtcp_recv_msg.header.type;
 		frame->ntp_msw = ntohl(sr->ntp_msw);
 		frame->ntp_lsw = ntohl(sr->ntp_lsw);
 		frame->timestamp = ntohl(sr->ts);
@@ -3337,8 +3337,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			struct switch_rtcp_senderinfo* sr = (struct switch_rtcp_senderinfo*)rtp_session->rtcp_send_msg.body;
 
 			sr->ssrc = send_msg->header.ssrc;
-			sr->ntp_msw = htonl(rtp_session->send_time / 1000000 + 2208988800UL);
-			sr->ntp_lsw = htonl(rtp_session->send_time % 1000000 * ((UINT_MAX * 1.0)/ 1000000.0));
+			sr->ntp_msw = htonl((u_long)rtp_session->send_time / 1000000 + 2208988800UL);
+			sr->ntp_lsw = htonl((u_long)(rtp_session->send_time % 1000000 * ((UINT_MAX * 1.0)/ 1000000.0)));
 			sr->ts = send_msg->header.ts;
 			sr->pc = htonl(rtp_session->stats.outbound.packet_count);
 			sr->oc = htonl((rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t)));
