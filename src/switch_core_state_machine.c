@@ -526,8 +526,9 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 
 		switch_api_execute(cmd, expanded, use_session, &stream);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, switch_str_nil(expanded),
-						  switch_str_nil((char *) stream.data));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Hangup Command %s %s(%s):\n%s\n",
+						  use_session ? "with Session" : "with no Session", cmd, switch_str_nil(expanded),
+						  switch_str_nil((char *) stream.data) );
 
 		if (expanded != arg) {
 			switch_safe_free(expanded);
