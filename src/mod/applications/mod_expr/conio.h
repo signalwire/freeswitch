@@ -8,8 +8,8 @@
  * Offered for use in the public domain without any warranty.
  */
 
-#ifndef _CONIO_H_
-#define _CONIO_H_
+#ifndef CONIO_H
+#define CONIO_H
 
 
 #include <stdio.h>

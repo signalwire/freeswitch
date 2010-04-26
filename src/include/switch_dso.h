@@ -18,8 +18,8 @@
  */
 
 
-#ifndef _SWITCH_DSO_H
-#define _SWITCH_DSO_H
+#ifndef FREESWITCH_DSO_H
+#define FREESWITCH_DSO_H
 
 typedef int (*switch_dso_func_t) (void);
 #ifdef WIN32

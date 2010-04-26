@@ -35,8 +35,8 @@
   \ingroup core1
   \{
 */
-#ifndef _SWITCH_NAT_H
-#define _SWITCH_NAT_H
+#ifndef FREESWITCH_NAT_H
+#define FREESWITCH_NAT_H
 
 SWITCH_BEGIN_EXTERN_C typedef enum {
 	SWITCH_NAT_TYPE_NONE,

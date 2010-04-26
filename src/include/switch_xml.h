@@ -53,8 +53,8 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _SWITCH_XML_H
-#define _SWITCH_XML_H
+#ifndef FREESWITCH_XML_H
+#define FREESWITCH_XML_H
 #include <switch.h>
 
 
