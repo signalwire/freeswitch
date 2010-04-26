@@ -75,6 +75,15 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
+static switch_bool_t match_key(const char *caller_exit_key, char key)
+{
+	while (caller_exit_key && *caller_exit_key) {
+		if (*caller_exit_key++ == key) {
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
 
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
@@ -131,7 +140,7 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
 
-			if (caller_exit_key && dtmf->digit == *caller_exit_key) {
+			if (match_key(caller_exit_key, dtmf->digit)) {
 				char *bp = buf;
 				*bp = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
@@ -230,9 +239,10 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (caller_exit_key && *buf == *caller_exit_key) {
+			if (match_key(caller_exit_key, *buf)) {
 				cd->abort = 1;
 				return SWITCH_STATUS_FALSE;
+				switch_channel_set_variable(channel, "fifo_caller_exit_key", (char *)buf);
 			}
 			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;
@@ -1051,7 +1061,8 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_ivr_collect_digits_callback(session, &args, 0, 0);
 			}
 
-			if (caller_exit_key && *buf == *caller_exit_key) {
+			if (match_key(caller_exit_key, *buf)) {
+				switch_channel_set_variable(channel, "fifo_caller_exit_key", (char *)buf);
 				aborted = 1;
 				goto abort;
 			}
