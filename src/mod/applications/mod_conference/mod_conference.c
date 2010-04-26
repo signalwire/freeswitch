@@ -262,6 +262,7 @@ typedef struct conference_obj {
 	char *sound_prefix;
 	char *special_announce;
 	char *auto_record;
+	uint32_t terminate_on_silence;
 	uint32_t max_members;
 	char *maxmember_sound;
 	uint32_t announce_count;
@@ -336,6 +337,7 @@ struct conference_member {
 	int32_t energy_level;
 	int32_t volume_in_level;
 	int32_t volume_out_level;
+	switch_time_t join_time;
 	switch_time_t last_talking;
 	uint32_t native_rate;
 	switch_audio_resampler_t *read_resampler;
@@ -639,6 +641,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_lock(conference->member_mutex);
 
 	switch_clear_flag(conference, CFLAG_DESTRUCT);
+	member->join_time = switch_epoch_time_now(NULL);
 	member->conference = conference;
 	member->next = conference->members;
 	member->energy_level = conference->energy_level;
@@ -1044,6 +1047,23 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				ready++;
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
+		}
+
+		/* Find if no one talked for more than x number of second */
+		if (conference->terminate_on_silence && conference->count > 1) {
+			int is_talking = 0;
+
+			for (imember = conference->members; imember; imember = imember->next) {
+				if (switch_epoch_time_now(NULL) - imember->join_time <= conference->terminate_on_silence) {
+					is_talking++;
+				} else if (imember->last_talking != 0 && switch_epoch_time_now(NULL) - imember->last_talking <= conference->terminate_on_silence) {
+					is_talking++;
+				}
+			}
+			if (is_talking == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Conference has been idle for over %d seconds, terminating\n", conference->terminate_on_silence);
+				switch_set_flag(conference, CFLAG_DESTRUCT);
+			}
 		}
 
 		/* Start recording if there's more than one participant. */
@@ -3618,6 +3638,9 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		add_x_tag(x_member, "caller_id_number", profile->caller_id_number, toff++);
 
 
+                switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->join_time);
+                add_x_tag(x_member, "join_time", i, toff++);
+
                 switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->last_talking);
                 add_x_tag(x_member, "last_talking", member->last_talking ? i : "N/A", toff++);
 
@@ -5798,6 +5821,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
+	char *terminate_on_silence = NULL;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -5927,6 +5951,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				verbose_events = val;
 			} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 				auto_record = val;
+			} else if (!strcasecmp(var, "terminate-on-silence") && !zstr(val)) {
+				terminate_on_silence = val;
 			}
 		}
 
@@ -6098,6 +6124,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	if (!zstr(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
 	}
+        if (!zstr(terminate_on_silence)) {
+                conference->terminate_on_silence = atoi(terminate_on_silence);
+        }
 
 	if (!zstr(verbose_events) && switch_true(verbose_events)) {
 		conference->verbose_events = 1;
