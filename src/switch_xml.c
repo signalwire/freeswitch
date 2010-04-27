@@ -403,6 +403,10 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 		return NULL;
 	}
 
+	if (!root->attr) {
+		return NULL;
+	}
+	
 	for (i = 0; root->attr[i] && xml->name && strcmp(xml->name, root->attr[i][0]); i++);
 	if (!root->attr[i])
 		return NULL;			/* no matching default attributes */
@@ -451,6 +455,9 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 		return (const char **) SWITCH_XML_NIL;
 	while (root->xml.parent)
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
+	if (!root || !root->pi) {
+		return (const char **) SWITCH_XML_NIL;
+	}
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
 		i++;					/* find target */
 	return (const char **) ((root->pi[i]) ? root->pi[i] + 1 : SWITCH_XML_NIL);
@@ -462,6 +469,10 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 	va_list ap;
 	int line = 1;
 	char *t, fmt[SWITCH_XML_ERRL];
+
+	if (!root || !root->s) {
+		return NULL;
+	}
 
 	for (t = root->s; t && t < s; t++)
 		if (*t == '\n')
@@ -578,7 +589,13 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 /* called when parser finds start of new tag */
 static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 {
-	switch_xml_t xml = root->cur;
+	switch_xml_t xml;
+
+	if (!root || !root->cur) {
+		return;
+	}
+
+	xml = root->cur;
 
 	if (xml->name)
 		xml = switch_xml_add_child(xml, name, strlen(xml->txt));
@@ -592,9 +609,15 @@ static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 /* called when parser finds character content between open and closing tag */
 static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size_t len, char t)
 {
-	switch_xml_t xml = root->cur;
+	switch_xml_t xml;
 	char *m = s;
 	switch_size_t l;
+
+	if (!root || !root->cur) {
+		return;
+	}
+
+	xml = root->cur;
 
 	if (!xml || !xml->name || !len)
 		return;					/* sanity check */
@@ -632,7 +655,7 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 /* called when parser finds closing tag */
 static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, char *s)
 {
-	if (!root->cur || !root->cur->name || strcmp(name, root->cur->name))
+	if (!root || !root->cur || !root->cur->name || strcmp(name, root->cur->name))
 		return switch_xml_err(root, s, "unexpected closing tag </%s>", name);
 
 	root->cur = root->cur->parent;
@@ -681,7 +704,7 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		return;
 	}
 
-	if (!root->pi[0]) {
+	if (!root->pi || !root->pi[0]) {
 		root->pi = (char ***) malloc(sizeof(char **));
 		if (!root->pi)
 			return;
@@ -2600,6 +2623,107 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 	xml->ordered = xml->sibling = xml->next = NULL;	/* prevent switch_xml_free() from clobbering ordered list */
 	return xml;
 }
+
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
+
+	const char *xyear = switch_xml_attr(xcond, "year");
+	const char *xyday = switch_xml_attr(xcond, "yday");
+	const char *xmon = switch_xml_attr(xcond, "mon");
+	const char *xmday = switch_xml_attr(xcond, "mday");
+	const char *xweek = switch_xml_attr(xcond, "week");
+	const char *xmweek = switch_xml_attr(xcond, "mweek");
+	const char *xwday = switch_xml_attr(xcond, "wday");
+	const char *xhour = switch_xml_attr(xcond, "hour");
+	const char *xminute = switch_xml_attr(xcond, "minute");
+	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
+
+	switch_time_t ts = switch_micro_time_now();
+	int time_match = -1;
+	switch_time_exp_t tm;
+
+	switch_time_exp_lt(&tm, ts);
+
+	if (time_match && xyear) {
+		int test = tm.tm_year + 1900;
+		time_match = switch_number_cmp(xyear, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: year[%d] =~ %s (%s)\n", test, xyear, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xyday) {
+		int test = tm.tm_yday + 1;
+		time_match = switch_number_cmp(xyday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: day of year[%d] =~ %s (%s)\n", test, xyday, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xmon) {
+		int test = tm.tm_mon + 1;
+		time_match = switch_number_cmp(xmon, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: month[%d] =~ %s (%s)\n", test, xmon, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xmday) {
+		int test = tm.tm_mday;
+		time_match = switch_number_cmp(xmday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: day of month[%d] =~ %s (%s)\n", test, xmday, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xweek) {
+		int test = (int) (tm.tm_yday / 7 + 1);
+		time_match = switch_number_cmp(xweek, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
+	}
+	if (time_match && xweek) {
+		int test = (int) (tm.tm_yday / 7 + 1);
+		time_match = switch_number_cmp(xweek, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xmweek) {
+		/* calculate the day of the week of the first of the month (0-6) */
+		int firstdow = (int) (7 - (tm.tm_mday - (tm.tm_wday + 1)) % 7) % 7;
+		/* calculate the week of the month (1-6)*/
+		int test = (int) ceil((tm.tm_mday + firstdow) / 7.0);
+		time_match = switch_number_cmp(xmweek, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime: week of month[%d] =~ %s (%s)\n", test, xmweek, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xwday) {
+		int test = tm.tm_wday + 1;
+		time_match = switch_number_cmp(xwday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: day of week[%d] =~ %s (%s)\n", test, xwday, time_match ? "PASS" : "FAIL");
+	}
+	if (time_match && xhour) {
+		int test = tm.tm_hour;
+		time_match = switch_number_cmp(xhour, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: hour[%d] =~ %s (%s)\n", test, xhour, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xminute) {
+		int test = tm.tm_min;
+		time_match = switch_number_cmp(xminute, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: minute[%d] =~ %s (%s)\n", test, xminute, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xminday) {
+		int test = (tm.tm_hour * 60) + (tm.tm_min + 1);
+		time_match = switch_number_cmp(xminday, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: minute of day[%d] =~ %s (%s)\n", test, xminday, time_match ? "PASS" : "FAIL");
+	}
+
+	return time_match;
+}
+
 
 #ifdef WIN32
 /* 

@@ -353,7 +353,6 @@ AC_SUBST(PA_LIBS)
 
 AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
-
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
 AC_ARG_ENABLE(core-odbc-support,     
@@ -361,6 +360,11 @@ AC_ARG_ENABLE(core-odbc-support,
 AX_LIB_ODBC
 if test "$ac_cv_found_odbc" = "yes" ; then
   enable_core_odbc_support="yes"
+fi
+
+AC_CHECK_LIB(z, inflateReset, have_libz=yes, have_libz=no)
+if test "x$have_libz" = "xyes"  ; then
+APR_ADDTO(SWITCH_AM_LDFLAGS, -lz)
 fi
 
 ESL_LDFLAGS=

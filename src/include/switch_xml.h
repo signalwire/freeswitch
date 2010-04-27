@@ -53,8 +53,8 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _SWITCH_XML_H
-#define _SWITCH_XML_H
+#ifndef FREESWITCH_XML_H
+#define FREESWITCH_XML_H
 #include <switch.h>
 
 
@@ -412,6 +412,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(_In_ switc
 ///\param str a | delimited list of section names
 ///\return the section mask
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(_In_opt_z_ const char *str);
+
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond);
 
 SWITCH_END_EXTERN_C
 ///\}

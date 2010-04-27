@@ -786,7 +786,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 		return ESL_FAIL;
 	}
 
-	if (esl_mutex_trylock(handle->mutex) != ESL_SUCCESS) {
+	if (activity == 0 || !FD_ISSET(handle->sock, &rfds) || (esl_mutex_trylock(handle->mutex) != ESL_SUCCESS)) {
 		return ESL_BREAK;
 	}
 

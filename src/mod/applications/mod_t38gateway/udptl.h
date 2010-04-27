@@ -22,8 +22,8 @@
  *
  */
 
-#if !defined(_UDPTL_H_)
-#define _UDPTL_H_
+#if !defined(FREESWITCH_UDPTL_H)
+#define FREESWITCH_UDPTL_H
 
 #define LOCAL_FAX_MAX_DATAGRAM      400
 #define LOCAL_FAX_MAX_FEC_PACKETS   5

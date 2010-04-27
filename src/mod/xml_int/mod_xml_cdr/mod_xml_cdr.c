@@ -200,7 +200,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	is_b = channel && switch_channel_get_originator_caller_profile(channel);
 	if (!globals.log_b && is_b) {
-		return SWITCH_STATUS_SUCCESS;
+		const char *force_cdr = switch_channel_get_variable(channel, SWITCH_FORCE_PROCESS_CDR_VARIABLE);
+		if (!switch_true(force_cdr)) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 	if (!is_b && globals.prefix_a)
 		a_prefix = "a_";
@@ -334,7 +337,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_yield(globals.delay * 1000000);
 			}
 
-			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], switch_core_session_get_uuid(session));
+			destUrl = switch_mprintf("%s?uuid=%s&leg=%c", globals.urls[globals.url_index], switch_core_session_get_uuid(session), 
+				is_b ? 'b' : 'a');
 			curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
 			if (!strncasecmp(destUrl, "https", 5)) {

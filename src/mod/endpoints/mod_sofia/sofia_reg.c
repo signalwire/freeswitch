@@ -1688,6 +1688,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	const char *mwi_account = NULL;
+	switch_bool_t allow_empty_password = SWITCH_TRUE;
 	const char *call_id = NULL;
 	char *sql;
 	char *number_alias = NULL;
@@ -1924,7 +1925,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (!strcasecmp(var, "mwi-account")) {
 				mwi_account = val;
 			}
-
+			if (!strcasecmp(var, "allow-empty-password")) {
+				allow_empty_password = switch_true(val);
+			}
 			if (!strcasecmp(var, "user-agent-filter")) {
 				user_agent_filter = val;
 			}
@@ -1958,7 +1961,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			if (!strcasecmp(var, "mwi-account")) {
 				mwi_account = val;
 			}
-
+			if (!strcasecmp(var, "allow-empty-password")) {
+				allow_empty_password = switch_true(val);
+			}
 			if (!strcasecmp(var, "user-agent-filter")) {
 				user_agent_filter = val;
 			}
@@ -1991,6 +1996,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			}
 			if (!strcasecmp(var, "mwi-account")) {
 				mwi_account = val;
+			}
+			if (!strcasecmp(var, "allow-empty-password")) {
+				allow_empty_password = switch_true(val);
 			}
 			if (!strcasecmp(var, "user-agent-filter")) {
 				user_agent_filter = val;
@@ -2058,6 +2066,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
 
+	if (!allow_empty_password && zstr(passwd) && zstr(a1_hash)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty password denied for user %s@%s\n", username, domain_name);
+		ret = AUTH_FORBIDDEN;
+		goto end;
+	}
+	
 	if (zstr(passwd) && zstr(a1_hash)) {
 		ret = AUTH_OK;
 		goto skip_auth;

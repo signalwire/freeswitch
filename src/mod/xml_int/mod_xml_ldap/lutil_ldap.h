@@ -13,8 +13,8 @@
  * <http://www.OpenLDAP.org/license.html>.
  */
 
-#ifndef _LUTIL_LDAP_H
-#define _LUTIL_LDAP_H 1
+#ifndef LUTIL_LDAP_H
+#define LUTIL_LDAP_H
 
 #include <ldap_cdefs.h>
 #include <lber_types.h>

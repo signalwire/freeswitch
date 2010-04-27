@@ -350,7 +350,7 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 	  touch .version ; \
 	else \
 	  if [ -d .git ] ; then \
-	    version=`git log --format="%h %ci" -1 HEAD | head -1 || echo hacked` ; \
+	    version=`git log --format="%h %ci" -1 HEAD | head -1 | sed -e 's|:|-|g' || echo hacked` ; \
 	    if [ "x$$version" == "xhacked" ] ; then \
 	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
 	    else \

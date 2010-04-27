@@ -2189,6 +2189,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 
 	if (tech_pvt->local_sdp_video_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP);
+		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_video_port + 1, SWITCH_NAT_UDP);
 	}
 
 
@@ -2200,6 +2201,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 
 	if (tech_pvt->local_sdp_audio_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP);
+		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP);
 	}
 
 }

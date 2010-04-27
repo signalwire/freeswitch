@@ -372,6 +372,38 @@ static switch_bool_t monitor_callback(switch_core_session_t *session, const char
 	return SWITCH_FALSE;
 }
 
+static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_t *session)
+{
+	const char *var = switch_channel_get_variable(caller_channel, "inherit_codec");
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	
+	if (switch_true(var)) {
+		switch_codec_implementation_t impl = { 0 };
+		switch_codec_implementation_t video_impl = { 0 };
+		char tmp[128] = "";
+
+
+		if (switch_core_session_get_read_impl(session, &impl) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_get_video_read_impl(session, &impl) == SWITCH_STATUS_SUCCESS) {
+				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui,%s",
+								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000,
+								video_impl.iananame);
+			} else {
+				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui",
+								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
+			}
+			switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n",
+							  switch_channel_get_name(caller_channel), tmp);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_WARNING,
+							  "Error inheriting codec.  Channel %s has no read codec yet.\n",
+							  switch_channel_get_name(channel));
+		}
+
+	}
+}
+
 static uint8_t check_channel_status(originate_global_t *oglobals, originate_status_t *originate_status, uint32_t len)
 {
 
@@ -671,32 +703,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
   end:
 
 	if (pindex > -1 && caller_channel && switch_channel_ready(caller_channel) && !switch_channel_media_ready(caller_channel)) {
-		const char *var = switch_channel_get_variable(caller_channel, "inherit_codec");
-		if (switch_true(var)) {
-			switch_codec_implementation_t impl = { 0 };
-			switch_codec_implementation_t video_impl = { 0 };
-			char tmp[128] = "";
-
-
-			if (switch_core_session_get_read_impl(originate_status[pindex].peer_session, &impl) == SWITCH_STATUS_SUCCESS) {
-				if (switch_core_session_get_video_read_impl(originate_status[pindex].peer_session, &impl) == SWITCH_STATUS_SUCCESS) {
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui,%s",
-									impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000,
-									video_impl.iananame);
-				} else {
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui",
-									impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
-				}
-				switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
-				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n",
-								  switch_channel_get_name(caller_channel), tmp);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(originate_status[pindex].peer_channel), SWITCH_LOG_WARNING,
-								  "Error inheriting codec.  Channel %s has no read codec yet.\n",
-								  switch_channel_get_name(originate_status[pindex].peer_channel));
-			}
-
-		}
+		inherit_codec(caller_channel, originate_status[pindex].peer_session);
 	}
 
 	if (send_ringback) {
@@ -1051,7 +1058,7 @@ SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switc
 }
 
 
-static switch_status_t setup_ringback(originate_global_t *oglobals,
+static switch_status_t setup_ringback(originate_global_t *oglobals, originate_status_t *originate_status, int len,
 									  const char *ringback_data, ringback_t *ringback, switch_frame_t *write_frame, switch_codec_t *write_codec)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1061,6 +1068,10 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
 
 	if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
 		&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+		if (oglobals->bridge_early_media > -1  && len == 1 && originate_status[0].peer_session && 
+			switch_channel_media_ready(originate_status[0].peer_channel)) {				
+			inherit_codec(caller_channel, originate_status[0].peer_session);
+		}
 		if ((status = switch_channel_pre_answer(caller_channel)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n",
 							  switch_channel_get_name(caller_channel));
@@ -1072,6 +1083,25 @@ static switch_status_t setup_ringback(originate_global_t *oglobals,
 		if (ringback_data && switch_is_file_path(ringback_data)) {
 			if (!(strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR))) {
 				ringback->asis++;
+			}
+		} else if (oglobals->bridge_early_media > -1 && zstr(ringback_data) && len == 1 && originate_status[0].peer_session) {
+			switch_codec_implementation_t read_impl = { 0 }, write_impl = { 0 };
+			
+			if (switch_channel_ready(originate_status[0].peer_channel)
+				&& switch_core_session_get_read_impl(originate_status[0].peer_session, &read_impl) == SWITCH_STATUS_SUCCESS
+				&& switch_core_session_get_write_impl(oglobals->session, &write_impl) == SWITCH_STATUS_SUCCESS) {
+				if (read_impl.impl_id == write_impl.impl_id && 
+					read_impl.microseconds_per_packet == write_impl.microseconds_per_packet &&
+					read_impl.actual_samples_per_second == write_impl.actual_samples_per_second) {
+						ringback->asis++;
+						write_frame->codec = switch_core_session_get_write_codec(originate_status[0].peer_session);
+						write_frame->datalen = write_frame->codec->implementation->decoded_bytes_per_packet;
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "bridge_early_media: passthrough enabled\n");
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "bridge_early_media: codecs don't match (%s@%uh@%di / %s@%uh@%di)\n",
+							read_impl.iananame, read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000, 
+							write_impl.iananame, write_impl.actual_samples_per_second, write_impl.microseconds_per_packet / 1000);
+					}
 			}
 		}
 
@@ -1553,6 +1583,7 @@ struct early_state {
 	switch_mutex_t *mutex;
 	switch_buffer_t *buffer;
 	int ready;
+	ringback_t *ringback;
 };
 typedef struct early_state early_state_t;
 
@@ -1591,37 +1622,51 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 					answered++;
 				}
 
-				if (!switch_core_codec_ready((&read_codecs[i]))) {
-					read_codec = switch_core_session_get_read_codec(session);
+				if (!state->ringback->asis) {
+					if (!switch_core_codec_ready((&read_codecs[i]))) {
+						read_codec = switch_core_session_get_read_codec(session);
 
-					if (switch_core_codec_init(&read_codecs[i],
-											   "L16",
-											   NULL,
-											   read_codec->implementation->actual_samples_per_second,
-											   read_codec->implementation->microseconds_per_packet / 1000,
-											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-											   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
-					} else {
-						switch_core_session_set_read_codec(session, &read_codecs[i]);
+						if (switch_core_codec_init(&read_codecs[i],
+												   "L16",
+												   NULL,
+												   read_codec->implementation->actual_samples_per_second,
+												   read_codec->implementation->microseconds_per_packet / 1000,
+												   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+												   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
+						} else {
+							switch_core_session_set_read_codec(session, &read_codecs[i]);
+						}
 					}
-				}
-				status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-				if (SWITCH_READ_ACCEPTABLE(status)) {
-					data = (int16_t *) read_frame->data;
-					if (datalen < read_frame->datalen) {
+					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+					if (SWITCH_READ_ACCEPTABLE(status)) {
+						data = (int16_t *) read_frame->data;
+						if (datalen < read_frame->datalen) {
+							datalen = read_frame->datalen;
+						}
+						for (x = 0; x < (int) read_frame->datalen / 2; x++) {
+							sample = data[x] + mux_data[x];
+							switch_normalize_to_16bit(sample);
+							mux_data[x] = (int16_t) sample;
+						}
+					}
+				} else {
+					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+					if (SWITCH_READ_ACCEPTABLE(status)) {
 						datalen = read_frame->datalen;
 					}
-					for (x = 0; x < (int) read_frame->datalen / 2; x++) {
-						sample = data[x] + mux_data[x];
-						switch_normalize_to_16bit(sample);
-						mux_data[x] = (int16_t) sample;
-					}
-
+					break;
 				}
 			}
 		}
-		if (datalen) {
+		
+		if (state->ringback->asis && datalen) {
+			uint16_t flen = (uint16_t)datalen;
+			switch_mutex_lock(state->mutex);
+			switch_buffer_write(state->buffer, &flen, sizeof(uint16_t));
+			switch_buffer_write(state->buffer, read_frame->data, datalen);
+			switch_mutex_unlock(state->mutex);
+		} else if (datalen) {
 			switch_mutex_lock(state->mutex);
 			switch_buffer_write(state->buffer, mux_data, datalen);
 			switch_mutex_unlock(state->mutex);
@@ -2758,9 +2803,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (oglobals.ringback_ok && (oglobals.ring_ready || oglobals.instant_ringback ||
 												 oglobals.sending_ringback > 1 || oglobals.bridge_early_media > -1)) {
 						if (oglobals.ringback_ok == 1) {
-							switch_status_t rst = setup_ringback(&oglobals, ringback_data, &ringback, &write_frame, &write_codec);
-
-
+							switch_status_t rst;
+							
+							rst = setup_ringback(&oglobals, originate_status, and_argc, ringback_data, &ringback, &write_frame, &write_codec);
+							
 							if (oglobals.bridge_early_media > -1) {
 								switch_threadattr_t *thd_attr = NULL;
 								switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
@@ -2768,6 +2814,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								early_state.oglobals = &oglobals;
 								early_state.originate_status = originate_status;
 								early_state.ready = 1;
+								early_state.ringback = &ringback;
 								switch_mutex_init(&early_state.mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 								switch_buffer_create_dynamic(&early_state.buffer, 1024, 1024, 0);
 								switch_thread_create(&oglobals.ethread, thd_attr, early_thread_run, &early_state, switch_core_session_get_pool(session));
@@ -2794,12 +2841,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							continue;
 						}
 
-						if (oglobals.bridge_early_media > -1) {
+						if (oglobals.bridge_early_media > -1) {							
 							write_frame.datalen = 0;
 							switch_mutex_lock(early_state.mutex);
-							if (switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
-								write_frame.datalen = switch_buffer_read(early_state.buffer, write_frame.data,
-																		 write_frame.codec->implementation->decoded_bytes_per_packet);
+							if (ringback.asis) {
+								uint16_t mlen;
+								switch_size_t buflen = switch_buffer_inuse(early_state.buffer);
+								if (buflen > sizeof(uint16_t)) {
+									switch_buffer_peek(early_state.buffer, &mlen, sizeof(uint16_t));
+									if (buflen >= (mlen + sizeof(uint16_t))) {
+										switch_buffer_toss(early_state.buffer, sizeof(uint16_t));
+										write_frame.datalen = switch_buffer_read(early_state.buffer, write_frame.data, mlen);
+									}
+								}
+							} else {
+								if (switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
+									write_frame.datalen = switch_buffer_read(early_state.buffer, write_frame.data,
+																			 write_frame.codec->implementation->decoded_bytes_per_packet);
+								}
 							}
 							switch_mutex_unlock(early_state.mutex);
 						} else if (ringback.fh) {

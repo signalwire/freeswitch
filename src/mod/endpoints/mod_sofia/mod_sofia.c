@@ -392,7 +392,13 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_call_cause_t cause = switch_channel_get_cause(channel);
 	int sip_cause = hangup_cause_to_sip(cause);
 	const char *ps_cause = NULL, *use_my_cause;
+	const char *gateway_name = NULL;
+	sofia_gateway_t *gateway_ptr = NULL;
 
+	if ((gateway_name = switch_channel_get_variable(channel, "sip_gateway_name"))) {
+		gateway_ptr = sofia_reg_find_gateway(gateway_name);
+	}
+	
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
 	sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
@@ -405,6 +411,18 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		} else {
 			tech_pvt->profile->ib_failed_calls++;
 		}
+		
+		if (gateway_ptr) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				gateway_ptr->ob_failed_calls++;
+			} else {
+				gateway_ptr->ib_failed_calls++;
+			}
+		}		
+	}
+	
+	if (gateway_ptr) {
+		sofia_reg_release_gateway(gateway_ptr);
 	}
 
 	if (!((use_my_cause = switch_channel_get_variable(channel, "sip_ignore_remote_cause")) && switch_true(use_my_cause))) {
@@ -2086,7 +2104,14 @@ const char *sofia_state_string(int state)
 	return sofia_state_names[state];
 }
 
+struct cb_helper_sql2str {
+        char *buf;
+        size_t len;
+        int matches;
+};
+
 struct cb_helper {
+	uint32_t row_process;
 	sofia_profile_t *profile;
 	switch_stream_handle_t *stream;
 };
@@ -2097,12 +2122,17 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 {
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char exp_buf[128] = "";
+	int exp_secs = 0;
 	switch_time_exp_t tm;
 
+	cb->row_process++;
+
 	if (argv[6]) {
+		time_t now = switch_epoch_time_now(NULL);
 		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
-
+		
+		exp_secs = etime - now;
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
@@ -2112,7 +2142,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "User:       \t%s@%s\n"
 							   "Contact:    \t%s\n"
 							   "Agent:      \t%s\n"
-							   "Status:     \t%s(%s) EXP(%s)\n"
+							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d)\n"
 							   "Host:       \t%s\n"
 							   "IP:         \t%s\n"
 							   "Port:       \t%s\n"
@@ -2120,7 +2150,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Auth-Realm: \t%s\n"
 							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[11]),
 							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]),
 							   switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
@@ -2133,11 +2163,16 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	switch_time_exp_t tm;
 	const int buflen = 2048;
 	char xmlbuf[2048];
+	int exp_secs = 0;
+
+	cb->row_process++;
 
 	if (argv[6]) {
+		time_t now = switch_epoch_time_now(NULL);
 		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
 
+		exp_secs = etime - now;
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
@@ -2147,7 +2182,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	cb->stream->write_function(cb->stream,"        <user>%s@%s</user>\n", switch_str_nil(argv[1]), switch_str_nil(argv[2]));
 	cb->stream->write_function(cb->stream,"        <contact>%s</contact>\n", switch_amp_encode(switch_str_nil(argv[3]), xmlbuf, buflen));
 	cb->stream->write_function(cb->stream,"        <agent>%s</agent>\n", switch_str_nil(argv[7]));
-	cb->stream->write_function(cb->stream,"        <status>%s(%s) exp(%s)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf);
+	cb->stream->write_function(cb->stream,"        <status>%s(%s) exp(%s) expsecs(%d)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs);
 	cb->stream->write_function(cb->stream,"        <host>%s</host>\n", switch_str_nil(argv[11]));
 	cb->stream->write_function(cb->stream,"        <network-ip>%s</network-ip>\n", switch_str_nil(argv[12]));
 	cb->stream->write_function(cb->stream,"        <network-port>%s</network-port>\n", switch_str_nil(argv[13]));
@@ -2175,7 +2210,56 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 	if (argc > 0) {
 		if (argc == 1) {
-			stream->write_function(stream, "Invalid Syntax!\n");
+			/* show summary of all gateways*/
+
+			uint32_t ib_failed = 0;
+			uint32_t ib = 0;
+			uint32_t ob_failed = 0;
+			uint32_t ob = 0;
+
+			stream->write_function(stream, "%25s\t%32s\t%s\t%s\t%s\n", "Profile::Gateway-Name", "    Data    ", "State", "IB Calls(F/T)", "OB Calls(F/T)");
+			stream->write_function(stream, "%s\n", line);
+			switch_mutex_lock(mod_sofia_globals.hash_mutex);
+			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &vvar, NULL, &val);
+				profile = (sofia_profile_t *) val;
+				if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+
+					if (!strcmp(vvar, profile->name)) { /* not an alias */
+						for (gp = profile->gateways; gp; gp = gp->next) {
+							char *pkey = switch_mprintf("%s::%s", profile->name, gp->name);
+
+							switch_assert(gp->state < REG_STATE_LAST);
+
+							c++;
+							ib_failed += gp->ib_failed_calls;
+							ib += gp->ib_calls;
+							ob_failed += gp->ob_failed_calls;
+							ob += gp->ob_calls;
+
+							stream->write_function(stream, "%25s\t%32s\t%s\t%ld/%ld\t%ld/%ld", 
+								pkey, gp->register_to, sofia_state_names[gp->state],
+								gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
+
+							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+								time_t now = switch_epoch_time_now(NULL);
+								if (gp->retry > now) {
+									stream->write_function(stream, " (retry: %ds)", gp->retry - now);
+								} else {
+									stream->write_function(stream, " (retry: NEVER)");
+								}
+							}
+							stream->write_function(stream, "\n");
+						}
+					}
+				}
+			}
+			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+			stream->write_function(stream, "%s\n", line);
+			stream->write_function(stream, "%d gateway%s: Inound(Failed/Total): %ld/%ld,"
+				"Outbound(Failed/Total):%ld/%ld\n", c, c == 1 ? "" : "s",
+				ib_failed, ib, ob_failed, ob);
+
 			return SWITCH_STATUS_SUCCESS;
 		}
 
@@ -2205,6 +2289,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
 				stream->write_function(stream, "CallsIN \t%d\n", gp->ib_calls);
 				stream->write_function(stream, "CallsOUT\t%d\n", gp->ob_calls);
+				stream->write_function(stream, "FailedCallsIN\t%d\n", gp->ib_failed_calls);
+				stream->write_function(stream, "FailedCallsOUT\t%d\n", gp->ob_failed_calls);
 				stream->write_function(stream, "%s\n", line);
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -2213,7 +2299,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
-
+			cb.row_process = 0;
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				if (!argv[2] || (strcasecmp(argv[2], "reg") && strcasecmp(argv[2], "user"))) {
 					stream->write_function(stream, "%s\n", line);
@@ -2334,6 +2420,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback, &cb);
 				switch_safe_free(sql);
 
+				stream->write_function(stream, "Total items returned: %d\n", cb.row_process);
 				stream->write_function(stream, "%s\n", line);
 
 				sofia_glue_release_profile(profile);
@@ -2412,7 +2499,46 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 	if (argc > 0) {
 		if (argc == 1) {
-			stream->write_function(stream, "Invalid Syntax!\n");
+ 			/* show summary of all gateways */
+
+ 			stream->write_function(stream, "%s\n", header);
+ 			stream->write_function(stream, "<gateways>\n", header);
+ 			
+ 			switch_mutex_lock(mod_sofia_globals.hash_mutex);
+ 			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+ 				switch_hash_this(hi, &vvar, NULL, &val);
+ 				profile = (sofia_profile_t *) val;
+ 				if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+ 
+ 					if (!strcmp(vvar, profile->name)) { /* not an alias */
+ 						for (gp = profile->gateways; gp; gp = gp->next) {
+ 							switch_assert(gp->state < REG_STATE_LAST);
+ 							
+ 							stream->write_function(stream, "\t<gateway>\n");
+ 							stream->write_function(stream, "\t\t<profile>%s</profile>\n", profile->name);
+ 							stream->write_function(stream, "\t\t<to>%s</to>\n", gp->register_to);
+ 							stream->write_function(stream, "\t\t<state>%s</state>\n", sofia_state_names[gp->state]);
+ 							stream->write_function(stream, "\t\t<calls-in>%ld</calls-in>\n", gp->ib_calls);
+ 							stream->write_function(stream, "\t\t<calls-out>%ld</calls-out>\n", gp->ob_calls);
+ 							stream->write_function(stream, "\t\t<failed-calls-in>%ld</failed-calls-in>\n", gp->ib_failed_calls);
+ 							stream->write_function(stream, "\t\t<failed-calls-out>%ld</failed-calls-out>\n", gp->ob_failed_calls);
+ 
+ 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+ 								time_t now = switch_epoch_time_now(NULL);
+ 								if (gp->retry > now) {
+ 									stream->write_function(stream, "\t\t<retry>%ds</retry>\n", gp->retry - now);
+ 								} else {
+ 									stream->write_function(stream, "\t\t<retry>NEVER</retry>\n");
+ 								}
+ 							}
+ 							stream->write_function(stream, "\t</gateway>\n");
+ 						}
+ 					}
+ 				}
+ 			}
+ 			switch_mutex_unlock(mod_sofia_globals.hash_mutex); 			
+ 			stream->write_function(stream, "</gateways>\n");
+
 			return SWITCH_STATUS_SUCCESS;
 		}
 		if (!strcasecmp(argv[0], "gateway")) {
@@ -2440,7 +2566,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
 				stream->write_function(stream, "    <calls-in>%d</calls-in>\n", gp->ib_calls);
 				stream->write_function(stream, "    <calls-out>%d</calls-out>\n", gp->ob_calls);
-
+				stream->write_function(stream, "    <failed-calls-in>%d</calls-in>\n", gp->ib_failed_calls);
+				stream->write_function(stream, "    <failed-calls-out>%d</calls-out>\n", gp->ob_failed_calls);
 				stream->write_function(stream, "  </gateway>\n");
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -2449,6 +2576,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
+			cb.row_process = 0;
 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				stream->write_function(stream, "%s\n", header);
@@ -2867,6 +2995,8 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char *contact;
 
+	cb->row_process++;
+
 	if (!zstr(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1))) {
 		cb->stream->write_function(cb->stream, "%ssofia/%s/sip:%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
 		free(contact);
@@ -2874,7 +3004,115 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 
 	return 0;
 }
+static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+        struct cb_helper_sql2str *cbt = (struct cb_helper_sql2str *) pArg;
 
+        switch_copy_string(cbt->buf, argv[0], cbt->len);
+        cbt->matches++;
+        return 0;
+}
+
+SWITCH_STANDARD_API(sofia_count_reg_function) {
+	char *data;
+	char *user = NULL;
+	char *domain = NULL;
+	char *concat = NULL;
+	char *profile_name = NULL;
+	char *p;
+	char *reply = "-1";
+	sofia_profile_t *profile = NULL;
+	
+	if (!cmd) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	data = strdup(cmd);
+	switch_assert(data);
+
+	if ((p = strchr(data, '/'))) {
+		profile_name = data;
+		*p++ = '\0';
+		user = p;
+	} else {
+		user = data;
+	}
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+		if ( (concat = strchr( domain, '/')) ) {
+		    *concat++ = '\0';
+		}
+	}
+	else {
+		if ( (concat = strchr( user, '/')) ) {
+		    *concat++ = '\0';
+		}
+	}
+
+	if (!profile_name && domain) {
+		profile_name = domain;
+	}
+
+	if (user && profile_name) {
+		char *sql;
+
+		if (!(profile = sofia_glue_find_profile(profile_name))) {
+			profile_name = domain;
+			domain = NULL;
+		}
+
+		if (!profile && profile_name) {
+			profile = sofia_glue_find_profile(profile_name);
+		}
+
+		if (profile) {
+			struct cb_helper_sql2str cb;
+			char reg_count[80] = "";
+
+			cb.buf = reg_count;
+			cb.len = sizeof(reg_count);
+
+			if (!domain || !strchr(domain, '.')) {
+				domain = profile->name;
+			}
+
+			if (zstr(user)) {
+				sql = switch_mprintf("select count(*) "
+						"from sip_registrations where (sip_host='%q' or presence_hosts like '%%%q%%')",
+						( concat != NULL ) ? concat : "", domain, domain);
+
+			} else {
+				sql = switch_mprintf("select count(*) "
+						"from sip_registrations where (sip_user='%q' or dir_user='%q') and (sip_host='%q' or presence_hosts like '%%%q%%')", 
+						( concat != NULL ) ? concat : "", user, user, domain, domain);
+			}
+			switch_assert(sql);
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			switch_safe_free(sql);
+			if (!zstr(reg_count)) {
+				stream->write_function(stream, "%s", reg_count);
+			} else {
+				stream->write_function(stream, "0");
+			}
+			reply = NULL;
+			
+		}
+	}
+
+	if (reply) {
+		stream->write_function(stream, "%s", reply);
+	}
+
+	switch_safe_free(data);
+
+	if (profile) {
+		sofia_glue_release_profile(profile);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 SWITCH_STANDARD_API(sofia_contact_function)
 {
 	char *data;
@@ -2939,6 +3177,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		if (profile) {
 			struct cb_helper cb;
 			switch_stream_handle_t mystream = { 0 };
+
+			cb.row_process = 0;
 
 			if (!domain || (!strchr(domain, '.') && strcmp(profile_name, domain))) {
 				domain = profile->name;
@@ -3255,6 +3495,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway is down!\n");
 			cause = SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+			gateway_ptr->ob_failed_calls++;
 			sofia_reg_release_gateway(gateway_ptr);
 			gateway_ptr = NULL;
 			goto error;
@@ -3280,6 +3521,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				tech_pvt->transport = sofia_glue_str2transport(tp_param);
 				if (tech_pvt->transport == SOFIA_TRANSPORT_UNKNOWN) {
 					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					gateway_ptr->ob_failed_calls++;
 					goto error;
 				}
 			}
@@ -4161,6 +4403,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
+	SWITCH_ADD_API(api_interface, "sofia_count_reg", "Count Sofia registration", sofia_count_reg_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_dig", "SIP DIG", sip_dig_function, "<url>");
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 

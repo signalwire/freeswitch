@@ -39,8 +39,8 @@ difficult to achieve the precise transcoding procedure laid down in the G.711
 specification by other means.
 */
 
-#if !defined(_G711_H_)
-#define _G711_H_
+#if !defined(FREESWITCH_G711_H)
+#define FREESWITCH_G711_H
 
 #ifdef __cplusplus
 extern "C" {

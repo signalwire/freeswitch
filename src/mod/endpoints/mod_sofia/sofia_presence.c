@@ -1901,7 +1901,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		full_from = sip_header_as_string(profile->home, (void *) sip->sip_from);
 		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
 
-		if (sip->sip_expires->ex_delta > 31536000) {
+		if (sip && sip->sip_expires && sip->sip_expires->ex_delta > 31536000) {
 			sip->sip_expires->ex_delta = 31536000;
 		}
 

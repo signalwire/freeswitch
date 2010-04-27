@@ -1,5 +1,5 @@
-#ifndef _PABLIO_H
-#define _PABLIO_H
+#ifndef PORTAUDIO_PABLIO_H
+#define PORTAUDIO_PABLIO_H
 
 #ifdef __cplusplus
 extern "C" {
