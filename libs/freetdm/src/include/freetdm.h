@@ -199,6 +199,7 @@ extern "C" {
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
 
 #define FTDM_MAX_NAME_STR_SZ 80
+#define FTDM_MAX_NUMBER_STR_SZ 20
 
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
@@ -614,6 +615,8 @@ struct ftdm_channel {
 };
 
 struct ftdm_channel_config {
+	char name[FTDM_MAX_NAME_STR_SZ];
+	char number[FTDM_MAX_NUMBER_STR_SZ];
 	char group_name[FTDM_MAX_NAME_STR_SZ];
 	float rxgain;
 	float txgain;
@@ -840,7 +843,7 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node);
 
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, int currindex, ftdm_channel_config_t *chan_config);
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char *str, ftdm_channel_config_t *chan_config, ftdm_chan_type_t type, unsigned *configured);
 
 FIO_CODEC_FUNCTION(fio_slin2ulaw);
 FIO_CODEC_FUNCTION(fio_ulaw2slin);

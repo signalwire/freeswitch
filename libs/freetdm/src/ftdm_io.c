@@ -2902,8 +2902,11 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 }
 
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, int currindex, ftdm_channel_config_t *chan_config)
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, ftdm_chan_type_t type, unsigned *configured)
 {
+	int currindex = span->chan_count;
+	*configured += span->fio->configure_span(span, str, type, chan_config->name, chan_config->number);
+
 	if (ftdm_group_add_channels(span, currindex, chan_config->group_name) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to add channels to group %s\n", span->span_id, chan_config->group_name);
 		return FTDM_FAIL;
@@ -2927,11 +2930,8 @@ static ftdm_status_t load_config(void)
 	char *var, *val;
 	int catno = -1;
 	int intparam = 0;
-	int currindex = 0;
 	ftdm_span_t *span = NULL;
 	unsigned configured = 0, d = 0;
-	char name[FTDM_MAX_NAME_STR_SZ] = "";
-	char number[25] = "";
 	ftdm_io_interface_t *fio = NULL;
 	ftdm_analog_start_type_t tmp;
 	ftdm_size_t len = 0;
@@ -3017,15 +3017,15 @@ static ftdm_status_t load_config(void)
 				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(span->trunk_type)); 
 			} else if (!strcasecmp(var, "name")) {
 				if (!strcasecmp(val, "undef")) {
-					*name = '\0';
+					chan_config.name[0] = '\0';
 				} else {
-					ftdm_copy_string(name, val, sizeof(name));
+					ftdm_copy_string(chan_config.name, val, FTDM_MAX_NAME_STR_SZ);
 				}
 			} else if (!strcasecmp(var, "number")) {
 				if (!strcasecmp(val, "undef")) {
-					*number = '\0';
+					chan_config.number[0] = '\0';
 				} else {
-					ftdm_copy_string(number, val, sizeof(number));
+					ftdm_copy_string(chan_config.number, val, FTDM_MAX_NUMBER_STR_SZ);
 				}
 			} else if (!strcasecmp(var, "analog-start-type")) {
 				if (span->trunk_type == FTDM_TRUNK_FXS || span->trunk_type == FTDM_TRUNK_FXO || span->trunk_type == FTDM_TRUNK_EM) {
@@ -3043,9 +3043,7 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
-					currindex = span->chan_count;
-					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXO, name, number);
-					ftdm_configure_span_channels(span, currindex, &chan_config);
+					ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_FXO, &configured);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -3056,9 +3054,7 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
-					currindex = span->chan_count;
-					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXS, name, number);
-					ftdm_configure_span_channels(span, currindex, &chan_config);
+					ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_FXS, &configured);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -3069,16 +3065,12 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_EM) {
-					currindex = span->chan_count;
-					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_EM, name, number);
-					ftdm_configure_span_channels(span, currindex, &chan_config);
+					ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_EM, &configured);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
-				currindex = span->chan_count;
-				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_B, name, number);
-				ftdm_configure_span_channels(span, currindex, &chan_config);
+				ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_B, &configured);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
@@ -3090,13 +3082,11 @@ static ftdm_status_t load_config(void)
 					} else {
 						qtype = FTDM_CHAN_TYPE_DQ921;
 					}
-					configured += fio->configure_span(span, val, qtype, name, number);
+					ftdm_configure_span_channels(span, val, &chan_config, qtype, &configured);
 					d++;
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
-				currindex = span->chan_count;
-				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_CAS, name, number);
-				ftdm_configure_span_channels(span, currindex, &chan_config);
+				ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_CAS, &configured);
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
