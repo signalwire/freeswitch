@@ -6433,11 +6433,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					if (uuid) {
 						switch_core_session_t *c_session = NULL;
 						int do_conf = 0;
+						const char *c_app = NULL;
+						const char *c_data = NULL;
+
 						uuid = switch_core_session_strdup(b_session, uuid);
 
 						if ((c_session = switch_core_session_locate(uuid))) {
 							switch_channel_t *c_channel = switch_core_session_get_channel(c_session);
 							private_object_t *c_tech_pvt = NULL;
+
+							c_app = switch_channel_get_variable(c_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
+							c_data = switch_channel_get_variable(c_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
 
 							if (switch_core_session_check_interface(c_session, sofia_endpoint_interface)) {
 								c_tech_pvt = switch_core_session_get_private(c_session);
@@ -6461,7 +6467,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 						if (do_conf) {
 							destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s@sla+flags{mintwo}", uuid);
 						} else {
-							destination_number = switch_core_session_sprintf(b_session, "answer,intercept:%s", uuid);
+							if (one_leg && c_app) {
+								if (c_data) {
+									destination_number = switch_core_session_sprintf(b_session, "answer,%s:%s", c_app, c_data);
+								} else {
+									destination_number = switch_core_session_sprintf(b_session, "answer,%s", c_app);
+								}
+							} else {
+								destination_number = switch_core_session_sprintf(b_session, "answer,intercept:%s", uuid);
+							}
 						}
 
 						dialplan = "inline";
