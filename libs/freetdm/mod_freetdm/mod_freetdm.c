@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Moises Silva <moy@sangoma.com>
+ * David Yat Sin <dyatsin@sangoma.com>
  *
  *
  * mod_freetdm.c -- FreeTDM Endpoint Module
@@ -3002,8 +3003,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "chan_id: %u\n"
 						   "physical_span_id: %u\n"
 						   "physical_chan_id: %u\n"
-						   "physical_state: %s\n"
-						   "signaling_state: %s\n"
+						   "physical_status: %s\n"
+						   "signaling_status: %s\n"
 						   "type: %s\n"
 						   "state: %s\n"
 						   "last_state: %s\n"
@@ -3051,8 +3052,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <chan-id>%u</chan-id>>\n"
 						   "  <physical-span-id>%u</physical-span-id>\n"
 						   "  <physical-chan-id>%u</physical-chan-id>\n"
-						   "  <physical-state>%s</physical-state>\n"
-						   "  <signaling-state>%s</signaling-state>\n"
+						   "  <physical-status>%s</physical-status>\n"
+						   "  <signaling-status>%s</signaling-status>\n"
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
 						   "  <last-state>%s</last-state>\n"
@@ -3186,7 +3187,7 @@ SWITCH_STANDARD_API(ft_function)
 					stream->write_function(stream,
 										   "+OK\n"
 										   "span: %u (%s)\n"
-										   "type: %s\n"
+										   "type: %s\n"		
 										   "signaling_status: %s\n"
 										   "chan_count: %u\n"
 										   "dialplan: %s\n"

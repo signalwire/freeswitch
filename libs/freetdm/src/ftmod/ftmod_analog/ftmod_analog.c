@@ -85,6 +85,32 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 }
 
 /**
+ * \brief Returns the signalling status on a channel
+ * \param ftdmchan Channel to get status on
+ * \param status	Pointer to set signalling status
+ * \return Success or failure
+ */
+
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_get_channel_sig_status)
+{
+	*status = FTDM_SIG_STATE_UP;
+	return FTDM_SUCCESS;
+}
+
+/**
+ * \brief Returns the signalling status on a span
+ * \param span Span to get status on
+ * \param status	Pointer to set signalling status
+ * \return Success or failure
+ */
+
+static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_get_span_sig_status)
+{
+	*status = FTDM_SIG_STATE_UP;
+	return FTDM_SUCCESS;
+}
+
+/**
  * \brief Starts an analog span thread (monitor)
  * \param span Span to monitor
  * \return Success or failure
@@ -181,6 +207,9 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	span->signal_type = FTDM_SIGTYPE_ANALOG;
 	span->signal_data = analog_data;
 	span->outgoing_call = span->trunk_type == FTDM_TRUNK_FXS ? analog_fxs_outgoing_call : analog_fxo_outgoing_call;
+	span->get_channel_sig_status = analog_get_channel_sig_status;
+	span->get_span_sig_status = analog_get_span_sig_status;
+
 	ftdm_span_load_tones(span, tonemap);
 
 	return FTDM_SUCCESS;

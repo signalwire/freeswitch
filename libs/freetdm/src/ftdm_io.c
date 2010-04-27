@@ -143,6 +143,8 @@ FTDM_STR2ENUM(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t, CHA
 FTDM_ENUM_NAMES(SIGNALING_STATUS_NAMES, SIGSTATUS_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t, SIGNALING_STATUS_NAMES, FTDM_SIG_STATE_INVALID)
 
+static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
+
 static const char *cut_path(const char *in)
 {
 	const char *p, *ret = in;
@@ -775,7 +777,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 			i++;
 		}
 
-		ftdm_set_flag(new_chan, FTDM_CHANNEL_CONFIGURED | FTDM_CHANNEL_READY);
+		ftdm_set_flag(new_chan, FTDM_CHANNEL_CONFIGURED | FTDM_CHANNEL_READY);		
 		*chan = new_chan;
 		return FTDM_SUCCESS;
 	}
@@ -2853,26 +2855,71 @@ FT_DECLARE(char *) ftdm_api_execute(const char *type, const char *cmd)
 	return rval;
 }
 
-static void ftdm_set_channels_gains(ftdm_span_t *span, int currindex, float rxgain, float txgain)
+static ftdm_status_t ftdm_set_channels_gains(ftdm_span_t *span, int currindex, float rxgain, float txgain)
 {
 	unsigned chan_index = 0;
 
 	if (!span->chan_count) {
-		return;
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set gains because span has no channels\n");
+		return FTDM_FAIL;
 	}
 
 	for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
 		if (!FTDM_IS_VOICE_CHANNEL(span->channels[chan_index])) {
 			continue;
 		}
-		ftdm_channel_command(span->channels[chan_index], FTDM_COMMAND_SET_RX_GAIN, &rxgain);
-		ftdm_channel_command(span->channels[chan_index], FTDM_COMMAND_SET_TX_GAIN, &txgain);
+		if (ftdm_channel_command(span->channels[chan_index], FTDM_COMMAND_SET_RX_GAIN, &rxgain) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
+		if (ftdm_channel_command(span->channels[chan_index], FTDM_COMMAND_SET_TX_GAIN, &txgain) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
 	}
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) {
+	unsigned chan_index = 0;
+
+	if (!span->chan_count) {
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set alarms because span has no channels\n");
+		return FTDM_FAIL;
+	}
+
+	if (!span->fio->get_alarms) {
+		ftdm_log(FTDM_LOG_WARNING, "%d: Span does not support alarms\n", span->span_id);
+		return FTDM_SUCCESS;
+	}
+
+	for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
+		/* fio->get_alarms will update ftdm_chan->alarm_flags */
+		if (span->fio->get_alarms(span->channels[chan_index]) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%d:%d: Failed to get alarms\n", span->channels[chan_index]->physical_span_id, span->channels[chan_index]->physical_chan_id);
+			return FTDM_FAIL;
+		}
+	}
+	return FTDM_SUCCESS;
 }
 
 
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, int currindex, ftdm_channel_config_t *chan_config)
+{
+	if (ftdm_group_add_channels(span, currindex, chan_config->group_name) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to add channels to group %s\n", span->span_id, chan_config->group_name);
+		return FTDM_FAIL;
+	}
+	if (ftdm_set_channels_alarms(span, currindex) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel alarms\n", span->span_id);
+		return FTDM_FAIL;
+	}
+	if (ftdm_set_channels_gains(span, currindex, chan_config->rxgain, chan_config->txgain) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel gains\n", span->span_id);
+		return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
 
-static ftdm_status_t ftdm_group_add_channels(const char* name, ftdm_span_t* span, int currindex);
+
 static ftdm_status_t load_config(void)
 {
 	char cfg_name[] = "freetdm.conf";
@@ -2883,14 +2930,15 @@ static ftdm_status_t load_config(void)
 	int currindex = 0;
 	ftdm_span_t *span = NULL;
 	unsigned configured = 0, d = 0;
-	char name[80] = "";
+	char name[FTDM_MAX_NAME_STR_SZ] = "";
 	char number[25] = "";
-	char group_name[80] = "default";
 	ftdm_io_interface_t *fio = NULL;
 	ftdm_analog_start_type_t tmp;
-	float rxgain = 0.0;
-	float txgain = 0.0;
 	ftdm_size_t len = 0;
+	ftdm_channel_config_t chan_config;
+
+	memset(&chan_config, 0, sizeof(chan_config));
+	sprintf(chan_config.group_name,"default");
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
@@ -2997,8 +3045,7 @@ static ftdm_status_t load_config(void)
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
 					currindex = span->chan_count;
 					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXO, name, number);
-					ftdm_set_channels_gains(span, currindex, rxgain, txgain);
-					ftdm_group_add_channels(group_name, span, currindex);
+					ftdm_configure_span_channels(span, currindex, &chan_config);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -3011,8 +3058,7 @@ static ftdm_status_t load_config(void)
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
 					currindex = span->chan_count;
 					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_FXS, name, number);
-					ftdm_set_channels_gains(span, currindex, rxgain, txgain);
-					ftdm_group_add_channels(group_name, span, currindex);
+					ftdm_configure_span_channels(span, currindex, &chan_config);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -3025,16 +3071,14 @@ static ftdm_status_t load_config(void)
 				if (span->trunk_type == FTDM_TRUNK_EM) {
 					currindex = span->chan_count;
 					configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_EM, name, number);
-					ftdm_set_channels_gains(span, currindex, rxgain, txgain);
-					ftdm_group_add_channels(group_name, span, currindex);
+					ftdm_configure_span_channels(span, currindex, &chan_config);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
 				currindex = span->chan_count;
 				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_B, name, number);
-				ftdm_set_channels_gains(span, currindex, rxgain, txgain);
-				ftdm_group_add_channels(group_name, span, currindex);
+				ftdm_configure_span_channels(span, currindex, &chan_config);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
@@ -3051,28 +3095,27 @@ static ftdm_status_t load_config(void)
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
 				currindex = span->chan_count;
-				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_CAS, name, number);	
-				ftdm_set_channels_gains(span, currindex, rxgain, txgain);
-				ftdm_group_add_channels(group_name, span, currindex);
+				configured += fio->configure_span(span, val, FTDM_CHAN_TYPE_CAS, name, number);
+				ftdm_configure_span_channels(span, currindex, &chan_config);
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
 			} else if (!strcasecmp(var, "txgain")) {
-				if (sscanf(val, "%f", &txgain) != 1) {
+				if (sscanf(val, "%f", &(chan_config.txgain)) != 1) {
 					ftdm_log(FTDM_LOG_ERROR, "invalid txgain: '%s'\n", val);
 				}
 			} else if (!strcasecmp(var, "rxgain")) {
-				if (sscanf(val, "%f", &rxgain) != 1) {
+				if (sscanf(val, "%f", &(chan_config.rxgain)) != 1) {
 					ftdm_log(FTDM_LOG_ERROR, "invalid rxgain: '%s'\n", val);
 				}
 			} else if (!strcasecmp(var, "group")) {
 				len = strlen(val);
-				if (len >= sizeof(group_name)) {
-					len = sizeof(group_name) - 1;
+				if (len >= FTDM_MAX_NAME_STR_SZ) {
+					len = FTDM_MAX_NAME_STR_SZ - 1;
 					ftdm_log(FTDM_LOG_WARNING, "Truncating group name %s to %zd length\n", val, len);
 				}
-				memcpy(group_name, val, len);
-				group_name[len] = '\0';
+				memcpy(chan_config.group_name, val, len);
+				chan_config.group_name[len] = '\0';
 			} else {
 				ftdm_log(FTDM_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
@@ -3529,7 +3572,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ft
 	return FTDM_FAIL;
 }
 
-static ftdm_status_t ftdm_group_add_channels(const char* name, ftdm_span_t* span, int currindex)
+static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name)
 {
 	unsigned chan_index = 0;
 

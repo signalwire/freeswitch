@@ -44,6 +44,43 @@ static FIO_IO_UNLOAD_FUNCTION(ftdm_libpri_unload)
 }
 
 /**
+ * \brief Returns the signalling status on a channel
+ * \param ftdmchan Channel to get status on
+ * \param status	Pointer to set signalling status
+ * \return Success or failure
+ */
+
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(isdn_get_channel_sig_status)
+{
+	*status = FTDM_SIG_STATE_DOWN;
+
+	ftdm_libpri_data_t *isdn_data = ftdmchan->span->signal_data;
+	if (ftdm_test_flag(&(isdn_data->spri), LPWRAP_PRI_READY)) {
+		*status = FTDM_SIG_STATE_UP;
+	}
+	return FTDM_SUCCESS;
+}
+
+/**
+ * \brief Returns the signalling status on a span
+ * \param span Span to get status on
+ * \param status	Pointer to set signalling status
+ * \return Success or failure
+ */
+
+static FIO_SPAN_GET_SIG_STATUS_FUNCTION(isdn_get_span_sig_status)
+{
+	*status = FTDM_SIG_STATE_DOWN;
+
+	ftdm_libpri_data_t *isdn_data = span->signal_data;
+	if (ftdm_test_flag(&(isdn_data->spri), LPWRAP_PRI_READY)) {
+		*status = FTDM_SIG_STATE_UP;
+	}
+	return FTDM_SUCCESS;
+}
+
+
+/**
  * \brief Starts a libpri channel (outgoing call)
  * \param ftdmchan Channel to initiate call on
  * \return Success or failure
@@ -937,13 +974,27 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
  */
 static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	
 	if (!ftdm_test_flag(spri, LPWRAP_PRI_READY)) {
+		ftdm_signaling_status_t status = FTDM_SIG_STATE_UP;
+		ftdm_channel_t *ftdmchan = NULL;
+		ftdm_sigmsg_t sig;
+		int i;
 		ftdm_log(FTDM_LOG_INFO, "Span %d D-Chan UP!\n", spri->span->span_id);
 		ftdm_set_flag(spri, LPWRAP_PRI_READY);
 		ftdm_set_state_all(spri->span, FTDM_CHANNEL_STATE_RESTART);
-	}
 
+		ftdm_log(FTDM_LOG_NOTICE, "%d:Signaling link status changed to %s\n", spri->span->span_id, ftdm_signaling_status2str(status));
+		for(i=1; i <= spri->span->chan_count; i++) {
+			ftdmchan = spri->span->channels[i];
+			memset(&sig, 0, sizeof(sig));
+			sig.chan_id = ftdmchan->chan_id;
+			sig.span_id = ftdmchan->span_id;
+			sig.channel = ftdmchan;
+			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sig.raw_data = &status;
+			ftdm_span_send_signal(spri->span, &sig);
+		}
+	}
 	return 0;
 }
 
@@ -955,13 +1006,28 @@ static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
  * \return 0
  */
 static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
-{
-
+{	
 	if (ftdm_test_flag(spri, LPWRAP_PRI_READY)) {
+		ftdm_signaling_status_t status = FTDM_SIG_STATE_DOWN;
+		ftdm_channel_t *ftdmchan = NULL;
+		ftdm_sigmsg_t sig;
+		int i;
 		ftdm_log(FTDM_LOG_INFO, "Span %d D-Chan DOWN!\n", spri->span->span_id);
 		ftdm_clear_flag(spri, LPWRAP_PRI_READY);
 		ftdm_set_state_all(spri->span, FTDM_CHANNEL_STATE_RESTART);
-		
+
+
+		ftdm_log(FTDM_LOG_NOTICE, "%d:Signaling link status changed to %s\n", spri->span->span_id, ftdm_signaling_status2str(status));
+		for(i=1; i <= spri->span->chan_count; i++) {
+			ftdmchan = spri->span->channels[i];
+			memset(&sig, 0, sizeof(sig));
+			sig.chan_id = ftdmchan->chan_id;
+			sig.span_id = ftdmchan->span_id;
+			sig.channel = ftdmchan;
+			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sig.raw_data = &status;
+			ftdm_span_send_signal(spri->span, &sig);
+		}
 	}
 
 	return 0;
@@ -1329,6 +1395,9 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 	span->signal_type = FTDM_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
 
+	span->get_channel_sig_status = isdn_get_channel_sig_status;
+	span->get_span_sig_status = isdn_get_span_sig_status;
+	
 	if ((isdn_data->opts & FTMOD_LIBPRI_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;
 		ftdm_set_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID);

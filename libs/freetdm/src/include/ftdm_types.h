@@ -468,6 +468,7 @@ typedef struct ftdm_conf_parameter_s {
 } ftdm_conf_parameter_t;
 
 typedef struct ftdm_channel ftdm_channel_t;
+typedef struct ftdm_channel_config ftdm_channel_config_t;
 typedef struct ftdm_event ftdm_event_t;
 typedef struct ftdm_sigmsg ftdm_sigmsg_t;
 typedef struct ftdm_span ftdm_span_t;

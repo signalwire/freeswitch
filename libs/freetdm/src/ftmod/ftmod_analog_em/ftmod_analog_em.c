@@ -83,6 +83,32 @@ static ftdm_status_t ftdm_analog_em_start(ftdm_span_t *span)
 }
 
 /**
+ * \brief Returns the signalling status on a channel
+ * \param ftdmchan Channel to get status on
+ * \param status	Pointer to set signalling status
+ * \return Success or failure
+ */
+
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_em_get_channel_sig_status)
+{
+	*status = FTDM_SIG_STATE_UP;
+	return FTDM_SUCCESS;
+}
+
+/**
+ * \brief Returns the signalling status on a span
+ * \param span Span to get status on
+ * \param status	Pointer to set signalling status
+ * \return Success or failure
+ */
+
+static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_em_get_span_sig_status)
+{
+	*status = FTDM_SIG_STATE_UP;
+	return FTDM_SUCCESS;
+}
+
+/**
  * \brief Initialises an EM span from configuration variables
  * \param span Span to configure
  * \param sig_cb Callback function for event signals
@@ -149,6 +175,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	span->signal_type = FTDM_SIGTYPE_ANALOG;
 	span->signal_data = analog_data;
 	span->outgoing_call = analog_em_outgoing_call;
+	span->get_channel_sig_status = analog_em_get_channel_sig_status;
+	span->get_span_sig_status = analog_em_get_span_sig_status;
 	ftdm_span_load_tones(span, tonemap);
 
 	return FTDM_SUCCESS;
