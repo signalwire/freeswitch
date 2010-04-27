@@ -1500,6 +1500,16 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "crash")) {
 			switch_core_session_ctl(SCSC_CRASH, NULL);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "verbose_events")) {
+			arg = -1;
+			if (argv[1]) {
+				arg = switch_true(argv[1]);
+			}
+
+			switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &arg);
+
+			stream->write_function(stream, "+OK verbose_events is %s \n", arg ? "on" : "off");
+			
 		} else if (!strcasecmp(argv[0], "save_history")) {
 			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
 			stream->write_function(stream, "+OK\n");

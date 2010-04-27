@@ -248,7 +248,8 @@ typedef enum {
 	SCF_EARLY_HANGUP = (1 << 7),
 	SCF_CALIBRATE_CLOCK = (1 << 8),
 	SCF_USE_HEAVY_TIMING = (1 << 9),
-	SCF_USE_CLOCK_RT = (1 << 10)
+	SCF_USE_CLOCK_RT = (1 << 10),
+	SCF_VERBOSE_EVENTS = (1 << 11)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1494,7 +1495,8 @@ typedef enum {
 	SCSC_CALIBRATE_CLOCK,
 	SCSC_SAVE_HISTORY,
 	SCSC_CRASH,
-	SCSC_MIN_IDLE_CPU
+	SCSC_MIN_IDLE_CPU,
+	SCSC_VERBOSE_EVENTS
 } switch_session_ctl_t;
 
 typedef enum {

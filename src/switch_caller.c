@@ -271,6 +271,14 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Number", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_number);
 	}
+	if (!zstr(caller_profile->callee_id_name)) {
+		switch_snprintf(header_name, sizeof(header_name), "%s-Callee-ID-Name", prefix);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->callee_id_name);
+	}
+	if (!zstr(caller_profile->callee_id_number)) {
+		switch_snprintf(header_name, sizeof(header_name), "%s-Callee-ID-Number", prefix);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->callee_id_number);
+	}
 	if (!zstr(caller_profile->network_addr)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Network-Addr", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->network_addr);
