@@ -1751,6 +1751,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 
+		if (!is_nat && sip && sip->sip_via && sip->sip_via->v_port &&
+			atoi(sip->sip_via->v_port) == 5060 && network_port != 5060 ) {
+			is_nat = "via port";
+		}
+
 		if (!is_nat && profile->nat_acl_count) {
 			uint32_t x = 0;
 			int ok = 1;
