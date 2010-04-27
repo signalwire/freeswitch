@@ -616,7 +616,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 
 %changelog
-* Fr Apr 23 2010 - michal.bielicki@seventhsignal.de
+* Fri Apr 23 2010 - michal.bielicki@seventhsignal.de
 - bumped spec file vrersion up to 1.0.7-trunk for trunk
 - added skinny dialplan stuff to specfile
 * Sun Mar 28 2010 - michal.bielicki@seventhsignal.de
