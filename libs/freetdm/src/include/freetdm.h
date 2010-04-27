@@ -614,10 +614,11 @@ struct ftdm_channel {
 	float txgain;
 };
 
-struct ftdm_channel_config {
+struct ftdm_channel_config {	
 	char name[FTDM_MAX_NAME_STR_SZ];
 	char number[FTDM_MAX_NUMBER_STR_SZ];
 	char group_name[FTDM_MAX_NAME_STR_SZ];
+	ftdm_chan_type_t type;
 	float rxgain;
 	float txgain;
 };
@@ -843,7 +844,7 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node);
 
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char *str, ftdm_channel_config_t *chan_config, ftdm_chan_type_t type, unsigned *configured);
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char *str, ftdm_channel_config_t *chan_config, unsigned *configured);
 
 FIO_CODEC_FUNCTION(fio_slin2ulaw);
 FIO_CODEC_FUNCTION(fio_ulaw2slin);

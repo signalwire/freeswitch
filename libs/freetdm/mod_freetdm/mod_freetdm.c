@@ -1954,10 +1954,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{
+			ftdm_signaling_status_t *sigstatus = (ftdm_signaling_status_t*)(sigmsg->raw_data);
 			if (*((ftdm_signaling_status_t*)(sigmsg->raw_data)) == FTDM_SIG_STATE_UP) {
-				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
-			} else {
-				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
+						sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signaling_status2str(*sigstatus));
 			}
 		}
 		break;

@@ -2902,10 +2902,10 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 }
 
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, ftdm_chan_type_t type, unsigned *configured)
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, unsigned *configured)
 {
 	int currindex = span->chan_count;
-	*configured += span->fio->configure_span(span, str, type, chan_config->name, chan_config->number);
+	*configured += span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
 
 	if (ftdm_group_add_channels(span, currindex, chan_config->group_name) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to add channels to group %s\n", span->span_id, chan_config->group_name);
@@ -3043,7 +3043,8 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
-					ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_FXO, &configured);
+					chan_config.type = FTDM_CHAN_TYPE_FXO;
+					ftdm_configure_span_channels(span, val, &chan_config, &configured);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -3054,7 +3055,8 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
-					ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_FXS, &configured);
+					chan_config.type = FTDM_CHAN_TYPE_FXS;
+					ftdm_configure_span_channels(span, val, &chan_config, &configured);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -3065,28 +3067,30 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_EM) {
-					ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_EM, &configured);
+					chan_config.type = FTDM_CHAN_TYPE_EM;
+					ftdm_configure_span_channels(span, val, &chan_config, &configured);
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
-				ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_B, &configured);
+				chan_config.type = FTDM_CHAN_TYPE_B;
+				ftdm_configure_span_channels(span, val, &chan_config, &configured);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
 				} else {
-					ftdm_chan_type_t qtype;
 					if (!strncasecmp(val, "lapd:", 5)) {
-						qtype = FTDM_CHAN_TYPE_DQ931;
+						chan_config.type = FTDM_CHAN_TYPE_DQ931;
 						val += 5;
 					} else {
-						qtype = FTDM_CHAN_TYPE_DQ921;
+						chan_config.type = FTDM_CHAN_TYPE_DQ921;
 					}
-					ftdm_configure_span_channels(span, val, &chan_config, qtype, &configured);
+					ftdm_configure_span_channels(span, val, &chan_config, &configured);
 					d++;
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
-				ftdm_configure_span_channels(span, val, &chan_config, FTDM_CHAN_TYPE_CAS, &configured);
+				chan_config.type = FTDM_CHAN_TYPE_CAS;
+				ftdm_configure_span_channels(span, val, &chan_config, &configured);
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
@@ -3674,19 +3678,24 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	ftdm_status_t status = FTDM_FAIL;
-
-	if (span->signal_cb) {
-		if (sigmsg->channel) {
-			ftdm_mutex_lock(sigmsg->channel->mutex);
-		}
-
-		status = span->signal_cb(sigmsg);
-
-		if (sigmsg->channel) {
-			ftdm_mutex_unlock(sigmsg->channel->mutex);
-		}
+	if (sigmsg->channel) {
+		ftdm_mutex_lock(sigmsg->channel->mutex);
 	}
 
+	if (sigmsg->event_id == FTDM_SIGEVENT_SIGSTATUS_CHANGED) {
+		if (*((ftdm_signaling_status_t*)(sigmsg->raw_data)) == FTDM_SIG_STATE_UP) {
+			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+		} else {
+			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+		}
+	}
+	if (span->signal_cb) {
+		status = span->signal_cb(sigmsg);
+	}
+
+	if (sigmsg->channel) {
+		ftdm_mutex_unlock(sigmsg->channel->mutex);
+	}
 	return status;
 }
 
