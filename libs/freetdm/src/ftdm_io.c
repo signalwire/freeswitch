@@ -2905,7 +2905,12 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, unsigned *configured)
 {
 	int currindex = span->chan_count;
-	*configured += span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
+	*configured = 0;
+	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
+	if (!*configured) {
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to configure span", span->span_id);
+		return FTDM_FAIL;
+	}
 
 	if (ftdm_group_add_channels(span, currindex, chan_config->group_name) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to add channels to group %s\n", span->span_id, chan_config->group_name);
@@ -3043,8 +3048,11 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
+     			unsigned chans_configured = 0;
 					chan_config.type = FTDM_CHAN_TYPE_FXO;
-					ftdm_configure_span_channels(span, val, &chan_config, &configured);
+					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+						configured += chans_configured;
+					}
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -3055,8 +3063,11 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
+					unsigned chans_configured = 0;
 					chan_config.type = FTDM_CHAN_TYPE_FXS;
-					ftdm_configure_span_channels(span, val, &chan_config, &configured);
+					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+						configured += chans_configured;
+					}
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
@@ -3067,30 +3078,43 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_EM) {
+					unsigned chans_configured = 0;
 					chan_config.type = FTDM_CHAN_TYPE_EM;
-					ftdm_configure_span_channels(span, val, &chan_config, &configured);
+					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+						configured += chans_configured;
+					}
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
+				unsigned chans_configured = 0;
 				chan_config.type = FTDM_CHAN_TYPE_B;
-				ftdm_configure_span_channels(span, val, &chan_config, &configured);
+				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+					configured += chans_configured;
+				}
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
 				} else {
+					unsigned chans_configured = 0;
 					if (!strncasecmp(val, "lapd:", 5)) {
 						chan_config.type = FTDM_CHAN_TYPE_DQ931;
 						val += 5;
 					} else {
 						chan_config.type = FTDM_CHAN_TYPE_DQ921;
 					}
-					ftdm_configure_span_channels(span, val, &chan_config, &configured);
+					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+						configured += chans_configured;
+					}
 					d++;
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
+				unsigned chans_configured = 0;
 				chan_config.type = FTDM_CHAN_TYPE_CAS;
-				ftdm_configure_span_channels(span, val, &chan_config, &configured);
+				
+				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+					configured += chans_configured;
+				}
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
