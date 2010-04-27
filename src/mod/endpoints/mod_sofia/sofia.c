@@ -6475,6 +6475,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 								}
 							} else {
 								destination_number = switch_core_session_sprintf(b_session, "answer,intercept:%s", uuid);
+								if ((c_session = switch_core_session_locate(uuid))) {
+									switch_channel_t *c_channel = switch_core_session_get_channel(c_session);
+
+									switch_channel_hangup(c_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+									switch_core_session_rwunlock(c_session);
+								}
 							}
 						}
 
