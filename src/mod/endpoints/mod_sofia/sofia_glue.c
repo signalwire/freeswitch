@@ -3573,18 +3573,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					match = 0;
 					got_audio = 0;
 				}
-				
-				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
-						match = (map->rm_pt == tech_pvt->agreed_pt) ? 1 : 0;
-					} else {
-						match = strcasecmp(map->rm_encoding, tech_pvt->rm_encoding) ? 0 : 1;
-					}					
-				}
-
-				if (match) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing codec is already acceptable, using that.\n");
-				}
 			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
@@ -3617,7 +3605,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						}
 					}
 				}
-
+				
 				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && !cng_pt && !strcasecmp(rm_encoding, "CN")) {
 					cng_pt = (switch_payload_t) map->rm_pt;
 					if (tech_pvt->rtp_session) {
