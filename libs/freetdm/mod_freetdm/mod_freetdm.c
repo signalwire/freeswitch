@@ -2019,7 +2019,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		{
 			ftdm_signaling_status_t *sigstatus = (ftdm_signaling_status_t*)(sigmsg->raw_data);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
-					sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signaling_status2str(*sigstatus));
+					spanid, chanid, ftdm_signaling_status2str(*sigstatus));
 		}
 		break;
 	default:
