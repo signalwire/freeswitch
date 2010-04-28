@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	
 
 
-	if (ftdm_configure_span("r2", span, on_r2_signal,
+	if (ftdm_configure_span(span, "r2", on_r2_signal,
 						   "variant", "mx",
 						   "max_ani", 10,
 						   "max_dnis", 4,

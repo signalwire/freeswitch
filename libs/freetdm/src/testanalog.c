@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 	}
 	
 
-	if (ftdm_configure_span("analog", span, on_signal, 
+	if (ftdm_configure_span(span, "analog", on_signal, 
 						   "tonemap", "us", 
 						   "digit_timeout", &digit_timeout,
 						   "max_dialstr", &max_dialstr,

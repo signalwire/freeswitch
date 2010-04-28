@@ -1005,8 +1005,8 @@ FT_DECLARE(uint32_t) ftdm_channel_get_ph_id(const ftdm_channel_t *ftdmchan);
  *
  * \note This function does the same as ftdm_configure_span_signaling
  *
- * \param type The signaling type ("boost", "isdn" and others, this depends on the available signaling modules)
  * \param span The span to configure
+ * \param type The signaling type ("boost", "isdn" and others, this depends on the available signaling modules)
  * \param sig_cb The callback that the signaling stack will use to notify about events
  * \param ... variable argument list with "var", value sequence, the variable and values are signaling type dependant
  *        the last argument must be FTDM_TAG_END
@@ -1014,22 +1014,22 @@ FT_DECLARE(uint32_t) ftdm_channel_get_ph_id(const ftdm_channel_t *ftdmchan);
  * \retval FTDM_SUCCESS success 
  * \retval FTDM_FAIL failure 
  */
-FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ...);
+FT_DECLARE(ftdm_status_t) ftdm_configure_span(ftdm_span_t *span, const char *type, fio_signal_cb_t sig_cb, ...);
 #define FTDM_TAG_END NULL
 
 
 /*! 
  * \brief Configure span with a signaling type
  *
- * \param type The signaling type ("boost", "isdn" and others, this depends on the available signaling modules)
  * \param span The span to configure
+ * \param type The signaling type ("boost", "isdn" and others, this depends on the available signaling modules)
  * \param sig_cb The callback that the signaling stack will use to notify about events
  * \param ... variable argument list with "var", value sequence, the variable and values are signaling type dependant
  *
  * \retval FTDM_SUCCESS success 
  * \retval FTDM_FAIL failure 
  */
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters);
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const char *type, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters);
 
 /*! 
  * \brief Start the span signaling (must call ftdm_configure_span_signaling first)

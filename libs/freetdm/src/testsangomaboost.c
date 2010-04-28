@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 	parameters[3].var = NULL;
 
 	/* send the configuration values down to the stack */
-	if (ftdm_configure_span_signaling("sangoma_boost", span, on_signaling_event, parameters) != FTDM_SUCCESS) {
+	if (ftdm_configure_span_signaling(span, "sangoma_boost", on_signaling_event, parameters) != FTDM_SUCCESS) {
 		fprintf(stderr, "Error configuring sangoma_boost signaling abstraction in span %s\n", ftdm_span_get_name(span));
 		goto done;
 	}

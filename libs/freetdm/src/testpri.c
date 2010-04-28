@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
 
 	if (ftdm_configure_span(
-						   "libpri", span, on_signal,
+						   span, "libpri", on_signal,
 						   "node", "cpe",
 						   "switch", "euroisdn",
 						   "dp", "unknown",

@@ -1369,7 +1369,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 			status = check->fio->open(check);
 				
 			if (status == FTDM_SUCCESS) {
-				ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
 				ftdm_channel_open_chan(check);
 				*ftdmchan = check;
 				break;
@@ -1489,7 +1488,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			status = check->fio->open(check);
 				
 			if (status == FTDM_SUCCESS) {
-				ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
 				ftdm_channel_open_chan(check);
 				*ftdmchan = check;
 				break;
@@ -1639,7 +1637,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	status = FTDM_FAIL;
 
 	if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && (!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) || 
-													(check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 1))) {
+		(check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 1))) {
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
 			status = check->fio->open(check);
 			if (status == FTDM_SUCCESS) {
@@ -3790,7 +3788,23 @@ FT_DECLARE(ftdm_status_t) ftdm_unload_modules(void)
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ...)
+static ftdm_status_t post_configure_span_channels(ftdm_span_t *span)
+{
+	unsigned i = 0;
+	ftdm_signaling_status_t status = FTDM_SUCCESS;
+	for (i = 1; i <= span->chan_count; i++) {
+		ftdm_channel_get_sig_status(span->channels[i], &status);
+		if (status == FTDM_SIG_STATE_UP) {
+			ftdm_set_flag(span->channels[i], FTDM_CHANNEL_SIG_UP);
+		}
+	}
+	if (ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
+		status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+	}
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_configure_span(ftdm_span_t *span, const char *type, fio_signal_cb_t sig_cb, ...)
 {
 	ftdm_module_t *mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	ftdm_status_t status = FTDM_FAIL;
@@ -3812,8 +3826,8 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 		va_start(ap, sig_cb);
 		status = mod->sig_configure(span, sig_cb, ap);
 		va_end(ap);
-		if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
-			status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+		if (status == FTDM_SUCCESS) {
+			status = post_configure_span_channels(span);
 		}
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "can't find '%s'\n", type);
@@ -3823,7 +3837,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(const char *type, ftdm_span_t *spa
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters) 
+FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const char *type, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters) 
 {
 	ftdm_module_t *mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	ftdm_status_t status = FTDM_FAIL;
@@ -3852,8 +3866,8 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(const char *type, ftdm_s
 
 	if (mod->configure_span_signaling) {
 		status = mod->configure_span_signaling(span, sig_cb, parameters);
-		if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
-			status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
+		if (status == FTDM_SUCCESS) {
+			status = post_configure_span_channels(span);
 		}
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "Module %s did not implement the signaling configuration method\n", type);

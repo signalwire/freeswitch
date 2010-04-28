@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	parameters[1].var = "signalling";	
 	parameters[1].val = "pri_cpe";	
 	parameters[2].var = NULL;
-	if (ftdm_configure_span_signaling("sangoma_boost", span, on_signal, parameters) == FTDM_SUCCESS) {
+	if (ftdm_configure_span_signaling(span, "sangoma_boost", on_signal, parameters) == FTDM_SUCCESS) {
 		ftdm_span_start(span);
 	} else {
 		fprintf(stderr, "Error starting SS7_BOOST\n");

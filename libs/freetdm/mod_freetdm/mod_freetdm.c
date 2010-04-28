@@ -2345,7 +2345,7 @@ static switch_status_t load_config(void)
 				}
 			}
 
-			if (ftdm_configure_span("ss7", span, on_ss7_signal,
+			if (ftdm_configure_span(span, "ss7", on_ss7_signal,
 								   "confnode", ss7confnode,
 								   "parameters", spanparameters,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
@@ -2450,7 +2450,7 @@ static switch_status_t load_config(void)
 				span_id = ftdm_span_get_id(span);
 			}
 
-			if (ftdm_configure_span("analog", span, on_analog_signal, 
+			if (ftdm_configure_span(span, "analog", on_analog_signal, 
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
@@ -2566,7 +2566,7 @@ static switch_status_t load_config(void)
 			}
 
 
-			if (ftdm_configure_span("analog_em", span, on_analog_signal, 
+			if (ftdm_configure_span(span, "analog_em", on_analog_signal, 
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
@@ -2683,7 +2683,7 @@ static switch_status_t load_config(void)
 				tonegroup = "us";
 			}
 			
-			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, 
+			if (ftdm_configure_span(span, "isdn", on_clear_channel_signal, 
 								   "mode", mode,
 								   "dialect", dialect,
 								   "digit_timeout", &to,
@@ -2778,7 +2778,7 @@ static switch_status_t load_config(void)
 			}
 			
 			
-			if (ftdm_configure_span("libpri", span, on_clear_channel_signal, 
+			if (ftdm_configure_span(span, "libpri", on_clear_channel_signal, 
 								   "node", o_node,
 								   "switch", o_switch,
 								   "dp", o_dp,
@@ -2866,7 +2866,7 @@ static switch_status_t load_config(void)
 				span_id = ftdm_span_get_id(span);
 			}
 
-			if (ftdm_configure_span_signaling("sangoma_boost", span, on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
+			if (ftdm_configure_span_signaling(span, "sangoma_boost", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d error: %s\n", span_id, ftdm_span_get_last_error(span));
 				continue;
 			}
@@ -3001,7 +3001,7 @@ static switch_status_t load_config(void)
 				span_id = ftdm_span_get_id(span);
 			}
 
-			if (ftdm_configure_span("r2", span, on_r2_signal, 
+			if (ftdm_configure_span(span, "r2", on_r2_signal, 
 				"variant", variant, 
 				"max_ani", max_ani,
 				"max_dnis", max_dnis,
@@ -3420,14 +3420,14 @@ SWITCH_STANDARD_API(ft_function)
 		tmp_path=switch_mprintf("%s%s%s.pcap", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pcapfn);
 		
 		if(!strcasecmp(argv[2], "on")) {
-			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 1, "pcapfilename", tmp_path, FTDM_TAG_END) != FTDM_SUCCESS) {
+			if (ftdm_configure_span(span, "isdn", on_clear_channel_signal, "q931topcap", 1, "pcapfilename", tmp_path, FTDM_TAG_END) != FTDM_SUCCESS) {
                                 ftdm_log(FTDM_LOG_WARNING, "Error couldn't (re-)enable Q931-To-Pcap!\n");
 				goto end;
                         } else {
 				stream->write_function(stream, "+OK\n");
 			}
 		} else if(!strcasecmp(argv[2], "off")) {
-			if (ftdm_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 0, FTDM_TAG_END) != FTDM_SUCCESS) {
+			if (ftdm_configure_span(span, "isdn", on_clear_channel_signal, "q931topcap", 0, FTDM_TAG_END) != FTDM_SUCCESS) {
                                 ftdm_log(FTDM_LOG_ERROR, "Error couldn't enable Q931-To-Pcap!\n");
                                 goto end;
 			} else {
