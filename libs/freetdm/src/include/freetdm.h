@@ -292,9 +292,9 @@ typedef enum {
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", \
-		"PROGRESS_MEDIA", "NOTIFY", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", "MISC", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGLINK_CHANGED", "INVALID"
+#define SIGNAL_STRINGS "START", "STOP", "ANSWER", "UP", "FLASH", "PROGRESS", \
+		"PROGRESS_MEDIA", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", \
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)

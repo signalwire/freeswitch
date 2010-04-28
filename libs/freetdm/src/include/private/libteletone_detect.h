@@ -63,7 +63,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <libteletone.h>
+#include "libteletone.h"
 
 	/*! \file libteletone_detect.h
 	  \brief Tone Detection Routines

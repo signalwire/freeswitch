@@ -3295,6 +3295,8 @@ SWITCH_STANDARD_API(ft_function)
 		int j;
 		for (j = 0 ; j < FTDM_MAX_SPANS_INTERFACE; j++) {
 			if (SPAN_CONFIG[j].span) {
+				ftdm_channel_t *fchan;
+				ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
 				const char *flags = "none";
 				ftdm_signaling_status_t sigstatus;
 
@@ -3303,12 +3305,17 @@ SWITCH_STANDARD_API(ft_function)
 				} else if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_CALL_SWAP) {
 					flags = "call swap";
 				}
+				fchan = ftdm_span_get_channel(SPAN_CONFIG[j].span, 1);
+				if (fchan) {
+					ftdm_channel_get_alarms(fchan, &alarmbits);
+				}
 				
 				if ((FTDM_SUCCESS == ftdm_span_get_sig_status(SPAN_CONFIG[j].span, &sigstatus))) {
 					stream->write_function(stream,
 										   "+OK\n"
 										   "span: %u (%s)\n"
 										   "type: %s\n"		
+										   "physical_status: %s\n"
 										   "signaling_status: %s\n"
 										   "chan_count: %u\n"
 										   "dialplan: %s\n"
@@ -3320,6 +3327,7 @@ SWITCH_STANDARD_API(ft_function)
 										   j,
 										   ftdm_span_get_name(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].type,
+										   alarmbits ? "alarmed" : "ok",
 										   ftdm_signaling_status2str(sigstatus),
 										   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].dialplan,
@@ -3334,6 +3342,7 @@ SWITCH_STANDARD_API(ft_function)
 										   "+OK\n"
 										   "span: %u (%s)\n"
 										   "type: %s\n"
+										   "physical_status: %s\n"
 										   "chan_count: %u\n"
 										   "dialplan: %s\n"
 										   "context: %s\n"
@@ -3344,6 +3353,7 @@ SWITCH_STANDARD_API(ft_function)
 										   j,
 										   ftdm_span_get_name(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].type,
+										   alarmbits ? "alarmed" : "ok",
 										   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].dialplan,
 										   SPAN_CONFIG[j].context,

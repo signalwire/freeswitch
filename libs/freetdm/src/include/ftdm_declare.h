@@ -119,8 +119,21 @@ typedef int ftdm_socket_t;
 #include <stdarg.h>
 #endif
 
+/*! 
+ * \brief FreeTDM channel.
+ *        This is the basic data structure used to place calls and I/O operations
+ */
 typedef struct ftdm_channel ftdm_channel_t;
+
+/*! 
+ * \brief FreeTDM span.
+ *        Channel and signaling configuration container.
+ *        This is a logical span structure, a span may ( or may note ) contain channels
+ *        of other physical spans, depending on configuration (freetdm.conf) or if you
+ *        are not using configuration depends on how you call ftdm_span_add_channel
+ */
 typedef struct ftdm_span ftdm_span_t;
+
 typedef struct ftdm_event ftdm_event_t;
 typedef struct ftdm_conf_node ftdm_conf_node_t;
 typedef struct ftdm_group ftdm_group_t;

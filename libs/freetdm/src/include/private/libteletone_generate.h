@@ -81,7 +81,7 @@ extern float powf (float, float);
 #endif
 #include <assert.h>
 #include <stdarg.h>
-#include <libteletone.h>
+#include "libteletone.h"
 
 #define TELETONE_VOL_DB_MAX 0
 #define TELETONE_VOL_DB_MIN -63
