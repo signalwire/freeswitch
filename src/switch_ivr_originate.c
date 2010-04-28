@@ -702,7 +702,8 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
   end:
 
-	if (pindex > -1 && caller_channel && switch_channel_ready(caller_channel) && !switch_channel_media_ready(caller_channel)) {
+	if (pindex > -1 && caller_channel && switch_channel_ready(caller_channel) && !switch_channel_media_ready(caller_channel) && 
+		switch_channel_media_ready(originate_status[pindex].peer_channel)) {
 		inherit_codec(caller_channel, originate_status[pindex].peer_session);
 	}
 
@@ -1750,7 +1751,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *soft_holding = NULL;
 	const char *export_vars = NULL;
 	early_state_t early_state = { 0 };
-
+	int read_packet = 0;
+	
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
 											   caller_profile_override, ovars, flags);
@@ -2708,6 +2710,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
 				   check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
+				
+				read_packet = 0;
 
 				if (cancel_cause && *cancel_cause > 0) {
 					if (force_reason == SWITCH_CAUSE_NONE) {
@@ -2741,7 +2745,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							const char *cause_str;
 
 							if (!originate_status[i].peer_session) {
-								continue;
+								goto do_continue;
 							}
 							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
 
@@ -2791,10 +2795,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 
 							if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
-								continue;
+								goto do_continue;
 							}
 							break;
 						}
+
+						read_packet++;
 					} else {
 						read_frame = NULL;
 					}
@@ -2838,7 +2844,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							}
 
-							continue;
+							goto do_continue;
 						}
 
 						if (oglobals.bridge_early_media > -1) {							
@@ -2897,7 +2903,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 								if (soft_holding) {
 									switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
-									continue;
+									goto do_continue;
 								}
 
 								break;
@@ -2920,16 +2926,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
 							}
 							if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
-								continue;
+								goto do_continue;
 							}
 							break;
 						}
 					}
 
-				} else {
+				} 
+
+			do_continue:
+
+				if (!read_packet) {
 					switch_cond_next();
 				}
-
 			}
 
 		  notready:

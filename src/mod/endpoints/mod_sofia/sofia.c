@@ -3874,7 +3874,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					free(stream.data);
+
 					switch_core_session_rwunlock(a_session);
+					switch_channel_hangup(channel, SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION);
 				}
 			} else {
 				su_home_t *home = su_home_new(sizeof(*home));
