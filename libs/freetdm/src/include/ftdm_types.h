@@ -416,6 +416,7 @@ typedef enum {
 	FTDM_CHANNEL_USE_RX_GAIN = (1 << 25),
 	FTDM_CHANNEL_USE_TX_GAIN = (1 << 26),
 	FTDM_CHANNEL_IN_ALARM = (1 << 27),
+	FTDM_CHANNEL_SIG_UP = (1 << 28),
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 
@@ -467,6 +468,7 @@ typedef struct ftdm_conf_parameter_s {
 } ftdm_conf_parameter_t;
 
 typedef struct ftdm_channel ftdm_channel_t;
+typedef struct ftdm_channel_config ftdm_channel_config_t;
 typedef struct ftdm_event ftdm_event_t;
 typedef struct ftdm_sigmsg ftdm_sigmsg_t;
 typedef struct ftdm_span ftdm_span_t;

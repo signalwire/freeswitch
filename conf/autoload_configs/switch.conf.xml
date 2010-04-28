@@ -72,6 +72,8 @@
     <param name="mailer-app" value="sendmail"/>
     <param name="mailer-app-args" value="-t"/>
     <param name="dump-cores" value="yes"/>
+    <!-- enable verbose-channel-events to dump every detail about a channel on every event  -->
+    <!--<param name="verbose-channel-events" value="no"/>-->
     <!--RTP port range -->
     <!--<param name="rtp-start-port" value="16384"/>-->
     <!--<param name="rtp-end-port" value="32768"/>-->

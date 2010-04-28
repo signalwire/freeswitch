@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Moises Silva <moy@sangoma.com>
+ * David Yat Sin <dyatsin@sangoma.com>
  *
  *
  * mod_freetdm.c -- FreeTDM Endpoint Module
@@ -1950,6 +1951,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					sigmsg->channel->span_id, sigmsg->channel->chan_id, (uuid) ? uuid : "N/A");
 			}
 		}
+		break;
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		{
+			ftdm_signaling_status_t *sigstatus = (ftdm_signaling_status_t*)(sigmsg->raw_data);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
+					sigmsg->channel->span_id, sigmsg->channel->chan_id, ftdm_signaling_status2str(*sigstatus));
+		}
+		break;
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
@@ -2983,15 +2992,19 @@ static switch_status_t load_config(void)
 
 void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
 {
+	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
 	if (chan_id > span->chan_count) {
 		return;
 	}
-
+	
+	ftdm_channel_get_sig_status(span->channels[chan_id], &sigstatus);
 	stream->write_function(stream,
 						   "span_id: %u\n"
 						   "chan_id: %u\n"
 						   "physical_span_id: %u\n"
 						   "physical_chan_id: %u\n"
+						   "physical_status: %s\n"
+						   "signaling_status: %s\n"
 						   "type: %s\n"
 						   "state: %s\n"
 						   "last_state: %s\n"
@@ -3009,6 +3022,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   span->channels[chan_id]->chan_id,
 						   span->channels[chan_id]->physical_span_id,
 						   span->channels[chan_id]->physical_chan_id,
+					  	 (span->channels[chan_id]->alarm_flags) ? "DOWN" : "UP",
+					     ftdm_signaling_status2str(sigstatus),
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
@@ -3027,16 +3042,19 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 
 void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
 {
+	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
 	if (chan_id > span->chan_count) {
 		return;
 	}
-
+	ftdm_channel_get_sig_status(span->channels[chan_id], &sigstatus);
 	stream->write_function(stream,
 						   " <channel>\n"
 						   "  <span-id>%u</span-id>\n"
 						   "  <chan-id>%u</chan-id>>\n"
 						   "  <physical-span-id>%u</physical-span-id>\n"
 						   "  <physical-chan-id>%u</physical-chan-id>\n"
+						   "  <physical-status>%s</physical-status>\n"
+						   "  <signaling-status>%s</signaling-status>\n"
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
 						   "  <last-state>%s</last-state>\n"
@@ -3055,6 +3073,8 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   span->channels[chan_id]->chan_id,
 						   span->channels[chan_id]->physical_span_id,
 						   span->channels[chan_id]->physical_chan_id,
+						   (span->channels[chan_id]->alarm_flags) ? "DOWN" : "UP",
+					     ftdm_signaling_status2str(sigstatus),
 						   ftdm_chan_type2str(span->channels[chan_id]->type),
 						   ftdm_channel_state2str(span->channels[chan_id]->state),
 						   ftdm_channel_state2str(span->channels[chan_id]->last_state),
@@ -3168,7 +3188,7 @@ SWITCH_STANDARD_API(ft_function)
 					stream->write_function(stream,
 										   "+OK\n"
 										   "span: %u (%s)\n"
-										   "type: %s\n"
+										   "type: %s\n"		
 										   "signaling_status: %s\n"
 										   "chan_count: %u\n"
 										   "dialplan: %s\n"

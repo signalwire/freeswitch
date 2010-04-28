@@ -182,7 +182,7 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 		size_t buflen = sizeof(buf), len = 0;
 		pri_set_debug(spri->pri, debug);
 		ret = 0;
-		ftdm_set_flag(spri, LPWRAP_PRI_READY);
+		
 		ftdm_channel_write(spri->dchan, buf, buflen, &len);
 	} else {
 		fprintf(stderr, "Unable to create PRI\n");
