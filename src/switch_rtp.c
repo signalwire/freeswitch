@@ -955,14 +955,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	}
 	switch_socket_opt_set(new_sock, SWITCH_SO_NONBLOCK, FALSE);
 
+#endif
 
 	old_sock = rtp_session->sock_input;
 	rtp_session->sock_input = new_sock;
 	new_sock = NULL;
-
-
-#endif
-
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
 		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
