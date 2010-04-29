@@ -32,6 +32,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "freetdm.h"
+
 #ifndef __PRIVATE_FTDM_CORE__
 #define __PRIVATE_FTDM_CORE__
 
@@ -500,12 +502,6 @@ struct ftdm_group {
 
 FT_DECLARE_DATA extern ftdm_crash_policy_t g_ftdm_crash_policy;
 
-FT_DECLARE_DATA extern ftdm_memory_handler_t g_ftdm_mem_handler;
-
-/*! \brief Duplicate string */
-FT_DECLARE(char *) ftdm_strdup(const char *str);
-FT_DECLARE(char *) ftdm_strndup(const char *str, ftdm_size_t inlen);
-
 FT_DECLARE(ftdm_size_t) ftdm_fsk_modulator_generate_bit(ftdm_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, ftdm_size_t buflen);
 FT_DECLARE(int32_t) ftdm_fsk_modulator_generate_carrier_bits(ftdm_fsk_modulator_t *fsk_trans, uint32_t bits);
 FT_DECLARE(void) ftdm_fsk_modulator_generate_chan_sieze(ftdm_fsk_modulator_t *fsk_trans);
@@ -597,37 +593,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);
 			return retval; \
 		} \
 	}
-
-/*!
-  \brief Allocate uninitialized memory
-  \command chunksize the chunk size
-*/
-#define ftdm_malloc(chunksize) g_ftdm_mem_handler.malloc(g_ftdm_mem_handler.pool, chunksize)
-
-/*!
-  \brief Reallocates memory
-  \command buff the buffer
-  \command chunksize the chunk size
-*/
-#define ftdm_realloc(buff, chunksize) g_ftdm_mem_handler.realloc(g_ftdm_mem_handler.pool, buff, chunksize)
-
-/*!
-  \brief Allocate initialized memory
-  \command chunksize the chunk size
-*/
-#define ftdm_calloc(elements, chunksize) g_ftdm_mem_handler.calloc(g_ftdm_mem_handler.pool, elements, chunksize)
-
-/*!
-  \brief Free chunk of memory
-  \command chunksize the chunk size
-*/
-#define ftdm_free(chunk) g_ftdm_mem_handler.free(g_ftdm_mem_handler.pool, chunk)
-
-/*!
-  \brief Free a pointer and set it to NULL unless it already is NULL
-  \command it the pointer
-*/
-#define ftdm_safe_free(it) if (it) { ftdm_free(it); it = NULL; }
 
 /*!
   \brief Socket the given socket

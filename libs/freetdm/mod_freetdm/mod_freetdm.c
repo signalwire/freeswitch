@@ -241,7 +241,7 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	private_t *tech_pvt;
-	int32_t tokencnt = ftdm_channel_get_token_count(ftdmchan);
+	uint32_t tokencnt = ftdm_channel_get_token_count(ftdmchan);
 	
 
 	for (i = 0; i < tokencnt; i++) {

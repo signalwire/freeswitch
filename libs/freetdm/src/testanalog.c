@@ -9,7 +9,7 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 	ftdm_channel_t *chan = (ftdm_channel_t *) obj;
 	uint8_t frame[1024];
 	ftdm_size_t len;
-	char *number = strdup("5551212");
+	char *number = ftdm_strdup("5551212");
 
 	ftdm_sleep(10 * 1000);
 	
@@ -40,7 +40,7 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "call over\n");
-	free(number);
+	ftdm_safe_free(number);
 	return NULL;
 }
 

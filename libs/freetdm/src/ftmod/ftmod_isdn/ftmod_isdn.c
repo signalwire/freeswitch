@@ -38,7 +38,7 @@
 #define __EXTENSIONS__
 #endif
 
-#include "freetdm.h"
+#include "private/ftdm_core.h"
 #include "Q931.h"
 #include "Q921.h"
 #ifdef WIN32

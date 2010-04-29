@@ -44,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/isdn/include;&quot;C:\Program Files\Sangoma\include&quot;"
+				AdditionalIncludeDirectories="../../include;&quot;C:\Program Files\Sangoma\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

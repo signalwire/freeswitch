@@ -412,13 +412,13 @@ typedef void *(*ftdm_malloc_func_t)(void *pool, ftdm_size_t len);
 typedef void *(*ftdm_calloc_func_t)(void *pool, ftdm_size_t elements, ftdm_size_t len);
 typedef void *(*ftdm_realloc_func_t)(void *pool, void *buff, ftdm_size_t len);
 typedef void (*ftdm_free_func_t)(void *pool, void *ptr);
-typedef struct ftdm_memory_handler {
+struct ftdm_memory_handler {
 	void *pool;
 	ftdm_malloc_func_t malloc;
 	ftdm_calloc_func_t calloc;
 	ftdm_realloc_func_t realloc;
 	ftdm_free_func_t free;
-} ftdm_memory_handler_t;
+};
 
 
 /*! \brief FreeTDM I/O layer interface argument macros 
