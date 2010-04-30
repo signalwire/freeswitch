@@ -975,7 +975,7 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 {
 	uint32_t i, event_id = 0;
-	ftdm_oob_event_t zt_event_id = 0;
+	zt_event_t zt_event_id = 0;
 
 	for(i = 1; i <= span->chan_count; i++) {
 		if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_EVENT)) {
