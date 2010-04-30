@@ -1482,6 +1482,17 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 	return 0;
 }
 
+SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_in6 *sa, socklen_t salen)
+{
+	switch_assert(buf);
+	*buf = '\0';
+
+	if (sa) {
+		inet_ntop(AF_INET6, sa, buf, len);
+	}
+
+	return buf;
+}
 
 SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *sa, socklen_t salen)
 {

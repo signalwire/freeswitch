@@ -778,9 +778,14 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_loopback(switch_socket_t *sock, uin
 SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)
 {
 	if (!in) {
-		return "";
+		return SWITCH_BLANK_STRING;
 	}
-	return get_addr(buf, len, (struct sockaddr *) &in->sa, in->salen);
+
+	if (in->family == AF_INET) {
+		return get_addr(buf, len, (struct sockaddr *) &in->sa, in->salen);
+	}
+
+	return get_addr6(buf, len, (struct sockaddr_in6 *) &in->sa, in->salen);
 }
 
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t *sa)
