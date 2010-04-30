@@ -76,6 +76,7 @@ static int process_command(esl_handle_t *handle, const char *cmd);
 
 static int running = 1;
 static int thread_running = 0;
+static char *filter_uuid;
 
 
 /*
@@ -588,26 +589,28 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 				if (!esl_strlen_zero(type)) {
 					if (!strcasecmp(type, "log/data")) {
-						int level = 0;
-						const char *lname = esl_event_get_header(handle->last_event, "log-level");
-#ifdef WIN32
-						DWORD len = (DWORD) strlen(handle->last_event->body);
-						DWORD outbytes = 0;
-#endif			
-						if (lname) {
-							level = atoi(lname);
+						const char *userdata = esl_event_get_header(handle->last_event, "user-data");
+						
+						if (esl_strlen_zero(userdata) || esl_strlen_zero(filter_uuid) || !strcasecmp(filter_uuid, userdata)) {
+							int level = 0;
+							const char *lname = esl_event_get_header(handle->last_event, "log-level");
+	#ifdef WIN32
+							DWORD len = (DWORD) strlen(handle->last_event->body);
+							DWORD outbytes = 0;
+	#endif			
+							if (lname) {
+								level = atoi(lname);
+							}
+						
+						
+	#ifdef WIN32
+							SetConsoleTextAttribute(hStdout, COLORS[level]);
+							WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
+							SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+	#else
+							printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+	#endif
 						}
-						
-						
-#ifdef WIN32
-						
-						SetConsoleTextAttribute(hStdout, COLORS[level]);
-						WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
-						SetConsoleTextAttribute(hStdout, wOldColorAttrs);
-#else
-						printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
-#endif
-							
 						known++;
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = thread_running = 0;
@@ -669,9 +672,22 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			) {
 			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com/\n");
 			return -1;
-		}
+		} else if (!strncasecmp(cmd, "uuid", 4)) {
+			cmd += 4;
+			
+			while (*cmd && *cmd == ' ') {
+				cmd++;
+			}
 
-		if (
+			if (!esl_strlen_zero(cmd)) {
+				filter_uuid = strdup(cmd);
+			} else {
+				esl_safe_free(filter_uuid);
+			}
+			
+			printf("UUID filtering %s\n", filter_uuid ? "enabled" : "disabled");
+
+		} else if (
 			!strncasecmp(cmd, "event", 5) || 
 			!strncasecmp(cmd, "noevent", 7) ||
 			!strncasecmp(cmd, "nixevent", 8) ||
@@ -683,11 +699,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			esl_send_recv(handle, cmd);	
 
 			printf("%s\n", handle->last_sr_reply);
-
-			goto end;
-		}
-		
-		if (!strncasecmp(cmd, "debug", 5)){
+		} else if (!strncasecmp(cmd, "debug", 5)){
 			int tmp_debug = atoi(cmd+6);
 			if (tmp_debug > -1 && tmp_debug < 8){
 				esl_global_set_default_logger(tmp_debug);
@@ -695,10 +707,9 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			} else {
 				printf("fs_cli debug level must be 0 - 7\n");
 			}
-			goto end;
+		} else {
+			printf("Unknown command [%s]\n", cmd);	
 		}
-	
-		printf("Unknown command [%s]\n", cmd);
 	} else {
 		char cmd_str[1024] = "";
 		const char *err = NULL;
