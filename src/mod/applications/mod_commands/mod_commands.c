@@ -3291,7 +3291,7 @@ SWITCH_STANDARD_API(complete_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define ALIAS_SYNTAX "add <alias> <command> | del [<alias>|*]"
+#define ALIAS_SYNTAX "[add|stickyadd] <alias> <command> | del [<alias>|*]"
 SWITCH_STANDARD_API(alias_function)
 {
 	switch_status_t status;
