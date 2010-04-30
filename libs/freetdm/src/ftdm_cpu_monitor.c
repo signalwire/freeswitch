@@ -273,7 +273,7 @@ FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time(struct ftdm_cpu_monitor_
 #else
 /* Unsupported */
 FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time(struct ftdm_cpu_monitor_stats *p, double *idle_percentage)
-{'
+{
 	*idle_percentate = 100.0;
 	return FTDM_FAIL;
 }
