@@ -1359,10 +1359,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 			check->state == FTDM_CHANNEL_STATE_DOWN && 
 			FTDM_IS_VOICE_CHANNEL(check)
 			) {
-			ftdm_span_t* span = NULL;
-			ftdm_span_find(check->span_id, &span);
-			if (span && span->channel_request) {
-				status = span->channel_request(span, check->chan_id, direction, caller_data, ftdmchan);
+			if (check->span->channel_request) {
+				status = check->span->channel_request(check->span, check->chan_id, direction, caller_data, ftdmchan);
 				break;
 			}
 
@@ -1606,13 +1604,14 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	ftdm_channel_t *check;
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_span_t *span = NULL;
+	*ftdmchan = NULL;
 
-	ftdm_mutex_unlock(globals.mutex);
+	ftdm_mutex_lock(globals.mutex);
+
 	ftdm_span_find(span_id, &span);
 
 	if (!span || !ftdm_test_flag(span, FTDM_SPAN_CONFIGURED) || chan_id >= FTDM_MAX_CHANNELS_SPAN) {
-		ftdm_log(FTDM_LOG_CRIT, "SPAN NOT DEFINED!\n");
-		*ftdmchan = NULL;
+		ftdm_log(FTDM_LOG_CRIT, "Could not find span!\n");
 		goto done;
 	}
 

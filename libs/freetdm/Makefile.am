@@ -77,6 +77,7 @@ $(SRC)/ftdm_cpu_monitor.c
 
 library_include_HEADERS = \
 $(SRC)/include/freetdm.h \
+$(SRC)/include/ftdm_declare.h \
 $(SRC)/include/ftdm_threadmutex.h \
 $(SRC)/include/ftdm_os.h 
 

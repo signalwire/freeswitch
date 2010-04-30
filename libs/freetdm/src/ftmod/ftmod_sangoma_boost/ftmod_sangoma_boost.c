@@ -501,58 +501,16 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
  */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(sangoma_boost_outgoing_call)
 {
-	char dnis[128] = "";
-	sangoma_boost_request_id_t r;
-	sangomabc_event_t event = {0};
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
+
 	if (!sangoma_boost_data->sigmod) {
 		return FTDM_SUCCESS;
 	}
-	ftdm_set_string(dnis, ftdmchan->caller_data.dnis.digits);
 
-	r = next_request_id();
-	if (r == 0) {
-		ftdm_log(FTDM_LOG_CRIT, "All boost request ids are busy.\n");
-		return FTDM_FAIL;
-	}
-	
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
-
-	sangomabc_call_init(&event, ftdmchan->caller_data.cid_num.digits, dnis, r);
-
-	event.span = (uint8_t)ftdmchan->physical_span_id;
-	event.chan = (uint8_t)ftdmchan->physical_chan_id;
-
-	ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
-	ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
-	if (strlen(ftdmchan->caller_data.rdnis.digits)) {
-			event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
-			event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
-			event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
-	}
-    
-	event.calling.screening_ind = ftdmchan->caller_data.screen;
-	event.calling.presentation_ind = ftdmchan->caller_data.pres;
-
-	event.calling.ton = ftdmchan->caller_data.cid_num.type;
-	event.calling.npi = ftdmchan->caller_data.cid_num.plan;
-
-	event.called.ton = ftdmchan->caller_data.dnis.type;
-	event.called.npi = ftdmchan->caller_data.dnis.plan;
-
-	OUTBOUND_REQUESTS[r].status = BST_WAITING;
-	OUTBOUND_REQUESTS[r].span = ftdmchan->span;
-	OUTBOUND_REQUESTS[r].ftdmchan = ftdmchan;
 
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
-	ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s over boost channel with request id %d\n", event.called_number_digits, r);
-	if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
-		release_request_id(r);
-		ftdm_log(FTDM_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
-		return FTDM_FAIL;
-	}
-			
 	return FTDM_SUCCESS;
 }
 
@@ -623,7 +581,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 
 	if (ftdmchan) {
 		ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
-		if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
+		if (!mcon->sigmod && ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "Failed to open FTDM channel [%s]\n", ftdmchan->last_error);
 		} else {
 
@@ -1511,6 +1469,54 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_DIALING:
 		{
+			char dnis[128] = "";
+			sangoma_boost_request_id_t r;
+			sangomabc_event_t event = {0};
+
+			ftdm_assert(sangoma_boost_data->sigmod != NULL, "We should be in sigmod here!\n");
+			
+			ftdm_set_string(dnis, ftdmchan->caller_data.dnis.digits);
+
+			r = next_request_id();
+			if (r == 0) {
+				ftdm_log(FTDM_LOG_CRIT, "All boost request ids are busy.\n");
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+				break;
+			}
+			
+			sangomabc_call_init(&event, ftdmchan->caller_data.cid_num.digits, dnis, r);
+
+			event.span = (uint8_t)ftdmchan->physical_span_id;
+			event.chan = (uint8_t)ftdmchan->physical_chan_id;
+
+			ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
+			ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
+			if (strlen(ftdmchan->caller_data.rdnis.digits)) {
+					event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
+					event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
+					event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
+			}
+		    
+			event.calling.screening_ind = ftdmchan->caller_data.screen;
+			event.calling.presentation_ind = ftdmchan->caller_data.pres;
+
+			event.calling.ton = ftdmchan->caller_data.cid_num.type;
+			event.calling.npi = ftdmchan->caller_data.cid_num.plan;
+
+			event.called.ton = ftdmchan->caller_data.dnis.type;
+			event.called.npi = ftdmchan->caller_data.dnis.plan;
+
+			OUTBOUND_REQUESTS[r].status = BST_WAITING;
+			OUTBOUND_REQUESTS[r].span = ftdmchan->span;
+			OUTBOUND_REQUESTS[r].ftdmchan = ftdmchan;
+
+			ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s over boost channel with request id %d\n", event.called_number_digits, r);
+			if (sangomabc_connection_write(&sangoma_boost_data->mcon, &event) <= 0) {
+				release_request_id(r);
+				ftdm_log(FTDM_LOG_CRIT, "Failed to tx boost event [%s]\n", strerror(errno));
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+			}
+			
 		}
 		break;
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
