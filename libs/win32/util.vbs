@@ -344,6 +344,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 				sLastVersion = sLastFile.ReadLine()
 			End If
 			sLastFile.Close
+			VERSION = Replace(VERSION, ":", "-")
 		End If
 	End If
 	
