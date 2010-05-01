@@ -3392,6 +3392,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		}
 	}
 
+	if (sofia_test_flag(tech_pvt->profile, PFLAG_DISABLE_HOLD) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "sip_disable_hold")) && switch_true(val))) {
+		sendonly = 0;
+	}
+
 	if (!tech_pvt->hold_laps) {
 		tech_pvt->hold_laps++;
 		sofia_glue_toggle_hold(tech_pvt, sendonly);

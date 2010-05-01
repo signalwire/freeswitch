@@ -2156,6 +2156,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
 						}
+					} else if (!strcasecmp(var, "disable-hold")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
+						}
 					} else if (!strcasecmp(var, "sip-trace")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_TPORT_LOG);
@@ -2790,6 +2796,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
+						}
+					} else if (!strcasecmp(var, "disable-hold")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
 						}
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
