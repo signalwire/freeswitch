@@ -12,6 +12,9 @@
     <!-- delay between retries in seconds, default is 5 seconds -->
     <!-- <param name="delay" value="1"/> -->
 
+    <!-- Log via http and on disk, default is false -->
+    <!-- <param name="log-http-and-disk" value="true"/> -->
+
     <!-- optional: if not present we do not log every record to disk -->
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank value will default to ${prefix}/logs/xml_cdr -->
     <param name="log-dir" value=""/>
