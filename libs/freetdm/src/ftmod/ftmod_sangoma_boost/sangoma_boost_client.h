@@ -144,8 +144,8 @@ const char *sangomabc_event_id_name(uint32_t event_id);
 int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause, int flags);
 int sangomabc_exec_commandp(sangomabc_connection_t *pcon, int span, int chan, int id, int cmd, int cause);
 
-#define BOOST_EVENT_SPAN(sigmod, event) ((sigmod)? event->span:event->span+1)
-#define BOOST_EVENT_CHAN(sigmod, event) ((sigmod)? event->chan:event->chan+1)
+#define BOOST_EVENT_SPAN(sigmod, event) ((sigmod) ? event->span : event->span + 1)
+#define BOOST_EVENT_CHAN(sigmod, event) ((sigmod) ? event->chan : event->chan + 1)
 
 
 #endif

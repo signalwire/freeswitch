@@ -125,6 +125,11 @@ static uint8_t nack_map[MAX_REQ_ID+1] = { 0 };
 
 /**
  * \brief Releases span and channel from setup grid
+ *
+ * \note This is ALWAYS based on freetdm span/chan numbers! not boost event numbers
+ *       is totally brain damaged to use event->span or event->chan to release the request
+ *       use BOOST_SPAN_EVENT and BOOST_SPAN_CHAN to get the right index!!
+ *
  * \param span Span number
  * \param chan Channel number
  * \param func Calling function
@@ -248,12 +253,12 @@ static ftdm_channel_t *find_ftdmchan(ftdm_span_t *span, sangomabc_short_event_t 
  	       to span.  This can happen if RESTART is received on a
 		   full load. Where stray ACK messages can arrive after
 		   a RESTART has taken place.
-     */
+        */
 	if (!span) {
 		ftdm_log(FTDM_LOG_CRIT, "No Span for Event=%s s%dc%d cid=%d\n",
 						BOOST_DECODE_EVENT_ID(event->event_id),
-						event->span,
-						event->chan,
+						targetspan,
+						targetchan,
 						event->call_setup_id);
 		return NULL;
 	}
@@ -588,7 +593,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 			/* Only bind the setup id to GRID when we are sure that channel is ready
 			   otherwise we could overwite the original call */
 			OUTBOUND_REQUESTS[event->call_setup_id].event = *event;
-			SETUP_GRID[event->span][event->chan] = event->call_setup_id;
+			SETUP_GRID[event_span][event_chan] = event->call_setup_id;
 
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
 			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_INUSE);
@@ -643,14 +648,14 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_UP ||
 					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
 					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS) {
-					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE UP -> Changed to TERMINATING %d:%d\n", event->span+1,event->chan+1);
+					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE UP -> Changed to TERMINATING %d:%d\n", event_span, event_chan);
 					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
 				} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP ||  ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
-					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE HANGUP  -> Changed to HANGUP COMPLETE %d:%d\n", event->span+1,event->chan+1);
+					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE HANGUP  -> Changed to HANGUP COMPLETE %d:%d\n", event_span, event_chan);
 					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN STATE INVALID State %s on IN CALL ACK %d:%d\n",
-						 ftdm_channel_state2str(ftdmchan->state),event->span+1,event->chan+1);
+						 ftdm_channel_state2str(ftdmchan->state), event_span, event_chan);
 				}
 				ftdm_set_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG);
 				ftdmchan=NULL;
@@ -659,7 +664,7 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 
 
 	if (!ftdmchan) {
-		ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
+		ftdm_log(FTDM_LOG_CRIT, "START ACK CANT FIND A CHAN %d:%d\n", event_span, event_chan);
 	} else {
 		/* only reason to be here is failed to open channel when we we're in sigmod  */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -722,7 +727,7 @@ static void handle_call_done(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 	if (event->call_setup_id) {
 		release_request_id(event->call_setup_id);
 	} else {
-		release_request_id_span_chan(event->span, event->chan);
+		release_request_id_span_chan(BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 	}
 }
 
@@ -823,10 +828,12 @@ static void handle_call_released(ftdm_span_t *span, sangomabc_connection_t *mcon
 	ftdm_channel_t *ftdmchan;
 	
 	if ((ftdmchan = find_ftdmchan(span, event, 1))) {
-		ftdm_log(FTDM_LOG_DEBUG, "Releasing completely chan s%dc%d\n", event->span, event->chan);
+		ftdm_log(FTDM_LOG_DEBUG, "Releasing completely chan s%dc%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), 
+				BOOST_EVENT_CHAN(mcon->sigmod, event));
 		ftdm_channel_done(ftdmchan);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "Odd, We could not find chan: s%dc%d to release the call completely!!\n", event->span, event->chan);
+		ftdm_log(FTDM_LOG_CRIT, "Odd, We could not find chan: s%dc%d to release the call completely!!\n", 
+				BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 	}
 }
 
@@ -888,8 +895,9 @@ static void handle_call_stop(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 			return;
 		}
 	} else { /* we have to do it ourselves.... */
-		ftdm_log(FTDM_LOG_ERROR, "Odd, We could not find chan: s%dc%d\n", event->span, event->chan);
-		release_request_id_span_chan(event->span, event->chan);
+		ftdm_log(FTDM_LOG_CRIT, "Odd, We could not find chan: s%dc%d\n", 
+				BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
+		release_request_id_span_chan(BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 	}
 }
 
@@ -912,7 +920,7 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 
 			/* NC: Do nothing here because we are in process
 				of stopping the call. So ignore the ANSWER. */
-			ftdm_log(FTDM_LOG_DEBUG, "ANSWER BUT CALL IS HANGUP %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), 
+			ftdm_log(FTDM_LOG_DEBUG, "Got answer but call is already hangup %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), 
 					BOOST_EVENT_CHAN(mcon->sigmod, event));
 
 		} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HOLD) {
@@ -924,13 +932,13 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 		}
 		ftdm_mutex_unlock(ftdmchan->mutex);
 	} else {
-		ftdm_log(FTDM_LOG_CRIT, "ANSWER CANT FIND A CHAN %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
+		ftdm_log(FTDM_LOG_CRIT, "Could not find channel %d:%d on answer message!\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		sangomabc_exec_command(mcon,
-							   event->span,
-							   event->chan,
-							   event->call_setup_id,
-							   SIGBOOST_EVENT_CALL_STOPPED,
-							   FTDM_CAUSE_DESTINATION_OUT_OF_ORDER, 0);
+				   event->span,
+				   event->chan,
+				   event->call_setup_id,
+				   SIGBOOST_EVENT_CALL_STOPPED,
+				   FTDM_CAUSE_DESTINATION_OUT_OF_ORDER, 0);
 	}
 }
 
@@ -1204,9 +1212,9 @@ static ftdm_channel_t* event_process_states(ftdm_span_t *span, sangomabc_short_e
         case SIGBOOST_EVENT_REMOVE_CHECK_LOOP:
         case SIGBOOST_EVENT_CALL_RELEASED:
             if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
-                ftdm_log(FTDM_LOG_DEBUG, "PROCESS STATES  CANT FIND CHAN %d:%d\n",
+                ftdm_log(FTDM_LOG_CRIT, "could not find channel %d:%d to process pending state changes!\n",
 			BOOST_EVENT_SPAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event),
-																							BOOST_EVENT_CHAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event));
+			BOOST_EVENT_CHAN(((ftdm_sangoma_boost_data_t*)(span->signal_data))->sigmod, event));
                 return NULL;
             }
             break;
@@ -1216,7 +1224,7 @@ static ftdm_channel_t* event_process_states(ftdm_span_t *span, sangomabc_short_e
         case SIGBOOST_EVENT_AUTO_CALL_GAP_ABATE:
             return NULL;
         default:
-            ftdm_log(FTDM_LOG_CRIT, "Unhandled event id:%d\n", event->event_id);
+            ftdm_log(FTDM_LOG_CRIT, "Unhandled event id: %d\n", event->event_id);
             return NULL;
     }
 
@@ -1341,7 +1349,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			int call_stopped_ack_sent = 0;
 			ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 
-			release_request_id_span_chan(ftdmchan->physical_span_id-1, ftdmchan->physical_chan_id-1);
+			release_request_id_span_chan(ftdmchan->physical_span_id, ftdmchan->physical_chan_id);
 
 			if (!ftdm_test_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG)) {
 				ftdm_set_sflag_locked(ftdmchan, SFLAG_SENT_FINAL_MSG);
@@ -1366,7 +1374,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				}
 			}
 			ftdmchan->sflags = 0;
-			memset(ftdmchan->call_data,0,sizeof(sangoma_boost_call_t));
+			memset(ftdmchan->call_data, 0, sizeof(sangoma_boost_call_t));
 
 			if (sangoma_boost_data->sigmod && call_stopped_ack_sent) {
 				/* we dont want to call ftdm_channel_done just yet until call released is received */
@@ -1488,6 +1496,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 
 			event.span = (uint8_t)ftdmchan->physical_span_id;
 			event.chan = (uint8_t)ftdmchan->physical_chan_id;
+			/* because we already have a span/chan here we bind to the SETUP_GRID now and not on call start ack */
+			SETUP_GRID[event.span][event.chan] = event.call_setup_id;
 
 			ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
 			ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
@@ -2566,7 +2576,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	}
 
 	for (j = 1; j <= span->chan_count; j++) {
-		span->channels[j]->call_data = ftdm_calloc(1,sizeof(sangoma_boost_call_t));
+		span->channels[j]->call_data = ftdm_calloc(1, sizeof(sangoma_boost_call_t));
 		if (!span->channels[j]->call_data) {
 			FAIL_CONFIG_RETURN(FTDM_FAIL);
 		}
