@@ -67,6 +67,7 @@ static struct {
 	int disable100continue;
 	int rotate;
 	int auth_scheme;
+	int timeout;
 	switch_memory_pool_t *pool;
 } globals;
 
@@ -326,9 +327,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		if (globals.ssl_cacert_file) {
 			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
+		
+		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.timeout);
 
 		/* these were used for testing, optionally they may be enabled if someone desires
-		   curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
 		   curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
 		 */
 
@@ -499,6 +501,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				}
 			} else if (!strcasecmp(var, "log-http-and-disk")) {
 				globals.log_http_and_disk = switch_true(val);
+			} else if (!strcasecmp(var, "timeout")) {
+				int tmp = atoi(val);
+				if (tmp >= 0) {
+					globals.timeout = tmp;
+				} else {
+					globals.timeout = 0;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
+				}
 			} else if (!strcasecmp(var, "delay") && !zstr(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
