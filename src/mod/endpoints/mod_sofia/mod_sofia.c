@@ -2566,8 +2566,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
 				stream->write_function(stream, "    <calls-in>%d</calls-in>\n", gp->ib_calls);
 				stream->write_function(stream, "    <calls-out>%d</calls-out>\n", gp->ob_calls);
-				stream->write_function(stream, "    <failed-calls-in>%d</calls-in>\n", gp->ib_failed_calls);
-				stream->write_function(stream, "    <failed-calls-out>%d</calls-out>\n", gp->ob_failed_calls);
+				stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", gp->ib_failed_calls);
+				stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", gp->ob_failed_calls);
 				stream->write_function(stream, "  </gateway>\n");
 				sofia_reg_release_gateway(gp);
 			} else {
