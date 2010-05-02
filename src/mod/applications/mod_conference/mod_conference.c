@@ -459,6 +459,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 
 	if (member->conference) {
 		status = conference_add_event_data(member->conference, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Floor", "%s", (member == member->conference->floor_holder) ? "true" : "false" );
 	}
 
 	if (member->session) {
@@ -469,9 +470,14 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 		} else {
 			switch_channel_event_set_basic_data(channel, event);
 		}
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Video", "%s",
+								switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false" );
 
 	}
 
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hear", "%s", switch_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false" );
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speak", "%s", switch_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false" );
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Talking", "%s", switch_test_flag(member, MFLAG_TALKING) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Type", "%s", switch_test_flag(member, MFLAG_MOD) ? "moderator" : "member");
 
