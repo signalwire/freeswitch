@@ -656,8 +656,9 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 				   "/exit, /quit, /bye, ...    \tExit the program.\n"
 				   "/event, /noevent, /nixevent\tEvent commands.\n"
 				   "/log, /nolog               \tLog commands.\n"
+				   "/uuid                      \tFilter logs for a single call uuid\n"
 				   "/filter                    \tFilter commands.\n"
-                                   "/debug [0-7]               \tSet debug level.\n"
+				   "/debug [0-7]               \tSet debug level.\n"
 				   "\n"
 				   );
 
