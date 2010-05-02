@@ -164,7 +164,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	if (!sr) {
-		sr = "sendrecv";
+		if ((var_val = switch_channel_get_variable(tech_pvt->channel, "media_audio_mode"))) { 
+			sr=var_val; 
+		} else {
+			sr = "sendrecv";
+		}
 	}
 
 	if (!tech_pvt->owner_id) {
