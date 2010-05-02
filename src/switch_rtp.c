@@ -2084,23 +2084,22 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 #ifdef ENABLE_ZRTP
 	/* ZRTP Recv */
 	if (bytes) {
-		unsigned int sbytes = (int) bytes;
+		unsigned int sbytes = (int) *bytes;
 		zrtp_status_t stat = 0;
 
 		stat = zrtp_process_srtcp(rtp_session->zrtp_stream, (void *) &rtp_session->rtcp_recv_msg, &sbytes);
 
 		switch (stat) {
 		case zrtp_status_ok:
-			bytes = sbytes;
+			*bytes = sbytes;
 			break;
 		case zrtp_status_drop:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
 			bytes = 0;
-			goto do_continue;
+			break;
 		case zrtp_status_fail:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
-			ret = -1;
-			goto end;
+			break;
 		default:
 			break;
 		}
