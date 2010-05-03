@@ -364,8 +364,28 @@
       <prompt phrase="...files..." filename="ivr-files-.wav"/>
 
       <!-- The following phrases still need to be recorded -->
-      <prompt phrase="" filename="vm-.wav"/>
-      <prompt phrase="" filename="vm-.wav"/>
+      <prompt phrase="Welcome." filename="ivr-welcome.wav"/>
+      <prompt phrase="Welcome to..." filename="ivr-welcome_to.wav"/>
+      <prompt phrase="Good morning." filename="ivr-good_morning.wav"/>
+      <prompt phrase="Good afternoon." filename="ivr-good_afternoon.wav"/>
+      <prompt phrase="Good evening." filename="ivr-good_evening.wav"/>
+      <prompt phrase="Thank you." filename="ivr-Thank you.wav"/>
+      <prompt phrase="For..." filename="ivr-for.wav"/>
+      <prompt phrase="We are experiencing longer than usual hold times." filename="ivr-longer_than_usual_hold_times.wav"/>
+      <prompt phrase="You are the..." filename="ivr-you_are_the.wav"/>
+      <prompt phrase="One moment please." filename="ivr-one_moment_please.wav"/>
+      <prompt phrase="Your call will be answered in the order it was received." filename="ivr-call_answered_order_received.wav"/>
+      <prompt phrase="Please enter the conference number, followed by the pound or hash key" filename="conf-Enter_conf_number.wav"/>
+      <prompt phrase="You entered..." filename="ivr-you_entered.wav"/>
+      <prompt phrase="Extension number..." filename="ivr-extension_number.wav"/>
+      <prompt phrase="Please hold while your party is being contacted." filename="ivr-please_hold_while_party_contacted.wav"/>
+      <prompt phrase="Please enjoy the music while your party is being reached." filename="ivr-please_enjoy_music_while_party_reached.wav"/>
+      <prompt phrase="For the next entry..." filename="dir-for_next.wav" note="re-record because original is wrong"/>
+
+      <prompt phrase="" filename="ivr-.wav"/>
+      <prompt phrase="" filename="ivr-.wav"/>
+      <prompt phrase="" filename="ivr-.wav"/>
+      <prompt phrase="" filename="ivr-.wav"/>
 
     </ivr>
     <misc>
