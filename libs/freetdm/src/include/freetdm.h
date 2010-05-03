@@ -634,7 +634,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_clear_token(ftdm_channel_t *ftdmchan, con
  * \brief Replace the given token with the new token
  *
  * \param ftdmchan The channel where the token is
- * \param token The token string. If NULL, all tokens in the channel are cleared
+ * \param old_token The token to replace
+ * \param new_token The token to put in place
  */
 FT_DECLARE(void) ftdm_channel_replace_token(ftdm_channel_t *ftdmchan, const char *old_token, const char *new_token);
 
@@ -710,6 +711,7 @@ FT_DECLARE(const char *) ftdm_channel_get_last_error(const ftdm_channel_t *ftdmc
  * \brief Get the current alarm bitmask for the channel
  *
  * \param ftdmchan The channel to get the alarm bitmask from
+ * \param alarmbits The alarm bitmask pointer to store the current alarms (you are responsible for allocation/deallocation)
  *
  * \retval FTDM_SUCCESS success
  * \retval FTDM_FAIL failure
@@ -729,6 +731,8 @@ FT_DECLARE(ftdm_chan_type_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmcha
  * \brief Get the channel type
  *
  * \param ftdmchan The channel to get the type from
+ * \param dtmf DTMF buffer to store the dtmf (you are responsible for its allocation and deallocation)
+ * \param len The size of the DTMF buffer
  *
  * \retval channel type (FXO, FXS, B-channel, D-channel, etc)
  */
@@ -794,15 +798,13 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
 FT_DECLARE(ftdm_status_t) ftdm_span_find(uint32_t id, ftdm_span_t **span);
 
 /*! 
- * \brief Find a span by its id
+ * \brief Get the last error string for the given span
  *
- * \param id The span id 
- * \param span Pointer to store the span if found
+ * \param span The span to get the last error from
  *
- * \retval FTDM_SUCCESS success (span is valid)
- * \retval FTDM_FAIL failure (span is not valid)
+ * \retval character string for the last error
  */
-FT_DECLARE(const char *) ftdm_span_get_last_error(const ftdm_span_t *ftdmchan);
+FT_DECLARE(const char *) ftdm_span_get_last_error(const ftdm_span_t *span);
 
 /*! 
  * \brief Create a new span (not needed if you are using freetdm.conf)
@@ -958,9 +960,22 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 /*! 
  * \brief Write data to a channel
  *
+ * \note The difference between data and datasize is subtle but important.
+ *
+ *       datalen is a pointer to the size of the actual data that you want to write. This pointer
+ *       will be updated with the number of bytes actually written.
+ *       
+ *       datasize on the other hand is the size of the entire buffer provided in data, whether 
+ *       all of that buffer is in use or not is a different matter. The difference becomes
+ *       important only if you are using FreeTDM doing transcoding, for example, providing
+ *       a ulaw frame of 160 bytes but where the I/O device accepts input in signed linear,
+ *       the data to write will be 320 bytes, therefore datasize is expected to be at least
+ *       320 where datalen would be just 160.
+ *
  * \param ftdmchan The channel to write data to
  * \param data The pointer to the buffer to write
- * \param datalen The size in bytes of the provided buffer
+ * \param datasize The maximum number of bytes in data that can be used (in case transcoding is necessary)
+ * \param datalen The size of the actual data
  *
  * \retval FTDM_SUCCESS success (a suitable channel was found available)
  * \retval FTDM_FAIL failure (no suitable channel was found available)
@@ -1024,7 +1039,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(ftdm_span_t *span, const char *typ
  * \param span The span to configure
  * \param type The signaling type ("boost", "isdn" and others, this depends on the available signaling modules)
  * \param sig_cb The callback that the signaling stack will use to notify about events
- * \param ... variable argument list with "var", value sequence, the variable and values are signaling type dependant
+ * \param parameters The array if signaling-specific parameters (the last member of the array MUST have its var member set to NULL, ie: .var = NULL)
  *
  * \retval FTDM_SUCCESS success 
  * \retval FTDM_FAIL failure 
@@ -1111,6 +1126,7 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_create(const char *name, ftdm_conf_node
 /*! 
  * \brief Adds a new parameter to the specified configuration node
  *
+ * \param node The configuration node to add the param-val pair to
  * \param param The parameter name
  * \param val The parameter value
  *

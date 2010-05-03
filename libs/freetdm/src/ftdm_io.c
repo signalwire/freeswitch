@@ -512,30 +512,6 @@ static void ftdm_span_add(ftdm_span_t *span)
 	ftdm_mutex_unlock(globals.span_mutex);
 }
 
-#if 0
-static void ftdm_span_del(ftdm_span_t *span)
-{
-	ftdm_span_t *last = NULL, *sp;
-
-	ftdm_mutex_lock(globals.span_mutex);
-	for (sp = globals.spans; sp; sp = sp->next) {
-		
-		if (sp == span) {
-			if (last) {
-				last->next = sp->next;
-			} else {
-				globals.spans = sp->next;
-			}
-			hashtable_remove(globals.span_hash, (void *)sp->name);
-			break;
-		}
-
-		last = sp;
-	}
-	ftdm_mutex_unlock(globals.span_mutex);
-}
-#endif
-
 FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 {
 	if (span->stop) {
@@ -3066,10 +3042,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 	}
 
 
-    if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
-        return FTDM_FAIL;
-    }
+		return FTDM_FAIL;
+	}
 
 	if (!ftdmchan->fio->write) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
@@ -3110,7 +3086,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 			wdata[i] = ftdmchan->txgain_table[wdata[i]];
 		}
 	}
-    status = ftdmchan->fio->write(ftdmchan, data, datalen);
+	status = ftdmchan->fio->write(ftdmchan, data, datalen);
 
 	return status;
 }
