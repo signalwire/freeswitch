@@ -1257,6 +1257,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_PROCESS_CDR_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_FORCE_PROCESS_CDR_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "force_process_cdr";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_BRIDGE_CHANNEL_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -6493,6 +6504,18 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_core_session_running(void * ja
 }
 
 
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_core_session_started(void * jarg1) {
+  unsigned int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (unsigned int)switch_core_session_started(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_perform_permanent_alloc(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
   void * jresult ;
   switch_size_t arg1 ;
@@ -10819,6 +10842,36 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_get_addr(char * jarg1, void * jarg2, void *
   }
   arg4 = *argp4; 
   result = (char *)get_addr(arg1,arg2,arg3,arg4);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_get_addr6(char * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_size_t arg2 ;
+  sockaddr_in6 *arg3 = (sockaddr_in6 *) 0 ;
+  socklen_t arg4 ;
+  char *result = 0 ;
+  switch_size_t *argp2 ;
+  socklen_t *argp4 ;
+  
+  arg1 = (char *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  arg3 = (sockaddr_in6 *)jarg3; 
+  argp4 = (socklen_t *)jarg4; 
+  if (!argp4) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null socklen_t", 0);
+    return 0;
+  }
+  arg4 = *argp4; 
+  result = (char *)get_addr6(arg1,arg2,arg3,arg4);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -28373,6 +28426,18 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_xml_parse_section_string(char
   arg1 = (char *)jarg1; 
   result = (switch_xml_section_t)switch_xml_parse_section_string((char const *)arg1);
   jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_std_datetime_check(void * jarg1) {
+  int jresult ;
+  switch_xml_t arg1 = (switch_xml_t) 0 ;
+  int result;
+  
+  arg1 = (switch_xml_t)jarg1; 
+  result = (int)switch_xml_std_datetime_check(arg1);
+  jresult = result; 
   return jresult;
 }
 
