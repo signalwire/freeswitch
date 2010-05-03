@@ -479,6 +479,7 @@ SWITCH_DECLARE(void) switch_core_session_run(_In_ switch_core_session_t *session
   \param session the session on which to check
 */
 SWITCH_DECLARE(unsigned int) switch_core_session_running(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(unsigned int) switch_core_session_started(_In_ switch_core_session_t *session);
 
 SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(_In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 

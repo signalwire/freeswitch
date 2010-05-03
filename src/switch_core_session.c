@@ -1024,7 +1024,12 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 
 SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *session)
 {
-	return session->thread_running;
+	return switch_test_flag(session, SSF_THREAD_RUNNING) ? 1 : 0;
+}
+
+SWITCH_DECLARE(unsigned int) switch_core_session_started(switch_core_session_t *session)
+{
+	return switch_test_flag(session, SSF_THREAD_STARTED) ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t **session, const char *file, const char *func, int line)
@@ -1197,17 +1202,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 
 	switch_mutex_lock(session->mutex);
 
-	if (!session->thread_running) {
-		session->thread_running = 1;
+	if (switch_test_flag(session, SSF_THREAD_RUNNING)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
+	} else if (switch_test_flag(session, SSF_THREAD_STARTED)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot launch thread again after it has already been run!\n");
+	} else {
+		switch_set_flag(session, SSF_THREAD_RUNNING);
+		switch_set_flag(session, SSF_THREAD_STARTED);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) == SWITCH_STATUS_SUCCESS) {
+			switch_set_flag(session, SSF_THREAD_STARTED);
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
-			session->thread_running = 0;
+			switch_clear_flag(session, SSF_THREAD_RUNNING);
+			switch_clear_flag(session, SSF_THREAD_STARTED);	
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot create thread!\n");
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
 	}
 
 	switch_mutex_unlock(session->mutex);

@@ -291,7 +291,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	 */
 	switch_assert(session != NULL);
 
-	session->thread_running = 1;
+	switch_set_flag(session, SSF_THREAD_RUNNING);
 	endpoint_interface = session->endpoint_interface;
 	switch_assert(endpoint_interface != NULL);
 
@@ -409,7 +409,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
   done:
 	switch_mutex_unlock(session->mutex);
 
-	session->thread_running = 0;
+	switch_clear_flag(session, SSF_THREAD_RUNNING);
 }
 
 SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *session)
@@ -429,7 +429,6 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 	switch_channel_clear_flag(session->channel, CF_TRANSFER);
 	switch_channel_clear_flag(session->channel, CF_REDIRECT);
 
-	session->thread_running = 1;
 	endpoint_interface = session->endpoint_interface;
 	switch_assert(endpoint_interface != NULL);
 
@@ -567,7 +566,6 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 
 	switch_assert(session != NULL);
 
-	session->thread_running = 1;
 	endpoint_interface = session->endpoint_interface;
 	switch_assert(endpoint_interface != NULL);
 

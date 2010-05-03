@@ -106,6 +106,10 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{NULL, 0}
 };
 
+typedef enum {
+	OCF_HANGUP = (1 << 0)
+} opaque_channel_flag_t;
+
 struct switch_channel {
 	char *name;
 	switch_call_direction_t direction;
@@ -132,6 +136,7 @@ struct switch_channel {
 	int vi;
 	int event_count;
 	int profile_index;
+	opaque_channel_flag_t opaque_flags;
 };
 
 SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
@@ -2090,7 +2095,21 @@ SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel)
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel,
 																	 const char *file, const char *func, int line, switch_call_cause_t hangup_cause)
 {
+	int ok = 0;
+
 	switch_assert(channel != NULL);
+
+	/* one per customer */
+	switch_mutex_lock(channel->state_mutex);
+	if (!(channel->opaque_flags & OCF_HANGUP)) {
+		channel->opaque_flags |= OCF_HANGUP;
+		ok = 1;
+	}
+	switch_mutex_unlock(channel->state_mutex);
+
+	if (!ok) {
+		return channel->state;
+	}
 
 	switch_channel_clear_flag(channel, CF_BLOCK_STATE);
 
@@ -2098,21 +2117,22 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_channel_state_t last_state;
 		switch_event_t *event;
 
-		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
-			switch_channel_set_variable(channel, "presence_call_info", NULL);
-		}
-
 		switch_mutex_lock(channel->state_mutex);
 		last_state = channel->state;
 		channel->state = CS_HANGUP;
 		switch_mutex_unlock(channel->state_mutex);
+
+
+		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
+			switch_channel_set_variable(channel, "presence_call_info", NULL);
+		}
 
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 
 
-		if (!switch_core_session_running(channel->session)) {
+		if (!switch_core_session_running(channel->session) && !switch_core_session_started(channel->session)) {
 			switch_core_session_thread_launch(channel->session);
 		}
 

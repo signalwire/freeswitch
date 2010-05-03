@@ -92,7 +92,9 @@ typedef enum {
 	SSF_NONE = 0,
 	SSF_DESTROYED = (1 << 0),
 	SSF_WARN_TRANSCODE = (1 << 1),
-	SSF_HANGUP = (1 << 2)
+	SSF_HANGUP = (1 << 2),
+	SSF_THREAD_STARTED = (1 << 3),
+	SSF_THREAD_RUNNING = (1 << 4)
 } switch_session_flag_t;
 
 
@@ -103,7 +105,6 @@ struct switch_core_session {
 	switch_endpoint_interface_t *endpoint_interface;
 	switch_size_t id;
 	switch_session_flag_t flags;
-	int thread_running;
 	switch_channel_t *channel;
 
 	switch_io_event_hooks_t event_hooks;
