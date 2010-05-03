@@ -121,6 +121,8 @@ typedef struct {
 	int sending_ringback;
 	int bridge_early_media;
 	switch_thread_t *ethread;
+	switch_caller_profile_t *caller_profile_override;
+	switch_memory_pool_t *pool;
 } originate_global_t;
 
 
@@ -1449,8 +1451,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	if (session) {
+		switch_caller_profile_t *cpp = NULL;
 		channel = switch_core_session_get_channel(session);
-		cp = switch_channel_get_caller_profile(channel);
+		if ((cpp = switch_channel_get_caller_profile(channel))) {
+			cp = switch_caller_profile_dup(pool, cpp);
+		}
 	}
 
 	switch_threadattr_create(&thd_attr, pool);
@@ -1724,7 +1729,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	ringback_t ringback = { 0 };
 	time_t start;
 	switch_frame_t *read_frame = NULL;
-	switch_memory_pool_t *pool = NULL;
 	int r = 0, i, and_argc = 0, or_argc = 0;
 	int32_t sleep_ms = 1000, try = 0, retries = 1;
 	switch_codec_t write_codec = { 0 };
@@ -1760,6 +1764,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	oglobals.ringback_ok = 1;
 	oglobals.bridge_early_media = -1;
+	switch_core_new_memory_pool(&oglobals.pool);
+
+	if (caller_profile_override) {
+		oglobals.caller_profile_override = switch_caller_profile_dup(oglobals.pool, caller_profile_override);
+	} else if (session) {
+		switch_caller_profile_t *cp = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
+
+		if (cp) {
+			oglobals.caller_profile_override = switch_caller_profile_dup(oglobals.pool, cp);
+		}
+	}
 
 	if (session) {
 		const char *to_var, *bypass_media = NULL, *proxy_media = NULL;
@@ -2235,7 +2250,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			peer_channel = NULL;
 			start = 0;
 			read_frame = NULL;
-			pool = NULL;
 			oglobals.ringback_ok = 1;
 			var = NULL;
 			to = 0;
@@ -2313,9 +2327,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						status = SWITCH_STATUS_FALSE;
 						goto done;
 					}
+					
+					if ((caller_caller_profile = oglobals.caller_profile_override)) {
+						new_profile = switch_caller_profile_dup(oglobals.pool, caller_caller_profile);
+					} else {
+						new_profile = switch_caller_profile_new(oglobals.pool,
+																NULL,
+																NULL,
+																cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
+					}
 
-					caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
-					new_profile = switch_caller_profile_clone(oglobals.session, caller_caller_profile);
 					new_profile->uuid = SWITCH_BLANK_STRING;
 					new_profile->chan_name = SWITCH_BLANK_STRING;
 					new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
@@ -2344,13 +2365,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (cid_num_override) {
 						new_profile->caller_id_number = switch_core_strdup(new_profile->pool, cid_num_override);
 					}
-
-					pool = NULL;
 				} else {
-					switch_core_new_memory_pool(&pool);
-
-					if (caller_profile_override) {
-						new_profile = switch_caller_profile_dup(pool, caller_profile_override);
+					if (oglobals.caller_profile_override) {
+						new_profile = switch_caller_profile_dup(oglobals.pool, caller_profile_override);
 						new_profile->destination_number = switch_core_strdup(new_profile->pool, switch_str_nil(chan_data));
 						new_profile->uuid = SWITCH_BLANK_STRING;
 						new_profile->chan_name = SWITCH_BLANK_STRING;
@@ -2362,7 +2379,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							cid_num_override = "0000000000";
 						}
 
-						new_profile = switch_caller_profile_new(pool,
+						new_profile = switch_caller_profile_new(oglobals.pool,
 																NULL,
 																NULL,
 																cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
@@ -2471,18 +2488,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NUMBER);
 					}
 				}
-
+				
 				current_variable = NULL;
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 
 				if ((reason = switch_core_session_outgoing_channel(oglobals.session, var_event, chan_type,
-																   new_profile, &new_session, &pool, myflags, cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
+																   new_profile, &new_session, NULL, myflags, cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n",
 									  chan_type, switch_channel_cause2str(reason));
-
-					if (pool) {
-						switch_core_destroy_memory_pool(&pool);
-					}
 					continue;
 				}
 
@@ -2490,11 +2503,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					status = SWITCH_STATUS_FALSE;
 					goto done;
 				}
-				pool = NULL;
 
-				originate_status[i].caller_profile = new_profile;
-				originate_status[i].peer_session = new_session;
 				originate_status[i].peer_channel = switch_core_session_get_channel(new_session);
+				originate_status[i].caller_profile = switch_channel_get_caller_profile(originate_status[i].peer_channel);
+				originate_status[i].peer_session = new_session;
+
 				switch_channel_set_flag(originate_status[i].peer_channel, CF_ORIGINATING);
 
 				if ((lc = switch_event_get_header(var_event, "local_var_clobber"))) {
@@ -3433,6 +3446,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (force_reason != SWITCH_CAUSE_NONE) {
 		*cause = force_reason;
 	}
+
+	switch_core_destroy_memory_pool(&oglobals.pool);
 
 	return status;
 }
