@@ -455,6 +455,17 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(switc
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec)
+{
+	switch_assert(codec != NULL);
+
+	codec->implementation->destroy(codec);
+	codec->implementation->init(codec, codec->flags, NULL);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, switch_memory_pool_t *pool)
 {
 	switch_status_t status;

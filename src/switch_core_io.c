@@ -214,8 +214,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (session->read_codec->implementation->impl_id != codec_impl.impl_id) {
 		need_codec = TRUE;
-	}
-
+	} 
+	
 	if (codec_impl.actual_samples_per_second != session->read_impl.actual_samples_per_second) {
 		do_resample = 1;
 	}
@@ -225,8 +225,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		need_codec = 1;
 	}
 
+	if (switch_test_flag(session, SSF_READ_TRANSCODE) && !need_codec && switch_core_codec_ready(session->read_codec)) {
+		switch_core_session_t *other_session;
+		const char *uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE);
+		switch_clear_flag(session, SSF_READ_TRANSCODE);
+		
+		if (uuid && (other_session = switch_core_session_locate(uuid))) {
+			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
+			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
+			switch_set_flag(other_session, SSF_WRITE_CODEC_RESET);
+			switch_core_session_rwunlock(other_session);
+		}
+	}
+
+	if (switch_test_flag(session, SSF_READ_CODEC_RESET)) {
+		switch_core_codec_reset(session->read_codec);
+		switch_clear_flag(session, SSF_READ_CODEC_RESET);
+	}
+
+	
+
+
+
+
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame_t *enc_frame, *read_frame = *frame;
+
+		switch_set_flag(session, SSF_READ_TRANSCODE);
 
 		if (!switch_test_flag(session, SSF_WARN_TRANSCODE)) {
 			switch_core_session_message_t msg = { 0 };
@@ -638,6 +663,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	if (frame->codec->implementation->actual_samples_per_second != session->write_impl.actual_samples_per_second) {
 		need_codec = TRUE;
 		do_resample = TRUE;
+	}
+
+	if (switch_test_flag(session, SSF_WRITE_TRANSCODE) && !need_codec && switch_core_codec_ready(session->write_codec)) {
+		switch_core_session_t *other_session;
+		const char *uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE);
+
+		if (uuid && (other_session = switch_core_session_locate(uuid))) {
+			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
+			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
+			switch_set_flag(other_session, SSF_WRITE_CODEC_RESET);
+			switch_core_session_rwunlock(other_session);
+		}
+		
+		switch_clear_flag(session, SSF_WRITE_TRANSCODE);
+	}
+
+
+	if (switch_test_flag(session, SSF_WRITE_CODEC_RESET)) {
+		switch_core_codec_reset(session->write_codec);
+		switch_clear_flag(session, SSF_WRITE_CODEC_RESET);
 	}
 
 	if (!need_codec) {

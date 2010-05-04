@@ -47,6 +47,11 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 		switch_buffer_destroy(&bug->raw_write_buffer);
 	}
 
+	if (switch_core_codec_ready(&bug->session->bug_codec)) {
+		switch_core_codec_destroy(&bug->session->bug_codec);
+		memset(&bug->session->bug_codec, 0, sizeof(bug->session->bug_codec));
+	}
+
 	if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bug->function);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bug->target);

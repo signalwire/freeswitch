@@ -94,7 +94,11 @@ typedef enum {
 	SSF_WARN_TRANSCODE = (1 << 1),
 	SSF_HANGUP = (1 << 2),
 	SSF_THREAD_STARTED = (1 << 3),
-	SSF_THREAD_RUNNING = (1 << 4)
+	SSF_THREAD_RUNNING = (1 << 4),
+	SSF_READ_TRANSCODE = (1 << 5),
+	SSF_WRITE_TRANSCODE = (1 << 6),
+	SSF_READ_CODEC_RESET = (1 << 7),
+	SSF_WRITE_CODEC_RESET = (1 << 8)
 } switch_session_flag_t;
 
 

@@ -1329,6 +1329,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec,
 													   uint32_t flags, const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec);
 
 /*! 
   \brief Encode data using a codec handle
