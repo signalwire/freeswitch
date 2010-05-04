@@ -1923,7 +1923,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_call_place(ftdm_channel_t *ftdmchan)
 	ftdm_status_t status;
 
 	ftdm_assert(ftdmchan != NULL, "null channel");
-	
+	ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_OUTBOUND);	
 	if (ftdmchan->span->outgoing_call) {
 		if ((status = ftdmchan->span->outgoing_call(ftdmchan)) == FTDM_SUCCESS) {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
