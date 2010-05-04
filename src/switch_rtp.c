@@ -2316,6 +2316,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 								
 								
 							}
+							switch_core_session_rwunlock(other_session);
 						}
 					}
 					
