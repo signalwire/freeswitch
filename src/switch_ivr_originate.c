@@ -1606,7 +1606,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	int16_t *data;
 	uint32_t datalen = 0;
 	switch_status_t status;
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame = NULL;
 
 	for (i = 0; i < MAX_PEERS && (session = state->originate_status[i].peer_session); i++) {
 		originate_status[i].peer_session = session;
