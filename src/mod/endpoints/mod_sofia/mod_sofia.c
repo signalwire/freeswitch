@@ -3778,8 +3778,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (nsession) {
 		switch_core_session_destroy(&nsession);
 	}
-	*pool = NULL;
-
+	if (pool) {
+		*pool = NULL;
+	}
   done:
 
 	if (profile) {
