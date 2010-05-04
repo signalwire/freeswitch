@@ -142,7 +142,7 @@ typedef struct zrtp_config_t
 	zrtp_callback_t			cb;
 
 	/** @brief Path to zrtp cache file (set if you use built-in realization) */
-	zrtp_string128_t		def_cache_path;
+	zrtp_string256_t		def_cache_path;
 } zrtp_config_t;
 
 /**

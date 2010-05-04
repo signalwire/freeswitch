@@ -359,7 +359,7 @@ struct zrtp_global_t
     /** RNG unit initialization flag. */
     uint8_t					rand_initialized;
 
-	zrtp_string128_t		def_cache_path;
+	zrtp_string256_t		def_cache_path;
 	
     /** This object is used to protect the shared RNG hash zrtp#rand_ctx */
     zrtp_mutex_t*			rng_protector;
