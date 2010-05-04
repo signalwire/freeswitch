@@ -1204,7 +1204,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			status = SWITCH_STATUS_SUCCESS;
-			switch_core_session_receive_message(session, &msg);
+			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
+				return SWITCH_STATUS_GENERR;
+			}
 
 			if ((flags & SMF_IMMEDIATE)) {
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 250, NULL);

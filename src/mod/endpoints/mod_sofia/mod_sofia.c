@@ -1562,6 +1562,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (send_invite) {
 				switch_channel_set_flag(channel, CF_REQ_MEDIA);
 				sofia_glue_do_invite(session);
+			} else {
+				status = SWITCH_STATUS_FALSE;
 			}
 		}
 		break;

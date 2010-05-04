@@ -1798,16 +1798,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 		}
 
-		if (!zstr(bypass_media)) {
+		if (!zstr(bypass_media) && !switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			if (switch_true(bypass_media)) {
 				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
 			} else if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+				if (!switch_channel_test_flag(caller_channel, CF_ANSWERED) && switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+					switch_channel_set_variable(caller_channel, SWITCH_B_SDP_VARIABLE, NULL);
+					switch_channel_answer(caller_channel);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+									  "Must answer channel %s due to SIP PARADOX\n", switch_channel_get_name(caller_channel));
+				}
+				switch_channel_set_variable(caller_channel, SWITCH_B_SDP_VARIABLE, NULL);
 				switch_ivr_media(switch_core_session_get_uuid(session), SMF_NONE);
 			}
 		}
-
-		switch_channel_set_variable(caller_channel, SWITCH_B_SDP_VARIABLE, NULL);
-
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_media_ready(caller_channel)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -1816,14 +1820,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
 			switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
 		}
-
-
-		if (switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) && switch_channel_media_ready(caller_channel)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is already up, proxy media cannot be used anymore\n");
-			switch_channel_set_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE, NULL);
-			switch_channel_clear_flag(caller_channel, CF_PROXY_MEDIA);
-		}
-
 	}
 
 	if (timelimit_sec <= 0) {
