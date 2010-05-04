@@ -109,7 +109,7 @@ static void sql_close(time_t prune)
 
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Dropping idle DB connection %s\n", key);
-
+				
 				switch (dbh->type) {
 				case SCDB_TYPE_ODBC:
 					{
@@ -719,6 +719,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
 
 			if (errmsg) {
+				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
 				free(errmsg);
 			}

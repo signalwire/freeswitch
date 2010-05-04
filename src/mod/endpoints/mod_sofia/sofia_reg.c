@@ -1784,7 +1784,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		cb.nplen = nplen;
 
 		switch_assert(sql != NULL);
-		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_nonce_callback, &cb);
+		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nonce_callback, &cb);
 		free(sql);
 
 		//if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
