@@ -1466,9 +1466,9 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 {
 	switch_core_session_t *rsession, *bsession = NULL;
 	switch_channel_t *channel, *rchannel, *bchannel = NULL;
-	const char *buuid;
+	const char *buuid, *var;
 	char brto[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
-
+	
 	if (bleg) {
 		if (switch_ivr_find_bridged_uuid(uuid, brto, sizeof(brto)) == SWITCH_STATUS_SUCCESS) {
 			uuid = switch_core_session_strdup(session, brto);
@@ -1485,10 +1485,18 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 
 	channel = switch_core_session_get_channel(session);
 	rchannel = switch_core_session_get_channel(rsession);
+	buuid = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE);
+
+	if ((var = switch_channel_get_variable(channel, "intercept_unbridged_only")) && switch_true(var)) {
+		if ((switch_channel_test_flag(rchannel, CF_BRIDGED))) {
+			switch_core_session_rwunlock(rsession);
+			return;
+		}
+	}
 
 	switch_channel_pre_answer(channel);
 
-	if ((buuid = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if (!zstr(buuid)) {
 		if ((bsession = switch_core_session_locate(buuid))) {
 			bchannel = switch_core_session_get_channel(bsession);
 		}
