@@ -262,7 +262,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 			switch_channel_mark_ring_ready(channel);
 		}
 
-		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		while (switch_channel_get_state(channel) == CS_ROUTING && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.read_timer.samples;
 
 			if (switch_micro_time_now() - last >= waitsec) {
