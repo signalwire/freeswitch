@@ -943,7 +943,10 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	if (nsession) {
 		switch_core_session_destroy(&nsession);
 	}
-	*pool = NULL;
+
+	if (pool) {
+		*pool = NULL;
+	}
 
 
   done:
