@@ -37,9 +37,7 @@ libdir = @libdir@
 library_includedir = $(PREFIX)/include
 
 INCS      = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/isdn/include -I$(FT_SRCDIR)/$(SRC)/include/private
-if HAVE_SCTP
-INCS +=  -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost 
-endif
+INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost 
 MY_CFLAGS = $(INCS) $(FTDM_CFLAGS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)

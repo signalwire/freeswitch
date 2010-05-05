@@ -2515,6 +2515,11 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	}
 
 	if (!sigmod) {
+#ifndef HAVE_NETINET_SCTP_H
+		ftdm_log(FTDM_LOG_CRIT, "No sigmod attribute in span %s, you must either specify a sigmod or re-compile with SCTP available to use socket mode boost!\n");
+		ftdm_set_string(span->last_error, "No sigmod configuration was set and there is no SCTP available!");
+		FAIL_CONFIG_RETURN(FTDM_FAIL);
+#endif
 		if (!local_ip && local_port && remote_ip && remote_port && sig_cb) {
 			ftdm_set_string(span->last_error, "missing Sangoma boost IP parameters");
 			FAIL_CONFIG_RETURN(FTDM_FAIL);
