@@ -2032,7 +2032,7 @@ SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len)
 				break;
 			}
 			buf[x++] = '%';
-			buf[x++] = hex[*p >> 4];
+			buf[x++] = hex[(*p >> 4) & 0x0f];
 			buf[x++] = hex[*p & 0x0f];
 		} else {
 			buf[x++] = *p;
