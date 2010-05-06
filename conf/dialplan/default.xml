@@ -346,7 +346,7 @@
     
     <!-- dial the FreeSWITCH conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
-      <condition field="destination_number" expression="^9(888|1616|3232)$">
+      <condition field="destination_number" expression="^9(888|8888|1616|3232)$">
 	<action application="export" data="hold_music=silence"/>
 	<!-- 
 	     This will take the SAS from the b-leg and send it to the display on the a-leg phone.
