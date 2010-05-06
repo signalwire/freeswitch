@@ -89,14 +89,14 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(const c
 			if (switch_test_flag(session, SSF_DESTROYED)) {
 				status = SWITCH_STATUS_FALSE;
 #ifdef SWITCH_DEBUG_RWLOCKS
-				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, uuid_str, SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, uuid_str, SWITCH_LOG_ERROR, "%s %s Read lock FAIL\n",
+								  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 			} else {
 				status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 #ifdef SWITCH_DEBUG_RWLOCKS
-				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, uuid_str, SWITCH_LOG_ERROR, "%s Read lock ACQUIRED\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, uuid_str, SWITCH_LOG_ERROR, "%s %s Read lock ACQUIRED\n",
+								  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 			}
 

@@ -50,22 +50,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 			if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
 #ifdef SWITCH_DEBUG_RWLOCKS
-					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Ping thread\n",
-									  switch_channel_get_name(session->channel));
+					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Ping thread\n",
+									  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 					switch_core_session_wake_session_thread(session);
 				}
 				switch_thread_rwlock_unlock(session->rwlock);
 			}
 #ifdef SWITCH_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
-							  switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Read lock FAIL\n",
+							  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 		} else {
 			status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 #ifdef SWITCH_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Read lock ACQUIRED\n",
-							  switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Read lock ACQUIRED\n",
+							  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 		}
 	}
@@ -86,14 +86,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock_hangup(switch_core
 		if (switch_test_flag(session, SSF_DESTROYED) || switch_channel_get_state(session->channel) >= CS_DESTROY) {
 			status = SWITCH_STATUS_FALSE;
 #ifdef SWITCH_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
-							  switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Read lock FAIL\n",
+							  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 		} else {
 			status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 #ifdef SWITCH_DEBUG_RWLOCKS
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Read lock ACQUIRED\n",
-							  switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Read lock ACQUIRED\n",
+							  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #endif
 		}
 	}
@@ -105,8 +105,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock_hangup(switch_core
 SWITCH_DECLARE(void) switch_core_session_perform_write_lock(switch_core_session_t *session, const char *file, const char *func, int line)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Write lock ACQUIRED\n",
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Write lock ACQUIRED\n",
+					  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #else
 SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *session)
 {
@@ -117,8 +117,8 @@ SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *sessi
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(void) switch_core_session_perform_rwunlock(switch_core_session_t *session, const char *file, const char *func, int line)
 {
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s Read/Write lock CLEARED\n",
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(session), SWITCH_LOG_ERROR, "%s %s Read/Write lock CLEARED\n",
+					  switch_core_session_get_uuid(session), switch_channel_get_name(session->channel));
 #else
 SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session)
 {
