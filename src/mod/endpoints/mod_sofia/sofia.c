@@ -5830,6 +5830,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
 								  network_ip, switch_str_nil(last_acl), acl_token);
+				switch_channel_set_variable(channel, "sip_acl_authed_by", last_acl);
+				if (token) {
+					switch_channel_set_variable(channel, "sip_acl_token", acl_token);
+				}
 				is_auth = 1;
 			}
 		} else {
@@ -5888,6 +5892,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
 									  proxied_client_ip, switch_str_nil(last_acl), acl_token);
 					is_auth = 1;
+					switch_channel_set_variable(channel, "sip_acl_authed_by", last_acl);
+					if (token) {
+						switch_channel_set_variable(channel, "sip_acl_token", acl_token);
+					}
 				}
 			}
 		}
