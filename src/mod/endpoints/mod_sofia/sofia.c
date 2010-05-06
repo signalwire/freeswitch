@@ -5749,6 +5749,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *gw_name = NULL;
 	char *call_info_str = NULL;
 	nua_handle_t *bnh = NULL;
+	char sip_acl_authed_by[512] = "";
+	char sip_acl_token[512] = "";
+
+
 
 	profile->ib_calls++;
 
@@ -5830,10 +5834,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
 								  network_ip, switch_str_nil(last_acl), acl_token);
-				switch_channel_set_variable(channel, "sip_acl_authed_by", last_acl);
-				if (token) {
-					switch_channel_set_variable(channel, "sip_acl_token", acl_token);
-				}
+				switch_set_string(sip_acl_authed_by, last_acl);
+				switch_set_string(sip_acl_token, acl_token);			
 				is_auth = 1;
 			}
 		} else {
@@ -5891,11 +5893,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
 									  proxied_client_ip, switch_str_nil(last_acl), acl_token);
+					switch_set_string(sip_acl_authed_by, last_acl);
+					switch_set_string(sip_acl_token, acl_token);
+					
 					is_auth = 1;
-					switch_channel_set_variable(channel, "sip_acl_authed_by", last_acl);
-					if (token) {
-						switch_channel_set_variable(channel, "sip_acl_token", acl_token);
-					}
+					
 				}
 			}
 		}
@@ -5994,6 +5996,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (is_auth) {
 		switch_channel_set_variable(channel, "sip_authorized", "true");
+
+		if (!zstr(sip_acl_authed_by)) {
+			switch_channel_set_variable(channel, "sip_acl_authed_by", sip_acl_authed_by);
+		}
+
+		if (!zstr(sip_acl_token)) {
+			switch_channel_set_variable(channel, "sip_acl_token", sip_acl_token);
+		}
+
 	}
 
 	if (calling_myself) {
