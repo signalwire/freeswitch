@@ -1445,7 +1445,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			*cc.buf = '\0';
 			memset(&fh, 0, sizeof(fh));
 			cc.fh = &fh;
-			TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
+			if (switch_file_exists(cbt->file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+				TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
+			}
 		}
 
 		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_LAST)) {
@@ -3005,11 +3007,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 		switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
 
-		if (!zstr(greet_path)) {
+		if (switch_file_exists(greet_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			memset(buf, 0, sizeof(buf));
 			TRY_CODE(switch_ivr_play_file(session, NULL, greet_path, &args));
 		} else {
-			if (!zstr(cbt.name_path)) {
+			if (switch_file_exists(cbt.name_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				memset(buf, 0, sizeof(buf));
 				TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
 			}

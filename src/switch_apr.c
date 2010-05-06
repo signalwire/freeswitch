@@ -507,15 +507,17 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	apr_finfo_t info = { 0 };
 
+	if (zstr(filename)) {
+		return status;
+	}
+
 	if (!pool) {
 		switch_core_new_memory_pool(&our_pool);
 	}
 
-	if (filename) {
-		apr_stat(&info, filename, wanted, pool ? pool : our_pool);
-		if (info.filetype != APR_NOFILE) {
-			status = SWITCH_STATUS_SUCCESS;
-		}
+	apr_stat(&info, filename, wanted, pool ? pool : our_pool);
+	if (info.filetype != APR_NOFILE) {
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	if (our_pool) {
