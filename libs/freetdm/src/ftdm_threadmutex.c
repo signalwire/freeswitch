@@ -419,7 +419,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 		}
 	}
 
-	res = WaitForMultipleObjects(size+numdevices, ints, FALSE, ms >= 0 ? ms : INFINITE);
+	res = WaitForMultipleObjects((DWORD)size+numdevices, ints, FALSE, ms >= 0 ? ms : INFINITE);
 
 	switch (res) {
 	case WAIT_TIMEOUT:

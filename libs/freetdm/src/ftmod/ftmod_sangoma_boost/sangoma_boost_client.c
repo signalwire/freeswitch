@@ -292,7 +292,7 @@ sangomabc_event_t *__sangomabc_connection_read(sangomabc_connection_t *mcon, int
 	if (mcon->sigmod) {
 		e = ftdm_queue_dequeue(mcon->boost_queue);
 		if (e) {
-			bytes = e->size;
+			bytes = (int)e->size;
 			memcpy(&mcon->event, e->boostmsg, bytes);
 			ftdm_safe_free(e);
 		}

@@ -266,7 +266,12 @@ int main(int argc, char *argv[])
 	}
 
 	/* register a handler to shutdown things properly */
+#ifdef _WIN64
+	// still trying to figure this one out otherwise triggers error
+	if (signal(SIGINT, interrupt_requested) < 0) {
+#else
 	if (signal(SIGINT, interrupt_requested) == SIG_ERR) {
+#endif
 		fprintf(stderr, "Could not set the SIGINT signal handler: %s\n", strerror(errno));
 		exit(-1);
 	}
