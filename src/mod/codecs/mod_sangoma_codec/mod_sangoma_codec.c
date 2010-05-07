@@ -110,11 +110,11 @@ vocallo_codec_t g_codec_map[] =
 	{ -1,                  -1,  NULL,      NULL,                -1, -1,     -1,    -1,  -1,      -1 },
 };
 
-/* default codec list to load, users may override, special codec 'all' loads everything available unless listed in noload */
-static char g_codec_load_list[1024] = "all";
+/* default codec list to load, users may override, special codec 'all' registers everything available unless listed in noregister */
+static char g_codec_register_list[1024] = "all";
 
 /* default codec list to NOT load, users may override */
-static char g_codec_noload_list[1024] = "";
+static char g_codec_noregister_list[1024] = "";
 
 struct codec_data {
 	/* sngtc request and reply */
@@ -854,12 +854,12 @@ static int sangoma_parse_config(void)
 				char *val = (char *)switch_xml_attr_soft(param, "value");
 
 				/* this parameter overrides the default list of codecs to load */
-				if (!strcasecmp(var, "load")) {
-					strncpy(g_codec_load_list, val, sizeof(g_codec_load_list)-1);
-					g_codec_load_list[sizeof(g_codec_load_list)-1] = 0;
-				} else if (!strcasecmp(var, "noload")) {
-					strncpy(g_codec_noload_list, val, sizeof(g_codec_noload_list)-1);
-					g_codec_noload_list[sizeof(g_codec_noload_list)-1] = 0;
+				if (!strcasecmp(var, "register")) {
+					strncpy(g_codec_register_list, val, sizeof(g_codec_register_list)-1);
+					g_codec_register_list[sizeof(g_codec_register_list)-1] = 0;
+				} else if (!strcasecmp(var, "noregister")) {
+					strncpy(g_codec_noregister_list, val, sizeof(g_codec_noregister_list)-1);
+					g_codec_noregister_list[sizeof(g_codec_noregister_list)-1] = 0;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma codec setting %s\n", var);
 				}
@@ -985,18 +985,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading codecs, load='%s', noload='%s'\n", g_codec_load_list, g_codec_noload_list);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading codecs, register='%s', noregister='%s'\n", g_codec_register_list, g_codec_noregister_list);
 	for (c = 0; g_codec_map[c].codec_id != -1; c++) {
 
 		/* check if the codec is in the load list, otherwise skip it */
-		if (strcasecmp(g_codec_load_list, "all") && !strcasestr(g_codec_load_list, g_codec_map[c].iana_name)) {
+		if (strcasecmp(g_codec_register_list, "all") && !strcasestr(g_codec_register_list, g_codec_map[c].iana_name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not loading codec %s because was not found in the load list\n", 
 					g_codec_map[c].iana_name);
 			continue;
 		}
 
 		/* load it unless is named in the noload list */
-		if (strcasestr(g_codec_noload_list, g_codec_map[c].iana_name)) {
+		if (strcasestr(g_codec_noregister_list, g_codec_map[c].iana_name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not loading codec %s because was not found in the noload list\n", 
 					g_codec_map[c].iana_name);
 			continue;
