@@ -616,6 +616,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download JSON", "libs\win32\Download JSON.2008.vcproj", "{B808178B-82F0-4CF4-A2B1-921939FA24D0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjson", "libs\win32\json\libjson.2008.vcproj", "{9778F1C0-09BC-4698-8EBC-BD982247209A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B808178B-82F0-4CF4-A2B1-921939FA24D0} = {B808178B-82F0-4CF4-A2B1-921939FA24D0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_curl", "src\mod\applications\mod_curl\mod_curl.2008.vcproj", "{EF300386-A8DF-4372-B6D8-FB9BFFCA9AED}"
 	ProjectSection(ProjectDependencies) = postProject

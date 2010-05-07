@@ -1081,6 +1081,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download JSON", "libs\win32\Download JSON.2008.vcproj", "{B808178B-82F0-4CF4-A2B1-921939FA24D0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjson", "libs\win32\json\libjson.2008.vcproj", "{9778F1C0-09BC-4698-8EBC-BD982247209A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B808178B-82F0-4CF4-A2B1-921939FA24D0} = {B808178B-82F0-4CF4-A2B1-921939FA24D0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_silk", "src\mod\codecs\mod_silk\mod_silk.2008.vcproj", "{AFA983D6-4569-4F88-BA94-555ED00FD9A8}"
 	ProjectSection(ProjectDependencies) = postProject
