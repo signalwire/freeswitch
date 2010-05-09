@@ -571,10 +571,11 @@ union skinny_data {
 /*
  * header is length+reserved
  * body is type+data
+ * length is length of body
  */
 struct skinny_message {
     uint32_t length;
-    uint32_t reserved;
+    uint32_t version;
     uint32_t type;
     union skinny_data data;
 };
