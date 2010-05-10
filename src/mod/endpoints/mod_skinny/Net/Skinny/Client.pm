@@ -28,12 +28,14 @@ my $messages_receive_queue;
 $Config{useithreads} or die('Recompile Perl with threads to run this program.');
 
 sub new {
-    $kept_self = shift->SUPER::new(@_);
+	$kept_self = shift->SUPER::new(@_);
 	$messages_send_queue = Thread::Queue->new();
 	$messages_receive_queue = Thread::Queue->new();
-    threads->create(\&send_messages_thread_func);
-    threads->create(\&receive_messages_thread_func);
-    return $kept_self;
+	if ($kept_self) {
+		threads->create(\&send_messages_thread_func);
+		threads->create(\&receive_messages_thread_func);
+	}
+	return $kept_self;
 }
 
 sub send_message {
@@ -87,7 +89,7 @@ sub send_messages_thread_func
 sub receive_messages_thread_func
 {
 	while(1) {
-	    $messages_receive_queue->enqueue($kept_self->SUPER::receive_message());
+		$messages_receive_queue->enqueue($kept_self->SUPER::receive_message());
 	}
 }
 
