@@ -301,47 +301,47 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 static switch_status_t bill_event(float billamount, const char *billaccount, switch_channel_t *channel)
 {
 	switch_stream_handle_t sql_stream = { 0 };
-	char *sql = NULL;
+	char *sql = NULL, *dsql = NULL;
 	switch_odbc_statement_handle_t stmt = NULL;
-	SWITCH_STANDARD_STREAM(sql_stream);
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!switch_odbc_available()) {
-		goto end;
+		return status;
 	}
 
 	if (globals.custom_sql_save) {
 		if (switch_string_var_check_const(globals.custom_sql_save) || switch_string_has_escaped_data(globals.custom_sql_save)) {
 			switch_channel_set_variable_printf(channel, "nibble_increment", "%f", billamount, SWITCH_FALSE);
 			sql = switch_channel_expand_variables(channel, globals.custom_sql_save);
+			if (sql != globals.custom_sql_save) dsql = sql;
 		} else {
 			sql = globals.custom_sql_save;
 		}
 	} else {
-		sql_stream.write_function(&sql_stream, SQL_SAVE, globals.db_table, globals.db_column_cash, globals.db_column_cash, billamount, globals.db_column_account,
-						billaccount);
-		sql = sql_stream.data;
+		SWITCH_STANDARD_STREAM(sql_stream);
+		sql_stream.write_function(&sql_stream, SQL_SAVE, globals.db_table, globals.db_column_cash, 
+								  globals.db_column_cash, billamount, globals.db_column_account, billaccount);
+								  
+		sql = (char *) sql_stream.data;
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing update query\n[%s]\n", sql);
 
-	if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
+	if ((status = switch_odbc_handle_exec(globals.master_odbc, sql, &stmt, NULL)) != SWITCH_ODBC_SUCCESS) {
 		char *err_str;
 		err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 		switch_safe_free(err_str);
-	} else {
-		/* TODO: Failover to a flat/text file if DB is unavailable */
-
-		goto end;
 	}
 
-	switch_odbc_statement_handle_free(&stmt);
-
-end:
-	if (sql != globals.custom_sql_lookup && sql != sql_stream.data) {
-		switch_safe_free(sql);
+	if (stmt) {
+		switch_odbc_statement_handle_free(&stmt);
 	}
+	
+	switch_safe_free(dsql);
 	switch_safe_free(sql_stream.data);
-	return SWITCH_STATUS_SUCCESS;
+
+	return status;
 }
 
 
