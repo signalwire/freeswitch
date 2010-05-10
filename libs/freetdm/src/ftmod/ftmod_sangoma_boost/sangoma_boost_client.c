@@ -223,12 +223,20 @@ int sangomabc_connection_open(sangomabc_connection_t *mcon, char *local_ip, int 
 
 int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int id, int cmd, int cause, int flags)
 {
-    sangomabc_short_event_t oevent;
-    int retry = 5;
+	sangomabc_event_t *oevent;
+	sangomabc_short_event_t sevent;
+	sangomabc_event_t fevent;
+	int retry = 5;
 
-    sangomabc_event_init(&oevent, cmd, chan, span);
-    oevent.release_cause = (uint8_t)cause;
-    oevent.flags = flags;
+	if (boost_full_event(cmd)) {
+		sangomabc_event_init((void *)&fevent, cmd, chan, span);
+		oevent = &fevent;
+	} else {
+		sangomabc_event_init(&sevent, cmd, chan, span);
+		sevent.release_cause = (uint8_t)cause;
+		oevent = (sangomabc_event_t *)&sevent;
+	}
+	oevent->flags = flags;
 
 	if (cmd == SIGBOOST_EVENT_SYSTEM_RESTART || cmd == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
 		mcon->rxseq_reset = 1;
@@ -237,21 +245,21 @@ int sangomabc_exec_command(sangomabc_connection_t *mcon, int span, int chan, int
 		mcon->txwindow = 0;
 	}
 
-    if (id >= 0) {
-        oevent.call_setup_id = (uint16_t)id;
-    }
+	if (id >= 0) {
+		oevent->call_setup_id = (uint16_t)id;
+	}
 
-    while (sangomabc_connection_write(mcon, (sangomabc_event_t*)&oevent) <= 0) {
-        if (--retry <= 0) {
-            ftdm_log(FTDM_LOG_CRIT, "Failed to tx on boost socket: %s\n", strerror(errno));
-            return -1;
-        } else {
-            ftdm_log(FTDM_LOG_WARNING, "Failed to tx on boost socket: %s :retry %i\n", strerror(errno), retry);
-	    ftdm_sleep(1);
-        }
-    }
+	while (sangomabc_connection_write(mcon, (sangomabc_event_t*)oevent) <= 0) {
+		if (--retry <= 0) {
+		    ftdm_log(FTDM_LOG_CRIT, "Failed to tx on boost socket: %s\n", strerror(errno));
+		    return -1;
+		} else {
+		    ftdm_log(FTDM_LOG_WARNING, "Failed to tx on boost socket: %s :retry %i\n", strerror(errno), retry);
+		    ftdm_sleep(1);
+		}
+	}
 
-    return 0;
+	return 0;
 }
 
 
@@ -540,7 +548,11 @@ void sangomabc_call_init(sangomabc_event_t *event, const char *calling, const ch
 
 void sangomabc_event_init(sangomabc_short_event_t *event, sangomabc_event_id_t event_id, int chan, int span)
 {
-	memset(event, 0, sizeof(sangomabc_short_event_t));
+	if (boost_full_event(event_id)) {
+		memset(event, 0, sizeof(sangomabc_event_t));
+	} else {
+		memset(event, 0, sizeof(sangomabc_short_event_t));
+	}
 	event->event_id = event_id;
 	event->chan = (uint8_t)chan;
 	event->span = (uint8_t)span;

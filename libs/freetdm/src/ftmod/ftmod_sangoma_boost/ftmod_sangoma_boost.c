@@ -1400,8 +1400,14 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 								BOOST_CHAN(ftdmchan),
 								0,
 								SIGBOOST_EVENT_CALL_START_ACK,
-								0, SIGBOOST_PROGRESS_MEDIA);
+								0, 0);
 				}
+				sangomabc_exec_command(mcon,
+							BOOST_SPAN(ftdmchan),
+							BOOST_CHAN(ftdmchan),
+							0,
+							SIGBOOST_EVENT_CALL_PROGRESS,
+							0, SIGBOOST_PROGRESS_MEDIA);
 			}
 		}
 		break;
@@ -1420,7 +1426,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 								BOOST_CHAN(ftdmchan),
 								0,
 								SIGBOOST_EVENT_CALL_START_ACK,
-								0, SIGBOOST_PROGRESS_RING);
+								0, 0);
 				}
 			}
 		}
