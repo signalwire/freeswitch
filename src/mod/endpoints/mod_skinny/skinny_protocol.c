@@ -270,40 +270,48 @@ switch_status_t skinny_send_call_info(switch_core_session_t *session, listener_t
 	private_t *tech_pvt;
 	switch_channel_t *channel;
 
-	char calling_party_name[40] = "UNKNOWN";
-	char calling_party[24] = "0000000000";
-	char called_party_name[40] = "UNKNOWN";
-	char called_party[24] = "0000000000";
+	char *calling_party_name;
+	char *calling_party_number;
+	char *called_party_name;
+	char *called_party_number;
+	uint32_t call_type = 0;
 
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
 	switch_assert(tech_pvt->caller_profile != NULL);
 
-	if(	switch_channel_test_flag(channel, CF_OUTBOUND) ) {
-	    struct line_stat_res_message *button = NULL;
-
-	    skinny_line_get(listener, line_instance, &button);
-
-	    if (button) {
-		    strncpy(calling_party_name, button->displayname, 40);
-		    strncpy(calling_party, button->name, 24);
-	    }	
-		strncpy(called_party_name, tech_pvt->caller_profile->caller_id_name, 40);
-		strncpy(called_party, tech_pvt->caller_profile->caller_id_number, 24);
+	/* Calling party */
+	if (zstr((calling_party_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
+		zstr((calling_party_name = switch_channel_get_variable(channel, "callee_id_name")))) {
+		calling_party_name = SWITCH_DEFAULT_CLID_NAME;
+	}
+	if (zstr((calling_party_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
+		zstr((calling_party_number = switch_channel_get_variable(channel, "callee_id_number")))) {
+		calling_party_number = "0000000000";
+	}
+	/* Called party */
+	if (zstr((called_party_name = switch_channel_get_variable(channel, "effective_called_id_name"))) &&
+		zstr((called_party_name = switch_channel_get_variable(channel, "called_id_name")))) {
+		called_party_name = SWITCH_DEFAULT_CLID_NAME;
+	}
+	if (zstr((called_party_number = switch_channel_get_variable(channel, "effective_called_id_number"))) &&
+		zstr((called_party_number = switch_channel_get_variable(channel, "called_id_number")))) {
+		called_party_number = "0000000000";
+	}
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		call_type = SKINNY_OUTBOUND_CALL;
 	} else {
-		strncpy(calling_party_name, tech_pvt->caller_profile->caller_id_name, 40);
-		strncpy(calling_party, tech_pvt->caller_profile->caller_id_number, 24);
-		/* TODO called party */
+		call_type = SKINNY_INBOUND_CALL;
 	}
 	send_call_info(listener,
 		calling_party_name, /* char calling_party_name[40], */
-		calling_party, /* char calling_party[24], */
+		calling_party_number, /* char calling_party[24], */
 		called_party_name, /* char called_party_name[40], */
-		called_party, /* char called_party[24], */
+		called_party_number, /* char called_party[24], */
 		line_instance, /* uint32_t line_instance, */
 		tech_pvt->call_id, /* uint32_t call_id, */
-		SKINNY_OUTBOUND_CALL, /* uint32_t call_type, */
+		call_type, /* uint32_t call_type, */
 		"", /* TODO char original_called_party_name[40], */
 		"", /* TODO char original_called_party[24], */
 		"", /* TODO char last_redirecting_party_name[40], */
