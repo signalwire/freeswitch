@@ -253,10 +253,11 @@ $(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
 
 src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
-	$(CC) -E $(switch_srcdir)/src/include/switch_cpp.h \
-		-I$(switch_srcdir)/src/include -I$(switch_srcdir)/libs/libteletone/src \
-		-DSWITCH_DECLARE_CLASS= -DSWITCH_DECLARE\(x\)=x -DSWITCH_DECLARE_CONSTRUCTOR= \
-		-DSWITCH_DECLARE_NONSTD\(x\)=x 2>/dev/null | grep -v "^#" > src/include/switch_swigable_cpp.h
+	cat $(switch_srcdir)/src/include/switch_cpp.h | perl $(switch_srcdir)/build/strip.pl > $(switch_srcdir)/src/include/switch_swigable_cpp.h
+#	$(CC) -E $(switch_srcdir)/src/include/switch_cpp.h \
+#		-I$(switch_srcdir)/src/include -I$(switch_srcdir)/libs/libteletone/src \
+#		-DSWITCH_DECLARE_CLASS= -DSWITCH_DECLARE\(x\)=x -DSWITCH_DECLARE_CONSTRUCTOR= \
+#		-DSWITCH_DECLARE_NONSTD\(x\)=x 2>/dev/null | grep -v "^#" > src/include/switch_swigable_cpp.h
 
 ##
 ## Applications
