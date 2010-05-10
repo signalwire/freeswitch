@@ -1710,13 +1710,14 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
 	switch_xml_t xroot, xdomain, xgroup, xuser, xskinny, xparams, xparam, xbuttons, xbutton;
+	listener_t *listener2 = NULL;
 	char *sql;
 	assert(listener->profile);
 	profile = listener->profile;
 
 	skinny_check_data_length(request, sizeof(request->data.reg));
 
-	if(!zstr(listener->device_name)) {
+	if (!zstr(listener->device_name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"A device is already registred on this listener.\n");
 		send_register_reject(listener, "A device is already registred on this listener");
@@ -1732,6 +1733,17 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					  "You must define a domain called '%s' in your directory and add a user with id=\"%s\".\n"
 					  , request->data.reg.device_name, profile->domain, profile->domain, request->data.reg.device_name);
 		send_register_reject(listener, "Device not found");
+		status =  SWITCH_STATUS_FALSE;
+		goto end;
+	}
+
+	skinny_profile_find_listener_by_device_name_and_instance(listener->profile,
+		request->data.reg.device_name, request->data.reg.instance, &listener2);
+	if (listener2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			"Device %s:%d is already registred on another listener.\n",
+			request->data.reg.device_name, request->data.reg.instance);
+		send_register_reject(listener, "Device is already registred on another listener");
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
 	}
