@@ -3589,13 +3589,23 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	return status;
 }
 
+const char *sofia_gateway_status_name(sofia_gateway_status_t status)
+{
+	static const char *status_names[] = { "DOWN", "UP", NULL };
+
+	if (status < SOFIA_GATEWAY_INVALID) {
+		return status_names[status];
+	} else {
+		return "INVALID";
+	}
+}
+
 static void sofia_handle_sip_r_options(switch_core_session_t *session, int status,
 									   char const *phrase,
 									   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 									   tagi_t tags[])
 {
 	sofia_gateway_t *gateway = NULL;
-	static const char *status_names[] = { "DOWN", "UP", NULL };
 
 	if (sofia_private && !zstr(sofia_private->gateway_name)) {
 		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
@@ -3611,12 +3621,14 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (gateway->ping_count < gateway->ping_max) {
 				gateway->ping_count++;
 
-				if (gateway->ping_count >= 0)
+				if (gateway->ping_count >= 0 && gateway->status != SOFIA_GATEWAY_UP) {
 					gateway->status = SOFIA_GATEWAY_UP;
+					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
+				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 								  "Ping succeeded %s with code %d - count %d/%d/%d, state %s\n",
-								  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, status_names[gateway->status]);
+								  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
 			}
 		} else {
 			if (gateway->state == REG_STATE_REGED) {
@@ -3627,13 +3639,15 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (gateway->ping_count > gateway->ping_min) {
 				gateway->ping_count--;
 
-				if (gateway->ping_count <= 0)
+				if (gateway->ping_count <= 0 && gateway->status != SOFIA_GATEWAY_DOWN) {
 					gateway->status = SOFIA_GATEWAY_DOWN;
+					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
+				}
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 							  "Ping failed %s with code %d - count %d/%d/%d, state %s\n",
-							  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, status_names[gateway->status]);
+							  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
 		}
 
 		gateway->ping = switch_epoch_time_now(NULL) + gateway->ping_freq;

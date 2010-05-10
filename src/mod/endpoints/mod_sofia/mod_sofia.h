@@ -332,7 +332,9 @@ typedef enum {
 
 typedef enum {
 	SOFIA_GATEWAY_DOWN,
-	SOFIA_GATEWAY_UP
+	SOFIA_GATEWAY_UP,
+
+	SOFIA_GATEWAY_INVALID
 } sofia_gateway_status_t;
 
 typedef enum {
@@ -981,3 +983,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 int sofia_glue_recover(switch_bool_t flush);
 void sofia_profile_destroy(sofia_profile_t *profile);
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
+const char *sofia_gateway_status_name(sofia_gateway_status_t status);
+void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase);
+
+
