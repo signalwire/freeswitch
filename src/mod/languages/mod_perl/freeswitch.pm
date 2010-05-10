@@ -324,8 +324,6 @@ use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 *swig_events_set = *freeswitchc::EventConsumer_events_set;
 *swig_e_event_id_get = *freeswitchc::EventConsumer_e_event_id_get;
 *swig_e_event_id_set = *freeswitchc::EventConsumer_e_event_id_set;
-*swig_node_get = *freeswitchc::EventConsumer_node_get;
-*swig_node_set = *freeswitchc::EventConsumer_node_set;
 *swig_e_callback_get = *freeswitchc::EventConsumer_e_callback_get;
 *swig_e_callback_set = *freeswitchc::EventConsumer_e_callback_set;
 *swig_e_subclass_name_get = *freeswitchc::EventConsumer_e_subclass_name_get;
@@ -349,6 +347,7 @@ sub DESTROY {
     }
 }
 
+*bind = *freeswitchc::EventConsumer_bind;
 *pop = *freeswitchc::EventConsumer_pop;
 sub DISOWN {
     my $self = shift;

@@ -125,11 +125,7 @@ public class CoreSession {
   }
 
   public void hangup(String cause) {
-    freeswitchJNI.CoreSession_hangup__SWIG_0(swigCPtr, this, cause);
-  }
-
-  public void hangup() {
-    freeswitchJNI.CoreSession_hangup__SWIG_1(swigCPtr, this);
+    freeswitchJNI.CoreSession_hangup(swigCPtr, this, cause);
   }
 
   public void hangupState() {
@@ -158,23 +154,11 @@ public class CoreSession {
   }
 
   public void say(String tosay, String module_name, String say_type, String say_method, String say_gender) {
-    freeswitchJNI.CoreSession_say__SWIG_0(swigCPtr, this, tosay, module_name, say_type, say_method, say_gender);
-  }
-
-  public void say(String tosay, String module_name, String say_type, String say_method) {
-    freeswitchJNI.CoreSession_say__SWIG_1(swigCPtr, this, tosay, module_name, say_type, say_method);
+    freeswitchJNI.CoreSession_say(swigCPtr, this, tosay, module_name, say_type, say_method, say_gender);
   }
 
   public void sayPhrase(String phrase_name, String phrase_data, String phrase_lang) {
-    freeswitchJNI.CoreSession_sayPhrase__SWIG_0(swigCPtr, this, phrase_name, phrase_data, phrase_lang);
-  }
-
-  public void sayPhrase(String phrase_name, String phrase_data) {
-    freeswitchJNI.CoreSession_sayPhrase__SWIG_1(swigCPtr, this, phrase_name, phrase_data);
-  }
-
-  public void sayPhrase(String phrase_name) {
-    freeswitchJNI.CoreSession_sayPhrase__SWIG_2(swigCPtr, this, phrase_name);
+    freeswitchJNI.CoreSession_sayPhrase(swigCPtr, this, phrase_name, phrase_data, phrase_lang);
   }
 
   public String hangupCause() {
@@ -186,31 +170,11 @@ public class CoreSession {
   }
 
   public int recordFile(String file_name, int time_limit, int silence_threshold, int silence_hits) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_0(swigCPtr, this, file_name, time_limit, silence_threshold, silence_hits);
-  }
-
-  public int recordFile(String file_name, int time_limit, int silence_threshold) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_1(swigCPtr, this, file_name, time_limit, silence_threshold);
-  }
-
-  public int recordFile(String file_name, int time_limit) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_2(swigCPtr, this, file_name, time_limit);
-  }
-
-  public int recordFile(String file_name) {
-    return freeswitchJNI.CoreSession_recordFile__SWIG_3(swigCPtr, this, file_name);
+    return freeswitchJNI.CoreSession_recordFile(swigCPtr, this, file_name, time_limit, silence_threshold, silence_hits);
   }
 
   public int originate(CoreSession a_leg_session, String dest, int timeout, SWIGTYPE_p_switch_state_handler_table_t handlers) {
-    return freeswitchJNI.CoreSession_originate__SWIG_0(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout, SWIGTYPE_p_switch_state_handler_table_t.getCPtr(handlers));
-  }
-
-  public int originate(CoreSession a_leg_session, String dest, int timeout) {
-    return freeswitchJNI.CoreSession_originate__SWIG_1(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout);
-  }
-
-  public int originate(CoreSession a_leg_session, String dest) {
-    return freeswitchJNI.CoreSession_originate__SWIG_2(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest);
+    return freeswitchJNI.CoreSession_originate(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout, SWIGTYPE_p_switch_state_handler_table_t.getCPtr(handlers));
   }
 
   public void destroy() {
@@ -246,15 +210,7 @@ public class CoreSession {
   }
 
   public int transfer(String extension, String dialplan, String context) {
-    return freeswitchJNI.CoreSession_transfer__SWIG_0(swigCPtr, this, extension, dialplan, context);
-  }
-
-  public int transfer(String extension, String dialplan) {
-    return freeswitchJNI.CoreSession_transfer__SWIG_1(swigCPtr, this, extension, dialplan);
-  }
-
-  public int transfer(String extension) {
-    return freeswitchJNI.CoreSession_transfer__SWIG_2(swigCPtr, this, extension);
+    return freeswitchJNI.CoreSession_transfer(swigCPtr, this, extension, dialplan, context);
   }
 
   public String read(int min_digits, int max_digits, String prompt_audio_file, int timeout, String valid_terminators) {
@@ -262,27 +218,15 @@ public class CoreSession {
   }
 
   public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex, String var_name) {
-    return freeswitchJNI.CoreSession_playAndGetDigits__SWIG_0(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name);
-  }
-
-  public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex) {
-    return freeswitchJNI.CoreSession_playAndGetDigits__SWIG_1(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex);
+    return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name);
   }
 
   public int streamFile(String file, int starting_sample_count) {
-    return freeswitchJNI.CoreSession_streamFile__SWIG_0(swigCPtr, this, file, starting_sample_count);
-  }
-
-  public int streamFile(String file) {
-    return freeswitchJNI.CoreSession_streamFile__SWIG_1(swigCPtr, this, file);
+    return freeswitchJNI.CoreSession_streamFile(swigCPtr, this, file, starting_sample_count);
   }
 
   public int sleep(int ms, int sync) {
-    return freeswitchJNI.CoreSession_sleep__SWIG_0(swigCPtr, this, ms, sync);
-  }
-
-  public int sleep(int ms) {
-    return freeswitchJNI.CoreSession_sleep__SWIG_1(swigCPtr, this, ms);
+    return freeswitchJNI.CoreSession_sleep(swigCPtr, this, ms, sync);
   }
 
   public int flushEvents() {
@@ -322,11 +266,7 @@ public class CoreSession {
   }
 
   public void execute(String app, String data) {
-    freeswitchJNI.CoreSession_execute__SWIG_0(swigCPtr, this, app, data);
-  }
-
-  public void execute(String app) {
-    freeswitchJNI.CoreSession_execute__SWIG_1(swigCPtr, this, app);
+    freeswitchJNI.CoreSession_execute(swigCPtr, this, app, data);
   }
 
   public void sendEvent(Event sendME) {

@@ -52,23 +52,33 @@ static void event_handler(switch_event_t *event)
 
 SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, const char *subclass_name)
 {
-	switch_name_event(event_name, &e_event_id);
-	switch_core_new_memory_pool(&pool);
-	
-	if (!zstr(subclass_name)) {
-		e_subclass_name = switch_core_strdup(pool, subclass_name);
-	} else {
-		e_subclass_name = NULL;
-	}
 
+	switch_core_new_memory_pool(&pool);	
 	switch_queue_create(&events, 5000, pool);
 	
-	if (switch_event_bind_removable(__FILE__, e_event_id, e_subclass_name, event_handler, this, &node) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(e_subclass_name));
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to %s %s\n", event_name, switch_str_nil(e_subclass_name));
+	if (!zstr(event_name)) {
+		bind(event_name, subclass_name);
 	}
 
+}
+
+SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subclass_name)
+{
+	switch_event_types_t event_id = SWITCH_EVENT_CUSTOM;
+	switch_name_event(event_name, &event_id);
+
+
+	if (zstr(subclass_name)) {
+		subclass_name = NULL;
+	}
+	
+	if (switch_event_bind(__FILE__, event_id, subclass_name, event_handler, this) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(subclass_name));
+		return 1;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to %s %s\n", event_name, switch_str_nil(subclass_name));
+		return 0;
+	}
 }
 
 
@@ -93,9 +103,8 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block)
 
 SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
 {
-	if (node) {
-		switch_event_unbind(&node);
-	}
+
+	switch_event_unbind_callback(event_handler);
 
 	if (events) {
 		switch_queue_interrupt_all(events);

@@ -1198,7 +1198,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 	if (node) {
 		*node = NULL;
 	}
-
+	
 	if (subclass_name) {
 		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
 			switch_event_reserve_subclass_detailed(id, subclass_name);

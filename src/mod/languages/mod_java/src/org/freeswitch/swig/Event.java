@@ -62,32 +62,16 @@ public class Event {
     this(freeswitchJNI.new_Event__SWIG_0(type, subclass_name), true);
   }
 
-  public Event(String type) {
-    this(freeswitchJNI.new_Event__SWIG_1(type), true);
-  }
-
   public Event(SWIGTYPE_p_switch_event_t wrap_me, int free_me) {
-    this(freeswitchJNI.new_Event__SWIG_2(SWIGTYPE_p_switch_event_t.getCPtr(wrap_me), free_me), true);
-  }
-
-  public Event(SWIGTYPE_p_switch_event_t wrap_me) {
-    this(freeswitchJNI.new_Event__SWIG_3(SWIGTYPE_p_switch_event_t.getCPtr(wrap_me)), true);
+    this(freeswitchJNI.new_Event__SWIG_1(SWIGTYPE_p_switch_event_t.getCPtr(wrap_me), free_me), true);
   }
 
   public String serialize(String format) {
-    return freeswitchJNI.Event_serialize__SWIG_0(swigCPtr, this, format);
-  }
-
-  public String serialize() {
-    return freeswitchJNI.Event_serialize__SWIG_1(swigCPtr, this);
+    return freeswitchJNI.Event_serialize(swigCPtr, this, format);
   }
 
   public boolean setPriority(SWIGTYPE_p_switch_priority_t priority) {
-    return freeswitchJNI.Event_setPriority__SWIG_0(swigCPtr, this, SWIGTYPE_p_switch_priority_t.getCPtr(priority));
-  }
-
-  public boolean setPriority() {
-    return freeswitchJNI.Event_setPriority__SWIG_1(swigCPtr, this);
+    return freeswitchJNI.Event_setPriority(swigCPtr, this, SWIGTYPE_p_switch_priority_t.getCPtr(priority));
   }
 
   public String getHeader(String header_name) {

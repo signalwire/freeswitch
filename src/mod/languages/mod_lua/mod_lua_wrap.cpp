@@ -1499,20 +1499,19 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_switch_channel_state_t swig_types[12]
 #define SWIGTYPE_p_switch_channel_t swig_types[13]
 #define SWIGTYPE_p_switch_core_session_t swig_types[14]
-#define SWIGTYPE_p_switch_event_node_t swig_types[15]
-#define SWIGTYPE_p_switch_event_t swig_types[16]
-#define SWIGTYPE_p_switch_event_types_t swig_types[17]
-#define SWIGTYPE_p_switch_input_args_t swig_types[18]
-#define SWIGTYPE_p_switch_input_type_t swig_types[19]
-#define SWIGTYPE_p_switch_priority_t swig_types[20]
-#define SWIGTYPE_p_switch_queue_t swig_types[21]
-#define SWIGTYPE_p_switch_state_handler_table_t swig_types[22]
-#define SWIGTYPE_p_switch_status_t swig_types[23]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[24]
-#define SWIGTYPE_p_uint32_t swig_types[25]
-#define SWIGTYPE_p_void swig_types[26]
-static swig_type_info *swig_types[28];
-static swig_module_info swig_module = {swig_types, 27, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_event_t swig_types[15]
+#define SWIGTYPE_p_switch_event_types_t swig_types[16]
+#define SWIGTYPE_p_switch_input_args_t swig_types[17]
+#define SWIGTYPE_p_switch_input_type_t swig_types[18]
+#define SWIGTYPE_p_switch_priority_t swig_types[19]
+#define SWIGTYPE_p_switch_queue_t swig_types[20]
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[21]
+#define SWIGTYPE_p_switch_status_t swig_types[22]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[23]
+#define SWIGTYPE_p_uint32_t swig_types[24]
+#define SWIGTYPE_p_void swig_types[25]
+static swig_type_info *swig_types[27];
+static swig_module_info swig_module = {swig_types, 26, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1801,24 +1800,26 @@ fail:
 }
 
 
-static int _wrap_API_execute__SWIG_0(lua_State* L) {
+static int _wrap_API_execute(lua_State* L) {
   int SWIG_arg = -1;
   API *arg1 = (API *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   char *result = 0 ;
   
-  SWIG_check_num_args("execute",3,3)
+  SWIG_check_num_args("execute",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"API *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_API,0))){
     SWIG_fail_ptr("API_execute",1,SWIGTYPE_p_API);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
   result = (char *)(arg1)->execute((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
@@ -1829,90 +1830,6 @@ static int _wrap_API_execute__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_API_execute__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  API *arg1 = (API *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("execute",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"API *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_API,0))){
-    SWIG_fail_ptr("API_execute",1,SWIGTYPE_p_API);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (char *)(arg1)->execute((char const *)arg2);
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_API_execute(lua_State* L) {
-  int argc;
-  int argv[4]={
-    1,2,3,4
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_API, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_API_execute__SWIG_1(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_API, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_API_execute__SWIG_0(L);
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'API_execute'");
-  lua_error(L);return 0;
 }
 
 
@@ -2381,23 +2298,23 @@ fail:
 }
 
 
-static int _wrap_new_DTMF__SWIG_0(lua_State* L) {
+static int _wrap_new_DTMF(lua_State* L) {
   int SWIG_arg = -1;
   char arg1 ;
-  uint32_t arg2 ;
+  uint32_t arg2 = (uint32_t) SWITCH_DEFAULT_DTMF_DURATION ;
   DTMF *result = 0 ;
   uint32_t *argp2 ;
   
-  SWIG_check_num_args("DTMF",2,2)
+  SWIG_check_num_args("DTMF",1,2)
   if(!lua_isstring(L,1)) SWIG_fail_arg("DTMF",1,"char");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("DTMF",2,"uint32_t");
+  if(lua_gettop(L)>=2 && !lua_isuserdata(L,2)) SWIG_fail_arg("DTMF",2,"uint32_t");
   arg1 = (lua_tostring(L, 1))[0];
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_uint32_t,0))){
-    SWIG_fail_ptr("new_DTMF",2,SWIGTYPE_p_uint32_t);
+  if(lua_gettop(L)>=2){
+    if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_uint32_t,0))){
+      SWIG_fail_ptr("new_DTMF",2,SWIGTYPE_p_uint32_t);
+    }
+    arg2 = *argp2;
   }
-  arg2 = *argp2;
-  
   result = (DTMF *)new DTMF(arg1,arg2);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_DTMF,1); SWIG_arg++; 
@@ -2408,68 +2325,6 @@ static int _wrap_new_DTMF__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_new_DTMF__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  char arg1 ;
-  DTMF *result = 0 ;
-  
-  SWIG_check_num_args("DTMF",1,1)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("DTMF",1,"char");
-  arg1 = (lua_tostring(L, 1))[0];
-  result = (DTMF *)new DTMF(arg1);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_DTMF,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_DTMF(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]) && (lua_strlen(L,argv[0])==1);
-    }
-    if (_v) {
-      return _wrap_new_DTMF__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]) && (lua_strlen(L,argv[0])==1);
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_uint32_t, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        return _wrap_new_DTMF__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'new_DTMF'");
-  lua_error(L);return 0;
 }
 
 
@@ -2853,14 +2708,16 @@ fail:
 static int _wrap_new_Event__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   Event *result = 0 ;
   
-  SWIG_check_num_args("Event",2,2)
+  SWIG_check_num_args("Event",1,2)
   if(!lua_isstring(L,1)) SWIG_fail_arg("Event",1,"char const *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("Event",2,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("Event",2,"char const *");
   arg1 = (char *)lua_tostring(L, 1);
-  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
   result = (Event *)new Event((char const *)arg1,(char const *)arg2);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
@@ -2876,66 +2733,22 @@ fail:
 
 static int _wrap_new_Event__SWIG_1(lua_State* L) {
   int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
-  Event *result = 0 ;
-  
-  SWIG_check_num_args("Event",1,1)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("Event",1,"char const *");
-  arg1 = (char *)lua_tostring(L, 1);
-  result = (Event *)new Event((char const *)arg1);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_Event__SWIG_2(lua_State* L) {
-  int SWIG_arg = -1;
   switch_event_t *arg1 = (switch_event_t *) 0 ;
-  int arg2 ;
+  int arg2 = (int) 0 ;
   Event *result = 0 ;
   
-  SWIG_check_num_args("Event",2,2)
+  SWIG_check_num_args("Event",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Event",1,"switch_event_t *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("Event",2,"int");
+  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("Event",2,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_switch_event_t,0))){
     SWIG_fail_ptr("new_Event",1,SWIGTYPE_p_switch_event_t);
   }
   
-  arg2 = (int)lua_tonumber(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (int)lua_tonumber(L, 2);
+  }
   result = (Event *)new Event(arg1,arg2);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_Event__SWIG_3(lua_State* L) {
-  int SWIG_arg = -1;
-  switch_event_t *arg1 = (switch_event_t *) 0 ;
-  Event *result = 0 ;
-  
-  SWIG_check_num_args("Event",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Event",1,"switch_event_t *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_switch_event_t,0))){
-    SWIG_fail_ptr("new_Event",1,SWIGTYPE_p_switch_event_t);
-  }
-  
-  result = (Event *)new Event(arg1);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
   return SWIG_arg;
@@ -2955,7 +2768,7 @@ static int _wrap_new_Event(lua_State* L) {
   };
   
   argc = lua_gettop(L);
-  if (argc == 1) {
+  if ((argc >= 1) && (argc <= 2)) {
     int _v;
     {
       void *ptr;
@@ -2966,43 +2779,26 @@ static int _wrap_new_Event(lua_State* L) {
       }
     }
     if (_v) {
-      return _wrap_new_Event__SWIG_3(L);
-    }
-  }
-  if (argc == 1) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]);
-    }
-    if (_v) {
-      return _wrap_new_Event__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_switch_event_t, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
+      if (argc <= 1) {
+        return _wrap_new_Event__SWIG_1(L);
       }
-    }
-    if (_v) {
       {
         _v = lua_isnumber(L,argv[1]);
       }
       if (_v) {
-        return _wrap_new_Event__SWIG_2(L);
+        return _wrap_new_Event__SWIG_1(L);
       }
     }
   }
-  if (argc == 2) {
+  if ((argc >= 1) && (argc <= 2)) {
     int _v;
     {
       _v = lua_isstring(L,argv[0]);
     }
     if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_Event__SWIG_0(L);
+      }
       {
         _v = lua_isstring(L,argv[1]);
       }
@@ -3042,21 +2838,23 @@ fail:
 }
 
 
-static int _wrap_Event_serialize__SWIG_0(lua_State* L) {
+static int _wrap_Event_serialize(lua_State* L) {
   int SWIG_arg = -1;
   Event *arg1 = (Event *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   char *result = 0 ;
   
-  SWIG_check_num_args("serialize",2,2)
+  SWIG_check_num_args("serialize",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"Event *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
     SWIG_fail_ptr("Event_serialize",1,SWIGTYPE_p_Event);
   }
   
-  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
   result = (char *)(arg1)->serialize((char const *)arg2);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
@@ -3070,98 +2868,27 @@ fail:
 }
 
 
-static int _wrap_Event_serialize__SWIG_1(lua_State* L) {
+static int _wrap_Event_setPriority(lua_State* L) {
   int SWIG_arg = -1;
   Event *arg1 = (Event *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("serialize",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"Event *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
-    SWIG_fail_ptr("Event_serialize",1,SWIGTYPE_p_Event);
-  }
-  
-  result = (char *)(arg1)->serialize();
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Event_serialize(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_Event, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_Event_serialize__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_Event, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_Event_serialize__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'Event_serialize'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_Event_setPriority__SWIG_0(lua_State* L) {
-  int SWIG_arg = -1;
-  Event *arg1 = (Event *) 0 ;
-  switch_priority_t arg2 ;
+  switch_priority_t arg2 = (switch_priority_t) SWITCH_PRIORITY_NORMAL ;
   bool result;
   switch_priority_t *argp2 ;
   
-  SWIG_check_num_args("setPriority",2,2)
+  SWIG_check_num_args("setPriority",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"Event *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("setPriority",2,"switch_priority_t");
+  if(lua_gettop(L)>=2 && !lua_isuserdata(L,2)) SWIG_fail_arg("setPriority",2,"switch_priority_t");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
     SWIG_fail_ptr("Event_setPriority",1,SWIGTYPE_p_Event);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_switch_priority_t,0))){
-    SWIG_fail_ptr("Event_setPriority",2,SWIGTYPE_p_switch_priority_t);
+  if(lua_gettop(L)>=2){
+    if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_switch_priority_t,0))){
+      SWIG_fail_ptr("Event_setPriority",2,SWIGTYPE_p_switch_priority_t);
+    }
+    arg2 = *argp2;
   }
-  arg2 = *argp2;
-  
   result = (bool)(arg1)->setPriority(arg2);
   SWIG_arg=0;
   lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
@@ -3172,82 +2899,6 @@ static int _wrap_Event_setPriority__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_Event_setPriority__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  Event *arg1 = (Event *) 0 ;
-  bool result;
-  
-  SWIG_check_num_args("setPriority",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"Event *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
-    SWIG_fail_ptr("Event_setPriority",1,SWIGTYPE_p_Event);
-  }
-  
-  result = (bool)(arg1)->setPriority();
-  SWIG_arg=0;
-  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_Event_setPriority(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_Event, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_Event_setPriority__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_Event, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_switch_priority_t, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        return _wrap_Event_setPriority__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'Event_setPriority'");
-  lua_error(L);return 0;
 }
 
 
@@ -3586,63 +3237,6 @@ fail:
 }
 
 
-static int _wrap_EventConsumer_node_set(lua_State* L) {
-  int SWIG_arg = -1;
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  switch_event_node_t *arg2 = (switch_event_node_t *) 0 ;
-  
-  SWIG_check_num_args("node",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("node",1,"EventConsumer *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("node",2,"switch_event_node_t *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
-    SWIG_fail_ptr("EventConsumer_node_set",1,SWIGTYPE_p_EventConsumer);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_switch_event_node_t,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("EventConsumer_node_set",2,SWIGTYPE_p_switch_event_node_t);
-  }
-  
-  if (arg1) (arg1)->node = arg2;
-  
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_EventConsumer_node_get(lua_State* L) {
-  int SWIG_arg = -1;
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  switch_event_node_t *result = 0 ;
-  
-  SWIG_check_num_args("node",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("node",1,"EventConsumer *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
-    SWIG_fail_ptr("EventConsumer_node_get",1,SWIGTYPE_p_EventConsumer);
-  }
-  
-  result = (switch_event_node_t *) ((arg1)->node);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_switch_event_node_t,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
 static int _wrap_EventConsumer_e_callback_set(lua_State* L) {
   int SWIG_arg = -1;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
@@ -3823,17 +3417,21 @@ fail:
 }
 
 
-static int _wrap_new_EventConsumer__SWIG_0(lua_State* L) {
+static int _wrap_new_EventConsumer(lua_State* L) {
   int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg1 = (char *) NULL ;
+  char *arg2 = (char *) "" ;
   EventConsumer *result = 0 ;
   
-  SWIG_check_num_args("EventConsumer",2,2)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("EventConsumer",1,"char const *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("EventConsumer",2,"char const *");
-  arg1 = (char *)lua_tostring(L, 1);
-  arg2 = (char *)lua_tostring(L, 2);
+  SWIG_check_num_args("EventConsumer",0,2)
+  if(lua_gettop(L)>=1 && !lua_isstring(L,1)) SWIG_fail_arg("EventConsumer",1,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("EventConsumer",2,"char const *");
+  if(lua_gettop(L)>=1){
+    arg1 = (char *)lua_tostring(L, 1);
+  }
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
   result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_EventConsumer,1); SWIG_arg++; 
@@ -3844,63 +3442,6 @@ static int _wrap_new_EventConsumer__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_new_EventConsumer__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
-  EventConsumer *result = 0 ;
-  
-  SWIG_check_num_args("EventConsumer",1,1)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("EventConsumer",1,"char const *");
-  arg1 = (char *)lua_tostring(L, 1);
-  result = (EventConsumer *)new EventConsumer((char const *)arg1);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_EventConsumer,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_EventConsumer(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]);
-    }
-    if (_v) {
-      return _wrap_new_EventConsumer__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]);
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_new_EventConsumer__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'new_EventConsumer'");
-  lua_error(L);return 0;
 }
 
 
@@ -3929,21 +3470,56 @@ fail:
 }
 
 
-static int _wrap_EventConsumer_pop__SWIG_0(lua_State* L) {
+static int _wrap_EventConsumer_bind(lua_State* L) {
   int SWIG_arg = -1;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
-  int arg2 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) "" ;
+  int result;
+  
+  SWIG_check_num_args("bind",2,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("bind",1,"EventConsumer *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("bind",2,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("bind",3,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
+    SWIG_fail_ptr("EventConsumer_bind",1,SWIGTYPE_p_EventConsumer);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  result = (int)(arg1)->bind((char const *)arg2,(char const *)arg3);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_EventConsumer_pop(lua_State* L) {
+  int SWIG_arg = -1;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  int arg2 = (int) 0 ;
   Event *result = 0 ;
   
-  SWIG_check_num_args("pop",2,2)
+  SWIG_check_num_args("pop",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("pop",1,"EventConsumer *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("pop",2,"int");
+  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("pop",2,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
     SWIG_fail_ptr("EventConsumer_pop",1,SWIGTYPE_p_EventConsumer);
   }
   
-  arg2 = (int)lua_tonumber(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (int)lua_tonumber(L, 2);
+  }
   result = (Event *)(arg1)->pop(arg2);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
@@ -3957,89 +3533,18 @@ fail:
 }
 
 
-static int _wrap_EventConsumer_pop__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  Event *result = 0 ;
-  
-  SWIG_check_num_args("pop",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("pop",1,"EventConsumer *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
-    SWIG_fail_ptr("EventConsumer_pop",1,SWIGTYPE_p_EventConsumer);
-  }
-  
-  result = (Event *)(arg1)->pop();
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_EventConsumer_pop(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_EventConsumer, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_EventConsumer_pop__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_EventConsumer, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_EventConsumer_pop__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'EventConsumer_pop'");
-  lua_error(L);return 0;
-}
-
-
 static void swig_delete_EventConsumer(void *obj) {
 EventConsumer *arg1 = (EventConsumer *) obj;
 delete arg1;
 }
 static swig_lua_method swig_EventConsumer_methods[] = {
+    {"bind", _wrap_EventConsumer_bind}, 
     {"pop", _wrap_EventConsumer_pop}, 
     {0,0}
 };
 static swig_lua_attribute swig_EventConsumer_attributes[] = {
     { "events", _wrap_EventConsumer_events_get, _wrap_EventConsumer_events_set},
     { "e_event_id", _wrap_EventConsumer_e_event_id_get, _wrap_EventConsumer_e_event_id_set},
-    { "node", _wrap_EventConsumer_node_get, _wrap_EventConsumer_node_set},
     { "e_callback", _wrap_EventConsumer_e_callback_get, _wrap_EventConsumer_e_callback_set},
     { "e_subclass_name", _wrap_EventConsumer_e_subclass_name_get, _wrap_EventConsumer_e_subclass_name_set},
     { "e_cb_arg", _wrap_EventConsumer_e_cb_arg_get, _wrap_EventConsumer_e_cb_arg_set},
@@ -4705,20 +4210,22 @@ fail:
 }
 
 
-static int _wrap_CoreSession_hangup__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_hangup(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) "normal_clearing" ;
   
-  SWIG_check_num_args("hangup",2,2)
+  SWIG_check_num_args("hangup",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("hangup",2,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("hangup",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_hangup",1,SWIGTYPE_p_CoreSession);
   }
   
-  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
   (arg1)->hangup((char const *)arg2);
   SWIG_arg=0;
   
@@ -4729,76 +4236,6 @@ static int _wrap_CoreSession_hangup__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_hangup__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  
-  SWIG_check_num_args("hangup",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("hangup",1,"CoreSession *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_hangup",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  (arg1)->hangup();
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_hangup(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_CoreSession_hangup__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_hangup__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_hangup'");
-  lua_error(L);return 0;
 }
 
 
@@ -4973,22 +4410,22 @@ fail:
 }
 
 
-static int _wrap_CoreSession_say__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_say(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  char *arg6 = (char *) 0 ;
+  char *arg6 = (char *) NULL ;
   
-  SWIG_check_num_args("say",6,6)
+  SWIG_check_num_args("say",5,6)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("say",1,"CoreSession *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("say",2,"char const *");
   if(!lua_isstring(L,3)) SWIG_fail_arg("say",3,"char const *");
   if(!lua_isstring(L,4)) SWIG_fail_arg("say",4,"char const *");
   if(!lua_isstring(L,5)) SWIG_fail_arg("say",5,"char const *");
-  if(!lua_isstring(L,6)) SWIG_fail_arg("say",6,"char const *");
+  if(lua_gettop(L)>=6 && !lua_isstring(L,6)) SWIG_fail_arg("say",6,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_say",1,SWIGTYPE_p_CoreSession);
@@ -4998,7 +4435,9 @@ static int _wrap_CoreSession_say__SWIG_0(lua_State* L) {
   arg3 = (char *)lua_tostring(L, 3);
   arg4 = (char *)lua_tostring(L, 4);
   arg5 = (char *)lua_tostring(L, 5);
-  arg6 = (char *)lua_tostring(L, 6);
+  if(lua_gettop(L)>=6){
+    arg6 = (char *)lua_tostring(L, 6);
+  }
   (arg1)->say((char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6);
   SWIG_arg=0;
   
@@ -5012,148 +4451,30 @@ fail:
 }
 
 
-static int _wrap_CoreSession_say__SWIG_1(lua_State* L) {
+static int _wrap_CoreSession_sayPhrase(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  char *arg5 = (char *) 0 ;
+  char *arg3 = (char *) "" ;
+  char *arg4 = (char *) NULL ;
   
-  SWIG_check_num_args("say",5,5)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("say",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("say",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("say",3,"char const *");
-  if(!lua_isstring(L,4)) SWIG_fail_arg("say",4,"char const *");
-  if(!lua_isstring(L,5)) SWIG_fail_arg("say",5,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_say",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (char *)lua_tostring(L, 4);
-  arg5 = (char *)lua_tostring(L, 5);
-  (arg1)->say((char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5);
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_say(lua_State* L) {
-  int argc;
-  int argv[7]={
-    1,2,3,4,5,6,7
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 5) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isstring(L,argv[3]);
-          }
-          if (_v) {
-            {
-              _v = lua_isstring(L,argv[4]);
-            }
-            if (_v) {
-              return _wrap_CoreSession_say__SWIG_1(L);
-            }
-          }
-        }
-      }
-    }
-  }
-  if (argc == 6) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isstring(L,argv[3]);
-          }
-          if (_v) {
-            {
-              _v = lua_isstring(L,argv[4]);
-            }
-            if (_v) {
-              {
-                _v = lua_isstring(L,argv[5]);
-              }
-              if (_v) {
-                return _wrap_CoreSession_say__SWIG_0(L);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_say'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_CoreSession_sayPhrase__SWIG_0(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  
-  SWIG_check_num_args("sayPhrase",4,4)
+  SWIG_check_num_args("sayPhrase",2,4)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sayPhrase",1,"CoreSession *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("sayPhrase",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("sayPhrase",3,"char const *");
-  if(!lua_isstring(L,4)) SWIG_fail_arg("sayPhrase",4,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("sayPhrase",3,"char const *");
+  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("sayPhrase",4,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_sayPhrase",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (char *)lua_tostring(L, 4);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
   (arg1)->sayPhrase((char const *)arg2,(char const *)arg3,(char const *)arg4);
   SWIG_arg=0;
   
@@ -5164,148 +4485,6 @@ static int _wrap_CoreSession_sayPhrase__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_sayPhrase__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  
-  SWIG_check_num_args("sayPhrase",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sayPhrase",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("sayPhrase",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("sayPhrase",3,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_sayPhrase",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  (arg1)->sayPhrase((char const *)arg2,(char const *)arg3);
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_sayPhrase__SWIG_2(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  
-  SWIG_check_num_args("sayPhrase",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sayPhrase",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("sayPhrase",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_sayPhrase",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  (arg1)->sayPhrase((char const *)arg2);
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_sayPhrase(lua_State* L) {
-  int argc;
-  int argv[5]={
-    1,2,3,4,5
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_sayPhrase__SWIG_2(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_sayPhrase__SWIG_1(L);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isstring(L,argv[3]);
-          }
-          if (_v) {
-            return _wrap_CoreSession_sayPhrase__SWIG_0(L);
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_sayPhrase'");
-  lua_error(L);return 0;
 }
 
 
@@ -5359,30 +4538,36 @@ fail:
 }
 
 
-static int _wrap_CoreSession_recordFile__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_recordFile(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  int arg3 ;
-  int arg4 ;
-  int arg5 ;
+  int arg3 = (int) 0 ;
+  int arg4 = (int) 0 ;
+  int arg5 = (int) 0 ;
   int result;
   
-  SWIG_check_num_args("recordFile",5,5)
+  SWIG_check_num_args("recordFile",2,5)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recordFile",1,"CoreSession *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("recordFile",2,"char *");
-  if(!lua_isnumber(L,3)) SWIG_fail_arg("recordFile",3,"int");
-  if(!lua_isnumber(L,4)) SWIG_fail_arg("recordFile",4,"int");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("recordFile",5,"int");
+  if(lua_gettop(L)>=3 && !lua_isnumber(L,3)) SWIG_fail_arg("recordFile",3,"int");
+  if(lua_gettop(L)>=4 && !lua_isnumber(L,4)) SWIG_fail_arg("recordFile",4,"int");
+  if(lua_gettop(L)>=5 && !lua_isnumber(L,5)) SWIG_fail_arg("recordFile",5,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_recordFile",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (int)lua_tonumber(L, 3);
-  arg4 = (int)lua_tonumber(L, 4);
-  arg5 = (int)lua_tonumber(L, 5);
+  if(lua_gettop(L)>=3){
+    arg3 = (int)lua_tonumber(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (int)lua_tonumber(L, 4);
+  }
+  if(lua_gettop(L)>=5){
+    arg5 = (int)lua_tonumber(L, 5);
+  }
   result = (int)(arg1)->recordFile(arg2,arg3,arg4,arg5);
   SWIG_arg=0;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
@@ -5396,233 +4581,21 @@ fail:
 }
 
 
-static int _wrap_CoreSession_recordFile__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int arg3 ;
-  int arg4 ;
-  int result;
-  
-  SWIG_check_num_args("recordFile",4,4)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recordFile",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("recordFile",2,"char *");
-  if(!lua_isnumber(L,3)) SWIG_fail_arg("recordFile",3,"int");
-  if(!lua_isnumber(L,4)) SWIG_fail_arg("recordFile",4,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_recordFile",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (int)lua_tonumber(L, 3);
-  arg4 = (int)lua_tonumber(L, 4);
-  result = (int)(arg1)->recordFile(arg2,arg3,arg4);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_recordFile__SWIG_2(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int arg3 ;
-  int result;
-  
-  SWIG_check_num_args("recordFile",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recordFile",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("recordFile",2,"char *");
-  if(!lua_isnumber(L,3)) SWIG_fail_arg("recordFile",3,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_recordFile",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (int)lua_tonumber(L, 3);
-  result = (int)(arg1)->recordFile(arg2,arg3);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_recordFile__SWIG_3(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("recordFile",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recordFile",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("recordFile",2,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_recordFile",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (int)(arg1)->recordFile(arg2);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_recordFile(lua_State* L) {
-  int argc;
-  int argv[6]={
-    1,2,3,4,5,6
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_recordFile__SWIG_3(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_recordFile__SWIG_2(L);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            return _wrap_CoreSession_recordFile__SWIG_1(L);
-          }
-        }
-      }
-    }
-  }
-  if (argc == 5) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            {
-              _v = lua_isnumber(L,argv[4]);
-            }
-            if (_v) {
-              return _wrap_CoreSession_recordFile__SWIG_0(L);
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_recordFile'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_CoreSession_originate__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_originate(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   CoreSession *arg2 = (CoreSession *) 0 ;
   char *arg3 = (char *) 0 ;
-  int arg4 ;
-  switch_state_handler_table_t *arg5 = (switch_state_handler_table_t *) 0 ;
+  int arg4 = (int) 60 ;
+  switch_state_handler_table_t *arg5 = (switch_state_handler_table_t *) NULL ;
   int result;
   
-  SWIG_check_num_args("originate",5,5)
+  SWIG_check_num_args("originate",3,5)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("originate",1,"CoreSession *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("originate",2,"CoreSession *");
   if(!lua_isstring(L,3)) SWIG_fail_arg("originate",3,"char *");
-  if(!lua_isnumber(L,4)) SWIG_fail_arg("originate",4,"int");
-  if(!SWIG_isptrtype(L,5)) SWIG_fail_arg("originate",5,"switch_state_handler_table_t *");
+  if(lua_gettop(L)>=4 && !lua_isnumber(L,4)) SWIG_fail_arg("originate",4,"int");
+  if(lua_gettop(L)>=5 && !SWIG_isptrtype(L,5)) SWIG_fail_arg("originate",5,"switch_state_handler_table_t *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_originate",1,SWIGTYPE_p_CoreSession);
@@ -5634,12 +4607,14 @@ static int _wrap_CoreSession_originate__SWIG_0(lua_State* L) {
   }
   
   arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (int)lua_tonumber(L, 4);
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,5,(void**)&arg5,SWIGTYPE_p_switch_state_handler_table_t,0))){
-    SWIG_fail_ptr("CoreSession_originate",5,SWIGTYPE_p_switch_state_handler_table_t);
+  if(lua_gettop(L)>=4){
+    arg4 = (int)lua_tonumber(L, 4);
   }
-  
+  if(lua_gettop(L)>=5){
+    if (!SWIG_IsOK(SWIG_ConvertPtr(L,5,(void**)&arg5,SWIGTYPE_p_switch_state_handler_table_t,0))){
+      SWIG_fail_ptr("CoreSession_originate",5,SWIGTYPE_p_switch_state_handler_table_t);
+    }
+  }
   result = (int)(arg1)->originate(arg2,arg3,arg4,arg5);
   SWIG_arg=0;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
@@ -5650,199 +4625,6 @@ static int _wrap_CoreSession_originate__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_originate__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  CoreSession *arg2 = (CoreSession *) 0 ;
-  char *arg3 = (char *) 0 ;
-  int arg4 ;
-  int result;
-  
-  SWIG_check_num_args("originate",4,4)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("originate",1,"CoreSession *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("originate",2,"CoreSession *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("originate",3,"char *");
-  if(!lua_isnumber(L,4)) SWIG_fail_arg("originate",4,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_originate",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_originate",2,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (int)lua_tonumber(L, 4);
-  result = (int)(arg1)->originate(arg2,arg3,arg4);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_originate__SWIG_2(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  CoreSession *arg2 = (CoreSession *) 0 ;
-  char *arg3 = (char *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("originate",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("originate",1,"CoreSession *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("originate",2,"CoreSession *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("originate",3,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_originate",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_originate",2,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg3 = (char *)lua_tostring(L, 3);
-  result = (int)(arg1)->originate(arg2,arg3);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_originate(lua_State* L) {
-  int argc;
-  int argv[6]={
-    1,2,3,4,5,6
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (SWIG_isptrtype(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_originate__SWIG_2(L);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (SWIG_isptrtype(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            return _wrap_CoreSession_originate__SWIG_1(L);
-          }
-        }
-      }
-    }
-  }
-  if (argc == 5) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (SWIG_isptrtype(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            {
-              void *ptr;
-              if (SWIG_isptrtype(L,argv[4])==0 || SWIG_ConvertPtr(L,argv[4], (void **) &ptr, SWIGTYPE_p_switch_state_handler_table_t, 0)) {
-                _v = 0;
-              } else {
-                _v = 1;
-              }
-            }
-            if (_v) {
-              return _wrap_CoreSession_originate__SWIG_0(L);
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_originate'");
-  lua_error(L);return 0;
 }
 
 
@@ -6220,27 +5002,31 @@ static int _wrap_CoreSession_getDigits(lua_State* L) {
 }
 
 
-static int _wrap_CoreSession_transfer__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_transfer(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   int result;
   
-  SWIG_check_num_args("transfer",4,4)
+  SWIG_check_num_args("transfer",2,4)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("transfer",1,"CoreSession *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("transfer",2,"char *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("transfer",3,"char *");
-  if(!lua_isstring(L,4)) SWIG_fail_arg("transfer",4,"char *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("transfer",3,"char *");
+  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("transfer",4,"char *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_transfer",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (char *)lua_tostring(L, 4);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
   result = (int)(arg1)->transfer(arg2,arg3,arg4);
   SWIG_arg=0;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
@@ -6251,150 +5037,6 @@ static int _wrap_CoreSession_transfer__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_transfer__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("transfer",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("transfer",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("transfer",2,"char *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("transfer",3,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_transfer",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  result = (int)(arg1)->transfer(arg2,arg3);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_transfer__SWIG_2(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("transfer",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("transfer",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("transfer",2,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_transfer",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (int)(arg1)->transfer(arg2);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_transfer(lua_State* L) {
-  int argc;
-  int argv[5]={
-    1,2,3,4,5
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_transfer__SWIG_2(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_transfer__SWIG_1(L);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isstring(L,argv[3]);
-          }
-          if (_v) {
-            return _wrap_CoreSession_transfer__SWIG_0(L);
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_transfer'");
-  lua_error(L);return 0;
 }
 
 
@@ -6438,7 +5080,7 @@ fail:
 }
 
 
-static int _wrap_CoreSession_playAndGetDigits__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -6449,10 +5091,10 @@ static int _wrap_CoreSession_playAndGetDigits__SWIG_0(lua_State* L) {
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
-  char *arg10 = (char *) 0 ;
+  char *arg10 = (char *) NULL ;
   char *result = 0 ;
   
-  SWIG_check_num_args("playAndGetDigits",10,10)
+  SWIG_check_num_args("playAndGetDigits",9,10)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("playAndGetDigits",1,"CoreSession *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("playAndGetDigits",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("playAndGetDigits",3,"int");
@@ -6462,7 +5104,7 @@ static int _wrap_CoreSession_playAndGetDigits__SWIG_0(lua_State* L) {
   if(!lua_isstring(L,7)) SWIG_fail_arg("playAndGetDigits",7,"char *");
   if(!lua_isstring(L,8)) SWIG_fail_arg("playAndGetDigits",8,"char *");
   if(!lua_isstring(L,9)) SWIG_fail_arg("playAndGetDigits",9,"char *");
-  if(!lua_isstring(L,10)) SWIG_fail_arg("playAndGetDigits",10,"char const *");
+  if(lua_gettop(L)>=10 && !lua_isstring(L,10)) SWIG_fail_arg("playAndGetDigits",10,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_playAndGetDigits",1,SWIGTYPE_p_CoreSession);
@@ -6476,7 +5118,9 @@ static int _wrap_CoreSession_playAndGetDigits__SWIG_0(lua_State* L) {
   arg7 = (char *)lua_tostring(L, 7);
   arg8 = (char *)lua_tostring(L, 8);
   arg9 = (char *)lua_tostring(L, 9);
-  arg10 = (char *)lua_tostring(L, 10);
+  if(lua_gettop(L)>=10){
+    arg10 = (char *)lua_tostring(L, 10);
+  }
   result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
@@ -6490,199 +5134,26 @@ fail:
 }
 
 
-static int _wrap_CoreSession_playAndGetDigits__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  int arg5 ;
-  char *arg6 = (char *) 0 ;
-  char *arg7 = (char *) 0 ;
-  char *arg8 = (char *) 0 ;
-  char *arg9 = (char *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("playAndGetDigits",9,9)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("playAndGetDigits",1,"CoreSession *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("playAndGetDigits",2,"int");
-  if(!lua_isnumber(L,3)) SWIG_fail_arg("playAndGetDigits",3,"int");
-  if(!lua_isnumber(L,4)) SWIG_fail_arg("playAndGetDigits",4,"int");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("playAndGetDigits",5,"int");
-  if(!lua_isstring(L,6)) SWIG_fail_arg("playAndGetDigits",6,"char *");
-  if(!lua_isstring(L,7)) SWIG_fail_arg("playAndGetDigits",7,"char *");
-  if(!lua_isstring(L,8)) SWIG_fail_arg("playAndGetDigits",8,"char *");
-  if(!lua_isstring(L,9)) SWIG_fail_arg("playAndGetDigits",9,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_playAndGetDigits",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (int)lua_tonumber(L, 2);
-  arg3 = (int)lua_tonumber(L, 3);
-  arg4 = (int)lua_tonumber(L, 4);
-  arg5 = (int)lua_tonumber(L, 5);
-  arg6 = (char *)lua_tostring(L, 6);
-  arg7 = (char *)lua_tostring(L, 7);
-  arg8 = (char *)lua_tostring(L, 8);
-  arg9 = (char *)lua_tostring(L, 9);
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
-  int argc;
-  int argv[11]={
-    1,2,3,4,5,6,7,8,9,10,11
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 9) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            {
-              _v = lua_isnumber(L,argv[4]);
-            }
-            if (_v) {
-              {
-                _v = lua_isstring(L,argv[5]);
-              }
-              if (_v) {
-                {
-                  _v = lua_isstring(L,argv[6]);
-                }
-                if (_v) {
-                  {
-                    _v = lua_isstring(L,argv[7]);
-                  }
-                  if (_v) {
-                    {
-                      _v = lua_isstring(L,argv[8]);
-                    }
-                    if (_v) {
-                      return _wrap_CoreSession_playAndGetDigits__SWIG_1(L);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if (argc == 10) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isnumber(L,argv[3]);
-          }
-          if (_v) {
-            {
-              _v = lua_isnumber(L,argv[4]);
-            }
-            if (_v) {
-              {
-                _v = lua_isstring(L,argv[5]);
-              }
-              if (_v) {
-                {
-                  _v = lua_isstring(L,argv[6]);
-                }
-                if (_v) {
-                  {
-                    _v = lua_isstring(L,argv[7]);
-                  }
-                  if (_v) {
-                    {
-                      _v = lua_isstring(L,argv[8]);
-                    }
-                    if (_v) {
-                      {
-                        _v = lua_isstring(L,argv[9]);
-                      }
-                      if (_v) {
-                        return _wrap_CoreSession_playAndGetDigits__SWIG_0(L);
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_playAndGetDigits'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_CoreSession_streamFile__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_streamFile(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  int arg3 ;
+  int arg3 = (int) 0 ;
   int result;
   
-  SWIG_check_num_args("streamFile",3,3)
+  SWIG_check_num_args("streamFile",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("streamFile",1,"CoreSession *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("streamFile",2,"char *");
-  if(!lua_isnumber(L,3)) SWIG_fail_arg("streamFile",3,"int");
+  if(lua_gettop(L)>=3 && !lua_isnumber(L,3)) SWIG_fail_arg("streamFile",3,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_streamFile",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (int)lua_tonumber(L, 3);
+  if(lua_gettop(L)>=3){
+    arg3 = (int)lua_tonumber(L, 3);
+  }
   result = (int)(arg1)->streamFile(arg2,arg3);
   SWIG_arg=0;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
@@ -6696,108 +5167,26 @@ fail:
 }
 
 
-static int _wrap_CoreSession_streamFile__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  SWIG_check_num_args("streamFile",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("streamFile",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("streamFile",2,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_streamFile",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (int)(arg1)->streamFile(arg2);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_streamFile(lua_State* L) {
-  int argc;
-  int argv[4]={
-    1,2,3,4
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_streamFile__SWIG_1(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_streamFile__SWIG_0(L);
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_streamFile'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_CoreSession_sleep__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_sleep(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
-  int arg3 ;
+  int arg3 = (int) 0 ;
   int result;
   
-  SWIG_check_num_args("sleep",3,3)
+  SWIG_check_num_args("sleep",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sleep",1,"CoreSession *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("sleep",2,"int");
-  if(!lua_isnumber(L,3)) SWIG_fail_arg("sleep",3,"int");
+  if(lua_gettop(L)>=3 && !lua_isnumber(L,3)) SWIG_fail_arg("sleep",3,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_sleep",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (int)lua_tonumber(L, 2);
-  arg3 = (int)lua_tonumber(L, 3);
+  if(lua_gettop(L)>=3){
+    arg3 = (int)lua_tonumber(L, 3);
+  }
   result = (int)(arg1)->sleep(arg2,arg3);
   SWIG_arg=0;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
@@ -6808,90 +5197,6 @@ static int _wrap_CoreSession_sleep__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_sleep__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  int arg2 ;
-  int result;
-  
-  SWIG_check_num_args("sleep",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sleep",1,"CoreSession *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("sleep",2,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_sleep",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (int)lua_tonumber(L, 2);
-  result = (int)(arg1)->sleep(arg2);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_sleep(lua_State* L) {
-  int argc;
-  int argv[4]={
-    1,2,3,4
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_sleep__SWIG_1(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isnumber(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_sleep__SWIG_0(L);
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_sleep'");
-  lua_error(L);return 0;
 }
 
 
@@ -7131,23 +5436,25 @@ fail:
 }
 
 
-static int _wrap_CoreSession_execute__SWIG_0(lua_State* L) {
+static int _wrap_CoreSession_execute(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   
-  SWIG_check_num_args("execute",3,3)
+  SWIG_check_num_args("execute",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"CoreSession *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_execute",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
   (arg1)->execute((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
   
@@ -7158,89 +5465,6 @@ static int _wrap_CoreSession_execute__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_execute__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  
-  SWIG_check_num_args("execute",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
-    SWIG_fail_ptr("CoreSession_execute",1,SWIGTYPE_p_CoreSession);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  (arg1)->execute((char const *)arg2);
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_CoreSession_execute(lua_State* L) {
-  int argc;
-  int argv[4]={
-    1,2,3,4
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_CoreSession_execute__SWIG_1(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_CoreSession_execute__SWIG_0(L);
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'CoreSession_execute'");
-  lua_error(L);return 0;
 }
 
 
@@ -8703,7 +6927,6 @@ static swig_type_info _swigt__p_switch_call_cause_t = {"_p_switch_call_cause_t",
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_switch_event_node_t = {"_p_switch_event_node_t", "switch_event_node_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_event_t = {"_p_switch_event_t", "switch_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_event_types_t = {"_p_switch_event_types_t", "switch_event_types_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_args_t = {"_p_switch_input_args_t", "switch_input_args_t *", 0, 0, (void*)0, 0};
@@ -8732,7 +6955,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
-  &_swigt__p_switch_event_node_t,
   &_swigt__p_switch_event_t,
   &_swigt__p_switch_event_types_t,
   &_swigt__p_switch_input_args_t,
@@ -8761,7 +6983,6 @@ static swig_cast_info _swigc__p_switch_call_cause_t[] = {  {&_swigt__p_switch_ca
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_switch_event_node_t[] = {  {&_swigt__p_switch_event_node_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_event_t[] = {  {&_swigt__p_switch_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_event_types_t[] = {  {&_swigt__p_switch_event_types_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_args_t[] = {  {&_swigt__p_switch_input_args_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -8790,7 +7011,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
-  _swigc__p_switch_event_node_t,
   _swigc__p_switch_event_t,
   _swigc__p_switch_event_types_t,
   _swigc__p_switch_input_args_t,

@@ -421,11 +421,11 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1API(JNIEn
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_API_1execute_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_API_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
   jstring jresult = 0 ;
   API *arg1 = (API *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   char *result = 0 ;
   
   (void)jenv;
@@ -446,28 +446,6 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_API_1execute_1
   if(result) jresult = jenv->NewStringUTF((const char *)result);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-  return jresult;
-}
-
-
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_API_1execute_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
-  jstring jresult = 0 ;
-  API *arg1 = (API *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(API **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  result = (char *)(arg1)->execute((char const *)arg2);
-  if(result) jresult = jenv->NewStringUTF((const char *)result);
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   return jresult;
 }
 
@@ -760,10 +738,10 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_DTMF_1duration_1
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1DTMF_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jchar jarg1, jlong jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1DTMF(JNIEnv *jenv, jclass jcls, jchar jarg1, jlong jarg2) {
   jlong jresult = 0 ;
   char arg1 ;
-  uint32_t arg2 ;
+  uint32_t arg2 = (uint32_t) SWITCH_DEFAULT_DTMF_DURATION ;
   DTMF *result = 0 ;
   uint32_t *argp2 ;
   
@@ -777,20 +755,6 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1DTMF_1_1SWI
   }
   arg2 = *argp2; 
   result = (DTMF *)new DTMF(arg1,arg2);
-  *(DTMF **)&jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1DTMF_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jchar jarg1) {
-  jlong jresult = 0 ;
-  char arg1 ;
-  DTMF *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  arg1 = (char)jarg1; 
-  result = (DTMF *)new DTMF(arg1);
   *(DTMF **)&jresult = result; 
   return jresult;
 }
@@ -979,7 +943,7 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1mine_1get(
 SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2) {
   jlong jresult = 0 ;
   char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   Event *result = 0 ;
   
   (void)jenv;
@@ -1002,29 +966,10 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SW
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jstring jarg1) {
-  jlong jresult = 0 ;
-  char *arg1 = (char *) 0 ;
-  Event *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  arg1 = 0;
-  if (jarg1) {
-    arg1 = (char *)jenv->GetStringUTFChars(jarg1, 0);
-    if (!arg1) return 0;
-  }
-  result = (Event *)new Event((char const *)arg1);
-  *(Event **)&jresult = result; 
-  if (arg1) jenv->ReleaseStringUTFChars(jarg1, (const char *)arg1);
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
   jlong jresult = 0 ;
   switch_event_t *arg1 = (switch_event_t *) 0 ;
-  int arg2 ;
+  int arg2 = (int) 0 ;
   Event *result = 0 ;
   
   (void)jenv;
@@ -1032,20 +977,6 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SW
   arg1 = *(switch_event_t **)&jarg1; 
   arg2 = (int)jarg2; 
   result = (Event *)new Event(arg1,arg2);
-  *(Event **)&jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1Event_1_1SWIG_13(JNIEnv *jenv, jclass jcls, jlong jarg1) {
-  jlong jresult = 0 ;
-  switch_event_t *arg1 = (switch_event_t *) 0 ;
-  Event *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  arg1 = *(switch_event_t **)&jarg1; 
-  result = (Event *)new Event(arg1);
   *(Event **)&jresult = result; 
   return jresult;
 }
@@ -1062,10 +993,10 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1Event(JNI
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1serialize_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1serialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   jstring jresult = 0 ;
   Event *arg1 = (Event *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   char *result = 0 ;
   
   (void)jenv;
@@ -1084,25 +1015,10 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1seriali
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1serialize_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jstring jresult = 0 ;
-  Event *arg1 = (Event *) 0 ;
-  char *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(Event **)&jarg1; 
-  result = (char *)(arg1)->serialize();
-  if(result) jresult = jenv->NewStringUTF((const char *)result);
-  return jresult;
-}
-
-
-SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1setPriority_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1setPriority(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   jboolean jresult = 0 ;
   Event *arg1 = (Event *) 0 ;
-  switch_priority_t arg2 ;
+  switch_priority_t arg2 = (switch_priority_t) SWITCH_PRIORITY_NORMAL ;
   bool result;
   switch_priority_t *argp2 ;
   
@@ -1117,21 +1033,6 @@ SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1setPri
   }
   arg2 = *argp2; 
   result = (bool)(arg1)->setPriority(arg2);
-  jresult = (jboolean)result; 
-  return jresult;
-}
-
-
-SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1setPriority_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jboolean jresult = 0 ;
-  Event *arg1 = (Event *) 0 ;
-  bool result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(Event **)&jarg1; 
-  result = (bool)(arg1)->setPriority();
   jresult = (jboolean)result; 
   return jresult;
 }
@@ -1341,35 +1242,6 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1e
 }
 
 
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1node_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  switch_event_node_t *arg2 = (switch_event_node_t *) 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(EventConsumer **)&jarg1; 
-  arg2 = *(switch_event_node_t **)&jarg2; 
-  if (arg1) (arg1)->node = arg2;
-  
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1node_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jlong jresult = 0 ;
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  switch_event_node_t *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(EventConsumer **)&jarg1; 
-  result = (switch_event_node_t *) ((arg1)->node);
-  *(switch_event_node_t **)&jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1e_1callback_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -1493,10 +1365,10 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsumer_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsumer(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2) {
   jlong jresult = 0 ;
-  char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg1 = (char *) NULL ;
+  char *arg2 = (char *) "" ;
   EventConsumer *result = 0 ;
   
   (void)jenv;
@@ -1519,25 +1391,6 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsum
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsumer_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jstring jarg1) {
-  jlong jresult = 0 ;
-  char *arg1 = (char *) 0 ;
-  EventConsumer *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  arg1 = 0;
-  if (jarg1) {
-    arg1 = (char *)jenv->GetStringUTFChars(jarg1, 0);
-    if (!arg1) return 0;
-  }
-  result = (EventConsumer *)new EventConsumer((char const *)arg1);
-  *(EventConsumer **)&jresult = result; 
-  if (arg1) jenv->ReleaseStringUTFChars(jarg1, (const char *)arg1);
-  return jresult;
-}
-
-
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1EventConsumer(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   
@@ -1549,10 +1402,39 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1EventCons
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1pop_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1bind(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) "" ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(EventConsumer **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return 0;
+  }
+  result = (int)(arg1)->bind((char const *)arg2,(char const *)arg3);
+  jresult = (jint)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1pop(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   jlong jresult = 0 ;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
-  int arg2 ;
+  int arg2 = (int) 0 ;
   Event *result = 0 ;
   
   (void)jenv;
@@ -1561,21 +1443,6 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1p
   arg1 = *(EventConsumer **)&jarg1; 
   arg2 = (int)jarg2; 
   result = (Event *)(arg1)->pop(arg2);
-  *(Event **)&jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1pop_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jlong jresult = 0 ;
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  Event *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(EventConsumer **)&jarg1; 
-  result = (Event *)(arg1)->pop();
   *(Event **)&jresult = result; 
   return jresult;
 }
@@ -1961,9 +1828,9 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1preA
 }
 
 
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hangup_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hangup(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) "normal_clearing" ;
   
   (void)jenv;
   (void)jcls;
@@ -1976,17 +1843,6 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hang
   }
   (arg1)->hangup((char const *)arg2);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-}
-
-
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1hangup_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  (arg1)->hangup();
 }
 
 
@@ -2112,13 +1968,13 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1pro
 }
 
 
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1say_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1say(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
   char *arg5 = (char *) 0 ;
-  char *arg6 = (char *) 0 ;
+  char *arg6 = (char *) NULL ;
   
   (void)jenv;
   (void)jcls;
@@ -2158,50 +2014,11 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1say_
 }
 
 
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1say_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5) {
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sayPhrase(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  char *arg5 = (char *) 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return ;
-  }
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
-    if (!arg3) return ;
-  }
-  arg4 = 0;
-  if (jarg4) {
-    arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
-    if (!arg4) return ;
-  }
-  arg5 = 0;
-  if (jarg5) {
-    arg5 = (char *)jenv->GetStringUTFChars(jarg5, 0);
-    if (!arg5) return ;
-  }
-  (arg1)->say((char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5);
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-  if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
-  if (arg5) jenv->ReleaseStringUTFChars(jarg5, (const char *)arg5);
-}
-
-
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sayPhrase_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
+  char *arg3 = (char *) "" ;
+  char *arg4 = (char *) NULL ;
   
   (void)jenv;
   (void)jcls;
@@ -2226,49 +2043,6 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sayP
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
   if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
-}
-
-
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sayPhrase_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return ;
-  }
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
-    if (!arg3) return ;
-  }
-  (arg1)->sayPhrase((char const *)arg2,(char const *)arg3);
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-}
-
-
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sayPhrase_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return ;
-  }
-  (arg1)->sayPhrase((char const *)arg2);
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 }
 
 
@@ -2302,13 +2076,13 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1g
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1recordFile_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3, jint jarg4, jint jarg5) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1recordFile(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3, jint jarg4, jint jarg5) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  int arg3 ;
-  int arg4 ;
-  int arg5 ;
+  int arg3 = (int) 0 ;
+  int arg4 = (int) 0 ;
+  int arg5 = (int) 0 ;
   int result;
   
   (void)jenv;
@@ -2330,85 +2104,13 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1reco
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1recordFile_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3, jint jarg4) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int arg3 ;
-  int arg4 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  arg3 = (int)jarg3; 
-  arg4 = (int)jarg4; 
-  result = (int)(arg1)->recordFile(arg2,arg3,arg4);
-  jresult = (jint)result; 
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1recordFile_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int arg3 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  arg3 = (int)jarg3; 
-  result = (int)(arg1)->recordFile(arg2,arg3);
-  jresult = (jint)result; 
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1recordFile_1_1SWIG_13(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  result = (int)(arg1)->recordFile(arg2);
-  jresult = (jint)result; 
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1originate_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jstring jarg3, jint jarg4, jlong jarg5) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1originate(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jstring jarg3, jint jarg4, jlong jarg5) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   CoreSession *arg2 = (CoreSession *) 0 ;
   char *arg3 = (char *) 0 ;
-  int arg4 ;
-  switch_state_handler_table_t *arg5 = (switch_state_handler_table_t *) 0 ;
+  int arg4 = (int) 60 ;
+  switch_state_handler_table_t *arg5 = (switch_state_handler_table_t *) NULL ;
   int result;
   
   (void)jenv;
@@ -2425,58 +2127,6 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1orig
   arg4 = (int)jarg4; 
   arg5 = *(switch_state_handler_table_t **)&jarg5; 
   result = (int)(arg1)->originate(arg2,arg3,arg4,arg5);
-  jresult = (jint)result; 
-  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1originate_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jstring jarg3, jint jarg4) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  CoreSession *arg2 = (CoreSession *) 0 ;
-  char *arg3 = (char *) 0 ;
-  int arg4 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  (void)jarg2_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = *(CoreSession **)&jarg2; 
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
-    if (!arg3) return 0;
-  }
-  arg4 = (int)jarg4; 
-  result = (int)(arg1)->originate(arg2,arg3,arg4);
-  jresult = (jint)result; 
-  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1originate_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jstring jarg3) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  CoreSession *arg2 = (CoreSession *) 0 ;
-  char *arg3 = (char *) 0 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  (void)jarg2_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = *(CoreSession **)&jarg2; 
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
-    if (!arg3) return 0;
-  }
-  result = (int)(arg1)->originate(arg2,arg3);
   jresult = (jint)result; 
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
   return jresult;
@@ -2651,12 +2301,12 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1g
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1transfer_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1transfer(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   int result;
   
   (void)jenv;
@@ -2683,57 +2333,6 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1tran
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
   if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1transfer_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  arg3 = 0;
-  if (jarg3) {
-    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
-    if (!arg3) return 0;
-  }
-  result = (int)(arg1)->transfer(arg2,arg3);
-  jresult = (jint)result; 
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1transfer_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  result = (int)(arg1)->transfer(arg2);
-  jresult = (jint)result; 
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   return jresult;
 }
 
@@ -2773,7 +2372,7 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1r
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1playAndGetDigits_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jint jarg4, jint jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9, jstring jarg10) {
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1playAndGetDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jint jarg4, jint jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9, jstring jarg10) {
   jstring jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -2784,7 +2383,7 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1p
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
-  char *arg10 = (char *) 0 ;
+  char *arg10 = (char *) NULL ;
   char *result = 0 ;
   
   (void)jenv;
@@ -2831,62 +2430,11 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1p
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1playAndGetDigits_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jint jarg4, jint jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9) {
-  jstring jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  int arg5 ;
-  char *arg6 = (char *) 0 ;
-  char *arg7 = (char *) 0 ;
-  char *arg8 = (char *) 0 ;
-  char *arg9 = (char *) 0 ;
-  char *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = (int)jarg2; 
-  arg3 = (int)jarg3; 
-  arg4 = (int)jarg4; 
-  arg5 = (int)jarg5; 
-  arg6 = 0;
-  if (jarg6) {
-    arg6 = (char *)jenv->GetStringUTFChars(jarg6, 0);
-    if (!arg6) return 0;
-  }
-  arg7 = 0;
-  if (jarg7) {
-    arg7 = (char *)jenv->GetStringUTFChars(jarg7, 0);
-    if (!arg7) return 0;
-  }
-  arg8 = 0;
-  if (jarg8) {
-    arg8 = (char *)jenv->GetStringUTFChars(jarg8, 0);
-    if (!arg8) return 0;
-  }
-  arg9 = 0;
-  if (jarg9) {
-    arg9 = (char *)jenv->GetStringUTFChars(jarg9, 0);
-    if (!arg9) return 0;
-  }
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
-  if(result) jresult = jenv->NewStringUTF((const char *)result);
-  if (arg6) jenv->ReleaseStringUTFChars(jarg6, (const char *)arg6);
-  if (arg7) jenv->ReleaseStringUTFChars(jarg7, (const char *)arg7);
-  if (arg8) jenv->ReleaseStringUTFChars(jarg8, (const char *)arg8);
-  if (arg9) jenv->ReleaseStringUTFChars(jarg9, (const char *)arg9);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1streamFile_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1streamFile(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  int arg3 ;
+  int arg3 = (int) 0 ;
   int result;
   
   (void)jenv;
@@ -2906,33 +2454,11 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1stre
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1streamFile_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return 0;
-  }
-  result = (int)(arg1)->streamFile(arg2);
-  jresult = (jint)result; 
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sleep_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3) {
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sleep(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3) {
   jint jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
-  int arg3 ;
+  int arg3 = (int) 0 ;
   int result;
   
   (void)jenv;
@@ -2942,23 +2468,6 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1slee
   arg2 = (int)jarg2; 
   arg3 = (int)jarg3; 
   result = (int)(arg1)->sleep(arg2,arg3);
-  jresult = (jint)result; 
-  return jresult;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1sleep_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
-  jint jresult = 0 ;
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  int arg2 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = (int)jarg2; 
-  result = (int)(arg1)->sleep(arg2);
   jresult = (jint)result; 
   return jresult;
 }
@@ -3098,10 +2607,10 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1wait
 }
 
 
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1execute_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   
   (void)jenv;
   (void)jcls;
@@ -3120,24 +2629,6 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1exec
   (arg1)->execute((char const *)arg2,(char const *)arg3);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
-}
-
-
-SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1execute_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
-  CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(CoreSession **)&jarg1; 
-  arg2 = 0;
-  if (jarg2) {
-    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
-    if (!arg2) return ;
-  }
-  (arg1)->execute((char const *)arg2);
-  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 }
 
 

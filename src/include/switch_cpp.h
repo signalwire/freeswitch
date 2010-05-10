@@ -170,12 +170,12 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 public:
 		 switch_queue_t *events;
 		 switch_event_types_t e_event_id;
-		 switch_event_node_t *node;
 		 char *e_callback;
 		 char *e_subclass_name;
 		 char *e_cb_arg;
-		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name, const char *subclass_name = "");
+		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "");
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
+		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
 		 SWITCH_DECLARE(Event *) pop(int block = 0);
 	 };
 

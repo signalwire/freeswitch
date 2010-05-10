@@ -7975,6 +7975,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_copy(void * jarg1, void * ja
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_reset(void * jarg1) {
+  int jresult ;
+  switch_codec_t *arg1 = (switch_codec_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_codec_t *)jarg1; 
+  result = (switch_status_t)switch_core_codec_reset(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_encode(void * jarg1, void * jarg2, void * jarg3, unsigned long jarg4, unsigned long jarg5, void * jarg6, void * jarg7, void * jarg8, void * jarg9) {
   int jresult ;
   switch_codec_t *arg1 = (switch_codec_t *) 0 ;
@@ -31030,29 +31042,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_EventConsumer_e_event_id_get(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_EventConsumer_node_set(void * jarg1, void * jarg2) {
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  switch_event_node_t *arg2 = (switch_event_node_t *) 0 ;
-  
-  arg1 = (EventConsumer *)jarg1; 
-  arg2 = (switch_event_node_t *)jarg2; 
-  if (arg1) (arg1)->node = arg2;
-  
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_EventConsumer_node_get(void * jarg1) {
-  void * jresult ;
-  EventConsumer *arg1 = (EventConsumer *) 0 ;
-  switch_event_node_t *result = 0 ;
-  
-  arg1 = (EventConsumer *)jarg1; 
-  result = (switch_event_node_t *) ((arg1)->node);
-  jresult = (void *)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_EventConsumer_e_callback_set(void * jarg1, char * jarg2) {
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -31145,7 +31134,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_EventConsumer_e_cb_arg_get(void * jarg1) {
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_EventConsumer(char * jarg1, char * jarg2) {
   void * jresult ;
-  char *arg1 = (char *) 0 ;
+  char *arg1 = (char *) NULL ;
   char *arg2 = (char *) "" ;
   EventConsumer *result = 0 ;
   
@@ -31163,6 +31152,22 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_EventConsumer(void * jarg1) {
   arg1 = (EventConsumer *)jarg1; 
   delete arg1;
   
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_EventConsumer_bind(void * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) "" ;
+  int result;
+  
+  arg1 = (EventConsumer *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (int)(arg1)->bind((char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
 }
 
 

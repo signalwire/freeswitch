@@ -50,11 +50,7 @@ public class DTMF {
   }
 
   public DTMF(char idigit, SWIGTYPE_p_uint32_t iduration) {
-    this(freeswitchJNI.new_DTMF__SWIG_0(idigit, SWIGTYPE_p_uint32_t.getCPtr(iduration)), true);
-  }
-
-  public DTMF(char idigit) {
-    this(freeswitchJNI.new_DTMF__SWIG_1(idigit), true);
+    this(freeswitchJNI.new_DTMF(idigit, SWIGTYPE_p_uint32_t.getCPtr(iduration)), true);
   }
 
 }

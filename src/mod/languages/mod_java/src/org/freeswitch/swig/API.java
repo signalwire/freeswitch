@@ -38,11 +38,7 @@ public class API {
   }
 
   public String execute(String command, String data) {
-    return freeswitchJNI.API_execute__SWIG_0(swigCPtr, this, command, data);
-  }
-
-  public String execute(String command) {
-    return freeswitchJNI.API_execute__SWIG_1(swigCPtr, this, command);
+    return freeswitchJNI.API_execute(swigCPtr, this, command, data);
   }
 
   public String executeString(String command) {

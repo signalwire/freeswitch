@@ -50,15 +50,6 @@ public class EventConsumer {
     return new SWIGTYPE_p_switch_event_types_t(freeswitchJNI.EventConsumer_e_event_id_get(swigCPtr, this), true);
   }
 
-  public void setNode(SWIGTYPE_p_switch_event_node_t value) {
-    freeswitchJNI.EventConsumer_node_set(swigCPtr, this, SWIGTYPE_p_switch_event_node_t.getCPtr(value));
-  }
-
-  public SWIGTYPE_p_switch_event_node_t getNode() {
-    long cPtr = freeswitchJNI.EventConsumer_node_get(swigCPtr, this);
-    return (cPtr == 0) ? null : new SWIGTYPE_p_switch_event_node_t(cPtr, false);
-  }
-
   public void setE_callback(String value) {
     freeswitchJNI.EventConsumer_e_callback_set(swigCPtr, this, value);
   }
@@ -84,20 +75,15 @@ public class EventConsumer {
   }
 
   public EventConsumer(String event_name, String subclass_name) {
-    this(freeswitchJNI.new_EventConsumer__SWIG_0(event_name, subclass_name), true);
+    this(freeswitchJNI.new_EventConsumer(event_name, subclass_name), true);
   }
 
-  public EventConsumer(String event_name) {
-    this(freeswitchJNI.new_EventConsumer__SWIG_1(event_name), true);
+  public int bind(String event_name, String subclass_name) {
+    return freeswitchJNI.EventConsumer_bind(swigCPtr, this, event_name, subclass_name);
   }
 
   public Event pop(int block) {
-    long cPtr = freeswitchJNI.EventConsumer_pop__SWIG_0(swigCPtr, this, block);
-    return (cPtr == 0) ? null : new Event(cPtr, true);
-  }
-
-  public Event pop() {
-    long cPtr = freeswitchJNI.EventConsumer_pop__SWIG_1(swigCPtr, this);
+    long cPtr = freeswitchJNI.EventConsumer_pop(swigCPtr, this, block);
     return (cPtr == 0) ? null : new Event(cPtr, true);
   }
 

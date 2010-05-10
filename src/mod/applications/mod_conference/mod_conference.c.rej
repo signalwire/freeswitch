@@ -1,0 +1,50 @@
+***************
+*** 3410,3420 ****
+  	}
+  	if (test_eflag(member->conference, EFLAG_VOLUME_IN_MEMBER) &&
+  		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+  		conference_add_event_member_data(member, event);
+  		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
+- 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_in_level);
+  		switch_event_fire(&event);
+  	}
+  
+  	return SWITCH_STATUS_SUCCESS;
+  }
+--- 3410,3420 ----
+  	}
+  	if (test_eflag(member->conference, EFLAG_VOLUME_IN_MEMBER) &&
+  		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+  		conference_add_event_member_data(member, event);
+  		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
++ 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%d", member->volume_in_level);
+  		switch_event_fire(&event);
+  	}
+  
+  	return SWITCH_STATUS_SUCCESS;
+  }
+***************
+*** 3437,3447 ****
+  	}
+  	if (test_eflag(member->conference, EFLAG_VOLUME_OUT_MEMBER) && data &&
+  		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+  		conference_add_event_member_data(member, event);
+  		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
+- 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_out_level);
+  		switch_event_fire(&event);
+  	}
+  
+  	return SWITCH_STATUS_SUCCESS;
+  }
+--- 3437,3447 ----
+  	}
+  	if (test_eflag(member->conference, EFLAG_VOLUME_OUT_MEMBER) && data &&
+  		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+  		conference_add_event_member_data(member, event);
+  		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
++ 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%d", member->volume_out_level);
+  		switch_event_fire(&event);
+  	}
+  
+  	return SWITCH_STATUS_SUCCESS;
+  }

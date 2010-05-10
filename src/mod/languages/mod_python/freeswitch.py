@@ -198,9 +198,6 @@ class EventConsumer(_object):
     __swig_setmethods__["e_event_id"] = _freeswitch.EventConsumer_e_event_id_set
     __swig_getmethods__["e_event_id"] = _freeswitch.EventConsumer_e_event_id_get
     if _newclass:e_event_id = _swig_property(_freeswitch.EventConsumer_e_event_id_get, _freeswitch.EventConsumer_e_event_id_set)
-    __swig_setmethods__["node"] = _freeswitch.EventConsumer_node_set
-    __swig_getmethods__["node"] = _freeswitch.EventConsumer_node_get
-    if _newclass:node = _swig_property(_freeswitch.EventConsumer_node_get, _freeswitch.EventConsumer_node_set)
     __swig_setmethods__["e_callback"] = _freeswitch.EventConsumer_e_callback_set
     __swig_getmethods__["e_callback"] = _freeswitch.EventConsumer_e_callback_get
     if _newclass:e_callback = _swig_property(_freeswitch.EventConsumer_e_callback_get, _freeswitch.EventConsumer_e_callback_set)
@@ -216,6 +213,7 @@ class EventConsumer(_object):
         except: self.this = this
     __swig_destroy__ = _freeswitch.delete_EventConsumer
     __del__ = lambda self : None;
+    def bind(*args): return _freeswitch.EventConsumer_bind(*args)
     def pop(*args): return _freeswitch.EventConsumer_pop(*args)
 EventConsumer_swigregister = _freeswitch.EventConsumer_swigregister
 EventConsumer_swigregister(EventConsumer)
