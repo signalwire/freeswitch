@@ -638,7 +638,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name);
 
-switch_status_t skinny_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
+switch_status_t skinny_session_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *channel_uuid, switch_core_db_callback_func_t callback, void *data);
 switch_call_cause_t skinny_ring_lines(private_t *tech_pvt);
 
@@ -703,27 +703,27 @@ switch_status_t send_stop_media_transmission(listener_t *listener,
     uint32_t conference_id,
     uint32_t pass_thru_party_id,
     uint32_t conference_id2);
-switch_status_t send_call_info(listener_t *listener,
-    char calling_party_name[40],
-    char calling_party[24],
-    char called_party_name[40],
-    char called_party[24],
-    uint32_t line_instance,
-    uint32_t call_id,
-    uint32_t call_type,
-    char original_called_party_name[40],
-    char original_called_party[24],
-    char last_redirecting_party_name[40],
-    char last_redirecting_party[24],
-    uint32_t original_called_party_redirect_reason,
-    uint32_t last_redirecting_reason,
-    char calling_party_voice_mailbox[24],
-    char called_party_voice_mailbox[24],
-    char original_called_party_voice_mailbox[24],
-    char last_redirecting_voice_mailbox[24],
-    uint32_t call_instance,
-    uint32_t call_security_status,
-    uint32_t party_pi_restriction_bits);
+switch_status_t skinny_send_call_info(listener_t *listener,
+        const char *calling_party_name,
+        const char *calling_party,
+        const char *called_party_name,
+        const char *called_party,
+        uint32_t line_instance,
+        uint32_t call_id,
+        uint32_t call_type,
+        const char *original_called_party_name,
+        const char *original_called_party,
+        const char *last_redirecting_party_name,
+        const char *last_redirecting_party,
+        uint32_t original_called_party_redirect_reason,
+        uint32_t last_redirecting_reason,
+        const char *calling_party_voice_mailbox,
+        const char *called_party_voice_mailbox,
+        const char *original_called_party_voice_mailbox,
+        const char *last_redirecting_voice_mailbox,
+        uint32_t call_instance,
+        uint32_t call_security_status,
+        uint32_t party_pi_restriction_bits);
 switch_status_t send_define_time_date(listener_t *listener,
 	uint32_t year,
 	uint32_t month,

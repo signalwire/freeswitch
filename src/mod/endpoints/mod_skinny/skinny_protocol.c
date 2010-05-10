@@ -265,15 +265,15 @@ switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, s
 }
 
 /*****************************************************************************/
-switch_status_t skinny_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance)
+switch_status_t skinny_session_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance)
 {
 	private_t *tech_pvt;
 	switch_channel_t *channel;
 
-	char *calling_party_name;
-	char *calling_party_number;
-	char *called_party_name;
-	char *called_party_number;
+	const char *calling_party_name;
+	const char *calling_party_number;
+	const char *called_party_name;
+	const char *called_party_number;
 	uint32_t call_type = 0;
 
 	channel = switch_core_session_get_channel(session);
@@ -304,7 +304,7 @@ switch_status_t skinny_send_call_info(switch_core_session_t *session, listener_t
 	} else {
 		call_type = SKINNY_INBOUND_CALL;
 	}
-	send_call_info(listener,
+	skinny_send_call_info(listener,
 		calling_party_name, /* char calling_party_name[40], */
 		calling_party_number, /* char calling_party[24], */
 		called_party_name, /* char called_party_name[40], */
@@ -411,7 +411,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		    send_display_pri_notify(listener, 10 /* message_timeout */, 5 /* priority */, tmp);
 		    switch_safe_free(tmp);
 	    }
-		skinny_send_call_info(helper->tech_pvt->session, listener, line_instance);
+		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
 	}
@@ -667,7 +667,7 @@ int skinny_session_process_dest_callback(void *pArg, int argc, char **argv, char
 			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
 			send_display_prompt_status(listener, 0, "\200\037",
 				line_instance, helper->tech_pvt->call_id);
-			skinny_send_call_info(helper->tech_pvt->session, listener, line_instance);
+			skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 	    }
 	}
 	return 0;
@@ -725,7 +725,7 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 			tech_pvt->caller_profile->context = switch_core_strdup(tech_pvt->caller_profile->pool, listener->profile->context);
 			send_dialed_number(listener, tech_pvt->caller_profile->destination_number, line_instance, tech_pvt->call_id);
 			skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_PROCEED);
-			skinny_send_call_info(session, listener, line_instance);
+			skinny_session_send_call_info(session, listener, line_instance);
 
 			skinny_session_start_media(session, listener, line_instance);
 			
@@ -762,7 +762,7 @@ switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener
 	    SKINNY_KEY_SET_RING_OUT, 0xffff);
 	send_display_prompt_status(listener, 0, "\200\026",
 		line_instance, tech_pvt->call_id);
-	skinny_send_call_info(session, listener, line_instance);
+	skinny_session_send_call_info(session, listener, line_instance);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -876,7 +876,7 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 	    "\200\030",
 	    line_instance,
 	    tech_pvt->call_id);
-	skinny_send_call_info(session, listener, line_instance);
+	skinny_session_send_call_info(session, listener, line_instance);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -902,7 +902,7 @@ switch_status_t skinny_session_hold_line(switch_core_session_t *session, listene
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_ON_HOLD, 0xffff);
 	send_display_prompt_status(listener, 0, "\200\003",
 		line_instance, tech_pvt->call_id);
-	skinny_send_call_info(tech_pvt->session, listener, line_instance);
+	skinny_session_send_call_info(tech_pvt->session, listener, line_instance);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
 
@@ -1384,24 +1384,24 @@ switch_status_t send_stop_media_transmission(listener_t *listener,
 	return skinny_send_reply(listener, message);
 }
 
-switch_status_t send_call_info(listener_t *listener,
-	char calling_party_name[40],
-	char calling_party[24],
-	char called_party_name[40],
-	char called_party[24],
+switch_status_t skinny_send_call_info(listener_t *listener,
+	const char *calling_party_name,
+	const char *calling_party,
+	const char *called_party_name,
+	const char *called_party,
 	uint32_t line_instance,
 	uint32_t call_id,
 	uint32_t call_type,
-	char original_called_party_name[40],
-	char original_called_party[24],
-	char last_redirecting_party_name[40],
-	char last_redirecting_party[24],
+	const char *original_called_party_name,
+	const char *original_called_party,
+	const char *last_redirecting_party_name,
+	const char *last_redirecting_party,
 	uint32_t original_called_party_redirect_reason,
 	uint32_t last_redirecting_reason,
-	char calling_party_voice_mailbox[24],
-	char called_party_voice_mailbox[24],
-	char original_called_party_voice_mailbox[24],
-	char last_redirecting_voice_mailbox[24],
+	const char *calling_party_voice_mailbox,
+	const char *called_party_voice_mailbox,
+	const char *original_called_party_voice_mailbox,
+	const char *last_redirecting_voice_mailbox,
 	uint32_t call_instance,
 	uint32_t call_security_status,
 	uint32_t party_pi_restriction_bits)
