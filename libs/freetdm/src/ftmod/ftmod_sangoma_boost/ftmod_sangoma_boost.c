@@ -1721,18 +1721,22 @@ static __inline__ ftdm_status_t check_events(ftdm_span_t *span, int ms_timeout)
  */
 static void *ftdm_sangoma_events_run(ftdm_thread_t *me, void *obj)
 {
-    ftdm_span_t *span = (ftdm_span_t *) obj;
+	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	unsigned errs = 0;
 
-	while (ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING) && ftdm_running()) {
-		if (check_events(span,100) != FTDM_SUCCESS) {
+	while (ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_EVENTS_RUNNING) && ftdm_running()) {
+		if (check_events(span, 100) != FTDM_SUCCESS) {
 			if (errs++ > 50) {
 				ftdm_log(FTDM_LOG_ERROR, "Too many event errors, quitting sangoma events thread\n");
 				return NULL;
 			}
 		}
 	}
+	
+	ftdm_log(FTDM_LOG_DEBUG, "Sangoma Boost Events thread ended.\n");
+
+	ftdm_clear_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_EVENTS_RUNNING);
 
 	return NULL;
 }
@@ -2159,18 +2163,23 @@ static ftdm_status_t ftdm_sangoma_boost_start(ftdm_span_t *span)
 	int err;
 
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+
 	ftdm_set_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING);
-	err=ftdm_thread_create_detached(ftdm_sangoma_boost_run, span);
+	err = ftdm_thread_create_detached(ftdm_sangoma_boost_run, span);
 	if (err) {
 		ftdm_clear_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING);
 		return err;
 	}
+
 	// launch the events thread to handle HW DTMF and possibly
 	// other events in the future
-	err=ftdm_thread_create_detached(ftdm_sangoma_events_run, span);
+	ftdm_set_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_EVENTS_RUNNING);
+	err = ftdm_thread_create_detached(ftdm_sangoma_events_run, span);
 	if (err) {
+		ftdm_clear_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_EVENTS_RUNNING);
 		ftdm_clear_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING);
 	}
+
 	return err;
 }
 
@@ -2179,12 +2188,16 @@ static ftdm_status_t ftdm_sangoma_boost_stop(ftdm_span_t *span)
 	int cnt = 50;
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
+
 	if (sangoma_boost_data->sigmod) {
 		/* I think stopping the span before destroying the queue makes sense
 		   otherwise may be boost events would still arrive when the queue is already destroyed! */
 		status = sangoma_boost_data->sigmod->stop_span(span);
+		if (status != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_CRIT, "Failed to stop span %s boost signaling\n", span->name);
+			return FTDM_FAIL;
+		}
 		ftdm_queue_enqueue(sangoma_boost_data->boost_queue, NULL);
-		return status;
 	}
 
 	while (ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_RUNNING) && cnt-- > 0) {
@@ -2194,6 +2207,17 @@ static ftdm_status_t ftdm_sangoma_boost_stop(ftdm_span_t *span)
 
 	if (!cnt) {
 		ftdm_log(FTDM_LOG_CRIT, "it seems boost thread in span %s may be stuck, we may segfault :-(\n", span->name);
+		return FTDM_FAIL;
+	}
+
+	cnt = 50;
+	while (ftdm_test_flag(sangoma_boost_data, FTDM_SANGOMA_BOOST_EVENTS_RUNNING) && cnt-- > 0) {
+		ftdm_log(FTDM_LOG_DEBUG, "Waiting for boost events thread\n");
+		ftdm_sleep(100);
+	}
+
+	if (!cnt) {
+		ftdm_log(FTDM_LOG_CRIT, "it seems boost events thread in span %s may be stuck, we may segfault :-(\n", span->name);
 		return FTDM_FAIL;
 	}
 
