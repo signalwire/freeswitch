@@ -112,20 +112,6 @@ typedef enum {
 FTDM_STR2ENUM_P(ftdm_str2ftdm_tonemap, ftdm_tonemap2str, ftdm_tonemap_t)
 
 typedef enum {
-	FTDM_TRUNK_E1,
-	FTDM_TRUNK_T1,
-	FTDM_TRUNK_J1,
-	FTDM_TRUNK_BRI,
-	FTDM_TRUNK_BRI_PTMP,
-	FTDM_TRUNK_FXO,
-	FTDM_TRUNK_FXS,
-	FTDM_TRUNK_EM,
-	FTDM_TRUNK_NONE
-} ftdm_trunk_type_t;
-#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "NONE"
-FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t)
-
-typedef enum {
 	FTDM_ANALOG_START_KEWL,
 	FTDM_ANALOG_START_LOOP,
 	FTDM_ANALOG_START_GROUND,
