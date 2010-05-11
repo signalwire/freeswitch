@@ -1331,7 +1331,7 @@ static const char *switch_inet_ntop4(const unsigned char *src, char *dst, size_t
 	return strcpy(dst, tmp);
 }
 
-#if HAVE_SIN6 || (defined(NTDDI_VERSION) && (NTDDI_VERSION < NTDDI_VISTA))
+#if HAVE_SIN6 || defined(NTDDI_VERSION)
 /* const char *
  * inet_ntop6(src, dst, size)
  *	convert IPv6 binary address into presentation (printable) format
@@ -1488,7 +1488,7 @@ SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_i
 	*buf = '\0';
 
 	if (sa) {
-#if defined(NTDDI_VERSION) && (NTDDI_VERSION < NTDDI_VISTA)
+#if defined(NTDDI_VERSION)
 			switch_inet_ntop6((unsigned char*)sa, buf, len);
 #else
 		inet_ntop(AF_INET6, sa, buf, len);
