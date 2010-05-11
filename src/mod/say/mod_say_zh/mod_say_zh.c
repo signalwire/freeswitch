@@ -111,18 +111,25 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session, char
 				switch (i) {
 				case 0:
 					/* Billions column */
-					if (digits[i] != '0') {
-						if (digits[i] != '1')
+					if (digits[0] != '0') {
+						if (digits[0] != '1')
 							say_file("digits/%c.wav", digits[i]);
 						say_file("digits/10.wav");
 					}
 					break;
 				case 1:
-					/* Hundred millions columns */
+					/* Hundred millions column */
 					if (digits[i] != '0')
 						say_file("digits/%c.wav", digits[i]);
 					if (memcmp(digits, "00", 2) != 0)
 						say_file("digits/100000000.wav");
+					break;
+				case 5:
+					/* Ten thousands column */
+					if (digits[i] != '0')
+						say_file("digits/%c.wav", digits[i]);
+					if (memcmp(digits + 2, "0000", 4) != 0)
+						say_file("digits/10000.wav");
 					break;
 				case 2:
 				case 6:
@@ -138,49 +145,27 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session, char
 					if (digits[i] != '0') {
 						say_file("digits/%c.wav", digits[i]);
 						say_file("digits/100.wav");
+					} else {
+						if (digits[i + 1] != '0'  &&  memcmp(digits, "00000000", i) != 0)
+							say_file("digits/0.wav");
 					}
 					break;
 				case 4:
-					/* Hundred thousands column */
-					if (digits[i] != '0') {
-						if (digits[i] != '1' || memcmp(digits, "0000", 4) != 0) {
-							say_file("digits/%c.wav", digits[i]);
-						}
-					} else {
-						if (digits[i + 1] != '0' && memcmp(digits, "0000", 4) != 0) {
-							say_file("digits/%c.wav", digits[i]);
-						}
-					}
-					if (digits[i] != '0')
-						say_file("digits/10.wav");
-					break;
-
-				case 5:
-					/* Ten thousands column */
-					if (digits[i] != '0') {
-						say_file("digits/%c.wav", digits[i]);
-						if (memcmp(digits + 2, "0000", 4) != 0)
-							say_file("digits/10000.wav");
-					}
-					break;
 				case 8:
-					/* Tens column */
+					/* Hundred thousands or tens column */
 					if (digits[i] != '0') {
-						if (digits[i] != '1' || memcmp(digits, "00000000", 8) != 0) {
+						if (digits[i] != '1')
 							say_file("digits/%c.wav", digits[i]);
-						}
-					} else {
-						if (digits[9] != '0' && memcmp(digits, "00000000", 8) != 0) {
-							say_file("digits/%c.wav", digits[i]);
-						}
-					}
-					if (digits[8] != '0')
 						say_file("digits/10.wav");
+					} else {
+						if (digits[i + 1] != '0'  &&  memcmp(digits, "00000000", i) != 0)
+							say_file("digits/0.wav");
+					}
 					break;
 				case 9:
 					/* Units column */
 					if (digits[9] != '0')
-						say_file("digits/%c.wav", digits[i]);
+						say_file("digits/%c.wav", digits[9]);
 					break;
 				}
 			}
