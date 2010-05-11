@@ -2,7 +2,7 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * private/sig_tone.h - Signalling tone processing for the 2280Hz, 2400Hz, 2600Hz
- *                      and similar signalling tone used in older protocols.
+ *                      and similar signalling tones used in older protocols.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -23,116 +23,116 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.h,v 1.4 2009/09/04 14:38:47 steveu Exp $
+ * $Id: sig_tone.h,v 1.9 2010/03/11 14:22:30 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_SIG_TONE_H_)
 #define _SPANDSP_PRIVATE_SIG_TONE_H_
 
+/*! \brief The coefficient set for a pair of cascaded bi-quads that make a signalling notch filter. */
+typedef struct
+{
+#if defined(SPANDSP_USE_FIXED_POINT)
+    int16_t a1[3];
+    int16_t b1[3];
+    int16_t a2[3];
+    int16_t b2[3];
+    int postscale;
+#else
+    float a1[3];
+    float b1[3];
+    float a2[3];
+    float b2[3];
+#endif
+} sig_tone_notch_coeffs_t;
+
+/*! \brief The coefficient set for a bi-quad that makes a signalling flat filter.
+           Some signalling tone schemes require such a filter, and some don't.
+           It is termed a flat filter, to distinguish it from the sharp filter,
+           but obviously it is not actually flat. It is a broad band weighting
+           filter. */
+typedef struct
+{
+#if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief Flat mode bandpass bi-quad parameters */
+    int16_t a[3];
+    /*! \brief Flat mode bandpass bi-quad parameters */
+    int16_t b[3];
+    /*! \brief Post filter scaling */
+    int postscale;
+#else
+    /*! \brief Flat mode bandpass bi-quad parameters */
+    float a[3];
+    /*! \brief Flat mode bandpass bi-quad parameters */
+    float b[3];
+#endif
+} sig_tone_flat_coeffs_t;
+
 /*!
-    Signaling tone descriptor. This defines the working state for a
-    single instance of the transmit and receive sides of a signaling
+    signalling tone descriptor. This defines the working state for a
+    single instance of the transmit and receive sides of a signalling
     tone processor.
 */
-struct sig_tone_descriptor_s
+typedef struct
 {
     /*! \brief The tones used. */
     int tone_freq[2];
-    /*! \brief The high and low tone amplitudes for each of the tones. */
+    /*! \brief The high and low tone amplitudes for each of the tones, in dBm0. */
     int tone_amp[2][2];
 
     /*! \brief The delay, in audio samples, before the high level tone drops
-               to a low level tone. */
+               to a low level tone. Some signalling protocols require the
+               signalling tone be started at a high level, to ensure crisp
+               initial detection at the receiver, but require the tone
+               amplitude to drop by a number of dBs if it is sustained,
+               to reduce crosstalk levels. */
     int high_low_timeout;
 
-    /*! \brief Some signaling tone detectors use a sharp initial filter,
-               changing to a broader band filter after some delay. This
+    /*! \brief Some signalling tone detectors use a sharp initial filter,
+               changing to a broader, flatter, filter after some delay. This
                parameter defines the delay. 0 means it never changes. */
     int sharp_flat_timeout;
 
     /*! \brief Parameters to control the behaviour of the notch filter, used
-               to remove the tone from the voice path in some protocols. */
+               to remove the tone from the voice path in some protocols. The
+               notch is applied as fast as possible, when the signalling tone
+               is detected. Its removal is delayed by this timeout, to avoid
+               clicky noises from repeated switching of the filter on rapid
+               pulses of signalling tone. */
     int notch_lag_time;
-    /*! \brief TRUE if the notch may be used in the media flow. */
-    int notch_allowed;
 
     /*! \brief The tone on persistence check, in audio samples. */
     int tone_on_check_time;
     /*! \brief The tone off persistence check, in audio samples. */
     int tone_off_check_time;
 
-    /*! \brief ??? */
+    /*! \brief The number of tones used. */
     int tones;
     /*! \brief The coefficients for the cascaded bi-quads notch filter. */
-    struct
-    {
-#if defined(SPANDSP_USE_FIXED_POINT)
-        int32_t notch_a1[3];
-        int32_t notch_b1[3];
-        int32_t notch_a2[3];
-        int32_t notch_b2[3];
-        int notch_postscale;
-#else
-        float notch_a1[3];
-        float notch_b1[3];
-        float notch_a2[3];
-        float notch_b2[3];
-#endif
-    } tone[2];
+    const sig_tone_notch_coeffs_t *notch[2];
+    /*! \brief The coefficients for the single bi-quad flat mode filter. */
+    const sig_tone_flat_coeffs_t *flat;
 
-#if defined(SPANDSP_USE_FIXED_POINT)
-    /*! \brief Flat mode bandpass bi-quad parameters */
-    int32_t broad_a[3];
-    /*! \brief Flat mode bandpass bi-quad parameters */
-    int32_t broad_b[3];
-    /*! \brief Post filter scaling */
-    int broad_postscale;
-#else
-    /*! \brief Flat mode bandpass bi-quad parameters */
-    float broad_a[3];
-    /*! \brief Flat mode bandpass bi-quad parameters */
-    float broad_b[3];
-#endif
-    /*! \brief The coefficients for the post notch leaky integrator. */
-    int32_t notch_slugi;
-    /*! \brief ??? */
-    int32_t notch_slugp;
-
-    /*! \brief The coefficients for the post modulus leaky integrator in the
-               unfiltered data path.  The prescale value incorporates the
-               detection ratio. This is called the guard ratio in some
-               protocols. */
-    int32_t unfiltered_slugi;
-    /*! \brief ??? */
-    int32_t unfiltered_slugp;
-
-    /*! \brief The coefficients for the post modulus leaky integrator in the
-               bandpass filter data path. */
-    int32_t broad_slugi;
-    /*! \brief ??? */
-    int32_t broad_slugp;
-
-    /*! \brief Masks which effectively threshold the notched, weighted and
-               bandpassed data. */
-    int32_t notch_threshold;
-    /*! \brief ??? */
-    int32_t unfiltered_threshold;
-    /*! \brief ??? */
-    int32_t broad_threshold;
-};
+    /*! \brief Minimum signalling tone to total power ratio, in dB */
+    int16_t detection_ratio;
+    /*! \brief Minimum total power for detection in sharp mode, in dB */
+    int16_t sharp_detection_threshold;
+    /*! \brief Minimum total power for detection in flat mode, in dB */
+    int16_t flat_detection_threshold;
+} sig_tone_descriptor_t;
 
 /*!
-    Signaling tone transmit state
+    Signalling tone transmit state
  */
 struct sig_tone_tx_state_s
 {
-    /*! \brief The callback function used to handle signaling changes. */
+    /*! \brief The callback function used to handle signalling changes. */
     tone_report_func_t sig_update;
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
     /*! \brief Tone descriptor */
-    sig_tone_descriptor_t *desc;
+    const sig_tone_descriptor_t *desc;
 
     /*! The phase rates for the one or two tones */
     int32_t phase_rate[2];
@@ -148,22 +148,22 @@ struct sig_tone_tx_state_s
     int current_tx_tone;
     /*! \brief Current transmit timeout */
     int current_tx_timeout;
-    /*! \brief Time in current signaling state, in samples. */
-    int signaling_state_duration;
+    /*! \brief Time in current signalling state, in samples. */
+    int signalling_state_duration;
 };
 
 /*!
-    Signaling tone receive state
+    Signalling tone receive state
  */
 struct sig_tone_rx_state_s
 {
-    /*! \brief The callback function used to handle signaling changes. */
+    /*! \brief The callback function used to handle signalling changes. */
     tone_report_func_t sig_update;
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
     /*! \brief Tone descriptor */
-    sig_tone_descriptor_t *desc;
+    const sig_tone_descriptor_t *desc;
 
     /*! \brief The current receive tone */
     int current_rx_tone;
@@ -174,45 +174,54 @@ struct sig_tone_rx_state_s
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
         /*! \brief The z's for the notch filter */
-        int32_t notch_z1[3];
+        int16_t notch_z1[2];
         /*! \brief The z's for the notch filter */
-        int32_t notch_z2[3];
+        int16_t notch_z2[2];
 #else
         /*! \brief The z's for the notch filter */
-        float notch_z1[3];
+        float notch_z1[2];
         /*! \brief The z's for the notch filter */
-        float notch_z2[3];
+        float notch_z2[2];
 #endif
 
-        /*! \brief The z's for the notch integrators. */
-        int32_t notch_zl;
+        /*! \brief The power output of the notch. */
+        power_meter_t power;
+        /*! \brief Persistence check for tone present */
+        int tone_persistence_timeout;
+        /*! \brief TRUE if the tone is declared to be present */
+        int tone_present;
     } tone[2];
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief The z's for the weighting/bandpass filter. */
-    int32_t broad_z[3];
+    int16_t flat_z[2];
 #else
     /*! \brief The z's for the weighting/bandpass filter. */
-    float broad_z[3];
+    float flat_z[2];
 #endif
-    /*! \brief The z for the broadband integrator. */
-    int32_t broad_zl;
+    /*! \brief The output power of the flat (unfiltered or flat filtered) path. */
+    power_meter_t flat_power;
 
-    /*! \brief ??? */
+    /*! \brief The minimum reading from the power meter for detection in flat mode */
+    int32_t flat_detection_threshold;
+    /*! \brief The minimum reading from the power meter for detection in sharp mode */
+    int32_t sharp_detection_threshold;
+    /*! \brief The minimum ratio between notched power and total power for detection */
+    int32_t detection_ratio;
+
+    /*! \brief TRUE if in flat mode. FALSE if in sharp mode. */
     int flat_mode;
-    /*! \brief ??? */
-    int tone_present;
-    /*! \brief ??? */
+    /*! \brief TRUE if the notch filter is enabled in the media path */
     int notch_enabled;
     /*! \brief ??? */
     int flat_mode_timeout;
     /*! \brief ??? */
     int notch_insertion_timeout;
-    /*! \brief ??? */
-    int tone_persistence_timeout;
     
     /*! \brief ??? */
-    int signaling_state_duration;
+    int signalling_state;
+    /*! \brief ??? */
+    int signalling_state_duration;
 };
 
 #endif
