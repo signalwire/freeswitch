@@ -2142,12 +2142,13 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_boost_destroy)
 	const void *key = NULL;
 	void *val = NULL;
 	ftdm_dso_lib_t lib;
-
+	ftdm_log(FTDM_LOG_DEBUG, "Destroying sangoma boost module\n");
 	for (i = hashtable_first(g_boost_modules_hash); i; i = hashtable_next(i)) {
 		hashtable_this(i, &key, NULL, &val);
 		if (key && val) {
 			sigmod = val;
 			lib = sigmod->pvt;
+			ftdm_log(FTDM_LOG_DEBUG, "destroying sigmod %s\n", sigmod->name);
 			ftdm_dso_destroy(&lib);
 		}
 	}

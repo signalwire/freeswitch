@@ -17,6 +17,7 @@
  *
  */
 
+#include "freetdm.h"
 
 #ifndef _FTDM_DSO_H
 #define _FTDM_DSO_H
@@ -28,7 +29,7 @@ extern "C" {
 typedef void (*ftdm_func_ptr_t) (void);
 typedef void * ftdm_dso_lib_t;
 
-FT_DECLARE(void) ftdm_dso_destroy(ftdm_dso_lib_t *lib);
+FT_DECLARE(ftdm_status_t) ftdm_dso_destroy(ftdm_dso_lib_t *lib);
 FT_DECLARE(ftdm_dso_lib_t) ftdm_dso_open(const char *path, char **err);
 FT_DECLARE(void *) ftdm_dso_func_sym(ftdm_dso_lib_t lib, const char *sym, char **err);
 

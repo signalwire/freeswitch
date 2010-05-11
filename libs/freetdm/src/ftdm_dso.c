@@ -27,11 +27,12 @@
 #include <stdio.h>
 
 
-FT_DECLARE(void) ftdm_dso_destroy(ftdm_dso_lib_t *lib) {
+FT_DECLARE(ftdm_status_t) ftdm_dso_destroy(ftdm_dso_lib_t *lib) {
 	if (lib && *lib) {
 		FreeLibrary(*lib);
 		*lib = NULL;
 	}
+	return FTDM_SUCCESS;
 }
 
 FT_DECLARE(ftdm_dso_lib_t) ftdm_dso_open(const char *path, char **err) {
@@ -78,11 +79,20 @@ FT_DECLARE(void*) ftdm_dso_func_sym(ftdm_dso_lib_t lib, const char *sym, char **
 
 #include <dlfcn.h>
 
-FT_DECLARE(void) ftdm_dso_destroy(ftdm_dso_lib_t *lib) {
+FT_DECLARE(ftdm_status_t) ftdm_dso_destroy(ftdm_dso_lib_t *lib) {
+	int rc;
 	if (lib && *lib) {
-		dlclose(*lib);
+		rc = dlclose(*lib);
+		if (rc) {
+			ftdm_log(FTDM_LOG_ERROR, "Failed to close lib %p: %s\n", *lib, dlerror());
+			return FTDM_FAIL;
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "lib %p was closed with success\n", *lib);
 		*lib = NULL;
+		return FTDM_SUCCESS;
 	}
+	ftdm_log(FTDM_LOG_ERROR, "Invalid pointer provided to ftdm_dso_destroy\n");
+	return FTDM_FAIL;
 }
 
 FT_DECLARE(ftdm_dso_lib_t) ftdm_dso_open(const char *path, char **err) {
@@ -93,7 +103,7 @@ FT_DECLARE(ftdm_dso_lib_t) ftdm_dso_open(const char *path, char **err) {
 	return lib;
 }
 
-FT_DECLARE(void*) ftdm_dso_func_sym(ftdm_dso_lib_t lib, const char *sym, char **err) {
+FT_DECLARE(void *) ftdm_dso_func_sym(ftdm_dso_lib_t lib, const char *sym, char **err) {
 	void *func = dlsym(lib, sym);
 	if (!func) {
 		*err = ftdm_strdup(dlerror());
