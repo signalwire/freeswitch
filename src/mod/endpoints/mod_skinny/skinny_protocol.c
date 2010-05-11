@@ -270,8 +270,8 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 	private_t *tech_pvt;
 	switch_channel_t *channel;
 
-	const char *calling_party_name;
-	const char *calling_party_number;
+	const char *caller_party_name;
+	const char *caller_party_number;
 	const char *called_party_name;
 	const char *called_party_number;
 	uint32_t call_type = 0;
@@ -282,13 +282,13 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 	switch_assert(tech_pvt->caller_profile != NULL);
 
 	/* Calling party */
-	if (zstr((calling_party_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
-		zstr((calling_party_name = switch_channel_get_variable(channel, "callee_id_name")))) {
-		calling_party_name = SWITCH_DEFAULT_CLID_NAME;
+	if (zstr((caller_party_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) &&
+		zstr((caller_party_name = switch_channel_get_variable(channel, "caller_id_name")))) {
+		caller_party_name = SWITCH_DEFAULT_CLID_NAME;
 	}
-	if (zstr((calling_party_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
-		zstr((calling_party_number = switch_channel_get_variable(channel, "callee_id_number")))) {
-		calling_party_number = "0000000000";
+	if (zstr((caller_party_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) &&
+		zstr((caller_party_number = switch_channel_get_variable(channel, "caller_id_number")))) {
+		caller_party_number = "0000000000";
 	}
 	/* Called party */
 	if (zstr((called_party_name = switch_channel_get_variable(channel, "effective_called_id_name"))) &&
@@ -300,13 +300,13 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 		called_party_number = "0000000000";
 	}
 	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		call_type = SKINNY_OUTBOUND_CALL;
-	} else {
 		call_type = SKINNY_INBOUND_CALL;
+	} else {
+		call_type = SKINNY_OUTBOUND_CALL;
 	}
 	skinny_send_call_info(listener,
-		calling_party_name, /* char calling_party_name[40], */
-		calling_party_number, /* char calling_party[24], */
+		caller_party_name, /* char calling_party_name[40], */
+		caller_party_number, /* char calling_party[24], */
 		called_party_name, /* char called_party_name[40], */
 		called_party_number, /* char called_party[24], */
 		line_instance, /* uint32_t line_instance, */
@@ -511,7 +511,7 @@ switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *li
 	/* First create the caller profile in the patterns Dialplan */
 	if (!(tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(nsession),
 													          NULL, listener->profile->patterns_dialplan, 
-													          button->shortname, button->name, 
+													          button->displayname, button->shortname, 
 													          listener->remote_ip, NULL, NULL, NULL,
 													          "skinny" /* modname */,
 													          listener->profile->patterns_context, 
