@@ -1,7 +1,10 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <freetdm.h>
 #include <ftdm_dso.h>
+#include <dlfcn.h>
+#include <execinfo.h>
 
 #define ARRLEN(obj) (sizeof(obj)/sizeof(obj[0]))
 
@@ -11,6 +14,65 @@ struct dso_entry {
 };
 
 struct dso_entry loaded[10];
+
+static void *(*real_dlopen)(const char *filename, int flag) = NULL;
+static int (*real_dlclose)(void *handle) = NULL;
+
+static void print_stack()
+{
+	void *stacktrace[100];
+	char **symbols;
+	int size;
+	int i;
+	size = backtrace(stacktrace, ARRLEN(stacktrace));
+	symbols = backtrace_symbols(stacktrace, size);
+	if (!symbols) {
+		return;
+	}
+	for (i = 0; i < size; i++) {
+		ftdm_log(FTDM_LOG_DEBUG, "%s\n", symbols[i]);
+	}
+	free(symbols);
+}
+
+void *dlopen(const char *filename, int flag)
+{
+	char *msg = NULL;
+	void *handle = NULL;
+	print_stack();
+	if (real_dlopen == NULL) {
+		dlerror();
+		real_dlopen = dlsym(RTLD_NEXT, "dlopen");
+		if ((msg = dlerror()) != NULL) {
+			fprintf(stderr, "dlsym failed: %s\n", msg);
+			exit(1);
+		}
+		fprintf(stderr, "Real dlopen at addr %p\n", real_dlopen);
+	}
+	handle = real_dlopen(filename, flag);
+	if (!handle) {
+		return NULL;
+	}
+	ftdm_log(FTDM_LOG_NOTICE, "Loaded %s with handle %p\n", filename, handle);
+	return handle;
+}
+
+int dlclose(void *handle)
+{
+	char *msg = NULL;
+	print_stack();
+	if (real_dlclose == NULL) {
+		dlerror();
+		real_dlclose = dlsym(RTLD_NEXT, "dlclose");
+		if ((msg = dlerror()) != NULL) {
+			fprintf(stderr, "dlsym failed: %s\n", msg);
+			exit(1);
+		}
+		fprintf(stderr, "Real dlclose at addr %p\n", real_dlclose);
+	}
+	ftdm_log(FTDM_LOG_NOTICE, "Unloading %p\n", handle);
+	return real_dlclose(handle);
+}
 
 int load(char *name)
 {
