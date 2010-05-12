@@ -761,7 +761,7 @@ switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener
 	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_RING_OUT);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
 	    SKINNY_KEY_SET_RING_OUT, 0xffff);
-	send_display_prompt_status(listener, 0, "\200\026",
+	send_display_prompt_status(listener, 0, SKINNY_DISP_RING_OUT,
 		line_instance, tech_pvt->call_id);
 	skinny_session_send_call_info(session, listener, line_instance);
 
@@ -809,7 +809,7 @@ int skinny_session_answer_callback(void *pArg, int argc, char **argv, char **col
 	        send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 	        skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
 	        send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0x0002);
-	        send_display_prompt_status(listener, 0, "\200\037", line_instance, helper->tech_pvt->call_id);
+	        send_display_prompt_status(listener, 0, SKINNY_DISP_IN_USE_REMOTE, line_instance, helper->tech_pvt->call_id);
 	        send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
 	    }
 	}
@@ -874,7 +874,7 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 	    SKINNY_KEY_SET_CONNECTED, 0xffff);
 	send_display_prompt_status(listener,
 	    0,
-	    "\200\030",
+	    SKINNY_DISP_CONNECTED,
 	    line_instance,
 	    tech_pvt->call_id);
 	skinny_session_send_call_info(session, listener, line_instance);
@@ -901,7 +901,7 @@ switch_status_t skinny_session_hold_line(switch_core_session_t *session, listene
 	send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_WINK);
 	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_HOLD);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_ON_HOLD, 0xffff);
-	send_display_prompt_status(listener, 0, "\200\003",
+	send_display_prompt_status(listener, 0, SKINNY_DISP_HOLD,
 		line_instance, tech_pvt->call_id);
 	skinny_session_send_call_info(tech_pvt->session, listener, line_instance);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
