@@ -33,30 +33,31 @@
 #include "mod_skinny.h"
 #include "skinny_protocol.h"
 #include "skinny_tables.h"
+#include "skinny_labels.h"
 
 skinny_globals_t globals;
 
 struct soft_key_template_definition soft_key_template_default[] = {
-	{ "\200\001", SOFTKEY_REDIAL },
-	{ "\200\002", SOFTKEY_NEWCALL },
-	{ "\200\003", SOFTKEY_HOLD },
-	{ "\200\004", SOFTKEY_TRANSFER },
-	{ "\200\005", SOFTKEY_CFWDALL },
-	{ "\200\006", SOFTKEY_CFWDBUSY },
-	{ "\200\007", SOFTKEY_CFWDNOANSWER },
-	{ "\200\010", SOFTKEY_BACKSPACE },
-	{ "\200\011", SOFTKEY_ENDCALL },
-	{ "\200\012", SOFTKEY_RESUME },
-	{ "\200\013", SOFTKEY_ANSWER },
-	{ "\200\014", SOFTKEY_INFO },
-	{ "\200\015", SOFTKEY_CONFRM },
-	{ "\200\016", SOFTKEY_PARK },
-	{ "\200\017", SOFTKEY_JOIN },
-	{ "\200\020", SOFTKEY_MEETMECONFRM },
-	{ "\200\021", SOFTKEY_CALLPICKUP },
-	{ "\200\022", SOFTKEY_GRPCALLPICKUP },
-	{ "\200\077", SOFTKEY_DND },
-	{ "\200\120", SOFTKEY_IDIVERT },
+	{ SKINNY_DISP_REDIAL, SOFTKEY_REDIAL },
+	{ SKINNY_DISP_NEWCALL, SOFTKEY_NEWCALL },
+	{ SKINNY_DISP_HOLD, SOFTKEY_HOLD },
+	{ SKINNY_DISP_TRANSFER, SOFTKEY_TRANSFER },
+	{ SKINNY_DISP_CFWDALL, SOFTKEY_CFWDALL },
+	{ SKINNY_DISP_CFWDBUSY, SOFTKEY_CFWDBUSY },
+	{ SKINNY_DISP_CFWDNOANSWER, SOFTKEY_CFWDNOANSWER },
+	{ SKINNY_DISP_BACKSPACE, SOFTKEY_BACKSPACE },
+	{ SKINNY_DISP_ENDCALL, SOFTKEY_ENDCALL },
+	{ SKINNY_DISP_RESUME, SOFTKEY_RESUME },
+	{ SKINNY_DISP_ANSWER, SOFTKEY_ANSWER },
+	{ SKINNY_DISP_INFO, SOFTKEY_INFO },
+	{ SKINNY_DISP_CONFRM, SOFTKEY_CONFRM },
+	{ SKINNY_DISP_PARK, SOFTKEY_PARK },
+	{ SKINNY_DISP_JOIN, SOFTKEY_JOIN },
+	{ SKINNY_DISP_MEETME, SOFTKEY_MEETMECONFRM },
+	{ SKINNY_DISP_CALLPICKUP, SOFTKEY_CALLPICKUP },
+	{ SKINNY_DISP_GRPCALLPICKUP, SOFTKEY_GRPCALLPICKUP },
+	{ SKINNY_DISP_DND, SOFTKEY_DND },
+	{ SKINNY_DISP_IDIVERT, SOFTKEY_IDIVERT },
 };
 
 /*****************************************************************************/
@@ -403,7 +404,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		helper->lines_count++;
 		skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_RING_IN);
 		send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_RING_IN, 0xffff);
-	    if ((tmp = switch_mprintf("\200\027%s", helper->tech_pvt->caller_profile->destination_number))) {
+	    if ((tmp = switch_mprintf("%s%s", SKINNY_DISP_FROM, helper->tech_pvt->caller_profile->destination_number))) {
 	        send_display_prompt_status(listener, 0, tmp, line_instance, helper->tech_pvt->call_id);
 		    switch_safe_free(tmp);
 	    }
@@ -665,7 +666,7 @@ int skinny_session_process_dest_callback(void *pArg, int argc, char **argv, char
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
 			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
-			send_display_prompt_status(listener, 0, "\200\037",
+			send_display_prompt_status(listener, 0, SKINNY_DISP_IN_USE_REMOTE,
 				line_instance, helper->tech_pvt->call_id);
 			skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 	    }
