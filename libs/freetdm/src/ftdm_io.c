@@ -522,17 +522,41 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 	return FTDM_FAIL;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t **span, const char *name)
+FT_DECLARE(ftdm_status_t) ftdm_span_create(const char *iotype, const char *name, ftdm_span_t **span)
 {
 	ftdm_span_t *new_span = NULL;
+	ftdm_io_interface_t *fio = NULL;
 	ftdm_status_t status = FTDM_FAIL;
+	char buf[128] = "";
 
-	ftdm_assert(fio != NULL, "No IO provided\n");
+	ftdm_assert_return(iotype != NULL, FTDM_FAIL, "No IO type provided\n");
+	ftdm_assert_return(name != NULL, FTDM_FAIL, "No span name provided\n");
+	
+	*span = NULL;
 
 	ftdm_mutex_lock(globals.mutex);
+	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)iotype))) {
+		ftdm_load_module_assume(iotype);
+		if ((fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)iotype))) {
+			ftdm_log(FTDM_LOG_INFO, "Auto-loaded I/O module '%s'\n", iotype);
+		}
+	}
+	ftdm_mutex_unlock(globals.mutex);
 
+	if (!fio) {
+		ftdm_log(FTDM_LOG_CRIT, "failure creating span, no such I/O type '%s'\n", iotype);
+		return FTDM_FAIL;
+	}
+
+	if (!fio->configure_span) {
+		ftdm_log(FTDM_LOG_CRIT, "failure creating span, no configure_span method for I/O type '%s'\n", iotype);
+		return FTDM_FAIL;
+	}
+
+	ftdm_mutex_lock(globals.mutex);
 	if (globals.span_index < FTDM_MAX_SPANS_INTERFACE) {
 		new_span = ftdm_calloc(sizeof(*new_span), 1);
+		
 		ftdm_assert(new_span, "allocating span failed\n");
 
 		status = ftdm_mutex_create(&new_span->mutex);
@@ -556,11 +580,11 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t
 		ftdm_mutex_unlock(globals.span_mutex);
 		
 		if (!name) {
-			char buf[128] = "";
 			snprintf(buf, sizeof(buf), "span%d", new_span->span_id);
 			name = buf;
 		}
 		new_span->name = ftdm_strdup(name);
+		new_span->type = ftdm_strdup(iotype);
 		ftdm_span_add(new_span);
 		*span = new_span;
 		status = FTDM_SUCCESS;
@@ -1655,6 +1679,16 @@ FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan)
 FT_DECLARE(const char *) ftdm_channel_get_span_name(const ftdm_channel_t *ftdmchan)
 {
 	return ftdmchan->span->name;
+}
+
+FT_DECLARE(void) ftdm_span_set_trunk_type(ftdm_span_t *span, ftdm_trunk_type_t type)
+{
+	span->trunk_type = type;
+}
+
+FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span)
+{
+	return span->trunk_type;
 }
 
 FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span)
@@ -3227,7 +3261,15 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, unsigned *configured)
 {
-	int currindex = span->chan_count;
+	int currindex;
+
+	ftdm_assert_return(span != NULL, FTDM_EINVAL, "span is null\n");
+	ftdm_assert_return(chan_config != NULL, FTDM_EINVAL, "config is null\n");
+	ftdm_assert_return(configured != NULL, FTDM_EINVAL, "configured pointer is null\n");
+	ftdm_assert_return(span->fio != NULL, FTDM_EINVAL, "span with no I/O configured\n");
+	ftdm_assert_return(span->fio->configure_span != NULL, FTDM_NOTIMPL, "span I/O with no channel configuration implemented\n");
+
+       	currindex = span->chan_count;
 	*configured = 0;
 	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
 	if (!*configured) {
@@ -3235,18 +3277,24 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		return FTDM_FAIL;
 	}
 
-	if (ftdm_group_add_channels(span, currindex, chan_config->group_name) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to add channels to group %s\n", span->span_id, chan_config->group_name);
-		return FTDM_FAIL;
+	if (chan_config->group_name[0]) {
+		if (ftdm_group_add_channels(span, currindex, chan_config->group_name) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%d:Failed to add channels to group %s\n", span->span_id, chan_config->group_name);
+			return FTDM_FAIL;
+		}
 	}
-	if (ftdm_set_channels_alarms(span, currindex) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel alarms\n", span->span_id);
-		return FTDM_FAIL;
-	}
+
 	if (ftdm_set_channels_gains(span, currindex, chan_config->rxgain, chan_config->txgain) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel gains\n", span->span_id);
 		return FTDM_FAIL;
 	}
+
+
+	if (ftdm_set_channels_alarms(span, currindex) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel alarms\n", span->span_id);
+		return FTDM_FAIL;
+	}
+
 	return FTDM_SUCCESS;
 }
 
@@ -3260,7 +3308,6 @@ static ftdm_status_t load_config(void)
 	int intparam = 0;
 	ftdm_span_t *span = NULL;
 	unsigned configured = 0, d = 0;
-	ftdm_io_interface_t *fio = NULL;
 	ftdm_analog_start_type_t tmp;
 	ftdm_size_t len = 0;
 	ftdm_channel_config_t chan_config;
@@ -3271,7 +3318,7 @@ static ftdm_status_t load_config(void)
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
 	}
-	
+	ftdm_log(FTDM_LOG_DEBUG, "Reading FreeTDM configuration file\n");	
 	while (ftdm_config_next_pair(&cfg, &var, &val)) {
 		if (*cfg.category == '#') {
 			if (cfg.catno != catno) {
@@ -3300,33 +3347,9 @@ static ftdm_status_t load_config(void)
 					*name++ = '\0';
 				}
 
-				ftdm_mutex_lock(globals.mutex);
-				if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
-					ftdm_load_module_assume(type);
-					if ((fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, type))) {
-						ftdm_log(FTDM_LOG_INFO, "auto-loaded '%s'\n", type);
-					}
-				}
-				ftdm_mutex_unlock(globals.mutex);
-
-				if (!fio) {
-					ftdm_log(FTDM_LOG_CRIT, "failure creating span, no such type '%s'\n", type);
-					span = NULL;
-					continue;
-				}
-
-				if (!fio->configure_span) {
-					ftdm_log(FTDM_LOG_CRIT, "failure creating span, no configure_span method for '%s'\n", type);
-					span = NULL;
-					continue;
-				}
-
-				if (ftdm_span_create(fio, &span, name) == FTDM_SUCCESS) {
-					span->type = ftdm_strdup(type);
-					d = 0;
-
+				if (ftdm_span_create(type, name, &span) == FTDM_SUCCESS) {
 					ftdm_log(FTDM_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
-					
+					d = 0;
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span of type %s\n", type);
 					span = NULL;
@@ -3341,8 +3364,9 @@ static ftdm_status_t load_config(void)
 			ftdm_log(FTDM_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
 			
 			if (!strcasecmp(var, "trunk_type")) {
-				span->trunk_type = ftdm_str2ftdm_trunk_type(val);
-				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(span->trunk_type)); 
+				ftdm_trunk_type_t trtype = ftdm_str2ftdm_trunk_type(val);
+				ftdm_span_set_trunk_type(span, trtype);
+				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(trtype)); 
 			} else if (!strcasecmp(var, "name")) {
 				if (!strcasecmp(val, "undef")) {
 					chan_config.name[0] = '\0';
@@ -3371,7 +3395,7 @@ static ftdm_status_t load_config(void)
 							ftdm_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
-     			unsigned chans_configured = 0;
+					unsigned chans_configured = 0;
 					chan_config.type = FTDM_CHAN_TYPE_FXO;
 					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
 						configured += chans_configured;

@@ -40,7 +40,8 @@
 
 typedef enum {
 	FTDM_SANGOMA_BOOST_RUNNING = (1 << 0),
-	FTDM_SANGOMA_BOOST_RESTARTING = (1 << 1)
+	FTDM_SANGOMA_BOOST_RESTARTING = (1 << 1),
+	FTDM_SANGOMA_BOOST_EVENTS_RUNNING = (1 << 2),
 } ftdm_sangoma_boost_flag_t;
 
 typedef struct ftdm_sangoma_boost_data {

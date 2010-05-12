@@ -67,7 +67,8 @@ typedef enum {
 	FTDM_MEMERR, /*!< Memory error, most likely allocation failure */
 	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
 	FTDM_NOTIMPL, /*!< Operation not implemented */
-	FTDM_BREAK /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
+	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
+	FTDM_EINVAL /*!< Invalid argument */
 } ftdm_status_t;
 
 /*! \brief FreeTDM bool type. */
@@ -298,6 +299,23 @@ typedef enum {
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
+
+/*! \brief Span trunk types */
+typedef enum {
+	FTDM_TRUNK_E1,
+	FTDM_TRUNK_T1,
+	FTDM_TRUNK_J1,
+	FTDM_TRUNK_BRI,
+	FTDM_TRUNK_BRI_PTMP,
+	FTDM_TRUNK_FXO,
+	FTDM_TRUNK_FXS,
+	FTDM_TRUNK_EM,
+	FTDM_TRUNK_NONE
+} ftdm_trunk_type_t;
+#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "NONE"
+
+/*! \brief Move from string to ftdm_trunk_type_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t)
 
 /*! \brief Basic channel configuration provided to ftdm_configure_span_channels */
 typedef struct ftdm_channel_config {    
@@ -809,14 +827,18 @@ FT_DECLARE(const char *) ftdm_span_get_last_error(const ftdm_span_t *span);
 /*! 
  * \brief Create a new span (not needed if you are using freetdm.conf)
  *
- * \param fio The I/O interface the span will use
- * \param span Pointer to store the create span
+ * \param iotype The I/O interface type this span will use. 
+ *               This depends on the available I/O modules 
+ *               ftmod_wanpipe = "wanpipe" (Sangoma)
+ *               ftmod_zt = "zt" (DAHDI or Zaptel)
+ *               ftmod_pika "pika" (this one is most likely broken)
  * \param name Name for the span
+ * \param span Pointer to store the create span
  *
  * \retval FTDM_SUCCESS success (the span was created)
  * \retval FTDM_FAIL failure (span was not created)
  */
-FT_DECLARE(ftdm_status_t) ftdm_span_create(ftdm_io_interface_t *fio, ftdm_span_t **span, const char *name);
+FT_DECLARE(ftdm_status_t) ftdm_span_create(const char *iotype, const char *name, ftdm_span_t **span);
 
 /*! 
  * \brief Add a new channel to a span
@@ -1144,7 +1166,38 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_add_param(ftdm_conf_node_t *node, const
  * \return FTDM_FAIL failure
  */
 FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node);
+
+/*! 
+ * \brief Create and configure channels in the given span
+ *
+ * \param span The span container
+ * \param str The channel range null terminated string. "1-10", "24" etc
+ * \param chan_config The basic channel configuration for each channel within the range
+ * \param configured Pointer where the number of channels configured will be stored
+ *
+ * \return FTDM_SUCCESS success
+ * \return FTDM_FAIL failure
+ */
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char *str, ftdm_channel_config_t *chan_config, unsigned *configured);
+
+/*! 
+ * \brief Set the trunk type for a span
+ *        This must be called before configuring any channels within the span
+ *
+ * \param span The span 
+ * \param type The trunk type
+ *
+ */
+FT_DECLARE(void) ftdm_span_set_trunk_type(ftdm_span_t *span, ftdm_trunk_type_t type);
+
+/*! 
+ * \brief Get the trunk type for a span
+ *
+ * \param span The span 
+ *
+ * \return The span trunk type
+ */
+FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span);
 
 /*! 
  * \brief Return the channel identified by the provided id

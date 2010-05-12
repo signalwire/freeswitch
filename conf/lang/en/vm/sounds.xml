@@ -71,18 +71,28 @@
   <macro name="voicemail_menu">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	<!-- To listen to new messages -->
 	<action function="play-file" data="voicemail/vm-listen_new.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- To listen to saved messages -->
 	<action function="play-file" data="voicemail/vm-listen_saved.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$3" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- For advanced options -->
 	<action function="play-file" data="voicemail/vm-advanced.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$4" method="pronounced" type="name_phonetic"/>
+	<action function="say" data="$3" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- To exit -->
 	<action function="play-file" data="voicemail/vm-to_exit.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
+	<action function="say" data="$4" method="pronounced" type="name_phonetic"/>
       </match>
     </input>
   </macro>
@@ -90,21 +100,34 @@
   <macro name="voicemail_config_menu">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	<!-- To record a greeting -->
 	<action function="play-file" data="voicemail/vm-to_record_greeting.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- To choose greeting -->
 	<action function="play-file" data="voicemail/vm-choose_greeting.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$3" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$2" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- To record your name -->
 	<action function="play-file" data="voicemail/vm-record_name2.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$4" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$3" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- To change password -->
 	<action function="play-file" data="voicemail/vm-change_password.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$5" method="pronounced" type="name_spelled"/>
+	<action function="say" data="$4" method="pronounced" type="name_spelled"/>
+	<action function="execute" data="sleep(100)"/>
+
+	<!-- To return to main menu -->
 	<action function="play-file" data="voicemail/vm-main_menu.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
+	<action function="say" data="$5" method="pronounced" type="name_spelled"/>
       </match>
     </input>
   </macro>

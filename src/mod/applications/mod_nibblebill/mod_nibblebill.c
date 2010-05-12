@@ -50,10 +50,6 @@
 
 #include <switch.h>
 
-/* Defaults */
-static char SQL_LOOKUP[] = "SELECT %s AS nibble_balance FROM %s WHERE %s='%s'";
-static char SQL_SAVE[] = "UPDATE %s SET %s=%s-%f WHERE %s='%s'";
-
 typedef struct {
 	switch_time_t lastts;		/* Last time we did any billing */
 	float total;				/* Total amount billed so far */
@@ -300,7 +296,6 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 /* At this time, billing never succeeds if you don't have a database. */
 static switch_status_t bill_event(float billamount, const char *billaccount, switch_channel_t *channel)
 {
-	switch_stream_handle_t sql_stream = { 0 };
 	char *sql = NULL, *dsql = NULL;
 	switch_odbc_statement_handle_t stmt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -318,11 +313,9 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 			sql = globals.custom_sql_save;
 		}
 	} else {
-		SWITCH_STANDARD_STREAM(sql_stream);
-		sql_stream.write_function(&sql_stream, SQL_SAVE, globals.db_table, globals.db_column_cash, 
-								  globals.db_column_cash, billamount, globals.db_column_account, billaccount);
-								  
-		sql = (char *) sql_stream.data;
+		sql = dsql = switch_mprintf("UPDATE %s SET %s=%s-%f WHERE %s='%s'", globals.db_table, globals.db_column_cash, 
+									globals.db_column_cash, billamount, globals.db_column_account, billaccount);
+		
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing update query\n[%s]\n", sql);
@@ -339,23 +332,18 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 	}
 	
 	switch_safe_free(dsql);
-	switch_safe_free(sql_stream.data);
-
 	return status;
 }
 
 
 static float get_balance(const char *billaccount, switch_channel_t *channel)
 {
-	switch_stream_handle_t sql_stream = { 0 };
-	char *sql = NULL;
+	char *dsql = NULL, *sql = NULL;
 	nibblebill_results_t pdata;
 	float balance = 0.00f;
-	SWITCH_STANDARD_STREAM(sql_stream);
 
 	if (!switch_odbc_available()) {
-		balance = -1.00f;
-		goto end;
+		return -1.00f;
 	}
 
 	memset(&pdata, 0, sizeof(pdata));
@@ -363,13 +351,15 @@ static float get_balance(const char *billaccount, switch_channel_t *channel)
 	if (globals.custom_sql_lookup) {
 		if (switch_string_var_check_const(globals.custom_sql_lookup) || switch_string_has_escaped_data(globals.custom_sql_lookup)) {
 			sql = switch_channel_expand_variables(channel, globals.custom_sql_lookup);
+			if (sql != globals.custom_sql_lookup) dsql = sql;
 		} else {
 			sql = globals.custom_sql_lookup;
 		}
 	} else {
-		sql_stream.write_function(&sql_stream, SQL_LOOKUP, globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
-		sql = sql_stream.data;
+		sql = dsql = switch_mprintf("SELECT %s AS nibble_balance FROM %s WHERE %s='%s'", 
+									globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing lookup query\n[%s]\n", sql);
 	
 	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, nibblebill_callback, &pdata, NULL) != SWITCH_ODBC_SUCCESS) {
@@ -377,19 +367,13 @@ static float get_balance(const char *billaccount, switch_channel_t *channel)
 		/* Return -1 for safety */
 
 		balance = -1.00f;
-		goto end;
 	} else {
 		/* Successfully retrieved! */
 		balance = pdata.balance;
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Retrieved current balance for account %s (balance = %f)\n", billaccount, balance);
 	}
 	
-end:
-	if (sql != globals.custom_sql_lookup && sql != sql_stream.data) {
-		switch_safe_free(sql);
-	}
-	switch_safe_free(sql_stream.data);
+	switch_safe_free(dsql);
 	return balance;
 }
 
