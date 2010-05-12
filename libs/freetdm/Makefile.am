@@ -77,7 +77,8 @@ library_include_HEADERS = \
 $(SRC)/include/freetdm.h \
 $(SRC)/include/ftdm_declare.h \
 $(SRC)/include/ftdm_threadmutex.h \
-$(SRC)/include/ftdm_os.h 
+$(SRC)/include/ftdm_os.h \
+$(SRC)/include/ftdm_dso.h 
 
 lib_LTLIBRARIES	       = libfreetdm.la
 libfreetdm_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)
