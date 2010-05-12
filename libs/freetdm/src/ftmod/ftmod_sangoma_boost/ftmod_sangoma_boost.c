@@ -2149,6 +2149,7 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_boost_destroy)
 			sigmod = val;
 			lib = sigmod->pvt;
 			ftdm_log(FTDM_LOG_DEBUG, "destroying sigmod %s\n", sigmod->name);
+			sigmod->on_unload();
 			ftdm_dso_destroy(&lib);
 		}
 	}

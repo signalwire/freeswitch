@@ -557,8 +557,6 @@ FT_DECLARE(ftdm_status_t) ftdm_unload_modules(void);
 
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg);
 
-FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t len);
-
 FT_DECLARE(void) ftdm_channel_clear_needed_tones(ftdm_channel_t *ftdmchan);
 FT_DECLARE(void) ftdm_channel_rotate_tokens(ftdm_channel_t *ftdmchan);
 
