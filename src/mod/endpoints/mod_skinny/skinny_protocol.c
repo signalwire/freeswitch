@@ -442,7 +442,7 @@ switch_call_cause_t skinny_ring_lines(private_t *tech_pvt)
 }
 
 /*****************************************************************************/
-switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *line_instance_p, switch_core_session_t **session)
+switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *line_instance_p, switch_core_session_t **session)
 {
 	uint32_t line_instance;
 	switch_core_session_t *nsession;
@@ -963,7 +963,7 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	} else {
 		if(remote_uuid) {
 			/* TODO CallSelectStat */
-			status = skinny_create_ingoing_session(listener, &line_instance, &session2);
+			status = skinny_create_incoming_session(listener, &line_instance, &session2);
 			tech_pvt2 = switch_core_session_get_private(session2);
 			tech_pvt2->transfer_from_call_id = tech_pvt->call_id;
 			tech_pvt->transfer_to_call_id = tech_pvt2->call_id;
@@ -1952,13 +1952,13 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 	switch(request->data.stimulus.instance_type) {
 		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
-		    skinny_create_ingoing_session(listener, &line_instance, &session);
+		    skinny_create_incoming_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
 			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
 			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button);
 			if(strlen(button->line) > 0) {
-		        skinny_create_ingoing_session(listener, &line_instance, &session);
+		        skinny_create_incoming_session(listener, &line_instance, &session);
 			    skinny_session_process_dest(session, listener, line_instance, button->line, '\0', 0);
 			}
 			break;
@@ -1970,7 +1970,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			}
 			break;
 		case SKINNY_BUTTON_VOICEMAIL:
-		    skinny_create_ingoing_session(listener, &line_instance, &session);
+		    skinny_create_incoming_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
 			break;
 		default:
@@ -2003,7 +2003,7 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 	if(session) { /*answering a call */
 		skinny_session_answer(session, listener, line_instance);
 	} else { /* start a new call */
-		skinny_create_ingoing_session(listener, &line_instance, &session);
+		skinny_create_incoming_session(listener, &line_instance, &session);
 	    tech_pvt = switch_core_session_get_private(session);
 	    assert(tech_pvt != NULL);
 
@@ -2497,12 +2497,12 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
-	        status = skinny_create_ingoing_session(listener, &line_instance, &session);
+	        status = skinny_create_incoming_session(listener, &line_instance, &session);
 
 		    skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
 			break;
 		case SOFTKEY_NEWCALL:
-	        status = skinny_create_ingoing_session(listener, &line_instance, &session);
+	        status = skinny_create_incoming_session(listener, &line_instance, &session);
 		    tech_pvt = switch_core_session_get_private(session);
 
 		    skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
