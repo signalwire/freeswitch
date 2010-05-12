@@ -46,7 +46,6 @@
 #include <string.h>
 #include <limits.h>
 
-#undef SPANDSP_USE_FIXED_POINT
 #include "spandsp/telephony.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/dc_restore.h"
@@ -575,7 +574,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
         if ((s->current_rx_tone & SIG_TONE_RX_PASSTHROUGH))
         {
             if ((s->current_rx_tone & SIG_TONE_RX_FILTER_TONE)  ||  s->notch_insertion_timeout)
-                amp[i] = saturate16(notched_signal[0]);
+                amp[i] = saturate(notched_signal[0]);
             /*endif*/
         }
         else
