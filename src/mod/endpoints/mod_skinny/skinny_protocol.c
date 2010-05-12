@@ -1595,7 +1595,7 @@ switch_status_t send_call_state(listener_t *listener,
 
 switch_status_t send_display_prompt_status(listener_t *listener,
 	uint32_t timeout,
-	char display[32],
+	const char *display,
 	uint32_t line_instance,
 	uint32_t call_id)
 {

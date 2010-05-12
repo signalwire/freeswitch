@@ -33,6 +33,7 @@
 #include "mod_skinny.h"
 #include "skinny_protocol.h"
 #include "skinny_tables.h"
+#include "skinny_labels.h"
 #include "skinny_api.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load);
@@ -615,6 +616,7 @@ switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 struct channel_on_hangup_helper {
 	private_t *tech_pvt;
+	switch_call_cause_t cause;
 };
 
 int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -646,7 +648,19 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			send_stop_tone(listener, line_instance, call_id);
 		}
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
-		send_clear_prompt_status(listener, line_instance, call_id);
+		switch (helper->cause) {
+			case SWITCH_CAUSE_UNALLOCATED_NUMBER:
+				send_display_prompt_status(listener, 0, SKINNY_DISP_UNKNOWN_NUMBER, line_instance, call_id);
+				break;
+			case SWITCH_CAUSE_USER_BUSY:
+				send_display_prompt_status(listener, 0, SKINNY_DISP_BUSY, line_instance, call_id);
+				break;
+			case SWITCH_CAUSE_NORMAL_CLEARING:
+    				send_clear_prompt_status(listener, line_instance, call_id);
+				break;
+			default:
+				send_display_prompt_status(listener, 0, switch_channel_cause2str(helper->cause), line_instance, call_id);
+		}
 		if(call_state == SKINNY_CONNECTED) { /* calling parties */
 			skinny_session_stop_media(helper->tech_pvt->session, listener, line_instance);
 		}
@@ -664,6 +678,7 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	struct channel_on_hangup_helper helper = {0};
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_call_cause_t cause = switch_channel_get_cause(channel);
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	char *sql;
 
@@ -673,6 +688,7 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
 	helper.tech_pvt= tech_pvt;
+	helper.cause= cause;
 
 	skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), channel_on_hangup_callback, &helper);
 	if ((sql = switch_mprintf(
