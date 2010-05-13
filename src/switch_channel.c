@@ -2837,12 +2837,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *
 	switch_mutex_lock(other_channel->profile_mutex);
 
 	if (!zstr(channel->caller_profile->callee_id_name)) {
-		other_channel->caller_profile->callee_id_name = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_name);
+		other_channel->caller_profile->callee_id_name = switch_core_strdup(other_channel->caller_profile->pool, channel->caller_profile->callee_id_name);
 		x++;
 	}
 
 	if (!zstr(channel->caller_profile->callee_id_number)) {
-		other_channel->caller_profile->callee_id_number = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_number);
+		other_channel->caller_profile->callee_id_number = switch_core_strdup(other_channel->caller_profile->pool, channel->caller_profile->callee_id_number);
 		x++;
 	}
 
