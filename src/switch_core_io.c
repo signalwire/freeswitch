@@ -639,6 +639,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_mutex_lock(session->write_codec->mutex);
 	switch_mutex_lock(frame->codec->mutex);
 
+	if (!frame->codec->implementation || !session->write_codec->implementation) goto error;
+	
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id ||
 			session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
