@@ -499,7 +499,6 @@ typedef enum {
 	SWITCH_RTP_FLAG_GOOGLEHACK    - Convert payload from 102 to 97
 	SWITCH_RTP_FLAG_VAD           - Enable VAD
 	SWITCH_RTP_FLAG_BREAK		  - Stop what you are doing and return SWITCH_STATUS_BREAK
-	SWITCH_RTP_FLAG_MINI		  - Use mini RTP when possible
 	SWITCH_RTP_FLAG_DATAWAIT	  - Do not return from reads unless there is data even when non blocking
 	SWITCH_RTP_FLAG_BUGGY_2833    - Emulate the bug in cisco equipment to allow interop
 	SWITCH_RTP_FLAG_PASS_RFC2833  - Pass 2833 (ignore it)
@@ -518,7 +517,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 8),
 	SWITCH_RTP_FLAG_VAD = (1 << 9),
 	SWITCH_RTP_FLAG_BREAK = (1 << 10),
-	SWITCH_RTP_FLAG_MINI = (1 << 11),
+	SWITCH_RTP_FLAG_UDPTL = (1 << 11),
 	SWITCH_RTP_FLAG_DATAWAIT = (1 << 12),
 	SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 13),
 	SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 14),
@@ -725,10 +724,13 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC,
 	SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE,
 	SWITCH_MESSAGE_INDICATE_PHONE_EVENT,
+	SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION,
+	SWITCH_MESSAGE_INDICATE_UDPTL_MODE,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
 typedef struct {
+	uint16_t T38FaxVersion;
 	uint32_t T38MaxBitRate;
 	switch_bool_t T38FaxFillBitRemoval;
 	switch_bool_t T38FaxTranscodingMMR;
@@ -1008,7 +1010,8 @@ typedef enum {
 
 
 typedef enum {
-	CF_APP_TAGGED = (1 << 0)
+	CF_APP_TAGGED = (1 << 0),
+	CF_APP_T38 = (1 << 1)
 } switch_channel_app_flag_t;
 
 
@@ -1034,7 +1037,8 @@ typedef enum {
 	SFF_RFC2833 = (1 << 4),
 	SFF_PROXY_PACKET = (1 << 5),
 	SFF_DYNAMIC = (1 << 6),
-	SFF_ZRTP = (1 << 7)
+	SFF_ZRTP = (1 << 7),
+	SFF_UDPTL_PACKET = (1 << 8)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 

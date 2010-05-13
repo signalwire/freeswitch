@@ -869,32 +869,33 @@ fi
 CHECK_ERLANG
 
 AC_CONFIG_FILES([Makefile
-                build/Makefile
-                src/Makefile
-                src/mod/Makefile
-                src/mod/applications/mod_enum/Makefile
+		build/Makefile
+		src/Makefile
+		src/mod/Makefile
+		src/mod/applications/mod_enum/Makefile
 		src/mod/applications/mod_expr/Makefile
+		src/mod/applications/mod_fax/Makefile
 		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_t38gateway/Makefile
 		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_skypopen/Makefile
-                src/mod/endpoints/mod_sofia/Makefile
+		src/mod/endpoints/mod_sofia/Makefile
 		src/mod/formats/mod_portaudio_stream/Makefile
-                src/mod/asr_tts/mod_unimrcp/Makefile
-                src/mod/languages/mod_java/Makefile
+		src/mod/asr_tts/mod_unimrcp/Makefile
+		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
-                src/mod/languages/mod_python/Makefile
+		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_spidermonkey/Makefile
-                src/mod/event_handlers/mod_erlang_event/Makefile
-                src/include/switch_am_config.h
-                build/getsounds.sh
-                build/getlib.sh
+		src/mod/event_handlers/mod_erlang_event/Makefile
+		src/include/switch_am_config.h
+		build/getsounds.sh
+		build/getlib.sh
 		build/freeswitch.pc
-                build/modmake.rules
-                libs/xmlrpc-c/include/xmlrpc-c/config.h
-                libs/xmlrpc-c/xmlrpc_config.h
-                scripts/gentls_cert])
+		build/modmake.rules
+		libs/xmlrpc-c/include/xmlrpc-c/config.h
+		libs/xmlrpc-c/xmlrpc_config.h
+		scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])

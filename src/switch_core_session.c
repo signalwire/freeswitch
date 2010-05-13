@@ -556,6 +556,7 @@ static const char *message_names[] = {
 	"APPLICATION_EXEC",
 	"APPLICATION_EXEC_COMPLETE",
 	"PHONE_EVENT",
+	"T38_DESCRIPTION"
 	"INVALID"
 };
 

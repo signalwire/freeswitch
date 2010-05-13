@@ -977,9 +977,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms == codec_ms) {
 								tech_pvt->mismatch_count++;
 							}
-
+							
 							tech_pvt->last_codec_ms = codec_ms;
-
+							
 							if (tech_pvt->mismatch_count > MAX_MISMATCH_FRAMES) {
 								if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
 									const char *val;
@@ -996,19 +996,23 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 
 									tech_pvt->read_frame.datalen = 0;
-									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-													  "We were told to use ptime %d but what they meant to say was %d\n"
-													  "This issue has so far been identified to happen on the following broken platforms/devices:\n"
-													  "Linksys/Sipura aka Cisco\n"
-													  "ShoreTel\n"
-													  "Sonus/L3\n"
-													  "We will try to fix it but some of the devices on this list are so broken who knows what will happen..\n",
-													  (int) tech_pvt->codec_ms, (int) codec_ms);
 
-									switch_channel_set_variable_printf(channel, "sip_h_X-Broken-PTIME", "Adv=%d;Sent=%d",
-																	   (int) tech_pvt->codec_ms, (int) codec_ms);
+									if (codec_ms != tech_pvt->codec_ms) {
+										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+														  "We were told to use ptime %d but what they meant to say was %d\n"
+														  "This issue has so far been identified to happen on the following broken platforms/devices:\n"
+														  "Linksys/Sipura aka Cisco\n"
+														  "ShoreTel\n"
+														  "Sonus/L3\n"
+														  "We will try to fix it but some of the devices on this list are so broken,\n"
+														  "who knows what will happen..\n",
+														  (int) tech_pvt->codec_ms, (int) codec_ms);
 
-									tech_pvt->codec_ms = codec_ms;
+										switch_channel_set_variable_printf(channel, "sip_h_X-Broken-PTIME", "Adv=%d;Sent=%d",
+																		   (int) tech_pvt->codec_ms, (int) codec_ms);
+
+										tech_pvt->codec_ms = codec_ms;
+									}
 
 									if (sofia_glue_tech_set_codec(tech_pvt, 2) != SWITCH_STATUS_SUCCESS) {
 										*frame = NULL;
@@ -1049,6 +1053,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									tech_pvt->last_ts = 0;
 
 									/* inform them of the codec they are actually sending */
+
 									if (++tech_pvt->codec_reinvites > 2) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 														  "Ok, some devices *cough* X-lite *cough*\n"
@@ -1065,7 +1070,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						} else {
 							tech_pvt->mismatch_count = 0;
 						}
+
 						tech_pvt->last_ts = tech_pvt->read_frame.timestamp;
+
+
 					} else {
 						tech_pvt->mismatch_count = 0;
 						tech_pvt->last_ts = 0;
@@ -1512,16 +1520,70 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
+		{
+			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
+			
+			if (!t38_options) {
+				nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+				goto end_lock;
+			}
+
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_udptl_mode(tech_pvt->rtp_session);
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION:
+		{
+			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
+			
+			if (!t38_options) {
+				nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+				goto end_lock;
+			}
+
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_udptl_mode(tech_pvt->rtp_session);
+			}
+
+			
+			sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+
+			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+				if (sofia_use_soa(tech_pvt)) {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								NUTAG_AUTOANSWER(0),
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
+								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+								SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1),
+								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+								TAG_END());
+				} else {
+					nua_respond(tech_pvt->nh, SIP_200_OK,
+								NUTAG_AUTOANSWER(0),
+								NUTAG_MEDIA_ENABLE(0),
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
+								SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+								SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),
+								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+								TAG_END());
+				}
+				switch_safe_free(extra_headers);
+				sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
+			}			
+		}
+		break;
 
 	case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:
 		{
-			switch_t38_options_t *t38_options = (switch_t38_options_t *) msg->pointer_arg;
+			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 
-			sofia_glue_set_image_sdp(tech_pvt, t38_options);
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Sending request for image media. %s\n",
-							  switch_channel_get_name(channel), tech_pvt->local_sdp_str);
-
+			sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+			
 			switch_channel_set_flag(channel, CF_REQ_MEDIA);
 			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 			sofia_glue_do_invite(session);

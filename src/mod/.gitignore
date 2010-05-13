@@ -1,5 +1,7 @@
 /Makefile
 /Makefile.in
+/applications/mod_fax/Makefile
+/applications/mod_fax/Makefile.in
 /applications/mod_commands/Makefile
 /applications/mod_conference/Makefile
 /applications/mod_dptools/Makefile

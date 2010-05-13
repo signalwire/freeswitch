@@ -199,7 +199,7 @@ SWITCH_STANDARD_APP(t38gateway_start_function)
 	t38gateway_info->t38_core = t38_gateway_get_t38_core_state(t38gateway_info->t38);
 	t38gateway_info->udptl = udptl_init(NULL, UDPTL_ERROR_CORRECTION_REDUNDANCY, 3, 3, rx_packet_handler, (void *) t38gateway_info);
 
-	status = switch_core_media_bug_add(session, t38gateway_callback, t38gateway_info, 0, SMBF_READ_STREAM, &bug);
+	status = switch_core_media_bug_add(session, "T.38 gateway", NULL, t38gateway_callback, t38gateway_info, 0, SMBF_READ_STREAM, &bug);
 
 	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure hooking to stream\n");
@@ -316,7 +316,7 @@ SWITCH_STANDARD_API(t38gateway_api_main)
 
 	/* Add a media bug that allows me to intercept the 
 	 * reading leg of the audio stream */
-	status = switch_core_media_bug_add(t38gateway_session, t38gateway_callback, t38gateway_info, 0, SMBF_READ_STREAM, &bug);
+	status = switch_core_media_bug_add(t38gateway_session, "T.38 gateway", NULL, t38gateway_callback, t38gateway_info, 0, SMBF_READ_STREAM, &bug);
 
 	/* If adding a media bug fails exit */
 	if (status != SWITCH_STATUS_SUCCESS) {

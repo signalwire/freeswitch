@@ -1025,6 +1025,33 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_sessi
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session) 
+{
+	READ_INC(rtp_session);
+	WRITE_INC(rtp_session);
+
+	if (rtp_session->timer.timer_interface) {
+		switch_core_timer_destroy(&rtp_session->timer);
+		memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
+	}
+
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_UDPTL);
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+	switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
+
+	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+		
+	WRITE_DEC(rtp_session);
+	READ_DEC(rtp_session);
+
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, switch_port_t remote_rtcp_port,
 															  switch_bool_t change_adv_addr, const char **err)
 {
@@ -1227,7 +1254,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_ses
 											 rtp_session->timer_name, ms_per_packet / 1000,
 											 samples_per_interval, rtp_session->pool)) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-							  "RE-Starting timer [%s] %d bytes per %dms\n", rtp_session->timer_name, samples_per_interval, ms_per_packet);
+							  "RE-Starting timer [%s] %d bytes per %dms\n", rtp_session->timer_name, samples_per_interval, ms_per_packet / 1000);
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -2451,9 +2478,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
-		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+		if (bytes && (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL))) {
 			/* Fast PASS! */
 			*flags |= SFF_PROXY_PACKET;
+
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+				*flags |= SFF_UDPTL_PACKET;
+			}
+
 			ret = (int) bytes;
 			goto end;
 		}
@@ -3475,12 +3507,12 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		return -1;
 	}
 	
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
 		switch_size_t bytes;
 		char bufa[30];
 		const char *tx_host;
 		/* Fast PASS! */
-		if (!switch_test_flag(frame, SFF_PROXY_PACKET)) {
+		if (!switch_test_flag(frame, SFF_PROXY_PACKET) && !switch_test_flag(frame, SFF_UDPTL_PACKET)) {
 			return 0;
 		}
 		bytes = frame->packetlen;

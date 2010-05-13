@@ -930,7 +930,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
 const char *sofia_state_string(int state);
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
-void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options);
+void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist);
 
 /*
  * SLA (shared line appearance) entrypoints
