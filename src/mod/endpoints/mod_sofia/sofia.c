@@ -654,12 +654,12 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	if (!strcmp(caller_profile->callee_id_name, name) && !strcmp(caller_profile->callee_id_number, number)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Same Callee ID \"%s\" <%s>\n", name, number);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s Same Callee ID \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
 		send = 0;
 	} else {
 		caller_profile->callee_id_name = switch_sanitize_number(switch_core_strdup(caller_profile->pool, name));
 		caller_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Update Callee ID to \"%s\" <%s>\n", name, number);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Update Callee ID to \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
 	}
 
 	if (send) {
