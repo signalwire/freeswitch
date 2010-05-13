@@ -32,6 +32,7 @@
 #include <switch.h>
 #include "mod_skinny.h"
 #include "skinny_protocol.h"
+#include "skinny_server.h"
 #include "skinny_tables.h"
 #include "skinny_labels.h"
 #include "skinny_api.h"

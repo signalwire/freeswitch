@@ -621,7 +621,7 @@ enum skinny_codecs {
     SKINNY_CODEC_RFC2833_DYNPAYLOAD = 257
 };
 
-typedef switch_status_t (*skinny_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
+char* skinny_codec2string(enum skinny_codecs skinnycodec);
 
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
@@ -638,22 +638,12 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name);
 
-switch_status_t skinny_session_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *channel_uuid, switch_core_db_callback_func_t callback, void *data);
-switch_call_cause_t skinny_ring_lines(private_t *tech_pvt);
-
-switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *line_instance, switch_core_session_t **session);
-switch_status_t skinny_session_process_dest(switch_core_session_t *session, listener_t *listener, uint32_t line_instance, char *dest, char append_dest, uint32_t backspace);
-switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
-switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
-switch_status_t skinny_session_start_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
-switch_status_t skinny_session_hold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
-switch_status_t skinny_session_unhold_line(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
-switch_status_t skinny_session_stop_media(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
-switch_status_t skinny_hold_active_calls(listener_t *listener);
 
 void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_res_message **button);
 void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed_dial_stat_res_message **button);
+void skinny_service_url_get(listener_t *listener, uint32_t instance, struct service_url_stat_res_message **button);
+void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_stat_res_message **button);
 
 switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
 #define  skinny_send_reply(listener, reply)  skinny_perform_send_reply(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
@@ -737,6 +727,7 @@ switch_status_t send_define_time_date(listener_t *listener,
 switch_status_t send_define_current_time_date(listener_t *listener);
 switch_status_t send_version(listener_t *listener,
     char *version);
+switch_status_t send_capabilities_req(listener_t *listener);
 switch_status_t send_register_reject(listener_t *listener,
     char *error);
 switch_status_t send_open_receive_channel(listener_t *listener,
