@@ -2045,9 +2045,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
   end_lock:
 
-	if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
-		sofia_send_callee_id(session, NULL, NULL);
-	}
+	//if (msg->message_id == SWITCH_MESSAGE_INDICATE_ANSWER || msg->message_id == SWITCH_MESSAGE_INDICATE_PROGRESS) {
+	//sofia_send_callee_id(session, NULL, NULL);
+	//}
 
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
