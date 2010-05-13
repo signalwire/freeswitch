@@ -2302,6 +2302,7 @@ SWITCH_STANDARD_API(uuid_display_function)
 
 	if (zstr(cmd) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
 		stream->write_function(stream, "-USAGE: %s\n", DISPLAY_SYNTAX);
+		goto end;
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
@@ -2321,6 +2322,8 @@ SWITCH_STANDARD_API(uuid_display_function)
 	} else {
 		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
+
+ end:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
