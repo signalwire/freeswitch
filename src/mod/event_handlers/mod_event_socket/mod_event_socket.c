@@ -2701,11 +2701,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
 		switch_core_hash_init(&listener->event_hash, listener->pool);
-		switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock);
-		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
-		listener->remote_port = switch_sockaddr_get_port(listener->sa);
-		launch_listener_thread(listener);
 
+		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
+			switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
+			if (listener->sa && (listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
+				launch_listener_thread(listener);
+				continue;
+			} 
+		}
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initilizing connection\n");
+		close_socket(&listener->sock);
+		expire_listener(&listener);
+	
 	}
 
   end:
