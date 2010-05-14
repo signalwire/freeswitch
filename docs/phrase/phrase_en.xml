@@ -375,16 +375,25 @@
       <prompt phrase="You are the..." filename="ivr-you_are_the.wav"/>
       <prompt phrase="One moment please." filename="ivr-one_moment_please.wav"/>
       <prompt phrase="Your call will be answered in the order it was received." filename="ivr-call_answered_order_received.wav"/>
-      <prompt phrase="Please enter the conference number, followed by the pound or hash key" filename="conf-Enter_conf_number.wav"/>
+      <prompt phrase="Please enter the conference number, followed by the pound key" filename="conf-enter_conf_number.wav"/>
+      <prompt phrase="Enter the conference PIN number, followed by the pound key." filename="ivr-enter_conf_pin.wav"/>
+      <prompt phrase="...has entered the conference." filename="conf-has_joined.wav"/>
+      <prompt phrase="...has left the conference." filename="conf-has_left.wav"/>
       <prompt phrase="You entered..." filename="ivr-you_entered.wav"/>
       <prompt phrase="Extension number..." filename="ivr-extension_number.wav"/>
       <prompt phrase="Please hold while your party is being contacted." filename="ivr-please_hold_while_party_contacted.wav"/>
       <prompt phrase="Please enjoy the music while your party is being reached." filename="ivr-please_enjoy_music_while_party_reached.wav"/>
       <prompt phrase="For the next entry..." filename="dir-for_next.wav" note="re-record because original is wrong"/>
-
-      <prompt phrase="" filename="ivr-.wav"/>
-      <prompt phrase="" filename="ivr-.wav"/>
-      <prompt phrase="" filename="ivr-.wav"/>
+      <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now, or dial nine for a directory." filename="ivr-generic_greeting.wav"/>
+      <prompt phrase="If this is correct, press 1. If not, press 2." filename="ivr-if_correct_one_if_not_two.wav"/>
+      <prompt phrase="To repeat this information..." filename="ivr-repeat_this_information.wav"/>
+      <prompt phrase="No no no!" filename="ivr-nonono.wav"/>
+      <prompt phrase="Do you mean to press that key?" filename="ivr-did_you_mean_to_press_key.wav"/>
+      <prompt phrase="Seriously. Did you REALLY mean to press that key?" filename="ivr-seriously_mean_to_press_key.wav"/>
+      <prompt phrase="Oh whatever." filename="ivr-oh_whatever.wav"/>
+      <prompt phrase="That's it! One more mistake and I WILL hang up on your ass." filename="ivr-one_more_mistake.wav"/>
+      <prompt phrase="Congratulations, you pressed star. This does not mean you ARE a star. It simply means that you can press buttons and probably have fingers." filename="ivr-congratulations_you_pressed_star.wav"/>
+      <prompt phrase="All of our engineers are busy assisting other sales guys with demonstrating how cool the CudaTel is. Please stay on the line and your call will be answered in the order it was received." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
       <prompt phrase="" filename="ivr-.wav"/>
 
     </ivr>
