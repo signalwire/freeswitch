@@ -1505,14 +1505,19 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
 		fstat(fd, &st);
+		if (!st.st_size) goto error;
 		m = malloc(st.st_size);
 		switch_assert(m);
-		l = read(fd, m, st.st_size);
-		root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l);
+		if (!(l = read(fd, m, st.st_size))) goto error;
+		if (!(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) goto error;
 		root->dynamic = 1;
 		close(fd);
 		return &root->xml;
 	}
+
+ error:
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing File [%s]\n", file);
 
 	return NULL;
 }
