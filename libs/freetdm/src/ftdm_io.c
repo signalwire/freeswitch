@@ -3790,10 +3790,11 @@ FT_DECLARE(ftdm_status_t) ftdm_unload_modules(void)
 static ftdm_status_t post_configure_span_channels(ftdm_span_t *span)
 {
 	unsigned i = 0;
-	ftdm_signaling_status_t status = FTDM_SUCCESS;
+	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
 	for (i = 1; i <= span->chan_count; i++) {
-		ftdm_channel_get_sig_status(span->channels[i], &status);
-		if (status == FTDM_SIG_STATE_UP) {
+		ftdm_channel_get_sig_status(span->channels[i], &sigstatus);
+		if (sigstatus == FTDM_SIG_STATE_UP) {
 			ftdm_set_flag(span->channels[i], FTDM_CHANNEL_SIG_UP);
 		}
 	}

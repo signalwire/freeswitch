@@ -123,6 +123,27 @@ static ftdm_status_t ftdm_analog_start(ftdm_span_t *span)
 }
 
 /**
+ * \brief Stops the analog span thread (monitor)
+ * \param span Span to stop 
+ * \return Success or failure
+ */
+static ftdm_status_t ftdm_analog_stop(ftdm_span_t *span)
+{
+	ftdm_analog_data_t *analog_data = span->signal_data;
+	int32_t sanity = 100;
+	while (ftdm_test_flag(analog_data, FTDM_ANALOG_RUNNING) && sanity--) {
+		ftdm_sleep(100);
+		ftdm_log(FTDM_LOG_DEBUG, "Waiting for analog thread for span %s to stop\n", span->name);
+	}
+
+	if (!sanity) {
+		ftdm_log(FTDM_LOG_ERROR, "The analog thread for span %s is probably still running, we may crash :(\n", span->name);
+		return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
+/**
  * \brief Initialises an analog span from configuration variables
  * \param span Span to configure
  * \param sig_cb Callback function for event signals
@@ -142,8 +163,10 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	uint32_t flags = FTDM_ANALOG_CALLERID;
 
 	assert(sig_cb != NULL);
+	ftdm_log(FTDM_LOG_DEBUG, "Configuring span %s for analog signaling ...\n", span->name);
 
 	if (span->signal_type) {
+		ftdm_log(FTDM_LOG_ERROR, "Span %s is already configured for signaling %d\n", span->name, span->signal_type);
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling.");
 		return FTDM_FAIL;
 	}
@@ -184,8 +207,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 			}
 			hotline = val;
 		} else {
-			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
-			return FTDM_FAIL;
+			ftdm_log(FTDM_LOG_ERROR, "Unknown parameter %s in span %s\n", var, span->name);
 		}			
 	}
 
@@ -199,6 +221,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	}
 	
 	span->start = ftdm_analog_start;
+	span->stop = ftdm_analog_stop;
 	analog_data->flags = flags;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
@@ -212,6 +235,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 
 	ftdm_span_load_tones(span, tonemap);
 
+	ftdm_log(FTDM_LOG_DEBUG, "Configuration of analog signaling for span %s is done\n", span->name);
 	return FTDM_SUCCESS;
 
 }

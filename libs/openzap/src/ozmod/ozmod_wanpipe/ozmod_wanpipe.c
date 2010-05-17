@@ -987,6 +987,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 						sangoma_tdm_txsig_onhook(zchan->sockfd,&tdm_api);
 					}
+					zap_log(ZAP_LOG_DEBUG, "%d:%d Returning fake ONHOOK\n", span->channels[i]->span_id, span->channels[i]->chan_id);
 					goto event;
 				}
 			}
@@ -1003,6 +1004,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				return ZAP_FAIL;
 			}
 			
+			zap_log(ZAP_LOG_DEBUG, "%d:%d wanpipe returned event %d\n", span->channels[i]->span_id, span->channels[i]->chan_id, tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 
 			case WP_TDMAPI_EVENT_LINK_STATUS:
@@ -1027,6 +1029,8 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 			case WP_TDMAPI_EVENT_RXHOOK:
 				{
+					zap_log(ZAP_LOG_DEBUG, "%d:%d rxhook, state %d\n", span->channels[i]->span_id, span->channels[i]->chan_id, 
+							tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state);
 					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXS) {
 						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
 						if (event_id == ZAP_OOB_OFFHOOK) {
