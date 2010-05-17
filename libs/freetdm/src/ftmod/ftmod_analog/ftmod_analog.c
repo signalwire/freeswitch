@@ -188,8 +188,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 			digit_timeout = *intval;
 		} else if (!strcasecmp(var, "enable_callerid")) {
 			if (!(val = va_arg(ap, char *))) {
-                break;
-            }
+                		break;
+            		}
 			
 			if (ftdm_true(val)) {
 				flags |= FTDM_ANALOG_CALLERID;
@@ -655,6 +655,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALTONE) {
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+					ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 					collecting = 1;
 				}
 				dtmf_offset = strlen(dtmf);

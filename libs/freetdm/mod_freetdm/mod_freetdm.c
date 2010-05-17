@@ -904,9 +904,9 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	assert(tech_pvt != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-        return SWITCH_STATUS_FALSE;
-    }
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -915,29 +915,15 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-#if 0
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
-			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
-			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_MEDIA);
-			ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
-			switch_channel_mark_answered(channel);
-		}
-#else
 		ftdm_channel_call_answer(tech_pvt->ftdmchan);
 		switch_channel_mark_answered(channel);
-#endif
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		if (!switch_channel_test_flag(channel, CF_ANSWERED) && 
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
 			!switch_channel_test_flag(channel, CF_RING_READY)
 			) {
-#if 0
-				ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_RING);
-#else
 				ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_RING);
-#endif
 				switch_channel_mark_ring_ready(channel);
 		}
 		break;
@@ -1562,13 +1548,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			private_t *tech_pvt = NULL;
 			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 			if (tokencount) {
+				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 				switch_core_session_t *session_a, *session_b, *session_t = NULL;
 				switch_channel_t *channel_a = NULL, *channel_b = NULL;
-#if 0
-				int digits = !zstr(sigmsg->channel->caller_data.collected);
-#else
-				int digits = 0;
-#endif
+				int digits = !zstr(caller_data->collected);
 				const char *br_a_uuid = NULL, *br_b_uuid = NULL;
 				private_t *tech_pvt = NULL;
 
@@ -1602,12 +1585,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					}
 				}
 				
-#if 0
 				if (session_t) {
-					switch_ivr_session_transfer(session_t, sigmsg->channel->caller_data.collected, NULL, NULL);
+					switch_ivr_session_transfer(session_t, caller_data->collected, NULL, NULL);
 					switch_core_session_rwunlock(session_t);
 				}
-#endif
 
 				if (session_a) {
 					switch_core_session_rwunlock(session_a);
@@ -1686,12 +1667,13 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		}
 		break;
 
-#if 0
     case FTDM_SIGEVENT_COLLECTED_DIGIT:
 		{
+			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
 			char *dtmf = sigmsg->raw_data;
-			char *regex = SPAN_CONFIG[sigmsg->channel->span->span_id].dial_regex;
-			char *fail_regex = SPAN_CONFIG[sigmsg->channel->span->span_id].fail_dial_regex;
+			char *regex = SPAN_CONFIG[span_id].dial_regex;
+			char *fail_regex = SPAN_CONFIG[span_id].fail_dial_regex;
+			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 			
 			if (zstr(regex)) {
 				regex = NULL;
@@ -1702,7 +1684,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 
 			ftdm_log(FTDM_LOG_DEBUG, "got DTMF sig [%s]\n", dtmf);
-			switch_set_string(sigmsg->channel->caller_data.collected, dtmf);
+			switch_set_string(caller_data->collected, dtmf);
 			
 			if ((regex || fail_regex) && !zstr(dtmf)) {
 				switch_regex_t *re = NULL;
@@ -1713,19 +1695,19 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					match = switch_regex_perform(dtmf, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 					status = match ? FTDM_SUCCESS : FTDM_BREAK;
 					switch_regex_safe_free(re);
+					ftdm_log(FTDM_LOG_DEBUG, "DTMF [%s] vs fail regex %s %s\n", dtmf, fail_regex, match ? "matched" : "did not match");
 				}
 
 				if (status == FTDM_SUCCESS && regex) {
 					match = switch_regex_perform(dtmf, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 					status = match ? FTDM_BREAK : FTDM_SUCCESS;
+					switch_regex_safe_free(re);
+					ftdm_log(FTDM_LOG_DEBUG, "DTMF [%s] vs dial regex %s %s\n", dtmf, regex, match ? "matched" : "did not match");
 				}
-				
-				switch_regex_safe_free(re);
+				ftdm_log(FTDM_LOG_DEBUG, "returning %s to COLLECT event with DTMF %s\n", status == FTDM_SUCCESS ? "success" : "break", dtmf);
 			}
-
 		}
 		break;
-#endif
 
 	default:
 		{
@@ -1780,13 +1762,13 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 
-#if 0
-FIXME: collected DNIS
 		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
 		{
-			char *regex = SPAN_CONFIG[sigmsg->channel->span->span_id].dial_regex;
-			char *fail_regex = SPAN_CONFIG[sigmsg->channel->span->span_id].fail_dial_regex;
+			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
+			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
+			char *regex = SPAN_CONFIG[span_id].dial_regex;
+			char *fail_regex = SPAN_CONFIG[span_id].fail_dial_regex;
 
 			if (zstr(regex)) {
 				regex = NULL;
@@ -1796,21 +1778,21 @@ FIXME: collected DNIS
 				fail_regex = NULL;
 			}
 
-			ftdm_log(FTDM_LOG_DEBUG, "R2 DNIS so far [%s]\n", sigmsg->channel->caller_data.dnis.digits);
+			ftdm_log(FTDM_LOG_DEBUG, "R2 DNIS so far [%s]\n", caller_data->dnis.digits);
 
-			if ((regex || fail_regex) && !zstr(sigmsg->channel->caller_data.dnis.digits)) {
+			if ((regex || fail_regex) && !zstr(caller_data->dnis.digits)) {
 				switch_regex_t *re = NULL;
 				int ovector[30];
 				int match = 0;
 
 				if (fail_regex) {
-					match = switch_regex_perform(sigmsg->channel->caller_data.dnis.digits, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					match = switch_regex_perform(caller_data->dnis.digits, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 					status = match ? FTDM_SUCCESS : FTDM_BREAK;
 					switch_regex_safe_free(re);
 				}
 
 				if (status == FTDM_SUCCESS && regex) {
-					match = switch_regex_perform(sigmsg->channel->caller_data.dnis.digits, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					match = switch_regex_perform(caller_data->dnis.digits, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 					status = match ? FTDM_BREAK : FTDM_SUCCESS;
 				}
 
@@ -1818,7 +1800,6 @@ FIXME: collected DNIS
 			}
 		}
 		break;
-#endif
 
 		case FTDM_SIGEVENT_PROGRESS:
 		{
