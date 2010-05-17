@@ -830,59 +830,17 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
-#if 0
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
-			} else {
-				ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-			}
-#else
 			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS);
-#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
-#if 0
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
-				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_MEDIA);
-			} else {
-				/* Don't skip messages in the ISDN call setup
-				 * TODO: make the isdn stack smart enough to handle that itself
-				 *       until then, this is here for safety...
-				 */
-				if (tech_pvt->ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
-					ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-				}
-				ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
-			}
-#else
 			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA);
-#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
-#if 0
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				ftdm_set_flag(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
-			} else {
-				/* Don't skip messages in the ISDN call setup
-				 * TODO: make the isdn stack smart enough to handle that itself
-				 *       until then, this is here for safety...
-				 */
-				if (tech_pvt->ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
-					ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-				}
-				if (tech_pvt->ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
-					ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
-				}
-				ftdm_set_state_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
-			}
-#else
 			ftdm_channel_call_answer(tech_pvt->ftdmchan);
-#endif
 		}
 		break;
 	default:

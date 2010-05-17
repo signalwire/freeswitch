@@ -587,25 +587,46 @@ typedef enum {
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
 
 /*! \brief Answer call */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_answer(ftdm_channel_t *ftdmchan);
+#define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Answer call recording the source code point where the it was called (see ftdm_channel_call_answer for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Place an outgoing call */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_place(ftdm_channel_t *ftdmchan);
+#define ftdm_channel_call_place(ftdmchan) _ftdm_channel_call_place(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Place an outgoing call recording the source code point where it was called (see ftdm_channel_call_place for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Indicate a new condition in an incoming call */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_indicate(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication);
+#define ftdm_channel_call_indicate(ftdmchan, indication) _ftdm_channel_call_indicate(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (indication))
+
+/*! \brief Indicate a new condition in an incoming call recording the source code point where it was called (see ftdm_channel_call_indicate for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication);
 
 /*! \brief Hangup the call without cause */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup(ftdm_channel_t *ftdmchan);
+#define ftdm_channel_call_hangup(ftdmchan) _ftdm_channel_call_hangup(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Hangup the call without cause recording the source code point where it was called (see ftdm_channel_call_hangup for an easy to use macro)*/
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Hangup the call with cause */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_hangup_with_cause(ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
+#define ftdm_channel_call_hangup_with_cause(ftdmchan, cause) _ftdm_channel_call_hangup_with_cause(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (cause))
+
+/*! \brief Hangup the call with cause recording the source code point where it was called (see ftdm_channel_call_hangup_with_cause for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
 
 /*! \brief Put a call on hold (if supported by the signaling stack) */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_hold(ftdm_channel_t *ftdmchan);
+#define ftdm_channel_call_hold(ftdmchan) _ftdm_channel_call_hold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Put a call on hold recording the source code point where it was called (see ftdm_channel_call_hold for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hold(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Unhold a call */
-FT_DECLARE(ftdm_status_t) ftdm_channel_call_unhold(ftdm_channel_t *ftdmchan);
+#define ftdm_channel_call_unhold(ftdmchan) _ftdm_channel_call_unhold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Unhold a call recording the source code point where it was called (see ftdm_channel_call_unhold for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_unhold(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Check if the call is answered already */
 FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_answered(const ftdm_channel_t *ftdmchan);

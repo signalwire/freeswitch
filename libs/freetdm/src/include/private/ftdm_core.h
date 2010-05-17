@@ -189,42 +189,23 @@ extern "C" {
 
 #define ftdm_clear_sflag_locked(obj, flag) assert(obj->mutex != NULL); ftdm_mutex_lock(obj->mutex); (obj)->sflags &= ~(flag); ftdm_mutex_unlock(obj->mutex);
 
+#define ftdm_set_state(obj, s) ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0);									\
 
-#define ftdm_set_state_locked(obj, s) if ( obj->state == s ) {			\
-		ftdm_log(FTDM_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(obj->state), ftdm_channel_state2str(s)); \
-	} else if (ftdm_test_flag(obj, FTDM_CHANNEL_READY)) {									\
-		ftdm_channel_state_t st = obj->state;											\
-		ftdm_channel_set_state(obj, s, 1);									\
-		if (obj->state == s) ftdm_log(FTDM_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
-		else ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
-	}
+#define ftdm_set_state_locked(obj, s) \
+	do { \
+		ftdm_channel_lock(obj); \
+		ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0);									\
+		ftdm_channel_unlock(obj); \
+	} while(0);
 
-#define ftdm_set_state(obj, s) if ( obj->state == s ) {			\
-		ftdm_log(FTDM_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(obj->state), ftdm_channel_state2str(s)); \
-	} else if (ftdm_test_flag(obj, FTDM_CHANNEL_READY)) {									\
-		ftdm_channel_state_t st = obj->state;											\
-		ftdm_channel_set_state(obj, s, 0);									\
-		if (obj->state == s) ftdm_log(FTDM_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
-		else ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
-	}
+#define ftdm_set_state_r(obj, s, r) r = ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0);
 
 #ifdef _MSC_VER
 /* The while(0) below throws a conditional expression is constant warning */
 #pragma warning(disable:4127) 
 #endif
 
-#define ftdm_set_state_locked_wait(obj, s) 						\
-	do {										\
-		int __safety = 100;							\
-		ftdm_set_state_locked(obj, s);						\
-		while(__safety-- && ftdm_test_flag(obj, FTDM_CHANNEL_STATE_CHANGE)) {	\
-			ftdm_sleep(10);							\
-		}									\
-		if(!__safety) {								\
-			ftdm_log(FTDM_LOG_CRIT, "State change not completed\n");		\
-		}									\
-	} while(0);
-
+/* this macro assumes obj is locked! */
 #define ftdm_wait_for_flag_cleared(obj, flag, time) 					\
 	do {										\
 		int __safety = time;							\
@@ -238,23 +219,6 @@ extern "C" {
 		}									\
 	} while(0);
 
-#define ftdm_set_state_wait(obj, s) 						\
-	do {										\
-		ftdm_channel_set_state(obj, s, 0);					\
-		ftdm_wait_for_flag_cleared(obj, FTDM_CHANNEL_STATE_CHANGE, 100);     \
-	} while(0);
-
-
-#define ftdm_set_state_r(obj, s, l, r) if ( obj->state == s ) {	\
-		if (s != FTDM_CHANNEL_STATE_HANGUP) ftdm_log(FTDM_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(obj->state), ftdm_channel_state2str(s)); r = FTDM_STATE_CHANGE_SAME; \
-	} else if (ftdm_test_flag(obj, FTDM_CHANNEL_READY)) {					\
-		int st = obj->state;											\
-		r = (ftdm_channel_set_state(obj, s, l) == FTDM_SUCCESS) ? FTDM_STATE_CHANGE_SUCCESS : FTDM_STATE_CHANGE_FAIL; \
-		if (obj->state == s) {ftdm_log(FTDM_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s));} \
-		else ftdm_log(FTDM_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, ftdm_channel_state2str(st), ftdm_channel_state2str(s)); \
-	}
-
-
 #define ftdm_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
 /*!
@@ -264,13 +228,6 @@ extern "C" {
   \command flags the flags to copy
 */
 #define ftdm_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
-
-/*! \brief channel state change result */
-typedef enum {
-	FTDM_STATE_CHANGE_FAIL,
-	FTDM_STATE_CHANGE_SUCCESS,
-	FTDM_STATE_CHANGE_SAME,
-} ftdm_state_change_result_t;
 
 struct ftdm_stream_handle {
 	ftdm_stream_handle_write_function_t write_function;
@@ -533,7 +490,8 @@ FT_DECLARE(ftdm_status_t) ftdm_fsk_data_add_checksum(ftdm_fsk_data_state_t *stat
 FT_DECLARE(ftdm_status_t) ftdm_fsk_data_add_sdmf(ftdm_fsk_data_state_t *state, const char *date, char *number);
 FT_DECLARE(ftdm_status_t) ftdm_channel_send_fsk_data(ftdm_channel_t *ftdmchan, ftdm_fsk_data_state_t *fsk_data, float db_level);
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int lock);
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line,
+		ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int wait);
 
 FT_DECLARE(ftdm_status_t) ftdm_span_load_tones(ftdm_span_t *span, const char *mapname);
 FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void);

@@ -649,10 +649,10 @@ static void handle_call_start_ack(sangomabc_connection_t *mcon, sangomabc_short_
 					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
 					ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS) {
 					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE UP -> Changed to TERMINATING %d:%d\n", event_span, event_chan);
-					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
+					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, r);
 				} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP ||  ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
 					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN CALL ACK STATE HANGUP  -> Changed to HANGUP COMPLETE %d:%d\n", event_span, event_chan);
-					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+					ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, r);
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "FTDMCHAN STATE INVALID State %s on IN CALL ACK %d:%d\n",
 						 ftdm_channel_state2str(ftdmchan->state), event_span, event_chan);
@@ -711,7 +711,7 @@ static void handle_call_done(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 			goto done;
 		}
 
-		ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+		ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, r);
 		if (r) {
 			ftdm_mutex_unlock(ftdmchan->mutex);
 			return;
@@ -799,8 +799,8 @@ static void handle_call_start_nack(ftdm_span_t *span, sangomabc_connection_t *mc
 
 			CALL_DATA(ftdmchan)->last_event_id = event->event_id;
 			ftdm_mutex_lock(ftdmchan->mutex);
-			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
-			if (r == FTDM_STATE_CHANGE_SUCCESS) {
+			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, r);
+			if (r == FTDM_SUCCESS) {
 				ftdmchan->caller_data.hangup_cause = event->release_cause;
 			}
 			ftdm_mutex_unlock(ftdmchan->mutex);
@@ -882,10 +882,10 @@ static void handle_call_stop(ftdm_span_t *span, sangomabc_connection_t *mcon, sa
 			ftdm_mutex_unlock(ftdmchan->mutex);
 			return;
 		} else {
-			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
+			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, r);
 		}
 
-		if (r == FTDM_STATE_CHANGE_SUCCESS) {
+		if (r == FTDM_SUCCESS) {
 			ftdmchan->caller_data.hangup_cause = event->release_cause;
 		}
 
@@ -928,7 +928,7 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 
 		} else {
 			int r = 0;
-			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_UP, 0, r);
+			ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_UP, r);
 		}
 		ftdm_mutex_unlock(ftdmchan->mutex);
 	} else {
@@ -969,11 +969,11 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 				ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS) {
 				ftdm_log(FTDM_LOG_CRIT, "s%dc%d: FTDMCHAN STATE UP -> Changed to TERMINATING\n", 
 						BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
-				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
+				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, r);
 			} else if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP ||  ftdm_test_sflag(ftdmchan, SFLAG_HANGUP)) {
 				ftdm_log(FTDM_LOG_CRIT, "s%dc%d: FTDMCHAN STATE HANGUP -> Changed to HANGUP COMPLETE\n", 
 						BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
-				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
+				ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, r);
 			} else if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
         			ftdm_log(FTDM_LOG_WARNING, "s%dc%d: Collision, hanging up incoming call\n", 
 						BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
@@ -983,7 +983,7 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 				 * when receiving call start nack we move the channel from DOWN to TERMINATING ( cuz we already
 				 * hangup here ) and the channel gets stuck in terminating forever. So at this point we're trusting
 				 * the other side to send the call start nack ( or proceed with the call )
-				 * ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, 0, r);
+				 * ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, r);
 				 */
 			} else {
 				ftdm_log(FTDM_LOG_ERROR, "s%dc%d: rejecting incoming call in channel state %s\n", 
@@ -1076,7 +1076,7 @@ static void handle_call_loop_start(ftdm_span_t *span, sangomabc_connection_t *mc
 		return;
 	}
 
-	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_IN_LOOP, 0, res);
+	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_IN_LOOP, res);
 	if (res != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "yay, could not set the state of the channel to IN_LOOP, loop will fail\n");
 		ftdm_channel_done(ftdmchan);
@@ -1100,7 +1100,7 @@ static void handle_call_loop_stop(ftdm_span_t *span, sangomabc_connection_t *mco
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
 	ftdm_set_flag(ftdmchan, SFLAG_SENT_FINAL_MSG);
-	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_DOWN, 0, res);
+	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_DOWN, res);
 }
 
 /**
@@ -1627,7 +1627,7 @@ static __inline__ void check_state(ftdm_span_t *span)
 					ftdm_mutex_lock(span->channels[j]->mutex);
 					ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
 					if (susp && span->channels[j]->state != FTDM_CHANNEL_STATE_DOWN) {
-						ftdm_channel_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART, 0);
+						ftdm_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART);
 					}
 					state_advance(span->channels[j]);
 					ftdm_channel_complete_state(span->channels[j]);

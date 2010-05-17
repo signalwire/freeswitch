@@ -174,7 +174,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 
 	ft_r2_clean_call(ftdmchan->call_data);
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
-	ftdm_channel_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING, 0);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
 	R2CALL(ftdmchan)->ftdm_started = 1;
 	ftdm_mutex_unlock(ftdmchan->mutex);
@@ -224,7 +224,7 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	}
 	ft_r2_clean_call(ftdmchan->call_data);
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
-	ftdm_channel_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT, 0);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
 	status = ftdm_thread_create_detached(ftdm_r2_channel_run, ftdmchan);
