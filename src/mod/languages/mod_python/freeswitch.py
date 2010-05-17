@@ -207,6 +207,12 @@ class EventConsumer(_object):
     __swig_setmethods__["e_cb_arg"] = _freeswitch.EventConsumer_e_cb_arg_set
     __swig_getmethods__["e_cb_arg"] = _freeswitch.EventConsumer_e_cb_arg_get
     if _newclass:e_cb_arg = _swig_property(_freeswitch.EventConsumer_e_cb_arg_get, _freeswitch.EventConsumer_e_cb_arg_set)
+    __swig_setmethods__["enodes"] = _freeswitch.EventConsumer_enodes_set
+    __swig_getmethods__["enodes"] = _freeswitch.EventConsumer_enodes_get
+    if _newclass:enodes = _swig_property(_freeswitch.EventConsumer_enodes_get, _freeswitch.EventConsumer_enodes_set)
+    __swig_setmethods__["node_index"] = _freeswitch.EventConsumer_node_index_set
+    __swig_getmethods__["node_index"] = _freeswitch.EventConsumer_node_index_get
+    if _newclass:node_index = _swig_property(_freeswitch.EventConsumer_node_index_get, _freeswitch.EventConsumer_node_index_set)
     def __init__(self, *args): 
         this = _freeswitch.new_EventConsumer(*args)
         try: self.this.append(this)

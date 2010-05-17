@@ -72,8 +72,10 @@ SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subc
 		subclass_name = NULL;
 	}
 	
-	if (switch_event_bind(__FILE__, event_id, subclass_name, event_handler, this) == SWITCH_STATUS_SUCCESS) {
+	if (node_index <= SWITCH_EVENT_ALL && 
+		switch_event_bind_removable(__FILE__, event_id, subclass_name, event_handler, this, &enodes[node_index]) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "bound to %s %s\n", event_name, switch_str_nil(subclass_name));
+		node_index++;
 		return 1;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to %s %s\n", event_name, switch_str_nil(subclass_name));
@@ -103,8 +105,11 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block)
 
 SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
 {
+	uint32_t i;
 
-	switch_event_unbind_callback(event_handler);
+	for (i = 0; i < node_index; i++) {
+		switch_event_unbind(&enodes[i]);
+	}
 
 	if (events) {
 		switch_queue_interrupt_all(events);
@@ -220,7 +225,7 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 	}
 
 	switch_safe_free(last_data);
-
+	
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(mycmd, arg, NULL, &stream);
 	last_data = (char *) stream.data;

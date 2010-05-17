@@ -1365,6 +1365,74 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1enodes_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  switch_event_node_t **arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(EventConsumer **)&jarg1; 
+  arg2 = *(switch_event_node_t ***)&jarg2; 
+  {
+    size_t ii;
+    switch_event_node_t * *b = (switch_event_node_t * *) arg1->enodes;
+    for (ii = 0; ii < (size_t)SWITCH_EVENT_ALL+1; ii++) b[ii] = *((switch_event_node_t * *) arg2 + ii);
+  }
+  
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1enodes_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  switch_event_node_t **result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(EventConsumer **)&jarg1; 
+  result = (switch_event_node_t **)(switch_event_node_t **) ((arg1)->enodes);
+  *(switch_event_node_t ***)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1node_1index_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  uint32_t arg2 ;
+  uint32_t *argp2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(EventConsumer **)&jarg1; 
+  argp2 = *(uint32_t **)&jarg2; 
+  if (!argp2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null uint32_t");
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->node_index = arg2;
+  
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1node_1index_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  uint32_t result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(EventConsumer **)&jarg1; 
+  result =  ((arg1)->node_index);
+  *(uint32_t **)&jresult = new uint32_t((uint32_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsumer(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2) {
   jlong jresult = 0 ;
   char *arg1 = (char *) NULL ;

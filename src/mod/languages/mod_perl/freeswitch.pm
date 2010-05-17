@@ -330,6 +330,10 @@ use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 *swig_e_subclass_name_set = *freeswitchc::EventConsumer_e_subclass_name_set;
 *swig_e_cb_arg_get = *freeswitchc::EventConsumer_e_cb_arg_get;
 *swig_e_cb_arg_set = *freeswitchc::EventConsumer_e_cb_arg_set;
+*swig_enodes_get = *freeswitchc::EventConsumer_enodes_get;
+*swig_enodes_set = *freeswitchc::EventConsumer_enodes_set;
+*swig_node_index_get = *freeswitchc::EventConsumer_node_index_get;
+*swig_node_index_set = *freeswitchc::EventConsumer_node_index_set;
 sub new {
     my $pkg = shift;
     my $self = freeswitchc::new_EventConsumer(@_);

@@ -72,6 +72,10 @@ class freeswitchJNI {
   public final static native String EventConsumer_e_subclass_name_get(long jarg1, EventConsumer jarg1_);
   public final static native void EventConsumer_e_cb_arg_set(long jarg1, EventConsumer jarg1_, String jarg2);
   public final static native String EventConsumer_e_cb_arg_get(long jarg1, EventConsumer jarg1_);
+  public final static native void EventConsumer_enodes_set(long jarg1, EventConsumer jarg1_, long jarg2);
+  public final static native long EventConsumer_enodes_get(long jarg1, EventConsumer jarg1_);
+  public final static native void EventConsumer_node_index_set(long jarg1, EventConsumer jarg1_, long jarg2);
+  public final static native long EventConsumer_node_index_get(long jarg1, EventConsumer jarg1_);
   public final static native long new_EventConsumer(String jarg1, String jarg2);
   public final static native void delete_EventConsumer(long jarg1);
   public final static native int EventConsumer_bind(long jarg1, EventConsumer jarg1_, String jarg2, String jarg3);

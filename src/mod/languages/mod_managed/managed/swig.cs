@@ -584,6 +584,27 @@ public class EventConsumer : IDisposable {
     } 
   }
 
+  public SWIGTYPE_p_p_switch_event_node enodes {
+    set {
+      freeswitchPINVOKE.EventConsumer_enodes_set(swigCPtr, SWIGTYPE_p_p_switch_event_node.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.EventConsumer_enodes_get(swigCPtr);
+      SWIGTYPE_p_p_switch_event_node ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_p_switch_event_node(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public uint node_index {
+    set {
+      freeswitchPINVOKE.EventConsumer_node_index_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.EventConsumer_node_index_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public EventConsumer(string event_name, string subclass_name) : this(freeswitchPINVOKE.new_EventConsumer(event_name, subclass_name), true) {
   }
 
@@ -12423,6 +12444,18 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_e_cb_arg_get")]
   public static extern string EventConsumer_e_cb_arg_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_enodes_set")]
+  public static extern void EventConsumer_enodes_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_enodes_get")]
+  public static extern IntPtr EventConsumer_enodes_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_node_index_set")]
+  public static extern void EventConsumer_node_index_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_node_index_get")]
+  public static extern uint EventConsumer_node_index_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_EventConsumer")]
   public static extern IntPtr new_EventConsumer(string jarg1, string jarg2);

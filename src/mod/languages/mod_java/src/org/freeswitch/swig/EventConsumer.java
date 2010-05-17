@@ -74,6 +74,23 @@ public class EventConsumer {
     return freeswitchJNI.EventConsumer_e_cb_arg_get(swigCPtr, this);
   }
 
+  public void setEnodes(SWIGTYPE_p_p_switch_event_node_t value) {
+    freeswitchJNI.EventConsumer_enodes_set(swigCPtr, this, SWIGTYPE_p_p_switch_event_node_t.getCPtr(value));
+  }
+
+  public SWIGTYPE_p_p_switch_event_node_t getEnodes() {
+    long cPtr = freeswitchJNI.EventConsumer_enodes_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new SWIGTYPE_p_p_switch_event_node_t(cPtr, false);
+  }
+
+  public void setNode_index(SWIGTYPE_p_uint32_t value) {
+    freeswitchJNI.EventConsumer_node_index_set(swigCPtr, this, SWIGTYPE_p_uint32_t.getCPtr(value));
+  }
+
+  public SWIGTYPE_p_uint32_t getNode_index() {
+    return new SWIGTYPE_p_uint32_t(freeswitchJNI.EventConsumer_node_index_get(swigCPtr, this), true);
+  }
+
   public EventConsumer(String event_name, String subclass_name) {
     this(freeswitchJNI.new_EventConsumer(event_name, subclass_name), true);
   }

@@ -31132,6 +31132,55 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_EventConsumer_e_cb_arg_get(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_EventConsumer_enodes_set(void * jarg1, void * jarg2) {
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  switch_event_node_t **arg2 ;
+  
+  arg1 = (EventConsumer *)jarg1; 
+  arg2 = (switch_event_node_t **)jarg2; 
+  {
+    size_t ii;
+    switch_event_node_t * *b = (switch_event_node_t * *) arg1->enodes;
+    for (ii = 0; ii < (size_t)SWITCH_EVENT_ALL+1; ii++) b[ii] = *((switch_event_node_t * *) arg2 + ii);
+  }
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_EventConsumer_enodes_get(void * jarg1) {
+  void * jresult ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  switch_event_node_t **result = 0 ;
+  
+  arg1 = (EventConsumer *)jarg1; 
+  result = (switch_event_node_t **)(switch_event_node_t **) ((arg1)->enodes);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_EventConsumer_node_index_set(void * jarg1, unsigned long jarg2) {
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (EventConsumer *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->node_index = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_EventConsumer_node_index_get(void * jarg1) {
+  unsigned long jresult ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  uint32_t result;
+  
+  arg1 = (EventConsumer *)jarg1; 
+  result = (uint32_t) ((arg1)->node_index);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_EventConsumer(char * jarg1, char * jarg2) {
   void * jresult ;
   char *arg1 = (char *) NULL ;
