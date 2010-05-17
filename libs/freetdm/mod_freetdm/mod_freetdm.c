@@ -490,23 +490,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	case FTDM_CHAN_TYPE_B:
 		{
-#if 0
-			if (tech_pvt->ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
-				if (tech_pvt->ftdmchan->state != FTDM_CHANNEL_STATE_TERMINATING) {
-					tech_pvt->ftdmchan->caller_data.hangup_cause = switch_channel_get_cause_q850(channel);
-					if (tech_pvt->ftdmchan->caller_data.hangup_cause < 1 || tech_pvt->ftdmchan->caller_data.hangup_cause > 127) {
-						tech_pvt->ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
-					}
-				}
-				ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-			}
-#else
 			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
 			if (hcause  < 1 || hcause > 127) {
 				hcause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
 			ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
-#endif
 		}
 		break;
 	default: 
@@ -795,30 +783,12 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
-#if 0
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
-			} else {
-				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-			}
-#else
 			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS);
-#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
-#if 0
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
-				ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_MEDIA);
-			} else {
-				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-				ftdm_set_state_locked_wait(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
-			}
-#else
 			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA);
-#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
