@@ -83,6 +83,7 @@ opt/freeswitch/conf/directory/default/1019.xml
 opt/freeswitch/conf/directory/default/brian.xml
 opt/freeswitch/conf/directory/default/default.xml
 opt/freeswitch/conf/directory/default/example.com.xml
+opt/freeswitch/conf/directory/default/skinny-example.xml
 opt/freeswitch/conf/directory/default.xml
 opt/freeswitch/conf/extensions.conf
 opt/freeswitch/conf/freeswitch.xml
