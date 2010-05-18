@@ -396,7 +396,8 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 		called_party_name = SWITCH_DEFAULT_CLID_NAME;
 	}
 	if (zstr((called_party_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
-		zstr((called_party_number = switch_channel_get_variable(channel, "callee_id_number")))) {
+		zstr((called_party_number = switch_channel_get_variable(channel, "callee_id_number"))) &&
+		zstr((called_party_number = switch_channel_get_variable(channel, "destination_number")))) {
 		called_party_number = "0000000000";
 	}
 	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
