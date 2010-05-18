@@ -143,7 +143,7 @@ extern "C" {
 		return _STRINGS[(int)type];							\
 	}														\
 
-#ifdef WIN32
+#ifdef __WINDOWS__
 #include <stdio.h>
 #include <windows.h>
 #define FTDM_INVALID_SOCKET INVALID_HANDLE_VALUE
