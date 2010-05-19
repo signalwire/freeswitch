@@ -1740,20 +1740,58 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				char *dest = (char *) msg->string_arg;
+				char *argv[128] = { 0 };
+				char *mydata = NULL, *newdest = NULL;
+				int argc = 0, i;
+				switch_size_t len = 0;
 
-				if (!strchr(msg->string_arg, '<') && !strchr(msg->string_arg, '>')) {
-					dest = switch_core_session_sprintf(session, "\"unknown\" <%s>", msg->string_arg);
+				if (strchr(dest, ',')) {
+					mydata = switch_core_session_strdup(session, dest);
+					len = strlen(mydata) * 2;
+					newdest = switch_core_session_alloc(session, len);
+					
+					argc = switch_split(mydata, ',', argv);
+					
+					for(i = 0; i < argc; i++) {
+						if (!strchr(argv[i], '<') && !strchr(argv[i], '>')) {
+							if (i == argc - 1) {
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
+							} else {
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>,", argv[i]);
+							}
+						} else {
+							if (i == argc - 1) {
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "%s", argv[i]);
+							} else {
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "%s,", argv[i]);
+							}
+						}
+					}
+					
+					dest = newdest;
+				} else {
+
+					if (!strchr(dest, '<') && !strchr(dest, '>')) {
+						dest = switch_core_session_sprintf(session, "\"unknown\" <%s>", dest);
+					}
 				}
-
+				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirecting to %s\n", dest);
 
-				nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(dest),
-							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+				if (argc > 1) {
+					nua_respond(tech_pvt->nh, SIP_300_MULTIPLE_CHOICES, SIPTAG_CONTACT_STR(dest),
+								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+				} else {
+					nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(dest),
+								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+				}
+
+
 				sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 				switch_safe_free(extra_headers);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Too late for redirecting to %s, already answered\n",
-								  msg->string_arg);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Too late for redirecting, already answered\n");
+								  
 			}
 		}
 		break;
