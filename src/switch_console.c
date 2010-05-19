@@ -1326,7 +1326,7 @@ static int console_bufferInput(char *addchars, int len, char *cmd, int key)
 
 static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int *key)
 {
-	DWORD recordIndex, bufferIndex, toRead, red;
+	DWORD recordIndex, bufferIndex, toRead = 0, red;
 	PINPUT_RECORD pInput;
 
 	GetNumberOfConsoleInputEvents(conIn, &toRead);
