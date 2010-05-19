@@ -433,6 +433,8 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 struct skinny_ring_lines_helper {
 	private_t *tech_pvt;
 	uint32_t lines_count;
+	char *effective_callee_id_number;
+	char *effective_callee_id_name;
 };
 
 int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -445,8 +447,8 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	/* uint32_t position = atoi(argv[2]); */
 	uint32_t line_instance = atoi(argv[3]);
 	/* char *label = argv[4]; */
-	/* char *value = argv[5]; */
-	/* char *caller_name = argv[6]; */
+	char *value = argv[5];
+	char *caller_name = argv[6];
 	/* uint32_t ring_on_idle = atoi(argv[7]); */
 	/* uint32_t ring_on_active = atoi(argv[8]); */
 	/* uint32_t busy_trigger = atoi(argv[9]); */
@@ -464,6 +466,12 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	    device_name, device_instance, &listener);
 	if(listener) {
 		helper->lines_count++;
+		if (!helper->effective_callee_id_number) {
+			helper->effective_callee_id_number = switch_core_session_strdup(helper->tech_pvt->session, value);
+		}
+		if (!helper->effective_callee_id_name) {
+			helper->effective_callee_id_name = switch_core_session_strdup(helper->tech_pvt->session, caller_name);
+		}
 		skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_RING_IN);
 		send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_RING_IN, 0xffff);
 	    if ((tmp = switch_mprintf("%s%s", SKINNY_DISP_FROM, helper->tech_pvt->caller_profile->destination_number))) {
@@ -492,12 +500,20 @@ switch_call_cause_t skinny_ring_lines(private_t *tech_pvt)
 
 	helper.tech_pvt = tech_pvt;
 	helper.lines_count = 0;
+	helper.effective_callee_id_number = NULL;
+	helper.effective_callee_id_name = NULL;
 
 	status = skinny_session_walk_lines(tech_pvt->profile,
 	    switch_core_session_get_uuid(tech_pvt->session), skinny_ring_lines_callback, &helper);
-	if(status != SWITCH_STATUS_SUCCESS) {
+	if (helper.effective_callee_id_number) {
+		switch_channel_set_variable(switch_core_session_get_channel(tech_pvt->session), "effective_callee_id_number", helper.effective_callee_id_number);
+	}
+	if (helper.effective_callee_id_name) {
+		switch_channel_set_variable(switch_core_session_get_channel(tech_pvt->session), "effective_callee_id_name", helper.effective_callee_id_name);
+	}
+	if (status != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-	} else if(helper.lines_count == 0) {
+	} else if (helper.lines_count == 0) {
 		return SWITCH_CAUSE_UNALLOCATED_NUMBER;
 	} else {
 		return SWITCH_CAUSE_SUCCESS;
