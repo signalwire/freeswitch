@@ -338,6 +338,11 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	event.called.ton = caller_data->ani.type;
 	event.called.npi = caller_data->ani.plan;
 
+	if (caller_data->raw_data_len) {
+		zap_set_string((char *)event.isup_in_rdnis, (char *)caller_data->raw_data);
+		event.isup_in_rdnis_size = caller_data->raw_data_len;
+	}
+
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
 
@@ -826,6 +831,10 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling.digits);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called.digits);
 	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->rdnis.digits);
+	if (event->isup_in_rdnis_size) {
+		zap_set_string((char *)zchan->caller_data.raw_data, (char *)event->isup_in_rdnis);
+		zchan->caller_data.raw_data_len = event->isup_in_rdnis_size;
+	}
 
 	if (strlen(event->calling_name)) {
 		zap_set_string(zchan->caller_data.cid_name, (char *)event->calling_name);
