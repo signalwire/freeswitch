@@ -637,6 +637,7 @@ char* skinny_codec2string(enum skinny_codecs skinnycodec);
 switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req);
 
 switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, switch_event_types_t event_id, const char *subclass_name);
+switch_status_t skinny_set_channel_variables(switch_channel_t *channel, listener_t *listener, uint32_t line_instance);
 
 switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *channel_uuid, switch_core_db_callback_func_t callback, void *data);
 

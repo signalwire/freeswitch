@@ -36,6 +36,7 @@
 
 /* SESSION FUNCTIONS */
 switch_status_t skinny_create_ingoing_session(listener_t *listener, uint32_t *line_instance, switch_core_session_t **session);
+skinny_action_t skinny_session_dest_match_pattern(switch_core_session_t *session, char **data);
 switch_status_t skinny_session_process_dest(switch_core_session_t *session, listener_t *listener, uint32_t line_instance, char *dest, char append_dest, uint32_t backspace);
 switch_status_t skinny_session_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_call_cause_t skinny_ring_lines(private_t *tech_pvt);

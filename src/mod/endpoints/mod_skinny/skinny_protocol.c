@@ -242,6 +242,15 @@ switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_set_channel_variables(switch_channel_t *channel, listener_t *listener, uint32_t line_instance)
+{
+	switch_channel_set_variable(channel, "skinny_profile_name", listener->profile->name);
+	switch_channel_set_variable(channel, "skinny_device_name", listener->device_name);
+	switch_channel_set_variable_printf(channel, "skinny_device_instance", "%d", listener->device_instance);
+	switch_channel_set_variable_printf(channel, "skinny_line_instance", "%d", line_instance);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /*****************************************************************************/
 /*****************************************************************************/
 switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *channel_uuid, switch_core_db_callback_func_t callback, void *data)
@@ -916,8 +925,9 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 	ptr = (char *) reply;
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
-		"Sending %s (type=%x,length=%d).\n",
-		skinny_message_type2str(reply->type), reply->type, reply->length);
+		"Sending %s (type=%x,length=%d) to %s:%d.\n",
+		skinny_message_type2str(reply->type), reply->type, reply->length,
+		listener->device_name, listener->device_instance);
 	switch_socket_send(listener->sock, ptr, &len);
 
 	return SWITCH_STATUS_SUCCESS;
