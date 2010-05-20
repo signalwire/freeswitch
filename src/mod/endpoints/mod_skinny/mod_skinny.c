@@ -954,6 +954,10 @@ switch_status_t channel_receive_message(switch_core_session_t *session, switch_c
 			channel_answer_channel(session);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_DISPLAY:
+		{
+			skinny_session_send_call_info_all(session);
+		}
 	default:
 		break;
 	}

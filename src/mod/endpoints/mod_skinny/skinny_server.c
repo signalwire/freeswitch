@@ -371,6 +371,51 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct skinny_session_send_call_info_all_helper {
+	private_t *tech_pvt;
+};
+
+int skinny_session_send_call_info_all_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *device_name = argv[0];
+	uint32_t device_instance = atoi(argv[1]);
+	/* uint32_t position = atoi(argv[2]); */
+	uint32_t line_instance = atoi(argv[3]);
+	/* char *label = argv[4]; */
+	/* char *value = argv[5]; */
+	/* char *caller_name = argv[6]; */
+	/* uint32_t ring_on_idle = atoi(argv[7]); */
+	/* uint32_t ring_on_active = atoi(argv[8]); */
+	/* uint32_t busy_trigger = atoi(argv[9]); */
+	/* char *forward_all = argv[10]; */
+	/* char *forward_busy = argv[11]; */
+	/* char *forward_noanswer = argv[12]; */
+	/* uint32_t noanswer_duration = atoi(argv[13]); */
+	/* char *channel_uuid = argv[14]; */
+	/* uint32_t call_id = atoi(argv[15]); */
+	/* uint32_t call_state = atoi(argv[16]); */
+
+	struct skinny_session_send_call_info_all_helper *helper = pArg;
+	listener_t *listener = NULL;
+
+	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, 
+	    device_name, device_instance, &listener);
+	if(listener) {
+		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
+	}
+	return 0;
+}
+
+switch_status_t skinny_session_send_call_info_all(switch_core_session_t *session)
+{
+	struct skinny_session_send_call_info_all_helper helper = {0};
+	private_t *tech_pvt = switch_core_session_get_private(session);
+
+	helper.tech_pvt = switch_core_session_get_private(session);
+	return skinny_session_walk_lines(tech_pvt->profile,
+	    switch_core_session_get_uuid(tech_pvt->session), skinny_session_send_call_info_all_callback, &helper);
+}
+
 struct skinny_ring_lines_helper {
 	private_t *tech_pvt;
 	uint32_t lines_count;
@@ -404,9 +449,24 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, 
 	    device_name, device_instance, &listener);
 	if(listener) {
+		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
+		const char *remote_uuid;
+		switch_core_session_t *remote_session;
 		helper->lines_count++;
-		switch_channel_set_variable(switch_core_session_get_channel(helper->tech_pvt->session), "effective_callee_id_number", value);
-		switch_channel_set_variable(switch_core_session_get_channel(helper->tech_pvt->session), "effective_callee_id_name", caller_name);
+		switch_channel_set_variable(channel, "effective_callee_id_number", value);
+		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
+		if ((remote_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (remote_session = switch_core_session_locate(remote_uuid))) {
+			switch_core_session_message_t *msg;
+			msg = switch_core_session_alloc(remote_session, sizeof(*msg));
+			MESSAGE_STAMP_FFL(msg);
+			msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+			msg->string_array_arg[0] = switch_core_session_strdup(remote_session, caller_name);
+			msg->string_array_arg[1] = switch_core_session_strdup(remote_session, value);
+			msg->from = __FILE__;
+			switch_core_session_queue_message(remote_session, msg);
+			switch_core_session_rwunlock(remote_session);
+		}
+		
 		skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_RING_IN);
 		send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_RING_IN, 0xffff);
 	    if ((tmp = switch_mprintf("%s%s", SKINNY_DISP_FROM, helper->tech_pvt->caller_profile->destination_number))) {
