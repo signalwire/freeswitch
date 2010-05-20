@@ -903,11 +903,12 @@ static void handle_call_loop_start(zap_span_t *span, sangomabc_connection_t *mco
 	}
 
 	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_IN_LOOP, 0, res);
-	if (res != ZAP_SUCCESS) {
+	if (res != ZAP_STATE_CHANGE_SUCCESS) {
 		zap_log(ZAP_LOG_CRIT, "yay, could not set the state of the channel to IN_LOOP, loop will fail\n");
 		zap_channel_done(zchan);
 		return;
 	}
+	zap_log(ZAP_LOG_DEBUG, "%d:%d starting loop\n", zchan->span_id, zchan->chan_id);
 	zap_channel_command(zchan, ZAP_COMMAND_ENABLE_LOOP, NULL);
 }
 
@@ -927,6 +928,9 @@ static void handle_call_loop_stop(zap_span_t *span, sangomabc_connection_t *mcon
 	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
 	zap_set_flag(zchan, SFLAG_SENT_FINAL_MSG);
 	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_DOWN, 0, res);
+	if (res != ZAP_STATE_CHANGE_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "yay, could not set the state of the channel from IN_LOOP to DOWN\n");
+	}
 }
 
 /**
@@ -1163,33 +1167,35 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	switch (zchan->state) {
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
-			/* Always try to clear the GRID */
-			release_request_id_span_chan(zchan->physical_span_id-1, zchan->physical_chan_id-1);
+			if (zchan->last_state == ZAP_CHANNEL_STATE_IN_LOOP) {
+				/* nothing to do after a loop */
+				zap_log(ZAP_LOG_DEBUG, "%d:%d terminating loop\n", zchan->span_id, zchan->chan_id);
+			} else {
+				/* Always try to clear the GRID */
+				release_request_id_span_chan(zchan->physical_span_id-1, zchan->physical_chan_id-1);
 
-			if (!zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
-				zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
+				if (!zap_test_sflag(zchan, SFLAG_SENT_FINAL_MSG)) {
+					zap_set_sflag_locked(zchan, SFLAG_SENT_FINAL_MSG);
 
-				if (zchan->call_data && ((uint32_t)(intptr_t)zchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
-					sangomabc_exec_command(mcon,
-										   zchan->physical_span_id-1,
-										   zchan->physical_chan_id-1,
-										   0,
-										   SIGBOOST_EVENT_CALL_START_NACK_ACK,
-										   0, 0);
-					
-				} else {
-					sangomabc_exec_command(mcon,
-										   zchan->physical_span_id-1,
-										   zchan->physical_chan_id-1,
-										   0,
-										   SIGBOOST_EVENT_CALL_STOPPED_ACK,
-										   0, 0);
+					if (zchan->call_data && ((uint32_t)(intptr_t)zchan->call_data == SIGBOOST_EVENT_CALL_START_NACK)) {
+						sangomabc_exec_command(mcon,
+											   zchan->physical_span_id-1,
+											   zchan->physical_chan_id-1,
+											   0,
+											   SIGBOOST_EVENT_CALL_START_NACK_ACK,
+											   0, 0);
+						
+					} else {
+						sangomabc_exec_command(mcon,
+											   zchan->physical_span_id-1,
+											   zchan->physical_chan_id-1,
+											   0,
+											   SIGBOOST_EVENT_CALL_STOPPED_ACK,
+											   0, 0);
+					}
 				}
-			}
-
-			if (zchan->extra_id) {
-				zchan->extra_id = 0;
-			}
+			} 
+			zchan->extra_id = 0;
 			zchan->sflags = 0;
 			zchan->call_data = NULL;
 			zap_channel_done(zchan);

@@ -360,7 +360,8 @@ typedef enum {
 } zap_channel_state_t;
 #define CHANNEL_STATE_STRINGS "DOWN", "HOLD", "SUSPENDED", "DIALTONE", "COLLECT", \
 		"RING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
-		"RESTART", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", "HANGUP", "HANGUP_COMPLETE", "INVALID"
+		"RESTART", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", \
+		"HANGUP", "HANGUP_COMPLETE", "IN_LOOP", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t)
 
 typedef enum {

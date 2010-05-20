@@ -948,11 +948,15 @@ OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel
 	int ok = 1;
 	
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
+		zap_log(ZAP_LOG_ERROR, "%d:%d Cannot set state in channel that is not ready\n",
+				zchan->span_id, zchan->chan_id);
 		return ZAP_FAIL;
 	}
 
 	if (zap_test_flag(zchan->span, ZAP_SPAN_SUSPENDED)) {
 		if (state != ZAP_CHANNEL_STATE_RESTART && state != ZAP_CHANNEL_STATE_DOWN) {
+			zap_log(ZAP_LOG_ERROR, "%d:%d Cannot set state in channel that is suspended\n",
+				zchan->span_id, zchan->chan_id);
 			return ZAP_FAIL;
 		}
 	}
