@@ -126,6 +126,7 @@ struct profile_obj {
 	switch_bool_t reorder_by_rate;
 	switch_bool_t quote_in_list;
 	switch_bool_t info_in_headers;
+	switch_bool_t enable_sip_redir;
 };
 typedef struct profile_obj profile_t;
 
@@ -294,9 +295,14 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 		user_rate = switch_core_sprintf(pool, ",lcr_user_rate=%s", cur_route->user_rate_str);
 	}
 
-	data =
-		switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s%s%s]%s%s%s%s%s", cur_route->carrier_name, cur_route->rate_str, user_rate, codec, cid,
-							header, cur_route->gw_prefix, cur_route->prefix, destination_number, cur_route->suffix, cur_route->gw_suffix);
+	if (profile->enable_sip_redir) {
+		data =
+			switch_core_sprintf(pool, "%s%s%s%s%s", cur_route->gw_prefix, cur_route->prefix, destination_number, cur_route->suffix, cur_route->gw_suffix);
+	} else {
+		data =
+			switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s%s%s]%s%s%s%s%s", cur_route->carrier_name, cur_route->rate_str, user_rate, codec, cid,
+								header, cur_route->gw_prefix, cur_route->prefix, destination_number, cur_route->suffix, cur_route->gw_suffix);
+	}
 
 	if (session && (switch_string_var_check_const(data) || switch_string_has_escaped_data(data))) {
 		data = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
@@ -907,6 +913,7 @@ static switch_status_t lcr_load_config()
 			char *reorder_by_rate = NULL;
 			char *quote_in_list = NULL;
 			char *info_in_headers = NULL;
+			char *enable_sip_redir = NULL;
 			char *id_s = NULL;
 			char *custom_sql = NULL;
 			int argc, x = 0;
@@ -959,6 +966,8 @@ static switch_status_t lcr_load_config()
 					info_in_headers = val;
 				} else if (!strcasecmp(var, "quote_in_list") && !zstr(val)) {
 					quote_in_list = val;
+				} else if (!strcasecmp(var, "enable_sip_redir") && !zstr(val)) {
+					enable_sip_redir = val;
 				}
 			}
 
@@ -1047,6 +1056,10 @@ static switch_status_t lcr_load_config()
 
 				if (!zstr(info_in_headers)) {
 					profile->info_in_headers = switch_true(info_in_headers);
+				}
+
+				if (!zstr(enable_sip_redir)) {
+					profile->enable_sip_redir = switch_true(enable_sip_redir);
 				}
 
 				if (!zstr(quote_in_list)) {
@@ -1256,7 +1269,11 @@ SWITCH_STANDARD_APP(lcr_app_function)
 				switch_channel_set_variable(channel, vbuf, cur_route->codec);
 				cnt++;
 				if (cur_route->next) {
-					dig_stream.write_function(&dig_stream, "%s|", cur_route->dialstring);
+					if (routes.profile->enable_sip_redir) {
+						dig_stream.write_function(&dig_stream, "%s,", cur_route->dialstring);
+					} else {
+						dig_stream.write_function(&dig_stream, "%s|", cur_route->dialstring);
+					}
 				} else {
 					dig_stream.write_function(&dig_stream, "%s", cur_route->dialstring);
 				}
@@ -1503,6 +1520,7 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				stream->write_function(stream, " has npanxx:\t%s\n", profile->profile_has_npanxx ? "true" : "false");
 				stream->write_function(stream, " Reorder rate:\t%s\n", profile->reorder_by_rate ? "enabled" : "disabled");
 				stream->write_function(stream, " Info in headers:\t%s\n", profile->info_in_headers ? "enabled" : "disabled");
+				stream->write_function(stream, " Sip Redirection Mode:\t%s\n", profile->enable_sip_redir ? "enabled" : "disabled");
 				stream->write_function(stream, " Quote IN() List:\t%s\n", profile->quote_in_list ? "enabled" : "disabled");
 				stream->write_function(stream, "\n");
 			}
