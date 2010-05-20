@@ -630,7 +630,6 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 
 		if(switch_test_flag(tech_pvt, TFLAG_FORCE_ROUTE)) {
 			action = SKINNY_ACTION_ROUTE;
-			switch_clear_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
 		} else {
 			action = skinny_session_dest_match_pattern(session, &data);
 		}
@@ -649,6 +648,8 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 						switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"),
 						switch_channel_get_name(channel));
 				}
+				/* Future bridge should go straight */
+				switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
 				break;
 			case SKINNY_ACTION_WAIT:
 				/* for now, wait forever */
@@ -932,7 +933,6 @@ switch_status_t channel_answer_channel(switch_core_session_t *session)
 		switch_channel_get_variable(channel, "skinny_device_name"),
 		atoi(switch_channel_get_variable(channel, "skinny_device_instance")), &listener);
 	if (listener) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Bli!\n");
 		skinny_session_start_media(session, listener, atoi(switch_channel_get_variable(channel, "skinny_line_instance")));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unable to find listener to answer %s:%s\n",
