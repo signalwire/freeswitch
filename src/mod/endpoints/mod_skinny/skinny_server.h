@@ -40,6 +40,7 @@ skinny_action_t skinny_session_dest_match_pattern(switch_core_session_t *session
 switch_status_t skinny_session_process_dest(switch_core_session_t *session, listener_t *listener, uint32_t line_instance, char *dest, char append_dest, uint32_t backspace);
 switch_status_t skinny_session_send_call_info(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_status_t skinny_session_send_call_info_all(switch_core_session_t *session);
+switch_status_t skinny_session_set_variables(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_call_cause_t skinny_ring_lines(private_t *tech_pvt, switch_core_session_t *remote_session);
 switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);
 switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t *listener, uint32_t line_instance);

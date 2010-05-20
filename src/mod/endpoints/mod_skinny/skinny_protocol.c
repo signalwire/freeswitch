@@ -242,14 +242,6 @@ switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t skinny_set_channel_variables(switch_channel_t *channel, listener_t *listener, uint32_t line_instance)
-{
-	switch_channel_set_variable(channel, "skinny_profile_name", listener->profile->name);
-	switch_channel_set_variable(channel, "skinny_device_name", listener->device_name);
-	switch_channel_set_variable_printf(channel, "skinny_device_instance", "%d", listener->device_instance);
-	switch_channel_set_variable_printf(channel, "skinny_line_instance", "%d", line_instance);
-	return SWITCH_STATUS_SUCCESS;
-}
 
 /*****************************************************************************/
 /*****************************************************************************/
