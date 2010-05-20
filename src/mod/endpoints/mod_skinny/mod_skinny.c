@@ -355,6 +355,7 @@ void skinny_line_perform_set_state(const char *file, const char *func, int line,
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Call-Id", "%d", call_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Call-State", "%d", call_state);
 	switch_event_fire(&event);
+	send_call_state(listener, call_state, line_instance, call_id);
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
 		"Device %s:%d, Line %d, Call %d Change State to %s (%d)\n",
 		listener->device_name, listener->device_instance, line_instance, call_id,
@@ -1788,7 +1789,6 @@ static void event_handler(switch_event_t *event)
 					    ))) {
 				    skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
 				    switch_safe_free(sql);
-				    send_call_state(listener, call_state, line_instance, call_id);
 			    }
 			    switch_safe_free(line_instance_condition);
 			    switch_safe_free(call_id_condition);
