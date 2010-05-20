@@ -831,9 +831,9 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling.digits);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called.digits);
 	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->rdnis.digits);
-	if (event->isup_in_rdnis_size) {
-		zap_set_string((char *)zchan->caller_data.raw_data, (char *)event->isup_in_rdnis);
-		zchan->caller_data.raw_data_len = event->isup_in_rdnis_size;
+	if (event->custom_data_size) {
+		zap_set_string(zchan->caller_data.raw_data, event->custom_data);
+		zchan->caller_data.raw_data_len = event->custom_data_size;
 	}
 
 	if (strlen(event->calling_name)) {
@@ -855,15 +855,17 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 	zchan->caller_data.screen = event->calling.screening_ind;
 	zchan->caller_data.pres = event->calling.presentation_ind;
 
+	/* more info about custom data: http://www.ss7box.com/smg_manual.html#ISUP-IN-RDNIS-NEW */
 	if (event->custom_data_size) {
 		char* p = NULL;
 
-		p = strstr((char*)event->custom_data,"PRI001-ANI2-");
-		if (p!=NULL) {
+		p = strstr(event->custom_data,"PRI001-ANI2-");
+		if ( p != NULL) {
 			int ani2 = 0;
 			sscanf(p, "PRI001-ANI2-%d", &ani2);
 			snprintf(zchan->caller_data.aniII, 5, "%.2d", ani2);
-		}	
+		}
+
 	}
 
 	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);

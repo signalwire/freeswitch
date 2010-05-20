@@ -481,7 +481,7 @@ struct zap_caller_data {
 	char collected[25];
 	int CRV;
 	int hangup_cause;	
-	uint8_t raw_data[1024];
+	char raw_data[1024];
 	uint32_t raw_data_len;
 	uint32_t flags;
 	zap_caller_state_t call_state;
