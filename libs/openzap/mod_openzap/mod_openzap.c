@@ -1443,8 +1443,8 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	switch_channel_set_variable(channel, "openzap_span_name", sigmsg->channel->span->name);
 	switch_channel_set_variable_printf(channel, "openzap_span_number", "%d", sigmsg->channel->span_id);	
 	switch_channel_set_variable_printf(channel, "openzap_chan_number", "%d", sigmsg->channel->chan_id);
-	if (sigmsg->channel->caller_profile.raw_data_len) {
-		switch_channel_set_variable_printf(channel, "openzap_custom_call_data", "%s", sigmsg->channel->caller_profile.raw_data);
+	if (sigmsg->channel->caller_data.raw_data_len) {
+		switch_channel_set_variable_printf(channel, "openzap_custom_call_data", "%s", sigmsg->channel->caller_data.raw_data);
 	}
 		
 	switch_channel_set_state(channel, CS_INIT);
