@@ -1324,6 +1324,7 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 	struct button_template_helper helper = {0};
 	skinny_profile_t *profile;
 	char *sql;
+	int i;
 
 	switch_assert(listener->profile);
 	switch_assert(listener->device_name);
@@ -1367,7 +1368,7 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 	}
 
 	/* Fill remaining buttons with Undefined */
-	for(int i = 0; i+1 < helper.max_position; i++) {
+	for(i = 0; i+1 < helper.max_position; i++) {
 		if(message->data.button_template.btn[i].button_definition == SKINNY_BUTTON_UNKNOWN) {
 			message->data.button_template.btn[i].instance_number = ++helper.count[SKINNY_BUTTON_UNDEFINED];
 			message->data.button_template.btn[i].button_definition = SKINNY_BUTTON_UNDEFINED;
@@ -1546,7 +1547,11 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 						  tech_pvt->agreed_pt,
 						  tech_pvt->read_impl.microseconds_per_packet / 1000,
 						  switch_rtp_ready(tech_pvt->rtp_session) ? "SUCCESS" : err);
+#ifdef WIN32
+		addr.s_addr = inet_addr((uint16_t) tech_pvt->local_sdp_audio_ip);
+#else
 		inet_aton(tech_pvt->local_sdp_audio_ip, &addr);
+#endif
 		send_start_media_transmission(listener,
 			tech_pvt->call_id, /* uint32_t conference_id, */
 			tech_pvt->party_id, /* uint32_t pass_thru_party_id, */

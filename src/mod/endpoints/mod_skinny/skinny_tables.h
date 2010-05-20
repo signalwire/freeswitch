@@ -44,8 +44,9 @@ struct skinny_table {
 const char *func(uint32_t id) \
 { \
     const char *str = DEFAULT_STR; \
+    uint8_t x; \
     \
-    for (uint8_t x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1; x++) {\
+    for (x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1; x++) {\
 	    if (TABLE[x].id == id) {\
 		    str = TABLE[x].name;\
 		    break;\
@@ -58,12 +59,13 @@ const char *func(uint32_t id) \
 #define SKINNY_DECLARE_STR2ID(func, TABLE, DEFAULT_ID) \
 uint32_t func(const char *str)\
 {\
-    uint32_t id = DEFAULT_ID;\
+    uint32_t id = (uint32_t) DEFAULT_ID;\
     \
     if (*str > 47 && *str < 58) {\
 	    id = atoi(str);\
     } else {\
-	    for (uint8_t x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1 && TABLE[x].name; x++) {\
+	    uint8_t x;\
+	    for (x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1 && TABLE[x].name; x++) {\
 		    if (!strcasecmp(TABLE[x].name, str)) {\
 			    id = TABLE[x].id;\
 			    break;\
@@ -75,7 +77,8 @@ uint32_t func(const char *str)\
 
 #define SKINNY_DECLARE_PUSH_MATCH(TABLE) \
     switch_console_callback_match_t *my_matches = NULL;\
-    for (uint8_t x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1; x++) {\
+    uint8_t x;\
+    for (x = 0; x < (sizeof(TABLE) / sizeof(struct skinny_table)) - 1; x++) {\
 	    switch_console_push_match(&my_matches, TABLE[x].name);\
     }\
     if (my_matches) {\

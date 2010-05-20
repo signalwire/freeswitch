@@ -145,8 +145,10 @@ skinny_profile_t *skinny_find_profile(const char *profile_name)
 
 switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *profile, const char *device_name, listener_t **listener)
 {
+	listener_t *l;
+
 	switch_mutex_lock(profile->listener_mutex);
-	for (listener_t *l = profile->listeners; l; l = l->next) {
+	for (l = profile->listeners; l; l = l->next) {
 		if (!strcmp(l->device_name, device_name)) {
 			*listener = l;
 		}
@@ -158,8 +160,10 @@ switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *pr
 
 switch_status_t skinny_profile_find_listener_by_device_name_and_instance(skinny_profile_t *profile, const char *device_name, uint32_t device_instance, listener_t **listener)
 {
+	listener_t *l;
+
 	switch_mutex_lock(profile->listener_mutex);
-	for (listener_t *l = profile->listeners; l; l = l->next) {
+	for (l = profile->listeners; l; l = l->next) {
 		if (!strcmp(l->device_name, device_name) && (l->device_instance == device_instance)) {
 			*listener = l;
 		}
@@ -1084,9 +1088,7 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 
 switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
-	struct private_object *tech_pvt = switch_core_session_get_private(session);
 	char *body = switch_event_get_body(event);
-	switch_assert(tech_pvt != NULL);
 
 	if (!body) {
 		body = "";
