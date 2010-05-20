@@ -1002,6 +1002,16 @@ FT_DECLARE(void) ftdm_channel_replace_token(ftdm_channel_t *ftdmchan, const char
 	}
 }
 
+FT_DECLARE(void) ftdm_channel_set_private(ftdm_channel_t *ftdmchan, void *pvt)
+{
+	ftdmchan->user_private = pvt;
+}
+
+FT_DECLARE(void *) ftdm_channel_get_private(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->user_private;
+}
+
 FT_DECLARE(uint32_t) ftdm_channel_get_token_count(const ftdm_channel_t *ftdmchan)
 {
 	uint32_t count;
@@ -1747,7 +1757,7 @@ FT_DECLARE(ftdm_bool_t) ftdm_channel_call_check_hold(const ftdm_channel_t *ftdmc
 {
 	ftdm_bool_t condition;
 	ftdm_channel_lock(ftdmchan);
-	condition = ftdm_test_flag(ftdmchan, FTDM_CHANNEL_HOLD);
+	condition = ftdm_test_flag(ftdmchan, FTDM_CHANNEL_HOLD) ? FTDM_TRUE : FTDM_FALSE;
 	ftdm_channel_unlock(ftdmchan);
 	return condition;
 }
@@ -1801,7 +1811,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hold(const char *file, const char *
 {
 	ftdm_channel_lock(ftdmchan);
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_HOLD);
-	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALTONE, 1);
+	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALTONE, 0);
 	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
 }
@@ -1809,9 +1819,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hold(const char *file, const char *
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_unhold(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_channel_lock(ftdmchan);
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_HOLD)) {
-		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 1);
-	}
+	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 0);
 	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
 }
@@ -1820,15 +1828,11 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 {
 	ftdm_channel_lock(ftdmchan);
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_ANSWERED)) {
-		ftdm_channel_unlock(ftdmchan);
-		return FTDM_SUCCESS;
-	}
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 		ftdm_channel_unlock(ftdmchan);
 		return FTDM_SUCCESS;
 	}

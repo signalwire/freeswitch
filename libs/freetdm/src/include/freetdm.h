@@ -659,6 +659,24 @@ FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signa
 FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
 /*! 
+ * \brief Set user private data in the channel
+ *
+ * \param ftdmchan The channel where the private data will be stored
+ * \param pvt The private pointer to store
+ *
+ */
+FT_DECLARE(void) ftdm_channel_set_private(ftdm_channel_t *ftdmchan, void *pvt);
+
+/*! 
+ * \brief Get user private data in the channel
+ *
+ * \param ftdmchan The channel to retrieve the private data
+ * \retval The private data (if any or NULL if no data has been stored)
+ *
+ */
+FT_DECLARE(void *) ftdm_channel_get_private(const ftdm_channel_t *ftdmchan);
+
+/*! 
  * \brief Remove the given token from the channel
  *
  * \param ftdmchan The channel where the token is

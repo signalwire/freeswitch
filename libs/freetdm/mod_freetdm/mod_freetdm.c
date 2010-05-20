@@ -55,19 +55,6 @@ typedef enum {
 	ANALOG_OPTION_CALL_SWAP = (1 << 1)
 } analog_option_t;
 
-struct span_config {
-	ftdm_span_t *span;
-	char dialplan[80];
-	char context[80];
-	char dial_regex[256];
-	char fail_dial_regex[256];
-	char hold_music[256];
-	char type[256];	
-	analog_option_t analog_options;
-};
-
-static struct span_config SPAN_CONFIG[FTDM_MAX_SPANS_INTERFACE] = {{0}};
-
 typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_DTMF = (1 << 1),
@@ -95,6 +82,7 @@ static struct {
 	switch_hash_t *ss7_configs;
 } globals;
 
+/* private data attached to each fs session */
 struct private_object {
 	unsigned int flags;
 	switch_codec_t read_codec;
@@ -114,8 +102,26 @@ struct private_object {
 	uint32_t wr_error;
 };
 
+/* private data attached to FTDM channels (only FXS for now) */
+typedef struct chan_pvt {
+	unsigned int flags;
+} chan_pvt_t;
+
 typedef struct private_object private_t;
 
+struct span_config {
+	ftdm_span_t *span;
+	char dialplan[80];
+	char context[80];
+	char dial_regex[256];
+	char fail_dial_regex[256];
+	char hold_music[256];
+	char type[256];	
+	analog_option_t analog_options;
+	chan_pvt_t pvts[FTDM_MAX_CHANNELS_SPAN];
+};
+
+static struct span_config SPAN_CONFIG[FTDM_MAX_SPANS_INTERFACE] = {{0}};
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -873,17 +879,7 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-#if 0
-		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_ANSWERED);
-			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_PROGRESS);
-			ftdm_set_flag_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_MEDIA);
-		} else {
-			ftdm_set_state_locked(tech_pvt->ftdmchan, FTDM_CHANNEL_STATE_UP);
-		}
-#else
 		ftdm_channel_call_answer(tech_pvt->ftdmchan);
-#endif
 		break;
 	default:
 		break;
@@ -1514,7 +1510,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	tokencount = ftdm_channel_get_token_count(sigmsg->channel);
 
-    ftdm_log(FTDM_LOG_DEBUG, "got FXS sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
+	ftdm_log(FTDM_LOG_DEBUG, "got FXS sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_UP:
@@ -1621,6 +1617,12 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case FTDM_SIGEVENT_FLASH:
 		{
+			chan_pvt_t *chanpvt = ftdm_channel_get_private(sigmsg->channel);
+			if (!chanpvt) {
+				ftdm_log(FTDM_LOG_ERROR, "%d:%d has no private data, can't handle FXS features! (this is a bug)\n",
+						chanid, spanid);
+				break;
+			}
 			if (ftdm_channel_call_check_hold(sigmsg->channel) && tokencount == 1) {
 				switch_core_session_t *session;
 				if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
@@ -1636,10 +1638,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 					switch_core_session_rwunlock(session);
 				}
-#if 0
 			} else if (tokencount == 2 && (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)) {
-				if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_3WAY)) {
-					ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_3WAY);
+				if (switch_test_flag(chanpvt, ANALOG_OPTION_3WAY)) {
+					switch_clear_flag(chanpvt, ANALOG_OPTION_3WAY);
 					if ((session = ftdm_channel_get_session(sigmsg->channel, 1))) {
 						channel = switch_core_session_get_channel(session);
 						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -1649,8 +1650,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					cycle_foreground(sigmsg->channel, 1, NULL);
 				} else {
 					char *cmd;
-					cmd = switch_mprintf("three_way::%s", sigmsg->channel->tokens[0]);
-					ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_3WAY);
+					cmd = switch_mprintf("three_way::%s", ftdm_channel_get_token(sigmsg->channel, 0));
+					switch_set_flag(chanpvt, ANALOG_OPTION_3WAY);
 					cycle_foreground(sigmsg->channel, 1, cmd);
 					free(cmd);
 				}
@@ -1661,7 +1662,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				if (tokencount == 1) {
 					ftdm_channel_call_hold(sigmsg->channel);
 				}
-#endif
 			}
 			
 		}
@@ -2160,6 +2160,8 @@ static switch_status_t load_config(void)
 	ftdm_span_t *boost_span = NULL;
 	unsigned boosti = 0;
 	unsigned int i = 0;
+	ftdm_channel_t *fchan = NULL;
+	unsigned int chancount = 0;
 
 	memset(boost_spans, 0, sizeof(boost_spans));
 	memset(&globals, 0, sizeof(globals));
@@ -2366,7 +2368,7 @@ static switch_status_t load_config(void)
 								   "hotline", hotline,
 								   "enable_callerid", enable_callerid,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d\n", span_id);
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
 				continue;
 			}
 
@@ -2374,6 +2376,12 @@ static switch_status_t load_config(void)
 			switch_set_string(SPAN_CONFIG[span_id].context, context);
 			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
 			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
+			
+			chancount = ftdm_span_get_chan_count(span);
+			for (i = 1; i <= chancount; i++) {
+				fchan = ftdm_span_get_channel(span, i);
+				ftdm_channel_set_private(fchan, &SPAN_CONFIG[span_id].pvts[i]);
+			}
 			
 			if (dial_regex) {
 				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);

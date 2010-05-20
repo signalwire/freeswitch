@@ -691,8 +691,8 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 		}
 
 		if (ftdm_channel_read(ftdmchan, frame, &len) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_ERROR, "READ ERROR [%s]\n", ftdmchan->last_error);
-			goto done;
+			ftdm_log(FTDM_LOG_WARNING, "read error [%s]\n", ftdmchan->last_error);
+			continue;
 		}
 
 		if (ftdmchan->type == FTDM_CHAN_TYPE_FXO && ftdmchan->detected_tones[0]) {
