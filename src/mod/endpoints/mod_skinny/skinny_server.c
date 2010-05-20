@@ -418,6 +418,7 @@ switch_status_t skinny_session_send_call_info_all(switch_core_session_t *session
 
 struct skinny_ring_lines_helper {
 	private_t *tech_pvt;
+	switch_core_session_t *remote_session;
 	uint32_t lines_count;
 };
 
@@ -450,21 +451,22 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	    device_name, device_instance, &listener);
 	if(listener) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
-		const char *remote_uuid;
-		switch_core_session_t *remote_session;
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
-		if ((remote_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (remote_session = switch_core_session_locate(remote_uuid))) {
+		if (helper->remote_session) {
 			switch_core_session_message_t *msg;
-			msg = switch_core_session_alloc(remote_session, sizeof(*msg));
+			msg = switch_core_session_alloc(helper->remote_session, sizeof(*msg));
 			MESSAGE_STAMP_FFL(msg);
 			msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
-			msg->string_array_arg[0] = switch_core_session_strdup(remote_session, caller_name);
-			msg->string_array_arg[1] = switch_core_session_strdup(remote_session, value);
+			msg->string_array_arg[0] = switch_core_session_strdup(helper->remote_session, caller_name);
+			msg->string_array_arg[1] = switch_core_session_strdup(helper->remote_session, value);
 			msg->from = __FILE__;
-			switch_core_session_queue_message(remote_session, msg);
-			switch_core_session_rwunlock(remote_session);
+			if (switch_core_session_queue_message(helper->remote_session, msg) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_WARNING, 
+					"Unable to send SWITCH_MESSAGE_INDICATE_DISPLAY message to channel %s\n",
+					switch_core_session_get_uuid(helper->remote_session));
+			}
 		}
 		
 		skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_RING_IN);
@@ -484,7 +486,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	return 0;
 }
 
-switch_call_cause_t skinny_ring_lines(private_t *tech_pvt)
+switch_call_cause_t skinny_ring_lines(private_t *tech_pvt, switch_core_session_t *remote_session)
 {
 	switch_status_t status;
 	struct skinny_ring_lines_helper helper = {0};
@@ -494,6 +496,7 @@ switch_call_cause_t skinny_ring_lines(private_t *tech_pvt)
 	switch_assert(tech_pvt->session);
 
 	helper.tech_pvt = tech_pvt;
+	helper.remote_session = remote_session;
 	helper.lines_count = 0;
 
 	status = skinny_session_walk_lines(tech_pvt->profile,

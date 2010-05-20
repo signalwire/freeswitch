@@ -1043,7 +1043,7 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 		switch_safe_free(sql);
 	}
 
-	cause = skinny_ring_lines(tech_pvt);
+	cause = skinny_ring_lines(tech_pvt, session);
 
 	if(cause != SWITCH_CAUSE_SUCCESS) {
 		goto error;
