@@ -24,6 +24,7 @@ struct apr_thread_rwlock_t {
     HANDLE      write_mutex;
     HANDLE      read_event;
     LONG        readers;
+	CRITICAL_SECTION  read_section;
 };
 
 #endif  /* THREAD_RWLOCK_H */

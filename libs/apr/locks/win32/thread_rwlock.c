@@ -28,6 +28,8 @@ static apr_status_t thread_rwlock_cleanup(void *data)
     if (! CloseHandle(rwlock->read_event))
         return apr_get_os_error();
 
+	DeleteCriticalSection(&rwlock->read_section);
+
     if (! CloseHandle(rwlock->write_mutex))
         return apr_get_os_error();
     
@@ -53,6 +55,8 @@ APR_DECLARE(apr_status_t)apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
         return apr_get_os_error();
     }
 
+	InitializeCriticalSection(&(*rwlock)->read_section);
+
     apr_pool_cleanup_register(pool, *rwlock, thread_rwlock_cleanup,
                               apr_pool_cleanup_null);
 
@@ -62,10 +66,14 @@ APR_DECLARE(apr_status_t)apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
 static apr_status_t apr_thread_rwlock_rdlock_core(apr_thread_rwlock_t *rwlock,
                                                   DWORD  milliseconds)
 {
-    DWORD   code = WaitForSingleObject(rwlock->write_mutex, milliseconds);
+	DWORD   code;
+	EnterCriticalSection(&rwlock->read_section); 
+    code = WaitForSingleObject(rwlock->write_mutex, milliseconds);
 
-    if (code == WAIT_FAILED || code == WAIT_TIMEOUT)
+	if (code == WAIT_FAILED || code == WAIT_TIMEOUT) {
+		LeaveCriticalSection(&rwlock->read_section);
         return APR_FROM_OS_ERROR(code);
+	}
 
     /* We've successfully acquired the writer mutex, we can't be locked
      * for write, so it's OK to add the reader lock.  The writer mutex
@@ -73,12 +81,17 @@ static apr_status_t apr_thread_rwlock_rdlock_core(apr_thread_rwlock_t *rwlock,
      */
     InterlockedIncrement(&rwlock->readers);
     
-    if (! ResetEvent(rwlock->read_event))
+	if (! ResetEvent(rwlock->read_event)) {
+		LeaveCriticalSection(&rwlock->read_section);
         return apr_get_os_error();
+	}
     
-    if (! ReleaseMutex(rwlock->write_mutex))
+	if (! ReleaseMutex(rwlock->write_mutex)) {
+		LeaveCriticalSection(&rwlock->read_section);
         return apr_get_os_error();
-    
+	}
+
+	LeaveCriticalSection(&rwlock->read_section);
     return APR_SUCCESS;
 }
 
