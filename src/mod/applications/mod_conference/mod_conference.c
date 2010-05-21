@@ -695,6 +695,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 
 		channel = switch_core_session_get_channel(member->session);
+		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
+		
+
 		call_list = (call_list_t *) switch_channel_get_private(channel, "_conference_autocall_list_");
 
 		if (call_list) {
