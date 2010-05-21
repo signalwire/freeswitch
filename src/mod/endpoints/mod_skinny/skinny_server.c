@@ -1201,19 +1201,19 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_message_t *request)
 {
-	uint32_t line_instance;
+	uint32_t line_instance = 1;
+	uint32_t call_id = 0;
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
 
-	skinny_check_data_length(request, sizeof(request->data.off_hook));
-
-	if(request->data.off_hook.line_instance > 0) {
-		line_instance = request->data.off_hook.line_instance;
-	} else {
-		line_instance = 1;
+	if(skinny_check_data_length_soft(request, sizeof(request->data.off_hook))) {
+		if (request->data.off_hook.line_instance > 0) {
+			line_instance = request->data.off_hook.line_instance;
+		}
+	    call_id = request->data.off_hook.call_id;
 	}
 
-	session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.off_hook.call_id);
+	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 	if(session) { /*answering a call */
 		skinny_session_answer(session, listener, line_instance);
