@@ -429,7 +429,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 
 	if (caller_data->raw_data_len) {
 		ftdm_set_string(event.custom_data, caller_data->raw_data);
-		event.custom_data_size = caller_data->raw_data_len;
+		event.custom_data_size = (uint16_t)caller_data->raw_data_len;
 	}
 
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
@@ -1538,7 +1538,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 
 			if (ftdmchan->caller_data.raw_data_len) {
 				ftdm_set_string(event.custom_data, ftdmchan->caller_data.raw_data);
-				event.custom_data_size = ftdmchan->caller_data.raw_data_len;
+				event.custom_data_size = (uint16_t)ftdmchan->caller_data.raw_data_len;
 			}
 
 			OUTBOUND_REQUESTS[r].status = BST_WAITING;
