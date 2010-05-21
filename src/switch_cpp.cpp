@@ -55,6 +55,7 @@ SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, 
 
 	switch_core_new_memory_pool(&pool);	
 	switch_queue_create(&events, 5000, pool);
+	node_index = 0;
 	
 	if (!zstr(event_name)) {
 		bind(event_name, subclass_name);
