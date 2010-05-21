@@ -527,14 +527,13 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
 		if (helper->remote_session) {
-			switch_core_session_message_t *msg;
-			msg = switch_core_session_alloc(helper->remote_session, sizeof(*msg));
-			MESSAGE_STAMP_FFL(msg);
-			msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
-			msg->string_array_arg[0] = switch_core_session_strdup(helper->remote_session, caller_name);
-			msg->string_array_arg[1] = switch_core_session_strdup(helper->remote_session, value);
-			msg->from = __FILE__;
-			if (switch_core_session_queue_message(helper->remote_session, msg) != SWITCH_STATUS_SUCCESS) {
+			switch_core_session_message_t msg = { 0 };
+			msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+			msg.string_array_arg[0] = switch_core_session_strdup(helper->remote_session, caller_name);
+			msg.string_array_arg[1] = switch_core_session_strdup(helper->remote_session, value);
+			msg.from = __FILE__;
+
+			if (switch_core_session_receive_message(helper->remote_session, &msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_WARNING, 
 					"Unable to send SWITCH_MESSAGE_INDICATE_DISPLAY message to channel %s\n",
 					switch_core_session_get_uuid(helper->remote_session));

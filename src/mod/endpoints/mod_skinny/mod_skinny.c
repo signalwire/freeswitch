@@ -1047,6 +1047,10 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 		switch_safe_free(sql);
 	}
 
+	/* FIXME: ring_lines need BOND before switch_core_session_outgoing_channel() set it */
+	switch_channel_set_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(nsession));
+	switch_channel_set_variable(switch_core_session_get_channel(nsession), SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
+	
 	cause = skinny_ring_lines(tech_pvt, session);
 
 	if(cause != SWITCH_CAUSE_SUCCESS) {
