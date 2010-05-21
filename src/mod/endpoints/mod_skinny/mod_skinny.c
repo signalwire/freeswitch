@@ -985,7 +985,7 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	skinny_profile_t *profile = NULL;
 	char *sql;
 	char name[128];
-	switch_channel_t *channel;
+	switch_channel_t *nchannel;
 	switch_caller_profile_t *caller_profile;
 
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
@@ -1024,16 +1024,16 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 
 	snprintf(name, sizeof(name), "SKINNY/%s/%s", profile->name, dest);
 
-	channel = switch_core_session_get_channel(nsession);
-	switch_channel_set_name(channel, name);
+	nchannel = switch_core_session_get_channel(nsession);
+	switch_channel_set_name(nchannel, name);
 
 	tech_init(tech_pvt, profile, nsession);
 
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
-	switch_channel_set_caller_profile(channel, caller_profile);
+	switch_channel_set_caller_profile(nchannel, caller_profile);
 	tech_pvt->caller_profile = caller_profile;
 
-	switch_channel_set_flag(channel, CF_OUTBOUND);
+	switch_channel_set_flag(nchannel, CF_OUTBOUND);
 
 	if ((sql = switch_mprintf(
 			"INSERT INTO skinny_active_lines "
@@ -1048,8 +1048,10 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	}
 
 	/* FIXME: ring_lines need BOND before switch_core_session_outgoing_channel() set it */
-	switch_channel_set_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(nsession));
-	switch_channel_set_variable(switch_core_session_get_channel(nsession), SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
+	if (session) {
+		switch_channel_set_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(nsession));
+		switch_channel_set_variable(nchannel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
+	}
 	
 	cause = skinny_ring_lines(tech_pvt, session);
 
@@ -1061,8 +1063,8 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 
 	/* ?? switch_channel_mark_ring_ready(channel); */
 
-	if (switch_channel_get_state(channel) == CS_NEW) {
-		switch_channel_set_state(channel, CS_INIT);
+	if (switch_channel_get_state(nchannel) == CS_NEW) {
+		switch_channel_set_state(nchannel, CS_INIT);
 	}
 
 	cause = SWITCH_CAUSE_SUCCESS;
