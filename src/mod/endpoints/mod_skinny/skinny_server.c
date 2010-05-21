@@ -1235,14 +1235,16 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_core_session_t *session = NULL;
 	uint32_t line_instance = 0;
+	uint32_t call_id = 0;
+	switch_core_session_t *session = NULL;
 
-	skinny_check_data_length(request, sizeof(request->data.on_hook));
+	if(skinny_check_data_length_soft(request, sizeof(request->data.on_hook))) {
+		line_instance = request->data.on_hook.line_instance;
+	    call_id = request->data.on_hook.call_id;
+	}
 
-	line_instance = request->data.on_hook.line_instance;
-	
-	session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.on_hook.call_id);
+	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 	if(session) {
 		switch_channel_t *channel = NULL;
