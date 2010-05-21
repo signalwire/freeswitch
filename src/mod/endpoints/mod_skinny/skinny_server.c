@@ -767,8 +767,6 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_RING_OUT, 0xffff);
 	skinny_session_start_media(session, listener, line_instance);
-	switch_ivr_unhold(session);
-	send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1640,6 +1638,10 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 
 		switch_set_flag_locked(tech_pvt, TFLAG_IO);
 		switch_channel_mark_answered(channel);
+		if (switch_channel_test_flag(channel, CF_HOLD)) {
+			switch_ivr_unhold(session);
+			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 			"Unable to find session for device %s:%d (call id=%d).\n", 

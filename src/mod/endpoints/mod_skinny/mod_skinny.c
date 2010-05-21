@@ -1290,7 +1290,8 @@ static void close_socket(switch_socket_t **sock, skinny_profile_t *profile)
 
 static switch_status_t kill_listener(listener_t *listener, void *pvt)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener %s:%d.\n",
+		listener->device_name, listener->device_instance);
 	switch_clear_flag(listener, LFLAG_RUNNING);
 	close_socket(&listener->sock, listener->profile);
 	return SWITCH_STATUS_SUCCESS;
