@@ -601,7 +601,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		{
 			err=sangoma_tdm_enable_hwec(ftdmchan->sockfd, &tdm_api);
 			if (err) {
-             	snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Enable Failed");
+             			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Enable Failed");
 				return FTDM_FAIL;
 			}
 		}
@@ -610,7 +610,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		{
 			err=sangoma_tdm_disable_hwec(ftdmchan->sockfd, &tdm_api);
 			if (err) {
-             	snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Disable Failed");
+             			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Disable Failed");
 				return FTDM_FAIL;
 			}
 		}
@@ -625,6 +625,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			}
 #endif		
 		}
+		break;
 	case FTDM_COMMAND_DISABLE_LOOP:
 		{
 #ifdef WP_API_FEATURE_LOOP
@@ -635,6 +636,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			}
 #endif	 
 		}
+		break;
 	case FTDM_COMMAND_SET_INTERVAL: 
 		{
 			err=sangoma_tdm_set_usr_period(ftdmchan->sockfd, &tdm_api, FTDM_COMMAND_OBJ_INT);

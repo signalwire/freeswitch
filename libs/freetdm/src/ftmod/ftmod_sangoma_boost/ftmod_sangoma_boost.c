@@ -1088,6 +1088,7 @@ static void handle_call_loop_start(ftdm_span_t *span, sangomabc_connection_t *mc
 		ftdm_channel_done(ftdmchan);
 		return;
 	}
+	ftdm_log(FTDM_LOG_DEBUG, "%d:%d starting loop\n", ftdmchan->span_id, ftdmchan->chan_id);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_LOOP, NULL);
 }
 
@@ -1100,13 +1101,16 @@ static void handle_call_loop_stop(ftdm_span_t *span, sangomabc_connection_t *mco
 		return;
 	}
 	if (ftdmchan->state != FTDM_CHANNEL_STATE_IN_LOOP) {
-		ftdm_log(FTDM_LOG_ERROR, "Got stop loop request in a channel that is not in loop, ignoring ...\n");
+		ftdm_log(FTDM_LOG_WARNING, "Got stop loop request in a channel that is not in loop, ignoring ...\n");
 		return;
 	}
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
 	ftdm_set_flag(ftdmchan, SFLAG_SENT_FINAL_MSG);
 	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_DOWN, res);
+	if (res != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "yay, could not set the state of the channel from IN_LOOP to DOWN\n");
+	}
 }
 
 /**
@@ -1355,33 +1359,37 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			int call_stopped_ack_sent = 0;
 			ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 
-			release_request_id_span_chan(ftdmchan->physical_span_id, ftdmchan->physical_chan_id);
+			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_IN_LOOP) {
+				ftdm_log(FTDM_LOG_DEBUG, "%d:%d terminating loop\n", ftdmchan->span_id, ftdmchan->chan_id);
+			} else {
+				release_request_id_span_chan(ftdmchan->physical_span_id, ftdmchan->physical_chan_id);
 
-			if (!ftdm_test_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG)) {
-				ftdm_set_sflag_locked(ftdmchan, SFLAG_SENT_FINAL_MSG);
+				if (!ftdm_test_sflag(ftdmchan, SFLAG_SENT_FINAL_MSG)) {
+					ftdm_set_sflag_locked(ftdmchan, SFLAG_SENT_FINAL_MSG);
 
-				if (ftdmchan->call_data && CALL_DATA(ftdmchan)->last_event_id == SIGBOOST_EVENT_CALL_START_NACK) {
-					sangomabc_exec_command(mcon,
-									BOOST_SPAN(ftdmchan),
-									BOOST_CHAN(ftdmchan),
-									CALL_DATA(ftdmchan)->call_setup_id,
-									SIGBOOST_EVENT_CALL_START_NACK_ACK,
-									0, 0);
-					
-				} else {
-					/* we got a call stop msg, time to reply with call stopped ack  */
-					sangomabc_exec_command(mcon,
-									BOOST_SPAN(ftdmchan),
-									BOOST_CHAN(ftdmchan),
-									0,
-									SIGBOOST_EVENT_CALL_STOPPED_ACK,
-									0, 0);
-					call_stopped_ack_sent = 1;
+					if (ftdmchan->call_data && CALL_DATA(ftdmchan)->last_event_id == SIGBOOST_EVENT_CALL_START_NACK) {
+						sangomabc_exec_command(mcon,
+										BOOST_SPAN(ftdmchan),
+										BOOST_CHAN(ftdmchan),
+										CALL_DATA(ftdmchan)->call_setup_id,
+										SIGBOOST_EVENT_CALL_START_NACK_ACK,
+										0, 0);
+						
+					} else {
+						/* we got a call stop msg, time to reply with call stopped ack  */
+						sangomabc_exec_command(mcon,
+										BOOST_SPAN(ftdmchan),
+										BOOST_CHAN(ftdmchan),
+										0,
+										SIGBOOST_EVENT_CALL_STOPPED_ACK,
+										0, 0);
+						call_stopped_ack_sent = 1;
+					}
 				}
 			}
+
 			ftdmchan->sflags = 0;
 			memset(ftdmchan->call_data, 0, sizeof(sangoma_boost_call_t));
-
 			if (sangoma_boost_data->sigmod && call_stopped_ack_sent) {
 				/* we dont want to call ftdm_channel_done just yet until call released is received */
 				ftdm_log(FTDM_LOG_DEBUG, "Waiting for call release confirmation before declaring chan %d:%d as available \n", 
