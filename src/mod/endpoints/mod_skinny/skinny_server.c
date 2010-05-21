@@ -1097,18 +1097,20 @@ switch_status_t skinny_handle_port_message(listener_t *listener, skinny_message_
 
 switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny_message_t *request)
 {
-	uint32_t line_instance = 0;
-	switch_core_session_t *session;
+	uint32_t line_instance = 1;
+	uint32_t call_id = 0;
+	switch_core_session_t *session = NULL;
 
-	skinny_check_data_length(request, sizeof(request->data.keypad_button));
-	
-	if(request->data.keypad_button.line_instance) {
-	    line_instance = request->data.keypad_button.line_instance;
-	} else {
-	    line_instance = 1;
+	skinny_check_data_length(request, sizeof(request->data.keypad_button.button));
+
+	if(skinny_check_data_length_soft(request, sizeof(request->data.keypad_button))) {
+		if (request->data.keypad_button.line_instance > 0) {
+			line_instance = request->data.keypad_button.line_instance;
+		}
+	    call_id = request->data.keypad_button.call_id;
 	}
 
-	session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.keypad_button.call_id);
+	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 	if(session) {
 		switch_channel_t *channel = NULL;
