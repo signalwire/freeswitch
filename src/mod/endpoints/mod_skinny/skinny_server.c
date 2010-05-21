@@ -1723,7 +1723,7 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 
 	if(skinny_check_data_length_soft(request, sizeof(request->data.soft_key_event))) {
 		line_instance = request->data.soft_key_event.line_instance;
-	    call_id = request->data.soft_key_eventcall_id;
+	    call_id = request->data.soft_key_event.call_id;
 	}
 
 	switch(request->data.soft_key_event.event) {
