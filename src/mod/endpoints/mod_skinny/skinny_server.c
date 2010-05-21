@@ -1714,16 +1714,17 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	uint32_t line_instance = 0;
+	uint32_t call_id = 0;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 
-	switch_assert(listener);
-	switch_assert(listener->profile);
-	
-	skinny_check_data_length(request, sizeof(request->data.soft_key_event));
+	skinny_check_data_length(request, sizeof(request->data.soft_key_event.event));
 
-	line_instance = request->data.soft_key_event.line_instance;
+	if(skinny_check_data_length_soft(request, sizeof(request->data.soft_key_event))) {
+		line_instance = request->data.soft_key_event.line_instance;
+	    call_id = request->data.soft_key_eventcall_id;
+	}
 
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
@@ -1738,28 +1739,28 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 		    skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			break;
 		case SOFTKEY_HOLD:
-	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 		    if(session) {
 	            status = skinny_session_hold_line(session, listener, line_instance);
 	        }
 			break;
 		case SOFTKEY_TRANSFER:
-			session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 			if(session) {
 				status = skinny_session_transfer(session, listener, line_instance);
 			}
 			break;
 		case SOFTKEY_BACKSPACE:
-	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 		    if(session) {
 		    	skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 1);
 	        }
 			break;
 		case SOFTKEY_ENDCALL:
-	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 		    if(session) {
 			    channel = switch_core_session_get_channel(session);
@@ -1768,14 +1769,14 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	        }
 			break;
 		case SOFTKEY_RESUME:
-	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 		    if(session) {
 	            status = skinny_session_unhold_line(session, listener, line_instance);
 	        }
 			break;
 		case SOFTKEY_ANSWER:
-	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, request->data.soft_key_event.call_id);
+	        session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
 		    if(session) {
 				status = skinny_session_answer(session, listener, line_instance);
