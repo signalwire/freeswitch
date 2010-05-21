@@ -4131,16 +4131,11 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		break;
 
 	case FTDM_SIGEVENT_START:
-		sigmsg->raw_data = &sigmsg->channel->caller_data;
 		/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
 		 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
 		 * is needed at all?
 		 * */
 		ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
-		break;
-
-	case FTDM_SIGEVENT_STOP:
-		sigmsg->raw_data = &sigmsg->channel->caller_data;
 		break;
 
 	default:

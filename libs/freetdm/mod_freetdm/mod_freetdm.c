@@ -1155,6 +1155,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	} else {
 		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
+
+	if ((var = switch_event_get_header(var_event, "freetdm_custom_call_data")) || (var = switch_core_get_variable("freetdm_custom_call_data"))) {
+		ftdm_set_string(caller_data.raw_data, var);
+		caller_data.raw_data_len = strlen(var);
+	}
 	
 	caller_data.dnis.plan = outbound_profile->destination_number_numplan;
 
@@ -1273,7 +1278,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_t *channel = NULL;
 	uint32_t spanid, chanid;
 	char name[128];
-	ftdm_caller_data_t *channel_caller_data = sigmsg->raw_data;
+	ftdm_caller_data_t *channel_caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 	
 	*sp = NULL;
 
@@ -1350,6 +1355,9 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(sigmsg->channel));
 	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", spanid);	
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
+	if (channel_caller_data->raw_data_len) {
+		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
+	}
 		
 	switch_channel_set_state(channel, CS_INIT);
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
@@ -1440,7 +1448,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	chanid = ftdm_channel_get_id(sigmsg->channel);
-	callerdata = sigmsg->raw_data;
+	callerdata = ftdm_channel_get_caller_data(sigmsg->channel);
 
 	ftdm_log(FTDM_LOG_DEBUG, "got FXO sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
 
@@ -1727,7 +1735,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	ftdm_status_t status = FTDM_SUCCESS;
-	ftdm_caller_data_t *caller_data = sigmsg->raw_data;
+	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 
 	phyid = ftdm_channel_get_ph_id(sigmsg->channel);
 	chanid = ftdm_channel_get_id(sigmsg->channel);
@@ -1845,7 +1853,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 
 	ftdm_log(FTDM_LOG_DEBUG, "got clear channel sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
 
-	caller_data = sigmsg->raw_data;
+	caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 	chanid = ftdm_channel_get_id(sigmsg->channel);
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 

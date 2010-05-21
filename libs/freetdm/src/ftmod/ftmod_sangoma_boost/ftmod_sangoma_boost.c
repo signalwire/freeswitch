@@ -427,6 +427,11 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	event.called.ton = caller_data->dnis.type;
 	event.called.npi = caller_data->dnis.plan;
 
+	if (caller_data->raw_data_len) {
+		ftdm_set_string(event.custom_data, caller_data->raw_data);
+		event.custom_data_size = caller_data->raw_data_len;
+	}
+
 	OUTBOUND_REQUESTS[r].status = BST_WAITING;
 	OUTBOUND_REQUESTS[r].span = span;
 
@@ -1036,6 +1041,7 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 	ftdmchan->caller_data.screen = event->calling.screening_ind;
 	ftdmchan->caller_data.pres = event->calling.presentation_ind;
 
+	/* more info about custom data: http://www.ss7box.com/smg_manual.html#ISUP-IN-RDNIS-NEW */
 	if (event->custom_data_size) {
 		char* p = NULL;
 
@@ -1521,6 +1527,11 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 
 			event.called.ton = ftdmchan->caller_data.dnis.type;
 			event.called.npi = ftdmchan->caller_data.dnis.plan;
+
+			if (ftdmchan->caller_data.raw_data_len) {
+				ftdm_set_string(event.custom_data, ftdmchan->caller_data.raw_data);
+				event.custom_data_size = ftdmchan->caller_data.raw_data_len;
+			}
 
 			OUTBOUND_REQUESTS[r].status = BST_WAITING;
 			OUTBOUND_REQUESTS[r].span = ftdmchan->span;

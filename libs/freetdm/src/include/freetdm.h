@@ -267,7 +267,9 @@ typedef struct ftdm_caller_data {
 	uint8_t screen; /*!< Screening */
 	uint8_t pres; /*!< Presentation*/
 	char collected[25]; /*!< Collected digits so far */
-	int hangup_cause; /*! Hangup cause */
+	int hangup_cause; /*!< Hangup cause */
+	char raw_data[1024]; /*!< Protocol specific raw caller data */
+	uint32_t raw_data_len; /* !< Raw data length */
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
