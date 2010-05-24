@@ -779,7 +779,7 @@ static const char *basic_gets(int *cnt)
 	*cnt = x;
 #else
 	int read, key;
-	char keys[80];
+	char keys[CMD_BUFLEN];
 	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 
 	console_bufferInput (0, 0, prompt_str, PROMPT_OP);
