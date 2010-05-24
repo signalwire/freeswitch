@@ -15,3 +15,10 @@ mod_fax_la_CFLAGS   = $(AM_CFLAGS) -I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I
 mod_fax_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TIFF_LA)
 mod_fax_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -ljpeg
 
+$(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
+	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1
+	$(TOUCH_TARGET)
+
+$(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
+	cd $(TIFF_BUILDDIR) && $(MAKE) -j1
+	$(TOUCH_TARGET)
