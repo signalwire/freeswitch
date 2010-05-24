@@ -685,7 +685,7 @@ static t38_mode_t configure_t38(pvt_t *pvt)
     switch_t38_options_t *t38_options = switch_channel_get_private(channel, "t38_options");
     int method = 2;
 
-    if (!t38_options) {
+    if (!t38_options || !pvt || !pvt->t38_core) {
         pvt->t38_mode = T38_MODE_REFUSED;
         return pvt->t38_mode;
     }
@@ -1481,6 +1481,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
     }
 
     if (pvt->t38_mode == T38_MODE_REQUESTED) {
+        spanfax_init(pvt, T38_GATEWAY_MODE);
         configure_t38(pvt);
         pvt->t38_mode = T38_MODE_NEGOTIATED;
     } else {
@@ -1489,9 +1490,9 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
             switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
             goto end_unlock;
         }
-    }
 
-    spanfax_init(pvt, T38_GATEWAY_MODE);
+        spanfax_init(pvt, T38_GATEWAY_MODE);
+    }
 
     /* This will change the rtp stack to udptl mode */
     msg.from = __FILE__;
