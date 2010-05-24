@@ -285,6 +285,14 @@
 			RelativePath=".\mod_fax.c"
 			>
 		</File>
+		<File
+			RelativePath=".\udptl.c"
+			>
+		</File>
+		<File
+			RelativePath=".\udptl.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
