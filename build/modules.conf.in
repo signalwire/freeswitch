@@ -9,6 +9,7 @@ applications/mod_enum
 #applications/mod_osp
 applications/mod_fifo
 #applications/mod_fax
+#applications/mod_spandsp
 #applications/mod_curl
 applications/mod_voicemail
 #applications/mod_directory

@@ -875,6 +875,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_enum/Makefile
 		src/mod/applications/mod_expr/Makefile
 		src/mod/applications/mod_fax/Makefile
+		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_stress/Makefile
 		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_skinny/Makefile

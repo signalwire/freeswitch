@@ -2,6 +2,9 @@
 /Makefile.in
 /applications/mod_fax/Makefile
 /applications/mod_fax/Makefile.in
+/applications/mod_spandsp/Makefile
+/applications/mod_spandsp/Makefile.in
+/applications/mod_spandsp/mod_spandsp.log
 /applications/mod_commands/Makefile
 /applications/mod_conference/Makefile
 /applications/mod_dptools/Makefile
@@ -16,8 +19,6 @@
 /applications/mod_limit/Makefile
 /applications/mod_stress/Makefile
 /applications/mod_stress/Makefile.in
-/applications/mod_t38gateway/Makefile
-/applications/mod_t38gateway/Makefile.in
 /applications/mod_valet_parking/Makefile
 /applications/mod_voicemail/Makefile
 /asr_tts/mod_unimrcp/Makefile
