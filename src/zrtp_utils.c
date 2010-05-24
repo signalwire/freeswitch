@@ -453,11 +453,13 @@ zrtp_status_t _zrtp_packet_preparse( zrtp_stream_t* stream,
 			break;
 		case ZRTP_SASRELAY:
 			is_correct = !(*length < (RTP_HDR_SIZE + sizeof(zrtp_packet_SASRelay_t)));
+			break;
 		case ZRTP_GOCLEAR:
 			is_correct = !(*length < (RTP_HDR_SIZE + sizeof(zrtp_packet_GoClear_t)));
 			break;
 		case ZRTP_ERROR:
 			is_correct = !(*length < (RTP_HDR_SIZE + sizeof(zrtp_packet_Error_t)));
+			break;
 		case ZRTP_ZFONEPING:
 		case ZRTP_ZFONEPINGACK:
 			is_correct = !(*length < (RTP_HDR_SIZE + sizeof(zrtp_packet_zfoneping_t)));

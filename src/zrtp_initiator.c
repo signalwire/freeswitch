@@ -70,7 +70,7 @@ zrtp_status_t _zrtp_machine_process_while_in_initiatingsecure( zrtp_stream_t* st
 				break;
 			}
 
-			s = _zrtp_machine_start_send_and_resend_dhpart2(stream);
+			_zrtp_machine_start_send_and_resend_dhpart2(stream);
 
 			/* Perform Key generation according to draft 5.6 */
 			s = _zrtp_set_public_value(stream, 1);
@@ -545,11 +545,13 @@ static zrtp_status_t _zrtp_machine_start_send_and_resend_confirm2(zrtp_stream_t 
 								   ZRTP_CONFIRM2,
 								   sizeof(zrtp_packet_Confirm_t) - sizeof(zrtp_msg_hdr_t),
 								   &stream->messages.confirm.hdr);
+	
+	if (zrtp_status_ok == s) {
+		task->_is_enabled = 1;
+		task->callback = _send_and_resend_confirm2;
+		task->_retrys = 0;
+		_send_and_resend_confirm2(stream, task);
+	}
 
-	task->_is_enabled = 1;
-	task->callback = _send_and_resend_confirm2;
-	task->_retrys = 0;
-	_send_and_resend_confirm2(stream, task);
-
-	return zrtp_status_ok;
+	return s;
 }

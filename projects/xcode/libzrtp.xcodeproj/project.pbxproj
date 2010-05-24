@@ -73,7 +73,6 @@
 		8D6EEBD30F01386E00529121 /* zrtp_iface_scheduler.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D30A9520EACB0C700A8A8EA /* zrtp_iface_scheduler.c */; };
 		8D6EEBD70F01388C00529121 /* zrtp.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A9830EACB0EA00A8A8EA /* zrtp.h */; };
 		8D6EEBD80F01388C00529121 /* zrtp_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A9940EACB0EA00A8A8EA /* zrtp_types.h */; };
-		8D6EEBD90F01388C00529121 /* zrtp_engine.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A9880EACB0EA00A8A8EA /* zrtp_engine.h */; };
 		8D6EEBDA0F01388C00529121 /* zrtp_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A9890EACB0EA00A8A8EA /* zrtp_error.h */; };
 		8D6EEBDB0F01388C00529121 /* zrtp_iface.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A98A0EACB0EA00A8A8EA /* zrtp_iface.h */; };
 		8D6EEBDC0F01388C00529121 /* zrtp_iface_system.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A98B0EACB0EA00A8A8EA /* zrtp_iface_system.h */; };
@@ -89,6 +88,7 @@
 		8D6EEBE60F01388C00529121 /* zrtp_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 8DBAF5AD0EE91A8C00D34BFB /* zrtp_version.h */; };
 		8D6EEBE70F0138AF00529121 /* zrtp_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A9840EACB0EA00A8A8EA /* zrtp_config.h */; };
 		8D6EEBE80F0138AF00529121 /* zrtp_config_user.h in Headers */ = {isa = PBXBuildFile; fileRef = 8D30A9850EACB0EA00A8A8EA /* zrtp_config_user.h */; };
+		8DCDA604119850ED006B39ED /* zrtp_engine.h in Headers */ = {isa = PBXBuildFile; fileRef = 8DCDA603119850ED006B39ED /* zrtp_engine.h */; };
 		8DD1C11E0F36D4A500903190 /* zrtp_config_unix.h in Headers */ = {isa = PBXBuildFile; fileRef = 8DD1C11C0F36D4A500903190 /* zrtp_config_unix.h */; };
 		8DEE0799102FF96100B585AD /* zrtp_ec.h in Headers */ = {isa = PBXBuildFile; fileRef = 8DEE0793102FF96100B585AD /* zrtp_ec.h */; };
 		8DEE079A102FF96100B585AD /* zrtp_iface_cache.h in Headers */ = {isa = PBXBuildFile; fileRef = 8DEE0794102FF96100B585AD /* zrtp_iface_cache.h */; };
@@ -101,7 +101,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		8996E0300EC9CA8C007D7FD5 /* libzrtp_ec.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libzrtp_ec.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8996E0300EC9CA8C007D7FD5 /* libzrtp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libzrtp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D30A9520EACB0C700A8A8EA /* zrtp_iface_scheduler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_iface_scheduler.c; path = ../../src/zrtp_iface_scheduler.c; sourceTree = SOURCE_ROOT; };
 		8D30A9590EACB0D600A8A8EA /* zrtp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp.c; path = ../../src/zrtp.c; sourceTree = SOURCE_ROOT; };
 		8D30A95B0EACB0D600A8A8EA /* zrtp_crc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_crc.c; path = ../../src/zrtp_crc.c; sourceTree = SOURCE_ROOT; };
@@ -125,7 +125,6 @@
 		8D30A9840EACB0EA00A8A8EA /* zrtp_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_config.h; path = ../../include/zrtp_config.h; sourceTree = SOURCE_ROOT; };
 		8D30A9850EACB0EA00A8A8EA /* zrtp_config_user.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_config_user.h; path = ../../include/zrtp_config_user.h; sourceTree = SOURCE_ROOT; };
 		8D30A9860EACB0EA00A8A8EA /* zrtp_crypto.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_crypto.h; path = ../../include/zrtp_crypto.h; sourceTree = SOURCE_ROOT; };
-		8D30A9880EACB0EA00A8A8EA /* zrtp_engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_engine.h; path = ../../include/zrtp_engine.h; sourceTree = SOURCE_ROOT; };
 		8D30A9890EACB0EA00A8A8EA /* zrtp_error.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_error.h; path = ../../include/zrtp_error.h; sourceTree = SOURCE_ROOT; };
 		8D30A98A0EACB0EA00A8A8EA /* zrtp_iface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_iface.h; path = ../../include/zrtp_iface.h; sourceTree = SOURCE_ROOT; };
 		8D30A98B0EACB0EA00A8A8EA /* zrtp_iface_system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_iface_system.h; path = ../../include/zrtp_iface_system.h; sourceTree = SOURCE_ROOT; };
@@ -170,6 +169,7 @@
 		8D4A9EDB0EC9E2E300F07172 /* zrtp_legal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_legal.c; path = ../../src/zrtp_legal.c; sourceTree = SOURCE_ROOT; };
 		8D4BE7680EC325A5003584D4 /* bninit32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bninit32.c; path = ../../third_party/bnlib/bninit32.c; sourceTree = SOURCE_ROOT; };
 		8DBAF5AD0EE91A8C00D34BFB /* zrtp_version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_version.h; path = ../../include/zrtp_version.h; sourceTree = SOURCE_ROOT; };
+		8DCDA603119850ED006B39ED /* zrtp_engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_engine.h; path = ../../include/zrtp_engine.h; sourceTree = SOURCE_ROOT; };
 		8DD1C11C0F36D4A500903190 /* zrtp_config_unix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_config_unix.h; path = ../../include/zrtp_config_unix.h; sourceTree = SOURCE_ROOT; };
 		8DEE0793102FF96100B585AD /* zrtp_ec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_ec.h; path = ../../include/zrtp_ec.h; sourceTree = SOURCE_ROOT; };
 		8DEE0794102FF96100B585AD /* zrtp_iface_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_iface_cache.h; path = ../../include/zrtp_iface_cache.h; sourceTree = SOURCE_ROOT; };
@@ -216,7 +216,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8996E0300EC9CA8C007D7FD5 /* libzrtp_ec.a */,
+				8996E0300EC9CA8C007D7FD5 /* libzrtp.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -228,9 +228,9 @@
 				8D30A9830EACB0EA00A8A8EA /* zrtp.h */,
 				8D30AB7B0EADA86000A8A8EA /* zrtp_base.h */,
 				8D30A9940EACB0EA00A8A8EA /* zrtp_types.h */,
-				8D30A9880EACB0EA00A8A8EA /* zrtp_engine.h */,
 				8D30A9890EACB0EA00A8A8EA /* zrtp_error.h */,
 				8D30A98A0EACB0EA00A8A8EA /* zrtp_iface.h */,
+				8DCDA603119850ED006B39ED /* zrtp_engine.h */,
 				8DEE0794102FF96100B585AD /* zrtp_iface_cache.h */,
 				8DEE0795102FF96100B585AD /* zrtp_iface_scheduler.h */,
 				8D30A98B0EACB0EA00A8A8EA /* zrtp_iface_system.h */,
@@ -353,7 +353,6 @@
 				8D6EEBD70F01388C00529121 /* zrtp.h in Headers */,
 				8996E0000EC9CA8C007D7FD5 /* zrtp_base.h in Headers */,
 				8D6EEBD80F01388C00529121 /* zrtp_types.h in Headers */,
-				8D6EEBD90F01388C00529121 /* zrtp_engine.h in Headers */,
 				8D6EEBDA0F01388C00529121 /* zrtp_error.h in Headers */,
 				8D6EEBDB0F01388C00529121 /* zrtp_iface.h in Headers */,
 				8D6EEBDC0F01388C00529121 /* zrtp_iface_system.h in Headers */,
@@ -384,15 +383,16 @@
 				8DEE0799102FF96100B585AD /* zrtp_ec.h in Headers */,
 				8DEE079A102FF96100B585AD /* zrtp_iface_cache.h in Headers */,
 				8DEE079B102FF96100B585AD /* zrtp_iface_scheduler.h in Headers */,
+				8DCDA604119850ED006B39ED /* zrtp_engine.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		8996DFD70EC9CA8C007D7FD5 /* libzrtp_ec */ = {
+		8996DFD70EC9CA8C007D7FD5 /* libzrtp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8996E02D0EC9CA8C007D7FD5 /* Build configuration list for PBXNativeTarget "libzrtp_ec" */;
+			buildConfigurationList = 8996E02D0EC9CA8C007D7FD5 /* Build configuration list for PBXNativeTarget "libzrtp" */;
 			buildPhases = (
 				8996DFD80EC9CA8C007D7FD5 /* Headers */,
 				8996E0030EC9CA8C007D7FD5 /* Sources */,
@@ -402,9 +402,9 @@
 			);
 			dependencies = (
 			);
-			name = libzrtp_ec;
+			name = libzrtp;
 			productName = libzrtp;
-			productReference = 8996E0300EC9CA8C007D7FD5 /* libzrtp_ec.a */;
+			productReference = 8996E0300EC9CA8C007D7FD5 /* libzrtp.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -420,7 +420,7 @@
 			projectRoot = "";
 			targets = (
 				8DF95BE80EC06AAE00832CBC /* configure */,
-				8996DFD70EC9CA8C007D7FD5 /* libzrtp_ec */,
+				8996DFD70EC9CA8C007D7FD5 /* libzrtp */,
 			);
 		};
 /* End PBXProject section */
@@ -511,12 +511,13 @@
 		1DEB91F108733DB70010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
 				SDKROOT = macosx10.5;
+				VALID_ARCHS = "i386 ppc x86_64";
 			};
 			name = Release;
 		};
@@ -538,8 +539,8 @@
 				INSTALL_PATH = /usr/local/lib;
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CFLAGS = "";
-				PRODUCT_NAME = zrtp_ec;
-				SDKROOT = "";
+				PRODUCT_NAME = zrtp;
+				SDKROOT = macosx10.5;
 				SYMROOT = build;
 				VALID_ARCHS = "i386 ppc x86_64";
 			};
@@ -549,11 +550,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = /usr/local/lib;
 				OTHER_CFLAGS = "-DZRTP_USE_ENTERPRISE=1";
 				PRODUCT_NAME = libzrtp;
+				SDKROOT = macosx10.5;
+				VALID_ARCHS = "i386 ppc x86_64";
 			};
 			name = Release;
 		};
@@ -590,7 +594,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8996E02D0EC9CA8C007D7FD5 /* Build configuration list for PBXNativeTarget "libzrtp_ec" */ = {
+		8996E02D0EC9CA8C007D7FD5 /* Build configuration list for PBXNativeTarget "libzrtp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8996E02E0EC9CA8C007D7FD5 /* Debug */,
