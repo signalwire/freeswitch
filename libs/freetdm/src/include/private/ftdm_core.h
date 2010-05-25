@@ -564,7 +564,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);
 #define ftdm_log_chan(fchan, level, format, ...) ftdm_log(level, "s%dc%d " format, fchan->span_id, fchan->chan_id, __VA_ARGS__)
 #define ftdm_log_chan_msg(fchan, level, msg) ftdm_log(level, "s%dc%d " msg, fchan->span_id, fchan->chan_id)
 
-extern const char *FTDM_LEVEL_NAMES[9];
+FT_DECLARE_DATA extern const char *FTDM_LEVEL_NAMES[9];
 
 static __inline__ void ftdm_abort(void)
 {
