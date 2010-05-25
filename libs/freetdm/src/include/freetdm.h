@@ -1125,6 +1125,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span);
 
 /*! 
  * \brief Stop the span signaling (must call ftdm_span_start first)
+ * \note certain signalings (boost signaling) does not support granular span start/stop
+ * so it is recommended to always configure all spans and then starting them all and finally
+ * stop them all (or call ftdm_global_destroy which takes care of stopping and destroying the spans at once).
  *
  * \param span The span to stop
  *
