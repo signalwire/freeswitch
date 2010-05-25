@@ -629,7 +629,7 @@ char* skinny_codec2string(enum skinny_codecs skinnycodec);
 #define skinny_check_data_length(message, len) \
     if (message->length < len+4) {\
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,\
-			"Received Too Short Skinny Message %s (type=%x,length=%d), expected %d.\n",\
+			"Received Too Short Skinny Message %s (type=%x,length=%d), expected %" SWITCH_SIZE_T_FMT ".\n",\
 			skinny_message_type2str(request->type), request->type, request->length,\
 	    	len+4);\
 	    return SWITCH_STATUS_FALSE;\
