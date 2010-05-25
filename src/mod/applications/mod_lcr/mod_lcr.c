@@ -415,7 +415,7 @@ static switch_bool_t db_check(char *sql)
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (globals.odbc_dsn && (dbh = lcr_get_db_handle())) {
-		if (switch_cache_db_execute_sql(dbh, sql, NULL) == SWITCH_ODBC_SUCCESS) {
+		if (switch_cache_db_execute_sql(dbh, sql, NULL) == SWITCH_STATUS_SUCCESS) {
 			ret = SWITCH_TRUE;
 		}
 	}
@@ -545,8 +545,7 @@ static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (globals.odbc_dsn && (dbh = lcr_get_db_handle())) {
-		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, NULL)
-			== SWITCH_ODBC_FAIL) {
+		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, NULL) != SWITCH_STATUS_SUCCESS) {
 			retval = SWITCH_FALSE;
 		} else {
 			retval = SWITCH_TRUE;

@@ -320,11 +320,13 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing update query\n[%s]\n", sql);
 
-	if ((status = switch_odbc_handle_exec(globals.master_odbc, sql, &stmt, NULL)) != SWITCH_ODBC_SUCCESS) {
+	if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
 		char *err_str;
 		err_str = switch_odbc_handle_get_error(globals.master_odbc, stmt);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 		switch_safe_free(err_str);
+	} else {
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	if (stmt) {
@@ -332,6 +334,7 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 	}
 	
 	switch_safe_free(dsql);
+
 	return status;
 }
 

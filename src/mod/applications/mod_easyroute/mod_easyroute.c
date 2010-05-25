@@ -152,10 +152,10 @@ static switch_status_t load_config(void)
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.db_dsn);
 		if (!globals.custom_query) {
-			if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from numbers", NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from numbers", NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the numbers table\?\?)\n");
 			}
-			if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from gateways", NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from gateways", NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the gateways table\?\?)\n");
 			}
 		}

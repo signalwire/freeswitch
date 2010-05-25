@@ -189,8 +189,7 @@ static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_ca
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (globals.odbc_dsn && (dbh = cidlookup_get_db_handle())) {
-		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, (void *) cbt, err)
-			== SWITCH_ODBC_FAIL) {
+		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, (void *) cbt, err) != SWITCH_STATUS_SUCCESS) {
 			retval = SWITCH_FALSE;
 		} else {
 			retval = SWITCH_TRUE;
