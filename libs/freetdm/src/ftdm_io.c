@@ -414,9 +414,7 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	ftdm_mutex_lock(span->mutex);
 
 	/* stop the signaling */
-	if (span->stop) {
-		status = span->stop(span);
-	} 
+	ftdm_span_stop(span);
 
 	/* destroy the channels */
 	ftdm_clear_flag(span, FTDM_SPAN_CONFIGURED);
@@ -514,12 +512,12 @@ static void ftdm_span_add(ftdm_span_t *span)
 
 FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 {
+	ftdm_status_t status =  FTDM_FAIL;
 	if (span->stop) {
-		span->stop(span);
-		return FTDM_SUCCESS;
+		status = span->stop(span);
+		span->stop = NULL;
 	}
-	
-	return FTDM_FAIL;
+	return status;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_span_create(const char *iotype, const char *name, ftdm_span_t **span)
