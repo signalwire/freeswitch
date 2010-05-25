@@ -1460,6 +1460,11 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
     pvt = pvt_init(session, FUNCTION_GW);
     request_t38(pvt);
 
+    msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+    msg.from = __FILE__;
+    msg.string_arg = peer_uuid;
+    switch_core_session_receive_message(session, &msg);
+
     while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag(channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -1532,6 +1537,12 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 
  end_unlock:
 
+
+    msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+    msg.from = __FILE__;
+    msg.string_arg = peer_uuid;
+    switch_core_session_receive_message(session, &msg);
+
     switch_channel_hangup(other_channel, SWITCH_CAUSE_NORMAL_CLEARING);
     switch_core_session_rwunlock(other_session);
 
@@ -1561,9 +1572,10 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
     const char *t38_trace = switch_channel_get_variable(channel, "t38_trace");
     char *trace_read, *trace_write;
     zap_socket_t read_fd = FAX_INVALID_SOCKET, write_fd = FAX_INVALID_SOCKET;
+    switch_core_session_message_t msg = { 0 };
 
 	switch_core_session_get_read_impl(session, &read_impl);
-
+    
     buf = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
     if (!(other_session = switch_core_session_locate(peer_uuid))) {
@@ -1573,6 +1585,11 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 
     other_channel = switch_core_session_get_channel(other_session);
     
+    msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+    msg.from = __FILE__;
+    msg.string_arg = peer_uuid;
+    switch_core_session_receive_message(session, &msg);
+
     while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag(channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
         
@@ -1707,6 +1724,11 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 
  end_unlock:
 
+    msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+    msg.from = __FILE__;
+    msg.string_arg = peer_uuid;
+    switch_core_session_receive_message(session, &msg);
+
     if (read_fd != FAX_INVALID_SOCKET) {
         close(read_fd);
         read_fd = FAX_INVALID_SOCKET;
@@ -1745,6 +1767,8 @@ static switch_status_t t38_gateway_on_reset(switch_core_session_t *session)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
 
+    switch_channel_set_variable(channel, "rtp_autoflush_during_bridge", "false");
+    
     switch_channel_clear_flag(channel, CF_REDIRECT);
 
     if (switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
