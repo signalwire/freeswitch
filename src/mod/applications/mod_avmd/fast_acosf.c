@@ -10,6 +10,9 @@
 #include <math.h>
 #include <unistd.h>
 #include "fast_acosf.h"
+#include "options.h"
+
+#ifdef FASTMATH
 
 #define SIGN_MASK (0x80000000)
 #define DATA_MASK (0x07FFFFF8)
@@ -126,5 +129,6 @@ static float float_from_index(uint32_t d)
 }
 
 
+#endif
 
 
