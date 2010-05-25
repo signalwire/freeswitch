@@ -775,6 +775,7 @@ static void handle_call_answer(zap_span_t *span, sangomabc_connection_t *mcon, s
 }
 
 static __inline__ void advance_chan_states(zap_channel_t *zchan);
+static __inline__ void stop_loop(zap_channel_t *zchan);
 
 /**
  * \brief Handler for call start event
@@ -786,6 +787,9 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 {
 	zap_channel_t *zchan;
 	int hangup_cause = ZAP_CAUSE_CALL_REJECTED;
+	int retry = 1;
+
+tryagain:
 
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
@@ -807,7 +811,12 @@ static void handle_call_start(zap_span_t *span, sangomabc_connection_t *mcon, sa
 				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL STATE HANGUP -> Changed to HANGUP %d:%d\n", event->span+1,event->chan+1);
 				zap_set_state_r(zchan, ZAP_CHANNEL_STATE_HANGUP_COMPLETE, 0, r);
 				/* Do nothing because outgoing STOP will generaate a stop ack */
-
+			} else if (zchan->state == ZAP_CHANNEL_STATE_IN_LOOP && retry) {
+				/* workaround ss7box sending us call start without sending first a loop stop */
+				stop_loop(zchan);
+				advance_chan_states(zchan);
+				retry = 0;
+				goto tryagain;
 			} else {
 				zap_log(ZAP_LOG_CRIT, "ZCHAN CALL ACK STATE INVALID %s s%dc%d\n",
 						zap_channel_state2str(zchan->state),event->span+1,event->chan+1);
@@ -912,10 +921,21 @@ static void handle_call_loop_start(zap_span_t *span, sangomabc_connection_t *mco
 	zap_channel_command(zchan, ZAP_COMMAND_ENABLE_LOOP, NULL);
 }
 
+static __inline__ void stop_loop(zap_channel_t *zchan)
+{
+	zap_status_t res = ZAP_FAIL;
+	zap_channel_command(zchan, ZAP_COMMAND_DISABLE_LOOP, NULL);
+	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
+	zap_set_flag(zchan, SFLAG_SENT_FINAL_MSG);
+	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_DOWN, 0, res);
+	if (res != ZAP_STATE_CHANGE_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "yay, could not set the state of the channel from IN_LOOP to DOWN\n");
+	}
+}
+
 static void handle_call_loop_stop(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	zap_channel_t *zchan;
-	zap_status_t res = ZAP_FAIL;
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 1))) {
 		zap_log(ZAP_LOG_CRIT, "CANNOT STOP LOOP, INVALID CHAN REQUESTED %d:%d\n", event->span+1,event->chan+1);
 		return;
@@ -924,13 +944,7 @@ static void handle_call_loop_stop(zap_span_t *span, sangomabc_connection_t *mcon
 		zap_log(ZAP_LOG_ERROR, "Got stop loop request in a channel that is not in loop, ignoring ...\n");
 		return;
 	}
-	zap_channel_command(zchan, ZAP_COMMAND_DISABLE_LOOP, NULL);
-	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
-	zap_set_flag(zchan, SFLAG_SENT_FINAL_MSG);
-	zap_set_state_r(zchan, ZAP_CHANNEL_STATE_DOWN, 0, res);
-	if (res != ZAP_STATE_CHANGE_SUCCESS) {
-		zap_log(ZAP_LOG_CRIT, "yay, could not set the state of the channel from IN_LOOP to DOWN\n");
-	}
+	stop_loop(zchan);
 }
 
 /**
