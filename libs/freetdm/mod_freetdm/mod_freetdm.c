@@ -2294,6 +2294,7 @@ static switch_status_t load_config(void)
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
 			const char *enable_callerid = "true";
+			int callwaiting = 1;
 
 			uint32_t span_id = 0, to = 0, max = 0;
 			ftdm_span_t *span = NULL;
@@ -2303,6 +2304,7 @@ static switch_status_t load_config(void)
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "analog_spans var = %s\n", var);
 				if (!strcasecmp(var, "tonegroup")) {
 					tonegroup = val;
 				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
@@ -2323,6 +2325,8 @@ static switch_status_t load_config(void)
 					max_digits = val;
 				} else if (!strcasecmp(var, "hotline")) {
 					hotline = val;
+				} else if (!strcasecmp(var, "callwaiting")) {
+					callwaiting = switch_true(val) ? 1 : 0;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
@@ -2332,8 +2336,6 @@ static switch_status_t load_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 				continue;
 			}
-
-			
 			
 			if (!tonegroup) {
 				tonegroup = "us";
@@ -2373,8 +2375,9 @@ static switch_status_t load_config(void)
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
-								   "hotline", hotline,
+								   "hotline", hotline ? hotline : "",
 								   "enable_callerid", enable_callerid,
+								   "callwaiting", &callwaiting,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
 				continue;

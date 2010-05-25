@@ -440,7 +440,6 @@ struct ftdm_memory_handler {
 	ftdm_free_func_t free;
 };
 
-
 /*! \brief FreeTDM I/O layer interface argument macros 
  * You don't need these unless your implementing an I/O interface module (most users don't) */
 #define FIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
@@ -985,7 +984,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan);
 
 /*! 
- * \brief Execute a command in a channel
+ * \brief Execute a command in a channel (same semantics as the ioctl() unix system call)
  *
  * \param ftdmchan The channel to execute the command
  * \param command The command to execute

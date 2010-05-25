@@ -1677,8 +1677,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	
 	status = FTDM_FAIL;
 
-	if (ftdm_test_flag(check, FTDM_CHANNEL_READY) && (!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) || 
-		(check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 1))) {
+	/* the channel is only allowed to be open if not in use, or, for FXS devices with a call with call waiting enabled */
+	if ((!ftdm_test_flag(check, FTDM_CHANNEL_INUSE)) 
+           || ((check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 1) && (ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING))))
+	{
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
 			status = check->fio->open(check);
 			if (status == FTDM_SUCCESS) {
@@ -1692,7 +1694,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	}
 	ftdm_mutex_unlock(check->mutex);
 
-	done:
+done:
 	ftdm_mutex_unlock(globals.mutex);
 
 	return status;
