@@ -1694,6 +1694,8 @@ static switch_status_t t38_gateway_on_reset(switch_core_session_t *session)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
 
+    switch_channel_clear_flag(channel, CF_REDIRECT);
+
     if (switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
         switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
         switch_channel_set_state(channel, CS_CONSUME_MEDIA);
@@ -1747,7 +1749,10 @@ static switch_bool_t t38_gateway_start(switch_core_session_t *session, const cha
         switch_channel_set_app_flag(peer ? channel : other_channel, CF_APP_TAGGED);
         switch_channel_clear_app_flag(peer ? other_channel : channel, CF_APP_TAGGED);   
         
+        switch_channel_set_flag(channel, CF_REDIRECT);
         switch_channel_set_state(channel, CS_RESET);
+
+        switch_channel_set_flag(other_channel, CF_REDIRECT);
         switch_channel_set_state(other_channel, CS_RESET);
         
         switch_core_session_rwunlock(other_session);
