@@ -1447,6 +1447,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
     switch_core_session_message_t msg = { 0 };
     switch_status_t status;
     switch_frame_t *read_frame = { 0 };
+    switch_event_t *event;
 
     if (!(other_session = switch_core_session_locate(peer_uuid))) {
         switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1464,6 +1465,11 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
     msg.from = __FILE__;
     msg.string_arg = peer_uuid;
     switch_core_session_receive_message(session, &msg);
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
 
     while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag(channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -1543,6 +1549,11 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
     msg.string_arg = peer_uuid;
     switch_core_session_receive_message(session, &msg);
 
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
     switch_channel_hangup(other_channel, SWITCH_CAUSE_NORMAL_CLEARING);
     switch_core_session_rwunlock(other_session);
 
@@ -1573,6 +1584,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
     char *trace_read, *trace_write;
     zap_socket_t read_fd = FAX_INVALID_SOCKET, write_fd = FAX_INVALID_SOCKET;
     switch_core_session_message_t msg = { 0 };
+    switch_event_t *event;
 
 	switch_core_session_get_read_impl(session, &read_impl);
     
@@ -1589,6 +1601,11 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
     msg.from = __FILE__;
     msg.string_arg = peer_uuid;
     switch_core_session_receive_message(session, &msg);
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
 
     while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag(channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -1728,6 +1745,12 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
     msg.from = __FILE__;
     msg.string_arg = peer_uuid;
     switch_core_session_receive_message(session, &msg);
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
 
     if (read_fd != FAX_INVALID_SOCKET) {
         close(read_fd);
