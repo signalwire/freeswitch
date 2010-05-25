@@ -197,7 +197,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
+				AdditionalIncludeDirectories="../src/include;../src/include/private;../src/isdn/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;FREETDM_EXPORTS;TELETONE_EXPORTS"
 				RuntimeLibrary="2"
 				DisableLanguageExtensions="false"
