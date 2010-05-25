@@ -2338,35 +2338,23 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			/* if they don't have thier own, use ours */
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-				ftdm_tone_type_t tt = FTDM_COMMAND_OBJ_INT;
-				if (tt == FTDM_TONE_DTMF) {
-					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-					ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
-					ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
-					GOTO_STATUS(done, FTDM_SUCCESS);
-				} else {
-					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "invalid command");
-					GOTO_STATUS(done, FTDM_FAIL);
-				}
+				teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 		}
 		break;
 	case FTDM_COMMAND_DISABLE_DTMF_DETECT:
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-				ftdm_tone_type_t tt = FTDM_COMMAND_OBJ_INT;
-                if (tt == FTDM_TONE_DTMF) {
-                    teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-                    ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
-					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
-					GOTO_STATUS(done, FTDM_SUCCESS);
-                } else {
-                    snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "invalid command");
-					GOTO_STATUS(done, FTDM_FAIL);
-                }
+                    		teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+                    		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 		}
-
+		break;
 	case FTDM_COMMAND_SET_PRE_BUFFER_SIZE:
 		{
 			int val = FTDM_COMMAND_OBJ_INT;

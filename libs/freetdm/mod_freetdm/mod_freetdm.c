@@ -3138,7 +3138,7 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   switch_channel_cause2str(caller_data->hangup_cause));
 }
 
-#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>]" 
+#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>] || dtmf on|off <span_id> [<chan_id>]" 
 SWITCH_STANDARD_API(ft_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -3366,6 +3366,49 @@ SWITCH_STANDARD_API(ft_function)
                         goto end;
 		}
 
+	} else if (!strcasecmp(argv[0], "dtmf")) {
+		unsigned i = 0;
+		uint32_t chan_id = 0;
+		unsigned schan_count = 0;
+		ftdm_span_t *span = NULL;
+		ftdm_command_t fcmd = FTDM_COMMAND_ENABLE_DTMF_DETECT;
+		ftdm_channel_t *fchan;
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: dtmf on|off <span_id> [<chan_id>]\n");
+			goto end;
+		}
+
+		if (switch_true(argv[1])) {
+			fcmd = FTDM_COMMAND_ENABLE_DTMF_DETECT;
+		} else {
+			fcmd = FTDM_COMMAND_DISABLE_DTMF_DETECT;
+		}
+
+		ftdm_span_find_by_name(argv[2], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		schan_count = ftdm_span_get_chan_count(span);
+		if (argc > 3) {
+			chan_id = atoi(argv[3]);
+			if (chan_id > schan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+
+		if (chan_id) {
+			fchan = ftdm_span_get_channel(span, chan_id);
+			ftdm_channel_command(fchan, fcmd, NULL);
+		} else {
+			for (i = 1; i <= schan_count; i++) {
+				fchan = ftdm_span_get_channel(span, i);
+				ftdm_channel_command(fchan, fcmd, NULL);
+			}
+		}
+
+		stream->write_function(stream, "+OK DTMF detection was %s\n", fcmd == FTDM_COMMAND_ENABLE_DTMF_DETECT ? "enabled" : "disabled");
 	} else if (!strcasecmp(argv[0], "gains")) {
 		unsigned int i = 0;
 		float txgain = 0.0;
@@ -3430,6 +3473,24 @@ SWITCH_STANDARD_API(ft_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_APP(disable_dtmf_function)
+{
+	private_t *tech_pvt;
+	if (!switch_core_session_check_interface(session, freetdm_endpoint_interface)) {
+		ftdm_log(FTDM_LOG_ERROR, "This application is only for FreeTDM channels.\n");
+		return;
+	}
+	
+	tech_pvt = switch_core_session_get_private(session);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+		return;
+	}
+	
+	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_DTMF_DETECT, NULL);
+	ftdm_log(FTDM_LOG_INFO, "DTMF detection Disabled in channel %d:%d\n", ftdm_channel_get_id(tech_pvt->ftdmchan), ftdm_channel_get_span_id(tech_pvt->ftdmchan));
+}
 
 SWITCH_STANDARD_APP(disable_ec_function)
 {
@@ -3490,6 +3551,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, FT_SYNTAX);
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

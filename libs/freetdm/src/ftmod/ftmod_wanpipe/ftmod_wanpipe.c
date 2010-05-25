@@ -615,6 +615,36 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			}
 		}
 		break;
+	case FTDM_COMMAND_ENABLE_DTMF_DETECT:
+		{
+#ifdef WP_API_FEATURE_DTMF_EVENTS
+			err = sangoma_tdm_enable_dtmf_events(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Enabling of Sangoma HW DTMF failed\n");
+             			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HW DTMF Enable Failed");
+				return FTDM_FAIL;
+			}
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled DTMF events\n");
+#else
+			return FTDM_NOTIMPL;
+#endif
+		}
+		break;
+	case FTDM_COMMAND_DISABLE_DTMF_DETECT:
+		{
+#ifdef WP_API_FEATURE_DTMF_EVENTS
+			err = sangoma_tdm_disable_dtmf_events(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Disabling of Sangoma HW DTMF failed\n");
+             			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HW DTMF Disable Failed");
+				return FTDM_FAIL;
+			}
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled DTMF events\n");
+#else
+			return FTDM_NOTIMPL;
+#endif
+		}
+		break;
 	case FTDM_COMMAND_ENABLE_LOOP:
 		{
 #ifdef WP_API_FEATURE_LOOP
