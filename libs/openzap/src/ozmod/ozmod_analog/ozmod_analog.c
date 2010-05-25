@@ -114,6 +114,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	const char *var, *val;
 	int *intval;
 	uint32_t flags = ZAP_ANALOG_CALLERID;
+	int callwaiting = 1;
+	unsigned i = 0;
 
 	assert(sig_cb != NULL);
 
@@ -157,6 +159,11 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 				break;
 			}
 			hotline = val;
+		} else if (!strcasecmp(var, "callwaiting")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			callwaiting = *intval;
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			return ZAP_FAIL;
@@ -170,6 +177,12 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 
 	if ((max_dialstr < 1 && !strlen(hotline)) || max_dialstr > MAX_DTMF) {
 		max_dialstr = MAX_DTMF;
+	}
+
+	if (callwaiting) {
+		for (i = 1; i <= span->chan_count; i++) {
+			zap_channel_set_feature(span->channels[i], ZAP_CHANNEL_FEATURE_CALLWAITING);
+		}
 	}
 	
 	span->start = zap_analog_start;

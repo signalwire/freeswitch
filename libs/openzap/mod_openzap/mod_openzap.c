@@ -2107,6 +2107,7 @@ static switch_status_t load_config(void)
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
 			const char *enable_callerid = "true";
+			int callwaiting = 1;
 
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
@@ -2136,6 +2137,8 @@ static switch_status_t load_config(void)
 					max_digits = val;
 				} else if (!strcasecmp(var, "hotline")) {
 					hotline = val;
+				} else if (!strcasecmp(var, "callwaiting")) {
+					callwaiting = switch_true(var) ? 1 : 0;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
@@ -2186,8 +2189,9 @@ static switch_status_t load_config(void)
 								   "tonemap", tonegroup, 
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
-								   "hotline", hotline,
+								   "hotline", hotline ? hotline : "",
 								   "enable_callerid", enable_callerid,
+								   "callwaiting", &callwaiting,
 								   TAG_END) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
