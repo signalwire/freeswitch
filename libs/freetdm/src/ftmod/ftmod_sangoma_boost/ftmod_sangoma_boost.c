@@ -2010,7 +2010,7 @@ static void ftdm_cli_span_state_cmd(ftdm_span_t *span, char *state)
 	ftdm_log(FTDM_LOG_CRIT, "Total Channel Cnt %i\n",cnt);
 }
 
-#define FTDM_BOOST_SYNTAX "list sigmods | <sigmod_name> <command>"
+#define FTDM_BOOST_SYNTAX "list sigmods | <sigmod_name> <command> | tracelevel <span> <level>"
 /**
  * \brief API function to kill or debug a sangoma_boost span
  * \param stream API stream handler
@@ -2041,7 +2041,45 @@ static FIO_API_FUNCTION(ftdm_sangoma_boost_api)
 				print_request_ids();
 				goto done;
 			}
-			
+		} else if (!strcasecmp(argv[0], "tracelevel")) {
+			ftdm_status_t status;
+			const char *levelname = NULL;
+			int dbglevel;
+			ftdm_sangoma_boost_data_t *sangoma_boost_data;
+			ftdm_span_t *span;
+
+			if (argc <= 2) {
+				stream->write_function(stream, "-ERR usage: tracelevel <span> <level>\n");
+				goto done;
+			}
+
+			status = ftdm_span_find_by_name(argv[1], &span);
+			if (FTDM_SUCCESS != status) {
+				stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[1]);
+				goto done;
+			}
+
+			if (span->signal_type != FTDM_SIGTYPE_SANGOMABOOST) {
+				stream->write_function(stream, "-ERR span %s is not of boost type\n", argv[1]);
+				goto done;
+			}
+
+			for (dbglevel = 0; (levelname = FTDM_LEVEL_NAMES[dbglevel]); dbglevel++) {
+				if (!strcasecmp(levelname, argv[2])) {
+					break;
+				}
+			}
+
+			if (!levelname) {
+				stream->write_function(stream, "-ERR invalid log level %s\n", argv[2]);
+				goto done;
+			}
+
+			sangoma_boost_data = span->signal_data;
+			sangoma_boost_data->pcon.debuglevel = dbglevel;
+			sangoma_boost_data->mcon.debuglevel = dbglevel;
+			stream->write_function(stream, "+OK span %s has now trace level %s\n", argv[1], FTDM_LEVEL_NAMES[dbglevel]);
+			goto done;
 #ifndef __WINDOWS__
 #if 0
 /* NC: This code crashes the kernel due to fork on heavy fs load */
@@ -2673,6 +2711,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
+	sangoma_boost_data->mcon.debuglevel = FTDM_LOG_LEVEL_DEBUG;
+	sangoma_boost_data->pcon.debuglevel = FTDM_LOG_LEVEL_DEBUG;
 	ftdm_clear_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID);
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	if (sigmod_iface) {

@@ -110,6 +110,7 @@ struct sangomabc_connection {
 	ftdm_queue_t *boost_queue;	
 	ftdm_interrupt_t *sock_interrupt;
 	ftdm_span_t *span;
+	int debuglevel;
 };
 
 typedef struct sangomabc_connection sangomabc_connection_t;

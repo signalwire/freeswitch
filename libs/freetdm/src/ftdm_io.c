@@ -169,7 +169,7 @@ static void null_logger(const char *file, const char *func, int line, int level,
 }
 
 
-static const char *LEVEL_NAMES[] = {
+const char *FTDM_LEVEL_NAMES[9] = {
 	"EMERG",
 	"ALERT",
 	"CRIT",
@@ -181,7 +181,7 @@ static const char *LEVEL_NAMES[] = {
 	NULL
 };
 
-static int ftdm_log_level = 7;
+static int ftdm_log_level = FTDM_LOG_LEVEL_DEBUG;
 
 static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
@@ -203,7 +203,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	vsnprintf(data, sizeof(data), fmt, ap);
 
 
-	fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+	fprintf(stderr, "[%s] %s:%d %s() %s", FTDM_LEVEL_NAMES[level], file, line, func, data);
 
 	va_end(ap);
 
