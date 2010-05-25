@@ -344,8 +344,15 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
 	} else {
+		switch_eavesdrop_flag_t flags = ED_DTMF;
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *require_group = switch_channel_get_variable(channel, "eavesdrop_require_group");
+		const char *enable_dtmf = switch_channel_get_variable(channel, "eavesdrop_enable_dtmf");
+
+		if (enable_dtmf) {
+			flags = switch_true(enable_dtmf) ? ED_DTMF : ED_NONE;
+		}
+
 		if (!strcasecmp((char *) data, "all")) {
 			switch_cache_db_handle_t *db = NULL;
 			char *errmsg = NULL;
@@ -387,7 +394,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 						if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_new"))) {
 							switch_ivr_play_file(session, NULL, file, NULL);
 						}
-						if ((status = switch_ivr_eavesdrop_session(session, e_data.uuid_list[x], require_group, ED_DTMF)) != SWITCH_STATUS_SUCCESS) {
+						if ((status = switch_ivr_eavesdrop_session(session, e_data.uuid_list[x], require_group, flags)) != SWITCH_STATUS_SUCCESS) {
 							if (status != SWITCH_STATUS_BREAK) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Spy: %s Failed\n", e_data.uuid_list[x]);
 								if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
@@ -412,7 +419,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			free(sql);
 
 		} else {
-			switch_ivr_eavesdrop_session(session, data, require_group, ED_DTMF);
+			switch_ivr_eavesdrop_session(session, data, require_group, flags);
 		}
 	}
 }

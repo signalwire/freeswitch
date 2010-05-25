@@ -230,6 +230,7 @@ typedef enum {
 typedef uint32_t switch_port_flag_t;
 
 typedef enum {
+	ED_NONE = 0,
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
 	ED_DTMF = (1 << 2)
