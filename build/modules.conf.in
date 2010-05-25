@@ -24,6 +24,7 @@ applications/mod_fsv
 #applications/mod_rss
 #applications/mod_snom
 #applications/mod_vmd
+#applications/mod_avmd
 #applications/mod_memcache
 #applications/mod_spy
 applications/mod_cluechoo
