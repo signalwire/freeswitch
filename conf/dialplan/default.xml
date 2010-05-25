@@ -564,7 +564,7 @@
     </extension>
     
     <extension name="fax_receive">
-      <condition field="destination_number" expression="^9978$">
+      <condition field="destination_number" expression="^9178$">
 	<action application="answer" />
 	<action application="playback" data="silence_stream://2000"/>
 	<action application="rxfax" data="/tmp/rxfax.tif"/>
@@ -573,7 +573,7 @@
     </extension>
 
     <extension name="fax_transmit">
-      <condition field="destination_number" expression="^9979$">
+      <condition field="destination_number" expression="^9179$">
 	<action application="txfax" data="/tmp/txfax.tif"/>
 	<action application="hangup"/>
       </condition>
@@ -581,7 +581,7 @@
 
     <!-- Send a 180 and let the far end generate ringback. -->
     <extension name="ringback_180">
-      <condition field="destination_number" expression="^9980$">
+      <condition field="destination_number" expression="^9180$">
 	<action application="ring_ready"/>
 	<action application="sleep" data="20000"/>
 	<action application="answer"/>
@@ -593,7 +593,7 @@
 
     <!-- Send a 183 and send uk-ring as the ringtone. (early media) -->
     <extension name="ringback_183_uk_ring">
-      <condition field="destination_number" expression="^9981$">
+      <condition field="destination_number" expression="^9181$">
 	<action application="set" data="ringback=$${uk-ring}"/>
 	<action application="bridge" data="loopback/wait"/>
       </condition>
@@ -601,7 +601,7 @@
 
     <!-- Send a 183 and use music as the ringtone. (early media) -->
     <extension name="ringback_183_music_ring">
-      <condition field="destination_number" expression="^9982$">
+      <condition field="destination_number" expression="^9182$">
 	<action application="set" data="ringback=$${hold_music}"/>
 	<action application="bridge" data="loopback/wait"/>
       </condition>
@@ -609,7 +609,7 @@
 
     <!-- Answer the call and use music as the ringtone. (post answer) -->
     <extension name="ringback_post_answer_uk_ring">
-      <condition field="destination_number" expression="^9983$">
+      <condition field="destination_number" expression="^9183$">
 	<action application="set" data="transfer_ringback=$${uk-ring}"/>
 	<action application="answer"/>
 	<action application="bridge" data="loopback/wait"/>
@@ -618,7 +618,7 @@
 
     <!-- Answer the call and use music as the ringtone. (post answer) -->
     <extension name="ringback_post_answer_music">
-      <condition field="destination_number" expression="^9984$">
+      <condition field="destination_number" expression="^9184$">
 	<action application="set" data="transfer_ringback=$${hold_music}"/>
 	<action application="answer"/>
 	<action application="bridge" data="loopback/wait"/>
@@ -626,14 +626,14 @@
     </extension>
 
     <extension name="ClueCon">
-      <condition field="destination_number" expression="^9991$">
+      <condition field="destination_number" expression="^9191$">
         <action application="set" data="effective_caller_id_name=ClueCon IVR"/>
         <action application="bridge" data="sofia/$${domain}/2000@bkw.org"/>
       </condition>
     </extension>
 
     <extension name="show_info">
-      <condition field="destination_number" expression="^9992$">
+      <condition field="destination_number" expression="^9192$">
 	<action application="answer"/>
 	<action application="info"/>
 	<action application="sleep" data="250"/>
@@ -642,42 +642,42 @@
     </extension>
 
     <extension name="video_record">
-      <condition field="destination_number" expression="^9993$">
+      <condition field="destination_number" expression="^9193$">
 	<action application="answer"/>
 	<action application="record_fsv" data="/tmp/testrecord.fsv"/>
       </condition>
     </extension>
 
     <extension name="video_playback">
-      <condition field="destination_number" expression="^9994$">
+      <condition field="destination_number" expression="^9194$">
 	<action application="answer"/>
 	<action application="play_fsv" data="/tmp/testrecord.fsv"/>
       </condition>
     </extension>
 
     <extension name="delay_echo">
-      <condition field="destination_number" expression="^9995$">
+      <condition field="destination_number" expression="^9195$">
 	<action application="answer"/>
 	<action application="delay_echo" data="5000"/>
       </condition>
     </extension>
 
     <extension name="echo">
-      <condition field="destination_number" expression="^9996$">
+      <condition field="destination_number" expression="^9196$">
 	<action application="answer"/>
 	<action application="echo"/>
       </condition>
     </extension>
 
     <extension name="milliwatt">
-      <condition field="destination_number" expression="^9997$">
+      <condition field="destination_number" expression="^9197$">
 	<action application="answer"/>
 	<action application="playback" data="tone_stream://%(251,0,1004);loops=-1"/>
       </condition>
     </extension>
 
     <extension name="tone_stream">
-      <condition field="destination_number" expression="^9998$">
+      <condition field="destination_number" expression="^9198$">
 	<action application="answer"/>
 	<action application="playback" data="tone_stream://path=${base_dir}/conf/tetris.ttml;loops=10"/>
       </condition>
@@ -697,7 +697,7 @@
     -->
 
     <extension name="hold_music">
-      <condition field="destination_number" expression="^9999$"/>
+      <condition field="destination_number" expression="^9664$"/>
       <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML features"/>
