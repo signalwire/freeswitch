@@ -1436,7 +1436,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 #ifndef _MSC_VER
 	int x = 0;
 #else
-	char keys[80];
+	char keys[CMD_BUFLEN];
 #endif
 
 	/* Load/Init the config first */
