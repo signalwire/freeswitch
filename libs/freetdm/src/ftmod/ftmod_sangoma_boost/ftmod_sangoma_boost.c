@@ -948,6 +948,7 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 }
 
 static __inline__ void advance_chan_states(ftdm_channel_t *ftdmchan);
+static __inline__ void stop_loop(ftdm_channel_t *ftdmchan);
 
 /**
  * \brief Handler for call start event
@@ -959,6 +960,10 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 {
 	ftdm_channel_t *ftdmchan = NULL;
 	int hangup_cause = FTDM_CAUSE_CALL_REJECTED;
+	int retry = 1;
+
+tryagain:
+
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 0))) {
 		if ((ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
 			int r;
@@ -990,6 +995,11 @@ static void handle_call_start(ftdm_span_t *span, sangomabc_connection_t *mcon, s
 				 * the other side to send the call start nack ( or proceed with the call )
 				 * ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING, r);
 				 */
+			} else if (ftdmchan->state == FTDM_CHANNEL_STATE_IN_LOOP && retry) {
+				retry = 0;
+				stop_loop(ftdmchan);
+				advance_chan_states(ftdmchan);
+				goto tryagain;
 			} else {
 				ftdm_log(FTDM_LOG_ERROR, "s%dc%d: rejecting incoming call in channel state %s\n", 
 						BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event), 
@@ -1092,10 +1102,21 @@ static void handle_call_loop_start(ftdm_span_t *span, sangomabc_connection_t *mc
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_LOOP, NULL);
 }
 
+static __inline__ void stop_loop(ftdm_channel_t *ftdmchan)
+{
+	ftdm_status_t res = FTDM_FAIL;
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
+	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
+	ftdm_set_flag(ftdmchan, SFLAG_SENT_FINAL_MSG);
+	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_DOWN, res);
+	if (res != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "yay, could not set the state of the channel from IN_LOOP to DOWN\n");
+	}
+}
+
 static void handle_call_loop_stop(ftdm_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
 	ftdm_channel_t *ftdmchan;
-	ftdm_status_t res = FTDM_FAIL;
 	if (!(ftdmchan = find_ftdmchan(span, (sangomabc_short_event_t*)event, 1))) {
 		ftdm_log(FTDM_LOG_CRIT, "CANNOT STOP LOOP, INVALID CHAN REQUESTED %d:%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
 		return;
@@ -1104,13 +1125,7 @@ static void handle_call_loop_stop(ftdm_span_t *span, sangomabc_connection_t *mco
 		ftdm_log(FTDM_LOG_WARNING, "Got stop loop request in a channel that is not in loop, ignoring ...\n");
 		return;
 	}
-	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
-	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
-	ftdm_set_flag(ftdmchan, SFLAG_SENT_FINAL_MSG);
-	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_DOWN, res);
-	if (res != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "yay, could not set the state of the channel from IN_LOOP to DOWN\n");
-	}
+	stop_loop(ftdmchan);
 }
 
 /**

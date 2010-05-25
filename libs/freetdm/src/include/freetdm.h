@@ -281,7 +281,6 @@ typedef enum {
 typedef enum {
 	FTDM_SIGEVENT_START, /*!< Incoming call (ie: incoming SETUP msg or Ring) */
 	FTDM_SIGEVENT_STOP, /*!< Hangup */
-	FTDM_SIGEVENT_ANSWER, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_FLASH, /*< Flash event  (typically on-hook/off-hook for analog devices) */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
@@ -439,7 +438,6 @@ struct ftdm_memory_handler {
 	ftdm_realloc_func_t realloc;
 	ftdm_free_func_t free;
 };
-
 
 /*! \brief FreeTDM I/O layer interface argument macros 
  * You don't need these unless your implementing an I/O interface module (most users don't) */
@@ -985,7 +983,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan);
 
 /*! 
- * \brief Execute a command in a channel
+ * \brief Execute a command in a channel (same semantics as the ioctl() unix system call)
  *
  * \param ftdmchan The channel to execute the command
  * \param command The command to execute

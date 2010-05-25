@@ -158,13 +158,15 @@ typedef enum {
 	FTDM_SPAN_SUGGEST_CHAN_ID = (1 << 7),
 } ftdm_span_flag_t;
 
+/*! \brief Channel supported features */
 typedef enum {
-	FTDM_CHANNEL_FEATURE_DTMF_DETECT = (1 << 0),
-	FTDM_CHANNEL_FEATURE_DTMF_GENERATE = (1 << 1),
-	FTDM_CHANNEL_FEATURE_CODECS = (1 << 2),
-	FTDM_CHANNEL_FEATURE_INTERVAL = (1 << 3),
-	FTDM_CHANNEL_FEATURE_CALLERID = (1 << 4),
-	FTDM_CHANNEL_FEATURE_PROGRESS = (1 << 5)
+	FTDM_CHANNEL_FEATURE_DTMF_DETECT = (1 << 0), /*!< Channel can detect DTMF (read-only) */
+	FTDM_CHANNEL_FEATURE_DTMF_GENERATE = (1 << 1), /*!< Channel can generate DTMF (read-only) */
+	FTDM_CHANNEL_FEATURE_CODECS = (1 << 2), /*!< Channel can do transcoding (read-only) */
+	FTDM_CHANNEL_FEATURE_INTERVAL = (1 << 3), /*!< Channel support i/o interval configuration (read-only) */
+	FTDM_CHANNEL_FEATURE_CALLERID = (1 << 4), /*!< Channel can detect caller id (read-only) */
+	FTDM_CHANNEL_FEATURE_PROGRESS = (1 << 5), /*!< Channel can detect inband progress (read-only) */
+	FTDM_CHANNEL_FEATURE_CALLWAITING = (1 << 6), /*!< Channel will allow call waiting (ie: FXS devices) (read/write) */
 } ftdm_channel_feature_t;
 
 typedef enum {

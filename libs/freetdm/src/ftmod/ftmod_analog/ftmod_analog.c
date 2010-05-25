@@ -161,6 +161,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	const char *var, *val;
 	int *intval;
 	uint32_t flags = FTDM_ANALOG_CALLERID;
+	int callwaiting = 1;
+	unsigned int i = 0;
 
 	assert(sig_cb != NULL);
 	ftdm_log(FTDM_LOG_DEBUG, "Configuring span %s for analog signaling ...\n", span->name);
@@ -172,10 +174,13 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	}
 	
 	analog_data = ftdm_malloc(sizeof(*analog_data));
-	assert(analog_data != NULL);
+	
+	ftdm_assert_return(analog_data != NULL, FTDM_FAIL, "malloc failure\n");
+
 	memset(analog_data, 0, sizeof(*analog_data));
 
 	while ((var = va_arg(ap, char *))) {
+		ftdm_log(FTDM_LOG_DEBUG, "Analog config var = %s\n", var);
 		if (!strcasecmp(var, "tonemap")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
@@ -196,6 +201,11 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 			} else {
 				flags &= ~FTDM_ANALOG_CALLERID;
 			}
+		} else if (!strcasecmp(var, "callwaiting")) {
+			if (!(intval = va_arg(ap, int *))) {
+                		break;
+            		}
+			callwaiting = *intval;
 		} else if (!strcasecmp(var, "max_dialstr")) {
 			if (!(intval = va_arg(ap, int *))) {
 				break;
@@ -218,6 +228,12 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 
 	if ((max_dialstr < 1 && !strlen(hotline)) || max_dialstr > MAX_DTMF) {
 		max_dialstr = MAX_DTMF;
+	}
+
+	if (callwaiting) {
+		for (i = 1; i <= span->chan_count; i++) {
+			ftdm_channel_set_feature(span->channels[i], FTDM_CHANNEL_FEATURE_CALLWAITING);
+		}
 	}
 	
 	span->start = ftdm_analog_start;
@@ -329,24 +345,24 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
 	
-	ftdm_log(FTDM_LOG_DEBUG, "ANALOG CHANNEL thread starting.\n");
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "ANALOG CHANNEL thread starting.\n");
 
 	ts.buffer = NULL;
 
 	if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "OPEN ERROR [%s]\n", ftdmchan->last_error);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "OPEN ERROR [%s]\n", ftdmchan->last_error);
 		goto done;
 	}
 
 	if (ftdm_buffer_create(&dt_buffer, 1024, 3192, 0) != FTDM_SUCCESS) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "memory error!");
-		ftdm_log(FTDM_LOG_ERROR, "MEM ERROR\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "MEM ERROR\n");
 		goto done;
 	}
 
 	if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "error initilizing tone detector!");
-		ftdm_log(FTDM_LOG_ERROR, "TONE ERROR\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "TONE ERROR\n");
 		goto done;
 	}
 
@@ -500,7 +516,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 			indicate = 0;
 			state_counter = 0;
 
-			ftdm_log(FTDM_LOG_DEBUG, "Executing state handler on %d:%d for %s\n", 
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler on %d:%d for %s\n", 
 					ftdmchan->span_id, ftdmchan->chan_id,
 					ftdm_channel_state2str(ftdmchan->state));
 			switch(ftdmchan->state) {
@@ -515,7 +531,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 					}
 
 					if (ftdmchan->fsk_buffer && ftdm_buffer_inuse(ftdmchan->fsk_buffer)) {
-						ftdm_log(FTDM_LOG_DEBUG, "Cancel FSK transmit due to early answer.\n");
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Cancel FSK transmit due to early answer.\n");
 						ftdm_buffer_zero(ftdmchan->fsk_buffer);
 					}
 
@@ -676,7 +692,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 
 		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) >= analog_data->max_dialstr))) {
-			ftdm_log(FTDM_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
 			last_digit = 0;
 			collecting = 0;
@@ -691,7 +707,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 		}
 
 		if (ftdm_channel_read(ftdmchan, frame, &len) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_WARNING, "read error [%s]\n", ftdmchan->last_error);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "read error [%s]\n", ftdmchan->last_error);
 			continue;
 		}
 
@@ -706,7 +722,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 			
 			for (i = 1; i < FTDM_TONEMAP_INVALID; i++) {
 				if (ftdmchan->detected_tones[i]) {
-					ftdm_log(FTDM_LOG_DEBUG, "Detected tone %s on %d:%d\n", ftdm_tonemap2str(i), ftdmchan->span_id, ftdmchan->chan_id);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Detected tone %s on %d:%d\n", ftdm_tonemap2str(i), ftdmchan->span_id, ftdmchan->chan_id);
 					sig.raw_data = &i;
 					ftdm_span_send_signal(ftdmchan->span, &sig);
 				}
@@ -718,15 +734,15 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				ftdmchan->detected_tones[FTDM_TONEMAP_FAIL3] ||
 				ftdmchan->detected_tones[FTDM_TONEMAP_ATTN]
 				) {
-				ftdm_log(FTDM_LOG_ERROR, "Failure indication detected!\n");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failure indication detected!\n");
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 			} else if (ftdmchan->detected_tones[FTDM_TONEMAP_DIAL]) {
 				if (ftdm_strlen_zero(ftdmchan->caller_data.dnis.digits)) {
-					ftdm_log(FTDM_LOG_ERROR, "No Digits to send!\n");
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "No Digits to send!\n");
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 				} else {
 					if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_SEND_DTMF, ftdmchan->caller_data.dnis.digits) != FTDM_SUCCESS) {
-						ftdm_log(FTDM_LOG_ERROR, "Send Digits Failed [%s]\n", ftdmchan->last_error);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Send Digits Failed [%s]\n", ftdmchan->last_error);
 						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 					} else {
 						state_counter = 0;
@@ -815,7 +831,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 		ftdm_set_state_locked(closed_chan, FTDM_CHANNEL_STATE_DOWN);
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "ANALOG CHANNEL %d:%d thread ended.\n", closed_chan->span_id, closed_chan->chan_id);
+	ftdm_log_chan(closed_chan, FTDM_LOG_DEBUG, "ANALOG CHANNEL %d:%d thread ended.\n", closed_chan->span_id, closed_chan->chan_id);
 	ftdm_clear_flag(closed_chan, FTDM_CHANNEL_INTHREAD);
 
 	return NULL;
@@ -839,7 +855,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	sig.channel = event->channel;
 
 
-	ftdm_log(FTDM_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
+	ftdm_log_chan(event->channel, FTDM_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
 			ftdm_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, ftdm_channel_state2str(event->channel->state));
 
 	ftdm_mutex_lock(event->channel->mutex);
@@ -849,7 +865,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	case FTDM_OOB_RING_START:
 		{
 			if (event->channel->type != FTDM_CHAN_TYPE_FXO) {
-				ftdm_log(FTDM_LOG_ERROR, "Cannot get a RING_START event on a non-fxo channel, please check your config.\n");
+				ftdm_log_chan_msg(event->channel, FTDM_LOG_ERROR, "Cannot get a RING_START event on a non-fxo channel, please check your config.\n");
 				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
 				goto end;
 			}
