@@ -629,6 +629,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 #endif
 		}
 		break;
+	case ZAP_COMMAND_ENABLE_LOOP:
 		{
 #ifdef WP_API_FEATURE_LOOP
          	err=sangoma_tdm_enable_loop(zchan->sockfd, &tdm_api);
