@@ -750,6 +750,17 @@ SWITCH_DECLARE(char *) switch_core_get_variable(_In_z_ const char *varname);
 */
 SWITCH_DECLARE(void) switch_core_set_variable(_In_z_ const char *varname, _In_opt_z_ const char *value);
 
+/*! 
+  \brief Conditionally add a global variable to the core
+  \param varname the name of the variable
+  \param value the value of the variable
+  \param val2 the value of the variable to verify against
+  \     If the global did not exist and val2=="", add global with value, return true
+  \     If the global exists with the value of val2, replace it, return true
+  \     If the global exists with a value other than val2, return false
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_set_var_conditional(_In_z_ const char *varname, _In_opt_z_ const char *value, _In_opt_z_ const char *val2);
+
 SWITCH_DECLARE(void) switch_core_dump_variables(_In_ switch_stream_handle_t *stream);
 
 /*! 

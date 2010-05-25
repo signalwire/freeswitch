@@ -3389,6 +3389,29 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtcp_hdr_t(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxVersion_set(void * jarg1, unsigned short jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint16_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (uint16_t)jarg2; 
+  if (arg1) (arg1)->T38FaxVersion = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned short SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxVersion_get(void * jarg1) {
+  unsigned short jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint16_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (uint16_t) ((arg1)->T38FaxVersion);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38MaxBitRate_set(void * jarg1, unsigned long jarg2) {
   switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
   uint32_t arg2 ;
@@ -6959,6 +6982,22 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_set_variable(char * jarg1, char *
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   switch_core_set_variable((char const *)arg1,(char const *)arg2);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_set_var_conditional(char * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_bool_t)switch_core_set_var_conditional((char const *)arg1,(char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
 }
 
 
@@ -26559,6 +26598,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_max_missed_packets(void * jarg
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (uint32_t)jarg2; 
   switch_rtp_set_max_missed_packets(arg1,arg2);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_udptl_mode(void * jarg1) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  result = (switch_status_t)switch_rtp_udptl_mode(arg1);
+  jresult = result; 
+  return jresult;
 }
 
 

@@ -195,7 +195,7 @@ struct switch_runtime {
 	switch_time_t initiated;
 	switch_time_t reference;
 	int64_t offset;
-	switch_hash_t *global_vars;
+	switch_event_t *global_vars;
 	switch_hash_t *mime_types;
 	switch_memory_pool_t *memory_pool;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];

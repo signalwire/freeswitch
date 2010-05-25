@@ -3966,10 +3966,10 @@ SWITCH_STANDARD_API(uuid_dump_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define GLOBAL_SETVAR_SYNTAX "<var> <value>"
+#define GLOBAL_SETVAR_SYNTAX "<var> <value> [<value2>]"
 SWITCH_STANDARD_API(global_setvar_function)
 {
-	char *mycmd = NULL, *argv[2] = { 0 };
+	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
@@ -3977,11 +3977,21 @@ SWITCH_STANDARD_API(global_setvar_function)
 		if (argc > 0 && !zstr(argv[0])) {
 			char *var_name = argv[0];
 			char *var_value = argv[1];
+			char *var_value2 = argv[2];
 
 			if (zstr(var_value)) {
 				var_value = NULL;
 			}
-			switch_core_set_variable(var_name, var_value);
+
+			if (zstr(var_value2)) {
+				var_value2 = NULL;
+			}
+
+			if (var_value2) {
+				switch_core_set_var_conditional(var_name, var_value, var_value2);
+			} else {
+				switch_core_set_variable(var_name, var_value);
+			}
 			stream->write_function(stream, "+OK");
 			goto done;
 		}

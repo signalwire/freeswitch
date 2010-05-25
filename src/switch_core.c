@@ -244,16 +244,11 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 
 SWITCH_DECLARE(void) switch_core_dump_variables(switch_stream_handle_t *stream)
 {
-	switch_hash_index_t *hi;
-	const void *var;
-	void *val;
+	switch_event_header_t *hi;
+
 	switch_mutex_lock(runtime.global_mutex);
-	for (hi = switch_hash_first(NULL, runtime.global_vars); hi; hi = switch_hash_next(hi)) {
-		char *vvar, *vval;
-		switch_hash_this(hi, &var, NULL, &val);
-		vvar = (char *) var;
-		vval = (char *) val;
-		stream->write_function(stream, "%s=%s\n", vvar, vval);
+	for (hi = runtime.global_vars->headers; hi; hi = hi->next) {
+		stream->write_function(stream, "%s=%s\n", hi->name, hi->value);
 	}
 	switch_mutex_unlock(runtime.global_mutex);
 }
@@ -262,22 +257,16 @@ SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
 	switch_mutex_lock(runtime.global_var_mutex);
-	val = (char *) switch_core_hash_find(runtime.global_vars, varname);
+	val = (char *) switch_event_get_header(runtime.global_vars, varname);
 	switch_mutex_unlock(runtime.global_var_mutex);
 	return val;
 }
 
 static void switch_core_unset_variables(void)
 {
-	switch_hash_index_t *hi;
-	const void *var;
-	void *val;
-
 	switch_mutex_lock(runtime.global_var_mutex);
-	for (hi = switch_hash_first(NULL, runtime.global_vars); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
-		free(val);
-	}
+	switch_event_destroy(&runtime.global_vars);
+	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
 	switch_mutex_unlock(runtime.global_var_mutex);
 }
 
@@ -287,19 +276,50 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 
 	if (varname) {
 		switch_mutex_lock(runtime.global_var_mutex);
-		val = (char *) switch_core_hash_find(runtime.global_vars, varname);
+		val = (char *) switch_event_get_header(runtime.global_vars, varname);
 		if (val) {
-			free(val);
+			switch_event_del_header(runtime.global_vars, varname);
 		}
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_core_hash_insert(runtime.global_vars, varname, v);
+			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
 		} else {
-			switch_core_hash_delete(runtime.global_vars, varname);
+			switch_event_del_header(runtime.global_vars, varname);
 		}
 		switch_mutex_unlock(runtime.global_var_mutex);
 	}
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_core_set_var_conditional(const char *varname, const char *value, const char *val2)
+{
+	char *val;
+
+	if (varname) {
+		switch_mutex_lock(runtime.global_var_mutex);
+		val = (char *) switch_event_get_header(runtime.global_vars, varname);
+
+		if (val) {
+			if (!val2 || strcmp(val, val2) != 0) {
+				switch_mutex_unlock(runtime.global_var_mutex);
+				return SWITCH_FALSE;
+			}
+			switch_event_del_header(runtime.global_vars, varname);
+		} else if (!zstr(val2)) {
+			switch_mutex_unlock(runtime.global_var_mutex);
+			return SWITCH_FALSE;
+		}
+
+		if (value) {
+			char *v = strdup(value);
+			switch_string_var_check(v, SWITCH_TRUE);
+			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
+		} else {
+			switch_event_del_header(runtime.global_vars, varname);
+		}
+		switch_mutex_unlock(runtime.global_var_mutex);
+	}
+	return SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(char *) switch_core_get_uuid(void)
@@ -1249,7 +1269,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_mutex_init(&runtime.global_var_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
-	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
+	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
 	switch_core_hash_init(&runtime.mime_types, runtime.memory_pool);
 	load_mime_types();
 	runtime.flags = flags;
@@ -1904,7 +1924,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.run_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
 
-	switch_core_hash_destroy(&runtime.global_vars);
+	switch_event_destroy(&runtime.global_vars);
 	switch_core_hash_destroy(&runtime.mime_types);
 
 	if (IP_LIST.hash) {

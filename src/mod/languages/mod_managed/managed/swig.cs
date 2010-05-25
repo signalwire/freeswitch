@@ -1308,6 +1308,11 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_set_variable(varname, value);
   }
 
+  public static switch_bool_t switch_core_set_var_conditional(string varname, string value, string val2) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_set_var_conditional(varname, value, val2);
+    return ret;
+  }
+
   public static void switch_core_dump_variables(switch_stream_handle stream) {
     freeswitchPINVOKE.switch_core_dump_variables(switch_stream_handle.getCPtr(stream));
   }
@@ -4110,6 +4115,11 @@ public class freeswitch {
     freeswitchPINVOKE.switch_rtp_set_max_missed_packets(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), max);
   }
 
+  public static switch_status_t switch_rtp_udptl_mode(SWIGTYPE_p_switch_rtp rtp_session) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_udptl_mode(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+    return ret;
+  }
+
   public static switch_status_t switch_rtp_set_local_address(SWIGTYPE_p_switch_rtp rtp_session, string host, ushort port, ref string err) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_local_address(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), host, port, ref err);
     return ret;
@@ -5953,6 +5963,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtcp_hdr_t")]
   public static extern void delete_switch_rtcp_hdr_t(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxVersion_set")]
+  public static extern void switch_t38_options_t_T38FaxVersion_set(HandleRef jarg1, ushort jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxVersion_get")]
+  public static extern ushort switch_t38_options_t_T38FaxVersion_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38MaxBitRate_set")]
   public static extern void switch_t38_options_t_T38MaxBitRate_set(HandleRef jarg1, uint jarg2);
 
@@ -6813,6 +6829,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_set_variable")]
   public static extern void switch_core_set_variable(string jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_set_var_conditional")]
+  public static extern int switch_core_set_var_conditional(string jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_dump_variables")]
   public static extern void switch_core_dump_variables(HandleRef jarg1);
@@ -11352,6 +11371,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_max_missed_packets")]
   public static extern void switch_rtp_set_max_missed_packets(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_udptl_mode")]
+  public static extern int switch_rtp_udptl_mode(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_local_address")]
   public static extern int switch_rtp_set_local_address(HandleRef jarg1, string jarg2, ushort jarg3, ref string jarg4);
@@ -19815,7 +19837,8 @@ namespace FreeSWITCH.Native {
 namespace FreeSWITCH.Native {
 
 public enum switch_channel_app_flag_t {
-  CF_APP_TAGGED = (1 << 0)
+  CF_APP_TAGGED = (1 << 0),
+  CF_APP_T38 = (1 << 1)
 }
 
 }
@@ -21622,6 +21645,8 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC,
   SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC_COMPLETE,
   SWITCH_MESSAGE_INDICATE_PHONE_EVENT,
+  SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION,
+  SWITCH_MESSAGE_INDICATE_UDPTL_MODE,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -22508,6 +22533,7 @@ public class switch_dtmf_t : IDisposable {
 namespace FreeSWITCH.Native {
 
 [System.Flags] public enum switch_eavesdrop_flag_enum_t {
+  ED_NONE = 0,
   ED_MUX_READ = (1 << 0),
   ED_MUX_WRITE = (1 << 1),
   ED_DTMF = (1 << 2)
@@ -23952,7 +23978,8 @@ namespace FreeSWITCH.Native {
   SFF_RFC2833 = (1 << 4),
   SFF_PROXY_PACKET = (1 << 5),
   SFF_DYNAMIC = (1 << 6),
-  SFF_ZRTP = (1 << 7)
+  SFF_ZRTP = (1 << 7),
+  SFF_UDPTL_PACKET = (1 << 8)
 }
 
 }
@@ -26182,7 +26209,7 @@ namespace FreeSWITCH.Native {
   SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 8),
   SWITCH_RTP_FLAG_VAD = (1 << 9),
   SWITCH_RTP_FLAG_BREAK = (1 << 10),
-  SWITCH_RTP_FLAG_MINI = (1 << 11),
+  SWITCH_RTP_FLAG_UDPTL = (1 << 11),
   SWITCH_RTP_FLAG_DATAWAIT = (1 << 12),
   SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 13),
   SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 14),
@@ -27960,6 +27987,16 @@ public class switch_t38_options_t : IDisposable {
       swigCPtr = new HandleRef(null, IntPtr.Zero);
       GC.SuppressFinalize(this);
     }
+  }
+
+  public ushort T38FaxVersion {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxVersion_set(swigCPtr, value);
+    } 
+    get {
+      ushort ret = freeswitchPINVOKE.switch_t38_options_t_T38FaxVersion_get(swigCPtr);
+      return ret;
+    } 
   }
 
   public uint T38MaxBitRate {

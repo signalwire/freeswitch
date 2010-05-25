@@ -91,14 +91,14 @@ static void sql_close(time_t prune)
 	switch_mutex_lock(sql_manager.dbh_mutex);
   top:
 	locked = 0;
-
+	printf("WTF1\n");
 	for (hi = switch_hash_first(NULL, sql_manager.dbh_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
 		key = (char *) var;
-
+		printf("WTF2\n");
 		if ((dbh = (switch_cache_db_handle_t *) val)) {
 			time_t diff = 0;
-
+			printf("WTF3\n");
 			if (prune > 0 && prune > dbh->last_used) {
 				diff = (time_t) prune - dbh->last_used;
 			}
@@ -106,10 +106,10 @@ static void sql_close(time_t prune)
 			if (prune > 0 && diff < SQL_CACHE_TIMEOUT) {
 				continue;
 			}
-
+			printf("WTF4\n");
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Dropping idle DB connection %s\n", key);
-				
+				printf("WTF5\n");
 				switch (dbh->type) {
 				case SCDB_TYPE_ODBC:
 					{

@@ -772,7 +772,7 @@ switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack
 	header->value = data;
 	header->hash = switch_ci_hashfunc_default(header->name, &hlen);
 
-	if (stack == SWITCH_STACK_TOP) {
+	if ((stack & SWITCH_STACK_TOP)) {
 		header->next = event->headers;
 		event->headers = header;
 		if (!event->last_header) {
@@ -823,7 +823,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *e
 SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data)
 {
 	if (data) {
-		return switch_event_base_add_header(event, stack, header_name, DUP(data));
+		return switch_event_base_add_header(event, stack, header_name, (stack & SWITCH_STACK_NODUP) ? (char *)data : DUP(data));
 	}
 	return SWITCH_STATUS_GENERR;
 }

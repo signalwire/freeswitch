@@ -3331,12 +3331,23 @@ static JSBool js_log(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, j
 
 static JSBool js_global_set(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-	char *var_name = NULL, *val = NULL;
+	char *var_name = NULL, *val = NULL, *val2 = NULL;
+	JSBool tf = JS_TRUE;
 	if (argc > 1) {
 		var_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		val = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		switch_core_set_variable(var_name, val);
-		return JS_TRUE;
+		if (argc == 2) {
+			switch_core_set_variable(var_name, val);
+			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+			return JS_TRUE;
+		} else {
+			val2 = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+			if (switch_core_set_var_conditional(var_name, val, val2) != SWITCH_TRUE) {
+				tf = JS_FALSE;
+			}
+			*rval = BOOLEAN_TO_JSVAL(tf);
+			return JS_TRUE;
+		}
 	}
 	/* this is so the wrong error message to throw for this one */
 	eval_some_js("~throw new Error(\"var name not supplied!\");", cx, obj, rval);
