@@ -281,7 +281,6 @@ typedef enum {
 typedef enum {
 	FTDM_SIGEVENT_START, /*!< Incoming call (ie: incoming SETUP msg or Ring) */
 	FTDM_SIGEVENT_STOP, /*!< Hangup */
-	FTDM_SIGEVENT_ANSWER, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_FLASH, /*< Flash event  (typically on-hook/off-hook for analog devices) */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
