@@ -27,7 +27,11 @@
 *.manifest
 *.dep
 *.dll
-/BuildLog.htm
+*.htm
+*.sbr
+*.ilk
+*.bsc
+*.pch
 /Path
 /w32/Library/lastversion
 /w32/Library/tmpVersion.Bat
