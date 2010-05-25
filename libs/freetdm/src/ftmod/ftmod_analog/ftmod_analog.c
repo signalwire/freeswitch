@@ -162,7 +162,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	int *intval;
 	uint32_t flags = FTDM_ANALOG_CALLERID;
 	int callwaiting = 1;
-	int i = 0;
+	unsigned int i = 0;
 
 	assert(sig_cb != NULL);
 	ftdm_log(FTDM_LOG_DEBUG, "Configuring span %s for analog signaling ...\n", span->name);
