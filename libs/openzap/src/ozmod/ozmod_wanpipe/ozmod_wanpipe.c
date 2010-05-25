@@ -585,7 +585,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		{
 			err=sangoma_tdm_enable_hwec(zchan->sockfd, &tdm_api);
 			if (err) {
-             	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Enable Failed");
+             			snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Enable Failed");
 				return ZAP_FAIL;
 			}
 		}
@@ -594,12 +594,41 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		{
 			err=sangoma_tdm_disable_hwec(zchan->sockfd, &tdm_api);
 			if (err) {
-             	snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Disable Failed");
+             			snprintf(zchan->last_error, sizeof(zchan->last_error), "HWEC Disable Failed");
 				return ZAP_FAIL;
 			}
 		}
 		break;
-	case ZAP_COMMAND_ENABLE_LOOP:
+	case ZAP_COMMAND_ENABLE_DTMF_DETECT:
+		{
+#ifdef WP_API_FEATURE_DTMF_EVENTS
+			err = sangoma_tdm_enable_dtmf_events(zchan->sockfd, &tdm_api);
+			if (err) {
+				zap_log(ZAP_LOG_WARNING, "Enabling of Sangoma HW DTMF failed\n");
+             			snprintf(zchan->last_error, sizeof(zchan->last_error), "HW DTMF Enable Failed");
+				return ZAP_FAIL;
+			}
+			zap_log(ZAP_LOG_DEBUG, "Enabled DTMF events on chan %d:%d\n", zchan->span_id, zchan->chan_id);
+#else
+			return ZAP_NOTIMPL;
+#endif
+		}
+		break;
+	case ZAP_COMMAND_DISABLE_DTMF_DETECT:
+		{
+#ifdef WP_API_FEATURE_DTMF_EVENTS
+			err = sangoma_tdm_disable_dtmf_events(zchan->sockfd, &tdm_api);
+			if (err) {
+				zap_log(ZAP_LOG_WARNING, "Disabling of Sangoma HW DTMF failed\n");
+             			snprintf(zchan->last_error, sizeof(zchan->last_error), "HW DTMF Disable Failed");
+				return ZAP_FAIL;
+			}
+			zap_log(ZAP_LOG_DEBUG, "Disabled DTMF events on chan %d:%d\n", zchan->span_id, zchan->chan_id);
+#else
+			return ZAP_NOTIMPL;
+#endif
+		}
+		break;
 		{
 #ifdef WP_API_FEATURE_LOOP
          	err=sangoma_tdm_enable_loop(zchan->sockfd, &tdm_api);

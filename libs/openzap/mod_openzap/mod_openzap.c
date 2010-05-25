@@ -2907,7 +2907,7 @@ void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *s
 						   );
 }
 
-#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>]" 
+#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>] || dtmf on|off <span_id> [<chan_id>]" 
 SWITCH_STANDARD_API(oz_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -3134,6 +3134,45 @@ SWITCH_STANDARD_API(oz_function)
 			}
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
+	} else if (!strcasecmp(argv[0], "dtmf")) {
+		int i = 0;
+		uint32_t chan_id = 0;
+		zap_span_t *span = NULL;
+		zap_command_t zapcmd = ZAP_COMMAND_ENABLE_DTMF_DETECT;
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: dtmf on|off <span_id> [<chan_id>]\n");
+			goto end;
+		}
+
+		if (switch_true(argv[1])) {
+			zapcmd = ZAP_COMMAND_ENABLE_DTMF_DETECT;
+		} else {
+			zapcmd = ZAP_COMMAND_DISABLE_DTMF_DETECT;
+		}
+
+		zap_span_find_by_name(argv[2], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+
+		if (argc > 3) {
+			chan_id = atoi(argv[3]);
+			if (chan_id > span->chan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+
+		if (chan_id) {
+			zap_channel_command(span->channels[chan_id], zapcmd, NULL);
+		} else {
+			for (i = 1; i <= (int)span->chan_count; i++) {
+				zap_channel_command(span->channels[i], zapcmd, NULL);
+			}
+		}
+
+		stream->write_function(stream, "+OK DTMF detection was %s\n", zapcmd == ZAP_COMMAND_ENABLE_DTMF_DETECT ? "enabled" : "disabled");
 	} else if (!strcasecmp(argv[0], "trace")) {
 		char tracepath[255];
 		int i = 0;
@@ -3239,6 +3278,25 @@ SWITCH_STANDARD_APP(disable_ec_function)
 	zap_log(ZAP_LOG_INFO, "Echo Canceller Disabled\n");
 }
 
+SWITCH_STANDARD_APP(disable_dtmf_function)
+{
+	private_t *tech_pvt;
+	if (!switch_core_session_check_interface(session, openzap_endpoint_interface)) {
+		zap_log(ZAP_LOG_ERROR, "This application is only for OpenZAP channels.\n");
+		return;
+	}
+	
+	tech_pvt = switch_core_session_get_private(session);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+		return;
+	}
+	
+	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_DISABLE_DTMF_DETECT, NULL);
+	zap_log(ZAP_LOG_INFO, "DTMF detection Disabled in channel %d:%d\n", tech_pvt->zchan->span_id, tech_pvt->zchan->chan_id);
+}
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 {
@@ -3270,6 +3328,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 	SWITCH_ADD_API(commands_api_interface, "oz", "OpenZAP commands", oz_function, OZ_SYNTAX);
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
