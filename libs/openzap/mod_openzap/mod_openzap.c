@@ -3297,6 +3297,24 @@ SWITCH_STANDARD_APP(disable_dtmf_function)
 	zap_log(ZAP_LOG_INFO, "DTMF detection Disabled in channel %d:%d\n", tech_pvt->zchan->span_id, tech_pvt->zchan->chan_id);
 }
 
+SWITCH_STANDARD_APP(enable_dtmf_function)
+{
+	private_t *tech_pvt;
+	if (!switch_core_session_check_interface(session, openzap_endpoint_interface)) {
+		zap_log(ZAP_LOG_ERROR, "This application is only for OpenZAP channels.\n");
+		return;
+	}
+	
+	tech_pvt = switch_core_session_get_private(session);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+        	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+		return;
+	}
+	
+	zap_channel_command(tech_pvt->zchan, ZAP_COMMAND_ENABLE_DTMF_DETECT, NULL);
+	zap_log(ZAP_LOG_INFO, "DTMF detection Enabled in channel %d:%d\n", tech_pvt->zchan->span_id, tech_pvt->zchan->chan_id);
+}
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 {
@@ -3329,6 +3347,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "enable_dtmf", "Enable DTMF Detection", "Enable DTMF Detection", enable_dtmf_function, "", SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
