@@ -54,7 +54,7 @@ struct skinny_globals {
 };
 typedef struct skinny_globals skinny_globals_t;
 
-skinny_globals_t globals;
+extern skinny_globals_t globals;
 
 struct skinny_profile {
     /* prefs */

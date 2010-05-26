@@ -87,12 +87,12 @@ uint32_t func(const char *str)\
     }
 
 
-struct skinny_table SKINNY_MESSAGE_TYPES[59];
+extern struct skinny_table SKINNY_MESSAGE_TYPES[59];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
 
-struct skinny_table SKINNY_DEVICE_TYPES[13];
+extern struct skinny_table SKINNY_DEVICE_TYPES[13];
 const char *skinny_device_type2str(uint32_t id);
 uint32_t skinny_str2device_type(const char *str);
 #define SKINNY_PUSH_DEVICE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_DEVICE_TYPES)
@@ -113,7 +113,7 @@ enum skinny_ring_type {
     SKINNY_RING_OUTSIDE = 3,
     SKINNY_RING_FEATURE = 4
 };
-struct skinny_table SKINNY_RING_TYPES[5];
+extern struct skinny_table SKINNY_RING_TYPES[5];
 const char *skinny_ring_type2str(uint32_t id);
 uint32_t skinny_str2ring_type(const char *str);
 #define SKINNY_PUSH_RING_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_RING_TYPES)
@@ -122,7 +122,7 @@ enum skinny_ring_mode {
     SKINNY_RING_FOREVER = 1,
     SKINNY_RING_ONCE = 2,
 };
-struct skinny_table SKINNY_RING_MODES[3];
+extern struct skinny_table SKINNY_RING_MODES[3];
 const char *skinny_ring_mode2str(uint32_t id);
 uint32_t skinny_str2ring_mode(const char *str);
 #define SKINNY_PUSH_RING_MODES SKINNY_DECLARE_PUSH_MATCH(SKINNY_RING_MODES)
@@ -135,7 +135,7 @@ enum skinny_lamp_mode {
     SKINNY_LAMP_FLASH = 4,
     SKINNY_LAMP_BLINK = 5,
 };
-struct skinny_table SKINNY_LAMP_MODES[6];
+extern struct skinny_table SKINNY_LAMP_MODES[6];
 const char *skinny_lamp_mode2str(uint32_t id);
 uint32_t skinny_str2lamp_mode(const char *str);
 #define SKINNY_PUSH_LAMP_MODES SKINNY_DECLARE_PUSH_MATCH(SKINNY_LAMP_MODES)
@@ -144,7 +144,7 @@ enum skinny_speaker_mode {
     SKINNY_SPEAKER_ON = 1,
     SKINNY_SPEAKER_OFF = 2,
 };
-struct skinny_table SKINNY_SPEAKER_MODES[3];
+extern struct skinny_table SKINNY_SPEAKER_MODES[3];
 const char *skinny_speaker_mode2str(uint32_t id);
 uint32_t skinny_str2speaker_mode(const char *str);
 #define SKINNY_PUSH_SPEAKER_MODES SKINNY_DECLARE_PUSH_MATCH(SKINNY_SPEAKER_MODES)
@@ -166,7 +166,7 @@ enum skinny_button_definition {
     SKINNY_BUTTON_SERVICE_URL = 0x14,
     SKINNY_BUTTON_UNDEFINED = 0xFF,
 };
-struct skinny_table SKINNY_BUTTONS[10];
+extern struct skinny_table SKINNY_BUTTONS[10];
 const char *skinny_button2str(uint32_t id);
 uint32_t skinny_str2button(const char *str);
 #define SKINNY_PUSH_STIMULI SKINNY_DECLARE_PUSH_MATCH(SKINNY_BUTTONS)
@@ -206,7 +206,7 @@ enum skinny_key_set {
     SKINNY_KEY_SET_RING_OUT = 8,
     SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES = 9,
 };
-struct skinny_table SKINNY_KEY_SETS[11];
+extern struct skinny_table SKINNY_KEY_SETS[11];
 const char *skinny_soft_key_set2str(uint32_t id);
 uint32_t skinny_str2soft_key_set(const char *str);
 #define SKINNY_PUSH_SOFT_KEY_SETS SKINNY_DECLARE_PUSH_MATCH(SKINNY_KEY_SETS)
@@ -228,7 +228,7 @@ enum skinny_call_state {
     SKINNY_IN_USE_REMOTELY = 13,
     SKINNY_INVALID_NUMBER = 14
 };
-struct skinny_table SKINNY_CALL_STATES[15];
+extern struct skinny_table SKINNY_CALL_STATES[15];
 const char *skinny_call_state2str(uint32_t id);
 uint32_t skinny_str2call_state(const char *str);
 #define SKINNY_PUSH_CALL_STATES SKINNY_DECLARE_PUSH_MATCH(SKINNY_CALL_STATES)
@@ -237,7 +237,7 @@ enum skinny_device_reset_types {
   SKINNY_DEVICE_RESET = 1,
   SKINNY_DEVICE_RESTART = 2
 };
-struct skinny_table SKINNY_DEVICE_RESET_TYPES[3];
+extern struct skinny_table SKINNY_DEVICE_RESET_TYPES[3];
 const char *skinny_device_reset_type2str(uint32_t id);
 uint32_t skinny_str2device_reset_type(const char *str);
 #define SKINNY_PUSH_DEVICE_RESET_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_DEVICE_RESET_TYPES)
