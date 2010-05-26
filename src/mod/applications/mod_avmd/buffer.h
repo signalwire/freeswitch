@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef INT16_MIN
+#define INT16_MIN              (-32767-1)
+#endif
+#ifndef INT16_MAX
+#define INT16_MAX              (32767)
+#endif
+
 #define BUFF_TYPE double
 
 typedef struct {
@@ -18,20 +25,20 @@ typedef struct {
 extern size_t next_power_of_2(size_t v);
 
 #define INC_POS(b) \
-    do{ \
+    { \
 	(b)->pos++; \
 	(b)->pos &= (b)->mask; \
 	(b)->lpos++; \
 	if((b)->backlog < (b)->buf_len) (b)->backlog++; \
-    }while(0)
+    }
 
 #define DEC_POS(b) \
-    do{ \
+    { \
 	(b)->pos--; \
 	(b)->pos &= (b)->mask; \
 	(b)->lpos--; \
 	if(((b)->backlog - 1) < (b)->backlog) (b)->backlog--; \
-    }while(0)
+    }
 
 #define GET_SAMPLE(b, i) ((b)->buf[(i) & (b)->mask])
 #define SET_SAMPLE(b, i, v) ((b)->buf[(i) & (b)->mask] = (v))
@@ -49,7 +56,7 @@ extern size_t next_power_of_2(size_t v);
     }while(0)
 
 #define INSERT_INT16_FRAME(b, f, l) \
-    do{ \
+    { \
 	for((b)->i = 0; (b)->i < (l); (b)->i++){ \
 	    SET_SAMPLE( \
 		(b), \
@@ -66,13 +73,13 @@ extern size_t next_power_of_2(size_t v);
 	(b)->pos &= (b)->mask; \
 	(b)->backlog += (l); \
 	if((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
-    }while(0)
+    }
 
 
 #define CALC_BUFF_LEN(fl, bl) (((fl) >= (bl))? next_power_of_2((fl) << 1): next_power_of_2((bl) << 1))
 
 #define INIT_CIRC_BUFFER(bf, bl, fl) \
-    do{ \
+    { \
 	(bf)->buf_len = CALC_BUFF_LEN((fl), (bl)); \
 	(bf)->mask = (bf)->buf_len - 1; \
 	(bf)->buf = (BUFF_TYPE *)calloc((bf)->buf_len, sizeof(BUFF_TYPE)); \
@@ -80,7 +87,7 @@ extern size_t next_power_of_2(size_t v);
 	(bf)->pos = 0; \
 	(bf)->lpos = 0; \
 	(bf)->backlog = 0; \
-    }while(0)
+    }
 
 #define DESTROY_CIRC_BUFFER(b) free((b)->buf)
 #define GET_BACKLOG_POS(b) ((b)->lpos - (b)->backlog)

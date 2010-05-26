@@ -535,8 +535,12 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
             else if(s_rate >= 0.99 && avg_a > 0.04)	valid = 1;
             else if(s_rate == 1.00 && avg_a > 0.02)	valid = 1;
 
-            if(valid) APPEND_SMA_VAL(&session->sma_b, s_rate * avg_a);
-            else      APPEND_SMA_VAL(&session->sma_b, 0.0           );
+			if(valid) {
+				APPEND_SMA_VAL(&session->sma_b, s_rate * avg_a);
+			}
+			else {
+				APPEND_SMA_VAL(&session->sma_b, 0.0           );
+			}
 
 			/*! If sma is higher then 0 we have some kind of detection (increase this value to eliminate false positives ex: 0.01) */
             if(session->sma_b.sma > 0.00){

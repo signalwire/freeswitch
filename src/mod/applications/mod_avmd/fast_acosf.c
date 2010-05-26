@@ -1,14 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _MSC_VER
 #include <stdint.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef _MSC_VER
 #include <sys/mman.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include "fast_acosf.h"
 #include "options.h"
 
