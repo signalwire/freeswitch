@@ -1853,14 +1853,25 @@ static switch_bool_t t38_gateway_start(switch_core_session_t *session, const cha
 SWITCH_STANDARD_APP(t38_gateway_function)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
+    time_t timeout = 20;
+    const char *var;
 
     if (zstr(data) || strcasecmp(data, "self")) {
         data = "peer";
     }
 
     switch_channel_set_variable(channel, "t38_leg", data);
+
+    if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
+        long to = atol(var);
+        if (to > -1) {
+            timeout = (time_t) to;
+        } else {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
+        }
+    }
     
-	switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", 0, 1, data, NULL, t38_gateway_start);
+	switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, data, NULL, t38_gateway_start);
 }
 
 
