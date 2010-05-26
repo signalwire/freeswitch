@@ -1142,9 +1142,10 @@ SWITCH_DECLARE(int) globalSetVariable(const char *var, const char *val, const ch
 	if (zstr(val2)) val2 = NULL;
 	
 	if (val2) {
-		switch_core_set_var_conditional(var, val, val2);
+		return switch_core_set_var_conditional(var, val, val2);
 	} else {
 		switch_core_set_variable(var, val);
+		return SWITCH_STATUS_SUCCESS;
 	}
 }
 

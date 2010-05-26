@@ -35,7 +35,7 @@
 #include <switch.h>
 #ifdef WIN32
 #define FAX_INVALID_SOCKET INVALID_HANDLE_VALUE
-typedef HANDLE fax_socket_t;
+typedef HANDLE zap_socket_t;
 #else
 #define FAX_INVALID_SOCKET -1
 typedef int zap_socket_t;
