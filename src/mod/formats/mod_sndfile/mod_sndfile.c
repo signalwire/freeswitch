@@ -300,7 +300,7 @@ static switch_status_t sndfile_file_write(switch_file_handle_t *handle, void *da
 
 	handle->sample_count += *len;
 
-	return SWITCH_STATUS_SUCCESS;
+	return sf_error(context->handle) == SF_ERR_NO_ERROR ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t sndfile_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
