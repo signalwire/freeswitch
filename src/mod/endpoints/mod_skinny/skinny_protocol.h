@@ -29,15 +29,12 @@
  * skinny_protocol.h -- Skinny Call Control Protocol (SCCP) Endpoint Module
  *
  */
-#ifndef _MOD_SKINNY_H
-/* mod_skinny.h should be loaded first */
-#include "mod_skinny.h"
-#endif /* _MOD_SKINNY_H */
-
 #ifndef _SKINNY_PROTOCOL_H
 #define _SKINNY_PROTOCOL_H
 
 #include <switch.h>
+/* mod_skinny.h should be loaded first */
+#include "mod_skinny.h"
 
 /*****************************************************************************/
 /* SKINNY MESSAGE DATA */
