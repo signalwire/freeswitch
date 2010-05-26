@@ -109,7 +109,6 @@
 #endif
 #include <assert.h>
 
-#include "freetdm.h"
 #include "ftdm_types.h"
 #include "hashtable.h"
 #include "ftdm_config.h"
@@ -117,6 +116,7 @@
 #include "libteletone.h"
 #include "ftdm_buffer.h"
 #include "ftdm_threadmutex.h"
+#include "ftdm_sched.h"
 
 #ifdef __cplusplus
 extern "C" {

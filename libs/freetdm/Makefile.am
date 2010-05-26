@@ -61,6 +61,7 @@ $(SRC)/hashtable.c \
 $(SRC)/hashtable_itr.c \
 $(SRC)/ftdm_io.c \
 $(SRC)/ftdm_queue.c \
+$(SRC)/ftdm_sched.c \
 $(SRC)/ftdm_config.c \
 $(SRC)/ftdm_callerid.c \
 $(SRC)/fsk.c \
