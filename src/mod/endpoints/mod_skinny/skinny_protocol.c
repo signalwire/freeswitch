@@ -688,10 +688,10 @@ switch_status_t send_define_current_time_date(listener_t *listener)
 	    tm.tm_year + 1900,
 	    tm.tm_mon + 1,
 	    tm.tm_wday,
-	    tm.tm_yday + 1,
+	    tm.tm_mday,
 	    tm.tm_hour,
 	    tm.tm_min,
-	    tm.tm_sec + 1,
+	    tm.tm_sec,
 	    tm.tm_usec / 1000,
 	    ts / 1000000);
 }
