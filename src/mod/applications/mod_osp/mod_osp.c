@@ -42,7 +42,7 @@
 /* OSP Buffer Size Constants */
 #define OSP_SIZE_NORSTR		256		/* OSP normal string buffer size */
 #define OSP_SIZE_KEYSTR		1024	/* OSP certificate string buffer size */
-#define OSP_SIZE_ROUSTR		1024	/* OSP route buffer size */
+#define OSP_SIZE_ROUSTR		2048	/* OSP route buffer size */
 #define OSP_SIZE_TOKSTR		4096	/* OSP token string buffer size */
 
 /* OSP Settings Constants */
@@ -1560,9 +1560,11 @@ static void osp_create_route(
 {
 	osp_destination_t *dest;
 	char name[OSP_SIZE_NORSTR];
-	char value[OSP_SIZE_NORSTR];
+	char value[OSP_SIZE_ROUSTR];
+	char allparam[OSP_SIZE_NORSTR];
 	char eachparam[OSP_SIZE_NORSTR];
 	char endpoint[OSP_SIZE_NORSTR];
+	char tmp[OSP_SIZE_ROUSTR];
 	char buffer[OSP_SIZE_ROUSTR];
 	int i, len, count, size = sizeof(buffer);
 	char *head = buffer;
@@ -1581,6 +1583,7 @@ static void osp_create_route(
 	}
 
 	osp_build_allparam(results, head, size);
+	switch_copy_string(allparam, head, sizeof(allparam));
 	osp_adjust_len(head, size, len);
 
 	for (count = 0, i = 0; i < results->numdest; i++) {
@@ -1589,10 +1592,13 @@ static void osp_create_route(
 			count++;
 			osp_build_eachparam(i + 1, dest, eachparam, sizeof(eachparam));
 			osp_build_endpoint(dest, endpoint, sizeof(endpoint));
+
 			switch_snprintf(name, sizeof(name), "%s%d", OSP_VAR_ROUTEPRE, count);
-			switch_snprintf(value, sizeof(value), "%s%s", eachparam, endpoint);
+			switch_snprintf(value, sizeof(value), "%s%s%s", allparam, eachparam, endpoint);
 			switch_channel_set_variable_var_check(channel, name, value, SWITCH_FALSE);
-			switch_snprintf(head, size, "%s|", value);
+
+			switch_snprintf(tmp, sizeof(tmp), "%s%s", eachparam, endpoint);
+			switch_snprintf(head, size, "%s|", tmp);
 			osp_adjust_len(head, size, len);
 		}
 	}
@@ -1668,8 +1674,9 @@ static void osp_add_application(
 	char allparam[OSP_SIZE_NORSTR];
 	char eachparam[OSP_SIZE_NORSTR];
 	char endpoint[OSP_SIZE_NORSTR];
-	char buffer[OSP_SIZE_ROUSTR];
-	int i;
+	char name[OSP_SIZE_NORSTR];
+	char value[OSP_SIZE_ROUSTR];
+	int i, count;
 
 	if ((*extension = switch_caller_extension_new(session, results->called, results->called)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create extension\n");
@@ -1680,15 +1687,23 @@ static void osp_add_application(
 
 	osp_build_allparam(results, allparam, sizeof(allparam));
 
-	for (i = 0; i < results->numdest; i++) {
+	for (count = 0, i = 0; i < results->numdest; i++) {
 		dest = &results->dests[i];
 		if (dest->supported) {
+			count++;
 			osp_build_eachparam(i + 1, dest, eachparam, sizeof(eachparam));
 			osp_build_endpoint(dest, endpoint, sizeof(endpoint));
-			switch_snprintf(buffer, sizeof(buffer), "%s%s%s", allparam, eachparam, endpoint);
-			switch_caller_extension_add_application(session, *extension, "bridge", buffer);
+
+			switch_snprintf(name, sizeof(name), "%s%d", OSP_VAR_ROUTEPRE, count);
+			switch_snprintf(value, sizeof(value), "%s%s%s", allparam, eachparam, endpoint);
+			switch_channel_set_variable_var_check(channel, name, value, SWITCH_FALSE);
+
+			switch_caller_extension_add_application(session, *extension, "bridge", value);
 		}
 	}
+
+	switch_snprintf(value, sizeof(value), "%d", count);
+	switch_channel_set_variable_var_check(channel, OSP_VAR_ROUTECOUNT, value, SWITCH_FALSE);
 }
 
 /*
