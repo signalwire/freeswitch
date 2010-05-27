@@ -48,10 +48,13 @@ typedef struct ftdm_timer ftdm_timer_t;
 typedef void (*ftdm_sched_callback_t)(void *data);
 
 /*! \brief Create a new scheduling context */
-FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched);
+FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched, const char *name);
 
 /*! \brief Run the schedule to find timers that are expired and run its callbacks */
 FT_DECLARE(ftdm_status_t) ftdm_sched_run(ftdm_sched_t *sched);
+
+/*! \brief Run the schedule in its own thread. Callbacks will be called in a core thread. You *must* not block there! */
+FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched);
 
 /*! 
  * \brief Schedule a new timer 
@@ -81,6 +84,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_destroy(ftdm_sched_t **sched);
  * \param timeto The pointer to store the next timer time in milliseconds
  */
 FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *sched, int32_t *timeto);
+
+/*! \brief Global initialization, called just once, this is called by FreeTDM core, other users MUST not call it */
+FT_DECLARE(ftdm_status_t) ftdm_sched_global_init(void);
+
+/*! \brief Checks if the main scheduling thread is running */
+FT_DECLARE(ftdm_bool_t) ftdm_free_sched_running(void);
 
 #ifdef __cplusplus
 } 

@@ -34,9 +34,19 @@
 
 #include "private/ftdm_core.h"
 
+static struct {
+	ftdm_sched_t *freeruns;
+	ftdm_mutex_t *mutex;
+	ftdm_bool_t running;
+} sched_globals;
+
 struct ftdm_sched {
+	char name[80];
 	ftdm_mutex_t *mutex;
 	ftdm_timer_t *timers;
+	int freerun;
+	ftdm_sched_t *next;
+	ftdm_sched_t *prev;
 };
 
 struct ftdm_timer {
@@ -50,11 +60,109 @@ struct ftdm_timer {
 	ftdm_timer_t *prev;
 };
 
-FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched)
+/* FIXME: use ftdm_interrupt_t to wait for new schedules to monitor */
+#define SCHED_MAX_SLEEP 100
+static void *run_main_schedule(ftdm_thread_t *thread, void *data)
+{
+	int32_t timeto;
+	int32_t sleepms;
+	ftdm_status_t status;
+	ftdm_sched_t *current = NULL;
+	while (ftdm_running()) {
+		
+		sleepms = SCHED_MAX_SLEEP;
+
+		ftdm_mutex_lock(sched_globals.mutex);
+
+		if (!sched_globals.freeruns) {
+		
+			/* there are no free runs, wait a bit and check again (FIXME: use ftdm_interrupt_t for this) */
+			ftdm_mutex_unlock(sched_globals.mutex);
+
+			ftdm_sleep(sleepms);
+		}
+
+		for (current = sched_globals.freeruns; current; current = current->next) {
+
+			/* first run the schedule */
+			ftdm_sched_run(current);
+
+			/* now find out how much time to sleep until running them again */
+			status = ftdm_sched_get_time_to_next_timer(current, &timeto);
+			if (status != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_WARNING, "Failed to get time to next timer for schedule %s, skipping\n", current->name);	
+				continue;
+			}
+
+			/* if timeto == -1 we don't want to sleep forever, so keep the last sleepms */
+			if (timeto != -1 && sleepms > timeto) {
+				sleepms = timeto;
+			}
+		}
+
+		ftdm_mutex_unlock(sched_globals.mutex);
+
+		ftdm_sleep(sleepms);
+	}
+	ftdm_log(FTDM_LOG_NOTICE, "Main scheduling thread going out ...\n");
+	sched_globals.running = 0;
+	return NULL;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_sched_global_init()
+{
+	ftdm_log(FTDM_LOG_DEBUG, "Initializing scheduling API\n");
+	memset(&sched_globals, 0, sizeof(sched_globals));
+	if (ftdm_mutex_create(&sched_globals.mutex) == FTDM_SUCCESS) {
+		return FTDM_SUCCESS;
+	}
+	return FTDM_FAIL;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched)
+{
+	ftdm_status_t status;
+	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "invalid pointer\n");
+
+	ftdm_mutex_lock(sched_globals.mutex);
+
+	if (sched_globals.running == FTDM_FALSE) {
+		ftdm_log(FTDM_LOG_NOTICE, "Launching main schedule thread\n");
+		status = ftdm_thread_create_detached(run_main_schedule, NULL);
+		if (status != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_CRIT, "Failed to launch main schedule thread\n");
+			goto done;
+		} 
+		sched_globals.running = FTDM_TRUE;
+	}
+
+	ftdm_log(FTDM_LOG_DEBUG, "Running schedule %s in the main schedule thread\n", sched->name);
+	
+	/* Add the schedule to the global list of free runs */
+	if (!sched_globals.freeruns) {
+		sched_globals.freeruns = sched;
+	}  else {
+		sched->next = sched_globals.freeruns;
+		sched_globals.freeruns->prev = sched;
+		sched_globals.freeruns = sched;
+	}
+
+done:
+	ftdm_mutex_unlock(sched_globals.mutex);
+	return status;
+}
+
+FT_DECLARE(ftdm_bool_t) ftdm_free_sched_running(void)
+{
+	return sched_globals.running;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched, const char *name)
 {
 	ftdm_sched_t *newsched = NULL;
 
-	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "invalid pointer");
+	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "invalid pointer\n");
+	ftdm_assert_return(name != NULL, FTDM_EINVAL, "invalid sched name\n");
 
 	*sched = NULL;
 
@@ -67,7 +175,10 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched)
 		goto failed;
 	}
 
+	ftdm_set_string(newsched->name, name);
+
 	*sched = newsched;
+	ftdm_log(FTDM_LOG_DEBUG, "Created schedule %s\n", name);
 	return FTDM_SUCCESS;
 
 failed:
@@ -235,7 +346,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 #endif
 	ftdm_timer_t *current = NULL;
 	ftdm_timer_t *winner = NULL;
-
+	
+	/* forever by default */
 	*timeto = -1;
 
 #ifndef __linux__
@@ -299,21 +411,24 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_cancel_timer(ftdm_sched_t *sched, ftdm_time
 
 	ftdm_mutex_lock(sched->mutex);
 
+	/* special case where the cancelled timer is the head */
 	if (*intimer == sched->timers) {
-		timer = sched->timers;
-		if (timer->next) {
-			sched->timers = timer->next;
+		timer = *intimer;
+		/* the timer next is the new head (even if that means the new head will be NULL)*/
+		sched->timers = timer->next;
+		/* if there is a new head, clean its prev member */
+		if (sched->timers) {
 			sched->timers->prev = NULL;
-		} else {
-			sched->timers = NULL;
 		}
+		/* free the old head */
 		ftdm_safe_free(timer);
 		status = FTDM_SUCCESS;
 		*intimer = NULL;
 		goto done;
 	}
 
-	for (timer = sched->timers; timer; timer = timer->next) {
+	/* look for the timer and destroy it (we know now that is not head, se we start at the next member after head) */
+	for (timer = sched->timers->next; timer; timer = timer->next) {
 		if (timer == *intimer) {
 			if (timer->prev) {
 				timer->prev->next = timer->next;
@@ -347,7 +462,26 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_destroy(ftdm_sched_t **insched)
 	ftdm_assert_return(*insched != NULL, FTDM_EINVAL, "sched is null!\n");
 
 	sched = *insched;
-	
+
+	/* since destroying a sched may affect the global list, we gotta check */	
+	ftdm_mutex_lock(sched_globals.mutex);
+
+	/* if we're head, replace head with our next (whatever our next is, even null will do) */
+	if (sched == sched_globals.freeruns) {
+		sched_globals.freeruns = sched->next;
+	}
+	/* if we have a previous member (then we were not head) set our previous next to our next */
+	if (sched->prev) {
+		sched->prev->next = sched->next;
+	}
+	/* if we have a next then set their prev to our prev (if we were head prev will be null and sched->next is already the new head) */
+	if (sched->next) {
+		sched->next->prev = sched->prev;
+	}
+
+	ftdm_mutex_unlock(sched_globals.mutex);
+
+	/* now grab the sched mutex */
 	ftdm_mutex_lock(sched->mutex);
 
 	timer = sched->timers;
@@ -356,6 +490,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_destroy(ftdm_sched_t **insched)
 		timer = timer->next;
 		ftdm_safe_free(deltimer);
 	}
+
+	ftdm_log(FTDM_LOG_DEBUG, "Destroying schedule %s\n", sched->name);
 
 	ftdm_mutex_unlock(sched->mutex);
 

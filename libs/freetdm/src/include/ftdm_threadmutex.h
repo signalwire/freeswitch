@@ -40,7 +40,6 @@ FT_DECLARE(ftdm_status_t) ftdm_thread_create_detached(ftdm_thread_function_t fun
 FT_DECLARE(ftdm_status_t) ftdm_thread_create_detached_ex(ftdm_thread_function_t func, void *data, ftdm_size_t stack_size);
 FT_DECLARE(void) ftdm_thread_override_default_stacksize(ftdm_size_t size);
 
-
 FT_DECLARE(ftdm_status_t) ftdm_mutex_create(ftdm_mutex_t **mutex);
 FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex);
 

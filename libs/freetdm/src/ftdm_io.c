@@ -4241,6 +4241,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 	ftdm_mutex_create(&globals.mutex);
 	ftdm_mutex_create(&globals.span_mutex);
 	ftdm_mutex_create(&globals.group_mutex);
+	ftdm_sched_global_init();
 	globals.running = 1;
 	return FTDM_SUCCESS;
 }
@@ -4287,6 +4288,7 @@ FT_DECLARE(uint32_t) ftdm_running(void)
 FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 {
 	ftdm_span_t *sp;
+	uint32_t sanity = 100;
 
 	time_end();
 
@@ -4319,6 +4321,15 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	ftdm_mutex_unlock(globals.span_mutex);
 
 	ftdm_unload_modules();
+
+	while (ftdm_free_sched_running() && --sanity) {
+		ftdm_log(FTDM_LOG_DEBUG, "Waiting for schedule thread to finish\n");
+		ftdm_sleep(100);
+	}
+
+	if (!sanity) {
+		ftdm_log(FTDM_LOG_CRIT, "schedule thread did not stop running, we may crash on shutdown\n");
+	}
 
 	ftdm_mutex_lock(globals.mutex);
 	hashtable_destroy(globals.interface_hash);
