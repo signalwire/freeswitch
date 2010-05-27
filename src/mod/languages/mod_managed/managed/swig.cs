@@ -27518,8 +27518,9 @@ public class switch_speech_interface : IDisposable {
 namespace FreeSWITCH.Native {
 
 public enum switch_stack_t {
-  SWITCH_STACK_BOTTOM,
-  SWITCH_STACK_TOP
+  SWITCH_STACK_BOTTOM = (1 << 0),
+  SWITCH_STACK_TOP = (1 << 1),
+  SWITCH_STACK_NODUP = (1 << 2)
 }
 
 }
