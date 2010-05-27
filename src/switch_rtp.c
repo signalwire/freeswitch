@@ -1045,8 +1045,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 	WRITE_DEC(rtp_session);
 	READ_DEC(rtp_session);
 
-	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 
+	switch_rtp_break(rtp_session);
+	
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -2250,6 +2253,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
 				pt = 20000;
 			}
+			
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
 				do_2833(rtp_session);
@@ -2274,7 +2278,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto end;
 				}
 			}
-
+			
 			if (rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 				return_cng_frame();
 			}

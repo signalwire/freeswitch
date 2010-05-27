@@ -1965,9 +1965,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else {
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+					char *sdp = (char *) msg->pointer_arg;
+
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
-					if (!zstr(((char *) msg->pointer_arg))) {
-						sofia_glue_tech_set_local_sdp(tech_pvt, (char *) msg->pointer_arg, SWITCH_TRUE);
+
+					if (!zstr((sdp))) {
+						if (!strcasecmp(sdp, "t38")) {
+							switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
+							if (t38_options) {
+								sofia_glue_set_image_sdp(tech_pvt, t38_options, 0);
+							}
+						} else {
+							sofia_glue_tech_set_local_sdp(tech_pvt, sdp, SWITCH_TRUE);
+						}
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 							sofia_glue_tech_patch_sdp(tech_pvt);

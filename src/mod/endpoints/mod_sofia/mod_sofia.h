@@ -209,6 +209,7 @@ typedef enum {
 	PFLAG_TRACK_CALLS,
 	PFLAG_DESTROY,
 	PFLAG_EXTENDED_INFO_PARSING,
+	PFLAG_T38_PASSTHRU,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -265,6 +266,7 @@ typedef enum {
 	TFLAG_TRACKED,
 	TFLAG_RECOVERING,
 	TFLAG_RECOVERING_BRIDGE,
+	TFLAG_T38_PASSTHRU,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -741,7 +743,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
-uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
+uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_sdp);
 
 void sofia_presence_establish_presence(sofia_profile_t *profile);
 
@@ -985,5 +987,5 @@ void sofia_profile_destroy(sofia_profile_t *profile);
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
 const char *sofia_gateway_status_name(sofia_gateway_status_t status);
 void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase);
-
-
+void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
+switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
