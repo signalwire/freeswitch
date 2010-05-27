@@ -6,6 +6,7 @@ ftdmload: ftdmload.o
 
 clean:
 	rm -rf ftdmload.o
+	rm -rf ftdmload
 
 export:
 	export LD_LIBRARY_PATH=/usr/local/freeswitch/lib
