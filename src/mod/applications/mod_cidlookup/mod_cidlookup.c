@@ -467,7 +467,12 @@ static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event
 
 	query = switch_event_expand_headers(event, "http://api.whitepages.com/reverse_phone/1.0/?phone=${whitepages-cid};api_key=${whitepages-api-key}");
 	do_lookup_url(pool, event, &xml_s, query, NULL, NULL, 0);
-
+	
+	if (zstr(xml_s)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No XML returned for number %s\n", num);
+		goto done;
+	}
+	
 	xml = switch_xml_parse_str_dup(xml_s);
 
 	if (!xml) {
