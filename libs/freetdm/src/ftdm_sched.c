@@ -357,9 +357,6 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 	/* forever by default */
 	*timeto = -1;
 
-	ftdm_log(FTDM_LOG_ERROR, "Implement me!\n");
-	return FTDM_NOTIMPL;
-
 	ftdm_mutex_lock(sched->mutex);
 
 	res = gettimeofday(&currtime, NULL);
@@ -399,6 +396,9 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 
 done:
 	ftdm_mutex_unlock(sched->mutex);
+#else
+	ftdm_log(FTDM_LOG_ERROR, "Implement me!\n");
+	status = FTDM_NOTIMPL;
 #endif
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(timeto);
