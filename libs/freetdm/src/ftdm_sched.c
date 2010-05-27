@@ -68,6 +68,10 @@ static void *run_main_schedule(ftdm_thread_t *thread, void *data)
 	int32_t sleepms;
 	ftdm_status_t status;
 	ftdm_sched_t *current = NULL;
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(data);
+	UNREFERENCED_PARAMETER(thread);
+#endif
 	while (ftdm_running()) {
 		
 		sleepms = SCHED_MAX_SLEEP;
@@ -121,7 +125,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_global_init()
 
 FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched)
 {
-	ftdm_status_t status;
+	ftdm_status_t status = FTDM_FAIL;
 	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "invalid pointer\n");
 
 	ftdm_mutex_lock(sched_globals.mutex);
@@ -137,6 +141,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched)
 	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "Running schedule %s in the main schedule thread\n", sched->name);
+	status = FTDM_SUCCESS;
 	
 	/* Add the schedule to the global list of free runs */
 	if (!sched_globals.freeruns) {
@@ -196,27 +201,21 @@ failed:
 FT_DECLARE(ftdm_status_t) ftdm_sched_run(ftdm_sched_t *sched)
 {
 	ftdm_status_t status = FTDM_FAIL;
+#ifdef __linux__
 	ftdm_timer_t *runtimer;
 	ftdm_timer_t *timer;
 	ftdm_sched_callback_t callback;
 	int ms = 0;
 	int rc = -1;
 	void *data;
-#ifdef __linux__
 	struct timeval now;
-#else
-	ftdm_log(FTDM_LOG_CRIT, "Not implemented in this platform\n");
-	return FTDM_NOTIMPL;
-#endif
 	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "sched is null!\n");
 
 	ftdm_mutex_lock(sched->mutex);
 
 tryagain:
 
-#ifdef __linux__
 	rc = gettimeofday(&now, NULL);
-#endif
 	if (rc == -1) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to retrieve time of day\n");
 		goto done;
@@ -227,10 +226,8 @@ tryagain:
 		runtimer = timer;
 		timer = runtimer->next;
 
-#ifdef __linux__
 		ms = ((runtimer->time.tv_sec - now.tv_sec) * 1000) +
 		     ((runtimer->time.tv_usec - now.tv_usec) / 1000);
-#endif
 
 		if (ms <= 0) {
 
@@ -264,6 +261,13 @@ tryagain:
 done:
 
 	ftdm_mutex_unlock(sched->mutex);
+#else
+	ftdm_log(FTDM_LOG_CRIT, "Not implemented in this platform\n");
+	status = FTDM_NOTIMPL;
+#endif
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(sched);
+#endif
 
 	return status;
 }
@@ -271,12 +275,11 @@ done:
 FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name, 
 		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_t **timer)
 {
+	ftdm_status_t status = FTDM_FAIL;
 #ifdef __linux__
 	struct timeval now;
-#endif
 	int rc = 0;
 	ftdm_timer_t *newtimer;
-	ftdm_status_t status = FTDM_FAIL;
 
 	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "sched is null!\n");
 	ftdm_assert_return(name != NULL, FTDM_EINVAL, "timer name is null!\n");
@@ -287,12 +290,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 		*timer = NULL;
 	}
 
-#ifdef __linux__
 	rc = gettimeofday(&now, NULL);
-#else
-	ftdm_log(FTDM_LOG_CRIT, "Not implemented in this platform\n");
-	return FTDM_NOTIMPL;
-#endif
 	if (rc == -1) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to retrieve time of day\n");
 		return FTDM_FAIL;
@@ -309,14 +307,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 	newtimer->callback = callback;
 	newtimer->usrdata = data;
 
-#ifdef __linux__
 	newtimer->time.tv_sec = now.tv_sec + (ms / 1000);
 	newtimer->time.tv_usec = now.tv_usec + (ms % 1000) * 1000;
 	if (newtimer->time.tv_usec >= FTDM_MICROSECONDS_PER_SECOND) {
 		newtimer->time.tv_sec += 1;
 		newtimer->time.tv_usec -= FTDM_MICROSECONDS_PER_SECOND;
 	}
-#endif
 
 	if (!sched->timers) {
 		sched->timers = newtimer;
@@ -333,33 +329,40 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 done:
 
 	ftdm_mutex_unlock(sched->mutex);
+#else
+	ftdm_log(FTDM_LOG_CRIT, "Not implemented in this platform\n");
+	status = FTDM_NOTIMPL;
+#endif
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(sched);
+	UNREFERENCED_PARAMETER(name);
+	UNREFERENCED_PARAMETER(ms);
+	UNREFERENCED_PARAMETER(callback);
+	UNREFERENCED_PARAMETER(data);
+	UNREFERENCED_PARAMETER(timer);
+#endif
 	return status;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *sched, int32_t *timeto)
 {
 	ftdm_status_t status = FTDM_FAIL;
+#ifdef __linux__
 	int res = -1;
 	int ms = 0;
-#ifdef __linux__
 	struct timeval currtime;
-#endif
 	ftdm_timer_t *current = NULL;
 	ftdm_timer_t *winner = NULL;
 	
 	/* forever by default */
 	*timeto = -1;
 
-#ifndef __linux__
 	ftdm_log(FTDM_LOG_ERROR, "Implement me!\n");
 	return FTDM_NOTIMPL;
-#endif
 
 	ftdm_mutex_lock(sched->mutex);
 
-#ifdef __linux__
 	res = gettimeofday(&currtime, NULL);
-#endif
 	if (-1 == res) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to get next event time\n");
 		goto done;
@@ -396,6 +399,11 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 
 done:
 	ftdm_mutex_unlock(sched->mutex);
+#endif
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(timeto);
+	UNREFERENCED_PARAMETER(sched);
+#endif
 
 	return status;
 }
