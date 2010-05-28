@@ -838,7 +838,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	char *cl;
 	esl_ssize_t len;
 	int zc = 0;
-
+	int bread = 0;
 
 	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
@@ -869,6 +869,13 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	beg = c;
 
 	while(handle->connected) {
+		if (bread + 2 >= sizeof(handle->header_buf)) {
+			esl_log(ESL_LOG_CRIT, "OUT OF BUFFER SPACE!\n");
+			handle->connected = 0;
+			esl_mutex_unlock(handle->mutex);
+			return ESL_DISCONNECTED;
+		}
+
 		rrval = recv(handle->sock, c, 1, 0);
 		if (rrval == 0) {
 			if (++zc >= 100) {
@@ -883,6 +890,9 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 			zc = 0;
 			
 			if (*c == '\n') {
+
+				*(c+1) = '\0';
+
 				if (++crc == 2) {
 					break;
 				}
@@ -911,8 +921,9 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 					esl_event_add_header_string(revent, ESL_STACK_BOTTOM, hname, hval);
 				}
 
-				beg = c+1;
-				
+				c = beg;
+				bread = 0;
+				continue;
 				
 			} else {
 				crc = 0;
