@@ -2245,6 +2245,19 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			GOTO_STATUS(done, FTDM_FAIL);
 		}
 		break;
+	case FTDM_COMMAND_TRACE_END_ALL:
+		{
+			if (ftdmchan->fds[0] > 0) {
+				close(ftdmchan->fds[0]);
+				ftdmchan->fds[0] = -1;
+			}
+			if (ftdmchan->fds[1] > 0) {
+				close(ftdmchan->fds[1]);
+				ftdmchan->fds[1] = -1;
+			}
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
 	case FTDM_COMMAND_SET_INTERVAL:
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL)) {

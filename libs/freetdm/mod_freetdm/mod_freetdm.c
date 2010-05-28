@@ -3155,7 +3155,7 @@ SWITCH_STANDARD_API(ft_function)
 
 	if (!strcasecmp(argv[0], "dump")) {
 		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: ft dump <span_id> [<chan_id>]\n");
+			stream->write_function(stream, "-ERR Usage: ftdm dump <span_id> [<chan_id>]\n");
 			goto end;
 		} else {
 			uint32_t chan_id = 0;
@@ -3325,7 +3325,7 @@ SWITCH_STANDARD_API(ft_function)
 		char *tmp_path = NULL;
 
                 if (argc < 3) {
-                        stream->write_function(stream, "-ERR Usage: ft q931_pcap <span_id> on|off [pcapfilename without suffix]\n");
+                        stream->write_function(stream, "-ERR Usage: ftdm q931_pcap <span_id> on|off [pcapfilename without suffix]\n");
                         goto end;
                 }
 		span_id = atoi(argv[1]);
@@ -3409,6 +3409,79 @@ SWITCH_STANDARD_API(ft_function)
 		}
 
 		stream->write_function(stream, "+OK DTMF detection was %s\n", fcmd == FTDM_COMMAND_ENABLE_DTMF_DETECT ? "enabled" : "disabled");
+	} else if (!strcasecmp(argv[0], "trace")) {
+		char tracepath[255];
+		int i = 0;
+		uint32_t chan_id = 0;
+		int32_t chan_count = 0;
+		ftdm_span_t *span = NULL;
+		ftdm_channel_t *chan = NULL;
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: ftdm trace <path> <span_id> [<chan_id>]\n");
+			goto end;
+		} 
+		ftdm_span_find_by_name(argv[2], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		chan_count = ftdm_span_get_chan_count(span);
+		if (argc > 3) {
+			chan_id = atoi(argv[3]);
+			if (chan_id > chan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+		if (chan_id) {
+			chan = ftdm_span_get_channel(span, chan_id);
+			snprintf(tracepath, sizeof(tracepath), "%s-in-c%d", argv[1], chan_id);
+			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+			snprintf(tracepath, sizeof(tracepath), "%s-out-c%d", argv[1], chan_id);
+			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+		} else {
+			for (i = 1; i <= chan_count; i++) {
+				chan = ftdm_span_get_channel(span, i);
+				snprintf(tracepath, sizeof(tracepath), "%s-in-c%d", argv[1], i);
+				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+				snprintf(tracepath, sizeof(tracepath), "%s-out-c%d", argv[1], i);
+				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+			}
+		}
+		stream->write_function(stream, "+OK trace enabled with prefix path %s\n", argv[1]);
+	} else if (!strcasecmp(argv[0], "notrace")) {
+		uint32_t i = 0;
+		uint32_t chan_id = 0;
+		int32_t chan_count = 0;
+		ftdm_channel_t *fchan = NULL;
+		ftdm_span_t *span = NULL;
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR Usage: oz notrace <span_id> [<chan_id>]\n");
+			goto end;
+		} 
+		ftdm_span_find_by_name(argv[1], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		chan_count = ftdm_span_get_chan_count(span);
+		if (argc > 2) {
+			chan_id = atoi(argv[2]);
+			if (chan_id > chan_count) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+		if (chan_id) {
+			fchan = ftdm_span_get_channel(span, chan_id);
+			ftdm_channel_command(fchan, FTDM_COMMAND_TRACE_END_ALL, NULL);
+		} else {
+			for (i = 1; i <= chan_count; i++) {
+				fchan = ftdm_span_get_channel(span, i);
+				ftdm_channel_command(fchan, FTDM_COMMAND_TRACE_END_ALL, NULL);
+			}
+		}
+		stream->write_function(stream, "+OK trace disabled\n");
 	} else if (!strcasecmp(argv[0], "gains")) {
 		unsigned int i = 0;
 		float txgain = 0.0;
