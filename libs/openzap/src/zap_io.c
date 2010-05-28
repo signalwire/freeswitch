@@ -1536,6 +1536,7 @@ OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t
 			}
 			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
+		break;
 	case ZAP_COMMAND_SET_INTERVAL:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL)) {
