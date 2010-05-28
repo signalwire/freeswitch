@@ -3411,9 +3411,9 @@ SWITCH_STANDARD_API(ft_function)
 		stream->write_function(stream, "+OK DTMF detection was %s\n", fcmd == FTDM_COMMAND_ENABLE_DTMF_DETECT ? "enabled" : "disabled");
 	} else if (!strcasecmp(argv[0], "trace")) {
 		char tracepath[255];
-		int i = 0;
+		unsigned i = 0;
 		uint32_t chan_id = 0;
-		int32_t chan_count = 0;
+		uint32_t chan_count = 0;
 		ftdm_span_t *span = NULL;
 		ftdm_channel_t *chan = NULL;
 		if (argc < 3) {
@@ -3452,7 +3452,7 @@ SWITCH_STANDARD_API(ft_function)
 	} else if (!strcasecmp(argv[0], "notrace")) {
 		uint32_t i = 0;
 		uint32_t chan_id = 0;
-		int32_t chan_count = 0;
+		uint32_t chan_count = 0;
 		ftdm_channel_t *fchan = NULL;
 		ftdm_span_t *span = NULL;
 		if (argc < 2) {
