@@ -11,3 +11,7 @@ config.*
 configure
 libtool
 aclocal.m4
+
+!/sample/boost/Makefile
+!/sample/dso/Makefile
+

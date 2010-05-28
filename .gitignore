@@ -27,7 +27,6 @@
 *.manifest
 *.dep
 *.dll
-*.htm
 *.sbr
 *.ilk
 *.bsc
@@ -46,6 +45,7 @@
 /Makefile.in
 /NEWS
 /README
+/TAGS
 aclocal.m4
 autom4te.cache
 /build/Makefile

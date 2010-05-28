@@ -14,6 +14,7 @@
 /applications/mod_expr/Makefile
 /applications/mod_expr/Makefile.in
 /applications/mod_expr/mod_expr.log
+/applications/mod_fax/mod_fax.log
 /applications/mod_fifo/Makefile
 /applications/mod_fsv/Makefile
 /applications/mod_limit/Makefile
