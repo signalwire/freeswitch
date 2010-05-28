@@ -51,6 +51,8 @@
 #include "ftdm_cpu_monitor.h"
 
 #define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
+#define FTDM_READ_TRACE_INDEX 0
+#define FTDM_WRITE_TRACE_INDEX 1
 
 static int time_is_init = 0;
 
@@ -756,8 +758,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 		new_chan->span_id = span->span_id;
 		new_chan->chan_id = span->chan_count;
 		new_chan->span = span;
-		new_chan->fds[0] = -1;
-		new_chan->fds[1] = -1;
+		new_chan->fds[FTDM_READ_TRACE_INDEX] = -1;
+		new_chan->fds[FTDM_WRITE_TRACE_INDEX] = -1;
 		new_chan->data_type = FTDM_TYPE_CHANNEL;
 		if (!new_chan->dtmf_on) {
 			new_chan->dtmf_on = FTDM_DEFAULT_DTMF_ON;
@@ -2216,12 +2218,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_TRACE_INPUT:
 		{
 			char *path = (char *) obj;
-			if (ftdmchan->fds[0] > 0) {
-				close(ftdmchan->fds[0]);
-				ftdmchan->fds[0] = -1;
+			if (ftdmchan->fds[FTDM_READ_TRACE_INDEX] > 0) {
+				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
+				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
 			}
-			if ((ftdmchan->fds[0] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-				ftdm_log(FTDM_LOG_DEBUG, "Tracing channel %u:%u to [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, path);	
+			if ((ftdmchan->fds[FTDM_READ_TRACE_INDEX] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				ftdm_log(FTDM_LOG_DEBUG, "Tracing channel %u:%u input to [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, path);	
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 			
@@ -2232,12 +2234,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_TRACE_OUTPUT:
 		{
 			char *path = (char *) obj;
-			if (ftdmchan->fds[1] > 0) {
-				close(ftdmchan->fds[1]);
-				ftdmchan->fds[1] = -1;
+			if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > 0) {
+				close(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX]);
+				ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] = -1;
 			}
-			if ((ftdmchan->fds[1] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-				ftdm_log(FTDM_LOG_DEBUG, "Tracing channel %u:%u to [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, path);	
+			if ((ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				ftdm_log(FTDM_LOG_DEBUG, "Tracing channel %u:%u output to [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, path);	
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 			
@@ -2247,13 +2249,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		break;
 	case FTDM_COMMAND_TRACE_END_ALL:
 		{
-			if (ftdmchan->fds[0] > 0) {
-				close(ftdmchan->fds[0]);
-				ftdmchan->fds[0] = -1;
+			if (ftdmchan->fds[FTDM_READ_TRACE_INDEX] > 0) {
+				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
+				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
 			}
-			if (ftdmchan->fds[1] > 0) {
-				close(ftdmchan->fds[1]);
-				ftdmchan->fds[1] = -1;
+			if (ftdmchan->fds[FTDM_READ_TRACE_INDEX] > 0) {
+				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
+				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
 			}
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
@@ -2771,6 +2773,28 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	return status;
 }
 
+static FIO_WRITE_FUNCTION(ftdm_raw_write)
+{
+	if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > -1) {
+		int dlen = (int) *datalen;
+		if ((write(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX], data, dlen)) != dlen) {
+			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %zd bytes\n", dlen);
+		}
+	}
+	return ftdmchan->fio->write(ftdmchan, data, datalen);
+}
+
+static FIO_READ_FUNCTION(ftdm_raw_read)
+{
+	ftdm_status_t  status = ftdmchan->fio->read(ftdmchan, data, datalen);
+	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
+		int dlen = (int) *datalen;
+		if (write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, dlen) != dlen) {
+			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %zd bytes\n", dlen);
+		}
+	}
+	return status;
+}
 
 static ftdm_status_t handle_dtmf(ftdm_channel_t *ftdmchan, ftdm_size_t datalen)
 {
@@ -2846,13 +2870,12 @@ static ftdm_status_t handle_dtmf(ftdm_channel_t *ftdmchan, ftdm_size_t datalen)
 			}
 		}
 		
-		return ftdmchan->fio->write(ftdmchan, auxbuf, &dlen);
+		return ftdm_raw_write(ftdmchan, auxbuf, &dlen);
 	} 
 
 	return FTDM_SUCCESS;
 
 }
-
 
 FT_DECLARE(void) ftdm_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
 {
@@ -2875,8 +2898,6 @@ FT_DECLARE(void) ftdm_generate_sln_silence(int16_t *data, uint32_t samples, uint
     }
 }
 
-
-
 FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -2897,14 +2918,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 		return FTDM_FAIL;
 	}
 
-	status = ftdmchan->fio->read(ftdmchan, data, datalen);
-	if (ftdmchan->fds[0] > -1) {
-		int dlen = (int) *datalen;
-		if (write(ftdmchan->fds[0], data, dlen) != dlen) {
-			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "file write error!");
-			return FTDM_FAIL;
-		}
-	}
+	status = ftdm_raw_read(ftdmchan, data, datalen);
 
 	if (status == FTDM_SUCCESS) {
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
@@ -3154,14 +3168,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 		}
 	}	
 	
-	if (ftdmchan->fds[1] > -1) {
-		int dlen = (int) *datalen;
-		if ((write(ftdmchan->fds[1], data, dlen)) != dlen) {
-			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "file write error!");
-			return FTDM_FAIL;
-		}
-	}
-
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_TX_GAIN) 
 		&& (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
 		unsigned char *wdata = data;
@@ -3169,7 +3175,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 			wdata[i] = ftdmchan->txgain_table[wdata[i]];
 		}
 	}
-	status = ftdmchan->fio->write(ftdmchan, data, datalen);
+
+	status = ftdm_raw_write(ftdmchan, data, datalen);
 
 	return status;
 }
