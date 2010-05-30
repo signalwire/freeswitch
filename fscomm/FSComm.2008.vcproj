@@ -219,6 +219,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\channel.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\widgets\codecwidget.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\debugtools\consolewindow.cpp"
+				>
+			</File>
+			<File
 				RelativePath="fshost.cpp"
 				>
 			</File>
@@ -248,6 +260,14 @@
 			</File>
 			<File
 				RelativePath=".\preferences\prefsofia.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\debugtools\sortfilterproxymodel.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\debugtools\statedebugdialog.cpp"
 				>
 			</File>
 		</Filter>
@@ -289,6 +309,62 @@
 			<File
 				RelativePath="call.h"
 				>
+			</File>
+			<File
+				RelativePath=".\channel.h"
+				>
+			</File>
+			<File
+				RelativePath=".\widgets\codecwidget.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC codecwidget.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_codecwidget.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 widgets\codecwidget.h -o debug\moc_codecwidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;codecwidget.h"
+						Outputs="debug\moc_codecwidget.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC prefportaudio.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_codecwidget.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 widgets\codecwidget.h -o release\moc_codecwidget.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;codecwidget.h"
+						Outputs="release\moc_codecwidget.cpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debugtools\consolewindow.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC consolewindow.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_consolewindow.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 debugtools\consolewindow.h -o debug\moc_consolewindow.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;consolewindow.h"
+						Outputs="debug\moc_consolewindow.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC consolewindow.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_consolewindow.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 debugtools\consolewindow.h -o release\moc_consolewindow.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;consolewindow.h"
+						Outputs="release\moc_consolewindow.cpp"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="fshost.h"
@@ -450,6 +526,62 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\debugtools\sortfilterproxymodel.h"
+				>
+			</File>
+			<File
+				RelativePath=".\debugtools\sortfilterproxymodel.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC sortfilterproxymodel.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_sortfilterproxymodel.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 debugtools\sortfilterproxymodel.h -o debug\moc_sortfilterproxymodel.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;sortfilterproxymodel.h"
+						Outputs="debug\moc_sortfilterproxymodel.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC sortfilterproxymodel.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_sortfilterproxymodel.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 debugtools\sortfilterproxymodel.h -o release\moc_sortfilterproxymodel.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;sortfilterproxymodel.h"
+						Outputs="release\moc_sortfilterproxymodel.cpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debugtools\statedebugdialog.h"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC statedebugdialog.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile debug\moc_statedebugdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;debug&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 debugtools\statedebugdialog.h -o debug\moc_statedebugdialog.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;statedebugdialog.h"
+						Outputs="debug\moc_statedebugdialog.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC prefportaudio.h"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile release\moc_statedebugdialog.cpp&#x0D;&#x0A;$(QTDIR)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I&quot;$(QTDIR)\include\QtCore&quot; -I&quot;$(QTDIR)\include\QtGui&quot; -I&quot;$(QTDIR)\include&quot; -I&quot;.&quot; -I&quot;$(QTDIR)\include\ActiveQt&quot; -I&quot;release&quot; -I&quot;.&quot; -I$(QTDIR)\mkspecs\win32-msvc2008 -D_MSC_VER=1500 -DWIN32 debugtools\statedebugdialog.h -o release\moc_statedebugdialog.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;statedebugdialog.h"
+						Outputs="release\moc_statedebugdialog.cpp"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 		<Filter
 			Name="Generated Files"
@@ -461,6 +593,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ui_codecwidget.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ui_consolewindow.h"
+				>
+			</File>
+			<File
 				RelativePath="ui_mainwindow.h"
 				>
 			</File>
@@ -468,11 +608,39 @@
 				RelativePath="ui_prefdialog.h"
 				>
 			</File>
+			<File
+				RelativePath=".\ui_statedebugdialog.h"
+				>
+			</File>
 			<Filter
 				Name="Debug"
 				>
 				<File
 					RelativePath="debug\moc_accountdialog.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="debug\moc_codecwidget.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="debug\moc_consolewindow.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -556,6 +724,30 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="debug\moc_sortfilterproxymodel.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="debug\moc_statedebugdialog.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="debug\qrc_resources.cpp"
 					>
 					<FileConfiguration
@@ -573,6 +765,30 @@
 				>
 				<File
 					RelativePath="release\moc_accountdialog.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="release\moc_codecwidget.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="release\moc_consolewindow.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -656,6 +872,30 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="release\moc_sortfilterproxymodel.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="release\moc_statedebugdialog.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="release\qrc_resources.cpp"
 					>
 					<FileConfiguration
@@ -698,6 +938,58 @@
 						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_accountdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe preferences\accountdialog.ui -o ui_accountdialog.h&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;accountdialog.ui"
 						Outputs="ui_accountdialog.h"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\widgets\codecwidget.ui"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC codecwidget.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_codecwidget.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe widgets\codecwidget.ui -o ui_codecwidget.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;codecwidgets.ui"
+						Outputs="ui_codecwidget.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC codecwidget.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_codecwidget.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe widgets\codecwidget.ui -o ui_codecwidget.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;codecwidget.ui"
+						Outputs="ui_codecwidget.h"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debugtools\consolewindow.ui"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC consolewindow.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_consolewindow.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe debugtools\consolewindow.ui -o ui_consolewindow.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;consolewindow.ui"
+						Outputs="ui_consolewindow.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC accountdialog.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_consolewindow.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe debugtools\consolewindow.ui -o ui_consolewindow.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;accountdialog.ui"
+						Outputs="ui_consolewindow.h"
 					/>
 				</FileConfiguration>
 			</File>
@@ -750,6 +1042,32 @@
 						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_prefdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe preferences\prefdialog.ui -o ui_prefdialog.h&#x0D;&#x0A;"
 						AdditionalDependencies="Rem;prefdialog.ui"
 						Outputs="ui_prefdialog.h"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debugtools\statedebugdialog.ui"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC statedebugdialog.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_statedebugdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe debugtools\statedebugdialog.ui -o ui_statedebugdialog.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;statedebugdialog.ui"
+						Outputs="ui_statedebugdialog.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC statedebugdialog.ui"
+						CommandLine="Rem IncrediBuild_AllowRemote&#x0D;&#x0A;Rem IncrediBuild_OutputFile .\ui_statedebugdialog.h&#x0D;&#x0A;$(QTDIR)\bin\uic.exe debugtools\statedebugdialog.ui -o ui_statedebugdialog.h&#x0D;&#x0A;"
+						AdditionalDependencies="Rem;statedebugdialog.ui"
+						Outputs="ui_statedebugdialog.h"
 					/>
 				</FileConfiguration>
 			</File>
