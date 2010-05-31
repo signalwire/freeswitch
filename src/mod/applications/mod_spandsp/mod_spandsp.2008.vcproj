@@ -286,6 +286,22 @@
 			>
 		</File>
 		<File
+			RelativePath=".\mod_spandsp.h"
+			>
+		</File>
+		<File
+			RelativePath=".\mod_spandsp_fax.c"
+			>
+		</File>
+		<File
+			RelativePath=".\mod_spandsp_dsp.c"
+			>
+		</File>
+		<File
+			RelativePath=".\mod_spandsp_codecs.c"
+			>
+		</File>
+		<File
 			RelativePath=".\udptl.c"
 			>
 		</File>
