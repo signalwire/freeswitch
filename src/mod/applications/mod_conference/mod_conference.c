@@ -1244,15 +1244,23 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					 */
 					if (conference->relationship_total) {
 						for (imember = conference->members; imember; imember = imember->next) {
-							conference_relationship_t *rel;
-							for (rel = imember->relationships; rel; rel = rel->next) {
-								if (imember != omember && switch_test_flag(imember, MFLAG_HAS_AUDIO)) {
-									int16_t *rptr = (int16_t *) imember->frame;
+							if (imember != omember && switch_test_flag(imember, MFLAG_HAS_AUDIO)) {
+								conference_relationship_t *rel;
+								switch_size_t found = 0;
+								int16_t *rptr = (int16_t *) imember->frame;
+								for (rel = imember->relationships; rel; rel = rel->next) {
 									if ((rel->id == omember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
 										z -= (int32_t) rptr[x];
+										found = 1;
+										break;
 									}
-									if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
-										z -= (int32_t) rptr[x];
+								}
+								if (!found) {
+									for (rel = omember->relationships; rel; rel = rel->next) {
+										if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
+											z -= (int32_t) rptr[x];
+											break;
+										}
 									}
 								}
 
