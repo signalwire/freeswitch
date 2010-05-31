@@ -358,8 +358,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
-		if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) && !switch_channel_test_flag(tech_pvt->channel, CF_EARLY_MEDIA) &&
-			!tech_pvt->local_sdp_video_port) {
+		if (!tech_pvt->local_sdp_video_port) {
 			sofia_glue_tech_choose_video_port(tech_pvt, 0);
 		}
 
