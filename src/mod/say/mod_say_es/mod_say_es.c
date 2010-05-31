@@ -111,16 +111,23 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 		if (b > 1) {
 			switch (b) {
 			case 2:
-				if (c) {
-					say_file("digits/veinti.wav");
-				} else {
-					say_file("digits/20.wav");
+				if (method != SSM_COUNTED) {
+					if (c) {
+						say_file("digits/veinti.wav");
+					} else {
+						say_file("digits/20.wav");
+					}
+					break;
 				}
-				break;
+
 			default:
-				say_file("digits/%d0.wav", b);
-				if (c) {
-					say_file("currency/and.wav");
+				if ((b < 4) && (method == SSM_COUNTED)) {
+					say_file("digits/h-%d0.wav", b);
+				} else {
+					say_file("digits/%d0.wav", b);
+					if (c) {
+						say_file("currency/and.wav");
+					}
 				}
 				break;
 			}
@@ -307,7 +314,7 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_date) {
 		say_file("time/day-%d.wav", tm.tm_wday);
 		say_file("time/mon-%d.wav", tm.tm_mon);
-		say_num(tm.tm_mday, SSM_COUNTED);
+		say_num(tm.tm_mday, SSM_PRONOUNCED);
 		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
 	}
 
@@ -327,9 +334,10 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 		say_num(hour, SSM_PRONOUNCED);
 
 		if (tm.tm_min > 9) {
+			say_file("currency/and.wav");
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		} else if (tm.tm_min) {
-			say_file("time/oh.wav");
+			say_file("currency/and.wav");
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		} else {
 			say_file("time/oclock.wav");
