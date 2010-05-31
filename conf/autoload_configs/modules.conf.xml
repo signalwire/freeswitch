@@ -45,8 +45,6 @@
     <load module="mod_fifo"/>
     <load module="mod_voicemail"/>
     <!--<load module="mod_directory"/>-->
-    <!--<load module="mod_fax"/>-->
-    <!--<load module="mod_spandsp"/>-->
     <!--<load module="mod_lcr"/>-->
     <load module="mod_limit"/>
     <load module="mod_esf"/>
@@ -64,7 +62,7 @@
     <load module="mod_dialplan_asterisk"/>
 
     <!-- Codec Interfaces -->
-    <load module="mod_voipcodecs"/>
+    <load module="mod_spandsp"/>
     <load module="mod_g723_1"/>
     <load module="mod_g729"/>
     <load module="mod_amr"/>

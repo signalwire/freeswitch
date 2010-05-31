@@ -18,6 +18,7 @@ opt/freeswitch/conf/autoload_configs/enum.conf.xml
 opt/freeswitch/conf/autoload_configs/event_multicast.conf.xml
 opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
 opt/freeswitch/conf/autoload_configs/fax.conf.xml
+opt/freeswitch/conf/autoload_configs/spandsp.conf.xml
 opt/freeswitch/conf/autoload_configs/fifo.conf.xml
 opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 opt/freeswitch/conf/autoload_configs/java.conf.xml
@@ -129,7 +130,7 @@ opt/freeswitch/mod/mod_enum.so*
 opt/freeswitch/mod/mod_esf.so*
 opt/freeswitch/mod/mod_event_*.so*
 opt/freeswitch/mod/mod_expr.so*
-opt/freeswitch/mod/mod_fax.so*
+opt/freeswitch/mod/mod_spandsp.so*
 opt/freeswitch/mod/mod_fifo.so*
 opt/freeswitch/mod/mod_fsv.so*
 opt/freeswitch/mod/mod_h26x.so*
@@ -159,7 +160,6 @@ opt/freeswitch/mod/mod_tts_commandline.so*
 opt/freeswitch/mod/mod_valet_parking.so*
 opt/freeswitch/mod/mod_vmd.so*
 opt/freeswitch/mod/mod_voicemail.so*
-opt/freeswitch/mod/mod_voipcodecs.so*
 opt/freeswitch/mod/mod_xml_*.so*
 opt/freeswitch/mod/ozmod_analog_em.so*
 opt/freeswitch/mod/ozmod_analog.so*

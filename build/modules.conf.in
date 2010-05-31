@@ -8,8 +8,6 @@ applications/mod_dptools
 applications/mod_enum
 #applications/mod_osp
 applications/mod_fifo
-#applications/mod_fax
-#applications/mod_spandsp
 #applications/mod_curl
 applications/mod_voicemail
 #applications/mod_directory
@@ -39,7 +37,7 @@ codecs/mod_amr
 #codecs/mod_silk
 codecs/mod_g729
 codecs/mod_h26x
-codecs/mod_voipcodecs
+codecs/mod_spandsp
 codecs/mod_bv
 codecs/mod_ilbc
 codecs/mod_speex

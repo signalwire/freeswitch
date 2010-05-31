@@ -11,11 +11,11 @@ export PASSTHRU_CODEC_MODULES=codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr
 export APPLICATIONS_MODULES=applications/mod_cluechoo applications/mod_commands applications/mod_conference applications/mod_dptools \
                             applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_fsv \
                             applications/mod_limit applications/mod_valet_parking applications/mod_voicemail applications/mod_rss \
-                            applications/mod_fax applications/mod_cidlookup applications/mod_curl applications/mod_easyroute \
+                            applications/mod_spandsp applications/mod_cidlookup applications/mod_curl applications/mod_easyroute \
 			    applications/mod_lcr applications/mod_nibblebill applications/mod_snom \
 			    applications/mod_spy applications/mod_vmd applications/mod_directory
 export ASR_TTS_MODULES=asr_tts/mod_tts_commandline
-export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_voipcodecs codecs/mod_siren codecs/mod_celt
+export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_siren codecs/mod_celt
 export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml
 export DIRECTORIES_MODULES=
 export DOTNET_MODULES=
