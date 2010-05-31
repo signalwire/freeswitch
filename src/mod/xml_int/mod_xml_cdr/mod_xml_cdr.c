@@ -69,6 +69,7 @@ static struct {
 	int auth_scheme;
 	int timeout;
 	switch_memory_pool_t *pool;
+	switch_event_node_t *node;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -466,12 +467,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	memset(&globals, 0, sizeof(globals));
+
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	memset(&globals, 0, sizeof(globals));
 	globals.log_http_and_disk = 0;
 	globals.log_b = 1;
 	globals.disable100continue = 0;
@@ -531,22 +533,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.rotate = switch_true(val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (zstr(val)) {
-					globals.base_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+					globals.base_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
 						globals.base_log_dir = switch_core_strdup(globals.pool, val);
 					} else {
-						globals.base_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+						globals.base_log_dir = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
 				if (zstr(val)) {
-					globals.base_err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+					globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
 						globals.base_err_log_dir = switch_core_strdup(globals.pool, val);
 					} else {
-						globals.base_err_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+						globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
@@ -581,15 +583,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					globals.auth_scheme = CURLAUTH_ANY;
 				}
 			}
-
-			if (zstr(globals.base_err_log_dir)) {
-				if (!zstr(globals.base_log_dir)) {
-					globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
-				} else {
-					globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
-				}
+		}
+		
+		if (zstr(globals.base_err_log_dir)) {
+			if (!zstr(globals.base_log_dir)) {
+				globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
+			} else {
+				globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 			}
 		}
+		
 	}
 	if (globals.retries < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries is negative, setting to 0\n");
@@ -614,7 +617,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 
 	globals.shutdown = 1;
 
+	switch_safe_free(globals.log_dir);
+	switch_safe_free(globals.err_log_dir);
+
+	switch_event_unbind(&globals.node);
 	switch_core_remove_state_handler(&state_handlers);
+
+	switch_thread_rwlock_destroy(globals.log_path_lock);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
