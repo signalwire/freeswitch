@@ -36,41 +36,63 @@
 
 typedef struct {
 	switch_core_session_t *session;
-    dtmf_rx_state_t *dtmf_detect;
+	dtmf_rx_state_t *dtmf_detect;
+	char last_digit;
+	uint32_t samples;
+	uint32_t last_digit_end;
+	uint32_t digit_begin;
+	uint32_t min_dup_digit_spacing;
 } switch_inband_dtmf_t;
+
+static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int level, int delay)
+{
+	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *)user_data;
+	char digit = (char)code;
+	if (digit) {
+		/* prevent duplicate DTMF */
+		if (digit != pvt->last_digit || (pvt->samples - pvt->last_digit_end) > pvt->min_dup_digit_spacing) {
+			switch_dtmf_t dtmf;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "DTMF BEGIN DETECTED: [%c]\n", digit);
+			pvt->last_digit = digit;
+			dtmf.digit = digit;
+			dtmf.duration = switch_core_default_dtmf_duration(0);
+			switch_channel_queue_dtmf(switch_core_session_get_channel(pvt->session), &dtmf);
+			pvt->digit_begin = pvt->samples;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "DUP DTMF DETECTED: [%c]\n", digit);
+			pvt->last_digit_end = pvt->samples;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "DTMF END DETECTED: [%c], duration = %u ms\n", pvt->last_digit, (pvt->samples - pvt->digit_begin) / 8);
+		pvt->last_digit_end = pvt->samples;
+	}
+}
 
 static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
 	switch_frame_t *frame = NULL;
-	char digit_str[80];
 	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
 
 	switch (type) {
-	case SWITCH_ABC_TYPE_INIT:
-        pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
+	case SWITCH_ABC_TYPE_INIT: {
+		const char *min_dup_digit_spacing_str = switch_channel_get_variable(channel, "min_dup_digit_spacing_ms");
+		pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
+		dtmf_rx_set_realtime_callback(pvt->dtmf_detect, spandsp_dtmf_rx_realtime_callback, pvt);
+		if (!zstr(min_dup_digit_spacing_str)) {
+			pvt->min_dup_digit_spacing = atoi(min_dup_digit_spacing_str) * 8;
+		}
 		break;
+	}
 	case SWITCH_ABC_TYPE_CLOSE:
-        if (pvt->dtmf_detect) {
-            dtmf_rx_free(pvt->dtmf_detect);
-        }
+		if (pvt->dtmf_detect) {
+			dtmf_rx_free(pvt->dtmf_detect);
+		}
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
+			pvt->samples += frame->samples;
 			dtmf_rx(pvt->dtmf_detect, frame->data, frame->samples);
-			dtmf_rx_get(pvt->dtmf_detect, digit_str, sizeof(digit_str));
-			if (digit_str[0]) {
-				char *p = digit_str;
-				while (p && *p) {
-					switch_dtmf_t dtmf;
-					dtmf.digit = *p;
-					dtmf.duration = switch_core_default_dtmf_duration(0);
-					switch_channel_queue_dtmf(channel, &dtmf);
-					p++;
-				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n",
-								  digit_str);
-			}
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
 		break;
