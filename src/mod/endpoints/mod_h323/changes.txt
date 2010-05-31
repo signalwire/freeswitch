@@ -1,3 +1,8 @@
+add dtmfinband conf parameter.
+add endpoint-name conf parameter represents endpoint name.
+fix GK registration retrying in case of registration reject.
+fix double DTMF hadling for examle in case dtmf-relay h245-signal h245-alphanumeric on cisco dial-peer.
+fix crash on module unloading.
 add PI handling in Call Proceeding.
 add PI handling in alerting.
 fix slow start handling

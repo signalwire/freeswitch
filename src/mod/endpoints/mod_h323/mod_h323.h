@@ -156,12 +156,15 @@ class FSH323EndPoint:public H323EndPoint {
 	switch_endpoint_interface_t *m_freeswitch;
 	PString m_gkAddress;
 	PString m_gkIdentifer;
+	PString m_endpointname;
 	PString m_gkInterface;
 	bool m_faststart;
 	bool m_h245tunneling;
 	bool m_h245insetup;
+	bool m_dtmfinband;
 	int m_gkretry;
 	FSGkRegThread *m_thread;
+	bool m_stop_gk;
 };
 
 
@@ -243,6 +246,7 @@ class FSH323Connection:public H323Connection {
 	bool m_txChennel;
 	bool m_ChennelAnswer;
 	bool m_ChennelProgress;
+	unsigned char m_select_dtmf;
 	PSyncPoint m_rxAudioOpened;
 	PSyncPoint m_txAudioOpened;
   protected:

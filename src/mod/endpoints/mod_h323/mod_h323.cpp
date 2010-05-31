@@ -1,5 +1,5 @@
 /*
-	Version 0.0.20
+	Version 0.0.22
 */
 
 #include "mod_h323.h"
@@ -12,6 +12,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, mod_h323_globals.dialplan
 SWITCH_MODULE_LOAD_FUNCTION(mod_h323_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_h323_shutdown);
 SWITCH_MODULE_DEFINITION(mod_h323, mod_h323_load, mod_h323_shutdown, NULL);
+
 
 #define CF_NEED_FLUSH (1 << 1)
 struct mod_h323_globals mod_h323_globals = { 0 };
@@ -84,9 +85,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_h323_load){
 
     if (h323_process->Initialise(*module_interface)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Opal manager initialized and running\n");
-        //unloading causes a seg in linux
-        return SWITCH_STATUS_NOUNLOAD;
-        //return SWITCH_STATUS_SUCCESS;
+        return SWITCH_STATUS_SUCCESS;
     }
 
     delete h323_process;
@@ -104,7 +103,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_h323_shutdown){
     return SWITCH_STATUS_SUCCESS;
 }
 
-
+void h_timer(unsigned sec){
+	timeval timeout;
+	timeout.tv_sec = sec;
+	timeout.tv_usec = 0; 
+	select(NULL, NULL, NULL, NULL, &timeout);
+}
 
 #if PTRACING
 
@@ -312,9 +316,11 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface){
     AddAllUserInputCapabilities(0,1);
 	PTRACE(1, "OpenPhone\tCapability Table:\n" << setprecision(4) << capabilities);
 	
-	DisableFastStart(!m_faststart);
+    DisableFastStart(!m_faststart);
     DisableH245Tunneling(!m_h245tunneling);
-    DisableH245inSetup(!m_h245insetup);	
+    DisableH245inSetup(!m_h245insetup);
+    DisableDetectInBandDTMF(!m_dtmfinband);
+    SetLocalUserName(m_endpointname);
 	 
     if (m_listeners.empty()) {
         StartListener("");
@@ -397,10 +403,14 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload){
 				m_h245tunneling = switch_true(val);
 			} else if (!strcasecmp(var, "h245insetup")) {
 				m_h245insetup = switch_true(val);
+			} else if (!strcasecmp(var, "dtmfinband")) {
+				m_dtmfinband = switch_true(val);
             } else if (!strcasecmp(var, "gk-address")) {
                 m_gkAddress = val;
             } else if (!strcasecmp(var, "gk-identifer")) {
                 m_gkIdentifer = val;
+            } else if (!strcasecmp(var, "endpoint-name")) {
+                m_endpointname = val;
             } else if (!strcasecmp(var, "gk-interface")) {
                 m_gkInterface = val;
             } else if (!strcasecmp(var, "gk-prefix")) {
@@ -456,6 +466,8 @@ FSH323EndPoint::FSH323EndPoint()
 	:m_faststart(true)
 	,m_h245tunneling(true)
 	,m_h245insetup(true)
+	,m_thread(NULL)
+	,m_stop_gk(false)
 {
 	PTRACE(4, "mod_h323\t======>FSH323EndPoint::FSH323EndPoint [" << *this<<"]");
 	terminalType = e_GatewayOnly;
@@ -464,6 +476,7 @@ FSH323EndPoint::FSH323EndPoint()
 FSH323EndPoint::~FSH323EndPoint(){
 	PTRACE(4, "mod_h323\t======>FSH323EndPoint::~FSH323EndPoint [" << *this<<"]");
 	StopGkClient();
+	ClearAllCalls(H323Connection::EndedByLocalUser,false);
 }
 
 H323Connection  *FSH323EndPoint::CreateConnection(
@@ -513,22 +526,38 @@ void FSH323EndPoint::StartGkClient(int retry, PString* gkAddress,PString* gkIden
                           (const char *)m_gkAddress,
                           (const char *)m_gkIdentifer,
                           (const char *)m_gkInterface);
-			switch_yield(retry*1000);
+					if (m_stop_gk) {
+			m_stop_gk = false;
+			return;
+		}		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Wait next go connect gatekeeper %d\n",retry);
+		h_timer(retry);
+		if (m_stop_gk) {
+			m_stop_gk = false;
+			return;
+		}
+		RemoveGatekeeper();
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started gatekeeper: %s\n",
 							(const char *)GetGatekeeper()->GetName());	
-	m_thread = 0;	
+	m_thread = NULL;
 }
 
 void FSH323EndPoint::StopGkClient(){
 	PTRACE(4, "mod_h323\t======> FSH323EndPoint::StopGkClient [" << *this<<"]");
 	if (m_thread) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started gatekeeper thread\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stop gatekeeper thread\n");		
+		m_stop_gk = true;
+		
+		while (m_stop_gk){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Wait stop gatekeeper thread\n");
+			h_timer(2);
+		}
 		RemoveGatekeeper();
-		m_thread->Terminate();
-		m_thread = 0;
+		m_thread = NULL;
     }
 }
+
 
 FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* transport, unsigned callReference,  switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel)
 	: H323Connection(endpoint,callReference)
@@ -540,7 +569,8 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 	, m_rxChennel(false)
 	, m_txChennel(false)
 	, m_ChennelAnswer(false)
-	, m_ChennelProgress(false){
+	, m_ChennelProgress(false)
+	, m_select_dtmf(0){
 	PTRACE(4, "mod_h323\t======>FSH323Connection::FSH323Connection [" << *this<<"]");
 
     h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
@@ -1054,19 +1084,24 @@ void FSH323Connection::SendUserInputTone(char tone, unsigned duration, unsigned 
 
 void FSH323Connection::OnUserInputTone(char tone, unsigned duration, unsigned logicalChannel, unsigned rtpTimestamp)
 {
-	PTRACE(4, "mod_h323\t======>FSH323Connection::OnUserInputTone [" << *this<<"]");
-	
-	switch_dtmf_t dtmf = { tone, duration };
-    switch_channel_queue_dtmf(m_fsChannel, &dtmf);
-	H323Connection::OnUserInputTone( tone,  duration, logicalChannel, rtpTimestamp);
+	if (m_select_dtmf == 0 || m_select_dtmf == 1){
+		m_select_dtmf = 1;
+		PTRACE(4, "mod_h323\t======>FSH323Connection::OnUserInputTone [" << *this<<"]");
+		switch_dtmf_t dtmf = { tone, duration };
+		switch_channel_queue_dtmf(m_fsChannel, &dtmf);
+		H323Connection::OnUserInputTone( tone,  duration, logicalChannel, rtpTimestamp);
+	}
 }
 
 void FSH323Connection::OnUserInputString(const PString &value)
 {
-	PTRACE(4, "mod_h323\t======>FSH323Connection::OnUserInputString [" << *this<<"]");
-	switch_dtmf_t dtmf = { value[0], 500 };
-    switch_channel_queue_dtmf(m_fsChannel, &dtmf);
-	H323Connection::OnUserInputString(value);
+	if (m_select_dtmf == 0 || m_select_dtmf == 2){
+		m_select_dtmf = 2;
+		PTRACE(4, "mod_h323\t======>FSH323Connection::OnUserInputString [" << *this<<"]");
+		switch_dtmf_t dtmf = { value[0], 500 };
+		switch_channel_queue_dtmf(m_fsChannel, &dtmf);
+		H323Connection::OnUserInputString(value);
+	}
 }
 
 
