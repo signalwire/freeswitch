@@ -20,6 +20,7 @@ applications/mod_fsv
 #applications/mod_nibblebill
 #applications/mod_soundtouch
 #applications/mod_rss
+applications/mod_spandsp
 #applications/mod_snom
 #applications/mod_vmd
 #applications/mod_avmd
@@ -37,7 +38,6 @@ codecs/mod_amr
 #codecs/mod_silk
 codecs/mod_g729
 codecs/mod_h26x
-codecs/mod_spandsp
 codecs/mod_bv
 codecs/mod_ilbc
 codecs/mod_speex
