@@ -8,4 +8,6 @@
     <!-- Enable remote debugging -->
     <option value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:8000"/>
   </options>
+  <startup class="net/cog/fs/system/Control" method="startup" arg="start up arg"/>
+  <shutdown class="net/cog/fs/system/Control" method="shutdown" arg="shutdown arg"/>
 </configuration>

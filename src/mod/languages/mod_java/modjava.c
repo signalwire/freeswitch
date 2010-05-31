@@ -44,6 +44,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_java_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_java_shutdown);
 SWITCH_MODULE_DEFINITION(mod_java, mod_java_load, mod_java_shutdown, NULL);
 
+struct user_method {
+	const char * class;
+	const char * method;
+	const char * arg;
+};
+
+typedef struct user_method user_method_t;
+
+struct vm_control {
+	struct user_method startup;
+	struct user_method shutdown;
+};
+
+typedef struct vm_control vm_control_t;
+static vm_control_t  vmControl;
 
 static void launch_java(switch_core_session_t *session, const char *data, JNIEnv *env)
 {
@@ -93,6 +108,67 @@ done:
         (*env)->DeleteLocalRef(env, Launcher);
 }
 
+static switch_status_t exec_user_method(user_method_t * userMethod) {
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+    jclass  class = NULL;
+    jmethodID method = NULL;
+    jstring arg = NULL;
+    JNIEnv *env;
+    jint res;
+
+    if (javaVM == NULL || userMethod->class == NULL) {
+        return status;
+    }
+
+    res = (*javaVM)->AttachCurrentThread(javaVM, (void*) &env, NULL);
+
+    if (res != JNI_OK) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching thread to Java VM!\n");
+        (*env)->ExceptionDescribe(env);
+        status =  SWITCH_STATUS_FALSE;
+		goto done;
+    }
+
+    class = (*env)->FindClass(env, userMethod->class);
+
+    if (class == NULL) {
+        (*env)->ExceptionDescribe(env);
+        status =  SWITCH_STATUS_FALSE;
+        goto done;
+    }
+
+    method = (*env)->GetStaticMethodID(env, class, userMethod->method, "(Ljava/lang/String;)V");
+
+    if (method == NULL) {
+        (*env)->ExceptionDescribe(env);
+        status =  SWITCH_STATUS_FALSE;
+        goto done;
+    }
+
+    arg = (*env)->NewStringUTF(env, userMethod->arg);
+
+    if (arg == NULL) {
+        (*env)->ExceptionDescribe(env);
+        status =  SWITCH_STATUS_FALSE;
+        goto done;
+    }
+
+    (*env)->CallStaticVoidMethod(env, class, method, arg);
+
+    if ((*env)->ExceptionOccurred(env)){
+        (*env)->ExceptionDescribe(env);
+        status =  SWITCH_STATUS_FALSE;
+    }
+
+done:
+    if (arg != NULL)
+        (*env)->DeleteLocalRef(env, arg);
+    if (class != NULL)
+        (*env)->DeleteLocalRef(env, class);
+ 	(*javaVM)->DetachCurrentThread(javaVM);
+    return status;
+}
+
 SWITCH_STANDARD_APP(java_function)
 {
     JNIEnv *env;
@@ -111,7 +187,7 @@ SWITCH_STANDARD_APP(java_function)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching thread to Java VM!\n");
 }
 
-static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount)
+static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount, vm_control_t * vmControl)
 {
     switch_xml_t cfg, xml;
     switch_status_t status;
@@ -121,6 +197,8 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount)
     {
         switch_xml_t javavm;
         switch_xml_t options;
+        switch_xml_t startup;
+        switch_xml_t shutdown;
 
         javavm = switch_xml_child(cfg, "javavm");
         if (javavm != NULL)
@@ -182,6 +260,25 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount)
             (*javaOptions)[i].optionString = "-Djava.library.path=" SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "mod";
         }
 
+	/*
+	<startup class="net/cog/fs/system/Control" method="startup" arg="start up arg"/>
+	<shutdown class="net/cog/fs/system/Control" method="shutdown" arg="shutdown arg"/>
+	*/
+
+        memset(vmControl, 0, sizeof(struct vm_control));
+        startup = switch_xml_child(cfg, "startup");
+        if (startup != NULL) {
+            vmControl->startup.class = switch_xml_attr_soft(startup, "class");
+            vmControl->startup.method = switch_xml_attr_soft(startup, "method");
+            vmControl->startup.arg = switch_xml_attr_soft(startup, "arg");
+        }
+        shutdown = switch_xml_child(cfg, "shutdown");
+        if (shutdown != NULL) {
+            vmControl->shutdown.class = switch_xml_attr_soft(shutdown, "class");
+            vmControl->shutdown.method = switch_xml_attr_soft(shutdown, "method");
+            vmControl->shutdown.arg = switch_xml_attr_soft(shutdown, "arg");
+        }
+
     close:
         switch_xml_free(xml);
     }
@@ -193,7 +290,7 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount)
     return status;
 }
 
-static switch_status_t create_java_vm(JavaVMOption *options, int optionCount)
+static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm_control_t * vmControl)
 {
     jint (JNICALL *pJNI_CreateJavaVM)(JavaVM**,void**,void*);
     switch_status_t status;
@@ -235,6 +332,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)
 {
     switch_status_t status;
     JavaVMOption *options = NULL;
+
     int optionCount = 0;
 	switch_application_interface_t *app_interface;
 
@@ -249,12 +347,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)
     status = switch_core_new_memory_pool(&memoryPool);
     if (status == SWITCH_STATUS_SUCCESS)
     {
-        status = load_config(&options, &optionCount);
-        if (status == SWITCH_STATUS_SUCCESS)
-        {
-            status = create_java_vm(options, optionCount);
-            if (status == SWITCH_STATUS_SUCCESS)
-                return SWITCH_STATUS_SUCCESS;
+        status = load_config(&options, &optionCount, &vmControl);
+
+        if (status == SWITCH_STATUS_SUCCESS) {
+
+            status = create_java_vm(options, optionCount, &vmControl);
+
+            if (status == SWITCH_STATUS_SUCCESS) {
+				status = exec_user_method(&vmControl.startup);
+                if (status == SWITCH_STATUS_SUCCESS){
+                    return SWITCH_STATUS_SUCCESS;
+                }
+			}
+
             switch_dso_unload(javaVMHandle);
         }
         switch_core_destroy_memory_pool(&memoryPool);
@@ -270,6 +375,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_java_shutdown)
     if (javaVM == NULL)
         return SWITCH_STATUS_FALSE;
 
+    exec_user_method(&vmControl.shutdown);
     (*javaVM)->DestroyJavaVM(javaVM);
     javaVM = NULL;
     switch_dso_unload(javaVMHandle);
