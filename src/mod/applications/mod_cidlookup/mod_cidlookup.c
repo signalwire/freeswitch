@@ -629,7 +629,17 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 		cid->area = "UNKNOWN";
 	}
 	if (!cid->name) {
-		cid->name = cid->area;
+		if (skipcitystate) {
+			if (strlen(number) == 11 && number[0] == '1') {
+				int a, b, c;
+				sscanf(number, "1%3d%3d%4d", &a, &b, &c);
+				cid->name = switch_core_sprintf(pool, "%03d-%03d-%04d", a, b, c);
+			} else {
+				cid->name = number;
+			}
+		} else {
+			cid->name = cid->area;
+		}
 	}
 	if (!cid->src) {
 		cid->src = "UNKNOWN";
