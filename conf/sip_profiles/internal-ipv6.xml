@@ -35,7 +35,7 @@
     <!--max number of open dialogs in proceeding -->
     <!--<param name="max-proceeding" value="1000"/>-->
     <!--session timers for all call to expire after the specified seconds -->
-    <!--<param name="session-timeout" value="120"/>-->
+    <!--<param name="session-timeout" value="1800"/>-->
     <!--<param name="multiple-registrations" value="true"/>-->
     <!--set to 'greedy' if you want your codec list to take precedence -->
     <param name="inbound-codec-negotiation" value="generous"/>
