@@ -52,8 +52,13 @@ typedef enum {
     FUNCTION_GW
 } mod_spandsp_fax_application_mode_t;
 
-void mod_spandsp_fax_shutdown(void);
 void mod_spandsp_fax_load(switch_memory_pool_t *pool);
+switch_status_t mod_spandsp_codecs_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool);
+switch_status_t mod_spandsp_dsp_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool);
+
+void mod_spandsp_fax_shutdown(void);
+void mod_spandsp_dsp_shutdown(void);
+
 void mod_spandsp_fax_event_handler(switch_event_t *event);
 void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *data, mod_spandsp_fax_application_mode_t app_mode);
 switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app, const char *data);
@@ -61,4 +66,5 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
 switch_status_t spandsp_stop_inband_dtmf_session(switch_core_session_t *session);
 switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session);
 
-switch_status_t mod_spandsp_codecs_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool);
+switch_status_t callprogress_detector_start(switch_core_session_t *session, const char *name);
+switch_status_t callprogress_detector_stop(switch_core_session_t *session);

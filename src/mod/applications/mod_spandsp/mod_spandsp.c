@@ -29,6 +29,7 @@
  * Brian West <brian@freeswitch.org>
  * Steve Underwood <steveu@coppice.org>
  * Antonio Gallo <agx@linux.it>
+ * Christopher M. Rienzo <chris@rienzo.net>
  * mod_spandsp.c -- Module implementing spandsp fax, dsp, and codec functionality
  *
  */
@@ -98,9 +99,91 @@ SWITCH_STANDARD_APP(t38_gateway_function)
 	switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, data, NULL, t38_gateway_start);
 }
 
+/**
+ * Start tone detector application
+ *
+ * @param data the command string
+ */
+SWITCH_STANDARD_APP(start_tone_detect_app)
+{
+	switch_channel_t *channel;
+	if (!session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No session\n");
+		return;
+	}
+	channel = switch_core_session_get_channel(session);
+	if (zstr(data)) {
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "-ERR missing descriptor name");
+	} else if (callprogress_detector_start(session, data) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "-ERR failed to start tone detector");
+	} else {
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "+OK started");
+	}
+}
+
+/**
+ * Start tone detector API
+ */
+SWITCH_STANDARD_API(start_tone_detect_api)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR missing descriptor name\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!session) {
+		stream->write_function(stream, "-ERR no session\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	status = callprogress_detector_start(session, cmd);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK started\n");
+	} else {
+		stream->write_function(stream, "-ERR failed to start tone detector\n");
+	}
+
+	return status;
+}
+
+/**
+ * Stop tone detector application
+ *
+ * @param data the command string
+ */
+SWITCH_STANDARD_APP(stop_tone_detect_app)
+{
+	switch_channel_t *channel;
+	if (!session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No session\n");
+		return;
+	}
+	channel = switch_core_session_get_channel(session);
+	callprogress_detector_stop(session);
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "+OK stopped");
+}
+
+/**
+ * Stop tone detector API
+ */
+SWITCH_STANDARD_API(stop_tone_detect_api)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	if (!session) {
+		stream->write_function(stream, "-ERR no session\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	callprogress_detector_stop(session);
+	stream->write_function(stream, "+OK stopped\n");
+	return status;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 {
 	switch_application_interface_t *app_interface;
+	switch_api_interface_t *api_interface;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -115,8 +198,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	SWITCH_ADD_APP(app_interface, "spandsp_stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
 
+	SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "[name]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "stop_tone_detect", "Stop background tone detection with cadence", "", stop_tone_detect_app, "", SAF_NONE);
+	SWITCH_ADD_API(api_interface, "start_tone_detect", "Start background tone detection with cadence", start_tone_detect_api, "[name]");
+	SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop backbground tone detection with cadence", stop_tone_detect_api, "");
+
+
 	mod_spandsp_fax_load(pool);
     mod_spandsp_codecs_load(module_interface, pool);
+	if (mod_spandsp_dsp_load(module_interface, pool) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our reloadxml handler!\n");
@@ -133,6 +225,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 	switch_event_unbind(&NODE);
 
 	mod_spandsp_fax_shutdown();
+	mod_spandsp_dsp_shutdown();
 
 	return SWITCH_STATUS_UNLOAD;
 }
