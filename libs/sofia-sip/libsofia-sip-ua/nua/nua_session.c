@@ -44,6 +44,7 @@
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_util.h>
 #include <sofia-sip/su_uniqueid.h>
+#include <sofia-sip/msg_mime_protos.h>
 
 #define NTA_INCOMING_MAGIC_T struct nua_server_request
 #define NTA_OUTGOING_MAGIC_T struct nua_client_request
@@ -2114,7 +2115,7 @@ nua_session_server_init(nua_server_request_t *sr)
   msg_t *msg = sr->sr_response.msg;
   sip_t *sip = sr->sr_response.sip;
 
-  sip_t const *request = sr->sr_request.sip;
+  sip_t *request = (sip_t *) sr->sr_request.sip;
 
   if (!sr->sr_initial)
     sr->sr_usage = nua_dialog_usage_get(nh->nh_ds, nua_session_usage, NULL);
@@ -2134,6 +2135,54 @@ nua_session_server_init(nua_server_request_t *sr)
 
     /* XXX - soa should know what it supports */
     sip_add_dup(msg, sip, (sip_header_t *)a);
+
+	/* if we see there is a multipart content-type, 
+	   parse it into the sip structre and find the SDP and replace it 
+	   into the request as the requested content */
+	if (request->sip_content_type &&
+        su_casenmatch(request->sip_content_type->c_type, "multipart/", 10)) {
+		msg_multipart_t *mp, *mpp;
+
+		if (request->sip_multipart) {
+			mp = request->sip_multipart;
+		} else {
+			mp = msg_multipart_parse(msg_home(msg),
+									 request->sip_content_type,
+									 (sip_payload_t *)request->sip_payload);
+			request->sip_multipart = mp;
+		}
+
+		if (mp) {
+			int sdp = 0;
+			
+			/* extract the SDP and set the primary content-type and payload to that SDP as if it was the only content so SOA will work */
+			for(mpp = mp; mpp; mpp = mpp->mp_next) {
+				if (mpp->mp_content_type && mpp->mp_content_type->c_type && 
+					mpp->mp_payload && mpp->mp_payload->pl_data && 
+					su_casenmatch(mpp->mp_content_type->c_type, "application/sdp", 15)) {
+
+					request->sip_content_type = msg_content_type_dup(msg_home(msg), mpp->mp_content_type);
+					
+					if (request->sip_content_length) {
+						request->sip_content_length->l_length = mpp->mp_payload->pl_len;
+					}
+					
+					request->sip_payload->pl_data = su_strdup(msg_home(msg), mpp->mp_payload->pl_data);
+					request->sip_payload->pl_len = mpp->mp_payload->pl_len;
+
+					sdp++;
+
+					break;
+				}
+			}
+
+			/* insist on the existance of a SDP in the content or refuse the request */
+			if (!sdp) {
+				return SR_STATUS1(sr, SIP_406_NOT_ACCEPTABLE);
+			}
+		}
+	}
+
 
     /* Make sure caller uses application/sdp without compression */
     if (nta_check_session_content(NULL, request, a, TAG_END())) {

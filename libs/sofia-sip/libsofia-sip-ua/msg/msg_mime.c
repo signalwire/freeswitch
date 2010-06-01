@@ -378,7 +378,7 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
   msg_t msg[1] = {{{ SU_HOME_INIT(msg) }}};
   size_t len, m, blen;
   char *boundary, *p, *next, save;
-  char const *b, *end;
+  char *b, *end;
   msg_param_t param;
 
   p = pl->pl_data; len = pl->pl_len; end = p + len;
@@ -438,8 +438,11 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
     *mmp = mp; mmp = &mp->mp_next;
 
     /* Put delimiter transport-padding CRLF here */
-    mp->mp_common->h_data = b;
+
+	*b = '\0';
     mp->mp_common->h_len = p - b;
+	b += strlen(boundary) - 2;
+    mp->mp_common->h_data = b;
 
     /* .. and body-part here */
     mp->mp_data = p;
@@ -449,14 +452,17 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
       /* We found close-delimiter */
       assert(mp);
       if (!mp)
-	break;			/* error */
+		  break;			/* error */
       mp->mp_close_delim = (msg_payload_t *)
-	msg_header_alloc(msg_home(msg), msg_payload_class, 0);
+		  msg_header_alloc(msg_home(msg), msg_payload_class, 0);
       if (!mp->mp_close_delim)
-	break;			/* error */
+		  break;			/* error */
       /* Include also transport-padding and epilogue in the close-delimiter */
-      mp->mp_close_delim->pl_data = next;
+	  *next = '\0';
       mp->mp_close_delim->pl_len = p + len - next;
+	  next += strlen(boundary) - 2;
+      mp->mp_close_delim->pl_data = next;
+	  
       break;
     }
 
@@ -515,8 +521,8 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
     mp->mp_data = boundary;
     mp->mp_len = (unsigned)blen; /* XXX */
 
-    assert(mp->mp_payload || mp->mp_separator);
-
+    if (!(mp->mp_payload || mp->mp_separator)) continue;
+	
     if (mp->mp_close_delim) {
       msg_header_t **tail;
 
