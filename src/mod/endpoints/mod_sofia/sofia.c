@@ -5805,10 +5805,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char sip_acl_authed_by[512] = "";
 	char sip_acl_token[512] = "";
 
-	if (sip->sip_multipart) {
-		printf("W0000000t\n");
-	}
-
 	profile->ib_calls++;
 
 	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING)) {
@@ -6350,6 +6346,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 		if (sip->sip_via->v_rport) {
 			switch_channel_set_variable(channel, "sip_via_rport", sip->sip_via->v_rport);
+		}
+	}
+
+
+	if (sip->sip_multipart) {
+		msg_multipart_t *mp;
+		
+		for (mp = sip->sip_multipart; mp; mp = mp->mp_next) {
+			if (mp->mp_payload && mp->mp_payload->pl_data && mp->mp_content_type && mp->mp_content_type->c_type) {
+				switch_channel_set_variable_name_printf(channel, mp->mp_payload->pl_data, SOFIA_MULTIPART_PREFIX "%s", mp->mp_content_type->c_type);
+			}
 		}
 	}
 

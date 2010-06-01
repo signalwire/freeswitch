@@ -1506,6 +1506,48 @@ void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_s
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 }
 
+char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
+{
+	char *extra_headers = NULL;
+	switch_stream_handle_t stream = { 0 };
+	switch_event_header_t *hi = NULL;
+	int x = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *boundary = switch_core_session_get_uuid(session);
+	
+	SWITCH_STANDARD_STREAM(stream);
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			const char *name = (char *) hi->name;
+			char *value = (char *) hi->value;
+
+			if (!strncasecmp(name, prefix, strlen(prefix))) {
+				const char *hname = name + strlen(prefix);
+				stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, hname, strlen(value) + 1, value);
+				x++;
+			}
+		}
+		switch_channel_variable_last(channel);
+	}
+
+	if (x) {
+		*mp_type = switch_core_session_sprintf(session, "multipart/mixed; boundary=%s", boundary);
+		if (sdp) {
+			stream.write_function(&stream, "--%s\nContent-Type: application/sdp\nContent-Length: %d\n\n%s\n", boundary, strlen(sdp) + 1, sdp);
+		}
+		stream.write_function(&stream, "--%s--\n", boundary);
+	}
+
+	if (!zstr((char *) stream.data)) {
+		extra_headers = stream.data;
+	} else {
+		switch_safe_free(stream.data);
+	}
+
+	return extra_headers;
+}
+
+
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix)
 {
 	char *extra_headers = NULL;
@@ -1583,7 +1625,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
 	const char *handle_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_from");
 	const char *handle_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_to");
-
+	char *mp = NULL, *mp_type = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -2018,6 +2060,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->nh->nh_has_invite = 1;
 	}
 
+	if ((mp = sofia_glue_get_multipart(session, SOFIA_MULTIPART_PREFIX, tech_pvt->local_sdp_str, &mp_type))) {
+		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+	}
+	
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
@@ -2069,12 +2115,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
 				   NUTAG_MEDIA_ENABLE(0),
-				   SIPTAG_CONTENT_TYPE_STR("application/sdp"),
-				   SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
+				   SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp"),
+				   SIPTAG_PAYLOAD_STR(mp ? mp : tech_pvt->local_sdp_str),
+				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), 
+				   SOATAG_HOLD(holdstr), 
+				   TAG_END());
 	}
 
 	sofia_glue_free_destination(dst);
 	switch_safe_free(extra_headers);
+	switch_safe_free(mp);
 	tech_pvt->redirected = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
