@@ -386,7 +386,7 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 
 
 		if (switch_core_session_get_read_impl(session, &impl) == SWITCH_STATUS_SUCCESS) {
-			if (switch_core_session_get_video_read_impl(session, &impl) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_get_video_read_impl(session, &video_impl) == SWITCH_STATUS_SUCCESS) {
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui,%s",
 								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000,
 								video_impl.iananame);
