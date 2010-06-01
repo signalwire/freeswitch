@@ -1038,7 +1038,7 @@ void event_handler(switch_event_t *event)
 		if ((mwi_account = switch_event_get_header_nil(event, "orig-mwi-account"))) {
 			dup_mwi_account = strdup(mwi_account);
 			switch_assert(dup_mwi_account != NULL);
-			sofia_glue_get_user_host(dup_mwi_account, &mwi_user, &mwi_host);
+			switch_split_user_domain(dup_mwi_account, &mwi_user, &mwi_host);
 		}
 
 		if (!mwi_user) {

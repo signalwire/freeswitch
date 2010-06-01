@@ -2349,6 +2349,49 @@ SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 
 }
 
+int switch_split_user_domain(char *in, char **user, char **domain)
+{
+	char *p = NULL, *h = NULL, *u = in;
+
+	if (!in) {
+		return 0;
+	}
+
+	/* First isolate the host part from the user part */
+	if ((h = strchr(u, '@'))) {
+		*h++ = '\0';
+	}
+
+	/* Clean out the user part of its protocol prefix (if any) */
+	if ((p = strchr(u, ':'))) {
+		*p++ = '\0';
+		u = p;
+	}
+
+	/* Clean out the host part of any suffix */
+	if (h) {
+		if ((p = strchr(h, ':'))) {
+			*p = '\0';
+		}
+
+		if ((p = strchr(h, ';'))) {
+			*p = '\0';
+		}
+
+		if ((p = strchr(h, ' '))) {
+			*p = '\0';
+		}
+	}
+	if (user) {
+		*user = u;
+	}
+	if (domain) {
+		*domain = h;
+	}
+
+	return 1;
+}
+
 
 /* For Emacs:
  * Local Variables:

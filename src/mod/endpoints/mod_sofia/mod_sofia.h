@@ -824,7 +824,6 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 											  const char *sourceip, switch_memory_pool_t *pool);
 
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
-int sofia_glue_get_user_host(char *in, char **user, char **host);
 switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
 void sofia_glue_do_xfer_invite(switch_core_session_t *session);
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,

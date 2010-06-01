@@ -304,7 +304,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	dup_account = strdup(account);
 	switch_assert(dup_account != NULL);
-	sofia_glue_get_user_host(dup_account, &user, &host);
+	switch_split_user_domain(dup_account, &user, &host);
 
 
 	if ((pname = switch_event_get_header(event, "sofia-profile"))) {

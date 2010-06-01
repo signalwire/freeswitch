@@ -5252,49 +5252,6 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	return ret;
 }
 
-int sofia_glue_get_user_host(char *in, char **user, char **host)
-{
-	char *p = NULL, *h = NULL, *u = in;
-
-	if (!in) {
-		return 0;
-	}
-
-	/* First isolate the host part from the user part */
-	if ((h = strchr(u, '@'))) {
-		*h++ = '\0';
-	}
-
-	/* Clean out the user part of its protocol prefix (if any) */
-	if ((p = strchr(u, ':'))) {
-		*p++ = '\0';
-		u = p;
-	}
-
-	/* Clean out the host part of any suffix */
-	if (h) {
-		if ((p = strchr(h, ':'))) {
-			*p = '\0';
-		}
-
-		if ((p = strchr(h, ';'))) {
-			*p = '\0';
-		}
-
-		if ((p = strchr(h, ' '))) {
-			*p = '\0';
-		}
-	}
-	if (user) {
-		*user = u;
-	}
-	if (host) {
-		*host = h;
-	}
-
-	return 1;
-}
-
 const char *sofia_glue_strip_proto(const char *uri)
 {
 	char *p;
