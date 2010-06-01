@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ChannelVariables.cs" />
+    <Compile Include="EventBinding.cs" />
     <Compile Include="ManagedSession.cs" />
     <Compile Include="Loader.cs" />
     <Compile Include="Extensions.cs" />
