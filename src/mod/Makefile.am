@@ -22,7 +22,7 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 	fi ; \
 	if test -z "$$target" ; then target="all" ; fi ; \
 	if ! test -f $$moddir/$$modname.c && ! test -f $$moddir/$$modname.cpp ;	\
-	then echo ; echo "WARNING $$modname is not a valid FreeSWITCH module dir, skipping it....." ; else \
+	then echo ; echo "WARNING $$modname is not a valid FreeSWITCH module dir, skipping it..." ; else \
 		echo ;\
 		echo making $$target $$modname ;\
 		test -d "$$buildmoddir" || mkdir -p $$buildmoddir ; \
