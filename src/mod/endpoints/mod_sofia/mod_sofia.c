@@ -3845,6 +3845,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_custom_headers")) || switch_true(vval)) {
 			switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
 		}
+
+		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_multipart")) || switch_true(vval)) {
+			switch_ivr_transfer_variable(session, nsession, SOFIA_MULTIPART_PREFIX_T);
+		}
 		switch_ivr_transfer_variable(session, nsession, "sip_video_fmtp");
 		switch_ivr_transfer_variable(session, nsession, "sip-force-contact");
 		switch_ivr_transfer_variable(session, nsession, "sip_sticky_contact");
