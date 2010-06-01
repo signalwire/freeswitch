@@ -1283,7 +1283,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	*sp = NULL;
 
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
-	chanid = ftdm_channel_get_span_id(sigmsg->channel);
+	chanid = ftdm_channel_get_id(sigmsg->channel);
 	
 	if (!(session = switch_core_session_request(freetdm_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
