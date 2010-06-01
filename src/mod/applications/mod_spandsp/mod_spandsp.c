@@ -201,7 +201,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "[name]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_tone_detect", "Stop background tone detection with cadence", "", stop_tone_detect_app, "", SAF_NONE);
 	SWITCH_ADD_API(api_interface, "start_tone_detect", "Start background tone detection with cadence", start_tone_detect_api, "[name]");
-	SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop backbground tone detection with cadence", stop_tone_detect_api, "");
+	SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop background tone detection with cadence", stop_tone_detect_api, "");
 
 
 	mod_spandsp_fax_load(pool);
