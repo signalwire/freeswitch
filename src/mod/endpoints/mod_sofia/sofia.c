@@ -1341,8 +1341,40 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl), NTATAG_USER_VIA(1), TAG_IF(!strchr(profile->sipip, ':'), SOATAG_AF(SOA_AF_IP4_ONLY)), TAG_IF(strchr(profile->sipip, ':'), SOATAG_AF(SOA_AF_IP6_ONLY)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERIFY_POLICY(0)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_KEEPALIVE(20000)), TAG_IF(!strchr(profile->sipip, ':'), NTATAG_UDP_MTU(65535)), TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV), NTATAG_USE_SRV(0)), TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR), NTATAG_USE_NAPTR(0)), NTATAG_DEFAULT_PROXY(profile->outbound_proxy), NTATAG_SERVER_RPORT(profile->rport_level), TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT), NTATAG_SIPFLAGS(MSG_DO_COMPACT)), TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)), TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)), TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)), TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)), TAG_END());	/* Last tag should always finish the sequence */
-
+							  NUTAG_URL(profile->bindurl),
+							  NTATAG_USER_VIA(1),
+							  TAG_IF(!strchr(profile->sipip, ':'),
+									 SOATAG_AF(SOA_AF_IP4_ONLY)),
+							  TAG_IF(strchr(profile->sipip, ':'),
+									 SOATAG_AF(SOA_AF_IP6_ONLY)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 NUTAG_SIPS_URL(profile->tls_bindurl)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 TPTAG_TLS_VERIFY_POLICY(0)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 TPTAG_TLS_VERSION(profile->tls_version)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 TPTAG_KEEPALIVE(20000)),
+							  TAG_IF(!strchr(profile->sipip, ':'),
+									 NTATAG_UDP_MTU(65535)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV),
+									 NTATAG_USE_SRV(0)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR),
+									 NTATAG_USE_NAPTR(0)),
+							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
+							  NTATAG_SERVER_RPORT(profile->rport_level),
+							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT),
+									 NTATAG_SIPFLAGS(MSG_DO_COMPACT)),
+							  TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)),
+							  TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)),
+							  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
+							  TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)),
+							  SIPTAG_ACCEPT_STR("application/sdp, multipart/mixed"),
+							  TAG_END());	/* Last tag should always finish the sequence */
+	
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
 		sofia_profile_start_failure(profile, profile->name);
@@ -1351,7 +1383,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
-
+	
 	nua_set_params(profile->nua,
 				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, UPDATE, INFO"),
 				   NUTAG_APPL_METHOD("OPTIONS"),
@@ -5773,7 +5805,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char sip_acl_authed_by[512] = "";
 	char sip_acl_token[512] = "";
 
-
+	if (sip->sip_multipart) {
+		printf("W0000000t\n");
+	}
 
 	profile->ib_calls++;
 

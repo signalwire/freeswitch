@@ -153,6 +153,12 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	char srbuf[128] = "";
 	const char *var_val;
 	const char *username = tech_pvt->profile->username;
+	const char *fmtp_out = tech_pvt->fmtp_out;
+	const char *fmtp_out_var = switch_channel_get_variable(tech_pvt->channel, "sip_force_audio_fmtp");
+
+	if (fmtp_out_var) {
+		fmtp_out = fmtp_out_var;
+	}
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
@@ -265,8 +271,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->agreed_pt, tech_pvt->rm_encoding, rate);
-		if (tech_pvt->fmtp_out) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->agreed_pt, tech_pvt->fmtp_out);
+		if (fmtp_out) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->agreed_pt, fmtp_out);
 		}
 		if (tech_pvt->read_codec.implementation && !ptime) {
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_packet / 1000;
