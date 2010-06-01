@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_spandsp"
-	ProjectGUID="{7877EFC8-4807-484B-B573-D7B7FD058FAA}"
+	ProjectGUID="{1E21AFE0-6FDB-41D2-942D-863607C24B91}"
 	RootNamespace="mod_spandsp"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
@@ -290,7 +290,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\mod_spandsp_fax.c"
+			RelativePath=".\mod_spandsp_codecs.c"
 			>
 		</File>
 		<File
@@ -298,7 +298,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\mod_spandsp_codecs.c"
+			RelativePath=".\mod_spandsp_fax.c"
 			>
 		</File>
 		<File
