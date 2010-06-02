@@ -1157,31 +1157,27 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 	int waitms = DEFAULT_WAIT_TIME;	
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY)) {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_ERROR, "%d:%d Ignored state change request from %s to %s, the channel is not ready\n",
-				ftdmchan->span_id, ftdmchan->chan_id,
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, "Ignored state change request from %s to %s, the channel is not ready\n",
 				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		return FTDM_FAIL;
 	}
 
 	if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_SUSPENDED)) {
 		if (state != FTDM_CHANNEL_STATE_RESTART && state != FTDM_CHANNEL_STATE_DOWN) {
-			ftdm_log(file, func, line, FTDM_LOG_LEVEL_ERROR, "%d:%d Ignored state change request from %s to %s, span %s is suspended\n",
-				ftdmchan->span_id, ftdmchan->chan_id,
+			ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, "Ignored state change request from %s to %s, span %s is suspended\n",
 				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state), ftdmchan->span->name);
 			return FTDM_FAIL;
 		}
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_ERROR, "%d:%d Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
-				ftdmchan->span_id, ftdmchan->chan_id,
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
 				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		return FTDM_FAIL;
 	}
 
 	if (ftdmchan->state == state) {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "%d:%d Why bother changing state from %s to %s\n", 
-			ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Why bother changing state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		return FTDM_FAIL;
 	}
 
@@ -1270,8 +1266,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 end:
 
 	if (ok) {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_DEBUG, "%d:%d Changed state from %s to %s\n",
-				ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		ftdmchan->last_state = ftdmchan->state; 
 		ftdmchan->state = state;
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
@@ -1283,8 +1278,7 @@ end:
 		}
 		ftdm_mutex_unlock(ftdmchan->span->mutex);
 	} else {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "%d:%d VETO state change from %s to %s\n",
-				ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "VETO state change from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 	}
 
 	/* there is an inherent race here between set and check of the change flag but we do not care because
@@ -1311,8 +1305,8 @@ end:
 	}
 
 	if (waitms <= 0) {
-		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "%d:%d state change from %s to %s was most likely not processed after aprox %dms\n",
-				ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not processed after aprox %dms\n",
+				ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
 	}
 
 	return ok ? FTDM_SUCCESS : FTDM_FAIL;
