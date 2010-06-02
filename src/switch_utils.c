@@ -2349,7 +2349,7 @@ SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 
 }
 
-int switch_split_user_domain(char *in, char **user, char **domain)
+SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domain)
 {
 	char *p = NULL, *h = NULL, *u = in;
 

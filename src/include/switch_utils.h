@@ -648,7 +648,7 @@ SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val);
   \return 1 if successfull
   \note Extended formats protocol:user@domain:port (Example: sip:toto@example.org)
 */
-int switch_split_user_domain(char *in, char **user, char **domain);
+SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domain);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG
