@@ -603,6 +603,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	assert(tech_pvt != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		ftdm_log(FTDM_LOG_DEBUG, "TFLAG_DEAD is set\n");
 		return SWITCH_STATUS_FALSE;
 	} 
 
@@ -636,6 +637,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 	
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		ftdm_log(FTDM_LOG_DEBUG, "TFLAG_IO is not set\n");
 		goto fail;
 	}
 
@@ -643,6 +645,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, chunk);
 	
 	if (status == FTDM_FAIL) {
+		ftdm_log(FTDM_LOG_WARNING, "failed to wait for I/O\n");
 		goto fail;
 	}
 	
@@ -650,19 +653,21 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		if (!switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 			total_to -= chunk;
 			if (total_to <= 0) {
+				ftdm_log(FTDM_LOG_WARNING, "Too many timeouts while waiting for I/O\n");
 				goto fail;
 			}
 		}
-
 		goto top;
 	}
 
 	if (!(wflags & FTDM_READ)) {
+		ftdm_log(FTDM_LOG_WARNING, "I/O waiting returned status %d but nothing to read is available\n", status);
 		goto fail;
 	}
 
 	len = tech_pvt->read_frame.buflen;
 	if (ftdm_channel_read(tech_pvt->ftdmchan, tech_pvt->read_frame.data, &len) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_WARNING, "failed to read from device\n");
 		goto fail;
 	}
 
