@@ -3042,7 +3042,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		  greet_key_press:
 			if (switch_stristr(buf, profile->login_keys)) {
 				voicemail_check_main(session, profile, domain_name, id, 0);
-			} else if (!strcasecmp(buf, profile->operator_key) && !zstr(profile->operator_key)) {
+			} else if (!zstr(profile->operator_ext) && !zstr(profile->operator_key) && !strcasecmp(buf, profile->operator_key) ) {
 				int argc;
 				char *argv[4];
 				char *mycmd;
