@@ -39,10 +39,9 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	/* testing out not using this, we probably don't need it anymore now that we have audio sync */
-#if 0
-	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-		while (switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
+	if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && switch_channel_test_flag(channel, CF_CONSUME_ON_ORIGINATE)) {
+		while (switch_channel_test_flag(channel, CF_ORIGINATING) &&
+			   switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
 			if (!switch_channel_media_ready(channel)) {
 				switch_yield(10000);
 			} else {
@@ -50,7 +49,6 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 			}
 		}
 	}
-#endif
 
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
 
@@ -2611,6 +2609,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (table) {
 					switch_channel_add_state_handler(originate_status[i].peer_channel, table);
+				}
+				
+				if (oglobals.monitor_early_media_ring || oglobals.monitor_early_media_fail) {
+					switch_channel_set_flag(originate_status[i].peer_channel, CF_CONSUME_ON_ORIGINATE);
 				}
 
 				switch_channel_add_state_handler(originate_status[i].peer_channel, &originate_state_handlers);
