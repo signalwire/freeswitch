@@ -198,16 +198,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	SWITCH_ADD_APP(app_interface, "spandsp_stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
 
-	SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "[name]", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "stop_tone_detect", "Stop background tone detection with cadence", "", stop_tone_detect_app, "", SAF_NONE);
-	SWITCH_ADD_API(api_interface, "start_tone_detect", "Start background tone detection with cadence", start_tone_detect_api, "[name]");
-	SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop background tone detection with cadence", stop_tone_detect_api, "");
-
-
 	mod_spandsp_fax_load(pool);
     mod_spandsp_codecs_load(module_interface, pool);
+
 	if (mod_spandsp_dsp_load(module_interface, pool) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load spandsp.conf, not adding tone_detect applications\n");
+    } else {
+        SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "[name]", SAF_NONE);
+        SWITCH_ADD_APP(app_interface, "stop_tone_detect", "Stop background tone detection with cadence", "", stop_tone_detect_app, "", SAF_NONE);
+        SWITCH_ADD_API(api_interface, "start_tone_detect", "Start background tone detection with cadence", start_tone_detect_api, "[name]");
+        SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop background tone detection with cadence", stop_tone_detect_api, "");
 	}
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
