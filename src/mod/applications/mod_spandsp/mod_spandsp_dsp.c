@@ -509,7 +509,7 @@ static switch_status_t do_config(void)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg = NULL, xml = NULL, callprogress = NULL, xdescriptor = NULL;
 	if (!(xml = switch_xml_open_cfg("spandsp.conf", &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open tone_detect.conf\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open spandsp.conf\n");
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}

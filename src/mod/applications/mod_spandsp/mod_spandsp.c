@@ -202,7 +202,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
     mod_spandsp_codecs_load(module_interface, pool);
 
 	if (mod_spandsp_dsp_load(module_interface, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load spandsp.conf, not adding tone_detect applications\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load or process spandsp.conf, not adding tone_detect applications\n");
     } else {
         SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "[name]", SAF_NONE);
         SWITCH_ADD_APP(app_interface, "stop_tone_detect", "Stop background tone detection with cadence", "", stop_tone_detect_app, "", SAF_NONE);
