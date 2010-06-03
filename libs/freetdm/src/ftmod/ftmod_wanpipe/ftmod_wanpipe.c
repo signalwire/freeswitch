@@ -264,7 +264,6 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				
 				dtmf = "software";
 
-				/* FIXME: Handle Error Condition Check for return code */
 				err = sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
 
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
@@ -273,14 +272,14 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 					chan->native_codec = chan->effective_codec = FTDM_CODEC_ULAW;
 				}
 
-				//err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
-				//if (err > 0) {
+				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
+				if (err > 0) {
 					err = sangoma_tdm_enable_dtmf_events(chan->sockfd, &tdm_api);
 					if (err == 0) {
 						ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
 						dtmf = "hardware";
 					}
-				//}
+				}
 			}
 
 #ifdef LIBSANGOMA_VERSION
@@ -341,7 +340,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				ftdm_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
 			}
 			configured++;
-			ftdm_log(FTDM_LOG_INFO, "configuring device s%dc%d as FreeTDM device %d:%d fd:%d DTMF: %s\n",
+			ftdm_log_chan(chan, FTDM_LOG_INFO, "configured wanpipe device s%dc%d as FreeTDM channel %d:%d fd:%d DTMF: %s\n",
 				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
 
 		} else {

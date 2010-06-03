@@ -2350,6 +2350,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
 				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled software DTMF detector\n");
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 		}
@@ -2360,6 +2361,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
                     		teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
                     		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled software DTMF detector\n");
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 		}

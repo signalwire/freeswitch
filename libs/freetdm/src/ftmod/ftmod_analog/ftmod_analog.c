@@ -362,9 +362,10 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 	if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "error initilizing tone detector!");
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "TONE ERROR\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "failed to initialize DTMF detector\n");
 		goto done;
 	}
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Initialized DTMF detection\n");
 
 	ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_INTHREAD);
 	teletone_init_session(&ts, 0, teletone_handler, dt_buffer);
@@ -855,8 +856,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	sig.channel = event->channel;
 
 
-	ftdm_log_chan(event->channel, FTDM_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
-			ftdm_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, ftdm_channel_state2str(event->channel->state));
+	ftdm_log_chan(event->channel, FTDM_LOG_DEBUG, "Received event [%s] in state [%s]\n", ftdm_oob_event2str(event->enum_id), ftdm_channel_state2str(event->channel->state));
 
 	ftdm_mutex_lock(event->channel->mutex);
 	locked++;
@@ -942,6 +942,11 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
 		}
+	default:
+		{
+			ftdm_log_chan(event->channel, FTDM_LOG_DEBUG, "Ignoring event [%s] in state [%s]\n", ftdm_oob_event2str(event->enum_id), ftdm_channel_state2str(event->channel->state));
+		}
+		break;
 	}
 
  end:
