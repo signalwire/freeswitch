@@ -2627,7 +2627,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 
 	if (!sigmod) {
 #ifndef HAVE_NETINET_SCTP_H
-		ftdm_log(FTDM_LOG_CRIT, "No sigmod attribute in span %s, you must either specify a sigmod or re-compile with SCTP available to use socket mode boost!\n");
+		ftdm_log(FTDM_LOG_CRIT, "No sigmod attribute in span %s, you must either specify a sigmod or re-compile with SCTP available to use socket mode boost!\n", span->name);
 		ftdm_set_string(span->last_error, "No sigmod configuration was set and there is no SCTP available!");
 		FAIL_CONFIG_RETURN(FTDM_FAIL);
 #else
