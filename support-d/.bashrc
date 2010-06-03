@@ -3,7 +3,7 @@
 #
 
 if [ "`id -u`" = "0" ]; then
-    export PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/X11R6/bin:/opt/bin:/usr/local/bin:/usr/local/sbin"
+    export PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/X11R6/bin:/opt/bin:/usr/local/bin:/usr/local/sbin:/usr/local/freeswitch/bin"
 else
     export PATH="/bin:/usr/bin:/usr/X11R6/bin:/opt/bin:/usr/local/bin:/usr/local/sbin"
 fi
