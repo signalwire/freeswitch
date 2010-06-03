@@ -46,7 +46,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\../../lib/Release/sphinxbase.tlb"
+				TypeLibraryName="$(IntDir)/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -58,10 +58,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/sphinxbase.pch"
-				AssemblerListingLocation=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)/sphinxbase.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
@@ -93,7 +93,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../lib/Release/sphinxbase.bsc"
+				OutputFile="$(IntDir)/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -133,7 +133,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\../../lib/Release/sphinxbase.tlb"
+				TypeLibraryName="$(IntDir)/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -145,7 +145,7 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/sphinxbase.pch"
+				PrecompiledHeaderFile="$(IntDir)/sphinxbase.pch"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
@@ -178,7 +178,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../lib/Release/sphinxbase.bsc"
+				OutputFile="$(IntDir)/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -219,7 +219,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\../../lib/Debug/sphinxbase.tlb"
+				TypeLibraryName="$(IntDir)/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -230,10 +230,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/sphinxbase.pch"
-				AssemblerListingLocation=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)/sphinxbase.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
@@ -257,10 +257,10 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\Debug"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\../../lib/Debug/sphinxbase.pdb"
+				ProgramDatabaseFile="$(IntDir)/sphinxbase.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\../../lib/Debug/sphinxbase.lib"
+				ImportLibrary="$(IntDir)//sphinxbase.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -275,7 +275,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../lib/Debug/sphinxbase.bsc"
+				OutputFile="$(IntDir)/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -316,7 +316,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\../../lib/Debug/sphinxbase.tlb"
+				TypeLibraryName="$(IntDir)/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -327,7 +327,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/sphinxbase.pch"
+				PrecompiledHeaderFile="$(IntDir)/sphinxbase.pch"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -351,7 +351,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\Debug"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\../../lib/Debug/sphinxbase.pdb"
+				ProgramDatabaseFile="$(IntDir)/sphinxbase.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"
@@ -368,7 +368,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../lib/Debug/sphinxbase.bsc"
+				OutputFile="$(IntDir)/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

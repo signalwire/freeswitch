@@ -49,7 +49,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -134,7 +134,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -219,7 +219,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -304,7 +304,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -389,7 +389,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -489,7 +489,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -589,7 +589,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -688,7 +688,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release/libpcre.tlb"
+				TypeLibraryName="$(IntDir)/libpcre.tlb"
 				HeaderFileName=""
 			/>
 			<Tool

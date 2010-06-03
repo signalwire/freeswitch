@@ -47,10 +47,10 @@
 				AdditionalIncludeDirectories="..\..\speex\win32, ..\..\speex\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;HAVE_CONFIG_H"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libspeex.pch"
-				AssemblerListingLocation=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)/libspeex.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
@@ -79,7 +79,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libspeex.bsc"
+				OutputFile="$(IntDir)/libspeex.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -120,10 +120,10 @@
 				AdditionalIncludeDirectories="..\..\speex\win32, ..\..\speex\include"
 				PreprocessorDefinitions="inline=__inline;WIN32;NDEBUG;_WINDOWS;HAVE_CONFIG_H"
 				RuntimeLibrary="2"
-				PrecompiledHeaderFile=".\Release/libspeex.pch"
-				AssemblerListingLocation=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)/libspeex.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
@@ -152,7 +152,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libspeex.bsc"
+				OutputFile="$(IntDir)/libspeex.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

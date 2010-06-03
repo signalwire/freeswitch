@@ -45,7 +45,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/curllib.tlb"
+				TypeLibraryName="$(IntDir)/curllib.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -57,10 +57,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/curllib.pch"
-				AssemblerListingLocation=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)/curllib.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				BrowseInformation="1"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
@@ -89,7 +89,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/curllib.bsc"
+				OutputFile="$(IntDir)/curllib.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -125,7 +125,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release/curllib.tlb"
+				TypeLibraryName="$(IntDir)/curllib.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -137,7 +137,7 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/curllib.pch"
+				PrecompiledHeaderFile="$(IntDir)/curllib.pch"
 				BrowseInformation="1"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
@@ -166,7 +166,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/curllib.bsc"
+				OutputFile="$(IntDir)/curllib.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -202,7 +202,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/curllib.tlb"
+				TypeLibraryName="$(IntDir)/curllib.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -213,10 +213,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/curllib.pch"
-				AssemblerListingLocation=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)/curllib.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				BrowseInformation="1"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
@@ -245,7 +245,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/curllib.bsc"
+				OutputFile="$(IntDir)/curllib.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -281,7 +281,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug/curllib.tlb"
+				TypeLibraryName="$(IntDir)/curllib.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -292,7 +292,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/curllib.pch"
+				PrecompiledHeaderFile="$(IntDir)/curllib.pch"
 				BrowseInformation="1"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
@@ -321,7 +321,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/curllib.bsc"
+				OutputFile="$(IntDir)/curllib.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

@@ -45,7 +45,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libapr.tlb"
+				TypeLibraryName="$(IntDir)/libapr.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -55,10 +55,10 @@
 				AdditionalIncludeDirectories="&quot;..\..\apr\include&quot;;&quot;..\..\apr\include/arch&quot;;&quot;..\..\apr\include/arch/win32&quot;;&quot;..\..\apr\include/arch/unix&quot;"
 				PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libapr.pch"
-				AssemblerListingLocation=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)/libapr.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName="Debug\libapr_src"
+				ProgramDataBaseFileName="$(IntDir)/libapr_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -82,12 +82,12 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libapr-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libapr-1.pdb"
 				SubSystem="2"
 				BaseAddress="0x6EEC0000"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/libapr-1.lib"
+				ImportLibrary="$(IntDir)/libapr-1.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libapr.bsc"
+				OutputFile="$(IntDir)/libapr.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -142,7 +142,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug/libapr.tlb"
+				TypeLibraryName="$(IntDir)/libapr.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -152,7 +152,7 @@
 				AdditionalIncludeDirectories="&quot;..\..\apr\include&quot;;&quot;..\..\apr\include/arch&quot;;&quot;..\..\apr\include/arch/win32&quot;;&quot;..\..\apr\include/arch/unix&quot;"
 				PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libapr.pch"
+				PrecompiledHeaderFile="$(IntDir)/libapr.pch"
 				ProgramDataBaseFileName="$(IntDir)\libapr_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -177,7 +177,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libapr-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libapr-1.pdb"
 				SubSystem="2"
 				BaseAddress="0x6EEC0000"
 				RandomizedBaseAddress="1"
@@ -197,7 +197,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libapr.bsc"
+				OutputFile="$(IntDir)/libapr.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -237,7 +237,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libapr.tlb"
+				TypeLibraryName="$(IntDir)/libapr.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -249,10 +249,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libapr.pch"
-				AssemblerListingLocation=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)/libapr.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Release/"
-				ProgramDataBaseFileName="Release\libapr_src"
+				ProgramDataBaseFileName="$(IntDir)/libapr_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -276,13 +276,13 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libapr-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libapr-1.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				BaseAddress="0x6EEC0000"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Release/libapr-1.lib"
+				ImportLibrary="$(IntDir)/libapr-1.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -297,7 +297,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libapr.bsc"
+				OutputFile="$(IntDir)/libapr.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -337,7 +337,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release/libapr.tlb"
+				TypeLibraryName="$(IntDir)/libapr.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -349,8 +349,8 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libapr.pch"
-				ProgramDataBaseFileName="$(IntDir)\libapr_src"
+				PrecompiledHeaderFile="$(IntDir)/libapr.pch"
+				ProgramDataBaseFileName="$(IntDir)/libapr_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -374,7 +374,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libapr-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libapr-1.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				BaseAddress="0x6EEC0000"
@@ -395,7 +395,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libapr.bsc"
+				OutputFile="$(IntDir)/libapr.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

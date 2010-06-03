@@ -51,10 +51,10 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libsofia_sip_ua_static.pch"
-				AssemblerListingLocation=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)/Debug/libsofia_sip_ua_static.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -74,7 +74,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\Debug\libsofia_sip_ua_static.lib"
+				OutputFile="$(IntDir)/libsofia_sip_ua_static.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -86,7 +86,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libsofia_sip_ua_static.bsc"
+				OutputFile="$(IntDir)/libsofia_sip_ua_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -129,7 +129,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libsofia_sip_ua_static.pch"
+				PrecompiledHeaderFile="$(IntDir)/libsofia_sip_ua_static.pch"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="false"
@@ -161,7 +161,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libsofia_sip_ua_static.bsc"
+				OutputFile="$(IntDir)/libsofia_sip_ua_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -204,10 +204,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libsofia_sip_ua_static.pch"
-				AssemblerListingLocation=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)/libsofia_sip_ua_static.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				ProgramDataBaseFileName="$(IntDir)/"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -226,7 +226,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\Release\libsofia_sip_ua_static.lib"
+				OutputFile="$(IntDir)/libsofia_sip_ua_static.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -238,7 +238,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libsofia_sip_ua_static.bsc"
+				OutputFile="$(IntDir)/libsofia_sip_ua_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -282,7 +282,7 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libsofia_sip_ua_static.pch"
+				PrecompiledHeaderFile="$(IntDir)/libsofia_sip_ua_static.pch"
 				BrowseInformation="1"
 				WarningLevel="4"
 				WarnAsError="false"
@@ -313,7 +313,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libsofia_sip_ua_static.bsc"
+				OutputFile="$(IntDir)/libsofia_sip_ua_static.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

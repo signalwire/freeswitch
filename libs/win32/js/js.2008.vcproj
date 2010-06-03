@@ -45,7 +45,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/js.tlb"
+				TypeLibraryName="$(IntDir)/js.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -82,13 +82,13 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
-				ProgramDatabaseFile=".\Release/js32.pdb"
+				ProgramDatabaseFile="$(IntDir)/js32.pdb"
 				SubSystem="2"
 				OptimizeReferences="1"
 				EnableCOMDATFolding="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Release/js32.lib"
+				ImportLibrary="$(IntDir)/js32.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -103,7 +103,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/js.bsc"
+				OutputFile="$(IntDir)/js.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -143,7 +143,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release/js.tlb"
+				TypeLibraryName="$(IntDir)/js.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -180,7 +180,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
-				ProgramDatabaseFile=".\Release/js32.pdb"
+				ProgramDatabaseFile="$(IntDir)/js32.pdb"
 				SubSystem="2"
 				OptimizeReferences="1"
 				EnableCOMDATFolding="1"
@@ -201,7 +201,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/js.bsc"
+				OutputFile="$(IntDir)/js.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -241,7 +241,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/js.tlb"
+				TypeLibraryName="$(IntDir)/js.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -278,11 +278,11 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/js32.pdb"
+				ProgramDatabaseFile="$(IntDir)/js32.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/js32.lib"
+				ImportLibrary="$(IntDir)/js32.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -297,7 +297,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/js.bsc"
+				OutputFile="$(IntDir)/js.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -337,7 +337,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug/js.tlb"
+				TypeLibraryName="$(IntDir)/js.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -374,7 +374,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/js32.pdb"
+				ProgramDatabaseFile="$(IntDir)/js32.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -393,7 +393,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/js.bsc"
+				OutputFile="$(IntDir)/js.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

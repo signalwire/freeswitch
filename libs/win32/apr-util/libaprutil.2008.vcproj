@@ -45,7 +45,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libaprutil.tlb"
+				TypeLibraryName="$(IntDir)/libaprutil.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -55,10 +55,10 @@
 				AdditionalIncludeDirectories="&quot;..\..\apr-util\include&quot;;&quot;..\..\apr-util\include/private&quot;;&quot;..\..\apr-util\dbm/sdbm&quot;;&quot;..\..\apr-iconv-1.1.1\include&quot;;..\..\apr\include"
 				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libaprutil.pch"
-				AssemblerListingLocation=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)/libaprutil.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName="Debug\libaprutil_src"
+				ProgramDataBaseFileName="$(IntDir)/libaprutil_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -83,12 +83,12 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libaprutil-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libaprutil-1.pdb"
 				SubSystem="2"
 				BaseAddress="0x6EE60000"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/libaprutil-1.lib"
+				ImportLibrary="$(IntDir)/libaprutil-1.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -103,7 +103,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libaprutil.bsc"
+				OutputFile="$(IntDir)/libaprutil.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -143,7 +143,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug/libaprutil.tlb"
+				TypeLibraryName="$(IntDir)/libaprutil.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -153,7 +153,7 @@
 				AdditionalIncludeDirectories="&quot;..\..\apr-util\include&quot;;&quot;..\..\apr-util\include/private&quot;;&quot;..\..\apr-util\dbm/sdbm&quot;;&quot;..\..\apr-iconv-1.1.1\include&quot;;..\..\apr\include"
 				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libaprutil.pch"
+				PrecompiledHeaderFile="$(IntDir)/libaprutil.pch"
 				ProgramDataBaseFileName="$(IntDir)\libaprutil_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -179,7 +179,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libaprutil-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libaprutil-1.pdb"
 				SubSystem="2"
 				BaseAddress="0x6EE60000"
 				RandomizedBaseAddress="1"
@@ -199,7 +199,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libaprutil.bsc"
+				OutputFile="$(IntDir)/libaprutil.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -239,7 +239,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libaprutil.tlb"
+				TypeLibraryName="$(IntDir)/libaprutil.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -251,10 +251,10 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libaprutil.pch"
-				AssemblerListingLocation=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)/libaprutil.pch"
+				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile=".\Release/"
-				ProgramDataBaseFileName="Release\libaprutil_src"
+				ProgramDataBaseFileName="$(IntDir)/libaprutil_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -279,13 +279,13 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libaprutil-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libaprutil-1.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				BaseAddress="0x6EE60000"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Release/libaprutil-1.lib"
+				ImportLibrary="$(IntDir)/libaprutil-1.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -300,7 +300,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libaprutil.bsc"
+				OutputFile="$(IntDir)/libaprutil.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -340,7 +340,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release/libaprutil.tlb"
+				TypeLibraryName="$(IntDir)/libaprutil.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -352,7 +352,7 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libaprutil.pch"
+				PrecompiledHeaderFile="$(IntDir)/libaprutil.pch"
 				ProgramDataBaseFileName="$(IntDir)\libaprutil_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -378,7 +378,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libaprutil-1.pdb"
+				ProgramDatabaseFile="$(IntDir)/libaprutil-1.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				BaseAddress="0x6EE60000"
@@ -399,7 +399,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libaprutil.bsc"
+				OutputFile="$(IntDir)/libaprutil.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
