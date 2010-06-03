@@ -1810,8 +1810,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_ivr_media(switch_core_session_get_uuid(session), SMF_NONE);
 			}
 		}
-
-		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_media_ready(caller_channel)) {
+		
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) && switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 							  "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
 			switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");

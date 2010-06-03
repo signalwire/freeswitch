@@ -287,6 +287,16 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_event_t *event;
 		loop_count++;
 
+		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
+			data->clean_exit = 1;
+		}
+
+		if (data->clean_exit || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
+			switch_channel_clear_flag(chan_a, CF_HOLD);
+			switch_channel_clear_flag(chan_a, CF_SUSPEND);
+			goto end_of_bridge_loop;
+		}
+
 		if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
 			goto end_of_bridge_loop;
 		}
@@ -298,17 +308,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if ((b_state = switch_channel_down(chan_b))) {
 			goto end_of_bridge_loop;
 		}
-
-		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
-			data->clean_exit = 1;
-		}
-
-		if (data->clean_exit || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
-			switch_channel_clear_flag(chan_a, CF_HOLD);
-			switch_channel_clear_flag(chan_a, CF_SUSPEND);
-			goto end_of_bridge_loop;
-		}
-
+		
 		if (loop_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;

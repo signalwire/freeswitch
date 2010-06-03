@@ -558,6 +558,7 @@ SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_
 SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel);
 SWITCH_DECLARE(char *) switch_channel_get_flag_string(switch_channel_t *channel);
 SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel);
+SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channel);
 
 /** @} */
 
