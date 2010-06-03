@@ -51,7 +51,8 @@ typedef enum {
 	TFLAG_CNG = (1 << 3),
 	TFLAG_BRIDGE = (1 << 4),
 	TFLAG_BOWOUT = (1 << 5),
-	TFLAG_BLEG = (1 << 6)
+	TFLAG_BLEG = (1 << 6),
+	TFLAG_APP = (1 << 7)
 } TFLAGS;
 
 struct private_object {
@@ -258,6 +259,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		//switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
 		switch_ivr_transfer_variable(session, tech_pvt->other_session, NULL);
 
+		if (switch_test_flag(tech_pvt, TFLAG_APP)) {
+			switch_set_flag(b_tech_pvt, TFLAG_APP);
+			switch_clear_flag(tech_pvt, TFLAG_APP);
+		}
+
 		switch_channel_set_variable(channel, "other_loopback_leg_uuid", switch_channel_get_uuid(b_channel));
 		switch_channel_set_variable(b_channel, "other_loopback_leg_uuid", switch_channel_get_uuid(channel));
 
@@ -313,10 +319,13 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	do_reset(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
-
-
-	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && (app = switch_channel_get_variable(channel, "loopback_app"))) {
+	
+	if (switch_test_flag(tech_pvt, TFLAG_APP) && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && 
+		(app = switch_channel_get_variable(channel, "loopback_app"))) {
 		switch_caller_extension_t *extension = NULL;
+
+		switch_clear_flag(tech_pvt, TFLAG_APP);
+
 		arg = switch_channel_get_variable(channel, "loopback_app_arg");
 		extension = switch_caller_extension_new(session, app, app);
 		switch_caller_extension_add_application(session, extension, "pre_answer", NULL);
@@ -862,9 +871,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				}
 
 				switch_channel_set_variable(channel, "loopback_app", app);
+				
 				if (arg) {
 					switch_channel_set_variable(channel, "loopback_app_arg", arg);
 				}
+
+				switch_set_flag(tech_pvt, TFLAG_APP);
 
 				caller_profile->destination_number = switch_core_strdup(caller_profile->pool, app);
 			}

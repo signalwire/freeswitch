@@ -11,3 +11,14 @@ config.*
 configure
 libtool
 aclocal.m4
+
+detect_dtmf
+detect_tones
+testanalog
+testapp
+testboost
+testcid
+testisdn
+testpri
+testr2
+testtones

@@ -5,6 +5,8 @@
 *.a
 *.la
 *.loT
+*.orig
+*.rej
 .libs
 .deps
 .\#*
@@ -31,6 +33,7 @@
 *.ilk
 *.bsc
 *.pch
+core.*
 /Path
 /w32/Library/lastversion
 /w32/Library/tmpVersion.Bat

@@ -4387,6 +4387,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid info");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid debug");
 	switch_console_set_complete("add uuid_media ::console::list_uuid");
+	switch_console_set_complete("add uuid_media off ::console::list_uuid");
 	switch_console_set_complete("add uuid_park ::console::list_uuid");
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid talk");
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid hold");
