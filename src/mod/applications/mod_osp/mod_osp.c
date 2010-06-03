@@ -190,7 +190,7 @@ typedef struct osp_destination {
 
 typedef struct osp_results {
 	const char *profile;					/* Provider name */
-	unsigned long long transid;				/* Transaction ID */
+	uint64_t transid;						/* Transaction ID */
 	switch_time_t start;					/* Call start time */
 	char called[OSP_SIZE_NORSTR];			/* Original called number */
 	const char *srcnid;						/* Source network ID */
@@ -199,13 +199,13 @@ typedef struct osp_results {
 } osp_results_t;
 
 typedef struct osp_cookie {
-	const char *profile;		/* Provider name */
-	unsigned long long transid;	/* Transaction ID */
-	switch_time_t start;		/* Call start time */
-	int destcount;				/* Destination count */
-	const char *dest;			/* Destination IP */
-	const char *srcnid;			/* Source network ID */
-	const char *destnid;		/* Destination network ID */
+	const char *profile;	/* Provider name */
+	uint64_t transid;		/* Transaction ID */
+	switch_time_t start;	/* Call start time */
+	int destcount;			/* Destination count */
+	const char *dest;		/* Destination IP */
+	const char *srcnid;		/* Source network ID */
+	const char *destnid;	/* Destination network ID */
 } osp_cookie_t;
 
 typedef struct osp_usage {
@@ -231,7 +231,7 @@ typedef struct osp_usage {
 
 typedef struct osp_threadarg {
 	OSPTTRANHANDLE handle;		/* Transaction handle */
-	unsigned long long transid;	/* Transaction ID */
+	uint64_t transid;			/* Transaction ID */
 	switch_call_cause_t cause;	/* Release code */
 	time_t start;				/* Call start time */
 	time_t alert;				/* Call alert time */
@@ -490,36 +490,40 @@ static switch_status_t osp_load_settings(
 				} else if (!strcasecmp(name, "device-ip")) {
 					provider->device = switch_core_strdup(osp_globals.pool, value);
 				} else if (!strcasecmp(name, "ssl-lifetime")) {
-					provider->lifetime = atoi(value);
+					if (sscanf(value, "%d", &number) == 1) {
+						provider->lifetime = number;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ssl-lifetime must be a number\n");
+					}
 				} else if (!strcasecmp(name, "http-max-connections")) {
-					number = atoi(value);
-					if ((number >= OSP_MIN_MAXCONN) && (number <= OSP_MAX_MAXCONN)) {
+					if ((sscanf(value, "%d", &number) == 1) && (number >= OSP_MIN_MAXCONN) && (number <= OSP_MAX_MAXCONN)) {
 						provider->maxconnect = number;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							"http-max-connections must be between %d and %d\n", OSP_MIN_MAXCONN, OSP_MAX_MAXCONN);
 					}
 				} else if (!strcasecmp(name, "http-persistence")) {
-					provider->persistence = atoi(value);
+					if (sscanf(value, "%d", &number) == 1) {
+						provider->persistence = number;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "http-persistence must be a number\n");
+					}
 				} else if (!strcasecmp(name, "http-retry-delay")) {
-					number = atoi(value);
-					if ((number >= OSP_MIN_RETRYDELAY) && (number <= OSP_MAX_RETRYDELAY)) {
+					if ((sscanf(value, "%d", &number) == 1) && (number >= OSP_MIN_RETRYDELAY) && (number <= OSP_MAX_RETRYDELAY)) {
 						provider->retrydelay = number;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							"http-retry-delay must be between %d and %d\n", OSP_MIN_RETRYDELAY, OSP_MAX_RETRYDELAY);
 					}
 				} else if (!strcasecmp(name, "http-retry-limit")) {
-					number = atoi(value);
-					if ((number >= OSP_MIN_RETRYLIMIT) && (number <= OSP_MAX_RETRYLIMIT)) {
+					if ((sscanf(value, "%d", &number) == 1) && (number >= OSP_MIN_RETRYLIMIT) && (number <= OSP_MAX_RETRYLIMIT)) {
 						provider->retrylimit = number;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							"http-retry-limit must be between %d and %d\n", OSP_MIN_RETRYLIMIT, OSP_MAX_RETRYLIMIT);
 					}
 				} else if (!strcasecmp(name, "http-timeout")) {
-					number = atoi(value);
-					if ((number >= OSP_MIN_TIMEOUT) && (number <= OSP_MAX_TIMEOUT)) {
+					if ((sscanf(value, "%d", &number) == 1) && (number >= OSP_MIN_TIMEOUT) && (number <= OSP_MAX_TIMEOUT)) {
 						provider->timeout = number;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -534,8 +538,7 @@ static switch_status_t osp_load_settings(
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown service type '%s'\n", value);
 					}
 				} else if (!strcasecmp(name, "max-destinations")) {
-					number = atoi(value);
-					if ((number >= OSP_MIN_MAXDEST) && (number <= OSP_MAX_MAXDEST)) {
+					if ((sscanf(value, "%d", &number) == 1) && (number >= OSP_MIN_MAXDEST) && (number <= OSP_MAX_MAXDEST)) {
 						provider->maxdest = number;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -1182,7 +1185,7 @@ static void osp_log_authrsp(
 		for (i = 0; i < results->numdest; i++) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, osp_globals.loglevel, 
 				"AuthRsp: "
-				"transid = '%llu' "
+				"transid = '%"PRIu64"' "
 				"destcount = '%d' "
 				"timelimit = '%u' "
 				"destination = '%s' "
@@ -1435,7 +1438,7 @@ static void osp_build_allparam(
 
 	if (results && head && size) {
 		switch_snprintf(head, size,
-			"{%s=%s,%s=%llu,%s=%llu",
+			"{%s=%s,%s=%"PRIu64",%s=%"PRId64"",
 			OSP_VAR_PROFILE, results->profile,
 			OSP_VAR_TRANSID, results->transid,
 			OSP_VAR_START, results->start);
@@ -1755,21 +1758,15 @@ static switch_status_t osp_get_ospcookie(
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((strvar = switch_channel_get_variable(channel, OSP_VAR_TRANSID))) {
-		cookie->transid = atoll(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_VAR_TRANSID)) || (sscanf(strvar, "%"PRIu64"", &cookie->transid) != 1)) {
 		cookie->transid = 0;
 	}
 
-	if ((strvar = switch_channel_get_variable(channel, OSP_VAR_START))) {
-		cookie->start = atoll(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_VAR_START)) || (sscanf(strvar, "%"PRId64"", &cookie->start) != 1)) {
 		cookie->start = 0;
 	}
 
-	if ((strvar = switch_channel_get_variable(channel, OSP_VAR_DESTCOUNT))) {
-		cookie->destcount = atoi(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_VAR_DESTCOUNT)) || (sscanf(strvar, "%d", &cookie->destcount) != 1)) {
 		cookie->destcount = 0;
 	}
 	
@@ -1843,24 +1840,16 @@ static void osp_get_usage(
 
 	usage->fcodec = switch_channel_get_variable(channel, OSP_FS_DOWNCODEC);
 	usage->rcodec = switch_channel_get_variable(channel, OSP_FS_UPCODEC);
-	if ((strvar = switch_channel_get_variable(channel, OSP_FS_RTPDOWNOCTS))) {
-		usage->rtpdownoctets = atoi(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPDOWNOCTS)) || (sscanf(strvar, "%d", &usage->rtpdownoctets) != 1)) {
 		usage->rtpdownoctets = OSP_DEF_STATS;
 	}
-	if ((strvar = switch_channel_get_variable(channel, OSP_FS_RTPUPOCTS))) {
-		usage->rtpupoctets = atoi(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPUPOCTS)) || (sscanf(strvar, "%d", &usage->rtpupoctets) != 1)) {
 		usage->rtpupoctets = OSP_DEF_STATS;
 	}
-	if ((strvar = switch_channel_get_variable(channel, OSP_FS_RTPDOWNPKTS))) {
-		usage->rtpdownpackets = atoi(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPDOWNPKTS)) || (sscanf(strvar, "%d", &usage->rtpdownpackets) != 1)) {
 		usage->rtpdownpackets = OSP_DEF_STATS;
 	}
-	if ((strvar = switch_channel_get_variable(channel, OSP_FS_RTPUPPKTS))) {
-		usage->rtpuppackets = atoi(strvar);
-	} else {
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPUPPKTS)) || (sscanf(strvar, "%d", &usage->rtpuppackets) != 1)) {
 		usage->rtpuppackets = OSP_DEF_STATS;
 	}
 }
@@ -1900,7 +1889,7 @@ static OSPTTHREADRETURN osp_report_thread(
 			NULL);			/* Log buffer */
 		if (error != OSPC_ERR_NO_ERROR) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				"Failed to report usage for '%llu' attempt '%d'\n",
+				"Failed to report usage for '%"PRIu64"' attempt '%d'\n",
 				info->transid,
 				i + 1);
 	} else {
@@ -2032,7 +2021,7 @@ static void osp_log_usageind(
 	if (osp_globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, osp_globals.loglevel,
 			"UsageInd: "
-			"transid = '%llu' "
+			"transid = '%"PRIu64"' "
 			"destcount = '%d' "
 			"callid = '%s' "
 			"calling = '%s' "
@@ -2043,9 +2032,9 @@ static void osp_log_usageind(
 			"protocol = '%s' "
 			"cause = '%d' "
 			"release = '%s' "
-			"times = '%llu/%llu/%llu/%llu' "
-			"duration = '%llu' "
-			"pdd = '%llu' "
+			"times = '%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"' "
+			"duration = '%"PRId64"' "
+			"pdd = '%"PRId64"' "
 			"outsessionid = '%s' "
 			"codec = '%s/%s' "
 			"rtpctets = '%d/%d' "
