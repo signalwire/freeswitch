@@ -2806,7 +2806,7 @@ static ftdm_status_t handle_dtmf(ftdm_channel_t *ftdmchan, ftdm_size_t datalen)
 		}
 
 		if (ftdm_buffer_read(ftdmchan->gen_dtmf_buffer, digits, dblen) && !ftdm_strlen_zero_buf(digits)) {
-			ftdm_log(FTDM_LOG_DEBUG, "%d:%d GENERATE DTMF [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, digits);	
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generating DTMF [%s]\n", digits);	
 		
 			cur = digits;
 

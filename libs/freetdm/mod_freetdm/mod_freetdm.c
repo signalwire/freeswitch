@@ -685,7 +685,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		for (p = dtmf; p && *p; p++) {
 			if (is_dtmf(*p)) {
 				_dtmf.digit = *p;
-				ftdm_log(FTDM_LOG_DEBUG, "queue DTMF [%c]\n", *p);
+				ftdm_log(FTDM_LOG_DEBUG, "Queuing DTMF [%c] in channel %s\n", *p, switch_channel_get_name(channel));
 				switch_channel_queue_dtmf(channel, &_dtmf);
 			}
 		}

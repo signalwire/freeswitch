@@ -1054,7 +1054,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				return FTDM_FAIL;
 			}
 			
-			ftdm_log(FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
+			ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 
 			case WP_TDMAPI_EVENT_LINK_STATUS:
@@ -1137,7 +1137,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
 						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);
 						if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-							ftdm_log(FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
 							ftdm_channel_queue_dtmf(ftdmchan, tmp_dtmf);
 						}
 					} 
@@ -1145,13 +1145,13 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				break;
 			case WP_TDMAPI_EVENT_ALARM:
 				{
-					ftdm_log(FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
 					event_id = FTDM_OOB_ALARM_TRAP;
 				}
 				break;
 			default:
 				{
-					ftdm_log(FTDM_LOG_WARNING, "Unhandled wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
 					event_id = FTDM_OOB_INVALID;
 				}
 				break;
