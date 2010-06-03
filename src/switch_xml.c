@@ -1157,11 +1157,17 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 		return NULL;
 	fstat(fd, &st);
 
+	if (!st.st_size) {
+		return NULL;
+	}
+
 #ifdef HAVE_MMAP
 	l = (st.st_size + sysconf(_SC_PAGESIZE) - 1) & ~(sysconf(_SC_PAGESIZE) - 1);
 	if ((m = mmap(NULL, l, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
 		madvise(m, l, MADV_SEQUENTIAL);	/* optimize for sequential access */
-		root = (switch_xml_root_t) switch_xml_parse_str(m, st.st_size);
+		if (!(root = (switch_xml_root_t) switch_xml_parse_str(m, st.st_size))) {
+			munmap(m, l);
+		}
 		madvise(m, root->len = l, MADV_NORMAL);	/* put it back to normal */
 	} else {					/* mmap failed, read file into memory */
 #endif /* HAVE_MMAP */
@@ -1169,7 +1175,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 		if (!m)
 			return NULL;
 		l = read(fd, m, st.st_size);
-		root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l);
+		if (!l || !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
+			free(m);
+			return NULL;
+		}
 		root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
 #ifdef HAVE_MMAP
 	}
