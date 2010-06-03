@@ -661,8 +661,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (!(wflags & FTDM_READ)) {
-		ftdm_log(FTDM_LOG_WARNING, "I/O waiting returned status %d but nothing to read is available\n", status);
-		goto fail;
+		goto top;
 	}
 
 	len = tech_pvt->read_frame.buflen;
