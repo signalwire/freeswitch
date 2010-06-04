@@ -1697,7 +1697,11 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 		if (!switch_test_flag(read_frame, SFF_CNG)) {
 
             if (read_fd != FAX_INVALID_SOCKET) {
-                write(read_fd, read_frame->data, read_frame->datalen);
+                int w = write(read_fd, read_frame->data, read_frame->datalen);
+                if (w <= 0) {
+                    close(read_fd);
+                    read_fd = FAX_INVALID_SOCKET;
+                }
             }
             if (t38_gateway_rx(pvt->t38_gateway_state, (int16_t *) read_frame->data, read_frame->samples)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
@@ -1720,7 +1724,11 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 		}
 
         if (write_fd != FAX_INVALID_SOCKET) {
-            write(write_fd, write_frame.data, write_frame.datalen);
+            int w = write(write_fd, write_frame.data, write_frame.datalen);
+            if (w <= 0) {
+                close(write_fd);
+                write_fd = FAX_INVALID_SOCKET;
+            }
         }
 
 		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
