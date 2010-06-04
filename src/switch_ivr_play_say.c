@@ -1195,14 +1195,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		for (;;) {
 			int do_speed = 1;
 			int last_speed = -1;
-
+			int f;
+			
 			if (!switch_channel_ready(channel)) {
 				status = SWITCH_STATUS_FALSE;
 				break;
 			}
 
-			if (switch_channel_test_flag(channel, CF_BREAK)) {
+			if ((f = switch_channel_test_flag(channel, CF_BREAK))) {
 				switch_channel_clear_flag(channel, CF_BREAK);
+				if (f == 2) {
+					done = 1;
+				}
 				status = SWITCH_STATUS_BREAK;
 				break;
 			}
