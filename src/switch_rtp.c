@@ -1383,7 +1383,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
-	switch_channel_set_private(channel, "__rtcp_audio_rtp_session", rtp_session);
+	if (channel) {
+		switch_channel_set_private(channel, "__rtcp_audio_rtp_session", rtp_session);
+	}
 
 #ifdef ENABLE_ZRTP
 	if (zrtp_on) {
