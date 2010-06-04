@@ -32,7 +32,7 @@
 #include "mod_qsettings/mod_qsettings.h"
 
 /* Declare it globally */
-FSHost g_FSHost;
+FSHost *g_FSHost;
 
 FSHost::FSHost(QObject *parent) :
     QThread(parent)
@@ -472,7 +472,7 @@ void FSHost::accountReloadCmd(QSharedPointer<Account> acc)
 
     connect(this, SIGNAL(delAccount(QSharedPointer<Account>)), this, SLOT(accountReloadSlot(QSharedPointer<Account>)));
 
-    if (g_FSHost.sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not killgw %s from profile softphone.\n",
                           acc.data()->getName().toAscii().data());
@@ -486,7 +486,7 @@ void FSHost::accountReloadSlot(QSharedPointer<Account> acc)
     {
         _reloading_Accounts.takeAt(_reloading_Accounts.indexOf(acc.data()->getName(), 0));
         QString res;
-        if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+        if (g_FSHost->sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
         {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
             return;

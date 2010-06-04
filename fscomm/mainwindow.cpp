@@ -84,16 +84,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(dialpadMapper, SIGNAL(mapped(QString)), this, SLOT(sendDTMF(QString)));
 
     /* Connect events related to FreeSWITCH */
-    connect(&g_FSHost, SIGNAL(ready()),this, SLOT(fshostReady()));
-    connect(&g_FSHost, SIGNAL(ringing(QSharedPointer<Call>)), this, SLOT(ringing(QSharedPointer<Call>)));
-    connect(&g_FSHost, SIGNAL(answered(QSharedPointer<Call>)), this, SLOT(answered(QSharedPointer<Call>)));
-    connect(&g_FSHost, SIGNAL(hungup(QSharedPointer<Call>)), this, SLOT(hungup(QSharedPointer<Call>)));
-    connect(&g_FSHost, SIGNAL(newOutgoingCall(QSharedPointer<Call>)), this, SLOT(newOutgoingCall(QSharedPointer<Call>)));
-    connect(&g_FSHost, SIGNAL(callFailed(QSharedPointer<Call>)), this, SLOT(callFailed(QSharedPointer<Call>)));
-    connect(&g_FSHost, SIGNAL(accountStateChange(QSharedPointer<Account>)), this, SLOT(accountStateChanged(QSharedPointer<Account>)));
-    connect(&g_FSHost, SIGNAL(newAccount(QSharedPointer<Account>)), this, SLOT(accountAdd(QSharedPointer<Account>)));
-    connect(&g_FSHost, SIGNAL(delAccount(QSharedPointer<Account>)), this, SLOT(accountDel(QSharedPointer<Account>)));
-    connect(&g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));
+    connect(g_FSHost, SIGNAL(ready()),this, SLOT(fshostReady()));
+    connect(g_FSHost, SIGNAL(ringing(QSharedPointer<Call>)), this, SLOT(ringing(QSharedPointer<Call>)));
+    connect(g_FSHost, SIGNAL(answered(QSharedPointer<Call>)), this, SLOT(answered(QSharedPointer<Call>)));
+    connect(g_FSHost, SIGNAL(hungup(QSharedPointer<Call>)), this, SLOT(hungup(QSharedPointer<Call>)));
+    connect(g_FSHost, SIGNAL(newOutgoingCall(QSharedPointer<Call>)), this, SLOT(newOutgoingCall(QSharedPointer<Call>)));
+    connect(g_FSHost, SIGNAL(callFailed(QSharedPointer<Call>)), this, SLOT(callFailed(QSharedPointer<Call>)));
+    connect(g_FSHost, SIGNAL(accountStateChange(QSharedPointer<Account>)), this, SLOT(accountStateChanged(QSharedPointer<Account>)));
+    connect(g_FSHost, SIGNAL(newAccount(QSharedPointer<Account>)), this, SLOT(accountAdd(QSharedPointer<Account>)));
+    connect(g_FSHost, SIGNAL(delAccount(QSharedPointer<Account>)), this, SLOT(accountDel(QSharedPointer<Account>)));
+    connect(g_FSHost, SIGNAL(coreLoadingError(QString)), this, SLOT(coreLoadingError(QString)));
 
     /* Connect call commands */
     connect(ui->newCallBtn, SIGNAL(clicked()), this, SLOT(makeCall()));
@@ -128,8 +128,8 @@ MainWindow::~MainWindow()
 {
     delete ui;
     QString res;
-    g_FSHost.sendCmd("fsctl", "shutdown", &res);
-    g_FSHost.wait();
+    g_FSHost->sendCmd("fsctl", "shutdown", &res);
+    g_FSHost->wait();
 }
 
 void MainWindow::updateCallTimers()
@@ -137,7 +137,7 @@ void MainWindow::updateCallTimers()
     for(int row=0; row<ui->tableCalls->rowCount(); row++)
     {
         QTableWidgetItem* item = ui->tableCalls->item(row, 2);
-        QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
+        QSharedPointer<Call> call = g_FSHost->getCallByUUID(item->data(Qt::UserRole).toString());
         QTime time = call.data()->getCurrentStateTime();
         item->setText(time.toString("hh:mm:ss"));
         item->setTextAlignment(Qt::AlignRight|Qt::AlignVCenter);
@@ -182,8 +182,8 @@ void MainWindow::debugConsoleTriggered()
 
 void MainWindow::applyPreprocessors(QStringList cmds)
 {
-    if (g_FSHost.getCurrentActiveCall().isNull()) return;
-    QString uuid = g_FSHost.getCurrentActiveCall().data()->getUuid();
+    if (g_FSHost->getCurrentActiveCall().isNull()) return;
+    QString uuid = g_FSHost->getCurrentActiveCall().data()->getUuid();
     foreach(QString cmd, cmds)
     {
         switch_stream_handle_t stream = { 0 };
@@ -259,16 +259,16 @@ void MainWindow::accountStateChanged(QSharedPointer<Account> acc)
 
 void MainWindow::sendDTMF(QString dtmf)
 {
-    g_FSHost.getCurrentActiveCall().data()->sendDTMF(dtmf);
+    g_FSHost->getCurrentActiveCall().data()->sendDTMF(dtmf);
 }
 
 void MainWindow::callTableDoubleClick(QTableWidgetItem *item)
 {
-    QSharedPointer<Call> lastCall = g_FSHost.getCurrentActiveCall();
-    QSharedPointer<Call> call = g_FSHost.getCallByUUID(item->data(Qt::UserRole).toString());
+    QSharedPointer<Call> lastCall = g_FSHost->getCurrentActiveCall();
+    QSharedPointer<Call> call = g_FSHost->getCallByUUID(item->data(Qt::UserRole).toString());
     QString switch_str = QString("switch %1").arg(call.data()->getCallID());
     QString result;
-    if (g_FSHost.sendCmd("pa", switch_str.toAscii(), &result) == SWITCH_STATUS_FALSE) {
+    if (g_FSHost->sendCmd("pa", switch_str.toAscii(), &result) == SWITCH_STATUS_FALSE) {
         ui->textEdit->setText(QString("Error switching to call %1").arg(call.data()->getCallID()));
         return;
     }
@@ -285,7 +285,7 @@ void MainWindow::makeCall()
     QString dialstring = QInputDialog::getText(this, tr("Make new call"),
                                                tr("Number to dial:"), QLineEdit::Normal, NULL,&ok);
 
-    QSharedPointer<Account> acc = g_FSHost.getCurrentDefaultAccount();
+    QSharedPointer<Account> acc = g_FSHost->getCurrentDefaultAccount();
     if (!acc.isNull()) {
         QSettings settings;
         settings.beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/");
@@ -329,13 +329,13 @@ void MainWindow::fshostReady()
     sysTray->show();
     sysTray->showMessage(tr("Status"), tr("FSComm has initialized!"), QSystemTrayIcon::Information, 5000);
 
-    if (!g_FSHost.isModuleLoaded("mod_sofia"))
+    if (!g_FSHost->isModuleLoaded("mod_sofia"))
     {
         QMessageBox::warning(this, tr("SIP not available"),
                              tr("Sofia could not be loaded, therefore, SIP will not be available."),
                              QMessageBox::Ok);
     }
-    if (!g_FSHost.isModuleLoaded("mod_portaudio"))
+    if (!g_FSHost->isModuleLoaded("mod_portaudio"))
     {
         QMessageBox::warning(this, tr("Audio not available"),
                              tr("Portaudio could not be loaded. Please check if mod_portaudio is properly compiled."),
@@ -347,7 +347,7 @@ void MainWindow::fshostReady()
 void MainWindow::paAnswer()
 {
     QString result;
-    if (g_FSHost.sendCmd("pa", "answer", &result) == SWITCH_STATUS_FALSE) {
+    if (g_FSHost->sendCmd("pa", "answer", &result) == SWITCH_STATUS_FALSE) {
         ui->textEdit->setText("Error sending that command");
     }
 
@@ -362,7 +362,7 @@ void MainWindow::paCall(QString dialstring)
 
     QString callstring = QString("call %1").arg(dialstring);
 
-    if (g_FSHost.sendCmd("pa", callstring.toAscii(), &result) == SWITCH_STATUS_FALSE) {
+    if (g_FSHost->sendCmd("pa", callstring.toAscii(), &result) == SWITCH_STATUS_FALSE) {
         ui->textEdit->setText("Error sending that command");
     }
 
@@ -372,7 +372,7 @@ void MainWindow::paCall(QString dialstring)
 void MainWindow::paHangup()
 {
     QString result;
-    if (g_FSHost.sendCmd("pa", "hangup", &result) == SWITCH_STATUS_FALSE) {
+    if (g_FSHost->sendCmd("pa", "hangup", &result) == SWITCH_STATUS_FALSE) {
         ui->textEdit->setText("Error sending that command");
     }
 
@@ -384,7 +384,7 @@ void MainWindow::paHangup()
 void MainWindow::holdCall(bool pressed)
 {
 
-    QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
+    QSharedPointer<Call> call = g_FSHost->getCurrentActiveCall();
 
     if (call.isNull())
     {
@@ -406,7 +406,7 @@ void MainWindow::holdCall(bool pressed)
 
 void MainWindow::recordCall(bool pressed)
 {
-    QSharedPointer<Call> call = g_FSHost.getCurrentActiveCall();
+    QSharedPointer<Call> call = g_FSHost->getCurrentActiveCall();
 
     if (call.isNull())
     {
@@ -649,7 +649,7 @@ void MainWindow::changeEvent(QEvent *e)
 void MainWindow::showAbout()
 {
     QString result;
-    g_FSHost.sendCmd("version", "", &result);
+    g_FSHost->sendCmd("version", "", &result);
 
     QMessageBox::about(this, tr("About FSComm"),
                        tr("<h2>FSComm</h2>"

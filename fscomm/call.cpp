@@ -69,13 +69,13 @@ switch_status_t Call::toggleRecord(bool startRecord)
                                          conf_dir.absolutePath(),
                                          QDateTime::currentDateTime().toString("yyyyMMddhhmmss"),
                                          getCidNumber());
-        status = g_FSHost.sendCmd("uuid_record", QString("%1 start %2").arg(getUuid(), _recording_filename).toAscii().data(),&result);
+        status = g_FSHost->sendCmd("uuid_record", QString("%1 start %2").arg(getUuid(), _recording_filename).toAscii().data(),&result);
     }
     else
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stopping call recording on call [%s]\n",
                           getUuid().toAscii().data());
-        status = g_FSHost.sendCmd("uuid_record", QString("%1 stop %2").arg(getUuid(), _recording_filename).toAscii().data(),&result);
+        status = g_FSHost->sendCmd("uuid_record", QString("%1 stop %2").arg(getUuid(), _recording_filename).toAscii().data(),&result);
     }
 
     return status;
@@ -85,7 +85,7 @@ void Call::sendDTMF(QString digit)
 {
     QString result;
     QString dtmf_string = QString("dtmf %1").arg(digit);
-    if (g_FSHost.sendCmd("pa", dtmf_string.toAscii(), &result) == SWITCH_STATUS_FALSE) {
+    if (g_FSHost->sendCmd("pa", dtmf_string.toAscii(), &result) == SWITCH_STATUS_FALSE) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not send DTMF digit %s on call[%s]", digit.toAscii().data(), getUuid().toAscii().data());
         QMessageBox::critical(0, QWidget::tr("DTMF Error"), QWidget::tr("There was an error sending DTMF, please report this bug."), QMessageBox::Ok);
     }

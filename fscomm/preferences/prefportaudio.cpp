@@ -42,7 +42,7 @@ void PrefPortaudio::applyPreprocessors(bool state)
 void PrefPortaudio::ringdevTest()
 {
     QString result;
-    if (g_FSHost.sendCmd("pa", QString("play %1/.fscomm/sounds/test.wav 0").arg(QDir::homePath()).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", QString("play %1/.fscomm/sounds/test.wav 0").arg(QDir::homePath()).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error testing ringdev on mod_portaudio! %s\n",
                           result.toAscii().constData());
@@ -53,7 +53,7 @@ void PrefPortaudio::loopTest()
 {
     QString result;
     _ui->PaLoopTestBtn->setEnabled(false);
-    if (g_FSHost.sendCmd("pa", "looptest", &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", "looptest", &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running looptest on mod_portaudio! %s\n",
                           result.toAscii().constData());
@@ -64,7 +64,7 @@ void PrefPortaudio::loopTest()
 void PrefPortaudio::refreshDevList()
 {
     QString result;
-    if (g_FSHost.sendCmd("pa", "rescan", &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", "rescan", &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error rescaning sound device on mod_portaudio! %s\n",
                           result.toAscii().constData());
@@ -80,7 +80,7 @@ void PrefPortaudio::indevChangeDev(int index)
 {
     QString result;
     int dev = _ui->PaIndevCombo->itemData(index, Qt::UserRole).toInt();
-    if (g_FSHost.sendCmd("pa", QString("indev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", QString("indev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting ringdev to #%d on mod_portaudio!\n", dev);
         QMessageBox::critical(0, tr("Unable to change device."),
@@ -94,7 +94,7 @@ void PrefPortaudio::ringdevChangeDev(int index)
 {
     QString result;
     int dev = _ui->PaRingdevCombo->itemData(index, Qt::UserRole).toInt();
-    if (g_FSHost.sendCmd("pa", QString("ringdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", QString("ringdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting ringdev to #%d on mod_portaudio!\n", dev);
         QMessageBox::critical(0, tr("Unable to change device."),
@@ -108,7 +108,7 @@ void PrefPortaudio::outdevChangeDev(int index)
 {
     QString result;
     int dev = _ui->PaRingdevCombo->itemData(index, Qt::UserRole).toInt();
-    if (g_FSHost.sendCmd("pa", QString("outdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", QString("outdev #%1").arg(dev).toAscii().constData(), &result) != SWITCH_STATUS_SUCCESS)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting outdev to #%d on mod_portaudio!\n", dev);
         QMessageBox::critical(0, tr("Unable to change device."),
@@ -173,7 +173,7 @@ void PrefPortaudio::writeConfig()
         sample_rate != nsample_rate||
         codec_ms != ncodec_ms)
     {
-        if (g_FSHost.sendCmd("reload", "mod_portaudio", &result) == SWITCH_STATUS_SUCCESS)
+        if (g_FSHost->sendCmd("reload", "mod_portaudio", &result) == SWITCH_STATUS_SUCCESS)
         {
             _settings->setValue("cid-name", ncid_name);
             _settings->setValue("cid-num", ncid_num);
@@ -201,7 +201,7 @@ void PrefPortaudio::writeConfig()
 
     if (nindev != indev)
     {
-        if (g_FSHost.sendCmd("pa", QString("indev #%1").arg(nindev).toAscii().constData(), &result) == SWITCH_STATUS_SUCCESS)
+        if (g_FSHost->sendCmd("pa", QString("indev #%1").arg(nindev).toAscii().constData(), &result) == SWITCH_STATUS_SUCCESS)
         {
             _settings->setValue("indev", nindev);
         }
@@ -252,7 +252,7 @@ void PrefPortaudio::getPaDevlist()
     int errorLine, errorColumn;
     QString errorMsg;
 
-    if (g_FSHost.sendCmd("pa", "devlist xml", &result) != SWITCH_STATUS_SUCCESS)
+    if (g_FSHost->sendCmd("pa", "devlist xml", &result) != SWITCH_STATUS_SUCCESS)
     {
         QMessageBox::critical(0, tr("PortAudio error" ),
                               tr("Error querying audio devices."),

@@ -43,11 +43,13 @@ int main(int argc, char *argv[])
     splash->show();
     splash->showMessage("Loading core, please wait...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
 
-    QObject::connect(&g_FSHost, SIGNAL(loadingModules(QString,int,QColor)), splash, SLOT(showMessage(QString,int,QColor)));
+	g_FSHost = new FSHost();
 
-    QObject::connect(&g_FSHost, SIGNAL(ready()), splash, SLOT(close()));
+    QObject::connect(g_FSHost, SIGNAL(loadingModules(QString,int,QColor)), splash, SLOT(showMessage(QString,int,QColor)));
+
+    QObject::connect(g_FSHost, SIGNAL(ready()), splash, SLOT(close()));
     MainWindow w;    
-    QObject::connect(&g_FSHost, SIGNAL(ready()), &w, SLOT(show()));
-    g_FSHost.start();
+    QObject::connect(g_FSHost, SIGNAL(ready()), &w, SLOT(show()));
+    g_FSHost->start();
     return a.exec();
 }

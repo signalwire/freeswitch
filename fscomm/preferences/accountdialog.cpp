@@ -128,10 +128,10 @@ void AccountDialog::readConfig()
 
 void AccountDialog::writeConfig()
 {
-    QSharedPointer<Account> acc = g_FSHost.getAccountByUUID(_accId);
+    QSharedPointer<Account> acc = g_FSHost->getAccountByUUID(_accId);
     if (!acc.isNull())
     {
-        g_FSHost.accountReloadCmd(acc);
+        g_FSHost->accountReloadCmd(acc);
     }
 
     _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");

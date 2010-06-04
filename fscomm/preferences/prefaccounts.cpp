@@ -20,7 +20,7 @@ void PrefAccounts::addAccountBtnClicked()
     if (!_accDlg)
     {
         QString uuid;
-        if (g_FSHost.sendCmd("create_uuid", "", &uuid) != SWITCH_STATUS_SUCCESS)
+        if (g_FSHost->sendCmd("create_uuid", "", &uuid) != SWITCH_STATUS_SUCCESS)
         {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create UUID for account. Reason: %s\n", uuid.toAscii().constData());
             return;
@@ -31,7 +31,7 @@ void PrefAccounts::addAccountBtnClicked()
     else
     {
         QString uuid;
-        if (g_FSHost.sendCmd("create_uuid", "", &uuid) != SWITCH_STATUS_SUCCESS)
+        if (g_FSHost->sendCmd("create_uuid", "", &uuid) != SWITCH_STATUS_SUCCESS)
         {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create UUID for account. Reason: %s\n", uuid.toAscii().constData());
             return;
@@ -89,13 +89,13 @@ void PrefAccounts::remAccountBtnClicked()
             /* Fire event to remove account */
             switch_event_t *event;
             if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FSCOMM_EVENT_ACC_REMOVED) == SWITCH_STATUS_SUCCESS) {
-                QSharedPointer<Account> acc = g_FSHost.getAccountByUUID(item->data(Qt::UserRole).toString());
+                QSharedPointer<Account> acc = g_FSHost->getAccountByUUID(item->data(Qt::UserRole).toString());
                 if (!acc.isNull())
                 {
                     QString res;
                     QString arg = QString("profile softphone killgw %1").arg(acc.data()->getName());
 
-                    if (g_FSHost.sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
+                    if (g_FSHost->sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
                     {
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not killgw %s from profile softphone.\n",
                                           acc.data()->getName().toAscii().data());
@@ -149,7 +149,7 @@ void PrefAccounts::readConfig(bool reload)
     if (reload)
     {
         QString res;
-        if (g_FSHost.sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+        if (g_FSHost->sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
         {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
             return;

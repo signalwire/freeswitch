@@ -54,7 +54,7 @@ ConsoleWindow::ConsoleWindow(QWidget *parent) :
     connect(ui->filterReverseCheckBox, SIGNAL(toggled(bool)),
                      this, SLOT(reverseFilterChecked()));
 
-    connect(&g_FSHost, SIGNAL(eventLog(QSharedPointer<switch_log_node_t>,switch_log_level_t)), this, SLOT(loggerHandler(QSharedPointer<switch_log_node_t>,switch_log_level_t)));
+    connect(g_FSHost, SIGNAL(eventLog(QSharedPointer<switch_log_node_t>,switch_log_level_t)), this, SLOT(loggerHandler(QSharedPointer<switch_log_node_t>,switch_log_level_t)));
 
 }
 
@@ -104,7 +104,7 @@ void ConsoleWindow::cmdSendClicked()
     }
 
     QString res;
-    g_FSHost.sendCmd(cmd.toAscii().data(), args.toAscii().data(), &res);
+    g_FSHost->sendCmd(cmd.toAscii().data(), args.toAscii().data(), &res);
     if (!res.isEmpty())
     {
          /* Remove \r\n */

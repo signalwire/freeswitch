@@ -6,7 +6,7 @@ StateDebugDialog::StateDebugDialog(QWidget *parent) :
     ui(new Ui::StateDebugDialog)
 {
     ui->setupUi(this);
-    connect(&g_FSHost, SIGNAL(newEvent(QSharedPointer<switch_event_t>)), this, SLOT(newEvent(QSharedPointer<switch_event_t>)));
+    connect(g_FSHost, SIGNAL(newEvent(QSharedPointer<switch_event_t>)), this, SLOT(newEvent(QSharedPointer<switch_event_t>)));
     connect(ui->listUUID, SIGNAL(itemSelectionChanged()), this, SLOT(currentUuidChanged()));
     connect(ui->listEvents, SIGNAL(itemSelectionChanged()), this, SLOT(currentEventsChanged()));
 }

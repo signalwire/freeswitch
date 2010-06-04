@@ -122,7 +122,7 @@ private:
     QList<QString> _loadedModules;
 };
 
-extern FSHost g_FSHost;
+extern FSHost *g_FSHost;
 
 /*
    Used to match callback from fs core. We dup the event and call the class
@@ -133,7 +133,7 @@ static void eventHandlerCallback(switch_event_t *event)
     switch_event_t *clone = NULL;
     if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
         QSharedPointer<switch_event_t> e(clone);
-        g_FSHost.generalEventHandler(e);
+        g_FSHost->generalEventHandler(e);
     }
 }
 
@@ -144,7 +144,7 @@ static switch_status_t loggerHandler(const switch_log_node_t *node, switch_log_l
 {
     switch_log_node_t *clone = switch_log_node_dup(node);
     QSharedPointer<switch_log_node_t> l(clone);
-    g_FSHost.generalLoggerHandler(l, level);
+    g_FSHost->generalLoggerHandler(l, level);
     return SWITCH_STATUS_SUCCESS;
 }
 
