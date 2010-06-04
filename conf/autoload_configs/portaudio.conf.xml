@@ -29,7 +29,7 @@
     <param name="cid-num" value="$${outbound_caller_id}"/>
 
     <!--audio sample rate and interval -->
-    <param name="sample-rate" value="8000"/>
+    <param name="sample-rate" value="48000"/>
     <param name="codec-ms" value="20"/>
   </settings>
 </configuration>
