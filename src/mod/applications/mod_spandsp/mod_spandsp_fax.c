@@ -1164,9 +1164,9 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			/* We have no real signal data for the FAX software, but we have a space in time if we have a CNG indication.
 			   Do a fill-in operation in the FAX machine, to keep things rolling along. */
-			if (fax_rx_fillin(pvt->fax_state, read_frame->samples)) {
+			if (fax_rx_fillin(pvt->fax_state, read_impl.samples_per_packet)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx_fillin reported an error\n");
-				goto done;
+                continue;
 			}
 		} else {
 			/* Pass the new incoming audio frame to the fax_rx function */
