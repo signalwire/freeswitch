@@ -37,7 +37,10 @@ libdir = @libdir@
 library_includedir = $(PREFIX)/include
 
 INCS      = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/isdn/include -I$(FT_SRCDIR)/$(SRC)/include/private
-INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost 
+INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost
+if SNGSS7
+INCS += -I/usr/include/wanpipe/sng_ss7/
+endif 
 MY_CFLAGS = $(INCS) $(FTDM_CFLAGS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
@@ -164,6 +167,10 @@ if LIBPRI
 mod_LTLIBRARIES += ftmod_libpri.la
 endif
 
+if SNGSS7
+mod_LTLIBRARIES += ftmod_sangoma_ss7.la
+endif
+
 if OPENR2
 mod_LTLIBRARIES += ftmod_r2.la
 endif
@@ -234,6 +241,20 @@ ftmod_libpri_la_SOURCES = $(SRC)/ftmod/ftmod_libpri/ftmod_libpri.c $(SRC)/ftmod/
 ftmod_libpri_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ftmod_libpri_la_LDFLAGS = -module  -avoid-version -lpri
 ftmod_libpri_la_LIBADD  = $(MYLIB)
+endif
+
+if SNGSS7
+ftmod_sangoma_ss7_la_SOURCES =  $(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_support.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_main.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_in.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_out.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cntrl.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_xml.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_timers.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cli.c
+ftmod_sangoma_ss7_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
+ftmod_sangoma_ss7_la_LDFLAGS = -module  -avoid-version -lsng_ss7
+ftmod_sangoma_ss7_la_LIBADD  = $(MYLIB)
 endif
 
 if OPENR2

@@ -170,6 +170,9 @@ AM_CONDITIONAL([LIBSANGOMA],[test "${have_libsangoma}" = "yes"])
 
 AM_CONDITIONAL([LIBPRI],[test "${enable_libpri}" = "yes"])
 
+AC_CHECK_LIB([sng_ss7], [sng_isup_init], [have_sng_ss7="yes"])
+AM_CONDITIONAL([SNGSS7],[test "${have_sng_ss7}" = "yes"])
+
 AC_CHECK_LIB([openr2], [openr2_context_set_io_type], [have_openr2="yes"])
 AM_CONDITIONAL([OPENR2],[test "${have_openr2}" = "yes"])
 
