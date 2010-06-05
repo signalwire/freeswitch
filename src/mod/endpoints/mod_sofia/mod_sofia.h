@@ -314,6 +314,12 @@ typedef enum {
 } reg_flags_t;
 
 typedef enum {
+	CID_TYPE_RPID,
+	CID_TYPE_PID,
+	CID_TYPE_NONE
+} sofia_cid_type_t;
+
+typedef enum {
 	REG_STATE_UNREGED,
 	REG_STATE_TRYING,
 	REG_STATE_REGISTER,
@@ -416,6 +422,7 @@ struct sofia_gateway {
 	struct sofia_gateway *next;
 	sofia_gateway_subscription_t *subscriptions;
 	int distinct_to;
+	sofia_cid_type_t cid_type;
 };
 
 typedef enum {
@@ -429,12 +436,6 @@ typedef enum {
 	MEDIA_OPT_MEDIA_ON_HOLD = (1 << 0),
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
 } sofia_media_options_t;
-
-typedef enum {
-	CID_TYPE_RPID,
-	CID_TYPE_PID,
-	CID_TYPE_NONE
-} sofia_cid_type_t;
 
 struct sofia_profile {
 	int debug;

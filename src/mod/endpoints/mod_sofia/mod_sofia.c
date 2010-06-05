@@ -3546,6 +3546,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	char *host = NULL, *dest_to = NULL;
 	const char *hval = NULL;
 	char *not_const = NULL;
+	int cid_locked = 0;
 
 	*new_session = NULL;
 
@@ -3614,7 +3615,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		tech_pvt->transport = gateway_ptr->register_transport;
-
+		tech_pvt->cid_type = gateway_ptr->cid_type;
+		cid_locked = 1;
 
 		/*
 		 * Handle params, strip them off the destination and add them to the
@@ -3852,7 +3854,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		switch_ivr_transfer_variable(session, nsession, "sip_video_fmtp");
 		switch_ivr_transfer_variable(session, nsession, "sip-force-contact");
 		switch_ivr_transfer_variable(session, nsession, "sip_sticky_contact");
-		switch_ivr_transfer_variable(session, nsession, "sip_cid_type");
+		if (!cid_locked) {
+			switch_ivr_transfer_variable(session, nsession, "sip_cid_type");
+		}
 
 		if (switch_core_session_compare(session, nsession)) {
 			/* It's another sofia channel! so lets cache what they use as a pt for telephone event so 
@@ -3863,7 +3867,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_assert(ctech_pvt != NULL);
 			tech_pvt->bte = ctech_pvt->te;
 			tech_pvt->bcng_pt = ctech_pvt->cng_pt;
-			tech_pvt->cid_type = ctech_pvt->cid_type;
+			if (!cid_locked) {
+				tech_pvt->cid_type = ctech_pvt->cid_type;
+			}
 
 			if (sofia_test_flag(tech_pvt, TFLAG_ENABLE_SOA)) {
 				sofia_set_flag(ctech_pvt, TFLAG_ENABLE_SOA);
