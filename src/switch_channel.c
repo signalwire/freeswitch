@@ -122,6 +122,7 @@ struct switch_channel {
 	switch_core_session_t *session;
 	switch_channel_state_t state;
 	switch_channel_state_t running_state;
+	switch_channel_callstate_t callstate;
 	uint32_t flags[CF_FLAG_MAX];
 	uint32_t caps[CC_FLAG_MAX];
 	uint8_t state_flags[CF_FLAG_MAX];
@@ -138,6 +139,7 @@ struct switch_channel {
 	int profile_index;
 	opaque_channel_flag_t opaque_flags;
 };
+
 
 SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 {
@@ -176,6 +178,68 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 {
 	return channel->hangup_cause;
 }
+
+
+struct switch_callstate_table {
+	const char *name;
+	switch_channel_callstate_t callstate;
+};
+static struct switch_callstate_table STATE_CHART[] = {
+    {"DOWN", CCS_DOWN},
+    {"DIALING", CCS_DIALING},
+    {"RINGING", CCS_RINGING},
+    {"EARLY", CCS_EARLY},
+    {"ACTIVE", CCS_ACTIVE},
+    {"HELD", CCS_HELD},
+    {"HANGUP", CCS_HANGUP},
+    {NULL, 0}
+};
+
+
+SWITCH_DECLARE(void) switch_channel_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate)
+{
+	channel->callstate = callstate;
+}
+
+SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_get_callstate(switch_channel_t *channel)
+{
+	return channel->callstate;
+}
+
+
+SWITCH_DECLARE(const char *) switch_channel_callstate2str(switch_channel_callstate_t callstate)
+{
+	uint8_t x;
+	const char *str = "UNKNOWN";
+
+	for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct switch_cause_table)) - 1; x++) {
+		if (STATE_CHART[x].callstate == callstate) {
+			str = STATE_CHART[x].name;
+			break;
+		}
+	}
+
+	return str;
+}
+
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str)
+{
+	uint8_t x;
+	switch_channel_callstate_t callstate = SWITCH_CAUSE_NONE;
+
+	if (*str > 47 && *str < 58) {
+		callstate = atoi(str);
+	} else {
+		for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct switch_callstate_table)) - 1 && STATE_CHART[x].name; x++) {
+			if (!strcasecmp(STATE_CHART[x].name, str)) {
+				callstate = STATE_CHART[x].callstate;
+				break;
+			}
+		}
+	}
+	return callstate;
+}
+
 
 
 SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line)
@@ -535,6 +599,23 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
 		switch_event_fire(&event);
 	}
+}
+
+SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_bool_t on)
+{
+	switch_event_t *event;
+
+	if (on) {
+		switch_channel_set_flag(channel, CF_LEG_HOLDING);
+	} else {
+		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
+	}
+
+	if (switch_event_create(&event, on ? SWITCH_EVENT_CHANNEL_HOLD : SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
 }
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup)
@@ -1134,6 +1215,12 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", "true");
 	}
+
+	if (flag == CF_LEG_HOLDING) {
+		switch_channel_set_callstate(channel, CCS_HELD);
+	}
+
+
 }
 
 SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag)
@@ -1220,6 +1307,10 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", NULL);
+	}
+
+	if (flag == CF_LEG_HOLDING) {
+		switch_channel_set_callstate(channel, CCS_ACTIVE);
 	}
 }
 
@@ -1357,11 +1448,21 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	if (state <= CS_DESTROY) {
 		switch_event_t *event;
+
+		if (state == CS_ROUTING) {
+			switch_channel_set_callstate(channel, CCS_RINGING);
+		} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+			switch_channel_set_callstate(channel, CCS_ACTIVE);
+		} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+			switch_channel_set_callstate(channel, CCS_EARLY);
+		}
+
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
 			if (state == CS_ROUTING) {
 				switch_channel_event_set_data(channel, event);
 			} else {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(state));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", switch_channel_callstate2str(channel->callstate));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%d", state);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", channel->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
@@ -1622,6 +1723,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	}
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(channel->state));
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", switch_channel_callstate2str(channel->callstate));
 	switch_snprintf(state_num, sizeof(state_num), "%d", channel->state);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", state_num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
@@ -2134,6 +2236,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 			switch_channel_set_variable(channel, "presence_call_info", NULL);
 		}
 
+		switch_channel_set_callstate(channel, CCS_HANGUP);
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
@@ -2219,6 +2322,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+		switch_channel_set_callstate(channel, CCS_EARLY);
 		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
@@ -2360,6 +2464,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	}
 
 	switch_channel_set_flag(channel, CF_ANSWERED);
+	switch_channel_set_callstate(channel, CCS_ACTIVE);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);

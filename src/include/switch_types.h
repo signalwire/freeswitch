@@ -875,6 +875,16 @@ typedef uint32_t switch_core_session_message_flag_t;
 #define SWITCH_CHANNEL_CHANNEL_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)switch_channel_get_session(x)
 #define SWITCH_CHANNEL_UUID_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, (x)
 
+typedef enum {
+	CCS_DOWN,
+	CCS_DIALING,
+	CCS_RINGING,
+	CCS_EARLY,
+	CCS_ACTIVE,
+	CCS_HELD,
+	CCS_HANGUP
+} switch_channel_callstate_t;
+
 /*!
   \enum switch_channel_state_t
   \brief Channel States (these are the defaults, CS_SOFT_EXECUTE, CS_EXCHANGE_MEDIA, and CS_CONSUME_MEDIA are often overridden by specific apps)
@@ -1337,6 +1347,8 @@ typedef enum {
 	SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE,
 	SWITCH_EVENT_CHANNEL_EXECUTE,
 	SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE,
+	SWITCH_EVENT_CHANNEL_HOLD,
+	SWITCH_EVENT_CHANNEL_UNHOLD,
 	SWITCH_EVENT_CHANNEL_BRIDGE,
 	SWITCH_EVENT_CHANNEL_UNBRIDGE,
 	SWITCH_EVENT_CHANNEL_PROGRESS,

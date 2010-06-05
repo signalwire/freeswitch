@@ -977,14 +977,15 @@ static void core_event_handler(switch_event_t *event)
 			break;
 		}
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		sql = switch_mprintf("insert into channels (uuid,direction,created,created_epoch, name,state,dialplan,context,hostname) "
-							 "values('%q','%q','%q','%ld','%q','%q','%q','%q','%q')",
+		sql = switch_mprintf("insert into channels (uuid,direction,created,created_epoch, name,state,callstate,dialplan,context,hostname) "
+							 "values('%q','%q','%q','%ld','%q','%q','%q','%q','%q','%q')",
 							 switch_event_get_header_nil(event, "unique-id"),
 							 switch_event_get_header_nil(event, "call-direction"),
 							 switch_event_get_header_nil(event, "event-date-local"),
 							 (long) switch_epoch_time_now(NULL),
 							 switch_event_get_header_nil(event, "channel-name"),
 							 switch_event_get_header_nil(event, "channel-state"),
+							 switch_event_get_header_nil(event, "channel-call-state"),
 							 switch_event_get_header_nil(event, "caller-dialplan"),
 							 switch_event_get_header_nil(event, "caller-context"), switch_core_get_variable("hostname")
 			);
@@ -999,9 +1000,12 @@ static void core_event_handler(switch_event_t *event)
 			 switch_event_get_header_nil(event, "channel-write-codec-rate"),
 			 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 		break;
+	case SWITCH_EVENT_CHANNEL_HOLD:
+	case SWITCH_EVENT_CHANNEL_UNHOLD:
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		sql = switch_mprintf("update channels set application='%q',application_data='%q',"
+		sql = switch_mprintf("update channels set callstate='%q',application='%q',application_data='%q',"
 							 "presence_id='%q',presence_data='%q' where uuid='%q' and hostname='%q'",
+							 switch_event_get_header_nil(event, "channel-call-state"),
 							 switch_event_get_header_nil(event, "application"),
 							 switch_event_get_header_nil(event, "application-data"),
 							 switch_event_get_header_nil(event, "channel-presence-id"),
@@ -1009,7 +1013,6 @@ static void core_event_handler(switch_event_t *event)
 							 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
 
 			);
-
 		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
 		{
@@ -1025,10 +1028,11 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DESTROY:
 				break;
 			case CS_ROUTING:
-				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
+				sql = switch_mprintf("update channels set state='%s',callstate='%q',cid_name='%q',cid_num='%q',"
 									 "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
 									 "where uuid='%s' and hostname='%q'",
 									 switch_event_get_header_nil(event, "channel-state"),
+									 switch_event_get_header_nil(event, "channel-call-state"),
 									 switch_event_get_header_nil(event, "caller-caller-id-name"),
 									 switch_event_get_header_nil(event, "caller-caller-id-number"),
 									 switch_event_get_header_nil(event, "caller-network-addr"),
@@ -1040,8 +1044,9 @@ static void core_event_handler(switch_event_t *event)
 									 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 				break;
 			default:
-				sql = switch_mprintf("update channels set state='%s' where uuid='%s' and hostname='%q'",
+				sql = switch_mprintf("update channels set state='%s',callstate='%s' where uuid='%s' and hostname='%q'",
 									 switch_event_get_header_nil(event, "channel-state"),
+									 switch_event_get_header_nil(event, "channel-call-state"),
 									 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 				break;
 			}
@@ -1186,6 +1191,7 @@ static char create_channels_sql[] =
 	"   created_epoch  INTEGER,\n"
 	"   name  VARCHAR(1024),\n"
 	"   state  VARCHAR(64),\n"
+	"   callstate  VARCHAR(64),\n"
 	"   cid_name  VARCHAR(1024),\n"
 	"   cid_num  VARCHAR(256),\n"
 	"   ip_addr  VARCHAR(256),\n"
@@ -1323,7 +1329,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		{
 			char *err;
-			switch_cache_db_test_reactive(dbh, "select hostname from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(dbh, "select callstate from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
