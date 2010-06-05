@@ -1372,15 +1372,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 
 	ftdm_mutex_lock(group->mutex);
 	for (;;) {
-		if (direction == FTDM_TOP_DOWN) {
-			if (i >= group->chan_count) {
-				break;
-			}
-		} else {
-			if (i < 0) {
-				break;
-			}
-		}
 	
 		if (!(check = group->channels[i])) {
 			status = FTDM_FAIL;
@@ -1410,10 +1401,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 		}
 		
 		if (direction == FTDM_TOP_DOWN) {
+			if (i >= group->chan_count) {
+				break;
+			}
 			i++;
 		} else {
+			if (i == 0) {
+				break;
+			}
 			i--;
-		}	
+		}
 	}
 	ftdm_mutex_unlock(group->mutex);
 	return status;
