@@ -376,6 +376,7 @@ typedef enum {
 typedef struct ftdm_conf_parameter {
 	const char *var;
 	const char *val;
+	void *ptr;
 } ftdm_conf_parameter_t;
 
 /*! \brief Channel commands that can be executed through ftdm_channel_command() */
