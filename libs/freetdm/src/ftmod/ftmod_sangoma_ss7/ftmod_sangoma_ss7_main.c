@@ -46,11 +46,11 @@ ftdm_sched_t                        *sngss7_sched;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
-static void *ftdm_ss7_run(ftdm_thread_t *me, void *obj);
-static void ftdm_ss7_process_state_change(ftdm_channel_t *ftdmchan);
+static void *ftdm_sangoma_ss7_run(ftdm_thread_t *me, void *obj);
+static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan);
 
-static ftdm_status_t ftdm_ss7_stop(ftdm_span_t *span);
-static ftdm_status_t ftdm_ss7_start(ftdm_span_t *span);
+static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t *span);
+static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t *span);
 /******************************************************************************/
 
 /* STATE MAP ******************************************************************/
@@ -222,9 +222,9 @@ ftdm_state_map_t sangoma_ss7_state_map = {
 /******************************************************************************/
 
 /* MONITIOR THREADS ***********************************************************/
-static void *ftdm_ss7_run(ftdm_thread_t *me, void *obj)
+static void *ftdm_sangoma_ss7_run(ftdm_thread_t *me, void *obj)
 {
-    ftdm_interrupt_t    *ftdm_ss7_int = NULL;
+    ftdm_interrupt_t    *ftdm_sangoma_ss7_int = NULL;
     ftdm_span_t         *span   = (ftdm_span_t *) obj;
     ftdm_channel_t      *ftdmchan = NULL;
 
@@ -234,22 +234,22 @@ static void *ftdm_ss7_run(ftdm_thread_t *me, void *obj)
     ftdm_set_flag(span, FTDM_SPAN_IN_THREAD);
 
     /* get an interrupt queue for this span */
-    if(ftdm_queue_get_interrupt(span->pendingchans, &ftdm_ss7_int) != FTDM_SUCCESS) {
+    if(ftdm_queue_get_interrupt(span->pendingchans, &ftdm_sangoma_ss7_int) != FTDM_SUCCESS) {
         SS7_CRITICAL("Failed to get a ftdm_interrupt for span = %d!\n", span->span_id);
-        goto ftdm_ss7_run_exit;
+        goto ftdm_sangoma_ss7_run_exit;
     }
 
     while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
 
         /* find out why we returned from the interrupt queue */
-        switch ((ftdm_interrupt_wait(ftdm_ss7_int, 100))) {
+        switch ((ftdm_interrupt_wait(ftdm_sangoma_ss7_int, 100))) {
         /**********************************************************************/
         case FTDM_SUCCESS:  /* there was a state change on the span */
             /* process all pending state changes */
             while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
                 /* double check that this channel has a state change pending */
                 if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-                    ftdm_ss7_process_state_change(ftdmchan);
+                    ftdm_sangoma_ss7_process_state_change(ftdmchan);
                 } else {
                     SS7_ERROR("ftdm_core reported state change, but state change flag not set on ft-span = %d, ft-chan = %d\n",
                                 ftdmchan->span_id,
@@ -271,7 +271,7 @@ static void *ftdm_ss7_run(ftdm_thread_t *me, void *obj)
             SS7_ERROR("ftdm_interrupt_wait returned with unknown code on span = %d\n", span->span_id);
             break;
         /**********************************************************************/
-        } /* switch ((ftdm_interrupt_wait(ftdm_ss7_int, 100))) */
+        } /* switch ((ftdm_interrupt_wait(ftdm_sangoma_ss7_int, 100))) */
 
     } /* master while loop */
 
@@ -282,20 +282,20 @@ static void *ftdm_ss7_run(ftdm_thread_t *me, void *obj)
 
     return NULL;
 
-ftdm_ss7_run_exit:
+ftdm_sangoma_ss7_run_exit:
 
     /* clear the IN_THREAD flag so that we know the thread is done */
     ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 
     ftdm_log(FTDM_LOG_INFO, "ftmod_sangoma_ss7 monitor thread for span=%u stopping due to error.\n", span->span_id);
 
-    ftdm_ss7_stop(span);
+    ftdm_sangoma_ss7_stop(span);
 
     return NULL;
 }
 
 /******************************************************************************/
-static void ftdm_ss7_process_state_change(ftdm_channel_t *ftdmchan)
+static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
 {
     ftdm_sigmsg_t           sigev;
     ftdm_signaling_status_t status;
@@ -824,7 +824,7 @@ static void ftdm_ss7_process_state_change(ftdm_channel_t *ftdmchan)
 /******************************************************************************/
 
 /******************************************************************************/
-static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_ss7_outgoing_call)
+static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 {
     sngss7_chan_data_t  *sngss7_info;
     int c;
@@ -934,7 +934,7 @@ outgoing_successful:
 }
 /******************************************************************************/
 #if 0
-static FIO_CHANNEL_REQUEST_FUNCTION(ftdm_ss7_request_chan)
+static FIO_CHANNEL_REQUEST_FUNCTION(ftdm_sangoma_ss7_request_chan)
 {
     SS7_INFO("KONRAD-> I got called %s\n",__FUNCTION__);
     return FTDM_SUCCESS;
@@ -944,7 +944,7 @@ static FIO_CHANNEL_REQUEST_FUNCTION(ftdm_ss7_request_chan)
 /******************************************************************************/
 
 /* FT-CORE SIG STATUS FUNCTIONS ***********************************************/
-static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_ss7_get_sig_status)
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_ss7_get_sig_status)
 {
     
     if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
@@ -956,7 +956,7 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_ss7_get_sig_status)
     return FTDM_SUCCESS;
 }
 
-static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_ss7_set_sig_status)
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_ss7_set_sig_status)
 {
     SS7_ERROR("Cannot set channel status in this module\n");
 
@@ -964,7 +964,7 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_ss7_set_sig_status)
 }
 
 /* FT-CORE SIG FUNCTIONS *******************************************************/
-static ftdm_status_t ftdm_ss7_start(ftdm_span_t *span)
+static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t *span)
 {
     SS7_INFO("Starting span %s:%u.\n",span->name,span->span_id);
 
@@ -979,7 +979,7 @@ static ftdm_status_t ftdm_ss7_start(ftdm_span_t *span)
     }
 
     /*start the span monitor thread*/
-    if(ftdm_thread_create_detached(ftdm_ss7_run, span) != FTDM_SUCCESS) {
+    if(ftdm_thread_create_detached(ftdm_sangoma_ss7_run, span) != FTDM_SUCCESS) {
         SS7_CRITICAL("Failed to start Span Monitor Thread!\n");
         return FTDM_FAIL;
     }
@@ -990,7 +990,7 @@ static ftdm_status_t ftdm_ss7_start(ftdm_span_t *span)
 }
 
 /******************************************************************************/
-static ftdm_status_t ftdm_ss7_stop(ftdm_span_t *span)
+static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t *span)
 {
     /*this function is called by the FT-Core to stop this span*/
     
@@ -1014,7 +1014,7 @@ static ftdm_status_t ftdm_ss7_stop(ftdm_span_t *span)
 /******************************************************************************/
 
 /* SIG_FUNCTIONS ***************************************************************/
-static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_ss7_span_config)
+static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 {
     ftdm_log(FTDM_LOG_INFO, "Configuring ftmod_sangoma_ss7 span = %s(%d)...\n", 
                     span->name,
@@ -1036,15 +1036,15 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_ss7_span_config)
     /*setup the span structure with the info so far*/
     g_ftdm_sngss7_data.sig_cb = sig_cb;
 
-    span->start                     = ftdm_ss7_start;
-    span->stop                      = ftdm_ss7_stop;
+    span->start                     = ftdm_sangoma_ss7_start;
+    span->stop                      = ftdm_sangoma_ss7_stop;
     span->signal_type               = FTDM_SIGTYPE_SANGOMASS7;
     span->signal_data               = NULL;
-    span->outgoing_call             = ftdm_ss7_outgoing_call;
+    span->outgoing_call             = ftdm_sangoma_ss7_outgoing_call;
     span->channel_request           = NULL;
     span->signal_cb                 = sig_cb;
-    span->get_channel_sig_status    = ftdm_ss7_get_sig_status;
-    span->set_channel_sig_status    = ftdm_ss7_set_sig_status;
+    span->get_channel_sig_status    = ftdm_sangoma_ss7_get_sig_status;
+    span->set_channel_sig_status    = ftdm_sangoma_ss7_set_sig_status;
     span->state_map                 = &sangoma_ss7_state_map;
     ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 
@@ -1053,13 +1053,13 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_ss7_span_config)
                     span->span_id);
 #if 0
     /* start the span up */
-    ftdm_ss7_start(span);
+    ftdm_sangoma_ss7_start(span);
 #endif
     return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
-static FIO_SIG_LOAD_FUNCTION(ftdm_ss7_init)
+static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 {
     /*this function is called by the FT-core to load the signaling module*/
 
@@ -1122,7 +1122,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_ss7_init)
 }
 
 /******************************************************************************/
-static FIO_SIG_UNLOAD_FUNCTION(ftdm_ss7_unload)
+static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 {
     /*this function is called by the FT-core to unload the signaling module*/
 
@@ -1135,20 +1135,20 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_ss7_unload)
 }
 
 /******************************************************************************/
-static FIO_API_FUNCTION(ftdm_ss7_api)
+static FIO_API_FUNCTION(ftdm_sangoma_ss7_api)
 {
     /* handle this in it's own file....so much to do */
     return (ftdm_sngss7_handle_cli_cmd(stream, data));
 }
 
 /******************************************************************************/
-static FIO_IO_LOAD_FUNCTION(ftdm_ss7_io_init)
+static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_ss7_io_init)
 {
     assert(fio != NULL);
     memset(&g_ftdm_sngss7_interface, 0, sizeof(g_ftdm_sngss7_interface));
 
-    g_ftdm_sngss7_interface.name = "ss7";
-    g_ftdm_sngss7_interface.api = ftdm_ss7_api;
+    g_ftdm_sngss7_interface.name = "sangoma_ss7";
+    g_ftdm_sngss7_interface.api = ftdm_sangoma_ss7_api;
 
     *fio = &g_ftdm_sngss7_interface;
 
@@ -1162,12 +1162,12 @@ static FIO_IO_LOAD_FUNCTION(ftdm_ss7_io_init)
 ftdm_module_t ftdm_module =
 {
     "sangoma_ss7",                  /*char name[256];                   */
-    ftdm_ss7_io_init,               /*fio_io_load_t                     */
+    ftdm_sangoma_ss7_io_init,       /*fio_io_load_t                     */
     NULL,                           /*fio_io_unload_t                   */
-    ftdm_ss7_init,                  /*fio_sig_load_t                    */
+    ftdm_sangoma_ss7_init,          /*fio_sig_load_t                    */
     NULL,                           /*fio_sig_configure_t               */
-    ftdm_ss7_unload,                /*fio_sig_unload_t                  */
-    ftdm_ss7_span_config            /*fio_configure_span_signaling_t    */
+    ftdm_sangoma_ss7_unload,        /*fio_sig_unload_t                  */
+    ftdm_sangoma_ss7_span_config    /*fio_configure_span_signaling_t    */
 };
 /******************************************************************************/
 
