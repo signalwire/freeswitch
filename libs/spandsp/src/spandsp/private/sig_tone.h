@@ -169,6 +169,8 @@ struct sig_tone_rx_state_s
     int current_rx_tone;
     /*! \brief The timeout for switching from the high level to low level tone detector. */
     int high_low_timer;
+    /*! \brief ??? */
+    int current_notch_filter;
 
     struct
     {
@@ -186,11 +188,7 @@ struct sig_tone_rx_state_s
 
         /*! \brief The power output of the notch. */
         power_meter_t power;
-        /*! \brief Persistence check for tone present */
-        int tone_persistence_timeout;
-        /*! \brief TRUE if the tone is declared to be present */
-        int tone_present;
-    } tone[2];
+    } tone[3];
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief The z's for the weighting/bandpass filter. */
@@ -201,6 +199,11 @@ struct sig_tone_rx_state_s
 #endif
     /*! \brief The output power of the flat (unfiltered or flat filtered) path. */
     power_meter_t flat_power;
+
+    /*! \brief Persistence check for tone present */
+    int tone_persistence_timeout;
+    /*! \brief The tone pattern on the last audio sample */
+    int last_sample_tone_present;
 
     /*! \brief The minimum reading from the power meter for detection in flat mode */
     int32_t flat_detection_threshold;

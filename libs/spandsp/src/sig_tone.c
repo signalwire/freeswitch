@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.c,v 1.39 2010/03/11 14:22:30 steveu Exp $
+ * $Id: sig_tone.c,v 1.40 2010/05/12 15:32:41 steveu Exp $
  */
 
 /*! \file */
@@ -201,16 +201,25 @@ static const sig_tone_descriptor_t sig_tones[3] =
     }
 };
 
-static const int tone_present_bits[2] =
+static const int tone_present_bits[3] =
 {
     SIG_TONE_1_PRESENT,
-    SIG_TONE_2_PRESENT
+    SIG_TONE_2_PRESENT,
+    SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT
 };
 
-static const int tone_change_bits[2] =
+static const int tone_change_bits[3] =
 {
     SIG_TONE_1_CHANGE,
-    SIG_TONE_2_CHANGE
+    SIG_TONE_2_CHANGE,
+    SIG_TONE_1_CHANGE | SIG_TONE_2_CHANGE
+};
+
+static const int coeff_sets[3] =
+{
+    0,
+    1,
+    0
 };
 
 SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
@@ -273,7 +282,7 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
                     for (j = i;  j < i + n;  j++)
                     {
                         tone = dds_mod(&(s->phase_acc[k]), s->phase_rate[k], s->tone_scaling[k][high_low], 0);
-                        amp[j] = saturate(amp[j] + tone);
+                        amp[j] = saturated_add16(amp[j], tone);
                     }
                     /*endfor*/
                 }
@@ -300,6 +309,11 @@ SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode, int du
     if (new_tones  &&  old_tones != new_tones)
         s->high_low_timer = s->desc->high_low_timeout;
     /*endif*/
+    /* If a tone is being turned on, let's start the phase from zero */
+    if ((mode & SIG_TONE_1_PRESENT)  &&  !(s->current_tx_tone & SIG_TONE_1_PRESENT))
+        s->phase_acc[0] = 0;
+    if ((mode & SIG_TONE_2_PRESENT)  &&  !(s->current_tx_tone & SIG_TONE_2_PRESENT))
+        s->phase_acc[1] = 0;
     s->current_tx_tone = mode;
     s->current_tx_timeout = duration;
 }
@@ -352,63 +366,78 @@ SPAN_DECLARE(int) sig_tone_tx_free(sig_tone_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+int nnn = 0;
+
 SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     int16_t x;
     int32_t v;
-    int16_t notched_signal[2];
+    int16_t notched_signal[3];
     int16_t bandpass_signal;
+    int16_t signal;
 #else
     float x;
     float v;
-    float notched_signal[2];
+    float notched_signal[3];
     float bandpass_signal;
+    float signal;
 #endif
     int i;
     int j;
-    int32_t notch_power[2];
+    int k;
+    int l;
+    int m;
+    int32_t notch_power[3];
     int32_t flat_power;
+    int immediate;
 
+    l = s->desc->tones;
+    if (l == 2)
+        l = 3;
+    notch_power[1] =
+    notch_power[2] = INT32_MAX;
     for (i = 0;  i < len;  i++)
     {
         if (s->signalling_state_duration < INT_MAX)
             s->signalling_state_duration++;
         /*endif*/
-        for (j = 0;  j < s->desc->tones;  j++)
+        signal = amp[i];
+        for (j = 0;  j < l;  j++)
         {
+            k = coeff_sets[j];
             /* The notch filter is two cascaded biquads. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-            v = ((int32_t) amp[i]*s->desc->notch[j]->a1[0])
-              + ((int32_t) s->tone[j].notch_z1[0]*s->desc->notch[j]->b1[1])
-              + ((int32_t) s->tone[j].notch_z1[1]*s->desc->notch[j]->b1[2]);
+            v = ((int32_t) signal*s->desc->notch[k]->a1[0])
+              + ((int32_t) s->tone[j].notch_z1[0]*s->desc->notch[k]->b1[1])
+              + ((int32_t) s->tone[j].notch_z1[1]*s->desc->notch[k]->b1[2]);
             x = v >> 15;
-            v +=   ((int32_t) s->tone[j].notch_z1[0]*s->desc->notch[j]->a1[1])
-                 + ((int32_t) s->tone[j].notch_z1[1]*s->desc->notch[j]->a1[2]);
+            v +=   ((int32_t) s->tone[j].notch_z1[0]*s->desc->notch[k]->a1[1])
+                 + ((int32_t) s->tone[j].notch_z1[1]*s->desc->notch[k]->a1[2]);
             s->tone[j].notch_z1[1] = s->tone[j].notch_z1[0];
             s->tone[j].notch_z1[0] = x;
-            v +=   ((int32_t) s->tone[j].notch_z2[0]*s->desc->notch[j]->b2[1])
-                 + ((int32_t) s->tone[j].notch_z2[1]*s->desc->notch[j]->b2[2]);
+            v +=   ((int32_t) s->tone[j].notch_z2[0]*s->desc->notch[k]->b2[1])
+                 + ((int32_t) s->tone[j].notch_z2[1]*s->desc->notch[k]->b2[2]);
             x = v >> 15;
-            v +=   ((int32_t) s->tone[j].notch_z2[0]*s->desc->notch[j]->a2[1])
-                 + ((int32_t) s->tone[j].notch_z2[1]*s->desc->notch[j]->a2[2]);
+            v +=   ((int32_t) s->tone[j].notch_z2[0]*s->desc->notch[k]->a2[1])
+                 + ((int32_t) s->tone[j].notch_z2[1]*s->desc->notch[k]->a2[2]);
             s->tone[j].notch_z2[1] = s->tone[j].notch_z2[0];
             s->tone[j].notch_z2[0] = x;
-            notched_signal[j] = v >> s->desc->notch[j]->postscale;
+            notched_signal[j] = v >> s->desc->notch[k]->postscale;
 #else
-            v = amp[i]*s->desc->notch[j]->a1[0]
-              + s->tone[j].notch_z1[0]*s->desc->notch[j]->b1[1]
-              + s->tone[j].notch_z1[1]*s->desc->notch[j]->b1[2];
+            v = signal*s->desc->notch[k]->a1[0]
+              + s->tone[j].notch_z1[0]*s->desc->notch[k]->b1[1]
+              + s->tone[j].notch_z1[1]*s->desc->notch[k]->b1[2];
             x = v;
-            v +=   s->tone[j].notch_z1[0]*s->desc->notch[j]->a1[1]
-                 + s->tone[j].notch_z1[1]*s->desc->notch[j]->a1[2];
+            v +=   s->tone[j].notch_z1[0]*s->desc->notch[k]->a1[1]
+                 + s->tone[j].notch_z1[1]*s->desc->notch[k]->a1[2];
             s->tone[j].notch_z1[1] = s->tone[j].notch_z1[0];
             s->tone[j].notch_z1[0] = x;
-            v +=   s->tone[j].notch_z2[0]*s->desc->notch[j]->b2[1]
-                 + s->tone[j].notch_z2[1]*s->desc->notch[j]->b2[2];
+            v +=   s->tone[j].notch_z2[0]*s->desc->notch[k]->b2[1]
+                 + s->tone[j].notch_z2[1]*s->desc->notch[k]->b2[2];
             x = v;
-            v +=   s->tone[j].notch_z2[0]*s->desc->notch[j]->a2[1]
-                 + s->tone[j].notch_z2[1]*s->desc->notch[j]->a2[2];
+            v +=   s->tone[j].notch_z2[0]*s->desc->notch[k]->a2[1]
+                 + s->tone[j].notch_z2[1]*s->desc->notch[k]->a2[2];
             s->tone[j].notch_z2[1] = s->tone[j].notch_z2[0];
             s->tone[j].notch_z2[0] = x;
             notched_signal[j] = v;
@@ -417,9 +446,10 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
                this isn't used in low tone detect mode, but we must keep the
                power measurement rolling along. */
             notch_power[j] = power_meter_update(&s->tone[j].power, notched_signal[j]);
+            if (j == 1)
+                signal = notched_signal[j];
         }
-
-        if (s->tone[0].tone_present  ||  s->tone[1].tone_present)
+        if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
         {
             if (s->flat_mode_timeout  &&  --s->flat_mode_timeout == 0)
                 s->flat_mode = TRUE;
@@ -432,8 +462,10 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
         }
         /*endif*/
 
+        immediate = -1;
         if (s->flat_mode)
         {
+            //printf("Flat mode %d %d\n", s->flat_mode_timeout, s->desc->sharp_flat_timeout);
             /* Flat mode */
             bandpass_signal = amp[i];
             if (s->desc->flat)
@@ -464,10 +496,9 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
             flat_power = power_meter_update(&s->flat_power, bandpass_signal);
     
             /* For the flat receiver we use a simple power threshold! */
-            if (s->tone[0].tone_present)
+            if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
             {
-                s->tone[0].tone_present = (flat_power > s->flat_detection_threshold);
-                if (!s->tone[0].tone_present)
+                if (flat_power < s->flat_detection_threshold)
                 {
                     s->signalling_state &= ~tone_present_bits[0];
                     s->signalling_state |= tone_change_bits[0];
@@ -476,18 +507,15 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
             }
             else
             {
-                s->tone[0].tone_present = (flat_power > s->flat_detection_threshold);
-                if (s->tone[0].tone_present)
-                {
+                if (flat_power > s->flat_detection_threshold)
                     s->signalling_state |= (tone_present_bits[0] | tone_change_bits[0]);
-                }
                 /*endif*/
             }
             /*endif*/
 
-            /* Notch insertion logic */    
+            /* Notch insertion logic */
             /* tone_present and tone_on are equivalent in flat mode */
-            if (s->tone[0].tone_present)
+            if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
             {
                 s->notch_insertion_timeout = s->desc->notch_lag_time;
             }
@@ -504,64 +532,68 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
             /* Sharp mode */
             flat_power = power_meter_update(&s->flat_power, amp[i]);
 
-            for (j = 0;  j < s->desc->tones;  j++)
+            /* Persistence checking and notch insertion logic */
+            if (flat_power >= s->sharp_detection_threshold)
             {
-                /* Persistence checking and notch insertion logic */
-                if (s->tone[j].tone_present)
+                /* Which is the better of the single tone responses? */
+                m = (notch_power[0] < notch_power[1])  ?  0  :  1;
+                /* Single tone has precedence. If the better one fails to detect, try
+                   for a dual tone signal. */
+                if ((notch_power[m] >> 6)*s->detection_ratio < (flat_power >> 6))
+                    immediate = m;
+                else if ((notch_power[2] >> 6)*s->detection_ratio < (flat_power >> 7))
+                    immediate = 2;
+            }
+            //printf("Immediate = %d  %d   %d\n", immediate, s->signalling_state, s->tone_persistence_timeout);
+            if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
+            {
+                if (immediate != s->current_notch_filter)
                 {
-                    if (flat_power < s->sharp_detection_threshold
-                        ||
-                        (notch_power[j] >> 6)*s->detection_ratio > (flat_power >> 6))
+                    /* No tone is detected this sample */
+                    if (--s->tone_persistence_timeout == 0)
                     {
-                        /* Tone is not detected this sample */
-                        if (--s->tone[j].tone_persistence_timeout == 0)
-                        {
-                            /* Tone off is confirmed */
-                            s->tone[j].tone_present = FALSE;
-                            s->tone[j].tone_persistence_timeout = s->desc->tone_on_check_time;
-                            s->signalling_state &= ~tone_present_bits[j];
-                            s->signalling_state |= tone_change_bits[j];
-                        }
-                        /*endif*/
-                    }
-                    else
-                    {
-                        s->tone[j].tone_persistence_timeout = s->desc->tone_off_check_time;
+                        /* Tone off is confirmed */
+                        s->tone_persistence_timeout = s->desc->tone_on_check_time;
+                        s->signalling_state |= ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)) << 1);
+                        s->signalling_state &= ~(SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT);
                     }
                     /*endif*/
                 }
                 else
                 {
-                    if (s->notch_insertion_timeout)
-                        s->notch_insertion_timeout--;
-                    /*endif*/
-                    if (flat_power > s->sharp_detection_threshold
-                        &&
-                        (notch_power[j] >> 6)*s->detection_ratio < (flat_power >> 6))
-                    {
-                        /* Tone is detected this sample */
-                        if (--s->tone[j].tone_persistence_timeout == 0)
-                        {
-                            /* Tone on is confirmed */
-                            s->tone[j].tone_present = TRUE;
-                            s->tone[j].tone_persistence_timeout = s->desc->tone_off_check_time;
-                            s->notch_insertion_timeout = s->desc->notch_lag_time;
-                            s->signalling_state |= (tone_present_bits[j] | tone_change_bits[j]);
-                        }
-                        /*endif*/
-                    }
-                    else
-                    {
-                        s->tone[j].tone_persistence_timeout = s->desc->tone_on_check_time;
-                    }
-                    /*endif*/
+                    s->tone_persistence_timeout = s->desc->tone_off_check_time;
                 }
                 /*endif*/
             }
-            /*endfor*/
+            else
+            {
+                if (s->notch_insertion_timeout)
+                    s->notch_insertion_timeout--;
+                /*endif*/
+                if (immediate >= 0  &&  immediate == s->last_sample_tone_present)
+                {
+                    /* Consistent tone detected this sample */
+                    if (--s->tone_persistence_timeout == 0)
+                    {
+                        /* Tone on is confirmed */
+                        s->tone_persistence_timeout = s->desc->tone_off_check_time;
+                        s->notch_insertion_timeout = s->desc->notch_lag_time;
+                        s->signalling_state |= (tone_present_bits[immediate] | tone_change_bits[immediate]);
+                        s->current_notch_filter = immediate;
+                    }
+                    /*endif*/
+                }
+                else
+                {
+                    s->tone_persistence_timeout = s->desc->tone_on_check_time;
+                }
+                /*endif*/
+            }
+            /*endif*/
+            //printf("XXX %d %d %d %d %d %d\n", nnn++, notch_power[0], notch_power[1], notch_power[2], flat_power, immediate*10000000);
         }
         /*endif*/
-        if (s->signalling_state & (SIG_TONE_1_CHANGE | SIG_TONE_2_CHANGE))
+        if ((s->signalling_state & (SIG_TONE_1_CHANGE | SIG_TONE_2_CHANGE)))
         {
             if (s->sig_update)
                 s->sig_update(s->user_data, s->signalling_state, 0, s->signalling_state_duration);
@@ -574,7 +606,11 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
         if ((s->current_rx_tone & SIG_TONE_RX_PASSTHROUGH))
         {
             if ((s->current_rx_tone & SIG_TONE_RX_FILTER_TONE)  ||  s->notch_insertion_timeout)
-                amp[i] = saturate(notched_signal[0]);
+#if defined(SPANDSP_USE_FIXED_POINT)
+                amp[i] = saturate16(notched_signal[s->current_notch_filter]);
+#else
+                amp[i] = fsaturatef(notched_signal[s->current_notch_filter]);
+#endif
             /*endif*/
         }
         else
@@ -583,6 +619,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
             amp[i] = 0;
         }
         /*endif*/
+        s->last_sample_tone_present = immediate;
     }
     /*endfor*/
     return len;
@@ -620,17 +657,19 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
             s->tone[j].notch_z1[i] = 0.0f;
             s->tone[j].notch_z2[i] = 0.0f;
         }
-        s->flat_z[i] = 0.0f;
     }
+    for (i = 0;  i < 2;  i++)
+        s->flat_z[i] = 0.0f;
 #endif
+    s->last_sample_tone_present = -1;
 
     s->sig_update = sig_update;
     s->user_data = user_data;
 
     s->desc = &sig_tones[tone_type - 1];
 
-    power_meter_init(&s->tone[0].power, 5);
-    power_meter_init(&s->tone[1].power, 5);
+    for (i = 0;  i < 3;  i++)
+        power_meter_init(&s->tone[i].power, 5);
     power_meter_init(&s->flat_power, 5);
 
     s->flat_detection_threshold = power_meter_level_dbm0(s->desc->flat_detection_threshold);

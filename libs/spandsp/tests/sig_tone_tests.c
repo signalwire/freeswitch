@@ -70,6 +70,13 @@ const char *bellcore_files[] =
     ""
 };
 
+typedef struct
+{
+    double freq;
+    double min_level;
+    double max_level;
+} template_t;
+
 static int number_of_tones = 1;
 
 static int sampleno = 0;
@@ -81,47 +88,132 @@ static int dial_pulses = 0;
 static int rx_handler_callbacks = 0;
 static int tx_handler_callbacks = 0;
 
+static int use_gui = FALSE;
+
+static void plot_frequency_response(void)
+{
+    FILE *gnucmd;
+    
+    if ((gnucmd = popen("gnuplot", "w")) == NULL)
+    {
+        exit(2);
+    }
+    
+    fprintf(gnucmd, "set autoscale\n");
+    fprintf(gnucmd, "unset log\n");
+    fprintf(gnucmd, "unset label\n");
+    fprintf(gnucmd, "set xtic auto\n");
+    fprintf(gnucmd, "set ytic auto\n");
+    fprintf(gnucmd, "set title 'Notch filter frequency response'\n");
+    fprintf(gnucmd, "set xlabel 'Frequency (Hz)'\n");
+    fprintf(gnucmd, "set ylabel 'Gain (dB)'\n");
+    fprintf(gnucmd, "plot 'sig_tone_notch' using 1:3 title 'min' with lines,"
+                    "'sig_tone_notch' using 1:6 title 'actual' with lines,"
+                    "'sig_tone_notch' using 1:9 title 'max' with lines\n");
+    fflush(gnucmd);
+    getchar();
+    if (pclose(gnucmd) == -1)
+    {
+        exit(2);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 static void tx_handler(void *user_data, int what, int level, int duration)
 {
     sig_tone_tx_state_t *s;
+    int tone;
+    int time;
+    static const int pattern_1_tone[][2] =
+    {
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {600, SIG_TONE_1_PRESENT},
+        {0, 0}
+    };
+    static const int pattern_2_tones[][2] =
+    {
+#if 0
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+        {33, SIG_TONE_1_PRESENT},
+        {67, 0},
+#endif
+        {100, SIG_TONE_1_PRESENT},
+        {100, SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT},
+        {100, SIG_TONE_2_PRESENT},
+#if 0
+        {100, 0},
+        {100, SIG_TONE_2_PRESENT},
+        {100, SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT},
+        {100, SIG_TONE_1_PRESENT},
+#endif
+        {0, 0}
+    };
     
     s = (sig_tone_tx_state_t *) user_data;
     tx_handler_callbacks++;
     //printf("What - %d, duration - %d\n", what, duration);
     if ((what & SIG_TONE_TX_UPDATE_REQUEST))
     {
-        printf("Tx: update request\n");
         /* The sig tone transmit side wants to know what to do next */
-        switch (tx_section)
+        printf("Tx: update request\n");
+
+        if (number_of_tones == 1)
         {
-        case 0:
-            printf("33ms break - %d samples\n", ms_to_samples(33));
-            tx_section++;
-            sig_tone_tx_set_mode(s, SIG_TONE_1_PRESENT, ms_to_samples(33));
-            break;
-        case 1:
-            printf("67ms make - %d samples\n", ms_to_samples(67));
-            if (++dial_pulses == 9)
-                tx_section++;
-            else
-                tx_section--;
-            /*endif*/
-            sig_tone_tx_set_mode(s, 0, ms_to_samples(67));
-            break;
-        case 2:
-            tx_section++;
-            printf("600ms on - %d samples\n", ms_to_samples(600));
-            if (number_of_tones == 2)
-                sig_tone_tx_set_mode(s, SIG_TONE_2_PRESENT, ms_to_samples(600));
-            else
-                sig_tone_tx_set_mode(s, SIG_TONE_1_PRESENT, ms_to_samples(600));
-            break;
-        case 3:
-            printf("End of sequence\n");
-            sig_tone_tx_set_mode(s, SIG_TONE_1_PRESENT | SIG_TONE_TX_PASSTHROUGH, 0);
-            break;
+            time = pattern_1_tone[tx_section][0];
+            tone = pattern_1_tone[tx_section][1];
         }
-        /*endswitch*/
+        else
+        {
+            time = pattern_2_tones[tx_section][0];
+            tone = pattern_2_tones[tx_section][1];
+        }
+        if (time)
+        {
+            printf("Tx: [%04x] %s %s for %d samples (%dms)\n",
+                   tone,
+                   (tone & SIG_TONE_1_PRESENT)  ?  "on "  :  "off",
+                   (tone & SIG_TONE_2_PRESENT)  ?  "on "  :  "off",
+                   ms_to_samples(time),
+                   time);
+            sig_tone_tx_set_mode(s, tone, ms_to_samples(time));
+            tx_section++;
+        }
+        else
+        {
+            printf("End of sequence\n");
+        }
     }
     /*endif*/
 }
@@ -130,30 +222,46 @@ static void tx_handler(void *user_data, int what, int level, int duration)
 static void rx_handler(void *user_data, int what, int level, int duration)
 {
     float ms;
+    int x;
 
     rx_handler_callbacks++;
     ms = 1000.0f*(float) duration/(float) SAMPLE_RATE;
-    printf("What - %d, duration - %d\n", what, duration);
+    printf("Rx: [%04x]", what);
+    x = what & SIG_TONE_1_PRESENT;
     if ((what & SIG_TONE_1_CHANGE))
     {
-        tone_1_present = what & SIG_TONE_1_PRESENT;
-        printf("Rx: tone 1 is %s after %d samples (%fms)\n", (tone_1_present)  ?  "on"  : "off", duration, ms);
+        printf(" %s", (x)  ?  "on "  : "off");
+        if (x == tone_1_present)
+            exit(2);
+        tone_1_present = x;
+    }
+    else
+    {
+        printf(" ---");
+        if (x != tone_1_present)
+            exit(2);
     }
     /*endif*/
+    x = what & SIG_TONE_2_PRESENT;
     if ((what & SIG_TONE_2_CHANGE))
     {
-        tone_2_present = what & SIG_TONE_2_PRESENT;
-        printf("Rx: tone 2 is %s after %d samples (%fms)\n", (tone_2_present)  ?  "on"  : "off", duration, ms);
+        printf(" %s", (x)  ?  "on "  : "off");
+        if (x == tone_2_present)
+            exit(2);
+        tone_2_present = x;
+    }
+    else
+    {
+        if (x != tone_2_present)
+            exit(2);
+        printf(" ---");
     }
     /*endif*/
+    printf(" after %d samples (%.3fms)\n", duration, ms);
 }
 /*- End of function --------------------------------------------------------*/
 
-static void map_frequency_response(sig_tone_rx_state_t *s,
-                                   double f1,
-                                   double f2,
-                                   double f3,
-                                   double f4)
+static void map_frequency_response(sig_tone_rx_state_t *s, template_t template[])
 {
     int16_t buf[SAMPLES_PER_CHUNK];
     int i;
@@ -163,12 +271,16 @@ static void map_frequency_response(sig_tone_rx_state_t *s,
     swept_tone_state_t *swept;
     double freq;
     double gain;
+    int template_entry;
+    FILE *file;
     
     /* Things like noise don't highlight the frequency response of the high Q notch
        very well. We use a slowly swept frequency to check it. */
     printf("Frequency response test\n");
     sig_tone_rx_set_mode(s, SIG_TONE_RX_PASSTHROUGH | SIG_TONE_RX_FILTER_TONE, 0);
     swept = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 120*SAMPLE_RATE, 0);
+    template_entry = 0;
+    file = fopen("sig_tone_notch", "wb");
     for (;;)
     {
         if ((len = swept_tone(swept, buf, SAMPLES_PER_CHUNK)) <= 0)
@@ -188,22 +300,43 @@ static void map_frequency_response(sig_tone_rx_state_t *s,
             gain = 10.0*log10(sumout/sumin);
         else
             gain = 0.0;
-        printf("%7.1f Hz %f dBm0\n", freq, gain);
-        if (gain > 0.0
-            ||
-            (freq < f1  &&  gain < -1.0)
-            ||
-            (freq > f2  &&  freq < f3  &&  gain > -30.0)
-            ||
-            (freq > f4  &&  gain < -1.0))
+        printf("%7.1f Hz %.3f dBm0 < %.3f dBm0 < %.3f dBm0\n",
+               freq,
+               template[template_entry].min_level,
+               gain,
+               template[template_entry].max_level);
+        if (file)
         {
+            fprintf(file,
+                    "%7.1f Hz %.3f dBm0 < %.3f dBm0 < %.3f dBm0\n",
+                    freq,
+                    template[template_entry].min_level,
+                    gain,
+                    template[template_entry].max_level);
+        }
+        /*endif*/
+        if (gain < template[template_entry].min_level  ||  gain > template[template_entry].max_level)
+        {
+            printf("Expected: %.3f dBm0 to  %.3f dBm0\n",
+                   template[template_entry].min_level,
+                   template[template_entry].max_level);
             printf("    Failed\n");
             exit(2);
         }
         /*endif*/
+        if (freq > template[template_entry].freq)
+            template_entry++;
     }
     /*endfor*/
     swept_tone_free(swept);
+    if (file)
+    {
+        fclose(file);
+        if (use_gui)
+            plot_frequency_response();
+        /*endif*/
+    }
+    /*endif*/
     printf("    Passed\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -256,16 +389,17 @@ static void speech_immunity_tests(sig_tone_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch)
+static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch[2])
 {
     awgn_state_t noise_source;
-    int32_t phase_rate;
-    uint32_t phase;
+    int32_t phase_rate[2];
+    uint32_t phase[2];
     int16_t gain;
     int16_t amp[SAMPLE_RATE];
     int i;
     int j;
     int k;
+    int l;
     float noise_level;
     float tone_level;
     power_meter_t noise_meter;
@@ -273,9 +407,12 @@ static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch)
     int16_t noise;
     int16_t tone;
 
-    printf("Acceptable level and ratio test\n");
-    phase = 0;
-    phase_rate = dds_phase_rate(pitch);
+    printf("Acceptable level and ratio test - %.2f Hz + %.2f Hz\n", pitch[0], pitch[1]);
+    for (l = 0;  l < 2;  l++)
+    {
+        phase[l] = 0;
+        phase_rate[l] = (pitch[l] != 0.0)  ?  dds_phase_rate(pitch[l])  :  0;
+    }
     for (k = -25;  k > -60;  k--)
     {
         noise_level = k;
@@ -293,7 +430,9 @@ static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch)
             for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
             {
                 noise = awgn(&noise_source);
-                tone = dds_mod(&phase, phase_rate, gain, 0);
+                tone = dds_mod(&phase[0], phase_rate[0], gain, 0);
+                if (phase_rate[1])
+                    tone += dds_mod(&phase[1], phase_rate[1], gain, 0);
                 power_meter_update(&noise_meter, noise);
                 power_meter_update(&tone_meter, tone);
                 amp[i] = noise + tone;
@@ -302,8 +441,10 @@ static void level_and_ratio_tests(sig_tone_rx_state_t *s, double pitch)
             sig_tone_rx(s, amp, SAMPLES_PER_CHUNK);
             if (rx_handler_callbacks)
             {
-                printf("Hit at tone = %fdBm0, noise = %fdBm0\n", tone_level, noise_level);
-                printf("Noise = %fdBm0, tone = %fdBm0\n", power_meter_current_dbm0(&noise_meter), power_meter_current_dbm0(&tone_meter));
+                printf("Hit at   tone = %.2fdBm0, noise = %.2fdBm0\n", tone_level, noise_level);
+                printf("Measured tone = %.2fdBm0, noise = %.2fdBm0\n", power_meter_current_dbm0(&tone_meter), power_meter_current_dbm0(&noise_meter));
+                if (rx_handler_callbacks != 1)
+                    printf("Callbacks = %d\n", rx_handler_callbacks);
             }
             /*endif*/
             tone_level += 1.0f;
@@ -327,6 +468,7 @@ static void sequence_tests(sig_tone_tx_state_t *tx_state, sig_tone_rx_state_t *r
     int tx_samples;
 
     printf("Signalling sequence test\n");
+    tx_section = 0;
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 2)) == NULL)
     {
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
@@ -335,12 +477,14 @@ static void sequence_tests(sig_tone_tx_state_t *tx_state, sig_tone_rx_state_t *r
     /*endif*/
 
     awgn_init_dbm0(&noise_source, 1234567, -20.0f);
-    for (sampleno = 0;  sampleno < 60000;  sampleno += SAMPLES_PER_CHUNK)
+    sig_tone_tx_set_mode(tx_state, SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT | SIG_TONE_TX_PASSTHROUGH, 0);
+    sig_tone_rx_set_mode(rx_state, SIG_TONE_RX_PASSTHROUGH, 0);
+    for (sampleno = 0;  sampleno < 4000;  sampleno += SAMPLES_PER_CHUNK)
     {
-        if (sampleno == 8000)
+        if (sampleno == 800)
         {
             /* 100ms seize */
-            printf("100ms seize - %d samples\n", ms_to_samples(100));
+            printf("Tx: [0000] off off for %d samples (%dms)\n", ms_to_samples(100), 100);
             dial_pulses = 0;
             sig_tone_tx_set_mode(tx_state, 0, ms_to_samples(100));
         }
@@ -381,24 +525,40 @@ int main(int argc, char *argv[])
     sig_tone_tx_state_t tx_state;
     sig_tone_rx_state_t rx_state;
     codec_munge_state_t *munge;
-    double f1;
-    double f2;
-    double fc;
-    double f3;
-    double f4;
+    double fc[2];
+    int i;
+    template_t template[10];
+    int opt;
+
+    use_gui = FALSE;
+    while ((opt = getopt(argc, argv, "g")) != -1)
+    {
+        switch (opt)
+        {
+        case 'g':
+            use_gui = TRUE;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+    }
 
     for (type = 1;  type <= 3;  type++)
     {
         sampleno = 0;
         tone_1_present = 0;
         tone_2_present = 0;
-        tx_section = 0;
         munge = NULL;
-        f1 =
-        f2 =
-        fc =
-        f3 =
-        f4 = 0.0;
+        for (i = 0;  i < 10;  i++)
+        {
+            template[i].freq = 0.0;
+            template[i].min_level = 0.0;
+            template[i].max_level = 0.0;
+        }
+        fc[0] =
+        fc[1] = 0.0;
         switch (type)
         {
         case 1:
@@ -407,11 +567,33 @@ int main(int argc, char *argv[])
             sig_tone_tx_init(&tx_state, SIG_TONE_2280HZ, tx_handler, &tx_state);
             sig_tone_rx_init(&rx_state, SIG_TONE_2280HZ, rx_handler, &rx_state);
             number_of_tones = 1;
-            f1 = 2280.0 - 200.0;
-            f2 = 2280.0 - 20.0;
-            fc = 2280.0;
-            f3 = 2280.0 + 20.0;
-            f4 = 2280.0 + 200.0;
+            fc[0] = 2280.0;
+
+            /* From BTNR 181 2.3.3.1 */
+            template[0].freq = 1150.0;
+            template[0].min_level = -0.2;
+            template[0].max_level = 0.0;
+            template[1].freq = 1880.0;
+            template[1].min_level = -0.5;
+            template[1].max_level = 0.0;
+            template[2].freq = 2080.0;
+            template[2].min_level = -5.0;
+            template[2].max_level = 0.0;
+            template[3].freq = 2280.0 - 20.0;
+            template[3].min_level = -99.0;
+            template[3].max_level = 0.0;
+            template[4].freq = 2280.0 + 20.0;
+            template[4].min_level = -99.0;
+            template[4].max_level = -30.0;
+            template[5].freq = 2480.0;
+            template[5].min_level = -99.0;
+            template[5].max_level = 0.0;
+            template[6].freq = 2680.0;
+            template[6].min_level = -5.0;
+            template[6].max_level = 0.0;
+            template[7].freq = 4000.0;
+            template[7].min_level = -0.5;
+            template[7].max_level = 0.0;
             break;
         case 2:
             printf("2600Hz tests.\n");
@@ -419,11 +601,23 @@ int main(int argc, char *argv[])
             sig_tone_tx_init(&tx_state, SIG_TONE_2600HZ, tx_handler, &tx_state);
             sig_tone_rx_init(&rx_state, SIG_TONE_2600HZ, rx_handler, &rx_state);
             number_of_tones = 1;
-            f1 = 2600.0 - 200.0;
-            f2 = 2600.0 - 20.0;
-            fc = 2600.0;
-            f3 = 2600.0 + 20.0;
-            f4 = 2600.0 + 200.0;
+            fc[0] = 2600.0;
+
+            template[0].freq = 2600.0 - 200.0;
+            template[0].min_level = -1.0;
+            template[0].max_level = 0.0;
+            template[1].freq = 2600.0 - 20.0;
+            template[1].min_level = -99.0;
+            template[1].max_level = 0.0;
+            template[2].freq = 2600.0 + 20.0;
+            template[2].min_level = -99.0;
+            template[2].max_level = -30.0;
+            template[3].freq = 2600.0 + 200.0;
+            template[3].min_level = -99.0;
+            template[3].max_level = 0.0;
+            template[4].freq = 4000.0;
+            template[4].min_level = -1.0;
+            template[4].max_level = 0.0;
             break;
         case 3:
             printf("2400Hz/2600Hz tests.\n");
@@ -431,21 +625,36 @@ int main(int argc, char *argv[])
             sig_tone_tx_init(&tx_state, SIG_TONE_2400HZ_2600HZ, tx_handler, &tx_state);
             sig_tone_rx_init(&rx_state, SIG_TONE_2400HZ_2600HZ, rx_handler, &rx_state);
             number_of_tones = 2;
-            f1 = 2400.0 - 200.0;
-            f2 = 2400.0 - 20.0;
-            fc = 2400.0;
-            f3 = 2400.0 + 20.0;
-            f4 = 2400.0 + 200.0;
+            fc[0] = 2400.0;
+            fc[1] = 2600.0;
+
+            template[0].freq = 2400.0 - 200.0;
+            template[0].min_level = -1.0;
+            template[0].max_level = 0.0;
+            template[1].freq = 2400.0 - 20.0;
+            template[1].min_level = -99.0;
+            template[1].max_level = 0.0;
+            template[2].freq = 2400.0 + 20.0;
+            template[2].min_level = -99.0;
+            template[2].max_level = -30.0;
+            template[3].freq = 2600.0 - 20.0;
+            template[3].min_level = -99.0;
+            template[3].max_level = 0.0;
+            template[4].freq = 2600.0 + 20.0;
+            template[4].min_level = -99.0;
+            template[4].max_level = -30.0;
+            template[5].freq = 2600.0 + 200.0;
+            template[5].min_level = -99.0;
+            template[5].max_level = 0.0;
+            template[6].freq = 4000.0;
+            template[6].min_level = -1.0;
+            template[6].max_level = 0.0;
             break;
         }
         /*endswitch*/
-        /* Set to the default on hook condition */
-        map_frequency_response(&rx_state, f1, f2, f3, f4);
+        map_frequency_response(&rx_state, template);
         speech_immunity_tests(&rx_state);
         level_and_ratio_tests(&rx_state, fc);
-
-        sig_tone_tx_set_mode(&tx_state, SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT | SIG_TONE_TX_PASSTHROUGH, 0);
-        sig_tone_rx_set_mode(&rx_state, SIG_TONE_RX_PASSTHROUGH, 0);
         sequence_tests(&tx_state, &rx_state, munge);
     }
     /*endfor*/
