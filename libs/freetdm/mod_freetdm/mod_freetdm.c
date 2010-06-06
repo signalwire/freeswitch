@@ -2199,7 +2199,7 @@ static switch_status_t load_config(void)
 	}
 
 	switch_core_hash_init(&globals.ss7_configs, module_pool);
-	if ((spans = switch_xml_child(cfg, "ss7_spans"))) {
+	if ((spans = switch_xml_child(cfg, "sangoma_ss7_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			ftdm_status_t zstatus = FTDM_FAIL;
 			const char *context = "default";
@@ -2248,6 +2248,10 @@ static switch_status_t load_config(void)
 			}
 
 			memset(spanparameters, 0, sizeof(spanparameters));
+			paramindex = 0;
+			spanparameters[paramindex].var = "confnode";
+			spanparameters[paramindex].ptr = ss7confnode;
+			paramindex++;
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -2268,10 +2272,10 @@ static switch_status_t load_config(void)
 				}
 			}
 
-			if (ftdm_configure_span(span, "ss7", on_ss7_signal,
-								   "confnode", ss7confnode,
-								   "parameters", spanparameters,
-								   FTDM_TAG_END) != FTDM_SUCCESS) {
+			if (ftdm_configure_span_signaling(span, 
+						          "sangoma_ss7", 
+						          on_ss7_signal,
+							  spanparameters) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
 				continue;
 			}

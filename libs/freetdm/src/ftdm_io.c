@@ -3867,10 +3867,13 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(ftdm_span_t *span, const char *typ
 		ftdm_load_module_assume(type);
 		if ((mod = (ftdm_module_t *) hashtable_search(globals.module_hash, (void *)type))) {
 			ftdm_log(FTDM_LOG_INFO, "auto-loaded '%s'\n", type);
+		} else {
+			ftdm_log(FTDM_LOG_ERROR, "can't load '%s'\n", type);
+			return FTDM_FAIL;
 		}
 	}
 
-	if (mod && mod->sig_configure) {
+	if (mod->sig_configure) {
 		va_list ap;
 		va_start(ap, sig_cb);
 		status = mod->sig_configure(span, sig_cb, ap);
@@ -3879,7 +3882,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(ftdm_span_t *span, const char *typ
 			status = post_configure_span_channels(span);
 		}
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "can't find '%s'\n", type);
+		ftdm_log(FTDM_LOG_CRIT, "module '%s' did not implement the sig_configure method\n", type);
 		status = FTDM_FAIL;
 	}
 
