@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.h,v 1.39 2009/06/02 16:03:56 steveu Exp $
+ * $Id: tone_generate.h,v 1.40 2010/05/22 13:20:18 steveu Exp $
  */
 
 /*! \file */
@@ -77,16 +77,18 @@ extern "C"
     \param d3 x
     \param d4 x
     \param repeat x */
-SPAN_DECLARE(void) make_tone_gen_descriptor(tone_gen_descriptor_t *s,
-                                            int f1,
-                                            int l1,
-                                            int f2,
-                                            int l2,
-                                            int d1,
-                                            int d2,
-                                            int d3,
-                                            int d4,
-                                            int repeat);
+SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descriptor_t *s,
+                                                               int f1,
+                                                               int l1,
+                                                               int f2,
+                                                               int l2,
+                                                               int d1,
+                                                               int d2,
+                                                               int d3,
+                                                               int d4,
+                                                               int repeat);
+
+SPAN_DECLARE(void) tone_gen_descriptor_free(tone_gen_descriptor_t *s);
 
 SPAN_DECLARE_NONSTD(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples);
 
