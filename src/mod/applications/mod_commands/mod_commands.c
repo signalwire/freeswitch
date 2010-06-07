@@ -4194,6 +4194,34 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define LOG_SYNTAX "<level> <message>"
+SWITCH_STANDARD_API(log_function)
+{
+	char *level, *log_str;
+
+	if (cmd && (level = strdup(cmd))) {
+		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
+
+		if ((log_str = strchr(level, ' '))) {
+			*log_str++ = '\0';
+			ltype = switch_log_str2level(level);
+		} else {
+			log_str = level;
+		}
+		if (ltype == SWITCH_LOG_INVALID) {
+			ltype = SWITCH_LOG_DEBUG;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), ltype, "%s\n", log_str);
+		switch_safe_free(level);
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -4233,6 +4261,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "in_group", "determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "log", "Log", log_function, LOG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
