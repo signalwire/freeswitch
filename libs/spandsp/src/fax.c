@@ -324,7 +324,7 @@ SPAN_DECLARE(int) fax_rx_fillin(fax_state_t *s, int len)
     /* Call the fillin function of the current modem (if there is one). */
     s->modems.rx_fillin_handler(s->modems.rx_user_data, len);
     t30_timer_update(&s->t30, len);
-    return len;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
