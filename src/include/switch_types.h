@@ -554,7 +554,7 @@ typedef enum {
 	 */
 
 
-	RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1)
+	RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1),
 		/*
 		   Sonus wrongly expects that, when sending a multi-packet 2833 DTMF event, The sender
 		   should increment the RTP timestamp in each packet when, in reality, the sender should
@@ -573,6 +573,19 @@ typedef enum {
 
 		   This flag will cause each packet to have a new timestamp.
 		 */
+
+
+	RTP_BUG_IGNORE_MARK_BIT = (1 << 2)
+
+	/*
+	  A Huawei SBC has been discovered that sends the mark bit on every single RTP packet.
+	  Since this causes the RTP stack to flush it's buffers, it horribly messes up the timing on the channel.
+
+	  This flag will do nothing when an inbound packet contains the mark bit.
+
+	 */
+
+
 } switch_rtp_bug_flag_t;
 
 #ifdef _MSC_VER
