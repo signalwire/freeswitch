@@ -25,6 +25,7 @@ Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.t
 Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source11:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Prefix:        %{prefix}
 
 #AutoReqProv:  no
@@ -215,6 +216,7 @@ cp %{SOURCE7} libs/
 cp %{SOURCE8} libs/
 cp %{SOURCE9} libs/
 cp %{SOURCE10} libs/
+cp %{SOURCE11} libs/
 
 
 %build
