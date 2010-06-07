@@ -1257,15 +1257,15 @@
 				Name="win32 headers"
 				>
 				<File
-					RelativePath="..\config.h"
+					RelativePath="..\..\sofia-sip\win32\config.h"
 					>
 				</File>
 				<File
-					RelativePath="..\sofia-sip\su_configure.h"
+					RelativePath="..\..\sofia-sip\win32\sofia-sip\su_configure.h"
 					>
 				</File>
 				<File
-					RelativePath="..\unistd.h"
+					RelativePath="..\..\sofia-sip\win32\unistd.h"
 					>
 				</File>
 			</Filter>
