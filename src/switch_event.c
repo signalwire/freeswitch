@@ -132,6 +132,8 @@ static char *EVENT_NAMES[] = {
 	"CHANNEL_PARK",
 	"CHANNEL_UNPARK",
 	"CHANNEL_APPLICATION",
+	"CHANNEL_HOLD",
+	"CHANNEL_UNHOLD",
 	"CHANNEL_ORIGINATE",
 	"CHANNEL_UUID",
 	"API",
@@ -383,7 +385,7 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(const char *name, switch_event
 	switch_assert(RUNTIME_POOL != NULL);
 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
-		if ((strlen(name) > 13 && !strcasecmp(name + 13, EVENT_NAMES[x])) || !strcasecmp(name, EVENT_NAMES[x])) {
+		if ((strlen(name) > 13 && x < switch_arraylen(EVENT_NAMES) && !strcasecmp(name + 13, EVENT_NAMES[x])) || !strcasecmp(name, EVENT_NAMES[x])) {
 			*type = x;
 			return SWITCH_STATUS_SUCCESS;
 		}
