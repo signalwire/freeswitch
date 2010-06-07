@@ -317,7 +317,7 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			free(errmsg);
+			switch_core_db_free(errmsg);
 		}
 
 		if (db) {
@@ -2730,7 +2730,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 				if ((sql = switch_mprintf("delete from jabber_subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
 					mdl_execute_sql(profile, sql, profile->mutex);
-					switch_core_db_free(sql);
+					free(sql);
 				}
 
 				break;
@@ -2743,12 +2743,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_mutex_lock(profile->mutex);
 					if ((sql = switch_mprintf("delete from jabber_subscriptions where sub_from='%q' and sub_to='%q'", from, to))) {
 						mdl_execute_sql(profile, sql, NULL);
-						switch_core_db_free(sql);
+						free(sql);
 					}
 					if ((sql = switch_mprintf("insert into jabber_subscriptions values('%q','%q','%q','%q');\n",
 											  switch_str_nil(from), switch_str_nil(to), switch_str_nil(msg), switch_str_nil(subject)))) {
 						mdl_execute_sql(profile, sql, NULL);
-						switch_core_db_free(sql);
+						free(sql);
 					}
 					switch_mutex_unlock(profile->mutex);
 					if (is_special(to)) {
@@ -2796,7 +2796,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'",
 										  switch_str_nil(msg), switch_str_nil(subject), switch_str_nil(from)))) {
 					mdl_execute_sql(profile, sql, profile->mutex);
-					switch_core_db_free(sql);
+					free(sql);
 				}
 
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
@@ -2831,7 +2831,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'",
 										  switch_str_nil(msg), switch_str_nil(subject), switch_str_nil(from)))) {
 					mdl_execute_sql(profile, sql, profile->mutex);
-					switch_core_db_free(sql);
+					free(sql);
 				}
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);

@@ -379,7 +379,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 				switch_cache_db_release_db_handle(&db);
 				if (errmsg) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error: %s\n", errmsg);
-					switch_core_db_free(errmsg);
+					free(errmsg);
 					if ((file = switch_channel_get_variable(channel, "eavesdrop_indicate_failed"))) {
 						switch_ivr_play_file(session, NULL, file, NULL);
 					}

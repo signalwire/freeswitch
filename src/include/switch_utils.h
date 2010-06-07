@@ -653,14 +653,17 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 /* malloc or DIE macros */
 #ifdef NDEBUG
 #define switch_malloc(ptr, len) (void)( (!!(ptr = malloc(len))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%s", __FILE__, __LINE__),abort(), 0), ptr )
-#define switch_zmalloc(ptr, len) (void)( (!!(ptr = malloc(len))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%s", __FILE__, __LINE__),abort(), 0), memset(ptr, 0, len))
+#define switch_zmalloc(ptr, len) (void)( (!!(ptr = calloc(1, (len)))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%s", __FILE__, __LINE__),abort(), 0), ptr)
+#define switch_strdup(ptr, s) (void)( (!!(ptr = strdup(s))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%s", __FILE__, __LINE__),abort(), 0), ptr)
 #else
 #if (_MSC_VER >= 1500)			// VC9+
 #define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr);__analysis_assume( ptr )
-#define switch_zmalloc(ptr, len) (void)(assert((ptr = malloc(len))),memset(ptr, 0, len));__analysis_assume( ptr )
+#define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr);__analysis_assume( ptr )
+#define switch_strdup(ptr, s) (void)(assert(((ptr) = _strdup(s)((len)))),ptr);__analysis_assume( ptr )
 #else
 #define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr)
-#define switch_zmalloc(ptr, len) (void)(assert((ptr = malloc(len))),memset(ptr, 0, len))
+#define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr)
+#define switch_strdup(ptr, s) (void)(assert(((ptr) = strdup((s)))),ptr)
 #endif
 #endif
 

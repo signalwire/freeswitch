@@ -374,6 +374,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
+	char *tmp = NULL;
 
 	if (dbh->io_mutex) {
 		switch_mutex_lock(dbh->io_mutex);
@@ -395,6 +396,11 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	case SCDB_TYPE_CORE_DB:
 		{
 			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+			if (errmsg) {
+				switch_strdup(tmp, errmsg);
+				switch_core_db_free(errmsg);
+				errmsg = tmp;
+			}
 		}
 		break;
 	}
@@ -721,7 +727,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 			if (errmsg) {
 				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-				free(errmsg);
+				switch_core_db_free(errmsg);
 			}
 		}
 		break;
@@ -874,7 +880,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 					len += newlen;
 
 				}
-				switch_core_db_free(sql);
+				free(sql);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "SQL thread ending\n");
 				break;

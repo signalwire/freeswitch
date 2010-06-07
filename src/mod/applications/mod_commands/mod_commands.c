@@ -3500,7 +3500,7 @@ SWITCH_STANDARD_API(show_function)
 
 		if (errmsg) {
 			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
-			switch_core_db_free(errmsg);
+			free(errmsg);
 			errmsg = NULL;
 		} else if (help) {
 			if (holder.count == 0)
@@ -3513,7 +3513,7 @@ SWITCH_STANDARD_API(show_function)
 
 		if (errmsg) {
 			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
-			switch_core_db_free(errmsg);
+			free(errmsg);
 			errmsg = NULL;
 		}
 

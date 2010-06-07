@@ -329,7 +329,7 @@ switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			free(errmsg);
+			switch_core_db_free(errmsg);
 		}
 
 		if (db) {

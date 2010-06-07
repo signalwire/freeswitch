@@ -22,7 +22,7 @@ SWITCH_BEGIN_EXTERN_C
  * options that are useful for constructing SQL statements.
  *
  * The strings returned by this routine should be freed by calling
- * switch_core_db_free().
+ * free().
  *
  * All of the usual printf formatting options apply.  In addition, there
  * is a "%q" option.  %q works like %s in that it substitutes a null-terminated
@@ -37,9 +37,9 @@ SWITCH_BEGIN_EXTERN_C
  *
  * We can use this text in an SQL statement as follows:
  *
- *      char *z = switch_core_db_mprintf("INSERT INTO TABLES('%q')", zText);
+ *      char *z = switch_mprintf("INSERT INTO TABLES('%q')", zText);
  *      switch_core_db_exec(db, z, callback1, 0, 0);
- *      switch_core_db_free(z);
+ *      free(z);
  *
  * Because the %q format string is used, the '\'' character in zText
  * is escaped and the SQL generated is as follows:
