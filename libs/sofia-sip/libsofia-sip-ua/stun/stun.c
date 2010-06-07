@@ -1300,7 +1300,7 @@ int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *arg)
   stun_attr_t *password, *username;
   int state;
   int events = su_wait_events(w, sd->sd_socket), one = 0;
-  unsigned int onelen;
+  socklen_t onelen;
 
   enter;
 
