@@ -385,7 +385,7 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(const char *name, switch_event
 	switch_assert(RUNTIME_POOL != NULL);
 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
-		if ((strlen(name) > 13 && x < switch_arraylen(EVENT_NAMES) && !strcasecmp(name + 13, EVENT_NAMES[x])) || !strcasecmp(name, EVENT_NAMES[x])) {
+		if ((strlen(name) > 13 && !strcasecmp(name + 13, EVENT_NAMES[x])) || !strcasecmp(name, EVENT_NAMES[x])) {
 			*type = x;
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -579,6 +579,8 @@ static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t 
 SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
 	switch_threadattr_t *thd_attr;;
+
+	switch_assert(switch_arraylen(EVENT_NAMES)  == SWITCH_EVENT_ALL + 1);
 
 	switch_assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
