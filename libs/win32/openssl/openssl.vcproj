@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="openssl"
+	ProjectGUID="{FE340F82-EBDF-4D85-A8B3-876E143D1639}"
+	RootNamespace="openssl"
+	TargetFrameworkVersion="196613"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="@setlocal&#x0D;&#x0A;::preparing&#x0D;&#x0A;&#x0D;&#x0A;cd /D $(ProjectDir)&#x0D;&#x0A;&#x0D;&#x0A;@echo download openssl source&#x0D;&#x0A;@SET OPENSSL_VERSION=openssl-1.0.0a&#x0D;&#x0A;&#x0D;&#x0A;@if exist %OPENSSL_VERSION% rmdir /Q /S %OPENSSL_VERSION%&#x0D;&#x0A;@if exist %OPENSSL_VERSION%.tar del /Q %OPENSSL_VERSION%.tar&#x0D;&#x0A;&#x0D;&#x0A;@cscript ..\util.vbs GetUnzip http://www.openssl.org/source/%OPENSSL_VERSION%.tar.gz  .&#x0D;&#x0A;&#x0D;&#x0A;@if not exist %OPENSSL_VERSION%.tar.gz goto no_openssl_local&#x0D;&#x0A;@del /Q %OPENSSL_VERSION%.tar&#x0D;&#x0A;&#x0D;&#x0A;:: Check that we have perl&#x0D;&#x0A;@perl -v  &lt; NUL &gt;NUL&#x0D;&#x0A;@if not errorlevel 9009 goto perl_ok&#x0D;&#x0A;@echo *** install perl your PATH ***&#x0D;&#x0A;@echo *** see http://www.activestate.com/activeperl ***&#x0D;&#x0A;@goto end&#x0D;&#x0A;&#x0D;&#x0A;:perl_ok&#x0D;&#x0A;::build openssl&#x0D;&#x0A;@echo *** perl OK ***&#x0D;&#x0A;&#x0D;&#x0A;call  $(VCInstallDir)vcvarsall.bat %PROCESSOR_ARCHITECTURE%&#x0D;&#x0A;&#x0D;&#x0A;@SET INSTALL_DIR=../&#x0D;&#x0A;@SET SSL_DIR=conf/ssl&#x0D;&#x0A;@SET OPENSSL_SOURCE=%OPENSSL_VERSION%&#x0D;&#x0A;@echo install directory: %INSTALL_DIR%&#x0D;&#x0A;&#x0D;&#x0A;cd /D %OPENSSL_SOURCE%&#x0D;&#x0A;echo %CD%&#x0D;&#x0A;&#x0D;&#x0A;@echo Configuring...&#x0D;&#x0A;perl Configure VC-WIN32 no-asm --prefix=%INSTALL_DIR% --openssldir=%SSL_DIR%&#x0D;&#x0A;call ms\do_ms.bat&#x0D;&#x0A;&#x0D;&#x0A;@echo Building...&#x0D;&#x0A;nmake -f ms\ntdll.mak&#x0D;&#x0A;&#x0D;&#x0A;@echo Testing...&#x0D;&#x0A;nmake -f ms\ntdll.mak test&#x0D;&#x0A;&#x0D;&#x0A;@echo Installing...&#x0D;&#x0A;nmake -f ms\ntdll.mak install&#x0D;&#x0A;&#x0D;&#x0A;@xcopy /Y /I /F ..\bin\*.dll ..\..\..\..\$(ConfigurationName)&#x0D;&#x0A;@goto end&#x0D;&#x0A;&#x0D;&#x0A;:no_openssl_local&#x0D;&#x0A;@echo *** error downloading openssl ***&#x0D;&#x0A;@goto end&#x0D;&#x0A;&#x0D;&#x0A;:end&#x0D;&#x0A;@endlocal&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="@setlocal&#x0D;&#x0A;::preparing&#x0D;&#x0A;&#x0D;&#x0A;cd /D $(ProjectDir)&#x0D;&#x0A;&#x0D;&#x0A;@echo download openssl source&#x0D;&#x0A;@SET OPENSSL_VERSION=openssl-1.0.0a&#x0D;&#x0A;&#x0D;&#x0A;@if exist %OPENSSL_VERSION% rmdir /Q /S %OPENSSL_VERSION%&#x0D;&#x0A;@if exist %OPENSSL_VERSION%.tar del /Q %OPENSSL_VERSION%.tar&#x0D;&#x0A;&#x0D;&#x0A;@cscript ..\util.vbs GetUnzip http://www.openssl.org/source/%OPENSSL_VERSION%.tar.gz  .&#x0D;&#x0A;&#x0D;&#x0A;@if not exist %OPENSSL_VERSION%.tar.gz goto no_openssl_local&#x0D;&#x0A;@del /Q %OPENSSL_VERSION%.tar&#x0D;&#x0A;&#x0D;&#x0A;:: Check that we have perl&#x0D;&#x0A;@perl -v  &lt; NUL &gt;NUL&#x0D;&#x0A;@if not errorlevel 9009 goto perl_ok&#x0D;&#x0A;@echo *** install perl your PATH ***&#x0D;&#x0A;@echo *** see http://www.activestate.com/activeperl ***&#x0D;&#x0A;@goto end&#x0D;&#x0A;&#x0D;&#x0A;:perl_ok&#x0D;&#x0A;::build openssl&#x0D;&#x0A;@echo *** perl OK ***&#x0D;&#x0A;&#x0D;&#x0A;call  $(VCInstallDir)vcvarsall.bat %PROCESSOR_ARCHITECTURE%&#x0D;&#x0A;&#x0D;&#x0A;@SET INSTALL_DIR=../&#x0D;&#x0A;@SET SSL_DIR=conf/ssl&#x0D;&#x0A;@SET OPENSSL_SOURCE=%OPENSSL_VERSION%&#x0D;&#x0A;@echo install directory: %INSTALL_DIR%&#x0D;&#x0A;&#x0D;&#x0A;cd /D %OPENSSL_SOURCE%&#x0D;&#x0A;echo %CD%&#x0D;&#x0A;&#x0D;&#x0A;@echo Configuring...&#x0D;&#x0A;perl Configure VC-WIN32 no-asm --prefix=%INSTALL_DIR% --openssldir=%SSL_DIR%&#x0D;&#x0A;call ms\do_ms.bat&#x0D;&#x0A;&#x0D;&#x0A;@echo Building...&#x0D;&#x0A;nmake -f ms\ntdll.mak&#x0D;&#x0A;&#x0D;&#x0A;@echo Testing...&#x0D;&#x0A;nmake -f ms\ntdll.mak test&#x0D;&#x0A;&#x0D;&#x0A;@echo Installing...&#x0D;&#x0A;nmake -f ms\ntdll.mak install&#x0D;&#x0A;&#x0D;&#x0A;@xcopy /Y /I /F ..\bin\*.dll ..\..\..\..\$(ConfigurationName)&#x0D;&#x0A;@goto end&#x0D;&#x0A;&#x0D;&#x0A;:no_openssl_local&#x0D;&#x0A;@echo *** error downloading openssl ***&#x0D;&#x0A;@goto end&#x0D;&#x0A;&#x0D;&#x0A;:end&#x0D;&#x0A;@endlocal&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
