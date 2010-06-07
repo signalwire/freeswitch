@@ -32,5 +32,6 @@
   <!--<param name="extension-in-contact" value="true"/>-->
   <!--send an options ping every x seconds, failure will unregister and/or mark it down-->
   <!--<param name="ping" value="25"/>-->
+  <!--<param name="cid-type" value="rpid"/>-->
   <!--</gateway>-->
 </include>
