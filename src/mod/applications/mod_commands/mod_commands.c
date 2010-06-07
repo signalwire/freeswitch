@@ -4340,7 +4340,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show application");
 	switch_console_set_complete("add show calls");
 	switch_console_set_complete("add show channels");
-	switch_console_set_complete("add show channels");
+	switch_console_set_complete("add show channels count");
 	switch_console_set_complete("add show chat");
 	switch_console_set_complete("add show codec");
 	switch_console_set_complete("add show complete");
