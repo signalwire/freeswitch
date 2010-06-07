@@ -2105,6 +2105,7 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 
 static void parse_rtp_bugs(sofia_profile_t *profile, const char *str)
 {
+
 	if (switch_stristr("clear", str)) {
 		profile->auto_rtp_bugs = 0;
 	}
@@ -2125,11 +2126,11 @@ static void parse_rtp_bugs(sofia_profile_t *profile, const char *str)
 		profile->auto_rtp_bugs &= ~RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
 	}
 
-	if (switch_stristr("RTP_BUG_IGNORE_MARK_BIT", str)) {
+	if (switch_stristr("IGNORE_MARK_BIT", str)) {
 		profile->auto_rtp_bugs |= RTP_BUG_IGNORE_MARK_BIT;
 	}	
 
-	if (switch_stristr("~RTP_BUG_IGNORE_MARK_BIT", str)) {
+	if (switch_stristr("~IGNORE_MARK_BIT", str)) {
 		profile->auto_rtp_bugs &= ~RTP_BUG_IGNORE_MARK_BIT;
 	}	
 
