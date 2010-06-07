@@ -196,9 +196,25 @@ static struct switch_callstate_table STATE_CHART[] = {
 };
 
 
-SWITCH_DECLARE(void) switch_channel_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate)
+SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate, 
+														  const char *file, const char *func, int line)
 {
+	switch_event_t *event;
+	switch_channel_callstate_t o_callstate = channel->callstate;
+
+	if (o_callstate == callstate) return;
+	
 	channel->callstate = callstate;
+	
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG,
+					  "(%s) Callstate Change %s -> %s\n", channel->name, 
+					  switch_channel_callstate2str(o_callstate), switch_channel_callstate2str(callstate));
+	
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
 }
 
 SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_get_callstate(switch_channel_t *channel)
@@ -1449,12 +1465,14 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	if (state <= CS_DESTROY) {
 		switch_event_t *event;
 
-		if (state == CS_ROUTING) {
-			switch_channel_set_callstate(channel, CCS_RINGING);
-		} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-			switch_channel_set_callstate(channel, CCS_ACTIVE);
-		} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-			switch_channel_set_callstate(channel, CCS_EARLY);
+		if (state < CS_HANGUP) {
+			if (state == CS_ROUTING) {
+				switch_channel_set_callstate(channel, CCS_RINGING);
+			} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+				switch_channel_set_callstate(channel, CCS_ACTIVE);
+			} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+				switch_channel_set_callstate(channel, CCS_EARLY);
+			}
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {

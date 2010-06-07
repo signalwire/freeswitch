@@ -560,7 +560,9 @@ SWITCH_DECLARE(char *) switch_channel_get_flag_string(switch_channel_t *channel)
 SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel);
 SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channel);
 
-SWITCH_DECLARE(void) switch_channel_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate);
+SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *channel, switch_channel_callstate_t callstate, 
+														  const char *file, const char *func, int line);
+#define switch_channel_set_callstate(channel, state) switch_channel_perform_set_callstate(channel, state, __FILE__, __SWITCH_FUNC__, __LINE__)
 SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_get_callstate(switch_channel_t *channel);
 SWITCH_DECLARE(const char *) switch_channel_callstate2str(switch_channel_callstate_t callstate);
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str);

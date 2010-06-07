@@ -424,6 +424,8 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 	int silly = 0;
 	int index = 0;
 
+	switch_channel_set_callstate(session->channel, CCS_DOWN);
+
 	switch_assert(session != NULL);
 	switch_channel_set_running_state(session->channel, CS_DESTROY);
 	switch_channel_clear_flag(session->channel, CF_TRANSFER);
