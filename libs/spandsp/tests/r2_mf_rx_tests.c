@@ -163,7 +163,7 @@ static void my_mf_gen_init(float low_fudge,
             tone = &r2_mf_fwd_tones[i];
         else
             tone = &r2_mf_back_tones[i];
-        make_tone_gen_descriptor(&my_mf_digit_tones[i],
+        tone_gen_descriptor_init(&my_mf_digit_tones[i],
                                  tone->f1*(1.0 + low_fudge),
                                  low_level,
                                  tone->f2*(1.0 + high_fudge),

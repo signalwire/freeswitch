@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
     for (f = 10;  f < 4000;  f++)
     {
-         make_tone_gen_descriptor(&tone_desc,
+         tone_gen_descriptor_init(&tone_desc,
                                   f,
                                   -10,
                                   0,

@@ -1139,7 +1139,7 @@ static int perform_test_6(void)
        that nothing unpleasant happens. */
     for (k = 0;  tones_6_4_2_7[k][0];  k++)
     {
-        make_tone_gen_descriptor(&tone_desc,
+        tone_gen_descriptor_init(&tone_desc,
                                  tones_6_4_2_7[k][0],
                                  -11,
                                  tones_6_4_2_7[k][1],
@@ -1201,7 +1201,7 @@ static int perform_test_7(void)
        happens. */
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
-    make_tone_gen_descriptor(&tone_desc,
+    tone_gen_descriptor_init(&tone_desc,
                              tones_6_4_2_7[0][0],
                              -11,
                              tones_6_4_2_7[0][1],

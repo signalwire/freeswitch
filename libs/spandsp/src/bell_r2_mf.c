@@ -262,7 +262,7 @@ static void bell_mf_gen_init(void)
     while (tones->on_time)
     {
         /* Note: The duration of KP is longer than the other signals. */
-        make_tone_gen_descriptor(&bell_mf_digit_tones[i++],
+        tone_gen_descriptor_init(&bell_mf_digit_tones[i++],
                                  tones->f1,
                                  tones->level1,
                                  tones->f2,
@@ -409,7 +409,7 @@ SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd)
         tones = r2_mf_fwd_tones;
         while (tones->on_time)
         {
-            make_tone_gen_descriptor(&r2_mf_fwd_digit_tones[i++],
+            tone_gen_descriptor_init(&r2_mf_fwd_digit_tones[i++],
                                      tones->f1,
                                      tones->level1,
                                      tones->f2,
@@ -425,7 +425,7 @@ SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd)
         tones = r2_mf_back_tones;
         while (tones->on_time)
         {
-            make_tone_gen_descriptor(&r2_mf_back_digit_tones[i++],
+            tone_gen_descriptor_init(&r2_mf_back_digit_tones[i++],
                                      tones->f1,
                                      tones->level1,
                                      tones->f2,

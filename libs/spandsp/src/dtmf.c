@@ -434,7 +434,7 @@ static void dtmf_tx_initialise(void)
     {
         for (col = 0;  col < 4;  col++)
         {
-            make_tone_gen_descriptor(&dtmf_digit_tones[row*4 + col],
+            tone_gen_descriptor_init(&dtmf_digit_tones[row*4 + col],
                                      (int) dtmf_row[row],
                                      DEFAULT_DTMF_TX_LEVEL,
                                      (int) dtmf_col[col],

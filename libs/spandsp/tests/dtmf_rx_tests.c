@@ -179,7 +179,7 @@ static void my_dtmf_gen_init(float low_fudge,
     {
         for (col = 0;  col < 4;  col++)
         {
-            make_tone_gen_descriptor(&my_dtmf_digit_tones[row*4 + col],
+            tone_gen_descriptor_init(&my_dtmf_digit_tones[row*4 + col],
                                      dtmf_row[row]*(1.0f + low_fudge),
                                      low_level,
                                      dtmf_col[col]*(1.0f + high_fudge),
@@ -704,7 +704,7 @@ static void dial_tone_tolerance_tests(void)
 
     for (j = -30;  j < -3;  j++)
     {
-        make_tone_gen_descriptor(&dial_tone_desc, 350, j, 440, j, 1, 0, 0, 0, TRUE);
+        tone_gen_descriptor_init(&dial_tone_desc, 350, j, 440, j, 1, 0, 0, 0, TRUE);
         tone_gen_init(&dial_tone, &dial_tone_desc);
         for (i = 0;  i < 10;  i++)
         {

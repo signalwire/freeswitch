@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
         on_at = 0;
         for (i = -40;  i < -25;  i++)
         {
-            make_tone_gen_descriptor(&tone_desc,
+            tone_gen_descriptor_init(&tone_desc,
                                      1500,
                                      i,
                                      0,
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
         off_at = 0;
         for (  ;  i > -40;  i--)
         {
-            make_tone_gen_descriptor(&tone_desc,
+            tone_gen_descriptor_init(&tone_desc,
                                      1500,
                                      i,
                                      0,

@@ -256,7 +256,7 @@ static int power_meter_tests(void)
     }
 
     printf("Testing with a sine wave tone 10dB from maximum\n");
-    make_tone_gen_descriptor(&tone_desc,
+    tone_gen_descriptor_init(&tone_desc,
                              1000,
                              -4,
                              0,

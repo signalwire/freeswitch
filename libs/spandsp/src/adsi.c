@@ -650,7 +650,7 @@ SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    make_tone_gen_descriptor(&(s->alert_tone_desc),
+    tone_gen_descriptor_init(&(s->alert_tone_desc),
                              2130,
                              -13,
                              2750,
