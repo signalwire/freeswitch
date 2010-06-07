@@ -1147,7 +1147,7 @@ static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_ss7_io_init)
     assert(fio != NULL);
     memset(&g_ftdm_sngss7_interface, 0, sizeof(g_ftdm_sngss7_interface));
 
-    g_ftdm_sngss7_interface.name = "sangoma_ss7";
+    g_ftdm_sngss7_interface.name = "ss7";
     g_ftdm_sngss7_interface.api = ftdm_sangoma_ss7_api;
 
     *fio = &g_ftdm_sngss7_interface;
