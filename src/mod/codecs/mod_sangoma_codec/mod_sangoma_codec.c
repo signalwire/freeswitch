@@ -883,6 +883,7 @@ static int sangoma_parse_config(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring vocallo %s\n", name);
 
 			g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_base_udp_port = SANGOMA_DEFAULT_UDP_PORT;
+			g_init_cfg.host_nic_vocallo_cfg[vidx].silence_suppression = 1;
 			for (param = switch_xml_child(vocallo, "param"); param; param = param->next) {
 				char *var = (char *)switch_xml_attr_soft(param, "name");
 				char *val = (char *)switch_xml_attr_soft(param, "value");
@@ -906,6 +907,9 @@ static int sangoma_parse_config(void)
 						break;
 					}
 					g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_ip = ntohl(vocallo_base_ip.s_addr);
+				} else if (!strcasecmp(var, "silence")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found Sangoma codec silence setting %s\n", val);
+					g_init_cfg.host_nic_vocallo_cfg[vidx].silence_suppression = switch_true(val) ? 1 : 0;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma vocallo setting %s\n", var);
 				}
