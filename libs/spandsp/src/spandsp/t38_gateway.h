@@ -109,7 +109,17 @@ SPAN_DECLARE(int) t38_gateway_free(t38_gateway_state_t *s);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
-SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE_NONSTD(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len);
+
+/*! Apply fake processing when a block of audio samples is missing (e.g due
+    to packet loss).
+    \brief Apply fake received audio processing.
+    \param s The T.38 context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed. This should only be non-zero if
+            the software has reached the end of the FAX call.
+*/
+SPAN_DECLARE_NONSTD(int) t38_gateway_rx_fillin(t38_gateway_state_t *s, int len);
 
 /*! Generate a block of FAX audio samples.
     \brief Generate a block of FAX audio samples.
@@ -118,7 +128,7 @@ SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
     \param max_len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-SPAN_DECLARE(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len);
+SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len);
 
 /*! Control whether error correcting mode (ECM) is allowed.
     \brief Control whether error correcting mode (ECM) is allowed.
