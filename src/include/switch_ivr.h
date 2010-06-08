@@ -806,6 +806,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												const char *var_name,
 												char *digit_buffer, switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators);
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_block_dtmf_session(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_unblock_dtmf_session(switch_core_session_t *session);
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key,
 																  switch_bind_flag_t bind_flags, const char *app);
 SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session, uint32_t key);
