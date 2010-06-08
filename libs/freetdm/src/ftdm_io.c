@@ -1338,6 +1338,57 @@ FT_DECLARE(ftdm_status_t) ftdm_group_channel_use_count(ftdm_group_t *group, uint
 	return FTDM_SUCCESS;
 }
 
+static __inline__ int chan_is_avail(ftdm_channel_t *check)
+{
+	if (!ftdm_test_flag(check, FTDM_CHANNEL_READY) ||
+		!ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) ||
+		ftdm_test_flag(check, FTDM_CHANNEL_INUSE) ||
+		ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) ||
+		ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) ||
+		check->state != FTDM_CHANNEL_STATE_DOWN ||
+		!FTDM_IS_VOICE_CHANNEL(check)) {
+		return 0;
+	}
+	return 1;
+}
+
+static __inline__ int request_channel(ftdm_channel_t *check, ftdm_channel_t **ftdmchan, 
+		ftdm_caller_data_t *caller_data, ftdm_direction_t direction)
+{
+	ftdm_status_t status;
+	if (chan_is_avail(check)) {
+		/* unlocked testing passed, try again with the channel locked */
+		ftdm_mutex_lock(check->mutex);
+		if (chan_is_avail(check)) {
+			if (check->span && check->span->channel_request) {
+				/* I am only unlocking here cuz this function is called
+				 * sometimes with the group or span lock held and were
+				 * blocking anyone hunting for channels available and
+				 * I believe teh channel_request() function may take
+				 * a bit of time 
+				 * */
+				ftdm_mutex_unlock(check->mutex);
+				ftdm_set_caller_data(check->span, caller_data);
+				status = check->span->channel_request(check->span, check->chan_id, 
+					direction, caller_data, ftdmchan);
+				if (status == FTDM_SUCCESS) {
+					return 1;
+				}
+			} else {
+				status = ftdm_channel_open_chan(check);
+				if (status == FTDM_SUCCESS) {
+					*ftdmchan = check;
+					ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
+					ftdm_mutex_unlock(check->mutex);
+					return 1;
+				}
+			}
+		}
+		ftdm_mutex_unlock(check->mutex);
+	} 
+	return 0;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -1376,30 +1427,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 		if (!(check = group->channels[i])) {
 			status = FTDM_FAIL;
 			break;
-		} 
-
-		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) &&
-			ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) &&
-			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
-			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
-			!ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) &&
-			check->state == FTDM_CHANNEL_STATE_DOWN && 
-			FTDM_IS_VOICE_CHANNEL(check)
-			) {
-			if (check->span->channel_request) {
-				status = check->span->channel_request(check->span, check->chan_id, direction, caller_data, ftdmchan);
-				break;
-			}
-
-			status = check->fio->open(check);
-				
-			if (status == FTDM_SUCCESS) {
-				ftdm_channel_open_chan(check);
-				*ftdmchan = check;
-				break;
-			}
 		}
-		
+
+		if (request_channel(check, ftdmchan, caller_data, direction)) {
+			status = FTDM_SUCCESS;
+			break;
+		}
+
 		if (direction == FTDM_TOP_DOWN) {
 			if (i >= group->chan_count) {
 				break;
@@ -1500,31 +1534,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			status = FTDM_FAIL;
 			break;
 		}
-			
-		if (ftdm_test_flag(check, FTDM_CHANNEL_READY) &&
-			ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) &&
-			!ftdm_test_flag(check, FTDM_CHANNEL_INUSE) && 
-			!ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) && 
-			!ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) && 
-			check->state == FTDM_CHANNEL_STATE_DOWN && 
-			FTDM_IS_VOICE_CHANNEL(check)
-			) {
 
-			if (span && span->channel_request) {
-				ftdm_set_caller_data(span, caller_data);
-				status = span->channel_request(span, i, direction, caller_data, ftdmchan);
-				break;
-			}
-
-			status = check->fio->open(check);
-				
-			if (status == FTDM_SUCCESS) {
-				ftdm_channel_open_chan(check);
-				*ftdmchan = check;
-				break;
-			}
+		if (request_channel(check, ftdmchan, caller_data, direction)) {
+			status = FTDM_SUCCESS;
+			break;
 		}
-		
+			
 		if (direction == FTDM_TOP_DOWN) {
 			i++;
 		} else {
@@ -1592,43 +1607,48 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
 
-	assert(ftdmchan != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "invalid ftdmchan pointer\n");
+
+	ftdm_mutex_lock(ftdmchan->mutex);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is suspended\n");
-		return FTDM_FAIL;
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Cannot open channel when is suspended\n");
+		goto done;
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is alarmed\n");
-		return FTDM_FAIL;
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Cannot open channel when is alarmed\n");
+		goto done;
+	}
+
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY)) {
+		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Channel is not ready");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Cannot open channel when is not ready\n");
+		goto done;
 	}
 
 	if (globals.cpu_monitor.alarm && 
 	    globals.cpu_monitor.alarm_action_flags & FTDM_CPU_ALARM_ACTION_REJECT) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "CPU usage alarm is on - refusing to open channel\n");
-		ftdm_log(FTDM_LOG_WARNING, "CPU usage alarm is on - refusing to open channel\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "CPU usage alarm is on - refusing to open channel\n");
 		ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_SWITCH_CONGESTION;
-		return FTDM_FAIL;
-	}
-	
-	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY) || (status = ftdm_mutex_trylock(ftdmchan->mutex)) != FTDM_SUCCESS) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Channel is not ready or is in use %d %d", ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY), status);
-		return status;
+		goto done;
 	}
 
-	status = FTDM_FAIL;
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY)) {
-		status = ftdmchan->span->fio->open(ftdmchan);
-		if (status == FTDM_SUCCESS) {
-			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OPEN | FTDM_CHANNEL_INUSE);
-		}
+	status = ftdmchan->fio->open(ftdmchan);
+	if (status == FTDM_SUCCESS) {
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OPEN | FTDM_CHANNEL_INUSE);
 	} else {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is not ready");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "IO open failed: %d\n", status);
 	}
 
+done:
+	
 	ftdm_mutex_unlock(ftdmchan->mutex);
+
 	return status;
 }
 
@@ -1643,35 +1663,40 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 
 	ftdm_span_find(span_id, &span);
 
-	if (!span || !ftdm_test_flag(span, FTDM_SPAN_CONFIGURED) || chan_id >= FTDM_MAX_CHANNELS_SPAN) {
+	if (!span) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find span!\n");
+		goto done;
+	}
+
+	if (!ftdm_test_flag(span, FTDM_SPAN_CONFIGURED)) {
+		ftdm_log(FTDM_LOG_CRIT, "Span %d is not configured\n", span_id);
 		goto done;
 	}
 
 	if (span->channel_request) {
 		ftdm_log(FTDM_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
-		*ftdmchan = NULL;
-		goto done;
-	}
-	
-	if (!(check = span->channels[chan_id])) {
-		ftdm_log(FTDM_LOG_ERROR, "Invalid Channel %d\n", chan_id);
-		*ftdmchan = NULL;
 		goto done;
 	}
 
-	if (ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) || ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) ||
-		!ftdm_test_flag(check, FTDM_CHANNEL_READY) || (status = ftdm_mutex_trylock(check->mutex)) != FTDM_SUCCESS) {
-		*ftdmchan = NULL;
+	if (chan_id < 1 || chan_id > span->chan_count) {
+		ftdm_log(FTDM_LOG_ERROR, "Invalid channel %d to open in span %d\n", chan_id, span_id);
 		goto done;
 	}
-	
-	status = FTDM_FAIL;
+
+	if (!(check = span->channels[chan_id])) {
+		ftdm_log(FTDM_LOG_CRIT, "Wow, no channel %d in span %d\n", chan_id, span_id);
+		goto done;
+	}
+
+	ftdm_mutex_lock(check->mutex);
 
 	/* the channel is only allowed to be open if not in use, or, for FXS devices with a call with call waiting enabled */
-	if ((!ftdm_test_flag(check, FTDM_CHANNEL_INUSE)) 
-           || ((check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 1) && (ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING))))
-	{
+	if (
+	    (check->type == FTDM_CHAN_TYPE_FXS 
+	    && check->token_count == 1 
+	    && ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING))
+	    ||
+	    chan_is_avail(check)) {
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
 			status = check->fio->open(check);
 			if (status == FTDM_SUCCESS) {
@@ -1683,9 +1708,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 		ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
 		*ftdmchan = check;
 	}
+
 	ftdm_mutex_unlock(check->mutex);
 
 done:
+
 	ftdm_mutex_unlock(globals.mutex);
 
 	return status;
