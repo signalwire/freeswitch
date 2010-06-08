@@ -285,7 +285,6 @@ typedef enum {
 	FTDM_SIGEVENT_FLASH, /*< Flash event  (typically on-hook/off-hook for analog devices) */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
-	FTDM_SIGEVENT_TONE_DETECTED, /*!< Inband tone detected */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
 	FTDM_SIGEVENT_ALARM_CLEAR, /*!< Hardware alarm OFF */
 	FTDM_SIGEVENT_COLLECTED_DIGIT, /*!< Digit collected (in signalings where digits are collected one by one) */

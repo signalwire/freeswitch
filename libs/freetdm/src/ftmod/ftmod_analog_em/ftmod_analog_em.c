@@ -496,19 +496,11 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 		}
 
 		if (ftdmchan->detected_tones[0]) {
-			ftdm_sigmsg_t sig;
 			int i;
-			memset(&sig, 0, sizeof(sig));
-			sig.chan_id = ftdmchan->chan_id;
-			sig.span_id = ftdmchan->span_id;
-			sig.channel = ftdmchan;
-			sig.event_id = FTDM_SIGEVENT_TONE_DETECTED;
 			
 			for (i = 1; i < FTDM_TONEMAP_INVALID; i++) {
 				if (ftdmchan->detected_tones[i]) {
 					ftdm_log(FTDM_LOG_DEBUG, "Detected tone %s on %d:%d\n", ftdm_tonemap2str(i), ftdmchan->span_id, ftdmchan->chan_id);
-					sig.raw_data = &i;
-					ftdm_span_send_signal(ftdmchan->span, &sig);
 				}
 			}
 			
