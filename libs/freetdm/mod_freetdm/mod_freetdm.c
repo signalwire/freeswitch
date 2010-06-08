@@ -1954,19 +1954,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 	return FTDM_SUCCESS;
 }
 
-
-static FIO_SIGNAL_CB_FUNCTION(on_ss7_signal)
-{
-	uint32_t spanid, chanid;
-	if (on_common_signal(sigmsg) == FTDM_BREAK) {
-		return FTDM_SUCCESS;
-	}
-	spanid = ftdm_channel_get_span_id(sigmsg->channel);
-	chanid = ftdm_channel_get_span_id(sigmsg->channel);
-	ftdm_log(FTDM_LOG_DEBUG, "got ss7 sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
-	return FTDM_SUCCESS;
-}
-
 static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	uint32_t spanid, chanid;
@@ -2274,7 +2261,7 @@ static switch_status_t load_config(void)
 
 			if (ftdm_configure_span_signaling(span, 
 						          "sangoma_ss7", 
-						          on_ss7_signal,
+						          on_clear_channel_signal,
 							  spanparameters) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
 				continue;
