@@ -719,7 +719,29 @@ GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
 
-LIBCURL_CHECK_CONFIG([yes], [7.13.0], [LIBCURL_DEPS=''], [LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la';LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la';LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'])
+LIBCURL_DEPS=
+
+AC_ARG_WITH(libcurl,
+ AC_HELP_STRING([--with-libcurl=DIR],[look for the curl library in DIR]),
+ [_libcurl_with=$withval],[_libcurl_with=ifelse([$1],,[yes],[$1])])
+
+if test "$_libcurl_with" = "no" ; then
+  ac_cv_use_system_curl=no;
+fi
+if test "$_libcurl_with" = "yes" ; then
+  ac_cv_use_system_curl=yes;
+fi
+
+AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_use_system_curl], [
+  LIBCURL_CHECK_CONFIG([yes], [7.13.0], [ac_cv_use_system_curl='yes'], [ac_cv_use_system_curl='no']) 
+])
+
+if test "$ac_cv_use_system_curl" != "yes" ; then
+ LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la'
+ LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la'
+ LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
+fi
+
 AC_SUBST(LIBCURL_DEPS)
 
 
@@ -949,7 +971,10 @@ AC_CONFIG_SUBDIRS([libs/pcre])
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])
-AC_CONFIG_SUBDIRS([libs/curl])
+
+if test "$ac_cv_use_system_curl" != "yes" ; then 
+   AC_CONFIG_SUBDIRS([libs/curl])
+fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/js/nsprpub])
 AC_CONFIG_SUBDIRS([libs/js])
