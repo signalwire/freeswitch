@@ -2138,7 +2138,7 @@ static switch_status_t load_config(void)
 				} else if (!strcasecmp(var, "hotline")) {
 					hotline = val;
 				} else if (!strcasecmp(var, "callwaiting")) {
-					callwaiting = switch_true(var) ? 1 : 0;
+					callwaiting = switch_true(val) ? 1 : 0;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
