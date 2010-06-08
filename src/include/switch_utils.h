@@ -659,7 +659,7 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 #if (_MSC_VER >= 1500)			// VC9+
 #define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr);__analysis_assume( ptr )
 #define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr);__analysis_assume( ptr )
-#define switch_strdup(ptr, s) (void)(assert(((ptr) = _strdup(s)((len)))),ptr);__analysis_assume( ptr )
+#define switch_strdup(ptr, s) (void)(assert(((ptr) = _strdup(s))),ptr);__analysis_assume( ptr )
 #else
 #define switch_malloc(ptr, len) (void)(assert(((ptr) = malloc((len)))),ptr)
 #define switch_zmalloc(ptr, len) (void)(assert((ptr = calloc(1, (len)))),ptr)

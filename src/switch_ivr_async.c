@@ -2359,7 +2359,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_
 static switch_status_t block_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint8_t enabled = (intptr_t)switch_channel_get_private(channel, SWITCH_BLOCK_DTMF_KEY);
+	uint8_t enabled = (uint8_t)(intptr_t)switch_channel_get_private(channel, SWITCH_BLOCK_DTMF_KEY);
 
 	if (!enabled || switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -2371,7 +2371,7 @@ static switch_status_t block_on_dtmf(switch_core_session_t *session, const switc
 SWITCH_DECLARE(switch_status_t) switch_ivr_unblock_dtmf_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint8_t enabled = (intptr_t)switch_channel_get_private(channel, SWITCH_BLOCK_DTMF_KEY);
+	uint8_t enabled = (uint8_t)(intptr_t)switch_channel_get_private(channel, SWITCH_BLOCK_DTMF_KEY);
 	
 	if (enabled) {
 		switch_channel_set_private(channel, SWITCH_BLOCK_DTMF_KEY, NULL);
@@ -2383,7 +2383,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unblock_dtmf_session(switch_core_sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_block_dtmf_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint8_t enabled = (intptr_t)switch_channel_get_private(channel, SWITCH_BLOCK_DTMF_KEY);
+	uint8_t enabled = (uint8_t)(intptr_t)switch_channel_get_private(channel, SWITCH_BLOCK_DTMF_KEY);
 
 	if (!enabled) {
 		switch_channel_set_private(channel, SWITCH_BLOCK_DTMF_KEY, (void *)(intptr_t)1);
