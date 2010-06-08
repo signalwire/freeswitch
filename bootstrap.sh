@@ -273,6 +273,7 @@ ${AUTOHEADER:-autoheader}
 libbootstrap()
 {
   i=$1
+  if [ -d ${LIBDIR}/${i} ] ; then
   echo "Entering directory ${LIBDIR}/${i}"
   cd ${LIBDIR}/${i}
   rm -f aclocal.m4
@@ -321,6 +322,9 @@ libbootstrap()
           ${AUTOMAKE:-automake} --no-force --add-missing --copy ;
       fi
       rm -rf autom4te*.cache
+  fi
+  else
+      echo "Skipping directory ${LIBDIR}/${i}"
   fi
 }
 
