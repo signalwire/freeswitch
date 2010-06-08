@@ -161,22 +161,6 @@ typedef enum {
 	FTDM_BOTTOM_UP
 } ftdm_direction_t;
 
-/*! \brief Event types */
-typedef enum {
-	FTDM_EVENT_NONE,
-	FTDM_EVENT_DTMF,
-	FTDM_EVENT_OOB,
-	FTDM_EVENT_COUNT
-} ftdm_event_type_t;
-
-/*! \brief Generic event data type */
-struct ftdm_event {
-	ftdm_event_type_t e_type;
-	uint32_t enum_id;
-	ftdm_channel_t *channel;
-	void *data;
-};
-
 /*! \brief I/O channel type */
 typedef enum {
 	FTDM_CHAN_TYPE_B, /*!< Bearer channel */
@@ -787,13 +771,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan, ftdm
 FT_DECLARE(ftdm_chan_type_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmchan);
 
 /*! 
- * \brief Get the channel type
+ * \brief Dequeue DTMF from the given channel
  *
- * \param ftdmchan The channel to get the type from
+ * \param ftdmchan The channel to dequeue DTMF from
  * \param dtmf DTMF buffer to store the dtmf (you are responsible for its allocation and deallocation)
- * \param len The size of the DTMF buffer
+ * \param len The size of the provided DTMF buffer
  *
- * \retval channel type (FXO, FXS, B-channel, D-channel, etc)
+ * \retval The size of the dequeued DTMF (it might be zero if there is no DTMF in the queue)
  */
 FT_DECLARE(ftdm_size_t) ftdm_channel_dequeue_dtmf(ftdm_channel_t *ftdmchan, char *dtmf, ftdm_size_t len);
 
@@ -826,24 +810,6 @@ FT_DECLARE(void) ftdm_channel_flush_dtmf(ftdm_channel_t *ftdmchan);
  * \retval FTDM_FAIL failure
  */
 FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms);
-
-/*! 
- * \brief Retrieves an event from the span
- *
- * \note
- * 	This function is non-reentrant and not thread-safe. 
- * 	The event returned may be modified if the function is called again 
- * 	from a different thread or even the same. It is recommended to
- * 	handle events from the same span in a single thread.
- *
- * \param span The span to retrieve the event from
- * \param event Pointer to store the pointer to the event
- *
- * \retval FTDM_SUCCESS success (at least one event available)
- * \retval FTDM_TIMEOUT Timed out waiting for events
- * \retval FTDM_FAIL failure
- */
-FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t **event);
 
 /*! 
  * \brief Find a span by its id
@@ -894,9 +860,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(const char *iotype, const char *name,
  */
 FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t sockfd, ftdm_chan_type_t type, ftdm_channel_t **chan);
 
-/*! \brief Set an event callback for the span */
-FT_DECLARE(ftdm_status_t) ftdm_span_set_event_callback(ftdm_span_t *span, fio_event_cb_t event_callback);
-
 /*! \brief Add the channel to a hunt group */
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_channel_t* ftdmchan);
 
@@ -911,9 +874,6 @@ FT_DECLARE(ftdm_status_t) ftdm_group_find_by_name(const char *name, ftdm_group_t
 
 /*! \brief Create a group with the given name */
 FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *name);
-
-/*! \brief Set the event callback for the channel */
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_event_callback(ftdm_channel_t *ftdmchan, fio_event_cb_t event_callback);
 
 /*! \brief Get the number of channels in use on a span */
 FT_DECLARE(ftdm_status_t) ftdm_span_channel_use_count(ftdm_span_t *span, uint32_t *count);

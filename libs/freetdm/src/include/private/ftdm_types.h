@@ -137,6 +137,24 @@ typedef enum {
 #define OOB_STRINGS "ONHOOK", "OFFHOOK", "WINK", "FLASH", "RING_START", "RING_STOP", "ALARM_TRAP", "ALARM_CLEAR", "NOOP", "CAS_BITS_CHANGE", "INVALID"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_oob_event, ftdm_oob_event2str, ftdm_oob_event_t)
 
+/*! \brief Event types */
+typedef enum {
+	FTDM_EVENT_NONE,
+	/* DTMF digit was just detected */
+	FTDM_EVENT_DTMF,
+	/* Out of band event */
+	FTDM_EVENT_OOB,
+	FTDM_EVENT_COUNT
+} ftdm_event_type_t;
+
+/*! \brief Generic event data type */
+struct ftdm_event {
+	ftdm_event_type_t e_type;
+	uint32_t enum_id;
+	ftdm_channel_t *channel;
+	void *data;
+};
+
 typedef enum {
 	FTDM_SIGTYPE_NONE,
 	FTDM_SIGTYPE_ISDN,

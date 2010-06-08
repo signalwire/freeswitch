@@ -846,15 +846,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_find(uint32_t id, ftdm_span_t **span)
 	
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_set_event_callback(ftdm_span_t *span, fio_event_cb_t event_callback)
-{
-	ftdm_mutex_lock(span->mutex);
-	span->event_callback = event_callback;
-	ftdm_mutex_unlock(span->mutex);
-	return FTDM_SUCCESS;
-}
-
-
 FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms)
 {
 	assert(span->fio != NULL);
@@ -938,15 +929,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_send_fsk_data(ftdm_channel_t *ftdmchan, f
 		ftdmchan->buffer_delay = 3500 / ftdmchan->effective_interval;
 	}
 
-	return FTDM_SUCCESS;
-}
-
-
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_event_callback(ftdm_channel_t *ftdmchan, fio_event_cb_t event_callback)
-{
-	ftdm_mutex_lock(ftdmchan->mutex);
-	ftdmchan->event_callback = event_callback;
-	ftdm_mutex_unlock(ftdmchan->mutex);
 	return FTDM_SUCCESS;
 }
 
@@ -1555,7 +1537,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 static ftdm_status_t ftdm_channel_reset(ftdm_channel_t *ftdmchan)
 {
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OPEN);
-	ftdmchan->event_callback = NULL;
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 	ftdm_channel_done(ftdmchan);
@@ -2720,7 +2701,7 @@ FT_DECLARE(ftdm_size_t) ftdm_channel_dequeue_dtmf(ftdm_channel_t *ftdmchan, char
 	assert(ftdmchan != NULL);
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_READY)) {
-		return FTDM_FAIL;
+		return 0;
 	}
 
 	if (ftdmchan->digit_buffer && ftdm_buffer_inuse(ftdmchan->digit_buffer)) {
@@ -3080,27 +3061,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 			teletone_dtmf_get(&ftdmchan->dtmf_detect, digit_str, sizeof(digit_str));
 
 			if(*digit_str) {
-				fio_event_cb_t event_callback = NULL;
-
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
 					ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
 				} else {
 					ftdm_channel_queue_dtmf(ftdmchan, digit_str);
 
-					if (ftdmchan->span->event_callback) {
-						event_callback = ftdmchan->span->event_callback;
-					} else if (ftdmchan->event_callback) {
-						event_callback = ftdmchan->event_callback;
-					}
-
-					if (event_callback) {
-						ftdmchan->event_header.channel = ftdmchan;
-						ftdmchan->event_header.e_type = FTDM_EVENT_DTMF;
-						ftdmchan->event_header.data = digit_str;
-						event_callback(ftdmchan, &ftdmchan->event_header);
-						ftdmchan->event_header.e_type = FTDM_EVENT_NONE;
-						ftdmchan->event_header.data = NULL;
-					}
 					if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF)) {
 						ftdmchan->skip_read_frames = 20;
 					}
