@@ -772,6 +772,7 @@ FT_DECLARE(ftdm_chan_type_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmcha
 
 /*! 
  * \brief Dequeue DTMF from the given channel
+ * \note To transmit DTMF use ftdm_channel_command with command FTDM_COMMAND_SEND_DTMF
  *
  * \param ftdmchan The channel to dequeue DTMF from
  * \param dtmf DTMF buffer to store the dtmf (you are responsible for its allocation and deallocation)
@@ -780,17 +781,6 @@ FT_DECLARE(ftdm_chan_type_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmcha
  * \retval The size of the dequeued DTMF (it might be zero if there is no DTMF in the queue)
  */
 FT_DECLARE(ftdm_size_t) ftdm_channel_dequeue_dtmf(ftdm_channel_t *ftdmchan, char *dtmf, ftdm_size_t len);
-
-/*! 
- * \brief Enqueue a DTMF string into the channel
- *
- * \param ftdmchan The channel to enqueue the dtmf string to
- * \param dtmf null-terminated DTMF string
- *
- * \retval FTDM_SUCCESS success
- * \retval FTDM_FAIL failure
- */
-FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, const char *dtmf);
 
 /*! 
  * \brief Flush the DTMF queue
