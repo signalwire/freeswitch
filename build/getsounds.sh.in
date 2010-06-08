@@ -9,15 +9,18 @@ DIR=`pwd`
 
 if [ -x "$WGET" ] ; then
     DOWNLOAD_CMD=$WGET
-else
-    if [ -x "$CURL" ] ; then
-        DOWNLOAD_CMD="$CURL -O"
-    fi
+fi
+if [ "x${DOWNLOAD_CMD}" = "x" -a -x "$CURL" ] ; then
+    DOWNLOAD_CMD="$CURL -O"
 fi
 
 base=http://files.freeswitch.org/
 tarfile=$1
 install=$2
+
+echo -n "#"
+pwd
+echo "# $0 $1 $2"
 
 if [ ! -f $tarfile ] ; then
     $DOWNLOAD_CMD $base$tarfile
