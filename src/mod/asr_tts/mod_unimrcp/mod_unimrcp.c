@@ -200,6 +200,7 @@ static int get_next_speech_channel_number(void);
 #define FILE_ID "file://"
 #define INLINE_ID "inline:"
 static int text_starts_with(const char *text, const char *match);
+static const char *skip_initial_whitespace(const char *text);
 
 /**
  * UniMRCP parameter ID container
@@ -531,13 +532,9 @@ static int text_starts_with(const char *text, const char *match)
 {
 	int result = 0;
 
+	text = skip_initial_whitespace(text);
 	if (!zstr(text)) {
 		size_t textlen, matchlen;
-
-		/* find first non-space character */
-		while (switch_isspace(*text)) {
-			text++;
-		}
 		textlen = strlen(text);
 		matchlen = strlen(match);
 		/* is there a match? */
@@ -545,6 +542,21 @@ static int text_starts_with(const char *text, const char *match)
 	}
 
 	return result;
+}
+
+/**
+ * Find the first non-whitespace text character in text
+ * @param text the text to scan
+ * @return pointer to the first non-whitespace char in text or the empty string if none
+ */
+static const char *skip_initial_whitespace(const char *text)
+{
+	if (!zstr(text)) {
+		while(switch_isspace(*text)) {
+			text++;
+		}
+	}
+	return text;
 }
 
 /**
@@ -2766,6 +2778,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	char *filename = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
 
+	grammar = skip_initial_whitespace(grammar);
 	if (zstr(grammar)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
