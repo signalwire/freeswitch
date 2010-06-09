@@ -279,7 +279,7 @@ typedef enum {
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "UP", "FLASH", "PROGRESS", \
-		"PROGRESS_MEDIA", "TONE_DETECTED", "ALARM_TRAP", "ALARM_CLEAR", \
+		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
