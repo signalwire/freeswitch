@@ -1206,6 +1206,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			status = SWITCH_STATUS_SUCCESS;
 			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
+				switch_core_session_rwunlock(session);
 				return SWITCH_STATUS_GENERR;
 			}
 
