@@ -437,6 +437,8 @@ typedef enum {
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
 } sofia_media_options_t;
 
+#define MAX_RTPIP 50
+
 struct sofia_profile {
 	int debug;
 	char *name;
@@ -446,7 +448,9 @@ struct sofia_profile {
 	char *context;
 	char *shutdown_type;
 	char *extrtpip;
-	char *rtpip;
+	char *rtpip[MAX_RTPIP];
+	uint32_t rtpip_index;
+	uint32_t rtpip_next;
 	char *sipip;
 	char *extsipip;
 	char *username;
@@ -569,6 +573,7 @@ struct private_object {
 	uint32_t ssrc;
 	uint32_t video_ssrc;
 	sofia_profile_t *profile;
+	char *sipip;
 	char *local_sdp_audio_ip;
 	switch_port_t local_sdp_audio_port;
 	char *remote_sdp_audio_ip;
@@ -627,6 +632,7 @@ struct private_object {
 	char *x_freeswitch_support_local;
 	char *last_sent_callee_id_name;
 	char *last_sent_callee_id_number;
+	char *rtpip;
 	switch_port_t stun_port;
 	uint32_t stun_flags;
 	unsigned long rm_rate;

@@ -578,6 +578,12 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->x_freeswitch_support_local = FREESWITCH_SUPPORT;
 
 	tech_pvt->profile = profile;
+
+	tech_pvt->rtpip = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next++]);
+	if (profile->rtpip_next >= profile->rtpip_index) {
+		profile->rtpip_next = 0;
+	}
+
 	profile->inuse++;
 	switch_mutex_unlock(profile->flag_mutex);
 	switch_mutex_unlock(tech_pvt->flag_mutex);
@@ -637,7 +643,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		char *p;
 
 		if (!sofia_test_pflag(profile, PFLAG_STUN_ENABLED)) {
-			*ip = switch_core_strdup(pool, profile->rtpip);
+			*ip = switch_core_strdup(pool, tech_pvt->rtpip);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Trying to use STUN but its disabled!\n");
 			goto out;
 		}
@@ -681,7 +687,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN Success [%s]:[%d]\n", *ip, *port);
 		status = SWITCH_STATUS_SUCCESS;
 		if (tech_pvt) {
-			if (myport == *port && !strcmp(*ip, tech_pvt->profile->rtpip)) {
+			if (myport == *port && !strcmp(*ip, tech_pvt->rtpip)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
 				if (sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE)) {
 					sofia_clear_pflag(profile, PFLAG_STUN_ENABLED);
@@ -724,7 +730,7 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force)
 {
-	char *lookup_rtpip = tech_pvt->profile->rtpip;	/* Pointer to externally looked up address */
+	char *lookup_rtpip = tech_pvt->rtpip;	/* Pointer to externally looked up address */
 	switch_port_t sdp_port, rtcp_port;		/* The external port to be sent in the SDP */
 	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
 
@@ -738,16 +744,16 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	/* Release the local sdp port */
 	if (tech_pvt->local_sdp_audio_port) {
-		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
+		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
 	/* Request a local port from the core's allocator */
-	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
+	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->rtpip))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	tech_pvt->local_sdp_audio_ip = tech_pvt->profile->rtpip;
+	tech_pvt->local_sdp_audio_ip = tech_pvt->rtpip;
 
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
@@ -771,7 +777,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP, &rtcp_port, SWITCH_FALSE);
 				} else {
 					/* No NAT detected */
-					use_ip = tech_pvt->profile->rtpip;
+					use_ip = tech_pvt->rtpip;
 				}
 			} else {
 				/* Address properly resolved, use it as external ip */
@@ -780,7 +786,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 		}
 	} else {
 		/* No NAT traversal required, use the profile's rtp ip */
-		use_ip = tech_pvt->profile->rtpip;
+		use_ip = tech_pvt->rtpip;
 	}
 
 	tech_pvt->adv_sdp_audio_port = sdp_port;
@@ -795,7 +801,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force)
 {
-	char *lookup_rtpip = tech_pvt->profile->rtpip;	/* Pointer to externally looked up address */
+	char *lookup_rtpip = tech_pvt->rtpip;	/* Pointer to externally looked up address */
 	switch_port_t sdp_port;		/* The external port to be sent in the SDP */
 	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
 
@@ -809,11 +815,11 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 
 	/* Release the local sdp port */
 	if (tech_pvt->local_sdp_video_port) {
-		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);
+		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_video_port);
 	}
 
 	/* Request a local port from the core's allocator */
-	if (!(tech_pvt->local_sdp_video_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
+	if (!(tech_pvt->local_sdp_video_port = switch_rtp_request_port(tech_pvt->rtpip))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -839,7 +845,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 					switch_nat_add_mapping(tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
 				} else {
 					/* No NAT detected */
-					use_ip = tech_pvt->profile->rtpip;
+					use_ip = tech_pvt->rtpip;
 				}
 			} else {
 				/* Address properly resolved, use it as external ip */
@@ -848,7 +854,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 		}
 	} else {
 		/* No NAT traversal required, use the profile's rtp ip */
-		use_ip = tech_pvt->profile->rtpip;
+		use_ip = tech_pvt->rtpip;
 	}
 
 	tech_pvt->adv_sdp_video_port = sdp_port;
@@ -2269,7 +2275,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	if (tech_pvt->video_rtp_session) {
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
 	} else if (tech_pvt->local_sdp_video_port) {
-		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);
+		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_video_port);
 	}
 
 
@@ -2282,7 +2288,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	if (tech_pvt->rtp_session) {
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 	} else if (tech_pvt->local_sdp_audio_port) {
-		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
+		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
 	if (tech_pvt->local_sdp_audio_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
@@ -4470,7 +4476,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 			tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
 			tech_pvt->adv_sdp_audio_port = tech_pvt->local_sdp_audio_port = atoi(port);
-			tech_pvt->local_sdp_audio_ip = tech_pvt->profile->rtpip;
+			tech_pvt->local_sdp_audio_ip = tech_pvt->rtpip;
 
 			if (r_ip && r_port) {
 				tech_pvt->remote_sdp_audio_ip = (char *) r_ip;

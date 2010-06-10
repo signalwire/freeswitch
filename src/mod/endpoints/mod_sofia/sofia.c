@@ -3005,7 +3005,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
-						profile->rtpip = switch_core_strdup(profile->pool, ip);
+						if (profile->rtpip_index < MAX_RTPIP) {
+							profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, ip);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Max IPs configured for profile %s.\n", profile->name);
+						}
 					} else if (!strcasecmp(var, "sip-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
 
@@ -3416,8 +3420,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->sipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
-				if (!profile->rtpip) {
-					profile->rtpip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+				if (!profile->rtpip[0]) {
+					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
 				if (switch_core_get_variable("nat_type")) {
@@ -3443,9 +3447,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->username = switch_core_strdup(profile->pool, "FreeSWITCH");
 				}
 
-				if (!profile->rtpip) {
+				if (!profile->rtpip[0]) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
-					profile->rtpip = switch_core_strdup(profile->pool, "127.0.0.1");
+					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, "127.0.0.1");
 				}
 
 				if (!profile->sip_port) {

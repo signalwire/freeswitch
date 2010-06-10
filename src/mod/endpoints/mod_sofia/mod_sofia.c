@@ -263,7 +263,7 @@ char *generate_pai_str(switch_core_session_t *session)
 	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
 	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
-		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
+		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->sipip);
 	}
 
 	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
@@ -2411,7 +2411,11 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
+			int x = 0 ;
+
 			cb.row_process = 0;
+
+
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				if (!argv[2] || (strcasecmp(argv[2], "reg") && strcasecmp(argv[2], "user"))) {
 					stream->write_function(stream, "%s\n", line);
@@ -2426,7 +2430,9 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "Dialplan         \t%s\n", switch_str_nil(profile->dialplan));
 					stream->write_function(stream, "Context          \t%s\n", switch_str_nil(profile->context));
 					stream->write_function(stream, "Challenge Realm  \t%s\n", zstr(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
-					stream->write_function(stream, "RTP-IP           \t%s\n", switch_str_nil(profile->rtpip));
+					for (x = 0; x < profile->rtpip_index; x++) {
+						stream->write_function(stream, "RTP-IP           \t%s\n", switch_str_nil(profile->rtpip[x]));
+					}
 					if (profile->extrtpip) {
 						stream->write_function(stream, "Ext-RTP-IP       \t%s\n", profile->extrtpip);
 					}
@@ -2688,6 +2694,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
+			int x = 0;
+
 			cb.row_process = 0;
 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
@@ -2707,7 +2715,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(profile->context));
 					stream->write_function(stream, "    <challenge-realm>%s</challenge-realm>\n",
 										   zstr(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
-					stream->write_function(stream, "    <rtp-ip>%s</rtp-ip>\n", switch_str_nil(profile->rtpip));
+					for (x = 0; x < profile->rtpip_index; x++) {
+						stream->write_function(stream, "    <rtp-ip>%s</rtp-ip>\n", switch_str_nil(profile->rtpip[x]));
+					}
 					stream->write_function(stream, "    <ext-rtp-ip>%s</ext-rtp-ip>\n", profile->extrtpip);
 					stream->write_function(stream, "    <sip-ip>%s</sip-ip>\n", switch_str_nil(profile->sipip));
 					stream->write_function(stream, "    <ext-sip-ip>%s</ext-sip-ip>\n", profile->extsipip);
@@ -4243,26 +4253,33 @@ static void general_event_handler(switch_event_t *event)
 				switch_mutex_lock(mod_sofia_globals.hash_mutex);
 				if (mod_sofia_globals.profile_hash) {
 					for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-						int rb = 0;
+						int rb = 0, x = 0;
 						switch_hash_this(hi, &var, NULL, &val);
 						if ((profile = (sofia_profile_t *) val) && profile->auto_restart) {
 							if (!strcmp(profile->sipip, old_ip4)) {
 								profile->sipip = switch_core_strdup(profile->pool, new_ip4);
 								rb++;
 							}
-							if (!strcmp(profile->rtpip, old_ip4)) {
-								profile->rtpip = switch_core_strdup(profile->pool, new_ip4);
-								rb++;
+							
+							for (x = 0; x < profile->rtpip_index; x++) {
+
+								if (!strcmp(profile->rtpip[x], old_ip4)) {
+									profile->rtpip[x] = switch_core_strdup(profile->pool, new_ip4);
+									rb++;
+								}
+
+								if (!strcmp(profile->rtpip[x], old_ip6)) {
+									profile->rtpip[x] = switch_core_strdup(profile->pool, new_ip6);
+									rb++;
+								}
 							}
+							
+
 							if (!strcmp(profile->sipip, old_ip6)) {
 								profile->sipip = switch_core_strdup(profile->pool, new_ip6);
 								rb++;
 							}
-							if (!strcmp(profile->rtpip, old_ip6)) {
-								profile->rtpip = switch_core_strdup(profile->pool, new_ip6);
-								rb++;
-							}
-
+							
 							if (rb) {
 								sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
 								sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
