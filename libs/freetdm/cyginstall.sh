@@ -7,6 +7,7 @@ cp Debug/mod/*.dll $fsdir/Debug/mod/
 cp mod_freetdm/Debug/*.pdb $fsdir/Debug/mod/
 cp Debug/*.dll $fsdir/Debug/
 cp Debug/*.pdb $fsdir/Debug/
+cp Debug/testsangomaboost.exe $fsdir/Debug/
 echo "FRIENDLY REMINDER: RECOMPILE ftmod_wanpipe WHENEVER YOU INSTALL NEW DRIVERS"
 set +x 
 

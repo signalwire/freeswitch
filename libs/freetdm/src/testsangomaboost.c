@@ -75,6 +75,9 @@ static dummy_timer_t g_timers[MAX_CALLS];
 /* mutex to protect the timers (both, the test thread and the signaling thread may modify them) */
 static ftdm_mutex_t *g_schedule_mutex;
 
+/* mutex to protect the channel */
+static ftdm_mutex_t *g_channel_mutex;
+
 /* unique outgoing channel */
 static ftdm_channel_t *g_outgoing_channel = NULL;
 
@@ -140,8 +143,16 @@ static void release_timers(ftdm_channel_t *channel)
 /*  hangup the call */ 
 static void send_hangup(ftdm_channel_t *channel)
 {
+	char dtmfbuff[100];
+	int rc;
 	int spanid = ftdm_channel_get_span_id(channel);
 	int chanid = ftdm_channel_get_id(channel);
+	rc = ftdm_channel_dequeue_dtmf(channel, dtmfbuff, sizeof(dtmfbuff));
+	if (rc) {
+		ftdm_log(FTDM_LOG_NOTICE, "Not hanging up channel %d:%d because has DTMF: %s\n", spanid, chanid, dtmfbuff);
+		schedule_timer(channel, HANGUP_TIMER, send_hangup);
+		return;
+	}
 	ftdm_log(FTDM_LOG_NOTICE, "-- Requesting hangup in channel %d:%d\n", spanid, chanid);
 	ftdm_channel_call_hangup(channel);
 }
@@ -191,6 +202,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_signaling_event)
 	/* This event signals answer in an outgoing call */
 	case FTDM_SIGEVENT_UP:
 		ftdm_log(FTDM_LOG_NOTICE, "Answer received in channel %d:%d\n", sigmsg->span_id, sigmsg->chan_id);
+		ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DTMF_DETECT, NULL);
 		/* now the channel is answered and we can use 
 		 * ftdm_channel_wait() to wait for input/output in a channel (equivalent to poll() or select())
 		 * ftdm_channel_read() to read available data in a channel
@@ -199,9 +211,11 @@ static FIO_SIGNAL_CB_FUNCTION(on_signaling_event)
 	/* This event signals hangup from the other end */
 	case FTDM_SIGEVENT_STOP:
 		ftdm_log(FTDM_LOG_NOTICE, "Hangup received in channel %d:%d\n", sigmsg->span_id, sigmsg->chan_id);
+		ftdm_mutex_lock(g_channel_mutex);
 		if (g_outgoing_channel == sigmsg->channel) {
 			g_outgoing_channel = NULL;
 		}
+		ftdm_mutex_unlock(g_channel_mutex);
 		/* release any timer for this channel */
 		release_timers(sigmsg->channel);
 		/* acknowledge the hangup */
@@ -238,7 +252,9 @@ static void place_call(const ftdm_span_t *span, const char *number)
 		return;
 	}
 
+	ftdm_mutex_lock(g_channel_mutex);
 	g_outgoing_channel = ftdmchan;
+	ftdm_mutex_unlock(g_channel_mutex);
 
 	/* set the caller data for the outgoing channel */
 	ftdm_channel_set_caller_data(ftdmchan, &caller_data);
@@ -253,15 +269,61 @@ static void place_call(const ftdm_span_t *span, const char *number)
 	ftdm_channel_init(ftdmchan);
 }
 
+static void *media_thread(ftdm_thread_t *th, void *data)
+{
+	/* The application thread can go on and do anything else, like waiting for a shutdown signal */
+	ftdm_wait_flag_t flags = FTDM_NO_FLAGS;
+	ftdm_status_t status;
+	ftdm_channel_t *chan;
+	char iobuff[160];
+	char dnis_str[] = "1234";
+	int tx_dtmf = 0;
+	ftdm_size_t datalen = 0;
+	memset(iobuff, 0, sizeof(iobuff));
+	while(ftdm_running() && app_running) {
+		ftdm_mutex_lock(g_channel_mutex);
+		chan = g_outgoing_channel;
+		ftdm_mutex_unlock(g_channel_mutex);
+		if (chan && tx_dtmf) {
+			flags = FTDM_WRITE | FTDM_READ;
+			ftdm_channel_wait(chan, &flags, 100);
+			if (flags & FTDM_WRITE) {
+				datalen = sizeof(iobuff);
+				status = ftdm_channel_write(chan, iobuff, datalen, &datalen);
+				if (status != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_ERROR, "writing to channel failed\n");
+				}
+			}
+			if (flags & FTDM_READ) {
+				datalen = sizeof(iobuff);
+				status = ftdm_channel_read(chan, iobuff, &datalen);
+				if (status != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_ERROR, "reading from channel failed\n");
+				}
+			}
+		} else if (chan && ftdm_channel_call_check_answered(chan)) {
+			ftdm_log(FTDM_LOG_NOTICE, "Transmitting DNIS %s\n", dnis_str);
+			ftdm_channel_command(g_outgoing_channel, FTDM_COMMAND_SEND_DTMF, dnis_str);
+			tx_dtmf = 1;
+		} else {
+			tx_dtmf = 0;
+			ftdm_sleep(100);
+		}
+	}
+	printf("Shutting down media thread ...\n");
+	return NULL;
+}
+
 int main(int argc, char *argv[])
 {
 	ftdm_conf_parameter_t parameters[20];
 	ftdm_span_t *span;
 	char *todial = NULL;
+	const char *sigtype = NULL;
 	int32_t ticks = 0;
 
-	if (argc < 2) {
-		fprintf(stderr, "Usage: %s <span name> [number to dial if any]\n", argv[0]);
+	if (argc < 3) {
+		fprintf(stderr, "Usage: %s <span name> <cpe|net> [number to dial if any]\n", argv[0]);
 		exit(-1);
 	}
 
@@ -276,8 +338,18 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	if (argc >= 3) {
-		todial = argv[2];
+	if (!strcasecmp(argv[2], "cpe")) {
+		sigtype = "pri_cpe";
+	} else if (!strcasecmp(argv[2], "net")) {
+		sigtype = "pri_net";
+	} else {
+		fprintf(stderr, "Valid signaling types are cpe and net only\n");
+		exit(-1);
+	}
+	printf("Using signalling %s\n", sigtype);
+
+	if (argc >= 4) {
+		todial = argv[3];
 		if (!strlen(todial)) {
 			todial = NULL;
 		}
@@ -295,8 +367,9 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	/* create the schedule mutex */
+	/* create the schedule and channel mutex */
 	ftdm_mutex_create(&g_schedule_mutex);
+	ftdm_mutex_create(&g_channel_mutex);
 
 	/* Load the FreeTDM configuration */
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
@@ -327,7 +400,7 @@ int main(int argc, char *argv[])
 	parameters[1].val = "national";
 
 	parameters[2].var = "signalling";
-	parameters[2].val = "pri_cpe";
+	parameters[2].val = sigtype;
 
 	/*
 	 * parameters[3].var = "nfas_primary";
@@ -357,6 +430,11 @@ int main(int argc, char *argv[])
 	 * */
 	ftdm_span_start(span);
 
+	if (ftdm_thread_create_detached(media_thread, NULL) != FTDM_SUCCESS){
+		fprintf(stderr, "Error launching media thread\n");
+		goto done;
+	}
+
 	app_running = 1;
 
 	/* The application thread can go on and do anything else, like waiting for a shutdown signal */
@@ -373,6 +451,7 @@ int main(int argc, char *argv[])
  done:
 
 	ftdm_mutex_destroy(&g_schedule_mutex);
+	ftdm_mutex_destroy(&g_channel_mutex);
 
 	/* whenever you're done, this function will shutdown the signaling threads in any span that was started */
 	ftdm_global_destroy();
