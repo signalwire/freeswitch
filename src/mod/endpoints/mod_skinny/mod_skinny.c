@@ -1753,13 +1753,16 @@ static switch_status_t load_skinny_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void event_handler(switch_event_t *event)
+static void skinny_heartbeat_event_handler(switch_event_t *event)
+{
+	walk_listeners(kill_expired_listener, NULL);
+}
+
+static void skinny_call_state_event_handler(switch_event_t *event)
 {
 	char *subclass;
 
-	if (event->event_id == SWITCH_EVENT_HEARTBEAT) {
-		walk_listeners(kill_expired_listener, NULL);
-	} else if ((subclass = switch_event_get_header_nil(event, "Event-Subclass")) && !strcasecmp(subclass, SKINNY_EVENT_CALL_STATE)) {
+	if ((subclass = switch_event_get_header_nil(event, "Event-Subclass")) && !strcasecmp(subclass, SKINNY_EVENT_CALL_STATE)) {
 		char *profile_name = switch_event_get_header_nil(event, "Skinny-Profile-Name");
 		char *device_name = switch_event_get_header_nil(event, "Skinny-Device-Name");
 		uint32_t device_instance = atoi(switch_event_get_header_nil(event, "Skinny-Station-Instance"));
@@ -1831,11 +1834,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	load_skinny_config();
 
 	/* bind to events */
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, skinny_heartbeat_event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our heartbeat handler!\n");
 		/* Not such severe to prevent loading */
 	}
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our call_state handler!\n");
 		return SWITCH_STATUS_TERM;
 	}
