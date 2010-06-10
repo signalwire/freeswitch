@@ -4082,6 +4082,7 @@ static void general_event_handler(switch_event_t *event)
 			const char *ct = switch_event_get_header(event, "content-type");
 			const char *user = switch_event_get_header(event, "user");
 			const char *host = switch_event_get_header(event, "host");
+			const char *subject = switch_event_get_header(event, "subject");
 			const char *body = switch_event_get_body(event);
 			sofia_profile_t *profile;
 			nua_handle_t *nh;
@@ -4114,7 +4115,10 @@ static void general_event_handler(switch_event_t *event)
 				nh = nua_handle(profile->nua,
 								NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 
-				nua_message(nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR(ct), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+				nua_message(nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR(ct),
+							TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)),
+							TAG_IF(!zstr(subject), SIPTAG_SUBJECT_STR(subject)),
+							TAG_END());
 
 
 				free(id);
