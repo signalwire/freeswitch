@@ -10,6 +10,9 @@
 #ifndef ZRTP_WIN_CONFIG_H__
 #define ZRTP_WIN_CONFIG_H__
 
+#define	_CRT_SECURE_NO_WARNINGS	1
+#pragma	warning(disable: 4068)
+
 /*
  * Used to map system integer types to zrtp integer definitions.
  * Define to 1 if you have the <inttypes.h> header file.
