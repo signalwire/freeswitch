@@ -232,6 +232,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 
 	if (callwaiting) {
 		for (i = 1; i <= span->chan_count; i++) {
+			ftdm_log_chan_msg(span->channels[i], FTDM_LOG_DEBUG, "Enabled call waiting\n");
 			ftdm_channel_set_feature(span->channels[i], FTDM_CHANNEL_FEATURE_CALLWAITING);
 		}
 	}

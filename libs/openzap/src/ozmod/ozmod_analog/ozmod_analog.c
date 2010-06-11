@@ -181,6 +181,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 
 	if (callwaiting) {
 		for (i = 1; i <= span->chan_count; i++) {
+			zap_log(ZAP_LOG_DEBUG, "Enabling call waiting for channel %d:%d\n", span->channels[i]->span_id, span->channels[i]->chan_id);
 			zap_channel_set_feature(span->channels[i], ZAP_CHANNEL_FEATURE_CALLWAITING);
 		}
 	}
