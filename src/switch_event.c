@@ -655,7 +655,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	memset(*event, 0, sizeof(switch_event_t));
 
-	if (event_id == SWITCH_EVENT_REQUEST_PARAMS) {
+	if (event_id == SWITCH_EVENT_REQUEST_PARAMS || event_id == SWITCH_EVENT_CHANNEL_DATA) {
 		(*event)->flags |= EF_UNIQ_HEADERS;
 	}
 
@@ -892,6 +892,17 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 }
 
 
+SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *tomerge)
+{
+	switch_event_header_t *hp;
+	
+	switch_assert(tomerge && event);
+
+	for (hp = tomerge->headers; hp; hp = hp->next) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
 	switch_event_header_t *hp;
@@ -903,7 +914,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	(*event)->event_id = todup->event_id;
 	(*event)->event_user_data = todup->event_user_data;
 	(*event)->bind_user_data = todup->bind_user_data;
-
+	(*event)->flags = todup->flags;
 	for (hp = todup->headers; hp; hp = hp->next) {
 		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
 			continue;

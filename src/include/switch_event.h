@@ -199,7 +199,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event);
   \return SWITCH_STATUS_SUCCESS if the event was duplicated
 */
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup);
-
+SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *tomerge);
 /*!
   \brief Fire an event with full arguement list
   \param file the calling file
