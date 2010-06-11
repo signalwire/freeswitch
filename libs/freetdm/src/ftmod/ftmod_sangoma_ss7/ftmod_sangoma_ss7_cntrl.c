@@ -175,7 +175,7 @@ static void handle_entsi_alarm(sng_alrm_t alarm)
     case (LCM_EVENT_TIMEOUT):
         /* this event always has the circuit value embedded */
         SS7_WARN("[ISUP] Timer %d expired on CIC %d\n",
-                    (alarm.eventParm[1] > 0 ) ? alarm.eventParm[1] : alarm.eventParm[8],
+                    alarm.eventParm[8],
                     g_ftdm_sngss7_data.cfg.isupCircuit[alarm.eventParm[0]].cic);
         break;
     /**************************************************************************/

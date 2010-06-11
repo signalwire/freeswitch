@@ -172,7 +172,7 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
         break;
     /**************************************************************************/
     case (FTDM_CHANNEL_STATE_DIALING):             /* glare */
-        SS7_ERROR("Got IAM in DIALING state...glare... queueing incoming call\n");
+        SS7_ERROR("Got IAM in DIALING state...glare...queueing incoming call\n");
         
         /* the flag the channel as having a collision */
         sngss7_set_flag(sngss7_info, FLAG_GLARE);
@@ -186,7 +186,10 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
         break;
     /**************************************************************************/
     default:    /* should not have gotten an IAM while in this state */
-        SS7_ERROR("Got IAM in an invalid state!\n");
+        SS7_ERROR("Got IAM in an invalid state (%s) on span=%d, chan=%d!\n", 
+                    ftdm_channel_state2str(ftdmchan->state),
+                    ftdmchan->physical_span_id,
+                    ftdmchan->physical_chan_id);
 
         /* move the state of the channel to RESTART to force a reset */
         ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -824,29 +827,10 @@ static ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint
         return FTDM_FAIL;
     };
 
+    /* glare, throw the flag, go to down state*/
+    sngss7_set_flag(sngss7_info, FLAG_GLARE);
 
-    switch (ftdmchan->state) {
-    /**************************************************************************/
-    case FTDM_CHANNEL_STATE_DIALING:
-        /* glare, go to down state*/
-
-        ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-        
-        break;
-    /**************************************************************************/
-    default:
-        /* fuck...this shouldn't happen */
-        SS7_ERROR("Received reattempt indication on CIC %d in invalid state %s\n", 
-                    sngss7_info->circuit->cic,
-                    ftdm_channel_state2str(ftdmchan->state));
-
-        /* throw the channel into reset */
-        sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
-        ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-
-        break;
-    /**************************************************************************/
-    }
+    ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
     /* unlock the channel again before we exit */
     ftdm_mutex_unlock(ftdmchan->mutex);

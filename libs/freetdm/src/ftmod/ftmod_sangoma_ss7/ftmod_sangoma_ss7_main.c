@@ -252,8 +252,8 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t *me, void *obj)
                     ftdm_sangoma_ss7_process_state_change(ftdmchan);
                 } else {
                     SS7_ERROR("ftdm_core reported state change, but state change flag not set on ft-span = %d, ft-chan = %d\n",
-                                ftdmchan->span_id,
-                                ftdmchan->chan_id);
+                                ftdmchan->physical_span_id,
+                                ftdmchan->physical_chan_id);
                 }
             } /* while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans)))  */
 
@@ -318,7 +318,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_COLLECT:     /* IAM received but wating on digits */
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                            ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                            ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -385,7 +385,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_RING:                      /*incoming call request*/
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -406,7 +406,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_DIALING:                   /*outgoing call request*/
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -420,7 +420,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_PROGRESS:
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -443,7 +443,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -455,7 +455,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_UP: /*call is accpeted...both incoming and outgoing*/
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -476,14 +476,14 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_CANCEL:
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
             break;
         }
 
-        SS7_ERROR("Hanging up call before informing user on span = %d, chan = %d!\n", ftdmchan->span_id,ftdmchan->chan_id);
+        SS7_ERROR("Hanging up call before informing user on span = %d, chan = %d!\n", ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         /*now go to the HANGUP complete state*/
         ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
@@ -492,7 +492,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_TERMINATING:            /*call is hung up remotely*/
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -510,7 +510,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_HANGUP:                  /*call is hung up locally*/
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -536,7 +536,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -568,7 +568,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_DOWN:           /*the call is finished and removed*/
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
@@ -598,8 +598,8 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
 
         /* check if the circuit has the glare flag up */
         if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
-            SS7_DEBUG("Glare flag is up....spoofing incoming call on span=%, chan=%d\n",
-                        ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("Glare flag is up....spoofing incoming call on span=%d, chan=%d\n",
+                        ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* clear all the call specific data */
             sngss7_info->suInstId = 0;
             sngss7_info->spInstId = 0;
@@ -639,7 +639,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_RESTART:                    /* CICs needs a Reset */
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
             /* bring the call down first...then process the rest of the reset */
@@ -694,11 +694,11 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_SUSPENDED:            /* circuit has been blocked */
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         /**********************************************************************/
         if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
-            SS7_DEBUG("processing pause for span = %, chan = %d\n",ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("processing pause for span = %, chan = %d\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* bring the channel signaling status to down */
             status = FTDM_SIG_STATE_DOWN;
             sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
@@ -709,7 +709,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
         }
         if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) {
-            SS7_DEBUG("processing resume for span = %, chan = %d\n",ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("processing resume for span = %, chan = %d\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* we just resumed...throw the channel into reset */
             sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
 
@@ -721,7 +721,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
         }
         /**********************************************************************/
         if (sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {
-            SS7_DEBUG("processing rx Mn ckt block for span = %, chan = %d\n",ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("processing rx Mn ckt block for span = %, chan = %d\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* bring the channel signaling status to down */
             status = FTDM_SIG_STATE_DOWN;
             sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
@@ -735,7 +735,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
         }
         if (sngss7_test_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX)) {
-            SS7_DEBUG("processing rx Mn ckt unblock for span = %, chan = %d\n",ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("processing rx Mn ckt unblock for span = %, chan = %d\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* bring the channel signaling status to up */
             status = FTDM_SIG_STATE_UP;
             sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
@@ -753,7 +753,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
         }
         /**********************************************************************/
         if (sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
-            SS7_DEBUG("processing tx Mn ckt block for span = %, chan = %d\n",ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("processing tx Mn ckt block for span = %, chan = %d\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* bring the channel signaling status to down */
             status = FTDM_SIG_STATE_DOWN;
             sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
@@ -767,7 +767,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
         }
         if (sngss7_test_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX)) {
-            SS7_DEBUG("processing tx Mn ckt unblock for span = %, chan = %d\n",ftdmchan->span_id,ftdmchan->chan_id);
+            SS7_DEBUG("processing tx Mn ckt unblock for span = %, chan = %d\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
             /* bring the channel signaling status to up */
             status = FTDM_SIG_STATE_UP;
             sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
@@ -789,7 +789,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_IN_LOOP:                              /* COT test */
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 processing state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         /* send the lpa */
         ft_to_sngss7_lpa(ftdmchan);
@@ -806,13 +806,13 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     case FTDM_CHANNEL_STATE_IDLE:
     case FTDM_CHANNEL_STATE_INVALID:
         ftdm_log(FTDM_LOG_DEBUG, "ftmod_sangoma_ss7 does not support state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
         break;
     /**************************************************************************/
     default:
         /*this is bad...we're in an unknown state...should we kill this channel???*/
         ftdm_log(FTDM_LOG_ERROR, "ftmod_sangoma_ss7 in unknown state %s on span=%u,chan=%u\n",
-                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->span_id,ftdmchan->chan_id);
+                                    ftdm_channel_state2str(ftdmchan->state),ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
         break;
     } /*switch (ftdmchan->state)*/
 
@@ -845,7 +845,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
          * glare or for the network to acknowledge the call
          */
         c = 0;
-        while (c < 20) {
+        while (c < 100) {
 
             /* lock the channel while we check whether it is availble */
             ftdm_mutex_lock(ftdmchan->mutex);
@@ -854,11 +854,9 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
             sngss7_info = (sngss7_chan_data_t  *)ftdmchan->call_data;
 
             if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
-                SS7_ERROR("Glare flag on span=%d, chan=%d\n",
-                            ftdmchan->span_id,ftdmchan->chan_id);
-
-                /* move the channel to DOWN to clear the existing channel allocations */
-                ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+                SS7_ERROR("Glare flag on span=%d,chan=%d\n",
+                            ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
+ 
                 goto outgoing_glare;
             }
 
@@ -870,17 +868,15 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
             case FTDM_CHANNEL_STATE_PROGRESS:
             case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
             case FTDM_CHANNEL_STATE_UP:
-                SS7_DEBUG("Outgoing call request successful on span=%d, chan=%d\n",
-                            ftdmchan->span_id,ftdmchan->chan_id);
                 goto outgoing_successful;
                 break;
             /******************************************************************/
             default:
-                SS7_ERROR("Channel in invalid state (%s) on span=%d, chan=%d...should not happen\n",
+                SS7_ERROR("Channel in invalid state (%s) on span=%d,chan=%d...glare\n",
                         ftdm_channel_state2str(ftdmchan->state),
-                        ftdmchan->span_id,
-                        ftdmchan->chan_id);
-                goto outgoing_fail;
+                        ftdmchan->physical_span_id,
+                        ftdmchan->physical_chan_id);
+                goto outgoing_glare;
                 break;
             /******************************************************************/
             }
@@ -889,7 +885,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
             ftdm_mutex_unlock(ftdmchan->mutex);
 
             /* sleep for a bit to let the state change */
-            ftdm_sleep(50);
+            ftdm_sleep(10);
 
             /* increment the timeout counter */
             c++;
@@ -897,8 +893,8 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
         } /* while (c < 4) */
 
         /* if we got here we have timed-out waiting for acknowledgment, kill the call */
-        SS7_DEBUG("Timeout waiting for outgoing call to be accepted by network, ok'ing outgoing call on span=%d, chan=%d\n",
-                        ftdmchan->span_id,ftdmchan->chan_id);
+        SS7_DEBUG("Timeout waiting for outgoing call to be accepted by network, ok'ing outgoing call on span=%d,chan=%d\n",
+                        ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
 
         /* consider the call good .... for now */
         goto outgoing_successful;
@@ -907,8 +903,8 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
     /**************************************************************************/
     default:
         /* the channel is already used...this can't be, end the request */
-        SS7_ERROR("Outgoing call requested channel in already in use...indicating glare on span=%d, chan=%d\n",
-                            ftdmchan->span_id,ftdmchan->chan_id);
+        SS7_ERROR("Outgoing call requested channel in already in use...indicating glare on span=%d,chan=%d\n",
+                            ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
         goto outgoing_glare;
         break;        
     /**************************************************************************/
@@ -917,17 +913,20 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
     /* we should not get to this here...all exit points above use goto */
     SS7_ERROR("WE SHOULD NOT HERE HERE!!!!\n");
 
-outgoing_fail:
+    SS7_DEBUG("Call Request on span=%d, chan=%d failed\n");
     /* unlock the channel */
-    ftdm_mutex_unlock(ftdmchan->mutex);
+    ftdm_mutex_unlock(ftdmchan->mutex);  
+
     return FTDM_FAIL;
 
 outgoing_glare:
+    SS7_DEBUG("Indicating glare on span=%d, chan=%d\n");
     /* unlock the channel */
     ftdm_mutex_unlock(ftdmchan->mutex);  
     return FTDM_BREAK;
 
 outgoing_successful:
+    SS7_DEBUG("Call Request on span=%d, chan=%d successful\n");
     /* unlock the channel */
     ftdm_mutex_unlock(ftdmchan->mutex);
     return FTDM_SUCCESS;
