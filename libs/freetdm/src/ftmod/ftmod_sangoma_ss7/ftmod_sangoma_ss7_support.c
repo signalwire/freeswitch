@@ -315,7 +315,7 @@ int check_for_state_change(ftdm_channel_t *ftdmchan)
                 ftdmchan->physical_chan_id);
 #endif
     /* check to see if there are any pending state changes on the channel and give them a sec to happen*/
-    ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 5000);
+    ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 500);
 
     /* check the flag to confirm it is clear now */
     if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
