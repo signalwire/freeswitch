@@ -2,9 +2,16 @@
 echo "bootstrap: checking installation..."
 
 BGJOB=false
-if [ "${1}" == "-j" ]  ; then
-	BGJOB=true
-fi
+while getopts jh arg
+do 
+  case $arg in
+    j) BGJOB=true;;
+    h) echo "Usage: $0 <options>"
+       echo "  Options:"
+       echo "           -j => Run Jobs in Background"
+       exit;;
+  esac
+done
 
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
