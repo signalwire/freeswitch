@@ -100,7 +100,8 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 	caller_channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
 
-	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+	//	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+	if (!switch_channel_test_flag(caller_channel, CF_BRIDGE_ORIGINATOR)) {
 		name = caller_profile->callee_id_name;
 		number = caller_profile->callee_id_number;
 
