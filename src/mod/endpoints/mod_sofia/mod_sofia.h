@@ -573,7 +573,6 @@ struct private_object {
 	uint32_t ssrc;
 	uint32_t video_ssrc;
 	sofia_profile_t *profile;
-	char *sipip;
 	char *local_sdp_audio_ip;
 	switch_port_t local_sdp_audio_port;
 	char *remote_sdp_audio_ip;

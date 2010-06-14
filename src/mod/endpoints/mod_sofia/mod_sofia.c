@@ -263,7 +263,7 @@ char *generate_pai_str(switch_core_session_t *session)
 	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
 	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
-		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->sipip);
+		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
 	}
 
 	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
