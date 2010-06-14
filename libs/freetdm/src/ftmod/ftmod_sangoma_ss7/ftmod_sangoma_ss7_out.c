@@ -58,6 +58,7 @@ void ft_to_sngss7_uba(ftdm_channel_t *ftdmchan);
 
 void ft_to_sngss7_lpa(ftdm_channel_t *ftdmchan);
 
+void ft_to_sngss7_gra(ftdm_channel_t *ftdmchan);
 /* FUNCTIONS ******************************************************************/
 void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan)
 {
@@ -400,6 +401,30 @@ void ft_to_sngss7_lpa(ftdm_channel_t *ftdmchan)
                        NULL);
 
     SS7_MSG_TRACE("Transmitted LPA on CIC # %d\n", sngss7_info->circuit->cic);
+
+    SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+    return;
+}
+
+/******************************************************************************/
+void ft_to_sngss7_gra(ftdm_channel_t *ftdmchan)
+{
+    SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+    sngss7_chan_data_t  *sngss7_info = ftdmchan->call_data;
+
+	/* get the original channel the message came in on */
+	sngss7_info = g_ftdm_sngss7_data.cfg.isupCircuit[sngss7_info->grs.circuit].obj;
+
+    sng_cc_sta_request(1, 
+                       0, 
+                       0, 
+                       sngss7_info->circuit->id, 
+                       sngss7_info->globalFlg, 
+                       SIT_STA_GRSRSP, 
+                       NULL);
+
+    SS7_MSG_TRACE("Transmitted GRA on CIC # %d\n", sngss7_info->circuit->cic);
 
     SS7_FUNC_TRACE_EXIT(__FUNCTION__);
     return;

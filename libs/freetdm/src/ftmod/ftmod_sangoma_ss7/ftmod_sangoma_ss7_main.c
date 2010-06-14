@@ -300,6 +300,9 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
     ftdm_sigmsg_t           sigev;
     ftdm_signaling_status_t status;
     sngss7_chan_data_t      *sngss7_info = ftdmchan->call_data;
+	sngss7_chan_data_t		*tmp_ss7info = NULL;
+	ftdm_channel_t			*tmp_chan = NULL;
+    int 					i = 0;
 
     memset(&sigev, 0, sizeof(sigev));
 
@@ -324,8 +327,6 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
             break;
         }
-
-        int i = 0;
 
         while (ftdmchan->caller_data.cid_num.digits[i] != '\0') {
             i++;
@@ -587,6 +588,28 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             ftdm_span_send_signal(ftdmchan->span, &sigev);
         }
 
+		/* check if there was a GRS that needs a GRA */
+		if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
+			/* check all the circuits in the range to see if we are the last ckt to reset */
+			for (i = sngss7_info->grs.circuit; i < (sngss7_info->grs.range + 1); i++) {
+				if (g_ftdm_sngss7_data.cfg.isupCircuit[i].siglink == 0) {
+					/* extract the sngss7_info for the circuit */
+					tmp_ss7info = g_ftdm_sngss7_data.cfg.isupCircuit[i].obj;
+					tmp_chan = tmp_ss7info->ftdmchan;
+					/* check if the circuit is done going through reset */ /* KONRAD FIX ME...better way to check this??? */
+					if (!(tmp_chan->state == FTDM_CHANNEL_STATE_DOWN) && (sngss7_test_flag(tmp_ss7info, FLAG_GRP_RESET_RX))) {
+						/* exit the for loop since we found a circuit still in reset */
+						continue;
+					} /* if inreset */
+				} /* if not siglink */
+			} /* for */
+
+			/* if we got through the whole range send out a GRA */
+			if (i == (sngss7_info->grs.range + 1)) {
+				ft_to_sngss7_gra(ftdmchan);
+			}
+		}
+
         /* check if we got the reset response */
         if (sngss7_test_flag(sngss7_info, FLAG_RESET_TX)) {
             /* inform Ftdm that the "sig" is up now for this channel */
@@ -666,7 +689,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
         } else {
 
             /* check if this an incoming RSC */
-            if (sngss7_test_flag(sngss7_info, FLAG_RESET_RX)) {
+            if (sngss7_test_flag(sngss7_info, FLAG_RESET_RX) || sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
                 /* go to a down state to clear the channel and send RSCa */
                 ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
             } /* if (sngss7_test_flag(sngss7_info, FLAG_RESET_RX)) */
@@ -909,9 +932,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
         break;        
     /**************************************************************************/
     }
-
-    /* we should not get to this here...all exit points above use goto */
-    SS7_ERROR("WE SHOULD NOT HERE HERE!!!!\n");
 
     SS7_DEBUG("Call Request on span=%d, chan=%d failed\n");
     /* unlock the channel */

@@ -96,6 +96,11 @@ typedef struct sngss7_glare_data {
     SiConEvnt               iam;
 }sngss7_glare_data_t;
 
+typedef struct sngss7_group_data {
+	uint32_t				circuit;
+	uint32_t				range;
+}sngss7_group_data_t;
+
 typedef struct sngss7_chan_data {
     ftdm_channel_t          *ftdmchan;
     sng_isupCircuit_t       *circuit;
@@ -106,6 +111,7 @@ typedef struct sngss7_chan_data {
     uint32_t                flags;
     sngss7_glare_data_t     glare;
     sngss7_timer_data_t     t35;
+	sngss7_group_data_t		grs;
 }sngss7_chan_data_t;
 
 
@@ -113,9 +119,11 @@ typedef struct sngss7_chan_data {
 typedef enum {
     FLAG_RESET_RX           = (1 << 0),
     FLAG_RESET_TX           = (1 << 1),
-    FLAG_REMOTE_REL         = (1 << 2),
-    FLAG_LOCAL_REL          = (1 << 3),
-    FLAG_GLARE              = (1 << 4),
+	FLAG_GRP_RESET_RX		= (1 << 2),
+	FLAG_GRP_RESET_TX		= (1 << 3),
+    FLAG_REMOTE_REL         = (1 << 4),
+    FLAG_LOCAL_REL          = (1 << 5),
+    FLAG_GLARE              = (1 << 6),
     FLAG_INFID_RESUME       = (1 << 17),
     FLAG_INFID_PAUSED       = (1 << 18),
     FLAG_CKT_MN_BLOCK_RX    = (1 << 19),
@@ -140,51 +148,52 @@ extern ftdm_sched_t         *sngss7_sched;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
-extern void handle_sng_log(uint8_t level, char *fmt,...);
-extern void handle_sng_alarm(sng_alrm_t t_alarm);
+void handle_sng_log(uint8_t level, char *fmt,...);
+void handle_sng_alarm(sng_alrm_t t_alarm);
 
-extern int  ft_to_sngss7_cfg(void);
-extern int  ft_to_sngss7_activate_all(void);
+int  ft_to_sngss7_cfg(void);
+int  ft_to_sngss7_activate_all(void);
 
-extern void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_acm(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_anm(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_rel(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_rlc(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_rsc(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_rsca(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_blo(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_bla(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_ubl(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_uba(ftdm_channel_t *ftdmchan);
-extern void ft_to_sngss7_lpa(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_acm(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_anm(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_rel(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_rlc(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_rsc(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_rsca(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_blo(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_bla(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_ubl(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_uba(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_lpa(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_gra(ftdm_channel_t *ftdmchan);
 
-extern void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
-extern void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
-extern void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
-extern void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType);
-extern void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt);
-extern void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt);
-extern void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiInfoEvnt *siInfoEvnt);
-extern void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
-extern void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
-extern void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
-extern void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
+void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
+void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType);
+void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt);
+void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRelEvnt *siRelEvnt);
+void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiInfoEvnt *siInfoEvnt);
+void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
+void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
+void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
 
-extern uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-extern uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-extern uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-extern uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-extern uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
-extern int check_for_state_change(ftdm_channel_t *ftdmchan);
-extern ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
-extern unsigned long get_unique_id(void);
+uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
+uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
+uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
+uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
+uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+int check_for_state_change(ftdm_channel_t *ftdmchan);
+ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
+unsigned long get_unique_id(void);
 
-extern int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
+int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
 
-extern void handle_isup_t35(void *userdata);
+void handle_isup_t35(void *userdata);
 
-extern ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
+ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
 /******************************************************************************/
 
 /* MACROS *********************************************************************/

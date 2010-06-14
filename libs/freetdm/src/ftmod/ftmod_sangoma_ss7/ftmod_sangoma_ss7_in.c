@@ -70,6 +70,8 @@ static ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32
 static ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 static ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
+static ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+
 
 
 /******************************************************************************/
@@ -701,7 +703,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
         break;
     /**************************************************************************/
     case SIT_STA_GRSREQ:            /* circuit group reset request */
-        SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+        handle_grs_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
         break;
     /**************************************************************************/
     case SIT_STA_CIRUNEQPD:         /* circuit unequipped indication */
@@ -1412,6 +1414,64 @@ static ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32
     SS7_FUNC_TRACE_EXIT(__FUNCTION__);
     return FTDM_SUCCESS;
 }
+
+/******************************************************************************/
+static ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
+{
+    SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+    sngss7_chan_data_t  *sngss7_info = NULL;
+    ftdm_channel_t      *ftdmchan = NULL;
+	int					range;
+	int 				x;
+
+	/* extract the range value from the event structure */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
+		range = siStaEvnt->rangStat.range.val;
+	} else {
+		SS7_ERROR("Received GRS with no range value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+    	return FTDM_FAIL;
+	}		
+
+	/* loop over the cics starting from circuit until range+1 */
+    for (x = circuit; x < (circuit + range + 1); x++) {
+		/* grab the circuit in question */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+			/* konrad fix me */
+		}
+	
+		/* now that we have the right channel...put a lock on it so no-one else can use it */
+		ftdm_mutex_lock(ftdmchan->mutex);
+	
+		/* check if there is a pending state change, give it a bit to clear */
+		if (check_for_state_change(ftdmchan)) {
+			SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
+			ftdm_mutex_unlock(ftdmchan->mutex);
+			/* konrad fix me */
+		};
+
+		/* store the circuit and range into the sngss7 info so that we can figure out when to send GRA */
+		sngss7_info->grs.circuit = circuit;
+		sngss7_info->grs.range 	 = range;
+		sngss7_info->globalFlg 	 = globalFlg;
+
+		/* flag the channel as having received a reset */
+		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX);
+
+		/* throw the channel into RESTART state */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+	}
+
+    SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+    return FTDM_SUCCESS;
+}
+
 
 /******************************************************************************/
 #if 0
