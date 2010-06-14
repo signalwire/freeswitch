@@ -4724,7 +4724,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			} else {
 				sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error! %s\n", r_sdp);
 				goto done;
 
 			}

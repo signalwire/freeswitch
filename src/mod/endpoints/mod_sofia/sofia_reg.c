@@ -1340,7 +1340,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT! ip: %s, port: %i\n", network_ip, network_port);
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		goto end;
 	}
