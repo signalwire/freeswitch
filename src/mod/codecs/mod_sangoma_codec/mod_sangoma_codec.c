@@ -110,6 +110,9 @@ vocallo_codec_t g_codec_map[] =
 	{ -1,                  -1,  NULL,      NULL,                -1, -1,     -1,    -1,  -1,      -1 },
 };
 
+/* RFC3389 RTP Payload for Comfort Noise */
+#define IANACODE_CN 13
+
 /* default codec list to load, users may override, special codec 'all' registers everything available unless listed in noregister */
 static char g_codec_register_list[1024] = "all";
 
@@ -268,19 +271,19 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 	if (encoding) {
 		sess->encoder.request.usr_priv = sess;
 		sess->encoder.request.a.codec_id = SNGTC_CODEC_PCMU;
-		sess->encoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
+		sess->encoder.request.a.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
 
 		sess->encoder.request.b.codec_id = vcodec->codec_id;
-		sess->encoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
+		sess->encoder.request.b.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
 	}
 
 	if (decoding) {
 		sess->decoder.request.usr_priv = sess;
 		sess->decoder.request.a.codec_id = vcodec->codec_id;
-		sess->decoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
+		sess->decoder.request.a.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
 
 		sess->decoder.request.b.codec_id = SNGTC_CODEC_PCMU;
-		sess->decoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
+		sess->decoder.request.b.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
 
 	}
 
@@ -400,7 +403,8 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (encoded_frame.payload != codec->implementation->ianacode) {
+	if (encoded_frame.payload != codec->implementation->ianacode
+	    && encoded_frame.payload != IANACODE_CN) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting %d\n", 
 				encoded_frame.payload, codec->implementation->ianacode);
 		return SWITCH_STATUS_FALSE;
@@ -512,7 +516,8 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (ulaw_frame.payload != IANA_ULAW) { 
+	if (ulaw_frame.payload != IANA_ULAW
+	    && ulaw_frame.payload != IANACODE_CN) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma decoder RTP session, expecting %d\n", 
 				ulaw_frame.payload, IANA_ULAW);
 		return SWITCH_STATUS_FALSE;
@@ -883,7 +888,7 @@ static int sangoma_parse_config(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring vocallo %s\n", name);
 
 			g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_base_udp_port = SANGOMA_DEFAULT_UDP_PORT;
-			g_init_cfg.host_nic_vocallo_cfg[vidx].silence_suppression = 1;
+			g_init_cfg.host_nic_vocallo_cfg[vidx].silence_suppression = 0;
 			for (param = switch_xml_child(vocallo, "param"); param; param = param->next) {
 				char *var = (char *)switch_xml_attr_soft(param, "name");
 				char *val = (char *)switch_xml_attr_soft(param, "value");
@@ -970,6 +975,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	g_init_cfg.log = sangoma_logger;
 	g_init_cfg.create_rtp = sangoma_create_rtp;
 	g_init_cfg.destroy_rtp = sangoma_destroy_rtp;
+
+#ifdef __linux__
+	if (geteuid() != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This module needs to be run as root to create raw sockets\n");
+		return SWITCH_STATUS_FALSE;
+	}
+#endif
 
 	if (sngtc_detect_init_modules(&g_init_cfg, &detected)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to detect vocallo modules\n");
