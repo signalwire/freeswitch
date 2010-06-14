@@ -1744,16 +1744,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		if (!rpid_domain) {
-			rpid_domain = "cluecon.com";
-		}
-
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
-			if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+			if (!zstr(tech_pvt->remote_ip) && !zstr(profile->extsipip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 				rpid_domain = tech_pvt->profile->extsipip;
 			} else {
 				rpid_domain = tech_pvt->profile->sipip;
 			}
+		}
+
+		if (zstr(rpid_domain)) {
+			rpid_domain = "cluecon.com";
 		}
 
 		/*

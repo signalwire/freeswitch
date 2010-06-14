@@ -2989,6 +2989,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							if (ip) {
 								if (!strncasecmp(ip, "autonat:", 8)) {
 									profile->extrtpip = switch_core_strdup(profile->pool, ip + 8);
+									if (zstr(profile->extsipip)) {
+										profile->extsipip = switch_core_strdup(profile->pool, profile->extrtpip);
+									}
 									sofia_set_pflag(profile, PFLAG_AUTO_NAT);
 								} else {
 									profile->extrtpip = switch_core_strdup(profile->pool, ip);
