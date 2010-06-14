@@ -26,16 +26,16 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * mod_mp4v.c -- MP4V Video Codec
+ * mod_theora.c -- THEORA Video Codec
  *
  */
 
 #include <switch.h>
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_mp4v_load);
-SWITCH_MODULE_DEFINITION(mod_mp4v, mod_mp4v_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(mod_theora_load);
+SWITCH_MODULE_DEFINITION(mod_theora, mod_theora_load, NULL, NULL);
 
-static switch_status_t switch_mp4v_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_theora_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -52,7 +52,7 @@ static switch_status_t switch_mp4v_init(switch_codec_t *codec, switch_codec_flag
 	}
 }
 
-static switch_status_t switch_mp4v_encode(switch_codec_t *codec,
+static switch_status_t switch_theora_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
@@ -62,7 +62,7 @@ static switch_status_t switch_mp4v_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t switch_mp4v_decode(switch_codec_t *codec,
+static switch_status_t switch_theora_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
@@ -72,20 +72,20 @@ static switch_status_t switch_mp4v_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t switch_mp4v_destroy(switch_codec_t *codec)
+static switch_status_t switch_theora_destroy(switch_codec_t *codec)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_mp4v_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_theora_load)
 {
 	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "MP4V Video (passthru)");
+	SWITCH_ADD_CODEC(codec_interface, "THEORA Video (passthru)");
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_VIDEO, 99, "MP4V-ES", NULL, 90000, 90000, 0,
-										 0, 0, 0, 0, 1, 1, switch_mp4v_init, switch_mp4v_encode, switch_mp4v_decode, switch_mp4v_destroy);
+										 SWITCH_CODEC_TYPE_VIDEO, 99, "THEORA", NULL, 90000, 90000, 0,
+										 0, 0, 0, 0, 1, 1, switch_theora_init, switch_theora_encode, switch_theora_decode, switch_theora_destroy);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
