@@ -1893,9 +1893,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if ((val = switch_channel_get_variable(channel, "sip_cid_type"))) {
 			cid_type = sofia_cid_name2type(val);
-		} else {
-			cid_type = tech_pvt->cid_type;
-		}
+		} 
 
 		if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING) && switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			if (zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
