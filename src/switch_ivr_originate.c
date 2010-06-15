@@ -413,6 +413,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	int pindex = -1;
 	char bug_key[256] = "";
 	int send_ringback = 0;
+	uint32_t ring_ready_val = 0;
 
 	oglobals->hups = 0;
 	oglobals->idx = IDX_NADA;
@@ -451,9 +452,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			continue;
 		}
 
-		if (switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY)) {
+		if ((ring_ready_val = switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY))) {
 			if (!originate_status[i].ring_ready) {
-				originate_status[i].ring_ready = 1;
+				originate_status[i].ring_ready = ring_ready_val;
 			}
 
 			if (oglobals->sending_ringback == 1) {
@@ -461,13 +462,13 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				pindex = (uint32_t) i;
 			} else {
 				if (!oglobals->ring_ready) {
-					oglobals->ring_ready = 1;
+					oglobals->ring_ready = ring_ready_val;
 					if (caller_channel && !oglobals->ignore_ring_ready) {
 						if (len == 1) {
 							switch_channel_pass_callee_id(originate_status[0].peer_channel, caller_channel);
 						}
-						switch_channel_ring_ready(caller_channel);
-						oglobals->sent_ring = 1;
+						switch_channel_ring_ready_value(caller_channel, ring_ready_val);
+						oglobals->sent_ring = ring_ready_val;
 					}
 				}
 			}
@@ -485,7 +486,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				pindex = (uint32_t) i;
 			} else if (!oglobals->sent_ring && oglobals->ignore_early_media == 2 && len == 1 && caller_channel && !oglobals->ignore_ring_ready) {
 				switch_channel_pass_callee_id(originate_status[0].peer_channel, caller_channel);
-				switch_channel_ring_ready(caller_channel);
+				//switch_channel_ring_ready(caller_channel);
 				oglobals->sent_ring = 1;
 			}
 

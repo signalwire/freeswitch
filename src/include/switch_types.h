@@ -934,6 +934,12 @@ typedef enum {
 	CS_NONE
 } switch_channel_state_t;
 
+typedef enum {
+	SWITCH_RING_READY_NONE,
+	SWITCH_RING_READY_RINGING,
+	SWITCH_RING_READY_QUEUED
+}  switch_ring_ready_t;
+
 
 /*!
   \enum switch_channel_flag_t

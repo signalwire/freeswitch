@@ -380,20 +380,26 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 */
 #define switch_channel_mark_pre_answered(channel) switch_channel_perform_mark_pre_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_channel_t *channel, 
+																		switch_ring_ready_t rv,
+																		const char *file, const char *func, int line);
 /*!
   \brief Send Ringing message to a channel
   \param channel channel to ring
   \return SWITCH_STATUS_SUCCESS if successful
 */
-#define switch_channel_ring_ready(channel) switch_channel_perform_ring_ready(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_channel_ring_ready(channel) switch_channel_perform_ring_ready_value(channel, SWITCH_RING_READY_RINGING, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_channel_ring_ready_value(channel, _rv)					\
+	switch_channel_perform_ring_ready_value(channel, _rv, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel, const char *file, const char *func, int line);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(switch_channel_t *channel, 
+																			 switch_ring_ready_t rv,
+																			 const char *file, const char *func, int line);
 
 /*!
   \brief Indicate progress on a channel to attempt early media
@@ -407,7 +413,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
   \param channel channel
   \return SWITCH_STATUS_SUCCESS
 */
-#define switch_channel_mark_ring_ready(channel) switch_channel_perform_mark_ring_ready(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_channel_mark_ring_ready(channel) \
+	switch_channel_perform_mark_ring_ready_value(channel, SWITCH_RING_READY_RINGING, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+#define switch_channel_mark_ring_ready_value(channel, _rv)					\
+	switch_channel_perform_mark_ring_ready_value(channel, _rv, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief add a state handler table to a given channel

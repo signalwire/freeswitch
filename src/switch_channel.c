@@ -2278,7 +2278,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	return channel->state;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line)
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(switch_channel_t *channel, 
+																			 switch_ring_ready_t rv,
+																			 const char *file, const char *func, int line)
 {
 	const char *var;
 	char *app;
@@ -2287,7 +2289,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 	if (!switch_channel_test_flag(channel, CF_RING_READY) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA &&
 																					   !switch_channel_test_flag(channel, CF_ANSWERED))) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
-		switch_channel_set_flag(channel, CF_RING_READY);
+		switch_channel_set_flag_value(channel, CF_RING_READY, rv);
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
 			channel->caller_profile->times->progress = switch_micro_time_now();
@@ -2423,7 +2425,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line)
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_channel_t *channel, switch_ring_ready_t rv, 
+																		const char *file, const char *func, int line)
 {
 	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -2445,11 +2448,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
 		msg.from = channel->name;
+		msg.numeric_arg = rv;
 		status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
 	}
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
+		switch_channel_perform_mark_ring_ready_value(channel, rv, file, func, line);
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
