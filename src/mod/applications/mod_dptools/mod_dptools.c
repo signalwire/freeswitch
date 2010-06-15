@@ -502,6 +502,13 @@ SWITCH_STANDARD_APP(set_mute_function)
 
 SWITCH_STANDARD_APP(ring_ready_function)
 {
+	if (!zstr(data)) {
+		if (!strcasecmp(data, "queued")) {
+			switch_channel_ring_ready_value(switch_core_session_get_channel(session), SWITCH_RING_READY_QUEUED);
+			return;
+		}
+	}
+	
 	switch_channel_ring_ready(switch_core_session_get_channel(session));
 }
 
