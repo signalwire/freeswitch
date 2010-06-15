@@ -1020,6 +1020,31 @@ static void core_event_handler(switch_event_t *event)
 
 			);
 		break;
+	case SWITCH_EVENT_CALL_UPDATE:
+		{
+			const char *name = switch_event_get_header(event, "callee-name");
+			const char *number = switch_event_get_header(event, "callee-number");
+
+			if (!name) {
+				name = switch_event_get_header(event, "caller-callee-id-name");
+			}
+			
+			if (!number) {
+				number = switch_event_get_header(event, "caller-callee-id-number");
+			}
+
+			if (!zstr(name) && !zstr(number)) {
+				sql = switch_mprintf("update channels set state='%s',callstate='%s',callee_name='%q',"
+									 "callee_num='%q',callee_direction='%q' where uuid='%s' and hostname='%q'",
+									 switch_event_get_header_nil(event, "channel-state"),
+									 switch_event_get_header_nil(event, "channel-call-state"),
+									 switch_str_nil(name),
+									 switch_str_nil(number),
+									 switch_event_get_header_nil(event, "direction"),
+									 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+			}
+		}
+		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
 		{
 			char *state = switch_event_get_header_nil(event, "channel-state-number");
@@ -1197,7 +1222,6 @@ static char create_channels_sql[] =
 	"   created_epoch  INTEGER,\n"
 	"   name  VARCHAR(1024),\n"
 	"   state  VARCHAR(64),\n"
-	"   callstate  VARCHAR(64),\n"
 	"   cid_name  VARCHAR(1024),\n"
 	"   cid_num  VARCHAR(256),\n"
 	"   ip_addr  VARCHAR(256),\n"
@@ -1213,7 +1237,11 @@ static char create_channels_sql[] =
 	"   secure VARCHAR(32),\n"
 	"   hostname VARCHAR(256),\n"
 	"   presence_id VARCHAR(4096),\n"
-	"   presence_data VARCHAR(4096)\n"
+	"   presence_data VARCHAR(4096),\n"
+	"   callstate  VARCHAR(64),\n"
+	"   callee_name  VARCHAR(1024),\n"
+	"   callee_num  VARCHAR(256),\n"
+	"   callee_direction  VARCHAR(5)\n"
 	");\ncreate index uuindex on channels (uuid,hostname);\n";
 
 static char create_calls_sql[] =
@@ -1335,7 +1363,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		{
 			char *err;
-			switch_cache_db_test_reactive(dbh, "select callstate from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(dbh, "select callee_direction from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
