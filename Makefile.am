@@ -162,6 +162,7 @@ library_include_HEADERS = \
 	src/include/switch_types.h \
 	src/include/switch_utils.h \
 	src/include/switch_rtp.h \
+	src/include/switch_rtcp_frame.h \
 	src/include/switch_stun.h \
 	src/include/switch_nat.h \
 	src/include/switch_log.h \
