@@ -506,7 +506,7 @@ int  ft_to_sngss7_cfg(void)
             SS7_DEBUG("ISUP interface already configured = %s\n", isup_interface->name);
         } else {
             if (ftmod_ss7_configure_isup_interface(x)) {
-                SS7_ERROR("Failed to configure ISUP interface = %s\n!", isup_interface->name);
+                SS7_ERROR("Failed to configure ISUP interface = %s\n", isup_interface->name);
                 return FTDM_FAIL;
             } else {
                 SS7_INFO("Successfully configured ISUP interface = %s\n", isup_interface->name);
