@@ -180,7 +180,7 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
     /* setup the self mtp3 route */
     i = g_ftdm_sngss7_data.cfg.isupInterface[x].mtp3RouteId;
 
-    if(ftmod_ss7_fill_in_self_route(g_ftdm_sngss7_data.cfg.spc,
+    if(ftmod_ss7_fill_in_self_route(atoi(g_ftdm_sngss7_data.cfg.spc),
                                     g_ftdm_sngss7_data.cfg.mtp3Route[i].linkType,
                                     g_ftdm_sngss7_data.cfg.isupInterface[x].switchType,
                                     g_ftdm_sngss7_data.cfg.mtp3Route[i].ssf)) {
@@ -751,8 +751,8 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
             SS7_DEBUG("\tFound an \"isup_interface\" named = %s\n", sng_isup.name);
         /**********************************************************************/
         } else if (!strcasecmp(parm->var, "spc")) {
-            g_ftdm_sngss7_data.cfg.spc = atoi(parm->val);
-            SS7_DEBUG("\tFound SPC = %d\n", g_ftdm_sngss7_data.cfg.spc);
+			strcpy(g_ftdm_sngss7_data.cfg.spc, parm->val);
+            SS7_DEBUG("\tFound SPC = %s\n", g_ftdm_sngss7_data.cfg.spc);
         /**********************************************************************/
         } else if (!strcasecmp(parm->var, "mtp_route")) {
             /* find the route by it's name */
@@ -813,6 +813,14 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
                 return FTDM_FAIL;
             }
         /**********************************************************************/
+		} else if (!strcasecmp(parm->var, "license")) {
+		/**********************************************************************/
+			strcpy(g_ftdm_sngss7_data.cfg.license, parm->val);
+			strcpy(g_ftdm_sngss7_data.cfg.signature, parm->val);
+			strcat(g_ftdm_sngss7_data.cfg.signature, ".sig");
+			SS7_DEBUG("\tFound license file = %s\n", g_ftdm_sngss7_data.cfg.license);
+			SS7_DEBUG("\tFound signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
+		/**********************************************************************/
         } else {
             SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
             return FTDM_FAIL;
