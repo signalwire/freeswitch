@@ -1627,6 +1627,7 @@ static void non_ecm_rx_status(void *user_data, int status)
         s->audio.modems.rx_trained = TRUE;
         s->core.timed_mode = TIMED_MODE_IDLE;
         s->core.samples_to_timeout = 0;
+        s->core.short_train = TRUE;
         to_t38_buffer_init(&s->core.to_t38);
         break;
     case SIG_STATUS_CARRIER_UP:
@@ -1792,6 +1793,7 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
         /* The modem is now trained. */
         s->audio.modems.rx_signal_present = TRUE;
         s->audio.modems.rx_trained = TRUE;
+        s->core.short_train = TRUE;
         /* Behave like HDLC preamble has been announced. */
         t->framing_ok_announced = TRUE;
         to_t38_buffer_init(&s->core.to_t38);

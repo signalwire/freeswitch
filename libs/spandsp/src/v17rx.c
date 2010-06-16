@@ -1358,12 +1358,12 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
         equalizer_reset(s);
 #if defined(SPANDSP_USE_FIXED_POINTx)
-        //s->agc_scaling_save = 0;
+        s->agc_scaling_save = 0;
         s->agc_scaling = (float) FP_FACTOR*32768.0f*0.0017f/RX_PULSESHAPER_GAIN;
         s->carrier_track_i = 5000;
         s->carrier_track_p = 40000;
 #else
-        //s->agc_scaling_save = 0.0f;
+        s->agc_scaling_save = 0.0f;
         s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
         s->carrier_track_i = 5000.0f;
         s->carrier_track_p = 40000.0f;
@@ -1371,6 +1371,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     }
     s->last_sample = 0;
     span_log(&s->logging, SPAN_LOG_FLOW, "Phase rates %f %f\n", dds_frequencyf(s->carrier_phase_rate), dds_frequencyf(s->carrier_phase_rate_save));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Gains %f %f\n", s->agc_scaling_save, s->agc_scaling);
 
     /* Initialise the working data for symbol timing synchronisation */
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -1407,7 +1408,7 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     case 9600:
     case 7200:
     case 4800:
-        /* 4800 is an extension of V.17, to provide full converage of the V.32bis modes */
+        /* 4800 is an extension of V.17, to provide full coverage of the V.32bis modes */
         break;
     default:
         return NULL;
@@ -1425,13 +1426,6 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     s->short_train = FALSE;
     //s->scrambler_tap = 18 - 1;
     v17_rx_signal_cutoff(s, -45.5f);
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    s->agc_scaling_save = 0;
-    s->agc_scaling = (float) FP_FACTOR*32768.0f*0.0017f/RX_PULSESHAPER_GAIN;
-#else
-    s->agc_scaling_save = 0.0f;
-    s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
-#endif
     s->carrier_phase_rate_save = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
     v17_rx_restart(s, bit_rate, s->short_train);
     return s;
