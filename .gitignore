@@ -99,3 +99,14 @@ src/mod/codecs/mod_com_g729/
 src/mod/languages/mod_lua/mod_lua_wrap.cpp.orig
 src/mod/languages/mod_perl/mod_perl_wrap.cpp.orig
 src/mod/languages/mod_python/mod_python_wrap.cpp.orig
+libs/freetdm/detect_dtmf
+libs/freetdm/detect_tones
+libs/freetdm/testanalog
+libs/freetdm/testapp
+libs/freetdm/testcid
+libs/freetdm/testpri
+libs/freetdm/testr2
+libs/freetdm/testsangomaboost
+libs/freetdm/testtones
+src/mod/applications/mod_osp/Makefile
+
