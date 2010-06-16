@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: oki_adpcm_tests.c,v 1.37 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -85,23 +83,32 @@ int main(int argc, char *argv[])
     int hist_out;
     oki_adpcm_state_t *oki_enc_state;
     oki_adpcm_state_t *oki_dec_state;
+    oki_adpcm_state_t *oki_dec_state2;
     int xx;
     int total_pre_samples;
     int total_compressed_bytes;
     int total_post_samples;
+    int successive_08_bytes;
+    int successive_80_bytes;
+    int encoded_fd;
+    const char *encoded_file_name;
     const char *in_file_name;
     int log_encoded_data;
     int opt;
 
     bit_rate = 32000;
+    encoded_file_name = NULL;
     in_file_name = IN_FILE_NAME;
     log_encoded_data = FALSE;
-    while ((opt = getopt(argc, argv, "2i:l")) != -1)
+    while ((opt = getopt(argc, argv, "2d:i:l")) != -1)
     {
         switch (opt)
         {
         case '2':
             bit_rate = 24000;
+            break;
+        case 'd':
+            encoded_file_name = optarg;
             break;
         case 'i':
             in_file_name = optarg;
@@ -116,24 +123,39 @@ int main(int argc, char *argv[])
         }
     }
 
-    if ((inhandle = sf_open_telephony_read(in_file_name, 1)) == NULL)
+    if (encoded_file_name)
     {
-        fprintf(stderr, "    Cannot open audio file '%s'\n", in_file_name);
-        exit(2);
+        if ((encoded_fd = open(encoded_file_name, O_RDONLY)) < 0)
+        {
+            fprintf(stderr, "    Cannot open encoded file '%s'\n", encoded_file_name);
+            exit(2);
+        }
     }
+    else
+    {
+        if ((inhandle = sf_open_telephony_read(in_file_name, 1)) == NULL)
+        {
+            fprintf(stderr, "    Cannot open audio file '%s'\n", in_file_name);
+            exit(2);
+        }
+        if ((oki_enc_state = oki_adpcm_init(NULL, bit_rate)) == NULL)
+        {
+            fprintf(stderr, "    Cannot create encoder\n");
+            exit(2);
+        }
+    }
+
     if ((outhandle = sf_open_telephony_write(OUT_FILE_NAME, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
-
-    if ((oki_enc_state = oki_adpcm_init(NULL, bit_rate)) == NULL)
+    if ((oki_dec_state = oki_adpcm_init(NULL, bit_rate)) == NULL)
     {
-        fprintf(stderr, "    Cannot create encoder\n");
+        fprintf(stderr, "    Cannot create decoder\n");
         exit(2);
     }
-        
-    if ((oki_dec_state = oki_adpcm_init(NULL, bit_rate)) == NULL)
+    if ((oki_dec_state2 = oki_adpcm_init(NULL, bit_rate)) == NULL)
     {
         fprintf(stderr, "    Cannot create decoder\n");
         exit(2);
@@ -151,71 +173,124 @@ int main(int argc, char *argv[])
     total_pre_samples = 0;
     total_compressed_bytes = 0;
     total_post_samples = 0;
-    while ((frames = sf_readf_short(inhandle, pre_amp, 159)))
+    if (encoded_file_name)
     {
-        total_pre_samples += frames;
-        oki_bytes = oki_adpcm_encode(oki_enc_state, oki_data, pre_amp, frames);
-        if (log_encoded_data)
-            write(1, oki_data, oki_bytes);
-        total_compressed_bytes += oki_bytes;
-        dec_frames = oki_adpcm_decode(oki_dec_state, post_amp, oki_data, oki_bytes);
-        total_post_samples += dec_frames;
-        for (i = 0;  i < frames;  i++)
+        /* Decode a file of OKI ADPCM code to a linear wave file */
+        while ((oki_bytes = read(encoded_fd, oki_data, 80)) > 0)
         {
-            history[hist_in++] = pre_amp[i];
-            if (hist_in >= HIST_LEN)
-                hist_in = 0;
-            pre_energy += (double) pre_amp[i] * (double) pre_amp[i];
+            total_compressed_bytes += oki_bytes;
+            dec_frames = oki_adpcm_decode(oki_dec_state, post_amp, oki_data, oki_bytes);
+            total_post_samples += dec_frames;
+            for (i = 0;  i < dec_frames;  i++)
+            {
+                post_energy += (double) post_amp[i] * (double) post_amp[i];
+                xx = post_amp[i] - history[hist_out++];
+                if (hist_out >= HIST_LEN)
+                    hist_out = 0;
+                diff_energy += (double) xx * (double) xx;
+            }
+            outframes = sf_writef_short(outhandle, post_amp, dec_frames);
         }
-        for (i = 0;  i < dec_frames;  i++)
-        {
-            post_energy += (double) post_amp[i] * (double) post_amp[i];
-            xx = post_amp[i] - history[hist_out++];
-            if (hist_out >= HIST_LEN)
-                hist_out = 0;
-            diff_energy += (double) xx * (double) xx;
-            //post_amp[i] = xx;
-        }
-        outframes = sf_writef_short(outhandle, post_amp, dec_frames);
+        close(encoded_fd);
     }
-    if (sf_close(inhandle) != 0)
+    else
     {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", in_file_name);
-        exit(2);
+        /* Perform a linear wave file -> OKI ADPCM -> linear wave file cycle. Along the way
+           check the decoder resets on the sequence specified for this codec, and the gain
+           and worst case sample distortion. */
+        successive_08_bytes = 0;
+        successive_80_bytes = 0;
+        while ((frames = sf_readf_short(inhandle, pre_amp, 159)))
+        {
+            total_pre_samples += frames;
+            oki_bytes = oki_adpcm_encode(oki_enc_state, oki_data, pre_amp, frames);
+            if (log_encoded_data)
+                write(1, oki_data, oki_bytes);
+            total_compressed_bytes += oki_bytes;
+            /* Look for a condition which is defined as something which should cause a reset of
+               the decoder (48 samples of 0, 8, 0, 8, etc.), and verify that it really does. Use
+               a second decode, which we feed byte by byte, for this. */
+            for (i = 0;  i < oki_bytes;  i++)
+            {
+                oki_adpcm_decode(oki_dec_state2, post_amp, &oki_data[i], 1);
+                if (oki_data[i] == 0x08)
+                    successive_08_bytes++;
+                else
+                    successive_08_bytes = 0;
+                if (oki_data[i] == 0x80)
+                    successive_80_bytes++;
+                else
+                    successive_80_bytes = 0;
+                if (successive_08_bytes == 24  ||  successive_80_bytes == 24)
+                {
+                    if (oki_dec_state2->step_index != 0)
+                    {
+                        fprintf(stderr, "Decoder reset failure\n");
+                        exit(2);
+                    }
+                }
+            }
+            dec_frames = oki_adpcm_decode(oki_dec_state, post_amp, oki_data, oki_bytes);
+            total_post_samples += dec_frames;
+            for (i = 0;  i < frames;  i++)
+            {
+                history[hist_in++] = pre_amp[i];
+                if (hist_in >= HIST_LEN)
+                    hist_in = 0;
+                pre_energy += (double) pre_amp[i] * (double) pre_amp[i];
+            }
+            for (i = 0;  i < dec_frames;  i++)
+            {
+                post_energy += (double) post_amp[i] * (double) post_amp[i];
+                xx = post_amp[i] - history[hist_out++];
+                if (hist_out >= HIST_LEN)
+                    hist_out = 0;
+                diff_energy += (double) xx * (double) xx;
+                //post_amp[i] = xx;
+            }
+            outframes = sf_writef_short(outhandle, post_amp, dec_frames);
+        }
+        printf("Pre samples: %d\n", total_pre_samples);
+        printf("Compressed bytes: %d\n", total_compressed_bytes);
+        printf("Post samples: %d\n", total_post_samples);
+
+        printf("Output energy is %f%% of input energy.\n", 100.0*post_energy/pre_energy);
+        printf("Residual energy is %f%% of the total.\n", 100.0*diff_energy/post_energy);
+        if (bit_rate == 32000)
+        {
+            if (fabs(1.0 - post_energy/pre_energy) > 0.01
+                ||
+                fabs(diff_energy/post_energy) > 0.01)
+            {
+                printf("Tests failed.\n");
+                exit(2);
+            }
+        }
+        else
+        {
+            if (fabs(1.0 - post_energy/pre_energy) > 0.11
+                ||
+                fabs(diff_energy/post_energy) > 0.05)
+            {
+                printf("Tests failed.\n");
+                exit(2);
+            }
+        }
+
+
+        oki_adpcm_release(oki_enc_state);
+        if (sf_close(inhandle) != 0)
+        {
+            fprintf(stderr, "    Cannot close audio file '%s'\n", in_file_name);
+            exit(2);
+        }
     }
+    oki_adpcm_release(oki_dec_state);
+    oki_adpcm_release(oki_dec_state2);
     if (sf_close(outhandle) != 0)
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
-    }
-    oki_adpcm_release(oki_enc_state);
-    oki_adpcm_release(oki_dec_state);
-
-    printf("Pre samples: %d\n", total_pre_samples);
-    printf("Compressed bytes: %d\n", total_compressed_bytes);
-    printf("Post samples: %d\n", total_post_samples);
-
-    printf("Output energy is %f%% of input energy.\n", 100.0*post_energy/pre_energy);
-    printf("Residual energy is %f%% of the total.\n", 100.0*diff_energy/post_energy);
-    if (bit_rate == 32000)
-    {
-        if (fabs(1.0 - post_energy/pre_energy) > 0.05
-            ||
-            fabs(diff_energy/post_energy) > 0.03)
-        {
-            printf("Tests failed.\n");
-            exit(2);
-        }
-    }
-    else
-    {
-        if (fabs(1.0 - post_energy/pre_energy) > 0.20
-            ||
-            fabs(diff_energy/post_energy) > 0.10)
-        {
-            printf("Tests failed.\n");
-            exit(2);
-        }
     }
 
     printf("Tests passed.\n");

@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v17rx.c,v 1.153.4.6 2009/12/28 12:20:46 steveu Exp $
  */
 
 /*! \file */
@@ -97,9 +95,6 @@
 
 /*! The 16 bit pattern used in the bridge section of the training sequence */
 #define V17_BRIDGE_WORD                 0x8880
-
-/*! The length of the equalizer buffer */
-#define V17_EQUALIZER_LEN    (V17_EQUALIZER_PRE_LEN + 1 + V17_EQUALIZER_POST_LEN)
 
 enum
 {
@@ -233,6 +228,7 @@ static void equalizer_restore(v17_rx_state_t *s)
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
     s->eq_step = 0;
+    s->eq_skip = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -253,6 +249,7 @@ static void equalizer_reset(v17_rx_state_t *s)
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
     s->eq_step = 0;
+    s->eq_skip = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -565,7 +562,7 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
         Passband Timing Recovery in an All-Digital Modem Receiver
         IEEE TRANSACTIONS ON COMMUNICATIONS, VOL. COM-26, NO. 5, MAY 1978 */
 
-    /* This is slightly rearranged for figure 3b of the Godard paper, as this saves a couple of
+    /* This is slightly rearranged from figure 3b of the Godard paper, as this saves a couple of
        maths operations */
 #if defined(SPANDSP_USE_FIXED_POINTx)
     /* TODO: The scalings used here need more thorough evaluation, to see if overflows are possible. */
@@ -579,12 +576,12 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
-    if (abs(s->baud_phase) > 100*FP_FACTOR)
+    v = labs(s->baud_phase);
+    if (v > 100*FP_FACTOR)
     {
-        if (s->baud_phase > 0)
-            i = (s->baud_phase > 1000*FP_FACTOR)  ?  15  :  1;
-        else
-            i = (s->baud_phase < -1000*FP_FACTOR)  ?  -15  :  -1;
+        i = (v > 1000*FP_FACTOR)  ?  15  :  1;
+        if (s->baud_phase < 0)
+            i = -i;
         //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
@@ -600,12 +597,12 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
-    if (fabsf(s->baud_phase) > 100.0f)
+    v = fabsf(s->baud_phase);
+    if (v > 100.0f)
     {
-        if (s->baud_phase > 0.0f)
-            i = (s->baud_phase > 1000.0f)  ?  15  :  1;
-        else
-            i = (s->baud_phase < -1000.0f)  ?  -15  :  -1;
+        i = (v > 1000.0f)  ?  15  :  1;
+        if (s->baud_phase < 0.0f)
+            i = -i;
         //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
@@ -732,18 +729,14 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         if (s->training_count == 100)
         {
             i = s->training_count;
-            /* Avoid the possibility of a divide by zero */
-            if (i)
-            {
-                j = i & 0xF;
-                ang = (s->angles[j] - s->start_angles[0])/i
-                    + (s->angles[j | 0x1] - s->start_angles[1])/i;
-                s->carrier_phase_rate += 3*(ang/20);
-                //span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, %x, %x, dist %d\n", s->angles[j], s->start_angles[0], s->angles[j | 0x1], s->start_angles[1], i);
+            j = i & 0xF;
+            ang = (s->angles[j] - s->start_angles[0])/i
+                + (s->angles[j | 0x1] - s->start_angles[1])/i;
+            s->carrier_phase_rate += 3*(ang/20);
+            //span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, %x, %x, dist %d\n", s->angles[j], s->start_angles[0], s->angles[j | 0x1], s->start_angles[1], i);
 
-                s->start_angles[0] = s->angles[j];
-                s->start_angles[1] = s->angles[j | 0x1];
-            }
+            s->start_angles[0] = s->angles[j];
+            s->start_angles[1] = s->angles[j | 0x1];
             //span_log(&s->logging, SPAN_LOG_FLOW, "%d %d %d %d %d\n", s->angles[s->training_count & 0xF], s->start_angles[0], s->angles[(s->training_count | 0x1) & 0xF], s->start_angles[1], s->training_count);
             span_log(&s->logging, SPAN_LOG_FLOW, "First coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
 
@@ -1219,7 +1212,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v17_rx_fillin(v17_rx_state_t *s, int len)
+SPAN_DECLARE_NONSTD(int) v17_rx_fillin(v17_rx_state_t *s, int len)
 {
     int i;
 
@@ -1343,15 +1336,14 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     s->distances[0] = 0;
     s->trellis_ptr = 14;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "Phase rates %f %f\n", dds_frequencyf(s->carrier_phase_rate), dds_frequencyf(s->carrier_phase_rate_save));
     s->carrier_phase = 0;
     power_meter_init(&(s->power), 4);
 
     if (s->short_train)
     {
         s->carrier_phase_rate = s->carrier_phase_rate_save;
-        s->agc_scaling = s->agc_scaling_save;
         equalizer_restore(s);
+        s->agc_scaling = s->agc_scaling_save;
         /* Don't allow any frequency correction at all, until we start to pull the phase in. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
         s->carrier_track_i = 0;
@@ -1366,18 +1358,19 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
         equalizer_reset(s);
 #if defined(SPANDSP_USE_FIXED_POINTx)
-        s->agc_scaling_save = 0;
+        //s->agc_scaling_save = 0;
         s->agc_scaling = (float) FP_FACTOR*32768.0f*0.0017f/RX_PULSESHAPER_GAIN;
         s->carrier_track_i = 5000;
         s->carrier_track_p = 40000;
 #else
-        s->agc_scaling_save = 0.0f;
+        //s->agc_scaling_save = 0.0f;
         s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
         s->carrier_track_i = 5000.0f;
         s->carrier_track_p = 40000.0f;
 #endif
     }
     s->last_sample = 0;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Phase rates %f %f\n", dds_frequencyf(s->carrier_phase_rate), dds_frequencyf(s->carrier_phase_rate_save));
 
     /* Initialise the working data for symbol timing synchronisation */
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -1432,8 +1425,13 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     s->short_train = FALSE;
     //s->scrambler_tap = 18 - 1;
     v17_rx_signal_cutoff(s, -45.5f);
-    s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    s->agc_scaling_save = 0;
+    s->agc_scaling = (float) FP_FACTOR*32768.0f*0.0017f/RX_PULSESHAPER_GAIN;
+#else
     s->agc_scaling_save = 0.0f;
+    s->agc_scaling = 0.0017f/RX_PULSESHAPER_GAIN;
+#endif
     s->carrier_phase_rate_save = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
     v17_rx_restart(s, bit_rate, s->short_train);
     return s;

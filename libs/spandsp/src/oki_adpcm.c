@@ -26,8 +26,6 @@
  *
  * The actual OKI ADPCM encode and decode method is derived from freely
  * available code, whose exact origins seem uncertain.
- *
- * $Id: oki_adpcm.c,v 1.32 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -153,7 +151,7 @@ static const float cutoff_coeffs[] =
 
 static int16_t decode(oki_adpcm_state_t *s, uint8_t adpcm)
 {
-    int16_t e;
+    int16_t d;
     int16_t ss;
     int16_t linear;
 
@@ -170,20 +168,20 @@ static int16_t decode(oki_adpcm_state_t *s, uint8_t adpcm)
      */
 
     ss = step_size[s->step_index];
-    e = ss >> 3;
+    d = ss >> 3;
     if (adpcm & 0x01)
-        e += (ss >> 2);
+        d += (ss >> 2);
     /*endif*/
     if (adpcm & 0x02)
-        e += (ss >> 1);
+        d += (ss >> 1);
     /*endif*/
     if (adpcm & 0x04)
-        e += ss;
+        d += ss;
     /*endif*/
     if (adpcm & 0x08)
-        e = -e;
+        d = -d;
     /*endif*/
-    linear = s->last + e;
+    linear = s->last + d;
 
     /* Saturate the values to +/- 2^11 (supposed to be 12 bits) */
     if (linear > 2047)
@@ -206,32 +204,32 @@ static int16_t decode(oki_adpcm_state_t *s, uint8_t adpcm)
 
 static uint8_t encode(oki_adpcm_state_t *s, int16_t linear)
 {
-    int16_t e;
+    int16_t d;
     int16_t ss;
     uint8_t adpcm;
 
     ss = step_size[s->step_index];
-    e = (linear >> 4) - s->last;
+    d = (linear >> 4) - s->last;
     adpcm = (uint8_t) 0x00;
-    if (e < 0)
+    if (d < 0)
     {
         adpcm = (uint8_t) 0x08;
-        e = -e;
+        d = -d;
     }
     /*endif*/
-    if (e >= ss)
+    if (d >= ss)
     {
         adpcm |= (uint8_t) 0x04;
-        e -= ss;
+        d -= ss;
     }
     /*endif*/
-    if (e >= (ss >> 1))
+    if (d >= (ss >> 1))
     {
         adpcm |= (uint8_t) 0x02;
-        e -= ss;
+        d -= (ss >> 1);
     }
     /*endif*/
-    if (e >= (ss >> 2))
+    if (d >= (ss >> 2))
         adpcm |= (uint8_t) 0x01;
     /*endif*/
 
