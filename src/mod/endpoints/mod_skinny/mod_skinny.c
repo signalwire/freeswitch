@@ -143,6 +143,32 @@ skinny_profile_t *skinny_find_profile(const char *profile_name)
 	return profile;
 }
 
+skinny_profile_t *skinny_find_profile_by_domain(const char *domain_name)
+{
+
+	switch_hash_index_t *hi;
+	void *val;
+	skinny_profile_t *profile = NULL, *tmp_profile;
+
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		tmp_profile = (skinny_profile_t *) val;
+
+		switch_mutex_lock(tmp_profile->listener_mutex);
+		if (!strcmp(tmp_profile->domain, domain_name)) {
+			profile = tmp_profile;
+		}
+		switch_mutex_unlock(tmp_profile->listener_mutex);
+		if (profile) {
+			break;
+		}
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	return profile;
+}
+
 switch_status_t skinny_profile_find_listener_by_device_name(skinny_profile_t *profile, const char *device_name, listener_t **listener)
 {
 	listener_t *l;
@@ -1877,8 +1903,8 @@ static void skinny_message_waiting_event_handler(switch_event_t *event)
 	}
 
 	if (!profile) {
-		if (!host || !(profile = skinny_find_profile(host))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile %s\n", switch_str_nil(host));
+		if (!host || !(profile = skinny_find_profile_by_domain(host))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile with domain %s\n", switch_str_nil(host));
 			switch_safe_free(dup_account);
 			return;
 		}
