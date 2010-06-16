@@ -1863,6 +1863,29 @@ SWITCH_STANDARD_API(fifo_api_function)
 		} else {
 			stream->write_function(stream, "none\n");
 		}
+	} else if (!strcasecmp(argv[0], "has_outbound")) {
+		if (argc < 2) {
+			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &var, NULL, &val);
+				node = (fifo_node_t *) val;
+				len = node_consumer_wait_count(node);
+				switch_mutex_lock(node->mutex);
+				stream->write_function(stream, "%s:%d\n", (char *) var, node->has_outbound);
+				switch_mutex_unlock(node->mutex);
+				x++;
+			}
+
+			if (!x) {
+				stream->write_function(stream, "none\n");
+			}
+		} else if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
+			len = node_consumer_wait_count(node);
+			switch_mutex_lock(node->mutex);
+			stream->write_function(stream, "%s:%d\n", argv[1], node->has_outbound);
+			switch_mutex_unlock(node->mutex);
+		} else {
+			stream->write_function(stream, "none\n");
+		}
 	} else {
 		stream->write_function(stream, "-ERR Usage: %s\n", FIFO_API_SYNTAX);
 	}
@@ -2158,6 +2181,9 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 {
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char *sql;
+	char outbound_count[80] = "";
+	callback_t cbt = { 0 };
+	fifo_node_t *node = NULL;
 
 	switch_md5_string(digest, (void *) originate_string, strlen(originate_string));
 
@@ -2165,6 +2191,24 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	switch_assert(sql);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	free(sql);
+
+	switch_mutex_lock(globals.mutex);
+        if (!(node = switch_core_hash_find(globals.fifo_hash, fifo_name))) {
+                node = create_node(fifo_name, 0, globals.sql_mutex);
+                node->ready = 1;
+        }
+        switch_mutex_unlock(globals.mutex);
+
+	cbt.buf = outbound_count;
+	cbt.len = sizeof(outbound_count);
+	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", node->name);
+	fifo_execute_sql_callback(globals.sql_mutex, sql, sql2str_callback, &cbt);
+	if (atoi(outbound_count) > 0) {
+        	node->has_outbound = 1;
+	} else {
+        	node->has_outbound = 0;
+	}
+	switch_safe_free(sql);	
 }
 
 #define FIFO_MEMBER_API_SYNTAX "[add <fifo_name> <originate_string> [<simo_count>] [<timeout>] [<lag>] | del <fifo_name> <originate_string>]"
@@ -2287,6 +2331,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	switch_console_set_complete("add fifo list");
 	switch_console_set_complete("add fifo list_verbose");
 	switch_console_set_complete("add fifo count");
+	switch_console_set_complete("add fifo has_outbound");
 	switch_console_set_complete("add fifo importance");
 
 	start_node_thread(globals.pool);
