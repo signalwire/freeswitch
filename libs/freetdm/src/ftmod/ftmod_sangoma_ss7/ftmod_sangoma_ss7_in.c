@@ -174,7 +174,7 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
         break;
     /**************************************************************************/
     case (FTDM_CHANNEL_STATE_DIALING):             /* glare */
-        SS7_ERROR("Got IAM in DIALING state...glare...queueing incoming call\n");
+        SS7_ERROR("Got IAM in DIALING state...glare!\n");
         
         /* the flag the channel as having a collision */
         sngss7_set_flag(sngss7_info, FLAG_GLARE);
@@ -184,6 +184,9 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
         sngss7_info->glare.suInstId = suInstId;
         sngss7_info->glare.spInstId = spInstId;
         sngss7_info->glare.circuit  = circuit;
+		SS7_DEBUG("Queuing incoming cal request on Circuit = %d (CIC # %d\n",
+					sngss7_info->glare.circuit,
+					sngss7_info->circuit->cic);
 
         break;
     /**************************************************************************/
@@ -464,7 +467,6 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
     switch (ftdmchan->state) {
     /**************************************************************************/
     case FTDM_CHANNEL_STATE_RING:
-    case FTDM_CHANNEL_STATE_DIALING:
     case FTDM_CHANNEL_STATE_PROGRESS:
     case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
     case FTDM_CHANNEL_STATE_UP:
@@ -482,6 +484,21 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 
         break;
     /**************************************************************************/
+    case FTDM_CHANNEL_STATE_DIALING:
+
+        /* pass the release code up to FTDM */
+        if (siRelEvnt->causeDgn.causeVal.pres) {
+            ftdmchan->caller_data.hangup_cause = siRelEvnt->causeDgn.causeVal.val;
+        } else {
+            SS7_ERROR("REL does not have a cause code!\n");
+            ftdmchan->caller_data.hangup_cause = 0;
+        }
+
+        /* move the state of the channel to TERMINATING to end the call */
+        ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+
+		break;
+	/**************************************************************************/
     default:
 
         /* fill in the channels SS7 Stack information */

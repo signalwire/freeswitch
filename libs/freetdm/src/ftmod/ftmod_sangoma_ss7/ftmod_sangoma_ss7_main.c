@@ -66,7 +66,7 @@ ftdm_state_map_t sangoma_ss7_state_map = {
             ZSD_INBOUND,
             ZSM_UNACCEPTABLE,
             {FTDM_CHANNEL_STATE_RESTART, FTDM_END},
-            {FTDM_CHANNEL_STATE_DOWN, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_END}
+            {FTDM_CHANNEL_STATE_DOWN, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END}
         },
         {
             ZSD_INBOUND,
@@ -179,7 +179,7 @@ ftdm_state_map_t sangoma_ss7_state_map = {
             ZSD_OUTBOUND,
             ZSM_UNACCEPTABLE,
             {FTDM_CHANNEL_STATE_DIALING, FTDM_END},
-            {FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+            {FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_DOWN, FTDM_CHANNEL_STATE_CANCEL, FTDM_END}
         },
         {
             ZSD_OUTBOUND,
@@ -393,6 +393,13 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             break;
         }
 
+		/* kill t35 if active */
+		if (sngss7_info->t35.heartbeat_timer) {
+			ftdm_sched_cancel_timer(sngss7_info->t35.sched, &sngss7_info->t35.heartbeat_timer);
+		} 
+
+
+
         SS7_DEBUG("Sending incoming call from %s to %s to FTDM core\n",
                         ftdmchan->caller_data.ani.digits,
                         ftdmchan->caller_data.dnis.digits);
@@ -414,6 +421,9 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             break;
         }
 
+		/* clear the glare flag if it is on from a preivous call */
+		sngss7_clear_flag(sngss7_info, FLAG_GLARE);
+
         /*call sangoma_ss7_dial to make outgoing call*/
         ft_to_sngss7_iam(ftdmchan);
 
@@ -430,6 +440,7 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
 
         /*check if the channel is inbound or outbound*/
         if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+
                 /*OUTBOUND...so we were told by the line of this so noifiy the user*/
                 sigev.event_id = FTDM_SIGEVENT_PROGRESS;
                 ftdm_span_send_signal(ftdmchan->span, &sigev);
@@ -576,6 +587,11 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
             break;
         }
 
+		/* check if t35 is active */
+		if (sngss7_info->t35.heartbeat_timer) {
+			ftdm_sched_cancel_timer(sngss7_info->t35.sched, &sngss7_info->t35.heartbeat_timer);
+		}
+
         /* check if there is a reset response that needs to be sent */
         if (sngss7_test_flag(sngss7_info, FLAG_RESET_RX)) {
             /* send a RLC */
@@ -621,27 +637,34 @@ static void ftdm_sangoma_ss7_process_state_change(ftdm_channel_t *ftdmchan)
 
         /* check if the circuit has the glare flag up */
         if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
-            SS7_DEBUG("Glare flag is up....spoofing incoming call on span=%d, chan=%d\n",
-                        ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
-            /* clear all the call specific data */
-            sngss7_info->suInstId = 0;
-            sngss7_info->spInstId = 0;
-            sngss7_info->globalFlg = 0;
-            sngss7_info->spId = 0;
-            sngss7_info->flags = 0;
+				sngss7_info->suInstId = 0;
+				sngss7_info->spInstId = 0;
+				sngss7_info->globalFlg = 0;
+				sngss7_info->spId = 0;
+				sngss7_info->flags = 0;
+				sngss7_set_flag(sngss7_info, FLAG_GLARE);
 
-            /* close the channel */
-            if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-                ftdm_channel_t *close_chan = ftdmchan;
-                /* close the channel */
-                ftdm_channel_close(&close_chan);
-            }
+				/* close the channel */
+				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
+					ftdm_channel_t *close_chan = ftdmchan;
+					/* close the channel */
+					ftdm_channel_close(&close_chan);
+				}
 
-            /* spoof an incoming call */
-            sngss7_con_ind(sngss7_info->glare.suInstId, 
-                           sngss7_info->glare.spInstId, 
-                           sngss7_info->glare.circuit, 
-                           &sngss7_info->glare.iam);
+			/* check if the glare was caused by in incoming call aka glare structure is valid */
+			if (sngss7_info->glare.circuit != 0) {
+				SS7_DEBUG("Glare flag is up....spoofing incoming call on span=%d, chan=%d (Cir=%d)\n",
+							ftdmchan->physical_span_id,
+							ftdmchan->physical_chan_id,
+							sngss7_info->glare.circuit);
+				/* clear all the call specific data */	
+
+				/* spoof an incoming call */
+				sngss7_con_ind(sngss7_info->glare.suInstId, 
+							sngss7_info->glare.spInstId, 
+							sngss7_info->glare.circuit, 
+							&sngss7_info->glare.iam);
+			}
         } else {
             /* clear all of the call specific data store in the channel structure */
             sngss7_info->suInstId = 0;
@@ -873,13 +896,26 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
             /* lock the channel while we check whether it is availble */
             ftdm_mutex_lock(ftdmchan->mutex);
 
+			/* check if there is a pending state change, give it a bit to clear */
+			if (check_for_state_change(ftdmchan)) {
+				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
+				ftdm_mutex_unlock(ftdmchan->mutex);
+				SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+				return FTDM_FAIL;
+			};
+
             /* extract the sngss7_chan_data structure */
             sngss7_info = (sngss7_chan_data_t  *)ftdmchan->call_data;
 
             if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
                 SS7_ERROR("Glare flag on span=%d,chan=%d\n",
                             ftdmchan->physical_span_id,ftdmchan->physical_chan_id);
- 
+
+				/* kill the timer */
+				if (sngss7_info->t35.heartbeat_timer) {
+					ftdm_sched_cancel_timer(sngss7_info->t35.sched, &sngss7_info->t35.heartbeat_timer);
+				}
+
                 goto outgoing_glare;
             }
 
@@ -895,11 +931,11 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
                 break;
             /******************************************************************/
             default:
-                SS7_ERROR("Channel in invalid state (%s) on span=%d,chan=%d...glare\n",
+                SS7_ERROR("Channel in invalid state (%s) on span=%d,chan=%d...fail\n",
                         ftdm_channel_state2str(ftdmchan->state),
                         ftdmchan->physical_span_id,
                         ftdmchan->physical_chan_id);
-                goto outgoing_glare;
+                goto outgoing_fail;
                 break;
             /******************************************************************/
             }
@@ -933,6 +969,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
     /**************************************************************************/
     }
 
+outgoing_fail:
     SS7_DEBUG("Call Request on span=%d, chan=%d failed\n");
     /* unlock the channel */
     ftdm_mutex_unlock(ftdmchan->mutex);  
