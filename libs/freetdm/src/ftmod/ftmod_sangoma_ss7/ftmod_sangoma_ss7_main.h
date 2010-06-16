@@ -44,10 +44,12 @@
 #include <ctype.h>
 
 #include "private/ftdm_core.h"
-
+/*
 #include "sng_sit.h"
-#include "sng_ss7.h"
 #include "sng_ss7_error.h"
+*/
+#include "sng_ss7.h"
+
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/

@@ -39,7 +39,7 @@ library_includedir = $(PREFIX)/include
 INCS      = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/isdn/include -I$(FT_SRCDIR)/$(SRC)/include/private
 INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost
 if SNGSS7
-INCS += -I/usr/include/wanpipe/sng_ss7/
+INCS += -I/usr/include/sng_ss7/
 endif 
 MY_CFLAGS = $(INCS) $(FTDM_CFLAGS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
