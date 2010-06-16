@@ -1247,7 +1247,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 
-		if (ftdm_channel_call_place(ftdmchan) != FTDM_SUCCESS) {
+		if ((status = ftdm_channel_call_place(ftdmchan)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);
 			}
@@ -1256,8 +1256,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				switch_core_codec_destroy(&tech_pvt->write_codec);
 			}
 			switch_core_session_destroy(new_session);
+			if (status == FTDM_BREAK) {
+				ftdmchan = NULL;
+			}
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-            		goto fail;
+            goto fail;
 		}
 
 		ftdm_channel_init(ftdmchan);
