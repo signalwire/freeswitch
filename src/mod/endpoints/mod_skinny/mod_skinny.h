@@ -51,6 +51,7 @@ struct skinny_globals {
     switch_hash_t *profile_hash;
     switch_event_node_t *heartbeat_node;
     switch_event_node_t *call_state_node;
+    switch_event_node_t *message_waiting_node;
 };
 typedef struct skinny_globals skinny_globals_t;
 

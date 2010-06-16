@@ -1018,13 +1018,22 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 								"ring_on_idle, ring_on_active, busy_trigger, "
 	  							"forward_all, forward_busy, forward_noanswer, noanswer_duration) "
 								"VALUES('%s', %d, %d, %d, '%s', '%s', '%s', %d, %d, %d, '%s', '%s', '%s', %d)",
-							request->data.reg.device_name, request->data.reg.instance, position, line_instance++,
+							request->data.reg.device_name, request->data.reg.instance, position, line_instance,
 							label, value, caller_name,
 							ring_on_idle, ring_on_active, busy_trigger,
 	  						forward_all, forward_busy, forward_noanswer, noanswer_duration))) {
 						skinny_execute_sql(profile, sql, profile->sql_mutex);
 						switch_safe_free(sql);
 					}
+					if (line_instance == 1) {
+						switch_event_t *message_query_event = NULL;
+						if (switch_event_create(&message_query_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header(message_query_event, SWITCH_STACK_BOTTOM, "Message-Account", "skinny:%s@%s", value, profile->domain);
+							switch_event_add_header_string(message_query_event, SWITCH_STACK_BOTTOM, "VM-Skinny-Profile", profile->name);
+							switch_event_fire(&message_query_event);
+						}
+					}
+					line_instance++;
 				} else {
 					const char *settings = switch_xml_attr_soft(xbutton, "settings");
 					if ((sql = switch_mprintf(

@@ -1815,6 +1815,95 @@ static void skinny_call_state_event_handler(switch_event_t *event)
 	}
 }
 
+struct skinny_message_waiting_event_handler_helper {
+	skinny_profile_t *profile;
+	switch_bool_t yn;
+	int total_new_messages;
+	int total_saved_messages;
+	int total_new_urgent_messages;
+	int total_saved_urgent_messages;
+};
+
+int skinny_message_waiting_event_handler_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *device_name = argv[0];
+	uint32_t device_instance = atoi(argv[1]);
+
+	struct skinny_message_waiting_event_handler_helper *helper = pArg;
+	listener_t *listener = NULL;
+
+	skinny_profile_find_listener_by_device_name_and_instance(helper->profile,
+		device_name, device_instance, &listener);
+
+	if (listener) {
+		if (helper->yn == SWITCH_TRUE) {
+			char buffer[32];
+			send_set_lamp(listener, SKINNY_BUTTON_VOICEMAIL, 0, SKINNY_LAMP_ON);
+			sprintf(buffer, "%s: (%d/%d urgents)", SKINNY_DISP_YOU_HAVE_VOICEMAIL, helper->total_new_messages, helper->total_new_urgent_messages);
+			send_display_pri_notify(listener, 5, 10, buffer);
+		} else {
+			send_set_lamp(listener, SKINNY_BUTTON_VOICEMAIL, 0, SKINNY_LAMP_OFF);
+			send_clear_prompt_status(listener, 0, 0);
+		}
+	}
+	return 0;
+}
+
+static void skinny_message_waiting_event_handler(switch_event_t *event)
+{
+	char *account, *dup_account, *yn, *host, *user, *count_str;
+	char *pname = NULL;
+	skinny_profile_t *profile = NULL;
+	char *sql;
+
+	if (!(account = switch_event_get_header(event, "mwi-message-account"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Message-Account'\n");
+		return;
+	}
+
+	if (!(yn = switch_event_get_header(event, "mwi-messages-waiting"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
+		return;
+	}
+	dup_account = strdup(account);
+	switch_assert(dup_account != NULL);
+	switch_split_user_domain(dup_account, &user, &host);
+
+
+	if ((pname = switch_event_get_header(event, "skinny-profile"))) {
+		if (!(profile = skinny_find_profile(pname))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No profile %s\n", pname);
+		}
+	}
+
+	if (!profile) {
+		if (!host || !(profile = skinny_find_profile(host))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile %s\n", switch_str_nil(host));
+			switch_safe_free(dup_account);
+			return;
+		}
+	}
+
+	count_str = switch_event_get_header(event, "mwi-voice-message");
+
+	if ((sql = switch_mprintf(
+			"SELECT device_name, device_instance FROM skinny_lines "
+				"WHERE value='%s' AND line_instance=1", user))) {
+		struct skinny_message_waiting_event_handler_helper helper = {0};
+		helper.profile = profile;
+		helper.yn = switch_true(yn);
+		if (count_str) {
+			sscanf(count_str,"%d/%d (%d/%d)",
+				&helper.total_new_messages, &helper.total_saved_messages,
+				&helper.total_new_urgent_messages, &helper.total_saved_urgent_messages);
+		}
+		skinny_execute_sql_callback(profile, profile->sql_mutex, sql,  skinny_message_waiting_event_handler_callback, &helper);
+		switch_safe_free(sql);
+	}
+
+	switch_safe_free(dup_account);
+}
+
 
 /*****************************************************************************/
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
@@ -1841,6 +1930,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our call_state handler!\n");
 		return SWITCH_STATUS_TERM;
+	}
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_WAITING, NULL, skinny_message_waiting_event_handler, NULL, &globals.message_waiting_node) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our message waiting handler!\n");
+		/* Not such severe to prevent loading */
 	}
 
 	/* reserve events */
@@ -1907,6 +2000,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	/* release events */
 	switch_event_unbind(&globals.heartbeat_node);
 	switch_event_unbind(&globals.call_state_node);
+	switch_event_unbind(&globals.message_waiting_node);
 	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
 	switch_event_free_subclass(SKINNY_EVENT_UNREGISTER);
 	switch_event_free_subclass(SKINNY_EVENT_EXPIRE);
