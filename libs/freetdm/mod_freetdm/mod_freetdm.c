@@ -1256,10 +1256,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				switch_core_codec_destroy(&tech_pvt->write_codec);
 			}
 			switch_core_session_destroy(new_session);
-			if (status == FTDM_BREAK) {
+			if (status == FTDM_BREAK) { /* glare, we don't want to touch the channel since is being used for incoming call now */
+				cause = SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
 				ftdmchan = NULL;
+			} else {
+				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
             goto fail;
 		}
 
@@ -1271,7 +1273,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 fail:
 
 	if (ftdmchan) {
-		ftdm_channel_call_hangup_with_cause(ftdmchan, FTDM_CAUSE_SWITCH_CONGESTION);
+		ftdm_channel_call_hangup_with_cause(ftdmchan, FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE);
 	}
 
 	return cause;
