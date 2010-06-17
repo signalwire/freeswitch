@@ -40,8 +40,8 @@
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
 	char buf[2048];
-	const char *ip = t38_options->ip;
-	uint32_t port = t38_options->port;
+	const char *ip = t38_options->local_ip;
+	uint32_t port = t38_options->local_port;
 	const char *family = "IP4";
 	const char *username = tech_pvt->profile->username;
 
@@ -3409,13 +3409,13 @@ void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_
 	local_t38_options->T38FaxFillBitRemoval = t38_options->T38FaxFillBitRemoval;
 	local_t38_options->T38FaxTranscodingMMR = t38_options->T38FaxTranscodingMMR;
 	local_t38_options->T38FaxTranscodingJBIG = t38_options->T38FaxTranscodingJBIG;
-	local_t38_options->T38FaxRateManagement = t38_options->T38FaxRateManagement;
+	local_t38_options->T38FaxRateManagement = switch_core_session_strdup(session, t38_options->T38FaxRateManagement);
 	local_t38_options->T38FaxMaxBuffer = t38_options->T38FaxMaxBuffer;
 	local_t38_options->T38FaxMaxDatagram = t38_options->T38FaxMaxDatagram;
-	local_t38_options->T38FaxUdpEC = t38_options->T38FaxUdpEC;
-	local_t38_options->T38VendorInfo = t38_options->T38VendorInfo;
-	local_t38_options->ip = NULL;
-	local_t38_options->port = 0;
+	local_t38_options->T38FaxUdpEC = switch_core_session_strdup(session, t38_options->T38FaxUdpEC);
+	local_t38_options->T38VendorInfo = switch_core_session_strdup(session, t38_options->T38VendorInfo);
+	local_t38_options->remote_ip = switch_core_session_strdup(session, t38_options->remote_ip);
+	local_t38_options->remote_port = t38_options->remote_port;
 	
 
 	switch_channel_set_private(channel, "t38_options", local_t38_options);
@@ -3430,12 +3430,12 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 		t38_options = switch_core_session_alloc(tech_pvt->session, sizeof(switch_t38_options_t));
 	}
 			
-	t38_options->port = m->m_port;
+	t38_options->remote_port = m->m_port;
 	
 	if (m->m_connections) {
-		t38_options->ip = switch_core_session_strdup(tech_pvt->session, m->m_connections->c_address);
+		t38_options->remote_ip = switch_core_session_strdup(tech_pvt->session, m->m_connections->c_address);
 	} else if (sdp && sdp->sdp_connection) {
-		t38_options->ip = switch_core_session_strdup(tech_pvt->session, sdp->sdp_connection->c_address);
+		t38_options->remote_ip = switch_core_session_strdup(tech_pvt->session, sdp->sdp_connection->c_address);
 	}
 	
 	for (attr = m->m_attributes; attr; attr = attr->a_next) {

@@ -754,8 +754,10 @@ typedef struct {
 	uint32_t T38FaxMaxDatagram;
 	const char *T38FaxUdpEC;
 	const char *T38VendorInfo;
-	const char *ip;
-	uint32_t port;
+	const char *remote_ip;
+	uint32_t remote_port;
+	const char *local_ip;
+	uint32_t local_port;
 } switch_t38_options_t;
 
 /*!

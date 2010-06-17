@@ -1024,15 +1024,50 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_sessi
 	return rtp_session->remote_port;
 }
 
+static void ping_socket(switch_rtp_t *rtp_session)
+{
+	uint32_t o = UINT_MAX;
+	switch_size_t len = sizeof(o);
+	switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
+
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && rtp_session->rtcp_sock_input) {
+		switch_socket_sendto(rtp_session->rtcp_sock_input, rtp_session->rtcp_local_addr, 0, (void *) &o, &len);
+	}
+}
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session) 
 {
+	switch_socket_t *sock;
+
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
 
 	if (rtp_session->timer.timer_interface) {
 		switch_core_timer_destroy(&rtp_session->timer);
 		memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
+	}
+
+	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP);
+
+	if (rtp_session->rtcp_sock_input) {
+		ping_socket(rtp_session);
+		switch_socket_shutdown(rtp_session->rtcp_sock_input, SWITCH_SHUTDOWN_READWRITE);
+	}
+
+	if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
+		switch_socket_shutdown(rtp_session->rtcp_sock_output, SWITCH_SHUTDOWN_READWRITE);
+	}
+
+	if ((sock = rtp_session->rtcp_sock_input)) {
+		rtp_session->rtcp_sock_input = NULL;
+		switch_socket_close(sock);
+
+		if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != sock) {
+			if ((sock = rtp_session->rtcp_sock_output)) {
+				rtp_session->rtcp_sock_output = NULL;
+				switch_socket_close(sock);
+			}
+		}
 	}
 
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_UDPTL);
@@ -1619,17 +1654,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void ping_socket(switch_rtp_t *rtp_session)
-{
-	uint32_t o = UINT_MAX;
-	switch_size_t len = sizeof(o);
-	switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
-
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && rtp_session->rtcp_sock_input) {
-		switch_socket_sendto(rtp_session->rtcp_sock_input, rtp_session->rtcp_local_addr, 0, (void *) &o, &len);
-	}
-}
-
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 {
 	if (!switch_rtp_ready(rtp_session)) {
@@ -1737,6 +1761,18 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		sock = (*rtp_session)->sock_output;
 		(*rtp_session)->sock_output = NULL;
 		switch_socket_close(sock);
+	}
+
+	if ((sock = (*rtp_session)->rtcp_sock_input)) {
+		(*rtp_session)->rtcp_sock_input = NULL;
+		switch_socket_close(sock);
+
+		if ((*rtp_session)->rtcp_sock_output && (*rtp_session)->rtcp_sock_output != sock) {
+			if ((sock = (*rtp_session)->rtcp_sock_output)) {
+				(*rtp_session)->rtcp_sock_output = NULL;
+				switch_socket_close(sock);
+			}
+		}
 	}
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {

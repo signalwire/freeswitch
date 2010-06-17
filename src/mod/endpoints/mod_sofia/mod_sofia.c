@@ -1195,6 +1195,39 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static void start_udptl(private_object_t *tech_pvt, switch_t38_options_t *t38_options)
+{
+
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
+		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+		const char *err, *val;
+
+		switch_rtp_udptl_mode(tech_pvt->rtp_session);
+
+		if (remote_host && remote_port && !strcmp(remote_host, t38_options->remote_ip) && remote_port == t38_options->remote_port) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
+							  t38_options->remote_ip, t38_options->remote_port);
+			return;
+		}
+				
+		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, t38_options->remote_ip,
+										  t38_options->remote_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "IMAGE UDPTL REPORTS ERROR: [%s]\n", err);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "IMAGE UDPTL CHANGING DEST TO: [%s:%d]\n",
+							  t38_options->remote_ip, t38_options->remote_port);
+			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
+				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_udptl_auto_adjust")) && switch_true(val))) {
+				/* Reactivate the NAT buster flag. */
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			}
+		}
+	}
+}
+
+
 static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	private_object_t *tech_pvt;
@@ -1528,12 +1561,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 				goto end_lock;
 			}
+			
+			start_udptl(tech_pvt, t38_options);
 
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				switch_rtp_udptl_mode(tech_pvt->rtp_session);
-			}
 		}
-		break;
 	case SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION:
 		{
 			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
@@ -1543,13 +1574,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				goto end_lock;
 			}
 
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				switch_rtp_udptl_mode(tech_pvt->rtp_session);
-			}
+			start_udptl(tech_pvt, t38_options);
 
-			
 			sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
-
+			
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				if (sofia_use_soa(tech_pvt)) {

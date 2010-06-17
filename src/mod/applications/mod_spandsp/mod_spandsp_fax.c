@@ -741,14 +741,11 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxMaxDatagram = %d\n", t38_options->T38FaxMaxDatagram);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxUdpEC = '%s'\n", t38_options->T38FaxUdpEC);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38VendorInfo = '%s'\n", switch_str_nil(t38_options->T38VendorInfo));
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ip = '%s'\n", t38_options->ip ? t38_options->ip : "Not specified");
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "port = %d\n", t38_options->port);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ip = '%s'\n", 
+                          t38_options->remote_ip ? t38_options->remote_ip : "Not specified");
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "port = %d\n", t38_options->remote_port);
 
         /* Time to practice our negotiating skills, by editing the t38_options */
-
-        /* use default IP/PORT */
-        t38_options->ip = NULL;
-        t38_options->port = 0;
 
         if (t38_options->T38FaxVersion > 3) {
             t38_options->T38FaxVersion = 3;
@@ -835,9 +832,6 @@ static t38_mode_t request_t38(pvt_t *pvt)
         t38_options->T38FaxUdpEC = "t38UDPRedundancy";
         t38_options->T38VendorInfo = "0 0 0";
         
-        /* use default IP/PORT */
-        t38_options->ip = NULL;
-        t38_options->port = 0;
         switch_channel_set_private(channel, "t38_options", t38_options);
         pvt->t38_mode = T38_MODE_REQUESTED;
 
