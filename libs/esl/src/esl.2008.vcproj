@@ -299,6 +299,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\esl_json.c"
+				>
+			</File>
+			<File
 				RelativePath=".\esl_threadmutex.c"
 				>
 			</File>
@@ -318,6 +322,10 @@
 			</File>
 			<File
 				RelativePath=".\include\esl_event.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\esl_json.h"
 				>
 			</File>
 			<File
