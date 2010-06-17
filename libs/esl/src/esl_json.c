@@ -33,8 +33,8 @@ static int cJSON_strcasecmp(const char *s1,const char *s2)
 	return tolower(*(const unsigned char *)s1) - tolower(*(const unsigned char *)s2);
 }
 
-static void *(*cJSON_malloc)(size_t sz) = malloc;
-static void (*cJSON_free)(void *ptr) = free;
+static void *(*cJSON_malloc)(size_t sz);
+static void (*cJSON_free)(void *ptr);
 
 static char* cJSON_strdup(const char* str)
 {
@@ -158,7 +158,7 @@ static const char *parse_string(cJSON *item,const char *str)
 					switch (len) {
 						case 3: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
 						case 2: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
-						case 1: *--ptr2 =(uc | firstByteMark[len]);
+						case 1: *--ptr2 =(char)(uc | firstByteMark[len]);
 					}
 					ptr2+=len;ptr+=4;
 					break;

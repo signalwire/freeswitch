@@ -413,7 +413,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	int pindex = -1;
 	char bug_key[256] = "";
 	int send_ringback = 0;
-	uint32_t ring_ready_val = 0;
+	uint8_t ring_ready_val = 0;
 
 	oglobals->hups = 0;
 	oglobals->idx = IDX_NADA;
@@ -452,7 +452,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			continue;
 		}
 
-		if ((ring_ready_val = switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY))) {
+		if ((ring_ready_val = (uint8_t)switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY))) {
 			if (!originate_status[i].ring_ready) {
 				originate_status[i].ring_ready = ring_ready_val;
 			}
