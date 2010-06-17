@@ -33,8 +33,18 @@ static int cJSON_strcasecmp(const char *s1,const char *s2)
 	return tolower(*(const unsigned char *)s1) - tolower(*(const unsigned char *)s2);
 }
 
-static void *(*cJSON_malloc)(size_t sz);
-static void (*cJSON_free)(void *ptr);
+static void *glue_malloc(size_t theSize) 
+{ 
+	return(malloc(theSize)); 
+} 
+
+static void glue_free(void *thePtr) 
+{ 
+	free(thePtr); 
+} 
+
+static void *(*cJSON_malloc)(size_t sz) = glue_malloc;
+static void (*cJSON_free)(void *ptr) = glue_free;
 
 static char* cJSON_strdup(const char* str)
 {
