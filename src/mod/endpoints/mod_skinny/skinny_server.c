@@ -697,26 +697,30 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 	
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
-	 
-	send_stop_tone(listener, line_instance, tech_pvt->call_id);
-	send_open_receive_channel(listener,
-	    tech_pvt->call_id, /* uint32_t conference_id, */
-	    tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
-	    20, /* uint32_t packets, */
-	    SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
-	    0, /* uint32_t echo_cancel_type, */
-	    0, /* uint32_t g723_bitrate, */
-	    0, /* uint32_t conference_id2, */
-	    0 /* uint32_t reserved[10] */
-	);
-	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_CONNECTED);
-	send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
-	    SKINNY_KEY_SET_CONNECTED, 0xffff);
-	send_display_prompt_status(listener,
-	    0,
-	    SKINNY_DISP_CONNECTED,
-	    line_instance,
-	    tech_pvt->call_id);
+	
+	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+		send_stop_tone(listener, line_instance, tech_pvt->call_id);
+		send_open_receive_channel(listener,
+			tech_pvt->call_id, /* uint32_t conference_id, */
+			tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
+			20, /* uint32_t packets, */
+			SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+			0, /* uint32_t echo_cancel_type, */
+			0, /* uint32_t g723_bitrate, */
+			0, /* uint32_t conference_id2, */
+			0 /* uint32_t reserved[10] */
+		);
+	}
+	if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+		skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_CONNECTED);
+		send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
+			SKINNY_KEY_SET_CONNECTED, 0xffff);
+		send_display_prompt_status(listener,
+			0,
+			SKINNY_DISP_CONNECTED,
+			line_instance,
+			tech_pvt->call_id);
+	}
 	skinny_session_send_call_info(session, listener, line_instance);
 
 	return SWITCH_STATUS_SUCCESS;

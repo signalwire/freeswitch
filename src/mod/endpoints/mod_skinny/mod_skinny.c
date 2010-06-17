@@ -972,15 +972,26 @@ switch_status_t channel_answer_channel(switch_core_session_t *session)
 
 switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
+	private_t *tech_pvt = switch_core_session_get_private(session);
+
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
+			switch_clear_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			channel_answer_channel(session);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 			skinny_session_send_call_info_all(session);
+		}
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		{
+			if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+				/* early media */
+				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+				channel_answer_channel(session);
+			}
 		}
 	default:
 		break;

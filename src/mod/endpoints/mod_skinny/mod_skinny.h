@@ -146,10 +146,11 @@ typedef switch_status_t (*skinny_listener_callback_func_t) (listener_t *listener
 /* CHANNEL TYPES */
 /*****************************************************************************/
 typedef enum {
-    TFLAG_IO = (1 << 0),
-    TFLAG_READING = (1 << 9),
-    TFLAG_WRITING = (1 << 10),
-    TFLAG_FORCE_ROUTE = (1 << 11)
+    TFLAG_FORCE_ROUTE = (1 << 0),
+    TFLAG_EARLY_MEDIA = (1 << 1),
+    TFLAG_IO = (1 << 2),
+    TFLAG_READING = (1 << 3),
+    TFLAG_WRITING = (1 << 4)
 } TFLAGS;
 
 typedef enum {
