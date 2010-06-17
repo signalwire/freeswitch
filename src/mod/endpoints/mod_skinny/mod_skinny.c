@@ -798,7 +798,6 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 	char *sql;
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
@@ -938,12 +937,6 @@ switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
-		switch_swap_linear(frame->data, (int) frame->datalen / 2);
-	}
-#endif
-
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	switch_rtp_write_frame(tech_pvt->rtp_session, frame);
