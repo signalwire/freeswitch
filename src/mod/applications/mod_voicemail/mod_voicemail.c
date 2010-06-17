@@ -1417,12 +1417,20 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	switch_file_handle_t fh = { 0 };
 	cc_t cc = { 0 };
 	char *forward_file_path = NULL;
-
+	switch_core_session_message_t msg = { 0 };
+	char cid_buf[1024];
 
 	if (switch_channel_ready(channel)) {
 
-		args.input_callback = cancel_on_dtmf;
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
 
+		msg.from = __FILE__;
+		msg.string_arg = cid_buf;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		switch_core_session_receive_message(session, &msg);
+
+		args.input_callback = cancel_on_dtmf;
+		
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->listen_file_key, profile->save_file_key,
 						profile->delete_file_key, profile->email_key, profile->callback_key,
 						profile->forward_key, cbt->email ? ":" : "", cbt->email ? cbt->email : "");
@@ -1436,6 +1444,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_MESSAGE_NUMBER_MACRO, input, NULL, &args));
 
 	  play_file:
+
 		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_FIRST)) {
 			cc.fh = NULL;
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_DATE_MACRO, cbt->created_epoch, NULL, &args));

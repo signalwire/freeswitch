@@ -785,7 +785,7 @@ SWITCH_STANDARD_APP(display_function)
 {
 	switch_core_session_message_t msg = { 0 };
 
-	/* Tell the channel to redirect */
+	/* Tell the channel to change display */
 	msg.from = __FILE__;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
