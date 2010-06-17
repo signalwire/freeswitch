@@ -1068,7 +1068,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event,
 		
 		if (name && value) {
 			if (!strcasecmp(name, "_body")) {
-				switch_event_add_body(new_event, value);
+				switch_event_add_body(new_event, value, SWITCH_VA_NONE);
 			} else {
 				if (!strcasecmp(name, "event-name")) {
 					switch_event_del_header(new_event, "event-name");
