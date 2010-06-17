@@ -1201,6 +1201,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 
+	if (switch_test_flag(session, SSF_THREAD_RUNNING) || switch_test_flag(session, SSF_THREAD_STARTED)) {
+		goto end;
+	}
+
 	switch_mutex_lock(session->mutex);
 
 	if (switch_test_flag(session, SSF_THREAD_RUNNING)) {
@@ -1222,6 +1226,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 	}
 
 	switch_mutex_unlock(session->mutex);
+
+ end:
 
 	return status;
 }

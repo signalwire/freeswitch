@@ -4454,6 +4454,8 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		const char *r_ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 		const char *r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 
+		sofia_set_flag(tech_pvt, TFLAG_RECOVERING);
+
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && ip && port) {
 			const char *tmp;
 			tech_pvt->iananame = tech_pvt->rm_encoding = (char *) switch_channel_get_variable(channel, "sip_use_codec_name");
@@ -4475,7 +4477,11 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 			tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
 			tech_pvt->adv_sdp_audio_port = tech_pvt->local_sdp_audio_port = atoi(port);
-			tech_pvt->local_sdp_audio_ip = tech_pvt->rtpip;
+
+			if ((tmp = switch_channel_get_variable(channel, "local_media_ip"))) {
+				tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(session, tmp);
+				tech_pvt->rtpip = tech_pvt->local_sdp_audio_ip;
+			}
 
 			if (r_ip && r_port) {
 				tech_pvt->remote_sdp_audio_ip = (char *) r_ip;
@@ -4518,11 +4524,12 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 			
-			sofia_glue_activate_rtp(tech_pvt, 0);
+			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+				switch_xml_free(xml);
+				return 0;
+			}
 		}
-
-		sofia_set_flag(tech_pvt, TFLAG_RECOVERING);
-
+		
 		if (switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
 			sofia_set_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE);
 		} else {
@@ -4548,6 +4555,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Resurrecting fallen channel %s\n", switch_channel_get_name(channel));
 
 	switch_core_session_thread_launch(session);
+
 	switch_xml_free(xml);
 
 	h->total++;

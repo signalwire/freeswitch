@@ -394,6 +394,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	const char *ps_cause = NULL, *use_my_cause;
 	const char *gateway_name = NULL;
 	sofia_gateway_t *gateway_ptr = NULL;
+	int rec;
 
 	if ((gateway_name = switch_channel_get_variable(channel, "sip_gateway_name"))) {
 		gateway_ptr = sofia_reg_find_gateway(gateway_name);
@@ -401,9 +402,12 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
+	rec = sofia_test_flag(tech_pvt, TFLAG_RECOVERING);
 	sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
 
-	sofia_glue_tech_untrack(tech_pvt->profile, session, SWITCH_TRUE);
+	if (!rec) {
+		sofia_glue_tech_untrack(tech_pvt->profile, session, SWITCH_TRUE);
+	}
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
