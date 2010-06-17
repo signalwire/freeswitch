@@ -132,6 +132,7 @@
 #include "switch_config.h"
 #include "switch_nat.h"
 #include "switch_odbc.h"
+#include "switch_json.h"
 
 #include <libteletone.h>
 

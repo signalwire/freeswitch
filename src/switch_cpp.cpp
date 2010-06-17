@@ -237,19 +237,28 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_name)
 {
 	switch_event_types_t event_id;
-	
-	if (switch_name_event(type, &event_id) != SWITCH_STATUS_SUCCESS) {
-		event_id = SWITCH_EVENT_MESSAGE;
-	}
 
-	if (!zstr(subclass_name) && event_id != SWITCH_EVENT_CUSTOM) {
-		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_WARNING, "Changing event type to custom because you specified a subclass name!\n");
-		event_id = SWITCH_EVENT_CUSTOM;
-	}
+	if (!strcasecmp(type, "json") && !zstr(subclass_name)) {
+        if (switch_event_create_json(&event, subclass_name) != SWITCH_STATUS_SUCCESS) {
+			return;
+		}
+		
+		event_id = event->event_id;
 
-	if (switch_event_create_subclass(&event, event_id, subclass_name) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to create event!\n");
-		event = NULL;
+    } else {
+		if (switch_name_event(type, &event_id) != SWITCH_STATUS_SUCCESS) {
+			event_id = SWITCH_EVENT_MESSAGE;
+		}
+
+		if (!zstr(subclass_name) && event_id != SWITCH_EVENT_CUSTOM) {
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_WARNING, "Changing event type to custom because you specified a subclass name!\n");
+			event_id = SWITCH_EVENT_CUSTOM;
+		}
+
+		if (switch_event_create_subclass(&event, event_id, subclass_name) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to create event!\n");
+			event = NULL;
+		}
 	}
 
 	serialized_string = NULL;
@@ -278,8 +287,6 @@ SWITCH_DECLARE_CONSTRUCTOR Event::~Event()
 
 SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 {
-	int isxml = 0;
-
 	this_check("");
 
 
@@ -290,10 +297,6 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 	}
 
 	if (format && !strcasecmp(format, "xml")) {
-		isxml++;
-	}
-
-	if (isxml) {
 		switch_xml_t xml;
 		if ((xml = switch_event_xmlize(event, SWITCH_VA_NONE))) {
 			serialized_string = switch_xml_toxml(xml, SWITCH_FALSE);
@@ -302,6 +305,9 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 		} else {
 			return "";
 		}
+	} else if (format && !strcasecmp(format, "json")) {
+		switch_event_serialize_json(event, &serialized_string);
+		return serialized_string;
 	} else {
 		if (switch_event_serialize(event, &serialized_string, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 			char *new_serialized_string = switch_mprintf("'%s'", serialized_string);

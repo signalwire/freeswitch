@@ -627,7 +627,7 @@ static JSBool event_serialize(JSContext * cx, JSObject * obj, uintN argc, jsval 
 {
 	struct event_obj *eo = JS_GetPrivate(cx, obj);
 	char *buf;
-	uint8_t isxml = 0;
+	uint8_t isxml = 0, isjson = 0;
 
 	if (!eo) {
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -638,6 +638,8 @@ static JSBool event_serialize(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		if (!strcasecmp(arg, "xml")) {
 			isxml++;
+		} else if (!strcasecmp(arg, "json")) {
+			isjson++;
 		}
 	}
 
@@ -651,6 +653,11 @@ static JSBool event_serialize(JSContext * cx, JSObject * obj, uintN argc, jsval 
 			free(xmlstr);
 		} else {
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+		}
+	} else if (isjson) {
+		if (switch_event_serialize_json(eo->event, &buf) == SWITCH_STATUS_SUCCESS) {
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
+			switch_safe_free(buf);
 		}
 	} else {
 		if (switch_event_serialize(eo->event, &buf, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {

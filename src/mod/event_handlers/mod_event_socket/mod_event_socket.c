@@ -61,7 +61,8 @@ typedef enum {
 
 typedef enum {
 	EVENT_FORMAT_PLAIN,
-	EVENT_FORMAT_XML
+	EVENT_FORMAT_XML,
+	EVENT_FORMAT_JSON
 } event_format_t;
 
 struct listener {
@@ -125,6 +126,20 @@ static struct {
 	int nat_map;
 } prefs;
 
+
+static const char *format2str(event_format_t format)
+{
+	switch (format) {
+	case EVENT_FORMAT_PLAIN:
+		return "plain";
+	case EVENT_FORMAT_XML:
+		return "xml";
+	case EVENT_FORMAT_JSON:
+		return "json";
+	}
+
+	return "invalid";
+}
 
 static void remove_listener(listener_t *listener);
 static void kill_all_listeners(void);
@@ -605,7 +620,7 @@ static void xmlize_listener(listener_t *listener, switch_stream_handle_t *stream
 {
 	stream->write_function(stream, " <listener>\n");
 	stream->write_function(stream, "  <listen-id>%u</listen-id>\n", listener->id);
-	stream->write_function(stream, "  <format>%s</format>\n", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
+	stream->write_function(stream, "  <format>%s</format>\n", format2str(listener->format));
 	stream->write_function(stream, "  <timeout>%u</timeout>\n", listener->timeout);
 	stream->write_function(stream, " </listener>\n");
 }
@@ -792,6 +807,8 @@ SWITCH_STANDARD_API(event_sink_function)
 
 			if (switch_stristr("xml", format)) {
 				listener->format = EVENT_FORMAT_XML;
+			} else if (switch_stristr("json", format)) {
+				listener->format = EVENT_FORMAT_JSON;
 			} else {
 				listener->format = EVENT_FORMAT_PLAIN;
 			}
@@ -931,6 +948,9 @@ SWITCH_STANDARD_API(event_sink_function)
 				etype = "plain";
 				switch_event_serialize(pevent, &listener->ebuf, SWITCH_TRUE);
 				stream->write_function(stream, "<event type=\"plain\">\n%s</event>", listener->ebuf);
+			} else if (listener->format == EVENT_FORMAT_JSON) {
+				etype = "json";
+				switch_event_serialize_json(pevent, &listener->ebuf);
 			} else {
 				switch_xml_t xml;
 				etype = "xml";
@@ -1219,6 +1239,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
 						switch_event_serialize(pevent, &listener->ebuf, SWITCH_TRUE);
+					} else if (listener->format == EVENT_FORMAT_JSON) {
+						etype = "json";
+						switch_event_serialize_json(pevent, &listener->ebuf);
 					} else {
 						switch_xml_t xml;
 						etype = "xml";
@@ -1846,6 +1869,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			if (strstr(cmd, "xml") || strstr(cmd, "XML")) {
 				listener->format = EVENT_FORMAT_XML;
 			}
+			if (strstr(cmd, "json") || strstr(cmd, "JSON")) {
+				listener->format = EVENT_FORMAT_JSON;
+			}
 			switch_snprintf(reply, reply_len, "+OK Events Enabled");
 			goto done;
 		}
@@ -2171,6 +2197,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					} else if (!strcasecmp(cur, "plain")) {
 						listener->format = EVENT_FORMAT_PLAIN;
 						goto end;
+					} else if (!strcasecmp(cur, "json")) {
+						listener->format = EVENT_FORMAT_JSON;
+						goto end;
 					}
 				}
 
@@ -2218,7 +2247,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 
-		switch_snprintf(reply, reply_len, "+OK event listener enabled %s", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
+		switch_snprintf(reply, reply_len, "+OK event listener enabled %s", format2str(listener->format));
 
 	} else if (!strncasecmp(cmd, "nixevent", 8)) {
 		char *next, *cur;

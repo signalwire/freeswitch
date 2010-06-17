@@ -1047,6 +1047,73 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event, const char *json)
+{
+	switch_event_t *new_event;
+	cJSON *cj, *cjp;
+
+
+	if (!(cj = cJSON_Parse(json))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_event_create(&new_event, SWITCH_EVENT_CLONE) != SWITCH_STATUS_SUCCESS) {
+		cJSON_Delete(cj);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	for (cjp = cj->child; cjp; cjp = cjp->next) {
+		char *name = cjp->string;
+		char *value = cjp->valuestring;
+		
+		if (name && value) {
+			if (!strcasecmp(name, "_body")) {
+				switch_event_add_body(new_event, value);
+			} else {
+				if (!strcasecmp(name, "event-name")) {
+					switch_event_del_header(new_event, "event-name");
+				}
+				
+				switch_name_event(value, &new_event->event_id);
+				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, name, value);
+			}
+
+		}
+	}
+	
+	cJSON_Delete(cj);
+	*event = new_event;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_event_serialize_json(switch_event_t *event, char **str)
+{
+	switch_event_header_t *hp;
+	cJSON *cj;
+
+	*str = NULL;
+	
+	cj = cJSON_CreateObject();
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
+							  }
+	if (event->body) {
+		int blen = (int) strlen(event->body);
+		char tmp[25];
+
+		switch_snprintf(tmp, sizeof(tmp), "%d", blen);
+
+		cJSON_AddItemToObject(cj, "Content-Length", cJSON_CreateString(tmp));
+		cJSON_AddItemToObject(cj, "_body", cJSON_CreateString(event->body));
+	}
+
+	*str = cJSON_Print(cj);
+	cJSON_Delete(cj);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, int offset)
 {
 	switch_xml_t header = switch_xml_add_child_d(xml, name, offset);

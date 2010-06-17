@@ -283,6 +283,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
   \note you must free the resulting string when you are finished with it
 */
 SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str, switch_bool_t encode);
+SWITCH_DECLARE(switch_status_t) switch_event_serialize_json(switch_event_t *event, char **str);
+SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event, const char *json);
 
 #ifndef SWIG
 /*!
