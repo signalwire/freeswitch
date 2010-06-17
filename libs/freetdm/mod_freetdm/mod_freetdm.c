@@ -80,6 +80,7 @@ static struct {
 	switch_mutex_t *mutex;
 	analog_option_t analog_options;
 	switch_hash_t *ss7_configs;
+	int sip_headers;
 } globals;
 
 /* private data attached to each fs session */
@@ -1364,6 +1365,11 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(sigmsg->channel));
 	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", spanid);	
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
+	if (globals.sip_headers) {
+		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);	
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ChanNumber", "%d", chanid);
+	}
 	if (channel_caller_data->raw_data_len) {
 		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
 	}
@@ -2184,6 +2190,8 @@ static switch_status_t load_config(void)
 				globals.debug = atoi(val);
 			} else if (!strcasecmp(var, "hold-music")) {
 				switch_set_string(globals.hold_music, val);
+			} else if (!strcasecmp(var, "sip-headers")) {
+				globals.sip_headers = switch_true(val);
 			} else if (!strcasecmp(var, "enable-analog-option")) {
 				globals.analog_options = enable_analog_option(val, globals.analog_options);
 			}
