@@ -249,6 +249,8 @@ int ESLconnection::events(const char *etype, const char *value)
 
 	if (!strcmp(etype, "xml")) {
 		type_id = ESL_EVENT_TYPE_XML;
+	} else if (!strcmp(etype, "json")) {
+        type_id = ESL_EVENT_TYPE_JSON;
 	}
 
 	return esl_events(&handle, type_id, value);
@@ -263,22 +265,32 @@ ESLevent::ESLevent(const char *type, const char *subclass_name)
 	
 	event_construct_common();
 
-	if (esl_name_event(type, &event_id) != ESL_SUCCESS) {
-		event_id = ESL_EVENT_MESSAGE;
-	}
+	if (!strcasecmp(type, "json") && !esl_strlen_zero(subclass_name)) {
+		if (esl_event_create_json(&event, subclass_name) != ESL_SUCCESS) {
+			return;
+			
+		}
+		event_id = event->event_id;
+	} else {
 
-	if (!esl_strlen_zero(subclass_name) && event_id != ESL_EVENT_CUSTOM) {
-		esl_log(ESL_LOG_WARNING, "Changing event type to custom because you specified a subclass name!\n");
-		event_id = ESL_EVENT_CUSTOM;
-	}
+		if (esl_name_event(type, &event_id) != ESL_SUCCESS) {
+			event_id = ESL_EVENT_MESSAGE;
+		}
 
-	if (esl_event_create_subclass(&event, event_id, subclass_name) != ESL_SUCCESS) {
-		esl_log(ESL_LOG_ERROR, "Failed to create event!\n");
-		event = NULL;
-	}
+		if (!esl_strlen_zero(subclass_name) && event_id != ESL_EVENT_CUSTOM) {
+			esl_log(ESL_LOG_WARNING, "Changing event type to custom because you specified a subclass name!\n");
+			event_id = ESL_EVENT_CUSTOM;
+		}
 
+		if (esl_event_create_subclass(&event, event_id, subclass_name) != ESL_SUCCESS) {
+			esl_log(ESL_LOG_ERROR, "Failed to create event!\n");
+			event = NULL;
+		}
+	}
+	
 	serialized_string = NULL;
 	mine = 1;
+	
 }
 
 ESLevent::ESLevent(esl_event_t *wrap_me, int free_me)
@@ -288,7 +300,6 @@ ESLevent::ESLevent(esl_event_t *wrap_me, int free_me)
 	mine = free_me;
 	serialized_string = NULL;
 }
-
 
 ESLevent::ESLevent(ESLevent *me)
 {
@@ -342,6 +353,11 @@ const char *ESLevent::serialize(const char *format)
 	
 	if (!event) {
 		return "";
+	}
+
+	if (!strcasecmp(format, "json")) {
+		esl_event_serialize_json(event, &serialized_string);
+		return serialized_string;
 	}
 
 	if (esl_event_serialize(event, &serialized_string, ESL_TRUE) == ESL_SUCCESS) {

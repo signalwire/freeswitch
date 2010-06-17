@@ -437,6 +437,73 @@ ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 	return ESL_SUCCESS;
 }
 
+ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char *json)
+{
+	esl_event_t *new_event;
+	cJSON *cj, *cjp;
+
+
+	if (!(cj = cJSON_Parse(json))) {
+		return ESL_FAIL;
+	}
+
+	if (esl_event_create(&new_event, ESL_EVENT_CLONE) != ESL_SUCCESS) {
+		cJSON_Delete(cj);
+		return ESL_FAIL;
+	}
+
+	for (cjp = cj->child; cjp; cjp = cjp->next) {
+		char *name = cjp->string;
+		char *value = cjp->valuestring;
+		
+		if (name && value) {
+			if (!strcasecmp(name, "_body")) {
+				esl_event_add_body(new_event, value);
+			} else {
+				if (!strcasecmp(name, "event-name")) {
+					esl_event_del_header(new_event, "event-name");
+				}
+				
+				esl_name_event(value, &new_event->event_id);
+				esl_event_add_header_string(new_event, ESL_STACK_BOTTOM, name, value);
+			}
+
+		}
+	}
+	
+	cJSON_Delete(cj);
+	*event = new_event;
+	return ESL_SUCCESS;
+}
+
+ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **str)
+{
+	esl_event_header_t *hp;
+	cJSON *cj;
+
+	*str = NULL;
+	
+	cj = cJSON_CreateObject();
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
+							  }
+	if (event->body) {
+		int blen = (int) strlen(event->body);
+		char tmp[25];
+
+		esl_snprintf(tmp, sizeof(tmp), "%d", blen);
+
+		cJSON_AddItemToObject(cj, "Content-Length", cJSON_CreateString(tmp));
+		cJSON_AddItemToObject(cj, "_body", cJSON_CreateString(event->body));
+	}
+
+	*str = cJSON_Print(cj);
+	cJSON_Delete(cj);
+	
+	return ESL_SUCCESS;
+}
+
 ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode)
 {
 	size_t len = 0;

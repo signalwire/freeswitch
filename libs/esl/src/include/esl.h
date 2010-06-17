@@ -49,7 +49,8 @@ typedef struct esl_event esl_event_t;
 
 typedef enum {
 	ESL_EVENT_TYPE_PLAIN,
-	ESL_EVENT_TYPE_XML
+	ESL_EVENT_TYPE_XML,
+	ESL_EVENT_TYPE_JSON
 } esl_event_type_t;
 
 #ifdef WIN32
@@ -245,6 +246,9 @@ typedef int esl_socket_t;
 typedef ssize_t esl_ssize_t;
 typedef int esl_filehandle_t;
 #endif
+
+#include "math.h"
+#include "esl_json.h"
 
 typedef int16_t esl_port_t;
 

@@ -273,7 +273,8 @@ ESL_DECLARE(esl_status_t) esl_name_event(const char *name, esl_event_types_t *ty
   \note you must free the resulting string when you are finished with it
 */
 ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode);
-
+ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **str);
+ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char *json);
 /*!
   \brief Add a body to an event
   \param event the event to add to body to

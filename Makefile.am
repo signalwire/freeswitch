@@ -169,6 +169,7 @@ library_include_HEADERS = \
 	src/include/switch_xml.h \
 	src/include/switch_xml_config.h \
 	src/include/switch_cpp.h \
+	src/include/switch_json.h\
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
@@ -230,6 +231,7 @@ libfreeswitch_la_SOURCES = \
 	src/g711.c \
 	src/switch_pcm.c \
 	src/switch_profile.c\
+	src/switch_json.c\
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
@@ -268,9 +270,9 @@ bin_PROGRAMS = freeswitch fs_cli fs_ivrd
 ##
 ## fs_cli ()
 ##
-fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
+fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c libs/esl/src/esl_json.c
 fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
-fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
+fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
 
 if HAVE_LIBEDIT
 fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
@@ -280,9 +282,9 @@ endif
 ##
 ## fs_ivrd ()
 ##
-fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c
+fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c libs/esl/src/esl_json.c
 fs_ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
-fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
+fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
 
 ##
 ## freeswitch ()

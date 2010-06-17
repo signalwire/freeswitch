@@ -527,6 +527,8 @@ ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etyp
 
 	if (etype == ESL_EVENT_TYPE_XML) {
 		type = "xml";
+	} else if (etype == ESL_EVENT_TYPE_JSON) {
+		type = "json";
 	}
 
 	snprintf(send_buf, sizeof(send_buf), "event %s %s\n\n", type, value);
@@ -979,63 +981,67 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		if (!esl_safe_strcasecmp(hval, "text/disconnect-notice") && revent->body) {
 			goto fail;
 		}
-
-		if (!esl_safe_strcasecmp(hval, "text/event-plain") && revent->body) {
-			esl_event_types_t et = ESL_EVENT_CLONE;
-			char *body = strdup(revent->body);
+		
+		if (revent->body) {
+			if (!esl_safe_strcasecmp(hval, "text/event-plain")) {
+				esl_event_types_t et = ESL_EVENT_CLONE;
+				char *body = strdup(revent->body);
 			
-			esl_event_create(&handle->last_ievent, et);
+				esl_event_create(&handle->last_ievent, et);
 
-			beg = body;
+				beg = body;
 
-			while(beg) {
-				if (!(c = strchr(beg, '\n'))) {
-					break;
-				}
-
-				hname = beg;
-				hval = col = NULL;
-			
-				if (hname && (col = strchr(hname, ':'))) {
-					hval = col + 1;
-					*col = '\0';
-					while(*hval == ' ') hval++;
-				}
-				
-				*c = '\0';
-			
-				if (hname && hval) {
-					esl_url_decode(hval);
-					esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
-					if (!strcasecmp(hname, "event-name")) {
-						esl_event_del_header(handle->last_ievent, "event-name");
+				while(beg) {
+					if (!(c = strchr(beg, '\n'))) {
+						break;
 					}
-					esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
-					esl_name_event(hval, &handle->last_ievent->event_id);
-				}
+
+					hname = beg;
+					hval = col = NULL;
+			
+					if (hname && (col = strchr(hname, ':'))) {
+						hval = col + 1;
+						*col = '\0';
+						while(*hval == ' ') hval++;
+					}
 				
-				beg = c + 1;
+					*c = '\0';
+			
+					if (hname && hval) {
+						esl_url_decode(hval);
+						esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
+						if (!strcasecmp(hname, "event-name")) {
+							esl_event_del_header(handle->last_ievent, "event-name");
+						}
+						esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
+						esl_name_event(hval, &handle->last_ievent->event_id);
+					}
+				
+					beg = c + 1;
 
-				if (*beg == '\n') {
-					beg++;
-					break;
+					if (*beg == '\n') {
+						beg++;
+						break;
+					}
 				}
-			}
 			
-			if ((cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
-				handle->last_ievent->body = strdup(beg);
-			}
+				if ((cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
+					handle->last_ievent->body = strdup(beg);
+				}
 			
-			free(body);			
+				free(body);			
 
-			if (esl_log_level >= 7) {
-				char *foo;
-				esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
-				esl_log(ESL_LOG_DEBUG, "RECV EVENT\n%s\n", foo);
-				free(foo);
+				if (esl_log_level >= 7) {
+					char *foo;
+					esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
+					esl_log(ESL_LOG_DEBUG, "RECV EVENT\n%s\n", foo);
+					free(foo);
+				}
+			} else if (!esl_safe_strcasecmp(hval, "text/event-json")) {
+				esl_event_create_json(&handle->last_ievent, revent->body);
 			}
 		}
-		
+
 		if (esl_log_level >= 7) {
 			char *foo;
 			esl_event_serialize(revent, &foo, ESL_FALSE);
