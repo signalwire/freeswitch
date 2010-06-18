@@ -3924,7 +3924,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					redirect_dialstring = stream.data;
-
+                    
+                    switch_channel_set_variable_printf(channel, "sip_redirect_count", "%d", i);
 					switch_channel_set_variable(channel, "sip_redirect_dialstring", redirect_dialstring);
 					switch_channel_set_variable(a_channel, "sip_redirect_dialstring", redirect_dialstring);
 
