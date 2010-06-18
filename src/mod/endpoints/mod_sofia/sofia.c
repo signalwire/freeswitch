@@ -4925,6 +4925,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
   done:
+
+	if ((enum nua_callstate) ss_state == nua_callstate_ready && channel && session && tech_pvt) {
+		sofia_glue_tech_simplify(tech_pvt);
+	}
+
+
 	return;
 }
 

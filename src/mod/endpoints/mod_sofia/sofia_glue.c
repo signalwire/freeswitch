@@ -5457,6 +5457,71 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+void sofia_glue_tech_simplify(private_object_t *tech_pvt)
+{
+	const char *uuid, *network_addr_a, *network_addr_b, *simplify, *simplify_other_channel;
+	switch_channel_t *other_channel = NULL, *inbound_channel = NULL;
+	switch_core_session_t *other_session = NULL, *inbound_session = NULL;
+	uint8_t did_simplify = 0;
+
+	if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
+		return;
+	}
+
+	if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
+		&& (other_session = switch_core_session_locate(uuid))) {
+
+		other_channel = switch_core_session_get_channel(other_session);
+
+		if (switch_channel_test_flag(other_channel, CF_ANSWERED)) { /* Check if the other channel is answered */
+			simplify = switch_channel_get_variable(tech_pvt->channel, "sip_auto_simplify");
+			simplify_other_channel = switch_channel_get_variable(other_channel, "sip_auto_simplify");
+
+			if (switch_true(simplify) && !switch_channel_test_flag(tech_pvt->channel, CF_BRIDGE_ORIGINATOR)) {
+				network_addr_a = switch_channel_get_variable(tech_pvt->channel, "network_addr");
+				network_addr_b = switch_channel_get_variable(other_channel, "network_addr");
+				inbound_session = other_session;
+				inbound_channel = other_channel;
+			} else if (switch_true(simplify_other_channel) && !switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+				network_addr_a = switch_channel_get_variable(other_channel, "network_addr");
+				network_addr_b = switch_channel_get_variable(tech_pvt->channel, "network_addr");
+				inbound_session = tech_pvt->session;
+				inbound_channel = tech_pvt->channel;
+			}
+
+			if (inbound_channel && inbound_session && !zstr(network_addr_a) && !zstr(network_addr_b) && !strcmp(network_addr_a, network_addr_b)) {
+				if (strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->sipip)) && strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->extsipip))) {
+
+					switch_core_session_message_t *msg;
+
+					switch_log_printf(SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, switch_channel_get_uuid(inbound_channel), SWITCH_LOG_NOTICE,
+						"Will simplify channel [%s]\n", switch_channel_get_name(inbound_channel));
+
+					msg = switch_core_session_alloc(inbound_session, sizeof(*msg));
+					MESSAGE_STAMP_FFL(msg);
+					msg->message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
+					msg->from = __FILE__;
+					switch_core_session_receive_message(inbound_session, msg);
+
+					did_simplify = 1;
+
+					sofia_glue_tech_track(tech_pvt->profile, inbound_session);
+				}
+			}
+
+			if (!did_simplify && inbound_channel) {
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, switch_channel_get_uuid(inbound_channel), SWITCH_LOG_NOTICE,
+					"Could not simplify channel [%s]\n", switch_channel_get_name(inbound_channel));
+			}
+		}
+
+		switch_core_session_rwunlock(other_session);
+	}
+}
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

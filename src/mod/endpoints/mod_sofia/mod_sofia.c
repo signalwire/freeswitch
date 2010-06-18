@@ -1341,42 +1341,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
-			const char *network_addr_a, *network_addr_b, *simplify_a, *simplify_b;
-			int s_ok = 0;
-			int do_s = 0;
 
-			simplify_a = switch_channel_get_variable(channel, "sip_auto_simplify");
-			simplify_b = switch_channel_get_variable_partner(channel, "sip_auto_simplify");
-
-			if (switch_true(simplify_a)) {
-				if (switch_true(simplify_b) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
-					s_ok = 0;
-				} else {
-					s_ok = 1;
-				}
-			}
-
-			if (s_ok) {
-				network_addr_a = switch_channel_get_variable(channel, "network_addr");
-				network_addr_b = switch_channel_get_variable_partner(channel, "network_addr");
-
-				if (!zstr(network_addr_a) && !zstr(network_addr_b) && !strcmp(network_addr_a, network_addr_b)) {
-					if (strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->sipip)) &&
-						strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->extsipip))) {
-						switch_core_session_message_t smsg = { 0 };
-
-						smsg.message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
-						smsg.from = __FILE__;
-
-						status = switch_core_session_receive_message(session, &smsg);
-						do_s = 1;
-					}
-				}
-			}
-
-			if (!do_s) {
-				sofia_glue_tech_track(tech_pvt->profile, session);
-			}
+			sofia_glue_tech_simplify(tech_pvt);
 
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;

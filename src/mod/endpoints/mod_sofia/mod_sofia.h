@@ -998,3 +998,4 @@ void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int sta
 void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
 switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
+void sofia_glue_tech_simplify(private_object_t *tech_pvt);
