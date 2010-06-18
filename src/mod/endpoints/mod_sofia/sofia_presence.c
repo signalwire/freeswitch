@@ -277,7 +277,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hp;
 	struct mwi_helper h = { 0 };
-	char *pname = NULL;
+	const char *pname = NULL;
 	const char *call_id;
 	const char *sub_call_id;
 	int for_everyone = 0;
@@ -308,9 +308,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 
 	if ((pname = switch_event_get_header(event, "sofia-profile"))) {
-		if (!(profile = sofia_glue_find_profile(pname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No profile %s\n", pname);
-		}
+		profile = sofia_glue_find_profile(pname);
 	}
 
 	if (!profile) {
