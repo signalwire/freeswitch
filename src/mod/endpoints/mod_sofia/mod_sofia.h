@@ -605,6 +605,7 @@ struct private_object {
 	switch_rtp_crypto_key_type_t crypto_send_type;
 	switch_rtp_crypto_key_type_t crypto_recv_type;
 	switch_rtp_crypto_key_type_t crypto_type;
+	char *early_sdp;
 	char *local_sdp_str;
 	char *last_sdp_str;
 	char *dest;
