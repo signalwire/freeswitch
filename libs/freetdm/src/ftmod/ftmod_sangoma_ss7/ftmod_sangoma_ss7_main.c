@@ -1094,7 +1094,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 
     span->start                     = ftdm_sangoma_ss7_start;
     span->stop                      = ftdm_sangoma_ss7_stop;
-    span->signal_type               = FTDM_SIGTYPE_SANGOMASS7;
+    span->signal_type               = FTDM_SIGTYPE_SS7;
     span->signal_data               = NULL;
     span->outgoing_call             = ftdm_sangoma_ss7_outgoing_call;
     span->channel_request           = NULL;
