@@ -672,9 +672,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		uint32_t tlen;
 		const char *macro_name = "eavesdrop_announce";
 		const char *id_name = NULL;
-		switch_codec_implementation_t tread_impl = { 0 }, read_impl = {
-		0};
+		switch_codec_implementation_t tread_impl = { 0 }, read_impl = { 0 };
 		switch_core_session_message_t msg = { 0 };
+		char cid_buf[1024] = "";
+		switch_caller_profile_t *cp = NULL;
 
 		if (!switch_channel_media_ready(channel)) {
 			goto end;
@@ -787,7 +788,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		/* Tell the channel we are going to be in a bridge */
 		msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 		switch_core_session_receive_message(session, &msg);
-
+		
+		cp = switch_channel_get_caller_profile(tchannel);
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cp->caller_id_number, cp->caller_id_name);
+		msg.string_arg = cid_buf;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		switch_core_session_receive_message(tsession, &msg);
 
 		while (switch_channel_ready(tchannel) && switch_channel_ready(channel)) {
 			uint32_t len = sizeof(buf);

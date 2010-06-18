@@ -1418,7 +1418,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	cc_t cc = { 0 };
 	char *forward_file_path = NULL;
 	switch_core_session_message_t msg = { 0 };
-	char cid_buf[1024];
+	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
 
