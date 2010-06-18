@@ -1194,6 +1194,56 @@ SWITCH_STANDARD_API(acl_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(replace_function)
+{
+	char delim = '|';
+	char *mydata = NULL, *argv[3], *d, *replace;
+	int argc = 0;
+
+	if (!cmd) {
+        goto error;
+    }
+
+	mydata = strdup(cmd);
+	d = mydata;
+
+	if (*d == 'm' && *(d + 1) == ':' && *(d + 2)) {
+		char t = *(d + 2);
+
+		switch (t) {
+		case '|':
+		case '~':
+		case '/':
+			d += 3;
+			delim = t;
+			break;
+		default:
+			break;
+		}
+	}
+
+	argc = switch_separate_string(d, delim, argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 3) {
+		goto error;
+	}
+
+	replace = switch_string_replace(argv[0], argv[1], argv[2]);
+	stream->write_function(stream, "%s", replace);
+	free(replace);
+
+	goto ok;
+
+
+  error:
+	stream->write_function(stream, "-ERR");
+  ok:
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+	
+
+}
+
 SWITCH_STANDARD_API(regex_function)
 {
 	switch_regex_t *re = NULL;
@@ -4271,6 +4321,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload Module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
+	SWITCH_ADD_API(commands_api_interface, "replace", "replace a string", replace_function, "<data>|<string1>|<string2>");
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, SCHED_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_broadcast", "Schedule a broadcast event to a running call", sched_broadcast_function,
 				   SCHED_BROADCAST_SYNTAX);
