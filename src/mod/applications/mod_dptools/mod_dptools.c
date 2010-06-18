@@ -398,6 +398,8 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 				}
 				if (e_data.total) {
 					for (x = 0; x < e_data.total && switch_channel_ready(channel); x++) {
+						if (!switch_ivr_uuid_exists(e_data.uuid_list[x])) continue;
+
 						/* If we have a group and 1000 concurrent calls, we will flood the logs. This check avoids this */
 						if (!require_group)
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Spy: %s\n", e_data.uuid_list[x]);
