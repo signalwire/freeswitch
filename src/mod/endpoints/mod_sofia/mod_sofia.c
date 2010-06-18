@@ -3857,8 +3857,28 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 #endif
 
-	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
+	if (profile->pres_type) {
+		char *sql;
+		const char *presence_id = switch_channel_get_variable(nchannel, "presence_id");
+		const char *presence_data = switch_channel_get_variable(nchannel, "presence_data");
 
+		if (zstr(presence_id)) {
+			presence_id = switch_event_get_header(var_event, "presence_id");
+		}
+
+		if (zstr(presence_data)) {
+			presence_data = switch_event_get_header(var_event, "presence_data");
+		}
+
+		sql = switch_mprintf("insert into sip_dialogs (uuid,presence_id,presence_data,profile_name,hostname) "
+							 "values ('%q', '%q', '%q', '%q', '%q')", switch_core_session_get_uuid(nsession), 
+							 switch_str_nil(presence_id), switch_str_nil(presence_data), profile->name, mod_sofia_globals.hostname);
+		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
+		switch_safe_free(sql);
+	}
+	
+	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
+	
 
 	caller_profile->destination_number = switch_sanitize_number(caller_profile->destination_number);
 	not_const = (char *) caller_profile->caller_id_name;

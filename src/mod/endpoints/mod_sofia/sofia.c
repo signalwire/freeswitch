@@ -3859,7 +3859,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_channel_t *a_channel;
 
 				const char *sip_redirect_profile, *sip_redirect_context, *sip_redirect_dialplan, *sip_redirect_fork;
-
+				
 				if ((a_session = switch_core_session_locate(br)) && (a_channel = switch_core_session_get_channel(a_session))) {
 					switch_stream_handle_t stream = { 0 };
 					char separator[2] = "|";
@@ -4090,7 +4090,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 				if (profile->pres_type) {
 					const char *presence_data = switch_channel_get_variable(channel, "presence_data");
-					const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+					//const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 					char *full_contact = "";
 					char *p = NULL;
 
@@ -4101,18 +4101,26 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					if (call_info && (p = strchr(call_info, ';'))) {
 						p++;
 					}
-					sql = switch_mprintf("insert into sip_dialogs "
-										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
-										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info) "
-										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
-										 call_id,
-										 switch_core_session_get_uuid(session),
-										 to_user, to_host, from_user, from_host, contact_user,
-										 contact_host, astate, "outbound", user_agent,
-										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
-										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
 
-					switch_assert(sql);
+					sql = switch_mprintf("update sip_dialogs set "
+										 "call_id='%q', "
+										 "sip_to_user='%q', "
+										 "sip_to_host='%q', "
+										 "sip_from_user='%q', "
+										 "sip_from_host='%q', "
+										 "contact_user='%q', "
+										 "contact_host='%q', "
+										 "state='%q', "
+										 "user_agent='%q', "
+										 "contact='%q', "
+										 "presence_data='%q', "
+										 "call_info='%q' where uuid='%q'",
+
+										 call_id,
+										 to_user, to_host, from_user, from_host, contact_user,
+										 contact_host, astate, user_agent,
+										 switch_str_nil(full_contact),
+										 switch_str_nil(presence_data), switch_str_nil(p), switch_core_session_get_uuid(session));
 
 					sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 					switch_safe_free(sql);

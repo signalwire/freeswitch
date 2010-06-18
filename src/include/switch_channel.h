@@ -162,8 +162,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
   \param status the status message
   \param id presence id
 */
-SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status, const char *id);
-
+SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, const char *rpid, const char *status, const char *id,
+											 const char *file, const char *func, int line);
+#define switch_channel_presence(_a, _b, _c, _d) switch_channel_perform_presence(_a, _b, _c, _d, __FILE__, __SWITCH_FUNC__, __LINE__)
 /*!
   \brief Uninitalize a channel
   \param channel the channel to uninit

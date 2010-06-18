@@ -552,7 +552,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status, const char *id)
+SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, const char *rpid, const char *status, const char *id,
+													 const char *file, const char *func, int line)
 {
 	switch_event_t *event;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
@@ -611,8 +612,11 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction",
 									   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
-
+		
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-File", file);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Line", "%d", line);
 		switch_event_fire(&event);
 	}
 }
