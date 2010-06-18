@@ -279,11 +279,18 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		args.buflen = sizeof(dbuf);
 
 		switch_mutex_unlock(lot->mutex);
+
 		if (!strcasecmp(music, "silence")) {
-			switch_ivr_collect_digits_callback(session, &args, 0, 0);
-		} else {
-			switch_ivr_play_file(session, NULL, music, &args);
+			music = "silence_stream://-1";
 		}
+		
+		while(switch_channel_ready(channel)) {
+			switch_status_t pstatus = switch_ivr_play_file(session, NULL, music, &args);
+			if (pstatus == SWITCH_STATUS_BREAK || pstatus == SWITCH_STATUS_TIMEOUT) {
+				break;
+			}
+		}
+
 		switch_mutex_lock(lot->mutex);
 		switch_core_hash_delete(lot->hash, ext);
 		switch_mutex_unlock(lot->mutex);

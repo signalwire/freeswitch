@@ -913,8 +913,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int argc;
 	int cur;
 	int done = 0;
+	int timeout_samples = 0;
+	const char *var;
 
 	switch_core_session_get_read_impl(session, &read_impl);
+
+	if ((var = switch_channel_get_variable(channel, "playback_timeout_sec"))) {
+		int tmp = atoi(var);
+		if (tmp > 1) {
+			timeout_samples = read_impl.actual_samples_per_second * tmp;
+		}
+	}
 
 	if ((play_delimiter_val = switch_channel_get_variable(channel, "playback_delimiter"))) {
 		play_delimiter = *play_delimiter_val;
@@ -1401,6 +1410,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			fh->offset_pos += write_frame.samples / 2;
 			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+
+			if (timeout_samples) {
+				timeout_samples -= write_frame.samples;
+				if (timeout_samples <= 0) {
+					timeout_samples = 0;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "timeout reached playing file\n");
+					status = SWITCH_STATUS_TIMEOUT;
+					break;
+				}
+			}
+			
 
 			if (status == SWITCH_STATUS_MORE_DATA) {
 				status = SWITCH_STATUS_SUCCESS;
