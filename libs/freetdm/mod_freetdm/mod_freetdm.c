@@ -1163,7 +1163,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	if ((var = switch_event_get_header(var_event, "freetdm_custom_call_data")) || (var = switch_core_get_variable("freetdm_custom_call_data"))) {
 		ftdm_set_string(caller_data.raw_data, var);
-		caller_data.raw_data_len = strlen(var);
+		caller_data.raw_data_len = (uint32_t)strlen(var);
 	}
 	
 	caller_data.dnis.plan = outbound_profile->destination_number_numplan;
