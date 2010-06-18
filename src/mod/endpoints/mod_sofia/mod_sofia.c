@@ -1435,6 +1435,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		goto end;
 
+	case SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS:
+		if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+			sofia_clear_flag(tech_pvt, TFLAG_EARLY_MEDIA);
+		}
+		goto end;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
@@ -2178,6 +2183,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+
+					if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && 
+						tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
+						/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
+						   we do so in this case we will abandon the SOA rules and go rogue.
+						*/
+						sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+					}
 
 					tech_pvt->early_sdp = switch_core_session_strdup(tech_pvt->session, tech_pvt->local_sdp_str);
 

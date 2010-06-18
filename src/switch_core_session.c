@@ -598,6 +598,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 					  switch_channel_get_name(session->channel), message_names[message->message_id]);
 
 
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS) {
+		switch_channel_clear_flag(session->channel, CF_EARLY_MEDIA);
+	}
+
 	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY &&
 		switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,

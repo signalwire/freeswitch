@@ -1797,6 +1797,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 		}
 
+		if (bypass_media && switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+			switch_core_session_message_t msg = { 0 };
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
+			msg.from = __FILE__;
+			switch_core_session_receive_message(session, &msg);
+		}
+
+
 		if (!zstr(bypass_media) && !switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			if (switch_true(bypass_media)) {
 				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
