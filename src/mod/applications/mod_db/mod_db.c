@@ -180,8 +180,6 @@ SWITCH_LIMIT_INCR(limit_incr_sql)
 	char gotstr[128];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	// check max! WTF
-	
 	switch_mutex_lock(globals.mutex);
 
 	switch_channel_set_variable(channel, "limit_realm", realm);
