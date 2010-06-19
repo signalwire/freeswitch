@@ -172,7 +172,7 @@ static char * limit_execute_sql2str(char *sql, char *str, size_t len)
  * \param max maximum count
  * \return SWITCH_STATUS_SUCCESS if the access is allowed
  */
-SWITCH_LIMIT_INCR(limit_incr_sql)
+SWITCH_LIMIT_INCR(limit_incr_db)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int got = 0;
@@ -221,7 +221,7 @@ SWITCH_LIMIT_INCR(limit_incr_sql)
 	return status;
 }
 
-SWITCH_LIMIT_RELEASE(limit_release_sql)
+SWITCH_LIMIT_RELEASE(limit_release_db)
 {
 	char *sql = NULL;
 
@@ -236,7 +236,7 @@ SWITCH_LIMIT_RELEASE(limit_release_sql)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_LIMIT_USAGE(limit_usage_sql)
+SWITCH_LIMIT_USAGE(limit_usage_db)
 {
 	char usagestr[128] = "";
 	int usage = 0;
@@ -250,7 +250,7 @@ SWITCH_LIMIT_USAGE(limit_usage_sql)
 	return usage;
 }
 
-SWITCH_LIMIT_RESET(limit_reset_sql)
+SWITCH_LIMIT_RESET(limit_reset_db)
 {
 	char *sql = NULL;
 	sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
@@ -260,7 +260,7 @@ SWITCH_LIMIT_RESET(limit_reset_sql)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_LIMIT_STATUS(limit_status_sql)
+SWITCH_LIMIT_STATUS(limit_status_db)
 {
 	char count[128] = "";
 	char *ret = NULL;
@@ -620,7 +620,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* register limit interfaces */
-	SWITCH_ADD_LIMIT(limit_interface, "sql", limit_incr_sql, limit_release_sql, limit_usage_sql, limit_reset_sql, limit_status_sql);
+	SWITCH_ADD_LIMIT(limit_interface, "db", limit_incr_db, limit_release_db, limit_usage_db, limit_reset_db, limit_status_db);
 
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
