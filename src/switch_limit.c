@@ -200,7 +200,7 @@ SWITCH_DECLARE(char *) switch_limit_status(const char *backend) {
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
-		switch_goto_status("-ERR", end);
+		switch_goto_status(strdup("-ERR"), end);
 	}
 	
 	status = limit->status();
