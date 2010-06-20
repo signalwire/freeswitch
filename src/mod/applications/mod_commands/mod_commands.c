@@ -4239,7 +4239,18 @@ SWITCH_STANDARD_API(limit_usage_function)
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-
+	
+	if (argc == 2) {
+		switch_safe_free(mydata);
+		/* allocate space for "db " */
+		mydata = malloc(strlen(cmd) + 10);
+		switch_assert(mydata);
+		sprintf(mydata, "db %s", cmd);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated limit api: Please specify backend.  Defaulting to 'db' backend.\n");
+	}
+	
+	/* backwards compat version */
 	if (argc < 3) {
 		stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
 		goto end;
@@ -4263,6 +4274,14 @@ end:
 	switch_safe_free(mydata);
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+#define LIMIT_HASH_USAGE_USAGE "<backend> <realm> <id> [rate]"
+SWITCH_STANDARD_API(limit_hash_usage_function)
+{
+	char *mydata = NULL;
+	mydata = switch_core_session_sprintf(session, "hash %s", cmd);
+	return limit_usage_function(mydata, session, stream);
 }
 
 #define LIMIT_STATUS_USAGE "<backend>"
@@ -4413,6 +4432,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "in_group", "determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
 	SWITCH_ADD_API(commands_api_interface, "limit_usage", "Gets the usage count of a limited resource", limit_usage_function, "<backend> <realm> <id>");
+	SWITCH_ADD_API(commands_api_interface, "limit_hash_usage", "Deprecated: gets the usage count of a limited resource", limit_hash_usage_function, "<realm> <id>");
 	SWITCH_ADD_API(commands_api_interface, "limit_status", "Gets the status of a limit backend", limit_status_function, "<backend>");
 	SWITCH_ADD_API(commands_api_interface, "limit_reset", "Reset the counters of a limit backend", limit_reset_function, "<backend>");
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);

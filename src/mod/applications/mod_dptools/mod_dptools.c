@@ -3021,6 +3021,7 @@ SWITCH_STANDARD_APP(limit_function)
 	char *xfer_exten = NULL;
 	int max = -1;
 	int interval = 0;
+	switch_limit_interface_t *limit = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
@@ -3028,13 +3029,23 @@ SWITCH_STANDARD_APP(limit_function)
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
-
+	
 	if (argc < 3) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
 		return;
 	}
 
 	backend = argv[0];
+	
+	/* if this is an invalid backend, fallback to db backend */
+	/* TODO: remove this when we can! */
+	if (!(limit = switch_loadable_module_get_limit_interface(backend))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown backend '%s'.  To maintain backwards compatability, falling back on db backend and shifting argumens. Either update your diaplan to include the backend, fix the typo, or load the appropriate limit implementation module.", backend);
+		mydata = switch_core_session_sprintf(session, "db %s", data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		backend = argv[0];
+	}
+
 	realm = argv[1];
 	id = argv[2];
 
@@ -3073,8 +3084,17 @@ SWITCH_STANDARD_APP(limit_function)
 	}
 }
 
+#define LIMIT_HASH_USAGE "<realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
+#define LIMIT_HASH_DESC "DEPRECATED: limit access to a resource and transfer to an extension if the limit is exceeded"
+SWITCH_STANDARD_APP(limit_hash_function)
+{
+	char *mydata = NULL;
+	mydata = switch_core_session_sprintf(session, "hash %s", data);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash' api: Please use 'limit hash'.\n");
+	limit_function(session, mydata);
+}
 
-#define LIMITEXECUTE_USAGE "<backend> <realm> <id> [<max>[/interval]] [application] [application arguments]"
+#define LIMITEXECUTE_USAGE "<backend> <realm> <id> <max>[/interval] <application> [application arguments]"
 #define LIMITEXECUTE_DESC "limit access to a resource. the specified application will only be executed if the resource is available"
 SWITCH_STANDARD_APP(limit_execute_function)
 {
@@ -3093,6 +3113,13 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	/* backwards compat version, if we have 5, just prepend with db and reparse */
+	if (argc == 5) {
+		mydata = switch_core_session_sprintf(session, "db %s", data);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated limit api: Please specify backend.  Defaulting to 'db' backend.\n");
 	}
 
 	if (argc < 6) {
@@ -3138,6 +3165,16 @@ SWITCH_STANDARD_APP(limit_execute_function)
 			switch_limit_release(backend, session, realm, id);			
 		}
 	}
+}
+
+#define LIMITHASHEXECUTE_USAGE "<realm> <id> <max>[/interval] <application> [application arguments]"
+#define LIMITHASHEXECUTE_DESC "DEPRECATED: limit access to a resource. the specified application will only be executed if the resource is available"
+SWITCH_STANDARD_APP(limit_hash_execute_function)
+{
+	char *mydata = NULL;
+	mydata = switch_core_session_sprintf(session, "hash %s", data);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash_execute' api: Please use 'limit_execute hash'.\n");
+	limit_execute_function(session, mydata);
 }
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
@@ -3310,7 +3347,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "session_loglevel", "session_loglevel", "session_loglevel", session_loglevel_function, SESSION_LOGLEVEL_SYNTAX,
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "limit_execute", "Limit", LIMITEXECUTE_USAGE, limit_execute_function, LIMITEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_hash", "Limit", LIMIT_HASH_DESC, limit_hash_function, LIMIT_HASH_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_execute", "Limit", LIMITEXECUTE_DESC, limit_execute_function, LIMITEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "limit_hash_execute", "Limit", LIMITHASHEXECUTE_DESC, limit_hash_execute_function, LIMITHASHEXECUTE_USAGE, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 
