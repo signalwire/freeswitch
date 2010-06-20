@@ -3131,11 +3131,10 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	}
 
 	if (switch_limit_incr(backend, session, realm, id, max, interval) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Executing\n");
 		switch_core_session_execute_application(session, app, app_arg);
 		/* Only release the resource if we are still in CS_EXECUTE */
 		if (switch_channel_get_state(switch_core_session_get_channel(session)) == CS_EXECUTE) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "immediately releasing\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_IFNO, "immediately releasing\n");
 			switch_limit_release(backend, session, realm, id);			
 		}
 	}
