@@ -25,10 +25,19 @@
     =============================================================
     <profile name="pg_prefix">
       <param name="custom_sql" value="
-SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix
-FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits_prefix @> '%q'
-AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
-ORDER BY digits DESC, random();
+SELECT l.digits AS lcr_digits,
+       c.carrier_name AS lcr_carrier_name,
+       l.${lcr_rate_field} as lcr_rate_field,
+       cg.prefix AS lcr_gw_prefix, cg.suffix AS lcr_gw_suffix,
+       l.lead_strip AS lcr_lead_strip, l.trail_strip AS lcr_trail_strip,
+       l.prefix AS lcr_prefix, l.suffix AS lcr_suffix
+  FROM lcr l
+    JOIN carriers c ON l.carrier_id=c.id
+    JOIN carrier_gateway cg ON c.id=cg.carrier_id
+  WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1'
+    AND digits_prefix @> %q
+    AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
+  ORDER BY digits DESC, ${lcr_rate_field}, random();
       "/>
     </profile>
 
@@ -39,10 +48,19 @@ ORDER BY digits DESC, random();
     =============================================================
     <profile name="pg_prefix2">
       <param name="custom_sql" value="
-SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix
-FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits_prefix @> '${lcr_query_digits}'
-AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
-ORDER BY digits DESC, random();
+SELECT l.digits AS lcr_digits,
+       c.carrier_name AS lcr_carrier_name,
+       l.${lcr_rate_field} as lcr_rate_field,
+       cg.prefix AS lcr_gw_prefix, cg.suffix AS lcr_gw_suffix,
+       l.lead_strip AS lcr_lead_strip, l.trail_strip AS lcr_trail_strip,
+       l.prefix AS lcr_prefix, l.suffix AS lcr_suffix
+  FROM lcr l
+    JOIN carriers c ON l.carrier_id=c.id
+    JOIN carrier_gateway cg ON c.id=cg.carrier_id
+  WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1'
+    AND digits_prefix @> '${lcr_query_digits}'
+    AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
+  ORDER BY digits DESC, ${lcr_rate_field}, random();
       "/>
     </profile>
 
@@ -51,10 +69,19 @@ ORDER BY digits DESC, random();
     =============================================================
     <profile name="inlist">
       <param name="custom_sql" value="
-SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix
-FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (${lcr_query_expanded_digits})
-AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
-ORDER BY digits DESC, random();
+SELECT l.digits AS lcr_digits,
+       c.carrier_name AS lcr_carrier_name,
+       l.${lcr_rate_field} as lcr_rate_field,
+       cg.prefix AS lcr_gw_prefix, cg.suffix AS lcr_gw_suffix,
+       l.lead_strip AS lcr_lead_strip, l.trail_strip AS lcr_trail_strip,
+       l.prefix AS lcr_prefix, l.suffix AS lcr_suffix
+  FROM lcr l
+    JOIN carriers c ON l.carrier_id=c.id
+    JOIN carrier_gateway cg ON c.id=cg.carrier_id
+  WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1'
+    AND digits IN (${lcr_query_expanded_digits})
+    AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end
+  ORDER BY digits DESC, ${lcr_rate_field}, random();
       "/>
     </profile>
 -->
