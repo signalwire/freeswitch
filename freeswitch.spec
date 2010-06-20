@@ -230,7 +230,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 %endif
 
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb"
-APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_directory applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_vmd applications/mod_limit applications/mod_soundtouch applications/mod_spandsp"
+APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_distributor applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_db applications/mod_rss applications/mod_voicemail applications/mod_directory applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_vmd applications/mod_soundtouch applications/mod_spandsp applications/mod_memcache applications/mod_spy applications/mod_valet_parking applications/mod_avmd"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=""
@@ -402,7 +402,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/timezones.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/limit.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/local_stream.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/logfile.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/modules.conf.xml
@@ -493,21 +493,27 @@ fi
 %{prefix}/mod/mod_xml_rpc.so* 
 %{prefix}/mod/mod_xml_curl.so* 
 %{prefix}/mod/mod_xml_cdr.so* 
-%{prefix}/mod/mod_fsv.so
-%{prefix}/mod/mod_tone_stream.so
-%{prefix}/mod/mod_amrwb.so
-%{prefix}/mod/mod_celt.so
-%{prefix}/mod/mod_easyroute.so
-%{prefix}/mod/mod_lcr.so
-%{prefix}/mod/mod_loopback.so
-%{prefix}/mod/mod_siren.so
-%{prefix}/mod/mod_bv.so
-%{prefix}/mod/mod_stress.so
-%{prefix}/mod/mod_shout.so
-%{prefix}/mod/mod_spandsp.so
-%{prefix}/mod/mod_soundtouch.so
-%{prefix}/mod/mod_vmd.so
-%{prefix}/mod/mod_unimrcp.so
+%{prefix}/mod/mod_fsv.so*
+%{prefix}/mod/mod_tone_stream.so*
+%{prefix}/mod/mod_amrwb.so*
+%{prefix}/mod/mod_celt.so*
+%{prefix}/mod/mod_easyroute.so*
+%{prefix}/mod/mod_lcr.so*
+%{prefix}/mod/mod_loopback.so*
+%{prefix}/mod/mod_siren.so*
+%{prefix}/mod/mod_bv.so*
+%{prefix}/mod/mod_stress.so*
+%{prefix}/mod/mod_shout.so*
+%{prefix}/mod/mod_spandsp.so*
+%{prefix}/mod/mod_soundtouch.so*
+%{prefix}/mod/mod_vmd.so*
+%{prefix}/mod/mod_unimrcp.so*
+%{prefix}/mod/mod_avmd.so*
+%{prefix}/mod/mod_valet_parking.so*
+%{prefix}/mod/mod_distributor.so*
+%{prefix}/mod/mod_memcache.so*
+%{prefix}/mod/mod_spy.so*
+
 
 %files openzap
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/tones.conf
@@ -618,6 +624,13 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 
 %changelog
+* Sun Jun 20 2010 - michal.bielicki@seventhsignal.de
+- replaced mod_limit with mod_db
+- added mod_spy
+- added mod_valet_parking
+- addded mod_memcache
+- added mod_distributor
+- added mod_avmd
 * Thu Apr 29 2010 - michal.bielicki@seventhsignal.de
 - added osp conf file
 * Fri Apr 23 2010 - michal.bielicki@seventhsignal.de
