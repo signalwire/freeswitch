@@ -447,6 +447,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_limit.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_loadable_module.c"
 				>
 			</File>
@@ -946,6 +950,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_json.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_limit.h"
 				>
 			</File>
 			<File
