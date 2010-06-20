@@ -4,6 +4,7 @@
 /opt/freeswitch/conf/autoload_configs/cidlookup.conf.xml
 /opt/freeswitch/conf/autoload_configs/conference.conf.xml
 /opt/freeswitch/conf/autoload_configs/console.conf.xml
+/opt/freeswitch/conf/autoload_configs/db.conf.xml
 /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
 /opt/freeswitch/conf/autoload_configs/dingaling.conf.xml
 /opt/freeswitch/conf/autoload_configs/directory.conf.xml
@@ -16,7 +17,6 @@
 /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 /opt/freeswitch/conf/autoload_configs/java.conf.xml
 /opt/freeswitch/conf/autoload_configs/lcr.conf.xml
-/opt/freeswitch/conf/autoload_configs/limit.conf.xml
 /opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
 /opt/freeswitch/conf/autoload_configs/logfile.conf.xml
 /opt/freeswitch/conf/autoload_configs/memcache.conf.xml
