@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="mod_skinny"
-	ProjectGUID="{CC1DD008-9406-448d-A0AD-33C3186CFADB}"
+	ProjectGUID="{CC1DD008-9406-448D-A0AD-33C3186CFADB}"
 	RootNamespace="mod_skinny"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"

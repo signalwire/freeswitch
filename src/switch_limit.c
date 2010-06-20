@@ -30,6 +30,7 @@
  */
 
 #include <switch.h>
+#include <switch_module_interfaces.h> /* this is odd VS 2008 Express requires this- include order problem?? */
 
 static switch_limit_interface_t *get_backend(const char *backend) {
 	switch_limit_interface_t *limit = NULL;
