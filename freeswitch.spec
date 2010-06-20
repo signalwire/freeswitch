@@ -468,7 +468,7 @@ fi
 %{prefix}/mod/mod_esf.so*
 %{prefix}/mod/mod_expr.so*
 %{prefix}/mod/mod_fifo.so*
-%{prefix}/mod/mod_limit.so*
+%{prefix}/mod/mod_db.so*
 %{prefix}/mod/mod_rss.so*
 %{prefix}/mod/mod_voicemail.so*
 %{prefix}/mod/mod_directory.so*
