@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_hash"
-	ProjectGUID="{F6A33240-8F29-48BD-98F0-826995911799}"
+	ProjectGUID="{2E250296-0C08-4342-9C8A-BCBDD0E7DF65}"
 	RootNamespace="mod_hash"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
