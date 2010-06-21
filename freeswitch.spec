@@ -230,7 +230,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 %endif
 
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb"
-APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_distributor applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_db applications/mod_hash applications/mod_rss applications/mod_voicemail applications/mod_directory applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_vmd applications/mod_soundtouch applications/mod_spandsp applications/mod_memcache applications/mod_spy applications/mod_valet_parking applications/mod_avmd"
+APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_distributor applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_db applications/mod_hash applications/mod_rss applications/mod_voicemail applications/mod_directory applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_vmd applications/mod_soundtouch applications/mod_spandsp applications/mod_memcache applications/mod_spy applications/mod_valet_parking applications/mod_avmd applications/mod_limit"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 DIRECTORIES_MODULES=""
@@ -513,6 +513,8 @@ fi
 %{prefix}/mod/mod_distributor.so*
 %{prefix}/mod/mod_memcache.so*
 %{prefix}/mod/mod_spy.so*
+%{prefix}/mod/mod_limit.so*
+%{prefix}/mod/mod_hash.so*
 
 
 %files openzap
@@ -624,6 +626,9 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 
 %changelog
+* Mon Jun 21 2010 - michal.bielicki@seventhsignal.de
+- added mod_limit shim for backwards compatibility
+- added mod_hash correctly
 * Sun Jun 20 2010 - michal.bielicki@seventhsignal.de
 - replaced mod_limit with mod_db
 - added mod_spy
