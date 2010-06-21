@@ -4240,6 +4240,7 @@ SWITCH_STANDARD_API(limit_usage_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 	
+	/* backwards compat version */
 	if (argc == 2) {
 		switch_safe_free(mydata);
 		/* allocate space for "db " */
@@ -4250,7 +4251,6 @@ SWITCH_STANDARD_API(limit_usage_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated limit api: Please specify backend.  Defaulting to 'db' backend.\n");
 	}
 	
-	/* backwards compat version */
 	if (argc < 3) {
 		stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
 		goto end;

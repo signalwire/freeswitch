@@ -3030,20 +3030,27 @@ SWITCH_STANDARD_APP(limit_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 	
-	if (argc < 3) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
+	backend = argv[0];
+
+	/* must have at least one item */
+	if (argc < 1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE: limit %s\n", LIMIT_USAGE);
 		return;
 	}
-
-	backend = argv[0];
 	
 	/* if this is an invalid backend, fallback to db backend */
 	/* TODO: remove this when we can! */
-	if (!(limit = switch_loadable_module_get_limit_interface(backend))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown backend '%s'.  To maintain backwards compatability, falling back on db backend and shifting argumens. Either update your diaplan to include the backend, fix the typo, or load the appropriate limit implementation module.", backend);
+	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag")) && 
+			!(limit = switch_loadable_module_get_limit_interface(backend))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown backend '%s'.  To maintain backwards compatability, falling back on db backend and shifting argumens. Either update your diaplan to include the backend, fix the typo, or load the appropriate limit implementation module.\n", backend);
 		mydata = switch_core_session_sprintf(session, "db %s", data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		backend = argv[0];
+	}
+
+	if (argc < 3) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE: limit %s\n", LIMIT_USAGE);
+		return;
 	}
 
 	realm = argv[1];
@@ -3089,9 +3096,15 @@ SWITCH_STANDARD_APP(limit_function)
 SWITCH_STANDARD_APP(limit_hash_function)
 {
 	char *mydata = NULL;
-	mydata = switch_core_session_sprintf(session, "hash %s", data);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash' api: Please use 'limit hash'.\n");
-	limit_function(session, mydata);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag"))) {
+		mydata = switch_core_session_sprintf(session, "hash %s", data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash' api: Please use 'limit hash'.\n");
+		limit_function(session, mydata);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "'limit_hash' (deprecated) is only available after loading mod_limit.\n");
+	}
 }
 
 #define LIMITEXECUTE_USAGE "<backend> <realm> <id> <max>[/interval] <application> [application arguments]"
@@ -3108,6 +3121,7 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	char *app_arg = NULL;
 	int max = -1;
 	int interval = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
 	if (!zstr(data)) {
@@ -3116,14 +3130,15 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	}
 	
 	/* backwards compat version, if we have 5, just prepend with db and reparse */
-	if (argc == 5) {
+	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag")) && 
+			argc == 5) {
 		mydata = switch_core_session_sprintf(session, "db %s", data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated limit api: Please specify backend.  Defaulting to 'db' backend.\n");
 	}
 
 	if (argc < 6) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "USAGE: limit_execute %s\n", LIMITEXECUTE_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE: limit_execute %s\n", LIMITEXECUTE_USAGE);
 		return;
 	}
 
@@ -3172,9 +3187,15 @@ SWITCH_STANDARD_APP(limit_execute_function)
 SWITCH_STANDARD_APP(limit_hash_execute_function)
 {
 	char *mydata = NULL;
-	mydata = switch_core_session_sprintf(session, "hash %s", data);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash_execute' api: Please use 'limit_execute hash'.\n");
-	limit_execute_function(session, mydata);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag"))) {
+		mydata = switch_core_session_sprintf(session, "hash %s", data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash_execute' api: Please use 'limit_execute hash'.\n");
+		limit_execute_function(session, mydata);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "'limit_hash_execute' (deprecated) is only available after loading mod_limit.\n");
+	}
 }
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"

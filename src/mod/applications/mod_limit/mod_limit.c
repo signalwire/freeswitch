@@ -61,6 +61,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load mod_db (%s)!\n", err);
 		}
 	}
+	
+	/* set compat flag */
+	switch_core_set_variable("switch_limit_backwards_compat_flag", "true");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -68,6 +71,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown)
 {
+	switch_core_set_variable("switch_limit_backwards_compat_flag", "false");
 	return SWITCH_STATUS_SUCCESS;
 }
 
