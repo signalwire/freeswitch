@@ -41,6 +41,7 @@
 
 #define MULTICAST_BUFFSIZE 65536
 #define IP_LEN 16
+#define NAT_REFRESH_INTERVAL 900
 
 typedef struct {
 	switch_nat_type_t nat_type;
@@ -675,6 +676,22 @@ SWITCH_DECLARE(void) switch_nat_republish(void)
 
 	switch_safe_free(stream.data);
 	switch_xml_free(natxml);
+}
+
+SWITCH_STANDARD_SCHED_FUNC(switch_nat_republish_sched)
+{
+	switch_nat_republish();
+	if (nat_globals_perm.running == 1) {
+		task->runtime = switch_epoch_time_now(NULL) + NAT_REFRESH_INTERVAL;
+	}
+}
+
+SWITCH_DECLARE(void) switch_nat_late_init(void)
+{
+	if (nat_globals_perm.running == 1) {
+		switch_scheduler_add_task(switch_epoch_time_now(NULL) + NAT_REFRESH_INTERVAL, switch_nat_republish_sched, "nat_republish", "core", 0, NULL,
+								  SSHF_NONE);
+	}
 }
 
 SWITCH_DECLARE(char *) switch_nat_status(void)

@@ -57,6 +57,14 @@ typedef enum {
   \note Generally called by the core_init
 */
 SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool);
+
+/*! 
+  \brief Initilize the rest of the NAT Traversal System
+  \note nat_init is called prior to some other modules being loaded.  
+        This method allows us to init the rest of the NAT system.
+*/
+SWITCH_DECLARE(void) switch_nat_late_init(void);
+
 /*!
  \brief Shuts down the NAT Traversal System
 */

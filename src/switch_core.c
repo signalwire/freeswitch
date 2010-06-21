@@ -1325,6 +1325,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_scheduler_task_thread_start();
 
+	switch_nat_late_init();
+
 	switch_rtp_init(runtime.memory_pool);
 
 	runtime.running = 1;
