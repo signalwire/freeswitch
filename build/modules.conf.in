@@ -11,6 +11,7 @@ applications/mod_fifo
 #applications/mod_curl
 applications/mod_db
 applications/mod_hash
+#applications/mod_redis
 applications/mod_voicemail
 #applications/mod_directory
 #applications/mod_lcr
