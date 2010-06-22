@@ -224,7 +224,7 @@ Requires:	%{name} = %{version}-%{release}
 Summary:	Perl support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Rquires:	perl
+Requires:	perl
 
 %description	perl
 
