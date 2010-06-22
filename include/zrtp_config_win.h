@@ -13,6 +13,10 @@
 #define	_CRT_SECURE_NO_WARNINGS	1
 #pragma	warning(disable: 4068)
 
+#if !(defined(__BUILDMACHINE__) && __BUILDMACHINE__ == WinDDK)
+#include <Windows.h>
+#endif
+
 /*
  * Used to map system integer types to zrtp integer definitions.
  * Define to 1 if you have the <inttypes.h> header file.

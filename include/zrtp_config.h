@@ -30,6 +30,8 @@
 #	elif defined(_WIN32) || defined(__WIN32__) || defined(_WIN64) || defined(WIN32) || defined(__TOS_WIN__)
 #		if defined(__BUILDMACHINE__) && (__BUILDMACHINE__ == WinDDK)
 #			define ZRTP_PLATFORM ZP_WIN32_KERNEL
+#		elif defined(_WIN64)
+#			define ZRTP_PLATFORM ZP_WIN32
 #		else
 #			define ZRTP_PLATFORM ZP_WIN32
 #		endif

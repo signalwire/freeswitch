@@ -110,7 +110,15 @@
 #endif
 
 #ifndef ZRTP_USE_BUILTIN_CACHE
-#define ZRTP_USE_BUILTIN_CACHE		1
+#	if defined(_WIN32) || defined(__WIN32__) || defined(_WIN64) || defined(WIN32) || defined(__TOS_WIN__)
+#		if defined(__BUILDMACHINE__) && (__BUILDMACHINE__ == WinDDK)
+#			define ZRTP_USE_BUILTIN_CACHE		1
+#		else
+#			define ZRTP_USE_BUILTIN_CACHE		0
+#		endif
+#	else
+#		define ZRTP_USE_BUILTIN_CACHE		1
+#	endif
 #endif
 
 #ifndef ZRTP_ENABLE_EC

@@ -16,12 +16,12 @@
 #include "zrtp_error.h"
 #include "zrtp_iface.h"
 
-#if defined(ZRTP_USE_BUILTIN_CACHE) && (ZRTP_USE_BUILTIN_CACHE == 1)
-
 #if defined(__cplusplus)
 extern "C"
 {
 #endif
+
+#if defined(ZRTP_USE_BUILTIN_CACHE) && (ZRTP_USE_BUILTIN_CACHE == 1)
 
 #define ZRTP_DEF_CACHE_VERSION_STR	"libZRTP cache version="
 #define ZRTP_DEF_CACHE_VERSION_VAL	"1.0"
@@ -58,7 +58,8 @@ typedef struct zrtp_cache_elem
 	mlist_t            	_mlist;
 } zrtp_cache_elem_t;
 	
-	
+#endif /* ZRTP_USE_BUILTIN_CACHE */
+
 zrtp_status_t zrtp_def_cache_init(zrtp_global_t* zrtp);
 
 void zrtp_def_cache_down();
@@ -97,6 +98,7 @@ zrtp_status_t zrtp_def_cache_get_presh_counter( const zrtp_stringn_t* one_zid,
 											    const zrtp_stringn_t* another_zid,
 											    uint32_t* counter);
 	
+#if defined(ZRTP_USE_BUILTIN_CACHE) && (ZRTP_USE_BUILTIN_CACHE == 1)
 /**
  * @brief Cache iterator
  * zrtp_def_cache_foreach() calls this function for every cache entry.
@@ -124,6 +126,8 @@ void zrtp_def_cache_foreach( zrtp_global_t *global,
 							 int is_mitm,
 							 zrtp_cache_callback_t callback,
 							 void *data);
+	
+#endif /* ZRTP_USE_BUILTIN_CACHE */
 
 /**
  * @brief Store shared secrets cache to the persistent storage
@@ -151,14 +155,13 @@ zrtp_status_t zrtp_def_cache_put_name( const zrtp_stringn_t* one_zid,
 									   const zrtp_stringn_t* another_zid,
 									   const zrtp_stringn_t* name);
 	
+#if defined(ZRTP_USE_BUILTIN_CACHE) && (ZRTP_USE_BUILTIN_CACHE == 1)
 zrtp_cache_elem_t* zrtp_def_cache_get2(const zrtp_cache_id_t id, int is_mitm);
-	
+#endif /* ZRTP_USE_BUILTIN_CACHE */
 
 #if defined(__cplusplus)
 }
 #endif
-
-#endif /* ZRTP_USE_BUILTIN_CACHE */
 
 #endif /*__ZRTP_IFACE_CACHE_H__*/
 
