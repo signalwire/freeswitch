@@ -322,7 +322,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 ###############################################################################################################################
 APPLICATION_MODULES_AE="applications/mod_avmd  applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf applications/mod_expr"
 
-APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limitp applications/mod_memcache"
+APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit applications/mod_memcache"
 
 APPLICATION_MODULES_NY=" applications/mod_redis applications/mod_rss applications/mod_soundtouch  applications/mod_spandsp applications/mod_stress applications/mod_spy "
 
