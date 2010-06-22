@@ -58,7 +58,7 @@ Source3:		http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:		http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:		http://files.freeswitch.org/downloads/libs/mpg123.tar.gz
 Source6:		http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source7:		http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.tar.gz
+Source7:		http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
 Source8:		http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
 Source9:		http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
 Source10:		http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
@@ -328,7 +328,7 @@ APPLICATION_MODULES_NY=" applications/mod_redis applications/mod_rss application
 
 APPLICATION_MODULES_VZ="applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail"
 
-APPLICATION_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
+APPLICATIONS_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
 ###############################################################################################################################
 #
 #													Automatic Speech Recognition and Text To Speech Modules
