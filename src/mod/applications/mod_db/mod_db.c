@@ -214,7 +214,7 @@ SWITCH_LIMIT_INCR(limit_incr_db)
 		switch_channel_set_variable(channel, "limit_usage", susage);
 		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_usage_%s_%s", realm, resource), susage);
 	}
-	switch_limit_fire_event("sql", realm, resource, got, 0, max, 0);
+	switch_limit_fire_event("db", realm, resource, got, 0, max, 0);
 
   done:
 	switch_mutex_unlock(globals.mutex);
