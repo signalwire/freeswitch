@@ -1380,6 +1380,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 				char *val = p;
 				switch_url_decode(val);
 				switch_channel_set_variable(channel, tag->name, val);
+				if (!strcasecmp(tag->name, "channel_name")) {
+					printf("name %s\n", val);
+					switch_channel_set_name(channel, val);
+				}
 				free(p);
 			}
 		}
@@ -1388,7 +1392,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	if ((callflow = switch_xml_child(xml, "callflow"))) {
 		if ((tag2 = switch_xml_child(callflow, "caller_profile"))) {
 			switch_caller_profile_t *caller_profile;
-			char *name;
 			char *tmp;
 
 			caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
@@ -1409,10 +1412,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 
 			if ((tmp = xml_find_var(tag2, "callee_id_number"))) {
 				caller_profile->callee_id_number = switch_core_session_strdup(session, tmp);
-			}
-
-			if ((name = xml_find_var(tag2, "channel_name"))) {
-				switch_channel_set_name(channel, name);
 			}
 
 			if ((tag3 = switch_xml_child(callflow, "times"))) {
