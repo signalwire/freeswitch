@@ -973,6 +973,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 					ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tmp);
 				}
 			}
+			if ((var = switch_channel_get_variable(channel, "freetdm_disable_dtmf"))) {
+				ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_DTMF_DETECT, NULL);
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_UUID_CHANGE:
@@ -1452,6 +1455,24 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 	return FTDM_BREAK;
 }
 
+static void ftdm_enable_channel_dtmf(ftdm_channel_t *fchan, switch_channel_t *channel)
+{
+	if (channel) {
+		const char *var;
+		if ((var = switch_channel_get_variable(channel, "freetdm_disable_dtmf"))) {
+			if (switch_true(var)) {
+				ftdm_channel_command(fchan, FTDM_COMMAND_DISABLE_DTMF_DETECT, NULL);
+				ftdm_log(FTDM_LOG_INFO, "DTMF detection disabled in channel %d:%d\n", ftdm_channel_get_id(fchan), ftdm_channel_get_span_id(fchan));
+				return;
+			}
+		}
+		/* the variable is not present or has a negative value then proceed to enable DTMF ... */
+	}
+	if (ftdm_channel_command(fchan, FTDM_COMMAND_ENABLE_DTMF_DETECT, NULL) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to enable DTMF detection in channel %d:%d\n", ftdm_channel_get_id(fchan), ftdm_channel_get_span_id(fchan));
+	}
+}
+
 static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
 	switch_core_session_t *session = NULL;
@@ -1497,6 +1518,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
+				ftdm_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1541,6 +1563,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
+				ftdm_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1837,12 +1860,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		case FTDM_SIGEVENT_UP:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
-				ftdm_tone_type_t tt = FTDM_TONE_DTMF;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
-				if (ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "Failed to enable DTMF detection in R2 channel %d:%d\n", spanid, chanid);
-				}
+				ftdm_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1879,12 +1899,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_START:
 		{
-			ftdm_tone_type_t tt = FTDM_TONE_DTMF;
-
-			if (ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "TONE ERROR\n");
-			}
-
+			ftdm_enable_channel_dtmf(sigmsg->channel, NULL);
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
@@ -1905,12 +1920,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case FTDM_SIGEVENT_UP:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
-				ftdm_tone_type_t tt = FTDM_TONE_DTMF;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
-				if (ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DTMF_DETECT, &tt) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "TONE ERROR\n");
-				}
+				ftdm_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			} else {
 				const char *uuid = ftdm_channel_get_uuid(sigmsg->channel, 0);
