@@ -274,11 +274,8 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 
 				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
 				if (err > 0) {
-					err = sangoma_tdm_enable_dtmf_events(chan->sockfd, &tdm_api);
-					if (err == 0) {
-						ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
-						dtmf = "hardware";
-					}
+					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
+					dtmf = "hardware";
 				}
 			}
 
