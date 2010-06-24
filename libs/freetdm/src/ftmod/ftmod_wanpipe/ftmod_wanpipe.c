@@ -1185,6 +1185,19 @@ static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 #endif
 
 	if (ftdmchan->sockfd != FTDM_INVALID_SOCKET) {
+		/* enable HW DTMF. As odd as it seems. Why enable when the channel is being destroyed and won't be used anymore?
+		 * because that way we can transfer the DTMF state back to the driver, if we're being restarted we will set again
+		 * the FEATURE_DTMF flag and use HW DTMF, if we don't enable here, then on module restart we won't see
+		 * HW DTMF available and will use software */
+		if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+			wanpipe_tdm_api_t tdm_api;
+			int err;
+			memset(&tdm_api, 0, sizeof(tdm_api));
+			err = sangoma_tdm_enable_dtmf_events(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed enabling Sangoma HW DTMF failed on channel destroy\n");
+			}
+		}
 		sangoma_close(&ftdmchan->sockfd);
 	}
 
