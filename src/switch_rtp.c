@@ -187,6 +187,7 @@ struct switch_rtp {
 	char *timer_name;
 	char *local_host_str;
 	char *remote_host_str;
+	char *eff_remote_host_str;
 	switch_time_t last_stun;
 	uint32_t samples_per_interval;
 	uint32_t samples_per_second;
@@ -195,6 +196,7 @@ struct switch_rtp {
 	uint32_t ms_per_packet;
 	switch_port_t local_port;
 	switch_port_t remote_port;
+	switch_port_t eff_remote_port;
 	switch_port_t remote_rtcp_port;
 	uint32_t stuncount;
 	uint32_t funny_stun;
@@ -774,7 +776,7 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 
-		if (switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, rtp_session->remote_host_str, SWITCH_UNSPEC, 
+		if (switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, rtp_session->eff_remote_host_str, SWITCH_UNSPEC, 
 									 rtp_session->remote_rtcp_port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !rtp_session->rtcp_remote_addr) {
 			*err = "RTCP Remote Address Error!";
 			return SWITCH_STATUS_FALSE;
@@ -1111,6 +1113,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		rtp_session->remote_host_str = switch_core_strdup(rtp_session->pool, host);
 		rtp_session->remote_port = port;
 	}
+
+	rtp_session->eff_remote_host_str = switch_core_strdup(rtp_session->pool, host);
+	rtp_session->eff_remote_port = port;
 
 	if (rtp_session->sock_input && switch_sockaddr_get_family(rtp_session->remote_addr) == switch_sockaddr_get_family(rtp_session->local_addr)) {
 		rtp_session->sock_output = rtp_session->sock_input;
