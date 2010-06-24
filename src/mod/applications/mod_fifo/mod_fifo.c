@@ -404,7 +404,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	switch_mutex_init(&node->mutex, SWITCH_MUTEX_NESTED, node->pool);
 	cbt.buf = outbound_count;
 	cbt.len = sizeof(outbound_count);
-	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", name);
+	sql = switch_mprintf("select count(*) from fifo_outbound where taking_calls = 1 and fifo_name = '%q'", name);
 	fifo_execute_sql_callback(mutex, sql, sql2str_callback, &cbt);
 	if (atoi(outbound_count) > 0) {
 		node->has_outbound = 1;
@@ -580,7 +580,8 @@ static void find_consumers(fifo_node_t *node)
 
 	sql = switch_mprintf("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 						 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname "
-						 "from fifo_outbound where (fifo_name = '%q') and (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) "
+						 "from fifo_outbound where taking_calls = 1 and "
+						 "(fifo_name = '%q') and (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) "
 						 "order by next_avail", node->name, (long) switch_epoch_time_now(NULL));
 
 	switch_assert(sql);
@@ -1658,6 +1659,8 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_xml_set_attr_d(x_out, "lag", argv[6]);
 	switch_xml_set_attr_d(x_out, "outbound-call-count", argv[10]);
 	switch_xml_set_attr_d(x_out, "outbound-fail-count", argv[11]);
+	switch_xml_set_attr_d(x_out, "taking-calls", argv[12]);
+	switch_xml_set_attr_d(x_out, "status", argv[13]);
 	switch_xml_set_attr_d(x_out, "next-available", expires);
 
 	switch_xml_set_txt_d(x_out, argv[2]);
@@ -1670,7 +1673,7 @@ static int xml_outbound(switch_xml_t xml, fifo_node_t *node, char *container, ch
 	struct xml_helper h;
 	char *sql = switch_mprintf("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, "
 							   "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, "
-							   "hostname from fifo_outbound where fifo_name = '%q'", node->name);
+							   "hostname, taking_calls, status from fifo_outbound where fifo_name = '%q'", node->name);
 
 	h.xml = xml;
 	h.node = node;
@@ -1907,7 +1910,14 @@ const char outbound_sql[] =
 	" timeout integer,\n"
 	" lag integer,\n"
 	" next_avail integer,\n"
-	" expires integer,\n" " static integer,\n" " outbound_call_count integer," " outbound_fail_count integer," " hostname varchar(255)\n" ");\n";
+	" expires integer,\n"
+	" static integer,\n"
+	" outbound_call_count integer,\n"
+	" outbound_fail_count integer,\n"
+	" hostname varchar(255),\n"
+	" taking_calls integer not null default 1,\n"
+	" status varchar(255)\n"
+	");\n";
 
 
 static switch_status_t load_config(int reload, int del_all)
@@ -1963,7 +1973,7 @@ static switch_status_t load_config(int reload, int del_all)
 		goto done;
 	}
 
-	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1", "drop table fifo_outbound", outbound_sql);
+	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0", "drop table fifo_outbound", outbound_sql);
 	switch_cache_db_release_db_handle(&dbh);
 
 	if (reload) {
@@ -2201,7 +2211,7 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 
 	cbt.buf = outbound_count;
 	cbt.len = sizeof(outbound_count);
-	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", node->name);
+	sql = switch_mprintf("select count(*) from fifo_outbound where taking_calls = 1 and fifo_name = '%q'", node->name);
 	fifo_execute_sql_callback(globals.sql_mutex, sql, sql2str_callback, &cbt);
 	if (atoi(outbound_count) > 0) {
         	node->has_outbound = 1;
