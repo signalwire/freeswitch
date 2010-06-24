@@ -1134,7 +1134,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		if (remote_rtcp_port) {
 			rtp_session->remote_rtcp_port = remote_rtcp_port;
 		} else {
-			rtp_session->remote_rtcp_port = rtp_session->remote_port + 1;
+			rtp_session->remote_rtcp_port = rtp_session->eff_remote_port + 1;
 		}
 		status = enable_remote_rtcp_socket(rtp_session, err);
 	}
