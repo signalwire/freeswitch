@@ -581,7 +581,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	if (!mod_sofia_globals.profile_hash)
 		goto done;
 
-
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
@@ -601,9 +600,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			continue;
 		}
 
-
 		if (call_info) {
 			const char *uuid = switch_event_get_header(event, "unique-id");
+
 
 #if 0
 			if (mod_sofia_globals.debug_sla > 1) {
@@ -634,24 +633,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			sync_sla(profile, euser, host, SWITCH_TRUE, SWITCH_TRUE);
-		} else {
-			char count_buf[128] = "";
-			int count = 0;
-			const char *state = switch_event_get_header(event, "channel-state");
-			
-			sql = switch_mprintf("select count(*) from sip_dialogs "
-								 "where hostname='%q' and presence_id='%q@%q'", mod_sofia_globals.hostname, euser, host);
-			sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, count_buf, sizeof(count_buf));
-
-			count = atoi(count_buf);
-			
-			switch_safe_free(sql);
-			
-			if (count > 1 || (count > 0 && switch_stristr("hangup", state))) {
-				continue;
-			}
 		}
-		
+
+
 		if ((sql = switch_mprintf("select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
 								  "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
 								  "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
