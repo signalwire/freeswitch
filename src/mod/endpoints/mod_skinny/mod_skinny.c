@@ -957,10 +957,16 @@ switch_status_t channel_answer_channel(switch_core_session_t *session)
 		switch_channel_get_variable(channel, "skinny_device_name"),
 		atoi(switch_channel_get_variable(channel, "skinny_device_instance")), &listener);
 	if (listener) {
+		int x = 0;
 		skinny_session_start_media(session, listener, atoi(switch_channel_get_variable(channel, "skinny_line_instance")));
 		/* Wait for media */
 		while(!switch_test_flag(tech_pvt, TFLAG_IO)) {
 			switch_cond_next();
+			if (++x > 1000) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Wait tooo long to answer %s:%s\n",
+					switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"));
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unable to find listener to answer %s:%s\n",
@@ -976,28 +982,26 @@ switch_status_t channel_receive_message(switch_core_session_t *session, switch_c
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		{
-			switch_clear_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-			channel_answer_channel(session);
-		}
-		break;
+		switch_clear_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+		return channel_answer_channel(session);
+
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
-		{
-			skinny_session_send_call_info_all(session);
-		}
+		skinny_session_send_call_info_all(session);
+		return SWITCH_STATUS_SUCCESS;
+
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-		{
-			if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
-				/* early media */
-				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-				channel_answer_channel(session);
-			}
+		if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+			/* early media */
+			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+			return channel_answer_channel(session);
 		}
+		return SWITCH_STATUS_SUCCESS;
+
 	default:
-		break;
+		return SWITCH_STATUS_SUCCESS;
+
 	}
 
-	return SWITCH_STATUS_SUCCESS;
 }
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
