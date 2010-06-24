@@ -479,11 +479,12 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_channel_t *channel;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	switch_caller_extension_t *extension = NULL;
-	char *app_name, *arg = NULL;
+	char *app_name, *arg = NULL, *originate_string = NULL, *p = NULL;
 	char sql[256] = "";
 	const char *member_wait = NULL;
 	fifo_node_t *node = NULL;
 	switch_event_t *ovars = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_mutex_lock(globals.mutex);
 	node = switch_core_hash_find(globals.fifo_hash, h->node_name);
@@ -501,9 +502,29 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(ovars);
 	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "originate_timeout", "%d", h->timeout);
+	
 
-	if (switch_ivr_originate(NULL, &session, &cause, h->originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+
+	if (switch_stristr("origination_caller", h->originate_string)) {
+		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q'}%s",
+										  node->name, h->originate_string);
+	} else {
+		char *name_dup = strdup(node->name);
+		if ((p = strchr(name_dup, '@'))) {
+			*p = '\0';
+		}
+
+		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+										  "origination_caller_id_name=Queue,origination_caller_id_number='fifo+%q'}%s",
+										  node->name,  name_dup, h->originate_string);
+		free(name_dup);
+	}
+
+	status = switch_ivr_originate(NULL, &session, &cause, originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
+	free(originate_string);
+
+
+	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_snprintf(sql, sizeof(sql),
 						"update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s'",
 						(long) switch_epoch_time_now(NULL), h->uuid);
@@ -2064,26 +2085,13 @@ static switch_status_t load_config(int reload, int del_all)
 					*p = '\0';
 				}
 
-				if (switch_stristr("origination_caller_id", member->txt)) {
-					sql = switch_mprintf("insert into fifo_outbound "
-										 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
-										 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-										 "values ('%q','%q',"
-										 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q''"
-										 "}%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
-										 digest, node->name, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname);
-				} else {
 
-					sql = switch_mprintf("insert into fifo_outbound "
-										 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
-										 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-										 "values ('%q','%q',"
-										 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q'',origination_caller_id_name=Queue,"
-										 "origination_caller_id_number=''fifo+%q''}%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
-										 digest, node->name, node->name, name_dup, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname);
-
-				}
-
+				sql = switch_mprintf("insert into fifo_outbound "
+									 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
+									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
+									 "values ('%q','%q','%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
+									 digest, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname);
+					
 				switch_assert(sql);
 				fifo_execute_sql(sql, globals.sql_mutex);
 				free(sql);
@@ -2176,10 +2184,8 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 	sql = switch_mprintf("insert into fifo_outbound "
 						 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, "
 						 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-						 "values ('%q','%q',"
-						 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q'',origination_caller_id_name=Queue,"
-						 "origination_caller_id_number=''fifo+%q''}%q',%d,%d,%d,%d,%d,%ld,0,0,0,'%q')",
-						 digest, fifo_name, fifo_name, name_dup, originate_string, simo_count, 0, timeout, lag, 0, (long) expires, globals.hostname);
+						 "values ('%q','%q','%q',%d,%d,%d,%d,%d,%ld,0,0,0,'%q')",
+						 digest, fifo_name, originate_string, simo_count, 0, timeout, lag, 0, (long) expires, globals.hostname);
 	switch_assert(sql);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	free(sql);
