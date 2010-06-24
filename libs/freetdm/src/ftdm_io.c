@@ -2252,9 +2252,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
 				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
 			}
-			if (ftdmchan->fds[FTDM_READ_TRACE_INDEX] > 0) {
-				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
-				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
+			if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > 0) {
+				close(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX]);
+				ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] = -1;
 			}
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
