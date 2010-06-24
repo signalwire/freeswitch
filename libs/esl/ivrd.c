@@ -47,8 +47,10 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 		return;
 	}
 	
-
-	esl_attach_handle(&handle, client_sock, addr);
+	if (esl_attach_handle(&handle, client_sock, addr) != ESL_SUCCESS || !handle.info_event) {
+		esl_log(ESL_LOG_ERROR, "Socket Error\n");
+		exit(0);
+	}
 
 	if (!(path = esl_event_get_header(handle.info_event, "variable_ivr_path"))) {
 		esl_disconnect(&handle);
