@@ -891,6 +891,18 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_subscribe:
 		sofia_presence_handle_sip_i_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
+	case nua_r_authenticate:
+
+		if (status >= 500) {
+			if (sofia_private && sofia_private->gateway) {
+				nua_handle_destroy(sofia_private->gateway->nh);
+				sofia_private->gateway->nh = NULL;
+			} else {
+				nua_handle_destroy(nh);
+			}
+		}
+		
+		break;
 	default:
 		if (status > 100) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s: unknown event %d: %03d %s\n", nua_event_name(event), event,
