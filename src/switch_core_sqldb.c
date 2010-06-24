@@ -1009,9 +1009,8 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_HOLD:
 	case SWITCH_EVENT_CHANNEL_UNHOLD:
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		sql = switch_mprintf("update channels set callstate='%q',application='%q',application_data='%q',"
+		sql = switch_mprintf("update channels set application='%q',application_data='%q',"
 							 "presence_id='%q',presence_data='%q' where uuid='%q' and hostname='%q'",
-							 switch_event_get_header_nil(event, "channel-call-state"),
 							 switch_event_get_header_nil(event, "application"),
 							 switch_event_get_header_nil(event, "application-data"),
 							 switch_event_get_header_nil(event, "channel-presence-id"),
@@ -1045,6 +1044,15 @@ static void core_event_handler(switch_event_t *event)
 			}
 		}
 		break;
+	case SWITCH_EVENT_CHANNEL_CALLSTATE:
+		{
+			sql = switch_mprintf("update channels set callstate='%q' where uuid='%q' and hostname='%q'",
+								 switch_event_get_header_nil(event, "channel-call-state"),
+								 switch_event_get_header_nil(event, "unique-id"), 
+								 switch_core_get_variable("hostname"));
+			
+		}
+		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
 		{
 			char *state = switch_event_get_header_nil(event, "channel-state-number");
@@ -1059,11 +1067,10 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DESTROY:
 				break;
 			case CS_ROUTING:
-				sql = switch_mprintf("update channels set state='%s',callstate='%q',cid_name='%q',cid_num='%q',"
+				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
 									 "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
 									 "where uuid='%s' and hostname='%q'",
 									 switch_event_get_header_nil(event, "channel-state"),
-									 switch_event_get_header_nil(event, "channel-call-state"),
 									 switch_event_get_header_nil(event, "caller-caller-id-name"),
 									 switch_event_get_header_nil(event, "caller-caller-id-number"),
 									 switch_event_get_header_nil(event, "caller-network-addr"),
@@ -1075,9 +1082,8 @@ static void core_event_handler(switch_event_t *event)
 									 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 				break;
 			default:
-				sql = switch_mprintf("update channels set state='%s',callstate='%s' where uuid='%s' and hostname='%q'",
+				sql = switch_mprintf("update channels set state='%s' where uuid='%s' and hostname='%q'",
 									 switch_event_get_header_nil(event, "channel-state"),
-									 switch_event_get_header_nil(event, "channel-call-state"),
 									 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 				break;
 			}
