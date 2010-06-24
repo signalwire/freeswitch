@@ -3434,6 +3434,7 @@ SWITCH_STANDARD_API(ft_function)
 		char tracepath[255];
 		unsigned i = 0;
 		uint32_t chan_id = 0;
+		uint32_t span_id = 0;
 		uint32_t chan_count = 0;
 		ftdm_span_t *span = NULL;
 		ftdm_channel_t *chan = NULL;
@@ -3454,18 +3455,19 @@ SWITCH_STANDARD_API(ft_function)
 				goto end;
 			}
 		}
+		span_id = ftdm_span_get_id(span);
 		if (chan_id) {
 			chan = ftdm_span_get_channel(span, chan_id);
-			snprintf(tracepath, sizeof(tracepath), "%s-in-c%d", argv[1], chan_id);
+			snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, chan_id);
 			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
-			snprintf(tracepath, sizeof(tracepath), "%s-out-c%d", argv[1], chan_id);
+			snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, chan_id);
 			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
 		} else {
 			for (i = 1; i <= chan_count; i++) {
 				chan = ftdm_span_get_channel(span, i);
-				snprintf(tracepath, sizeof(tracepath), "%s-in-c%d", argv[1], i);
+				snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, i);
 				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
-				snprintf(tracepath, sizeof(tracepath), "%s-out-c%d", argv[1], i);
+				snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, i);
 				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
 			}
 		}
