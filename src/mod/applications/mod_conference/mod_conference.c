@@ -3704,6 +3704,15 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		
 		switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->last_talking);
 		add_x_tag(x_member, "last_talking", member->last_talking ? i : "N/A", toff++);
+
+		switch_snprintf(i, sizeof(i), "%d", member->energy_level);
+		add_x_tag(x_member, "energy", i, toff++);
+
+		switch_snprintf(i, sizeof(i), "%d", member->volume_in_level);
+		add_x_tag(x_member, "volume_in", i, toff++);
+
+		switch_snprintf(i, sizeof(i), "%d", member->volume_out_level);
+		add_x_tag(x_member, "volume_out", i, toff++);
 		
 		x_flags = switch_xml_add_child_d(x_member, "flags", count++);
 		switch_assert(x_flags);
