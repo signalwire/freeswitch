@@ -731,19 +731,23 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
+	int myerrno = 0;
 	wp_tdm_api_rx_hdr_t hdrframe;
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
 
-	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen,0);
+	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen, 0);
 	*datalen = rx_len;
 
-	if (rx_len == 0 || rx_len == -17) {
+	if (rx_len == 0) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Read 0 bytes\n");
 		return FTDM_TIMEOUT;
 	}
 
 	if (rx_len < 0) {
+		myerrno = errno;
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read from sangoma device: %s (%d)\n", strerror(errno), rx_len);
 		return FTDM_FAIL;
 	} 
 
