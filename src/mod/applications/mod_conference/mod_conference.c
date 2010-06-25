@@ -176,7 +176,8 @@ typedef enum {
 	CFLAG_BRIDGE_TO = (1 << 6),
 	CFLAG_WAIT_MOD = (1 << 7),
 	CFLAG_VID_FLOOR = (1 << 8),
-	CFLAG_WASTE_BANDWIDTH = (1 << 9)
+	CFLAG_WASTE_BANDWIDTH = (1 << 9),
+	CFLAG_GAIN_CONTROL = (1 << 10)
 } conf_flag_t;
 
 typedef enum {
@@ -300,6 +301,8 @@ typedef struct conference_obj {
 	uint32_t verbose_events;
 	int end_count;
 	uint32_t relationship_total;
+	uint32_t score;
+	uint32_t avg_score;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -335,6 +338,7 @@ struct conference_member {
 	uint8_t *mux_frame;
 	uint32_t read;
 	int32_t energy_level;
+	int32_t agc_volume_in_level;
 	int32_t volume_in_level;
 	int32_t volume_out_level;
 	switch_time_t join_time;
@@ -997,8 +1001,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	uint8_t *file_frame;
 	uint8_t *async_file_frame;
 	int16_t *bptr;
-	int x;
+	int x = 0;
 	int32_t z = 0;
+	int member_score_sum = 0;
+	int mux_loop_count = 0;
 
 	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -1183,8 +1189,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 			has_file_data = 1;
 		}
-
-
+		
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
 			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
@@ -1203,16 +1208,29 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 			}
 
+			member_score_sum = 0;
+			mux_loop_count = 0;
+
 			/* Copy audio from every member known to be producing audio into the main frame. */
 			for (omember = conference->members; omember; omember = omember->next) {
+				if (switch_test_flag(conference, CFLAG_GAIN_CONTROL)) {
+					member_score_sum += omember->score;
+				}
+				
 				if (!(switch_test_flag(omember, MFLAG_RUNNING) && switch_test_flag(omember, MFLAG_HAS_AUDIO))) {
 					continue;
 				}
+				mux_loop_count++;
 				bptr = (int16_t *) omember->frame;
 				for (x = 0; x < omember->read / 2; x++) {
 					main_frame[x] += (int32_t) bptr[x];
 				}
 			}
+			
+			if (switch_test_flag(conference, CFLAG_GAIN_CONTROL) && x && mux_loop_count) {
+				conference->avg_score = member_score_sum / mux_loop_count;
+			}
+
 
 			/* Create write frame once per member who is not deaf for each sample in the main frame
 			   check if our audio is involved and if so, subtract it from the sample so we don't hear ourselves.
@@ -1272,7 +1290,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					switch_normalize_to_16bit(z);
 					write_frame[x] = (int16_t) z;
 				}
-
+				
 				switch_mutex_lock(omember->audio_out_mutex);
 				ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
 				switch_mutex_unlock(omember->audio_out_mutex);
@@ -1936,6 +1954,22 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->score = energy / (samples / divisor);
 			}
 
+			if (switch_test_flag(member->conference, CFLAG_GAIN_CONTROL) && member->conference->avg_score && member->score) {
+				int diff = member->conference->avg_score - member->score;
+
+				if (diff > 200) {
+					member->agc_volume_in_level++;
+					switch_normalize_volume(member->agc_volume_in_level);
+					member->score = member->energy_level + 10;
+				} else if (diff < -200) {
+					member->agc_volume_in_level--;
+					switch_normalize_volume(member->agc_volume_in_level);
+					member->score = member->energy_level + 10;
+				} else {
+					member->agc_volume_in_level = 0;
+				}
+			}
+
 			member->score_iir = (int) (((1.0 - SCORE_DECAY) * (float) member->score) + (SCORE_DECAY * (float) member->score_iir));
 
 			if (member->score_iir > SCORE_MAX_IIR) {
@@ -2041,7 +2075,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			}
 
 			/* Check for input volume adjustments */
-			if (member->volume_in_level) {
+			if (switch_test_flag(member->conference, CFLAG_GAIN_CONTROL) && member->agc_volume_in_level) {
+				switch_change_sln_volume(data, datalen / 2, member->agc_volume_in_level);
+			} else if (member->volume_in_level) {
 				switch_change_sln_volume(data, datalen / 2, member->volume_in_level);
 			}
 
@@ -3239,7 +3275,8 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 			count++;
 		}
 
-		stream->write_function(stream, "%s%d%s%d%s%d\n", delim, member->volume_in_level, delim, member->volume_out_level, delim, member->energy_level);
+		stream->write_function(stream, "%s%d%s%d%s%d\n", delim, member->agc_volume_in_level ? 
+							   member->agc_volume_in_level : member->volume_in_level, delim, member->volume_out_level, delim, member->energy_level);
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
@@ -3556,7 +3593,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 }
 
 
-static void add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
+static switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
 {
 	switch_size_t dlen = strlen(value) * 3;
 	char *data;
@@ -3570,6 +3607,8 @@ static void add_x_tag(switch_xml_t x_member, const char *name, const char *value
 	switch_url_encode(value, data, dlen);
 	switch_xml_set_txt_d(x_tag, data);
 	free(data);
+
+	return x_tag;
 }
 
 static void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, int off)
@@ -3620,6 +3659,10 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "dynamic", "true");
 	}
 
+	if (switch_test_flag(conference, CFLAG_GAIN_CONTROL)) {
+		switch_xml_set_attr_d(x_conference, "agc", "true");
+	}
+
 	x_members = switch_xml_add_child_d(x_conference, "members", 0);
 	switch_assert(x_members);
 
@@ -3633,6 +3676,7 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		uint32_t count = 0;
 		switch_xml_t x_tag;
 		int toff = 0;
+		char tmp[50] = "";
 
 		if (switch_test_flag(member, MFLAG_NOCHANNEL)) {
 			continue;
@@ -3655,12 +3699,12 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		add_x_tag(x_member, "caller_id_number", profile->caller_id_number, toff++);
 
 
-                switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->join_time);
-                add_x_tag(x_member, "join_time", i, toff++);
-
-                switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->last_talking);
-                add_x_tag(x_member, "last_talking", member->last_talking ? i : "N/A", toff++);
-
+		switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->join_time);
+		add_x_tag(x_member, "join_time", i, toff++);
+		
+		switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - member->last_talking);
+		add_x_tag(x_member, "last_talking", member->last_talking ? i : "N/A", toff++);
+		
 		x_flags = switch_xml_add_child_d(x_member, "flags", count++);
 		switch_assert(x_flags);
 
@@ -3684,6 +3728,16 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 
 		x_tag = switch_xml_add_child_d(x_flags, "end_conference", count++);
 		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_ENDCONF) ? "true" : "false");
+
+		switch_snprintf(tmp, sizeof(tmp), "%d", member->volume_out_level);
+		x_tag = add_x_tag(x_member, "output-volume", tmp, toff++);
+
+		switch_snprintf(tmp, sizeof(tmp), "%d", member->agc_volume_in_level ? member->agc_volume_in_level : member->volume_in_level);
+		x_tag = add_x_tag(x_member, "input-volume", tmp, toff++);
+
+		if (member->agc_volume_in_level) {
+			switch_xml_set_attr_d(x_tag, "auto", "true");
+		}
 
 	}
 
@@ -4902,6 +4956,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_VID_FLOOR;
 			} else if (!strcasecmp(argv[i], "waste-bandwidth")) {
 				*f |= CFLAG_WASTE_BANDWIDTH;
+			} else if (!strcasecmp(argv[i], "auto-gain-control")) {
+				*f |= CFLAG_GAIN_CONTROL;
 			}
 		}
 
