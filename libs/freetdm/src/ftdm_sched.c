@@ -128,7 +128,15 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched)
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "invalid pointer\n");
 
+	ftdm_mutex_lock(sched->mutex);
+
 	ftdm_mutex_lock(sched_globals.mutex);
+
+	if (sched->freerun) {
+		ftdm_log(FTDM_LOG_ERROR, "Schedule %s is already running in free run\n", sched->name);
+		goto done;
+	}
+	sched->freerun = 1;
 
 	if (sched_globals.running == FTDM_FALSE) {
 		ftdm_log(FTDM_LOG_NOTICE, "Launching main schedule thread\n");
@@ -154,6 +162,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched)
 
 done:
 	ftdm_mutex_unlock(sched_globals.mutex);
+
+	ftdm_mutex_unlock(sched->mutex);
 	return status;
 }
 
