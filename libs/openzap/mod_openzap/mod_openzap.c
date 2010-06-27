@@ -1529,6 +1529,24 @@ static ZIO_SIGNAL_CB_FUNCTION(on_common_signal)
 	return ZAP_BREAK;
 }
 
+static void zap_enable_channel_dtmf(zap_channel_t *zchan, switch_channel_t *channel)
+{
+	if (channel) {
+		const char *var;
+		if ((var = switch_channel_get_variable(channel, "openzap_disable_dtmf"))) {
+			if (switch_true(var)) {
+				zap_channel_command(zchan, ZAP_COMMAND_DISABLE_DTMF_DETECT, NULL);
+				zap_log(ZAP_LOG_INFO, "DTMF detection disabled in channel %d:%d\n", zchan->span_id, zchan->chan_id);
+				return;
+			}
+		}
+		/* the variable is not present or has negative value then proceed to enable DTMF */
+	}	
+	if (zap_channel_command(zchan, ZAP_COMMAND_ENABLE_DTMF_DETECT, NULL) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_ERROR, "Failed to enable DTMF detection in channel %d:%d\n", zchan->span_id, zchan->chan_id);
+	}
+}
+
 static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
 	switch_core_session_t *session = NULL;
@@ -1567,6 +1585,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
+				zap_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1606,6 +1625,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
+				zap_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1887,12 +1907,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		case ZAP_SIGEVENT_UP:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				zap_tone_type_t tt = ZAP_TONE_DTMF;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
-				if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
-					zap_log(ZAP_LOG_ERROR, "Failed to enable DTMF detection in R2 channel %d:%d\n", sigmsg->channel->span_id, sigmsg->channel->chan_id);
-				}
+				zap_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -1923,12 +1940,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_START:
 		{
-			zap_tone_type_t tt = ZAP_TONE_DTMF;
-
-			if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
-			}
-
+			zap_enable_channel_dtmf(sigmsg->channel, channel);
 			return zap_channel_from_event(sigmsg, &session);
 		}
 		break;
@@ -1949,12 +1961,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     case ZAP_SIGEVENT_UP:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
-				zap_tone_type_t tt = ZAP_TONE_DTMF;
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
-				if (zap_channel_command(sigmsg->channel, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
-					zap_log(ZAP_LOG_ERROR, "TONE ERROR\n");
-				}
+				zap_enable_channel_dtmf(sigmsg->channel, channel);
 				switch_core_session_rwunlock(session);
 			} else {
 				const char *uuid = zap_channel_get_uuid(sigmsg->channel, 0);
