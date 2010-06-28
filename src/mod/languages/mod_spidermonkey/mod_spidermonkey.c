@@ -2864,6 +2864,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 									 &jss->session, &jss->cause, uuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
 				switch_set_flag(jss, S_HUP);
 				switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_SOFT_EXECUTE);
+				switch_channel_wait_for_state_timeout(switch_core_session_get_channel(jss->session), CS_SOFT_EXECUTE, 5000);
 				*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 			} else {
 				*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_cause2str(jss->cause)));
