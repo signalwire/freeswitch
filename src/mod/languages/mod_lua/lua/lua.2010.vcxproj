@@ -80,7 +80,6 @@
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)lua5.1.dll</OutputFile>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -106,7 +105,6 @@
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)lua5.1.dll</OutputFile>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -128,7 +126,6 @@
       <DisableSpecificWarnings>4127; 4505;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)lua5.1.dll</OutputFile>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -152,7 +149,6 @@
       <DisableSpecificWarnings>4127; 4505;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)lua5.1.dll</OutputFile>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
