@@ -1951,7 +1951,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			goto do_continue;
 		}
 
-			/* Check for input volume adjustments */
+		/* Check for input volume adjustments */
+		if (!switch_test_flag(member->conference, CFLAG_GAIN_CONTROL)) {
+			member->agc_volume_in_level = 0;
+		}
+
 		if (switch_test_flag(member->conference, CFLAG_GAIN_CONTROL) && member->agc_volume_in_level) {
 			switch_change_sln_volume(read_frame->data, read_frame->datalen / 2, member->agc_volume_in_level);
 		} else if (member->volume_in_level) {
@@ -2004,11 +2008,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					member->agc_concur = 0;
 				}
 				
-				if (member->agc_concur >= one_sec / 2) {
+				if (member->agc_concur >= one_sec) {
 					if (diff > 200) {
 						member->agc_volume_in_level++;
 						
-						if (diff > 200) {
+						if (diff > 400) {
 							member->agc_volume_in_level++;
 						}
 
@@ -3400,7 +3404,7 @@ static switch_status_t conf_api_sub_agc_on(conference_obj_t *conference, switch_
 static switch_status_t conf_api_sub_agc_off(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_clear_flag(conference, CFLAG_GAIN_CONTROL);
-
+	
 	if (stream) {
 		stream->write_function(stream, "OK AGC DISABLED\n");
 	}
