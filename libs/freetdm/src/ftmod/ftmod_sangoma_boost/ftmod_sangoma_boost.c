@@ -1455,7 +1455,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 								BOOST_CHAN(ftdmchan),
 								0,
 								SIGBOOST_EVENT_CALL_START_ACK,
-								0, 0);
+								0, SIGBOOST_PROGRESS_RING);
 				}
 			}
 		}
