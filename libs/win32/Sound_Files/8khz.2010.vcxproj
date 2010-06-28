@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>8khz</ProjectName>
+    <ProjectGuid>{7A8D8174-B355-4114-AFC1-04777CB9DE0A}</ProjectGuid>
+    <RootNamespace>Sound_Files</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*" "$(OutDir)sounds\en\us\callie\ivr\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*" "$(OutDir)sounds\en\us\callie\conference\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*" "$(OutDir)sounds\en\us\callie\time\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*" "$(OutDir)sounds\en\us\callie\digits\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*" "$(OutDir)sounds\en\us\callie\ascii\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*" "$(OutDir)sounds\en\us\callie\misc\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*" "$(OutDir)sounds\en\us\callie\currency\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\8000" /C /D /Y /S /I
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*" "$(OutDir)sounds\en\us\callie\ivr\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*" "$(OutDir)sounds\en\us\callie\conference\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*" "$(OutDir)sounds\en\us\callie\time\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*" "$(OutDir)sounds\en\us\callie\digits\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*" "$(OutDir)sounds\en\us\callie\ascii\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*" "$(OutDir)sounds\en\us\callie\misc\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*" "$(OutDir)sounds\en\us\callie\currency\8000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\8000" /C /D /Y /S /I
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download 8khz Sounds.2010.vcxproj">
+      <Project>{3ce1dc99-8246-4db1-a709-74f19f08ec67}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

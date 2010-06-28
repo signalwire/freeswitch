@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>mod_sofia</ProjectName>
+    <ProjectGuid>{0DF3ABD0-DDC0-4265-B778-07C66780979B}</ProjectGuid>
+    <RootNamespace>mod_sofia</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_release.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_debug.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_release.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\module_debug.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\win32;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\tport;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sresolv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;advapi32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\libs\sofia-sip\win32\pthread;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\win32;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\tport;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sresolv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;advapi32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\libs\sofia-sip\win32\pthread;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\win32;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\tport;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sresolv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;advapi32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\libs\sofia-sip\win32\pthread;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\win32;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\tport;%(RootDir)%(Directory)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sresolv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB;LIBSRES_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <DisableSpecificWarnings>4201;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;advapi32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\libs\sofia-sip\win32\pthread;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="mod_sofia.c" />
+    <ClCompile Include="sip-dig.c" />
+    <ClCompile Include="sofia.c" />
+    <ClCompile Include="sofia_glue.c" />
+    <ClCompile Include="sofia_presence.c" />
+    <ClCompile Include="sofia_reg.c" />
+    <ClCompile Include="sofia_sla.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mod_sofia.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\libs\win32\apr\libapr.2010.vcxproj">
+      <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2010.vcxproj">
+      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\sofia\libsofia_sip_ua_static.2010.vcxproj">
+      <Project>{70a49bc2-7500-41d0-b75d-edcc5be987a0}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
+      <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
