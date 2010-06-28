@@ -155,6 +155,7 @@ SWITCH_DECLARE(void) switch_cache_db_flush_handles(void)
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t ** dbh)
 {
 	if (dbh && *dbh) {
+		switch_clear_flag(*dbh, CDF_INUSE);
 		switch_mutex_unlock((*dbh)->mutex);
 		*dbh = NULL;
 	}
