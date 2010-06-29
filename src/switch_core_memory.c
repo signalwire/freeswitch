@@ -318,6 +318,29 @@ SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, con
 	apr_pool_tag(pool, tag);
 }
 
+SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
+{
+#ifdef PER_POOL_LOCK
+	apr_thread_mutex_t *my_mutex;
+	apr_pool_mutex_set(p, NULL);
+#endif
+
+	apr_pool_clear(p);
+
+#ifdef PER_POOL_LOCK
+
+	if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, p)) != APR_SUCCESS) {
+		abort();
+	}
+
+	apr_pool_mutex_set(p, my_mutex);
+
+#endif
+
+}
+
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
 	char *tmp;
@@ -503,6 +526,7 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 				switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 #else
+				apr_pool_mutex_set(pop, NULL);
 				apr_pool_clear(pop);
 				if (switch_queue_trypush(memory_manager.pool_recycle_queue, pop) != SWITCH_STATUS_SUCCESS) {
 #ifdef USE_MEM_LOCK

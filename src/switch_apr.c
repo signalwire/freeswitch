@@ -89,11 +89,6 @@ SWITCH_DECLARE(int) switch_thread_equal(switch_thread_id_t tid1, switch_thread_i
 
 }
 
-SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
-{
-	apr_pool_clear(p);
-}
-
 SWITCH_DECLARE(unsigned int) switch_ci_hashfunc_default(const char *char_key, switch_ssize_t *klen)
 {
 	unsigned int hash = 0;
