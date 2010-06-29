@@ -103,7 +103,7 @@ static void sql_close(time_t prune)
 				diff = (time_t) prune - dbh->last_used;
 			}
 
-			if (prune > 0 && diff < SQL_CACHE_TIMEOUT) {
+			if (prune > 0 && diff < SQL_CACHE_TIMEOUT && !switch_test_flag(dbh, CDF_PRUNE)) {
 				continue;
 			}
 
@@ -161,6 +161,22 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 }
 
 
+SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t ** dbh)
+{
+	if (dbh && *dbh) {
+
+		if ((*dbh)->type == SCDB_TYPE_CORE_DB) {
+			switch_set_flag((*dbh), CDF_PRUNE);
+		} else {
+			switch_clear_flag((*dbh), CDF_INUSE);
+		}
+
+		switch_mutex_unlock((*dbh)->mutex);
+		*dbh = NULL;
+	}
+}
+
+
 SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t ** dbh)
 {
 	if (dbh && *dbh) {
@@ -208,9 +224,13 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 		if ((dbh = (switch_cache_db_handle_t *) val)) {
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 				if (strstr(dbh->name, thread_str)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,
-									  "Detach cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(dbh->type));
-					switch_clear_flag(dbh, CDF_INUSE);
+					if (dbh->type == SCDB_TYPE_CORE_DB) {
+						switch_set_flag(dbh, CDF_PRUNE);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,
+										  "Detach cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(dbh->type));
+						switch_clear_flag(dbh, CDF_INUSE);
+					}
 				}
 				switch_mutex_unlock(dbh->mutex);
 			}
@@ -281,7 +301,8 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 
 			if ((new_dbh = (switch_cache_db_handle_t *) val)) {
 				if (hash == new_dbh->hash && !strncasecmp(new_dbh->name, db_str, strlen(db_str)) &&
-					!switch_test_flag(new_dbh, CDF_INUSE) && switch_mutex_trylock(new_dbh->mutex) == SWITCH_STATUS_SUCCESS) {
+					!switch_test_flag(new_dbh, CDF_INUSE) && !switch_test_flag(new_dbh, CDF_PRUNE) 
+					&& switch_mutex_trylock(new_dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 					switch_set_flag(new_dbh, CDF_INUSE);
 					switch_set_string(new_dbh->name, thread_str);
 					new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);

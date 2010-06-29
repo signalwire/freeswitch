@@ -2012,7 +2012,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 
 #define CACHE_DB_LEN 256
 	 typedef enum {
-		 CDF_INUSE = (1 << 0)
+		 CDF_INUSE = (1 << 0),
+		 CDF_PRUNE = (1 << 1)
 	 } cache_db_flag_t;
 
 	 typedef enum {
@@ -2075,6 +2076,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 	return type_str;
 }
 
+SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t ** dbh);
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t ** dbh);
 SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t ** dbh);
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t ** dbh,
