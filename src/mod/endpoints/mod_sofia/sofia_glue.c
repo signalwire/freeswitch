@@ -4403,6 +4403,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	}
 
 	switch_channel_set_variable(channel, "sip_invite_call_id", switch_channel_get_variable(channel, "sip_call_id"));
+	switch_channel_set_variable(channel, "sip_invite_cseq", switch_channel_get_variable(channel, "sip_cseq"));
 
 	if (switch_true(switch_channel_get_variable(channel, "sip_nat_detected"))) {
 		switch_channel_set_variable_printf(channel, "sip_route_uri", "sip:%s@%s:%s",
