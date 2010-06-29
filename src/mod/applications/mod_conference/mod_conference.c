@@ -3801,7 +3801,7 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	if (conference->agc_level) {
 		char tmp[30] = "";
 		switch_snprintf(tmp, sizeof(tmp), "%d", conference->agc_level);
-		switch_xml_set_attr_d(x_conference, "agc", tmp);
+		switch_xml_set_attr_d_buf(x_conference, "agc", tmp);
 	}
 
 	x_members = switch_xml_add_child_d(x_conference, "members", 0);
