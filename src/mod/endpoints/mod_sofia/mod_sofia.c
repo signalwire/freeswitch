@@ -242,8 +242,16 @@ char *generate_pai_str(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
-	const char *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+	const char *var, *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
+
+	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) || 
+		((var = switch_channel_get_variable(tech_pvt->channel, "sip_cid_in_1xx")) && switch_false(var))) {
+		printf("ASSSSS\n");
+
+		return NULL;
+	}
+
 
 	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
@@ -511,9 +519,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					char *cid = generate_pai_str(session);
+					
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause),
 								TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
-								SIPTAG_HEADER_STR(generate_pai_str(session)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
+								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 				}
 			}
 		}
@@ -689,6 +699,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+		char *cid = generate_pai_str(session);
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
 			/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
@@ -702,7 +713,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						NUTAG_AUTOANSWER(0),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-						SIPTAG_HEADER_STR(generate_pai_str(session)),
+						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(session_timeout),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
@@ -717,7 +728,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						NUTAG_MEDIA_ENABLE(0),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-						SIPTAG_HEADER_STR(generate_pai_str(session)),
+						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(session_timeout),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
@@ -1936,7 +1947,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else if (code == 484 && msg->numeric_arg) {
 				const char *to = switch_channel_get_variable(channel, "sip_to_uri");
 				const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
-
+				char *cid = generate_pai_str(session);
 				char *to_uri = NULL;
 
 				if (to) {
@@ -1953,7 +1964,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 					nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
 								SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
-								SIPTAG_HEADER_STR(generate_pai_str(session)),
+								TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
 
@@ -2031,7 +2042,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 				char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 				const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
-
+				char *cid = generate_pai_str(session);
 
 				switch (ring_ready_val) {
 
@@ -2039,7 +2050,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 					nua_respond(tech_pvt->nh, SIP_182_QUEUED,
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SIPTAG_HEADER_STR(generate_pai_str(session)),
+								TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 								TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
@@ -2051,7 +2062,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 					nua_respond(tech_pvt->nh, SIP_180_RINGING,
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SIPTAG_HEADER_STR(generate_pai_str(session)),
+								TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 								TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
@@ -2147,6 +2158,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+					char *cid = generate_pai_str(session);
 
 					if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 						tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
@@ -2163,7 +2175,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									SIP_183_SESSION_PROGRESS,
 									NUTAG_AUTOANSWER(0),
 									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-									SIPTAG_HEADER_STR(generate_pai_str(session)),
+									TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SOATAG_REUSE_REJECTED(1),
 									SOATAG_ORDERED_USER(1),
@@ -2179,7 +2191,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									NUTAG_AUTOANSWER(0),
 									NUTAG_MEDIA_ENABLE(0),
 									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-									SIPTAG_HEADER_STR(generate_pai_str(session)),
+									TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 									SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),

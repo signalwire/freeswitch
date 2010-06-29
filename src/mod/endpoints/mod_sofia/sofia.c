@@ -2249,6 +2249,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
 						}
+					} else if (!strcasecmp(var, "cid-in-1xx")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_CID_IN_1XX);
+						}
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;
@@ -2820,6 +2826,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
 				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
+				sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2860,6 +2867,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_T38_PASSTHRU);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
+						}
+					} else if (!strcasecmp(var, "cid-in-1xx")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_CID_IN_1XX);
 						}
 					} else if (!strcasecmp(var, "disable-hold")) {
 						if (switch_true(val)) {

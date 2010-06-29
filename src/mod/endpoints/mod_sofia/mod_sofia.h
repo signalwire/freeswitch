@@ -212,6 +212,7 @@ typedef enum {
 	PFLAG_DESTROY,
 	PFLAG_EXTENDED_INFO_PARSING,
 	PFLAG_T38_PASSTHRU,
+	PFLAG_CID_IN_1XX,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
