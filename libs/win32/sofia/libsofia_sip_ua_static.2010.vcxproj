@@ -62,12 +62,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -101,7 +101,6 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Culture>0x040b</Culture>
     </ResourceCompile>
     <Lib>
-      <OutputFile>$(IntDir)libsofia_sip_ua_static.lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>
@@ -146,7 +145,6 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Culture>0x040b</Culture>
     </ResourceCompile>
     <Lib>
-      <OutputFile>$(IntDir)libsofia_sip_ua_static.lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>
@@ -183,7 +181,6 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Culture>0x040b</Culture>
     </ResourceCompile>
     <Lib>
-      <OutputFile>$(IntDir)libsofia_sip_ua_static.lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>
@@ -222,7 +219,6 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Culture>0x040b</Culture>
     </ResourceCompile>
     <Lib>
-      <OutputFile>$(IntDir)libsofia_sip_ua_static.lib</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <Bscmake>

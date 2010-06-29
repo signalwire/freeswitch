@@ -75,10 +75,6 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(PlatformName)\$(Configuration)\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">FreeSwitch</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">FreeSwitch</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">FreeSwitch</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">FreeSwitch</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <BuildLog>
@@ -115,7 +111,6 @@
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AddModuleNamesToAssembly>%(AddModuleNamesToAssembly)</AddModuleNamesToAssembly>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(OutDir)FreeSwitch.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>
       </OptimizeReferences>
@@ -177,7 +172,6 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AddModuleNamesToAssembly>%(AddModuleNamesToAssembly)</AddModuleNamesToAssembly>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(OutDir)FreeSwitch.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>
       </OptimizeReferences>
@@ -229,7 +223,6 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(OutDir)FreeSwitchCore.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -282,7 +275,6 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(OutDir)FreeSwitchCore.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
