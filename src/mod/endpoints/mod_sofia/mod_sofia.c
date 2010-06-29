@@ -247,8 +247,6 @@ char *generate_pai_str(switch_core_session_t *session)
 
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) || 
 		((var = switch_channel_get_variable(tech_pvt->channel, "sip_cid_in_1xx")) && switch_false(var))) {
-		printf("ASSSSS\n");
-
 		return NULL;
 	}
 
