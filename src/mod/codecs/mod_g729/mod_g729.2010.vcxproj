@@ -115,6 +115,10 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Passthrough|Win32'">$(SolutionDir)$(PlatformName)\Debug\mod\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Passthrough|x64'">$(SolutionDir)$(PlatformName)\Debug\mod\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Passthrough|Win32'">$(SolutionDir)$(PlatformName)\Release\mod\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Passthrough|x64'">$(SolutionDir)$(PlatformName)\Release\mod\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

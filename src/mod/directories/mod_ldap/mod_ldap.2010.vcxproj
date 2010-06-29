@@ -121,6 +121,10 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug MS-LDAP|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release MS-LDAP|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release MS-LDAP|x64'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug MS-LDAP|Win32'">$(SolutionDir)$(PlatformName)\Debug\mod\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug MS-LDAP|x64'">$(SolutionDir)$(PlatformName)\Debug\mod\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release MS-LDAP|Win32'">$(SolutionDir)$(PlatformName)\Release\mod\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release MS-LDAP|x64'">$(SolutionDir)$(PlatformName)\Release\mod\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
