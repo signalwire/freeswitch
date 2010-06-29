@@ -2996,7 +2996,7 @@ static switch_status_t load_config(void)
 
 	/* start all boost spans now that we're done configuring. Unfortunately at this point boost modules have the limitation
 	 * of needing all spans to be configured before starting them */
-	for ( ; i < boosti; i++) {
+	for (i=0 ; i < boosti; i++) {
 		boost_span = boost_spans[i];
 		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", ftdm_span_get_id(boost_span));
 		if (ftdm_span_start(boost_span) == FTDM_FAIL) {
