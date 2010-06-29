@@ -169,7 +169,7 @@ library_include_HEADERS = \
 	src/include/switch_xml.h \
 	src/include/switch_xml_config.h \
 	src/include/switch_cpp.h \
-	src/include/switch_json.h\
+	src/include/switch_json.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
@@ -232,8 +232,8 @@ libfreeswitch_la_SOURCES = \
 	src/switch_limit.c \
 	src/g711.c \
 	src/switch_pcm.c \
-	src/switch_profile.c\
-	src/switch_json.c\
+	src/switch_profile.c \
+	src/switch_json.c \
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
