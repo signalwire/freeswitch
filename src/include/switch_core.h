@@ -2076,20 +2076,68 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 	return type_str;
 }
 
+/*! 
+ \brief Returns the handle to the pool, immediately available for other
+ 		threads to use.
+ \param [in] The handle
+*/
 SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t ** dbh);
+/*! 
+ \brief Returns the handle to the pool, handle is NOT available to 
+ 		other threads until the allocating thread actually terminates.
+ \param [in] The handle
+*/
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t ** dbh);
+/*! 
+ \brief Removes the handle from the pool and frees up the handle resources. 
+ \param [in] The handle
+*/
 SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t ** dbh);
+/*! 
+ \brief Gets a new cached handle from the pool, potentially creating a new connection.
+ 		The connection is bound to the thread until it (the thread) terminates unless
+ 		you dismiss rather than release.
+ \param [out] dbh The handle
+ \param [in] type - ODBC or SQLLITE
+ \param [in] connection_options (userid, password, etc)
+*/
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t ** dbh,
 															   switch_cache_db_handle_type_t type,
 															   switch_cache_db_connection_options_t *connection_options,
 															   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle(_a, _b, _c) _switch_cache_db_get_db_handle(_a, _b, _c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+/*! 
+ \brief Executes the sql and returns the result as a string
+ \param [in] dbh The handle
+ \param [in] sql - sql to run
+ \param [out] str - buffer for result
+ \param [in] len - length of str buffer
+ \param [out] err - Error if it exists
+*/
 SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t *dbh, char *sql, char *str, size_t len, char **err);
+/*! 
+ \brief Executes the sql
+ \param [in] dbh The handle
+ \param [in] sql - sql to run
+ \param [out] err - Error if it exists
+*/
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql, char **err);
+/*! 
+ \brief Executes the sql and uses callback for row-by-row processing
+ \param [in] dbh The handle
+ \param [in] sql - sql to run
+ \param [in] callback - function pointer to callback
+ \param [in] pdata - data to pass to callback
+ \param [out] err - Error if it exists
+*/
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql,
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
+/*! 
+ \brief Provides some feedback as to the status of the db connection pool
+ \param [in] stream stream for status
+*/
 SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream);
 SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
 #define switch_core_db_handle(_a) _switch_core_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
@@ -2098,6 +2146,9 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 															const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
+/*! 
+ \brief Tries to detach all free connections from current thread.  
+*/
 SWITCH_DECLARE(void) switch_cache_db_detach(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
