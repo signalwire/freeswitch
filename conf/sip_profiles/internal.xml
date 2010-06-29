@@ -59,6 +59,10 @@
     <param name="hold-music" value="$${hold_music}"/>
     <param name="apply-nat-acl" value="nat.auto"/>
 
+
+    <!-- (default true) set to false if you do not wish to have called party info in 1XX responses -->
+    <!-- <param name="cid-in-1xx" value="false"/> -->
+
     <!-- extended info parsing -->
     <!-- <param name="extended-info-parsing" value="true"/> -->
 
