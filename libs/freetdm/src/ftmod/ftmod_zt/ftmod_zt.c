@@ -639,7 +639,7 @@ static FIO_OPEN_FUNCTION(zt_open)
 			}
 			if (ioctl(ftdmchan->sockfd, codes.ECHOCANCEL, &len)) {
 				ftdm_log(FTDM_LOG_WARNING, "Echo cancel not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
-			} else if (zt_globals.etlevel >= 0) {
+			} else if (zt_globals.etlevel > 0) {
 				len = zt_globals.etlevel;
 				if (ioctl(ftdmchan->sockfd, codes.ECHOTRAIN, &len)) {
 					ftdm_log(FTDM_LOG_WARNING, "Echo training not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
