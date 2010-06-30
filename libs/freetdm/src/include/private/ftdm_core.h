@@ -589,8 +589,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 */
 #define ftdm_socket_close(it) if (it > -1) { close(it); it = -1;}
 
-#define ftdm_array_len(array) sizeof(array)/sizeof(array[0])
-
 #define ftdm_channel_lock(chan) ftdm_mutex_lock(chan->mutex)
 #define ftdm_channel_unlock(chan) ftdm_mutex_unlock(chan->mutex)
 #define ftdm_log_chan_ex(fchan, file, func, line, level, format, ...) ftdm_log(file, func, line, level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
