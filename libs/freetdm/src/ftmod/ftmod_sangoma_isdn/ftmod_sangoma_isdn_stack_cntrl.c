@@ -37,11 +37,11 @@
 
 void stack_resp_hdr_init(Header *hdr);
 
-ftdm_status_t sng_isdn_cntrl_phy(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cntrl_q921(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cntrl_q931(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cntrl_cc(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cntrl_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
+ftdm_status_t sng_isdn_activate_phy(ftdm_span_t *span);
+ftdm_status_t sng_isdn_activate_q921(ftdm_span_t *span);
+ftdm_status_t sng_isdn_activate_q931(ftdm_span_t *span);
+ftdm_status_t sng_isdn_activate_cc(ftdm_span_t *span);
+ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 
 ftdm_status_t sng_isdn_cntrl_q931(ftdm_span_t *span, uint8_t action, uint8_t subaction);
 ftdm_status_t sng_isdn_cntrl_q921(ftdm_span_t *span, uint8_t action, uint8_t subaction);
@@ -53,21 +53,21 @@ ftdm_status_t sng_isdn_stack_activate(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
-	if (sng_isdn_cntrl_q921(span) != FTDM_SUCCESS) {
+	if (sng_isdn_activate_q921(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to activate stack q921\n", span->name);
 		return FTDM_FAIL;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%s:Stack q921 activated\n", span->name);
 	if (!g_sngisdn_data.ccs[signal_data->cc_id].activation_done) {
 		g_sngisdn_data.ccs[signal_data->cc_id].activation_done = 1;
-		if (sng_isdn_cntrl_cc(span) != FTDM_SUCCESS) {
+		if (sng_isdn_activate_cc(span) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_CRIT, "%s:Failed to activate stack CC\n", span->name);
 			return FTDM_FAIL;
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "%s:Stack CC activated\n", span->name);
 	}
 
-	if (sng_isdn_cntrl_q931(span) != FTDM_SUCCESS) {
+	if (sng_isdn_activate_q931(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to activate stack q931\n", span->name);
 		return FTDM_FAIL;
 	}
@@ -78,7 +78,7 @@ ftdm_status_t sng_isdn_stack_activate(ftdm_span_t *span)
 }
 
 
-ftdm_status_t sng_isdn_cntrl_phy(ftdm_span_t *span)
+ftdm_status_t sng_isdn_activate_phy(ftdm_span_t *span)
 {
 	L1Mngmt cntrl;
     Pst pst;
@@ -92,7 +92,7 @@ ftdm_status_t sng_isdn_cntrl_phy(ftdm_span_t *span)
 }
 
 
-ftdm_status_t sng_isdn_cntrl_q921(ftdm_span_t *span)
+ftdm_status_t sng_isdn_activate_q921(ftdm_span_t *span)
 {
 	ftdm_status_t status;
 	status = sng_isdn_cntrl_q921(span, ABND_ENA, NOTUSED);
@@ -109,13 +109,13 @@ ftdm_status_t sng_isdn_cntrl_q921(ftdm_span_t *span)
 	return status;
 }
 
-ftdm_status_t sng_isdn_cntrl_q931(ftdm_span_t *span)
+ftdm_status_t sng_isdn_activate_q931(ftdm_span_t *span)
 {
 	/* TODO: remove this function later, just call sng_isdn_cntrl_q931 directly */
 	return sng_isdn_cntrl_q931(span, ABND_ENA, SAELMNT);
 }
 
-ftdm_status_t sng_isdn_cntrl_cc(ftdm_span_t *span)
+ftdm_status_t sng_isdn_activate_cc(ftdm_span_t *span)
 {
 	CcMngmt cntrl;;
     Pst pst;
@@ -149,7 +149,7 @@ ftdm_status_t sng_isdn_cntrl_cc(ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_cntrl_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt)
+ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 	switch (trace_opt) {
