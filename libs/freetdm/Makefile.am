@@ -257,13 +257,31 @@ ftmod_sangoma_ss7_la_LDFLAGS = -module  -avoid-version -lsng_ss7
 ftmod_sangoma_ss7_la_LIBADD  = $(MYLIB)
 endif
 
+if SNGISDN
+ftmod_sangoma_isdn_la_SOURCES = $(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_cfg.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_cntrl.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_trace.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_support.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_cntrl.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_cfg.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_in.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_out.c
+
+
+ftmod_sangoma_isdn_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+ftmod_sangoma_isdn_la_LDFLAGS = -module -avoid-version -lsng_isdn
+ftmod_sangoma_isdn_la_LIBADD  = $(MYLIB)
+endif
+
+
+
 if OPENR2
 ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c 
 ftmod_r2_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ftmod_r2_la_LDFLAGS = -module  -avoid-version -lopenr2
 ftmod_r2_la_LIBADD  = $(MYLIB)
 endif
-
 
 dox doxygen:
 	cd docs && doxygen $(FT_SRCDIR)/docs/Doxygen.conf
