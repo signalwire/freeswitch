@@ -225,6 +225,7 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 	void *val;
 	char *key;
 	switch_cache_db_handle_t *dbh = NULL;
+	int prune = 0;
 
 	snprintf(thread_str, sizeof(thread_str) - 1, "%lu", (unsigned long) (intptr_t) switch_thread_self());
 	switch_mutex_lock(sql_manager.dbh_mutex);
@@ -237,6 +238,7 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 				if (strstr(dbh->name, thread_str)) {
 					if (dbh->type == SCDB_TYPE_CORE_DB) {
 						switch_set_flag(dbh, CDF_PRUNE);
+						prune++;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,
 										  "Detach cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(dbh->type));
@@ -249,6 +251,11 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 	}
 
 	switch_mutex_unlock(sql_manager.dbh_mutex);
+
+	if (prune) {
+		sql_close(switch_epoch_time_now(NULL));
+	}
+
 }
 
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh,
