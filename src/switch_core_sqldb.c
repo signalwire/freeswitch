@@ -77,7 +77,7 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 }
 
 
-#define SQL_CACHE_TIMEOUT 300
+#define SQL_CACHE_TIMEOUT 120
 
 static void sql_close(time_t prune)
 {
@@ -155,6 +155,17 @@ SWITCH_DECLARE(void) switch_cache_db_flush_handles(void)
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t ** dbh)
 {
 	if (dbh && *dbh) {
+
+		switch ((*dbh)->type) {
+		case SCDB_TYPE_ODBC:
+			{
+				switch_clear_flag((*dbh), CDF_INUSE);
+			}
+			break;
+		default:
+			break;
+		}
+		
 		switch_mutex_unlock((*dbh)->mutex);
 		*dbh = NULL;
 	}
