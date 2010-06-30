@@ -1166,7 +1166,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.ani.plan = atoi(sipvar);
 		}
 
-		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANIII");
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI2");
 		if (sipvar) {
 			ftdm_set_string(caller_data.aniII, sipvar);
 		}
