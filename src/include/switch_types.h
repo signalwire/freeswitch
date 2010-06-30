@@ -1539,7 +1539,8 @@ typedef enum {
 	SCSC_SAVE_HISTORY,
 	SCSC_CRASH,
 	SCSC_MIN_IDLE_CPU,
-	SCSC_VERBOSE_EVENTS
+	SCSC_VERBOSE_EVENTS,
+	SCSC_SHUTDOWN_CHECK
 } switch_session_ctl_t;
 
 typedef enum {
