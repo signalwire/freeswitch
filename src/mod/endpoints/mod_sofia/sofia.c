@@ -2949,8 +2949,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_UUID_AS_CALLID);
 						}
-					} else if (!strcasecmp(var, "track-calls") && switch_true(val)) {
-						sofia_set_pflag(profile, PFLAG_TRACK_CALLS);
+					} else if (!strcasecmp(var, "track-calls")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_TRACK_CALLS);
+						} else if (!strcasecmp(val, "events")) {
+							sofia_set_pflag(profile, PFLAG_TRACK_CALLS);
+							sofia_set_pflag(profile, PFLAG_TRACK_CALLS_EVENTS);
+						}
 					} else if (!strcasecmp(var, "NDLB-received-in-nat-reg-contact") && switch_true(val)) {
 						sofia_set_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT);
 					} else if (!strcasecmp(var, "aggressive-nat-detection") && switch_true(val)) {
