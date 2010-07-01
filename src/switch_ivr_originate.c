@@ -2537,7 +2537,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				current_variable = NULL;
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 
-				printf("ASS %s\n", vdata);
 				if (vdata) {
 					char *var_array[1024] = { 0 };
 					int var_count = 0;
@@ -3332,7 +3331,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			} else {
 				const char *cdr_var = NULL;
-				switch_xml_t cdr;
+				switch_xml_t cdr = NULL;
 				char *xml_text;
 				char buf[128] = "", buf2[128] = "";
 
