@@ -19,7 +19,7 @@
 	</settings>
 
 	<profiles>
-	<!-- Default OSP provider profile -->
+	<!-- Default OSP profile -->
 		<profile name="default">
 			<!-- Service point URLs, up to 8 allowed -->
 			<!-- <param name="service-point-url" value="http://osptestserver.transnexus.com:1080/osp"/> -->
@@ -42,6 +42,8 @@
 			<!-- HTTP timeout in milliseconds, 200~60000 -->
 			<param name="http-timeout" value="10000"/>
 
+			<!-- OSP work mode, direct or indirect -->
+			<param name="work-mode" value="direct"/>
 			<!-- OSP service type, voice or npquery -->
 			<param name="service-type" value="voice"/>
 			<!-- Max number of destinations -->
