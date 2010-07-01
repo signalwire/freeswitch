@@ -1859,8 +1859,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	char tmp[512], *f;
 	int cdr_off = 0, v_off = 0, cd_off = 0;
 
-	if (!(cdr = switch_xml_new("cdr"))) {
-		return SWITCH_STATUS_SUCCESS;
+	if (*xml_cdr) {
+		cdr = *xml_cdr;
+	} else {
+		if (!(cdr = switch_xml_new("cdr"))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	if (!(x_channel_data = switch_xml_add_child_d(cdr, "channel_data", cdr_off++))) {

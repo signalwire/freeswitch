@@ -2090,7 +2090,7 @@ static JSBool session_pre_answer(JSContext * cx, JSObject * obj, uintN argc, jsv
 static JSBool session_cdr(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_xml_t cdr;
+	switch_xml_t cdr = NULL;
 
 	/*Always a pessimist... sheesh! */
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);

@@ -133,7 +133,7 @@ static rc_handle *my_radius_init(void)
 
 static switch_status_t my_on_routing(switch_core_session_t *session)
 {
-	switch_xml_t cdr;
+	switch_xml_t cdr = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	rc_handle *rad_config;
 	switch_status_t retval = SWITCH_STATUS_TERM;
@@ -377,7 +377,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
-	switch_xml_t cdr;
+	switch_xml_t cdr = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	rc_handle *rad_config;
 	switch_status_t retval = SWITCH_STATUS_TERM;

@@ -1211,7 +1211,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			}
 			
 			if (switch_channel_down(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
-				switch_xml_t cdr;
+				switch_xml_t cdr = NULL;
 				char *xml_text;
 
 				switch_channel_wait_for_state(peer_channel, caller_channel, CS_DESTROY);

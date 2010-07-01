@@ -542,7 +542,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::~CoreSession()
 SWITCH_DECLARE(char *) CoreSession::getXMLCDR()
 {
 	
-	switch_xml_t cdr;
+	switch_xml_t cdr = NULL;
 
 	this_check((char *)"");
 	sanity_check((char *)"");
