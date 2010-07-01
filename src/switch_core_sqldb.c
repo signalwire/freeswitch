@@ -1153,7 +1153,10 @@ static void core_event_handler(switch_event_t *event)
 		new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' and hostname='%q'",
 								   switch_event_get_header_nil(event, "channel-call-uuid"),
 								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
-		new_sql() = switch_mprintf("insert into calls values ('%s', '%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s','%q')",
+		new_sql() = switch_mprintf("insert into calls (cal_uuid,call_created,call_created_epoch,function,caller_cid_name,"
+								   "caller_cid_num,caller_dest_num,caller_chan_name,caller_uuid,callee_cid_name,"
+								   "callee_cid_num,callee_dest_num,callee_chan_name,callee_uuid,hostname) "
+								   "values ('%s', '%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s','%q')",
 								   switch_event_get_header_nil(event, "channel-call-uuid"),
 								   switch_event_get_header_nil(event, "event-date-local"),
 								   (long) switch_epoch_time_now(NULL),
