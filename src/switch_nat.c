@@ -459,14 +459,14 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 	} while (r == NATPMP_TRYAGAIN);
 
 	if (r == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %hu protocol %s to localport %hu\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "mapped public port %hu protocol %s to localport %hu\n",
 						  response.pnu.newportmapping.mappedpublicport,
 						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"), response.pnu.newportmapping.privateport);
 		if (external_port) {
 			*external_port = response.pnu.newportmapping.mappedpublicport;
 		} else if (response.pnu.newportmapping.mappedpublicport != response.pnu.newportmapping.privateport) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "External port %hu protocol %s was not available, it was instead mapped to %hu",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "External port %hu protocol %s was not available, it was instead mapped to %hu\n",
 							  response.pnu.newportmapping.privateport,
 							  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 							  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"), response.pnu.newportmapping.mappedpublicport);
@@ -638,7 +638,7 @@ SWITCH_DECLARE(void) switch_nat_republish(void)
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Refreshing nat maps\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Refreshing nat maps\n");
 
 	switch_api_execute("show", "nat_map as xml", NULL, &stream);
 

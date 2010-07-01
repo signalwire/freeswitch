@@ -274,11 +274,8 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 
 				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
 				if (err > 0) {
-					err = sangoma_tdm_enable_dtmf_events(chan->sockfd, &tdm_api);
-					if (err == 0) {
-						ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
-						dtmf = "hardware";
-					}
+					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
+					dtmf = "hardware";
 				}
 			}
 
@@ -734,19 +731,23 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
+	int myerrno = 0;
 	wp_tdm_api_rx_hdr_t hdrframe;
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
 
-	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen,0);
+	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen, 0);
 	*datalen = rx_len;
 
-	if (rx_len == 0 || rx_len == -17) {
+	if (rx_len == 0) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Read 0 bytes\n");
 		return FTDM_TIMEOUT;
 	}
 
 	if (rx_len < 0) {
+		myerrno = errno;
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read from sangoma device: %s (%d)\n", strerror(errno), rx_len);
 		return FTDM_FAIL;
 	} 
 
@@ -1188,6 +1189,19 @@ static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 #endif
 
 	if (ftdmchan->sockfd != FTDM_INVALID_SOCKET) {
+		/* enable HW DTMF. As odd as it seems. Why enable when the channel is being destroyed and won't be used anymore?
+		 * because that way we can transfer the DTMF state back to the driver, if we're being restarted we will set again
+		 * the FEATURE_DTMF flag and use HW DTMF, if we don't enable here, then on module restart we won't see
+		 * HW DTMF available and will use software */
+		if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+			wanpipe_tdm_api_t tdm_api;
+			int err;
+			memset(&tdm_api, 0, sizeof(tdm_api));
+			err = sangoma_tdm_enable_dtmf_events(ftdmchan->sockfd, &tdm_api);
+			if (err) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed enabling Sangoma HW DTMF failed on channel destroy\n");
+			}
+		}
 		sangoma_close(&ftdmchan->sockfd);
 	}
 

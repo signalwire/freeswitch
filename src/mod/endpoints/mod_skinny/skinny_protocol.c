@@ -914,13 +914,19 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 	len = reply->length+8;
 	ptr = (char *) reply;
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
-		"Sending %s (type=%x,length=%d) to %s:%d.\n",
-		skinny_message_type2str(reply->type), reply->type, reply->length,
-		listener->device_name, listener->device_instance);
-	switch_socket_send(listener->sock, ptr, &len);
-
-	return SWITCH_STATUS_SUCCESS;
+	if (listener_is_ready(listener)) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
+			"Sending %s (type=%x,length=%d) to %s:%d.\n",
+			skinny_message_type2str(reply->type), reply->type, reply->length,
+			listener->device_name, listener->device_instance);
+		return switch_socket_send(listener->sock, ptr, &len);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
+			"Not sending %s (type=%x,length=%d) to %s:%d while not ready.\n",
+			skinny_message_type2str(reply->type), reply->type, reply->length,
+			listener->device_name, listener->device_instance);
+		return SWITCH_STATUS_FALSE;
+	}
 }
 
 /* For Emacs:

@@ -2223,7 +2223,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (cid_name_override) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid_name_override);
+		if (!cid_tmp) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid_name_override);
+		}
 	} else {
 		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
 	}
@@ -2233,7 +2235,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (cid_num_override) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num_override);
+		if (!cid_tmp) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num_override);
+		}
 	} else {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
@@ -2309,7 +2313,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (p == end) {
-					end = NULL;
+					end = strchr(p, '[');
 				}
 
 				p++;
@@ -2326,9 +2330,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				char *vdata;
 				const char *current_variable;
 				char variable_buffer[512] = "";
-				switch_event_t *local_var_event = NULL, *originate_var_event = NULL;
+				switch_event_t *local_var_event = NULL, *originate_var_event = NULL, *event = NULL;
+				char *check_a = NULL, *check_b = NULL;
 
 				end = NULL;
+				
 				chan_type = peer_names[i];
 				
 				while (chan_type && *chan_type && *chan_type == ' ') {
@@ -2337,6 +2343,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				vdata = chan_type;
 				end = switch_find_end_paren(vdata, '[', ']');
+
+				check_a = end;
+
+				while (check_a && (check_b = strchr(check_a, '['))) {
+					if ((check_b = switch_find_end_paren(check_b, '[', ']'))) {
+						check_a = check_b;
+					}
+				}
+
+				if (check_a) end = check_a;
 
 				if (end) {
 					vdata++;
@@ -2525,20 +2541,44 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (vdata) {
 					char *var_array[1024] = { 0 };
 					int var_count = 0;
+					char *next;
+					
 
 					switch_event_create_plain(&local_var_event, SWITCH_EVENT_CHANNEL_DATA);
+					
+					
+					for (;;) {
+						if ((next = strchr(vdata, ']'))) {
+							char *pnext;
+							*next++ = '\0';
 
-					if ((var_count = switch_separate_string(vdata, '|', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
-						int x = 0;
-						for (x = 0; x < var_count; x++) {
-							char *inner_var_array[2] = { 0 };
-							int inner_var_count;
-							if ((inner_var_count =
-								 switch_separate_string(var_array[x], '=',
-														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-								switch_event_add_header_string(local_var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+							if ((pnext = strchr(next, '['))) {
+								next = pnext + 1;
 							}
 						}
+						
+						if ((var_count = switch_separate_string(vdata, '|', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+							int x = 0;
+							for (x = 0; x < var_count; x++) {
+								char *inner_var_array[2] = { 0 };
+								int inner_var_count;
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "local variable string %d = [%s]\n", 
+												  x, var_array[x]);
+								if ((inner_var_count =
+									 switch_separate_string(var_array[x], '=',
+														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+									switch_event_add_header_string(local_var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+									
+								}
+							}
+						}
+
+						if (next) {
+							vdata = next;
+						} else {
+							break;
+						}
+
 					}
 				}
 
@@ -2582,16 +2622,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (local_clobber) {
 					if (var_event) {
-						switch_event_t *event;
 						switch_event_header_t *header;
 						/* install the vars from the {} params */
 						for (header = var_event->headers; header; header = header->next) {
 							switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
 						}
-						switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
-						switch_assert(event);
-						switch_channel_event_set_data(originate_status[i].peer_channel, event);
-						switch_event_fire(&event);
 					}
 				}
 
@@ -2606,18 +2641,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (!local_clobber) {
 					if (var_event) {
-						switch_event_t *event;
 						switch_event_header_t *header;
 						/* install the vars from the {} params */
 						for (header = var_event->headers; header; header = header->next) {
 							switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
 						}
-						switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
-						switch_assert(event);
-						switch_channel_event_set_data(originate_status[i].peer_channel, event);
-						switch_event_fire(&event);
 					}
 				}
+
+				switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
+				switch_assert(event);
+				switch_channel_event_set_data(originate_status[i].peer_channel, event);
+				switch_event_fire(&event);
 
 				if (originate_status[i].peer_channel) {
 					const char *vvar;

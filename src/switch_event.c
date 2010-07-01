@@ -1047,6 +1047,85 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data)
+{
+	char *vdata, *vdatap;
+	char *end, *check_a, *check_b;
+	switch_event_t *e = *event;
+	char *var_array[1024] = { 0 };
+	int var_count = 0;
+	char *next;
+	
+	vdata = strdup(data);
+	vdatap = vdata;
+
+	end = switch_find_end_paren(vdata, a, b);
+	
+	check_a = end;
+	
+	while (check_a && (check_b = strchr(check_a, a))) {
+		if ((check_b = switch_find_end_paren(check_b, a, b))) {
+			check_a = check_b;
+		}
+	}
+	
+	if (check_a) end = check_a;
+	
+	if (end) {
+		vdata++;
+		*end++ = '\0';
+	} else {
+		vdata = NULL;
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (!e) {
+		switch_event_create_plain(&e, SWITCH_EVENT_CHANNEL_DATA);
+	}
+
+	
+	for (;;) {
+		if ((next = strchr(vdata, b))) {
+			char *pnext;
+			*next++ = '\0';
+
+			if ((pnext = strchr(next, a))) {
+				next = pnext + 1;
+			}
+		}
+						
+		if ((var_count = switch_separate_string(vdata, c, var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+			int x = 0;
+			for (x = 0; x < var_count; x++) {
+				char *inner_var_array[2] = { 0 };
+				int inner_var_count;
+
+				if ((inner_var_count = switch_separate_string(var_array[x], '=',
+															  inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+				}
+			}
+		}
+
+		if (next) {
+			vdata = next;
+		} else {
+			break;
+		}
+
+	}
+
+	*event = e;
+	*new_data = strdup(end);
+	free(vdatap);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+
 SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event, const char *json)
 {
 	switch_event_t *new_event;

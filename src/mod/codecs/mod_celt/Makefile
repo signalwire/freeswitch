@@ -15,6 +15,7 @@ $(CELT_DIR):
 $(CELT_BUILDDIR)/Makefile: $(CELT_DIR)
 	mkdir -p $(CELT_BUILDDIR)
 	cd $(CELT_BUILDDIR) && $(DEFAULT_VARS) $(CELT_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(CELT_DIR)
+	$(TOUCH_TARGET)
 
 $(CELT_LA): $(CELT_BUILDDIR)/Makefile
 	cd $(CELT_BUILDDIR) && $(MAKE)

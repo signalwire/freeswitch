@@ -264,11 +264,8 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 
 				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
 				if (err > 0) {
-					err = sangoma_tdm_enable_dtmf_events(chan->sockfd, &tdm_api);
-					if (err == 0) {
-						zap_channel_set_feature(chan, ZAP_CHANNEL_FEATURE_DTMF_DETECT);
-						dtmf = "hardware";
-					}
+					zap_channel_set_feature(chan, ZAP_CHANNEL_FEATURE_DTMF_DETECT);
+					dtmf = "hardware";
 				}
 			}
 
@@ -1186,8 +1183,21 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 		sangoma_wait_obj_delete(&sangoma_wait_obj);
 	}
 #endif
-
 	if (zchan->sockfd != ZAP_INVALID_SOCKET) {
+		/* enable HW DTMF. As odd as it seems. Why enable when the channel is being destroyed and won't be used anymore?
+		* because that way we can transfer the DTMF state back to the driver, if we're being restarted we will set again
+		* the FEATURE_DTMF flag and use HW DTMF, if we don't enable here, then on module restart we won't see
+		* HW DTMF available and will use software */
+		if (zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
+			wanpipe_tdm_api_t tdm_api;
+			int err;
+			memset(&tdm_api, 0, sizeof(tdm_api));
+			err = sangoma_tdm_enable_dtmf_events(zchan->sockfd, &tdm_api);
+			if (err) {
+				zap_log(ZAP_LOG_WARNING, "Failed to enable Sangoma HW DTMF on channel %d:%d at destroy\n", 
+						zchan->span_id, zchan->chan_id);
+			}
+		}
 		sangoma_close(&zchan->sockfd);
 	}
 

@@ -515,7 +515,7 @@ SWITCH_STANDARD_APP(rss_function)
 		dtb.index = 0;
 		dtb.sh = &sh;
 		dtb.speed = TTS_MEAN_SPEED;
-		switch_set_flag(&dtb, SFLAG_INFO);
+		//switch_set_flag(&dtb, SFLAG_INFO);
 		switch_copy_string(dtb.voice, voice, sizeof(dtb.voice));
 		while (entries[0].inuse && switch_channel_ready(channel)) {
 			while (switch_channel_ready(channel)) {

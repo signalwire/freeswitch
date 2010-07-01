@@ -42,7 +42,9 @@
 
 #ifdef WIN32
 #include <winsock2.h>
+#if _MSC_VER < 1600
 #define EAFNOSUPPORT    WSAEAFNOSUPPORT
+#endif
 #endif
 
 #include <switch.h>

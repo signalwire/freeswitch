@@ -67,6 +67,9 @@ extern "C" {
 /*! \brief check for zero length string buffer */
 #define ftdm_strlen_zero_buf(s) (*s == '\0')
 
+/*! \brief array len helper */
+#define ftdm_array_len(array) sizeof(array)/sizeof(array[0])
+
 /*! \brief The memory handler. 
     Do not use directly this variable, use the memory macros and ftdm_global_set_memory_handler to override */	
 FT_DECLARE_DATA extern ftdm_memory_handler_t g_ftdm_mem_handler;

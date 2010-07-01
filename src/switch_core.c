@@ -1772,6 +1772,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 			}
 		}
 		break;
+	case SCSC_SHUTDOWN_CHECK:
+		newintval = !!switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
+		break;
 	case SCSC_SHUTDOWN:
 
 #ifdef _MSC_VER

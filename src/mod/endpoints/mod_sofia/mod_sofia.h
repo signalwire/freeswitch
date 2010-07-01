@@ -83,6 +83,8 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REINVITE "sofia::reinvite"
 #define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
 #define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
+#define MY_EVENT_RECOVERY "sofia::recovery"
+#define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
@@ -209,9 +211,11 @@ typedef enum {
 	PFLAG_PASS_CALLEE_ID,
 	PFLAG_LOG_AUTH_FAIL,
 	PFLAG_TRACK_CALLS,
+	PFLAG_TRACK_CALLS_EVENTS,
 	PFLAG_DESTROY,
 	PFLAG_EXTENDED_INFO_PARSING,
 	PFLAG_T38_PASSTHRU,
+	PFLAG_CID_IN_1XX,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -294,6 +298,7 @@ struct mod_sofia_globals {
 	switch_event_node_t *roster_node;
 	switch_event_node_t *custom_node;
 	switch_event_node_t *mwi_node;
+	switch_event_node_t *recovery_node;
 	int guess_mask;
 	char guess_mask_str[16];
 	int debug_presence;
@@ -760,8 +765,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
 
-void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
-							   tagi_t tags[]);
+void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 									 tagi_t tags[]);
@@ -791,6 +795,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);
 void sofia_presence_mwi_event_handler(switch_event_t *event);
+void sofia_glue_track_event_handler(switch_event_t *event);
 void sofia_presence_cancel(void);
 switch_status_t config_sofia(int reload, char *profile_name);
 void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale);
@@ -909,7 +914,7 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 /*
  * Transport handling helper functions
  */
-sofia_transport_t sofia_glue_via2transport(const sip_via_t *via);
+sofia_transport_t sofia_glue_via2transport(const sip_via_t * via);
 sofia_transport_t sofia_glue_url2transport(const url_t *url);
 sofia_transport_t sofia_glue_str2transport(const char *str);
 
@@ -921,8 +926,7 @@ char *sofia_glue_strip_uri(const char *str);
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
-switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type,
-										switch_rtp_crypto_direction_t direction);
+switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt);
 void sofia_presence_event_thread_start(void);

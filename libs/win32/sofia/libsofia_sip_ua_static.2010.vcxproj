@@ -1,0 +1,537 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libsofia_sip_ua_static</ProjectName>
+    <ProjectGuid>{70A49BC2-7500-41D0-B75D-EDCC5BE987A0}</ProjectGuid>
+    <RootNamespace>libsofia_sip_ua_static</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    </CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
+cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
+if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
+if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
+</Command>
+    </PreBuildEvent>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-7-0-release;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x040b</Culture>
+    </ResourceCompile>
+    <Lib>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)libsofia_sip_ua_static.bsc</OutputFile>
+    </Bscmake>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
+cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
+if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
+if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
+
+</Command>
+    </PreBuildEvent>
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-7-0-release;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN64;WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x040b</Culture>
+    </ResourceCompile>
+    <Lib>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)libsofia_sip_ua_static.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
+cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
+if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
+if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
+
+</Command>
+    </PreBuildEvent>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-7-0-release;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x040b</Culture>
+    </ResourceCompile>
+    <Lib>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)libsofia_sip_ua_static.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\sofia-sip\win32\gawk.exe" cscript /nologo "$(ProjectDir)..\util.vbs" Get http://files.freeswitch.org/downloads/win32/gawk.exe "$(ProjectDir)..\..\sofia-sip\win32\"
+cd /D "$(ProjectDir)..\..\sofia-sip\win32\"
+set AWK="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
+if not exist "$(ProjectDir)..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"  "autogen.cmd"
+if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
+
+</Command>
+    </PreBuildEvent>
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\sofia-sip\win32;..\..\sofia-sip\libsofia-sip-ua\su;..\..\sofia-sip\libsofia-sip-ua\ipt;..\..\sofia-sip\libsofia-sip-ua\sresolv;..\..\sofia-sip\libsofia-sip-ua\bnf;..\..\sofia-sip\libsofia-sip-ua\url;..\..\sofia-sip\libsofia-sip-ua\msg;..\..\sofia-sip\libsofia-sip-ua\sip;..\..\sofia-sip\libsofia-sip-ua\nta;..\..\sofia-sip\libsofia-sip-ua\nua;..\..\sofia-sip\libsofia-sip-ua\iptsec;..\..\sofia-sip\libsofia-sip-ua\http;..\..\sofia-sip\libsofia-sip-ua\nth;..\..\sofia-sip\libsofia-sip-ua\nea;..\..\sofia-sip\libsofia-sip-ua\sdp;..\..\sofia-sip\libsofia-sip-ua\soa;..\..\sofia-sip\libsofia-sip-ua\stun;..\..\sofia-sip\libsofia-sip-ua\tport;..\..\sofia-sip\libsofia-sip-ua\features;..\..\pthreads-w32-2-7-0-release;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN64;WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <BrowseInformation>true</BrowseInformation>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x040b</Culture>
+    </ResourceCompile>
+    <Lib>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>$(IntDir)libsofia_sip_ua_static.bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\inet_ntop.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\inet_pton.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\smoothsort.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\string0.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_addrinfo.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_alloc.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_alloc_lock.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_base_port.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_bm.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_default_log.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_errno.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_global_log.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_localinfo.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_log.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_md5.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_os_nw.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_port.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_pthread_port.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_root.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_socket_port.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_sprintf.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_strdup.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_string.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_strlst.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_tag_io.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_taglist.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_time.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_time0.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_timer.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_uniqueid.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_vector.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_wait.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\su_win32_port.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\ipt\base64.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\ipt\rc4.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\ipt\token64.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\url\url.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\url\url_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\url\url_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\features\features.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\bnf\bnf.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_auth.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_basic.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_date.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_generic.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_header_copy.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_header_make.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mclass.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mime.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mime_table.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_parser.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_parser_util.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memcspn.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memmem.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\memspn.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\strcasestr.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\su\strtoull.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_basic.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_caller_prefs.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_event.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_extra.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_feature.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_header.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_mime.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_parser.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_parser_table.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_prack.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_pref_util.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_reason.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_refer.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_security.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_session.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_status.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag_class.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_time.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_util.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_basic.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_extra.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_header.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_parser.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_status.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_tag_class.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\http\http_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_client.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_server.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nth\nth_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_blocking.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_cache.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_sip.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sresolv.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_debug.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_event.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_server.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_client.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_common.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_digest.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module_http.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module_sip.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_plugin.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_plugin_delayed.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\iptsec_debug.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_common.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_dns.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_mini.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_client.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_common.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_dialog.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_event_server.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_extension.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_message.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_notifier.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_options.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_params.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_publish.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_register.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_registrar.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_server.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_session.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_stack.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_subnotref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nua\outbound.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_check.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\sl_read_payload.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\sl_utils_log.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\nta\sl_utils_print.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_logging.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_stub_sigcomp.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_stub_stun.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_connect.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tcp.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_udp.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_parse.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_print.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_tag_ref.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa_static.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa_tag.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\soa\soa_tag_ref.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\stun_internal.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_client.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_dialog.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_params.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_server.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\nua_stack.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_internal.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_session.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\htable.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\htable2.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\rbtree.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\string0.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_addrinfo.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_alloc.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_alloc_stat.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_bm.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_config.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_debug.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_errno.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_localinfo.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_log.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_md5.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\su_module_debug.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_os_nw.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\su_port.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_source.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_string.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_strlst.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_class.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_inline.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_io.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tagarg.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_time.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_types.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_uniqueid.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_vector.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_wait.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\tstdef.h" />
+    <ClInclude Include="..\..\sofia-sip\win32\config.h" />
+    <ClInclude Include="..\..\sofia-sip\win32\sofia-sip\su_configure.h" />
+    <ClInclude Include="..\..\sofia-sip\win32\unistd.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\base64.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\rc4.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\token64.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url_tag_class.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\features\sofia-sip\sofia_features.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\bnf\sofia-sip\bnf.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\bnf\sofia-sip\hostdomain.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_addr.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_bnf.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_buffer.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_date.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_header.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\msg_internal.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mclass.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mclass_hash.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mime.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mime_protos.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_parser.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_protos.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_tag_class.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_types.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_extensions.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_hclasses.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_header.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sip_internal.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_parser.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_protos.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_status.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_tag_class.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_util.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_hclasses.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_header.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_parser.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_protos.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_status.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_tag_class.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nth\sofia-sip\nth.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nth\sofia-sip\nth_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_async.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_cache.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-sip\sres_sip.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-sip\sresolv.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nea\sofia-sip\nea.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nea\nea_debug.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nea\sofia-sip\nea_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_client.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_digest.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_module.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_ntlm.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_plugin.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\iptsec\iptsec_debug.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun_common.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\sofia-sip\nua.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nua\sofia-sip\nua_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\nta_internal.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_stateless.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_tport.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\sl_utils.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport_plugins.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tls.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sofia-sip\sdp.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sofia-sip\sdp_tag.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_add.h" />
+    <ClInclude Include="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_tag.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download PTHREAD.2010.vcxproj">
+      <Project>{8b3b4c4c-13c2-446c-beb0-f412cc2cfb9a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\pthread\pthread.2010.vcxproj">
+      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

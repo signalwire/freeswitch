@@ -1563,6 +1563,9 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "save_history")) {
 			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "shutdown_check")) {
+			switch_core_session_ctl(SCSC_SHUTDOWN_CHECK, &arg);
+			stream->write_function(stream, arg ? "true" : "false");
 		} else if (!strcasecmp(argv[0], "shutdown")) {
 			switch_session_ctl_t command = SCSC_SHUTDOWN;
 			int x = 0;
