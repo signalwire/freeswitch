@@ -1408,8 +1408,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 			/* change the states and let the chips fall where they may */
 
-			switch_channel_set_variable(originator_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
-			switch_channel_set_variable(originatee_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
+			//switch_channel_set_variable(originator_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
+			//switch_channel_set_variable(originatee_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
 			switch_channel_clear_state_handler(originator_channel, NULL);
 			switch_channel_clear_state_handler(originatee_channel, NULL);
 			switch_channel_set_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
