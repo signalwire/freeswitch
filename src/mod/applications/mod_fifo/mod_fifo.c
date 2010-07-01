@@ -831,7 +831,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	switch_core_event_hook_add_state_change(session, hanguphook);
 	app_name = "fifo";
-	arg = switch_core_session_sprintf(session, "%s out wait", node_name);
+	arg = switch_core_session_sprintf(session, "%s out nowait", node_name);
 	extension = switch_caller_extension_new(session, app_name, arg);
 	switch_caller_extension_add_application(session, extension, app_name, arg);
 	switch_channel_set_caller_extension(channel, extension);
