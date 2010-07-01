@@ -4615,6 +4615,7 @@ void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *se
 
 		if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS_EVENTS)) {
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY_SEND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sql", sql);
 				switch_event_fire(&event);
 			}
@@ -4657,6 +4658,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 			switch_event_t *event = NULL;
 			
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY_SEND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sql", sql);
 				switch_event_fire(&event);
 			}
