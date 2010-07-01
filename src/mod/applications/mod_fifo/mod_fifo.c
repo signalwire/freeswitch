@@ -2631,11 +2631,11 @@ const char bridge_sql[] =
 	"create table fifo_bridge (\n"
 	" fifo_name varchar(1024) not null,\n"
 	" caller_uuid varchar(255) not null,\n"
-	" caller_caller_id_name varchar(255),"
-	" caller_caller_id_number varchar(255),"
+	" caller_caller_id_name varchar(255),\n"
+	" caller_caller_id_number varchar(255),\n"
 
 	" consumer_uuid varchar(255) not null,\n"
-	" consumer_outgoing_uuid,\n"
+	" consumer_outgoing_uuid varchar(255),\n"
 	" bridge_start integer\n"
 	");\n"
 ;
