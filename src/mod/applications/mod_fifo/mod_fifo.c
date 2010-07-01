@@ -45,7 +45,7 @@ typedef enum {
 	NODE_STRATEGY_ENTERPRISE
 } outbound_strategy_t;
 
-static outbound_strategy_t default_strategy = NODE_STRATEGY_ENTERPRISE;
+static outbound_strategy_t default_strategy = NODE_STRATEGY_RINGALL;
 
 
 typedef struct {
