@@ -1064,7 +1064,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	
 	check_a = end;
 	
-	while (check_a && (check_b = strchr(check_a, a))) {
+	while (check_a && (check_b = switch_strchr_strict(check_a, a, " "))) {
 		if ((check_b = switch_find_end_paren(check_b, a, b))) {
 			check_a = check_b;
 		}
@@ -1090,7 +1090,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 			char *pnext;
 			*next++ = '\0';
 
-			if ((pnext = strchr(next, a))) {
+			if ((pnext = switch_strchr_strict(next, a, " "))) {
 				next = pnext + 1;
 			}
 		}
