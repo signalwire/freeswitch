@@ -662,7 +662,8 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	if (state == CS_HANGUP || state == CS_ROUTING) {
 		if ((uuid = switch_channel_get_variable(channel, "fifo_outbound_uuid"))) {
 			switch_snprintf(sql, sizeof(sql),
-							"update fifo_outbound set use_count=use_count-1, outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s'",
+							"update fifo_outbound set use_count=use_count-1, "
+							"outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s' and use_count > 0",
 							(long) switch_epoch_time_now(NULL), uuid);
 
 			fifo_execute_sql(sql, globals.sql_mutex);
@@ -817,7 +818,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		for (i = 0; i < cbh->rowcount; i++) {
 			struct call_helper *h = cbh->rows[i];
 			switch_snprintf(sql, sizeof(sql),
-							"update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s'",
+							"update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, "
+							"next_avail=%ld + lag where uuid='%s' and use_count > 0",
 							(long) switch_epoch_time_now(NULL), h->uuid);
 			fifo_execute_sql(sql, globals.sql_mutex);
 		}
@@ -908,7 +910,8 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_snprintf(sql, sizeof(sql),
-						"update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s'",
+						"update fifo_outbound set use_count=use_count-1, "
+						"outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s' and use_count > 0",
 						(long) switch_epoch_time_now(NULL), h->uuid);
 		fifo_execute_sql(sql, globals.sql_mutex);
 		goto end;
