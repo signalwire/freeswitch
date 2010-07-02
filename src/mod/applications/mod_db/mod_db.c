@@ -292,7 +292,7 @@ static switch_status_t do_config()
 	limit_config_dsn.pool = globals.pool;
 
 	if (switch_xml_config_parse_module_settings("db.conf", SWITCH_FALSE, config_settings) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No config file found, defaulting to sqlite\n", DB_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No config file found, defaulting to sqlite\n");
 	}
 
 	if (globals.odbc_dsn) {
