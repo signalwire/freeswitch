@@ -105,16 +105,18 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 
 	while(p && *p) {
 		const char *a = allowed;
-		int found = 0;
+		int acceptable = 0;
+
+		if (*p == find) break;
 
 		if (!a) {
-			found = 1;
+			acceptable = 1;
 		} else {
 
 			while(a && *a) {
 
 				if (*p == *a) {
-					found = 1;
+					acceptable = 1;
 					break;
 				}
 			
@@ -123,9 +125,7 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 
 		}
 		
-		if (!found) return NULL;
-
-		if (*p == find) break;
+		if (!acceptable) return NULL;
 
 		p++;
 	}
