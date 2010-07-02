@@ -1371,12 +1371,28 @@ static __inline__ int request_channel(ftdm_channel_t *check, ftdm_channel_t **ft
 	return 0;
 }
 
+static void __inline__ calculate_best_rate(ftdm_channel_t *check, ftdm_channel_t **best_rated, int *best_rate)
+{
+	if (ftdm_test_flag(check->span, FTDM_SPAN_USE_AV_RATE)) {
+		ftdm_mutex_lock(check->mutex);
+		if (!ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) 
+	 	    && check->availability_rate > *best_rate) {
+			*best_rated = check;
+			*best_rate = check->availability_rate;
+		}
+		ftdm_mutex_unlock(check->mutex);
+	}
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
-	ftdm_channel_t *check;
-	uint32_t i, count;
+	ftdm_channel_t *check = NULL;
+	ftdm_channel_t *best_rated = NULL;
 	ftdm_group_t *group = NULL;
+	int best_rate = 0;
+	uint32_t i = 0;
+	uint32_t count = 0;
 
 	if (group_id) {
 		ftdm_group_find(group_id, &group);
@@ -1416,6 +1432,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 			break;
 		}
 
+		calculate_best_rate(check, &best_rated, &best_rate);
+
 		if (direction == FTDM_TOP_DOWN) {
 			if (i >= group->chan_count) {
 				break;
@@ -1428,6 +1446,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 			i--;
 		}
 	}
+
+	if (status == FTDM_FAIL && best_rated) {
+		ftdm_log_chan(best_rated, FTDM_LOG_DEBUG, "I may not be available but I had the best availability rate %d\n", best_rate);
+		*ftdmchan = best_rated;
+		status = FTDM_SUCCESS;
+	}
+
 	ftdm_mutex_unlock(group->mutex);
 	return status;
 }
@@ -1457,41 +1482,39 @@ FT_DECLARE(ftdm_status_t) ftdm_span_channel_use_count(ftdm_span_t *span, uint32_
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
-	ftdm_channel_t *check;
-	uint32_t i, j, count;
+	ftdm_channel_t *check = NULL;
+	ftdm_channel_t *best_rated = NULL;
 	ftdm_span_t *span = NULL;
-	uint32_t span_max;
+	int best_rate = 0;
+	uint32_t i = 0;
+	uint32_t count = 0;
 
-	if (span_id) {
-		ftdm_span_find(span_id, &span);
+	*ftdmchan = NULL;
 
-		if (!span || !ftdm_test_flag(span, FTDM_SPAN_CONFIGURED)) {
-			ftdm_log(FTDM_LOG_CRIT, "SPAN NOT DEFINED!\n");
-			*ftdmchan = NULL;
-            		return FTDM_FAIL;
-		}
-
-		ftdm_span_channel_use_count(span, &count);
-
-		if (count >= span->chan_count) {
-			ftdm_log(FTDM_LOG_ERROR, "All circuits are busy: active=%i max=%i.\n", count, span->chan_count);
-			*ftdmchan = NULL;
-			return FTDM_FAIL;
-		}
-
-		if (span->channel_request && !ftdm_test_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID)) {
-			ftdm_set_caller_data(span, caller_data);
-			return span->channel_request(span, 0, direction, caller_data, ftdmchan);
-		}
-		
-		span_max = span_id;
-		j = span_id;
-	} else {
+	if (!span_id) {
 		ftdm_log(FTDM_LOG_CRIT, "No span supplied\n");
-		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
-	
+
+	ftdm_span_find(span_id, &span);
+
+	if (!span || !ftdm_test_flag(span, FTDM_SPAN_CONFIGURED)) {
+		ftdm_log(FTDM_LOG_CRIT, "span %d not defined or configured!\n", span_id);
+		return FTDM_FAIL;
+	}
+
+	ftdm_span_channel_use_count(span, &count);
+
+	if (count >= span->chan_count) {
+		ftdm_log(FTDM_LOG_ERROR, "All circuits are busy: active=%i max=%i.\n", count, span->chan_count);
+		return FTDM_FAIL;
+	}
+
+	if (span->channel_request && !ftdm_test_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID)) {
+		ftdm_set_caller_data(span, caller_data);
+		return span->channel_request(span, 0, direction, caller_data, ftdmchan);
+	}
+		
 	ftdm_mutex_lock(span->mutex);
 	
 	if (direction == FTDM_TOP_DOWN) {
@@ -1522,11 +1545,19 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			break;
 		}
 			
+		calculate_best_rate(check, &best_rated, &best_rate);
+
 		if (direction == FTDM_TOP_DOWN) {
 			i++;
 		} else {
 			i--;
 		}
+	}
+
+	if (status == FTDM_FAIL && best_rated) {
+		ftdm_log_chan(best_rated, FTDM_LOG_DEBUG, "I may not be available but I had the best availability rate %d\n", best_rate);
+		*ftdmchan = best_rated;
+		status = FTDM_SUCCESS;
 	}
 
 	ftdm_mutex_unlock(span->mutex);
@@ -1635,9 +1666,13 @@ done:
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
 {
-	ftdm_channel_t *check;
-	ftdm_status_t status = FTDM_FAIL;
+	ftdm_channel_t *check = NULL;
 	ftdm_span_t *span = NULL;
+	ftdm_channel_t *best_rated = NULL;
+	ftdm_status_t status = FTDM_FAIL;
+	int best_rate = 0;
+	int may_be_available = 0;
+
 	*ftdmchan = NULL;
 
 	ftdm_mutex_lock(globals.mutex);
@@ -1671,13 +1706,20 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 
 	ftdm_mutex_lock(check->mutex);
 
+	calculate_best_rate(check, &best_rated, &best_rate);
+	if (best_rated) {
+		may_be_available = 1;
+	}
+
 	/* the channel is only allowed to be open if not in use, or, for FXS devices with a call with call waiting enabled */
 	if (
 	    (check->type == FTDM_CHAN_TYPE_FXS 
 	    && check->token_count == 1 
 	    && ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING))
 	    ||
-	    chan_is_avail(check)) {
+	    chan_is_avail(check)
+	    ||
+	    may_be_available) {
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
 			status = check->fio->open(check);
 			if (status == FTDM_SUCCESS) {

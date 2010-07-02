@@ -2514,7 +2514,6 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 	if (!sangoma_boost_data->sigmod) {
-		ftdm_log(FTDM_LOG_ERROR, "Cannot get signaling status in boost span with no signaling module configured\n");
 		return FTDM_FAIL;
 	}
 	if (!sangoma_boost_data->sigmod->get_span_sig_status) {

@@ -407,6 +407,7 @@ struct ftdm_channel {
 	uint8_t txgain_table[FTDM_GAINS_TABLE_SIZE];
 	float rxgain;
 	float txgain;
+	int availability_rate;
 	void *user_private;
 };
 
