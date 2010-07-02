@@ -4507,6 +4507,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add complete del");
 	switch_console_set_complete("add db_cache status");
 	switch_console_set_complete("add fsctl debug_level");
+	switch_console_set_complete("add fsctl last_sps");
 	switch_console_set_complete("add fsctl default_dtmf_duration");
 	switch_console_set_complete("add fsctl hupall");
 	switch_console_set_complete("add fsctl loglevel");
@@ -4524,6 +4525,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl pause");
 	switch_console_set_complete("add fsctl reclaim_mem");
 	switch_console_set_complete("add fsctl resume");
+	switch_console_set_complete("add fsctl calibrate_clock");
+	switch_console_set_complete("add fsctl crash");
+	switch_console_set_complete("add fsctl verbose_events");
+	switch_console_set_complete("add fsctl save_history");
+	switch_console_set_complete("add fsctl shutdown_check");
 	switch_console_set_complete("add fsctl shutdown");
 	switch_console_set_complete("add fsctl shutdown asap");
 	switch_console_set_complete("add fsctl shutdown now");
