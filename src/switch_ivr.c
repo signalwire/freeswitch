@@ -697,7 +697,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_get_state(channel) == CS_RESET) {
+	if (switch_channel_get_state(channel) == CS_RESET) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -737,6 +737,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
 		} else {
 			switch_yield(20000);
+
+			if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+				switch_ivr_parse_event(session, event);
+				switch_event_destroy(&event);
+			}
+
 			status = SWITCH_STATUS_SUCCESS;
 		}
 
