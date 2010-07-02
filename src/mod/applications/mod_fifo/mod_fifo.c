@@ -2226,7 +2226,7 @@ static int xml_bridge_callback(void *pArg, int argc, char **argv, char **columnN
 	x_bridge = switch_xml_add_child_d(h->xml, h->tag, h->row_off++);
 
 	switch_xml_set_attr_d(x_bridge, "fifo_name", argv[0]);
-	switch_xml_set_attr_d(x_bridge, "bridge_start", exp_buf);
+	switch_xml_set_attr_d_buf(x_bridge, "bridge_start", exp_buf);
 	switch_xml_set_attr_d(x_bridge, "bridge_start_epoch", argv[6]);
 
 	x_caller = switch_xml_add_child_d(x_bridge, "caller", tag_off++);
