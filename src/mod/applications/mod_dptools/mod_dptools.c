@@ -816,6 +816,17 @@ SWITCH_STANDARD_APP(deflect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+
+SWITCH_STANDARD_APP(sched_cancel_function)
+{
+	const char *group = data;
+
+	if (zstr(group)) {
+		group = switch_core_session_get_uuid(session);
+	}
+	switch_scheduler_del_task_group(group);
+}
+
 SWITCH_STANDARD_APP(set_function)
 {
 	char *var, *val = NULL;
@@ -3299,6 +3310,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",
+				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sched_cencel", "cancel scheduled tasks", "cancel scheduled tasks", sched_cancel_function, "[group]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]",
 				   SAF_SUPPORT_NOMEDIA);
