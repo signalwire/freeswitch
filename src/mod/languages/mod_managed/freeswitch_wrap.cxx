@@ -10107,6 +10107,14 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_cache_db_type_name(int jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_cache_db_dismiss_db_handle(void * jarg1) {
+  switch_cache_db_handle_t **arg1 = (switch_cache_db_handle_t **) 0 ;
+  
+  arg1 = (switch_cache_db_handle_t **)jarg1; 
+  switch_cache_db_dismiss_db_handle(arg1);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_cache_db_release_db_handle(void * jarg1) {
   switch_cache_db_handle_t **arg1 = (switch_cache_db_handle_t **) 0 ;
   
@@ -10716,6 +10724,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_moh(char * jarg1) {
   arg1 = (char *)jarg1; 
   result = (switch_bool_t)switch_is_moh((char const *)arg1);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_strchr_strict(char * jarg1, char jarg2, char * jarg3) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (char *)switch_strchr_strict((char const *)arg1,arg2,(char const *)arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
 
@@ -24022,6 +24046,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_json(void * jarg1, char * 
   arg1 = (switch_event_t **)jarg1; 
   arg2 = (char *)jarg2; 
   result = (switch_status_t)switch_event_create_json(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_brackets(char * jarg1, char jarg2, char jarg3, char jarg4, void * jarg5, void * jarg6) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char arg2 ;
+  char arg3 ;
+  char arg4 ;
+  switch_event_t **arg5 = (switch_event_t **) 0 ;
+  char **arg6 = (char **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char)jarg2; 
+  arg3 = (char)jarg3; 
+  arg4 = (char)jarg4; 
+  arg5 = (switch_event_t **)jarg5; 
+  arg6 = (char **)jarg6; 
+  result = (switch_status_t)switch_event_create_brackets(arg1,arg2,arg3,arg4,arg5,arg6);
   jresult = result; 
   return jresult;
 }

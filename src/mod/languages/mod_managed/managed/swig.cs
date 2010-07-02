@@ -71,7 +71,8 @@ public class Api : IDisposable {
 namespace FreeSWITCH.Native {
 
 public enum cache_db_flag_t {
-  CDF_INUSE = (1 << 0)
+  CDF_INUSE = (1 << 0),
+  CDF_PRUNE = (1 << 1)
 }
 
 }
@@ -2206,6 +2207,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_cache_db_dismiss_db_handle(SWIGTYPE_p_p_switch_cache_db_handle_t dbh) {
+    freeswitchPINVOKE.switch_cache_db_dismiss_db_handle(SWIGTYPE_p_p_switch_cache_db_handle_t.getCPtr(dbh));
+  }
+
   public static void switch_cache_db_release_db_handle(SWIGTYPE_p_p_switch_cache_db_handle_t dbh) {
     freeswitchPINVOKE.switch_cache_db_release_db_handle(SWIGTYPE_p_p_switch_cache_db_handle_t.getCPtr(dbh));
   }
@@ -2424,6 +2429,11 @@ public class freeswitch {
 
   public static switch_bool_t switch_is_moh(string s) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_is_moh(s);
+    return ret;
+  }
+
+  public static string switch_strchr_strict(string arg0, char find, string allowed) {
+    string ret = freeswitchPINVOKE.switch_strchr_strict(arg0, find, allowed);
     return ret;
   }
 
@@ -3496,6 +3506,11 @@ public class freeswitch {
 
   public static switch_status_t switch_event_create_json(SWIGTYPE_p_p_switch_event arg0, string json) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_json(SWIGTYPE_p_p_switch_event.getCPtr(arg0), json);
+    return ret;
+  }
+
+  public static switch_status_t switch_event_create_brackets(string data, char a, char b, char c, SWIGTYPE_p_p_switch_event arg4, ref string new_data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_brackets(data, a, b, c, SWIGTYPE_p_p_switch_event.getCPtr(arg4), ref new_data);
     return ret;
   }
 
@@ -7595,6 +7610,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_type_name")]
   public static extern string switch_cache_db_type_name(int jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_dismiss_db_handle")]
+  public static extern void switch_cache_db_dismiss_db_handle(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_release_db_handle")]
   public static extern void switch_cache_db_release_db_handle(HandleRef jarg1);
 
@@ -7741,6 +7759,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_is_moh")]
   public static extern int switch_is_moh(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_strchr_strict")]
+  public static extern string switch_strchr_strict(string jarg1, char jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_string_has_escaped_data")]
   public static extern int switch_string_has_escaped_data(string jarg1);
@@ -10927,6 +10948,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_json")]
   public static extern int switch_event_create_json(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_brackets")]
+  public static extern int switch_event_create_brackets(string jarg1, char jarg2, char jarg3, char jarg4, HandleRef jarg5, ref string jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_running")]
   public static extern int switch_event_running();
@@ -27547,7 +27571,8 @@ public enum switch_session_ctl_t {
   SCSC_SAVE_HISTORY,
   SCSC_CRASH,
   SCSC_MIN_IDLE_CPU,
-  SCSC_VERBOSE_EVENTS
+  SCSC_VERBOSE_EVENTS,
+  SCSC_SHUTDOWN_CHECK
 }
 
 }
