@@ -249,6 +249,7 @@ struct fifo_node {
 	int busy;
 	int is_static;
 	int outbound_per_cycle;
+	char *outbound_name;
 	outbound_strategy_t outbound_strategy;
 };
 
@@ -679,7 +680,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	int timeout = 0;
 	switch_stream_handle_t stream = { 0 };
 	fifo_node_t *node = NULL;
-	char *originate_string;
+	char *originate_string = NULL;
 	switch_event_t *ovars = NULL;
 	switch_status_t status;
 	switch_core_session_t *session = NULL;
@@ -691,6 +692,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	switch_event_t *pop = NULL;
 	fifo_queue_t *q = NULL;
 	int x = 0;
+	switch_event_t *event;
 
 	if (!cbh->rowcount) {
 		goto end;
@@ -737,7 +739,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	if (originate_string) {
 		end_of(originate_string) = '\0';
 	}
-
+	
 	if (!timeout) timeout = 60;
 	
 	for (x = 0; x < MAX_PRI; x++) {
@@ -774,28 +776,81 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		goto end;
 	}
 
-	if ((caller_id_name = switch_event_get_header(pop, "caller-caller-id-name"))) {
-		switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", caller_id_name);
+
+	if (!switch_event_get_header(ovars, "origination_caller_id_name")) {
+		if ((caller_id_name = switch_event_get_header(pop, "caller-caller-id-name"))) {
+			if (node->outbound_name) {
+				switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", "(%s) %s", node->outbound_name, caller_id_name);
+			} else {
+				switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", caller_id_name);
+			}
+		}
 	}
 
-	if ((cid_num = switch_event_get_header(pop, "caller-caller-id-number"))) {
-		switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num);
+	if (!switch_event_get_header(ovars, "origination_caller_id_number")) {
+		if ((cid_num = switch_event_get_header(pop, "caller-caller-id-number"))) {
+			switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num);
+		}
 	}
-
+	
 	if ((id = switch_event_get_header(pop, "unique-id"))) {
 		switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "fifo_bridge_uuid", id);
+	}
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+		switch_core_session_t *session;
+		if (id && (session = switch_core_session_locate(id))) {
+			switch_channel_event_set_data(switch_core_session_get_channel(session), event);
+			switch_core_session_rwunlock(session);
+		}
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "pre-dial");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "ringall");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller-uuid", id);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
+
+		for (i = 0; i < cbh->rowcount; i++) {
+			struct call_helper *h = cbh->rows[i];
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Outbound-UUID", h->uuid);
+		}
+
+		switch_event_fire(&event);
 	}
 
 	switch_mutex_unlock(q->mutex);
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
-	free(originate_string);
-
+	
 	if (status != SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "ringall");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller-uuid", id);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "result", "failure");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cause", switch_channel_cause2str(cause));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
+			switch_event_fire(&event);
+		}
 		goto end;
 	}
 
 	channel = switch_core_session_get_channel(session);
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "ringall");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller-uuid", id);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Outbound-UUID", switch_channel_get_variable(channel, "fifo_outbound_uuid"));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "result", "success");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
+		switch_event_fire(&event);
+	}
+
+
 	switch_channel_set_variable(channel, "fifo_pop_order", NULL);
 
 	app_name = "fifo";
@@ -807,6 +862,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	switch_core_session_rwunlock(session);
 
   end:
+
+	switch_safe_free(originate_string);
 
 	switch_event_destroy(&ovars);
 	if (node) {
@@ -831,11 +888,12 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_channel_t *channel;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	switch_caller_extension_t *extension = NULL;
-	char *app_name, *arg = NULL, *originate_string = NULL, *p = NULL;
+	char *app_name, *arg = NULL, *originate_string = NULL;
 	const char *member_wait = NULL;
 	fifo_node_t *node = NULL;
 	switch_event_t *ovars = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_event_t *event = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	node = switch_core_hash_find(globals.fifo_hash, h->node_name);
@@ -856,27 +914,61 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q'}%s",
 										  node->name, h->originate_string);
 	} else {
-		char *name_dup = strdup(node->name);
-		if ((p = strchr(name_dup, '@'))) {
-			*p = '\0';
+		if (node->outbound_name) {
+			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
+											  node->name,  node->outbound_name, h->originate_string);
+		} else {
+			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
+											  node->name,  node->name, h->originate_string);
 		}
-
-		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
-										  "origination_caller_id_name=Queue,origination_caller_id_number='fifo+%q'}%s",
-										  node->name,  name_dup, h->originate_string);
-		free(name_dup);
+			
 	}
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "pre-dial");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Outbound-UUID", h->uuid);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "enterprise");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
+		switch_event_fire(&event);
+	}
+
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
 	free(originate_string);
 
 
 	if (status != SWITCH_STATUS_SUCCESS) {
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Outbound-UUID", h->uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "enterprise");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "result", "failure");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cause", switch_channel_cause2str(cause));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
+			switch_event_fire(&event);
+		}
+
 		goto end;
 	}
 
-
 	channel = switch_core_session_get_channel(session);
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Outbound-UUID", h->uuid);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "enterprise");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "result", "success");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
+		switch_event_fire(&event);
+	}
+
 
 	if ((member_wait = switch_channel_get_variable(channel, "fifo_member_wait")) || (member_wait = switch_channel_get_variable(channel, "member_wait"))) {
 		if (strcasecmp(member_wait, "wait") && strcasecmp(member_wait, "nowait")) {
@@ -2761,6 +2853,11 @@ static switch_status_t load_config(int reload, int del_all)
 			if (!(node = switch_core_hash_find(globals.fifo_hash, name))) {
 				node = create_node(name, imp, globals.sql_mutex);
 			}
+
+			if ((val = switch_xml_attr(fifo, "outbound_name"))) {
+				node->outbound_name = switch_core_strdup(node->pool, val);
+			}
+
 			switch_mutex_unlock(globals.mutex);
 
 			switch_assert(node);
