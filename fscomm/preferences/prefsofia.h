@@ -11,6 +11,7 @@ public:
     explicit PrefSofia(Ui::PrefDialog *ui, QObject *parent = 0);
     void writeConfig();
     void readConfig();
+    void postWriteConfig();
 
 private:
     Ui::PrefDialog *_ui;

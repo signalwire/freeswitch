@@ -1,12 +1,10 @@
 #include <QtGui>
-#include <fshost.h>
 #include "prefportaudio.h"
 
 PrefPortaudio::PrefPortaudio(Ui::PrefDialog *ui, QObject *parent) :
         QObject(parent),
         _ui(ui)
 {
-    _settings = new QSettings();
     connect(_ui->PaRingFileBtn, SIGNAL(clicked()), this, SLOT(ringFileChoose()));
     connect(_ui->PaHoldFileBtn, SIGNAL(clicked()), this, SLOT(holdFileChoose()));
     connect(_ui->PaIndevCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(indevChangeDev(int)));
@@ -139,111 +137,111 @@ void PrefPortaudio::ringFileChoose()
 
 void PrefPortaudio::writeConfig()
 {
-    _settings->beginGroup("FreeSWITCH/conf");
-    _settings->beginGroup("portaudio.conf/settings/params");
+    /* We can do better error control here, can't we? */
+    ISettings *_settings = new ISettings();
+    QDomElement cfg = _settings->getConfigNode("portaudio.conf");
+    QDomNodeList nl = cfg.elementsByTagName("param");
+    for (int i = 0; i < nl.count(); i++) {
+        QDomAttr var = nl.at(i).toElement().attributeNode("name");
+        QDomAttr val = nl.at(i).toElement().attributeNode("value");
+        if (var.value() == "indev") {
+            val.setValue(QString::number(_ui->PaIndevCombo->itemData(_ui->PaIndevCombo->currentIndex(), Qt::UserRole).toInt()));
+        }
+        if (var.value() == "outdev") {
+            val.setValue(QString::number(_ui->PaOutdevCombo->itemData(_ui->PaOutdevCombo->currentIndex(), Qt::UserRole).toInt()));
+        }
+        if (var.value() == "ringdev") {
+            val.setValue(QString::number(_ui->PaRingdevCombo->itemData(_ui->PaRingdevCombo->currentIndex(), Qt::UserRole).toInt()));
+        }
+        if (var.value() == "ring-file") {
+            val.setValue(_ui->PaRingFileEdit->text());
+        }
+        if (var.value() == "ring-interval") {
+            val.setValue(QString::number(_ui->PaRingIntervalSpin->value()));
+        }
+        if (var.value() == "hold-file") {
+            val.setValue(_ui->PaHoldFileEdit->text());
+        }
+        if (var.value() == "cid-name") {
+            val.setValue(_ui->PaCallerIdNameEdit->text());
+        }
+        if (var.value() == "cid-num") {
+            val.setValue(_ui->PaCallerIdNumEdit->text());
+        }
+        if (var.value() == "sample-rate") {
+            val.setValue(_ui->PaSampleRateEdit->text());
+        }
+        if (var.value() == "codec-ms") {
+            val.setValue(_ui->PaCodecMSEdit->text());
+        }
+        /* Not used currently
+        if (var.value() == "dialplan") {
+            val.setValue();
+        }
+        if (var.value() == "timer-name") {
+            val.setValue();
+        }*/
+    }
+    /* Save the config to the file */
+    _settings->setConfigNode(cfg, "portaudio.conf");
+}
 
-    QString cid_name = _settings->value("cid-name").toString();
-    QString ncid_name = _ui->PaCallerIdNameEdit->text();
-
-    QString cid_num = _settings->value("cid-num").toString();
-    QString ncid_num = _ui->PaCallerIdNumEdit->text();
-
-    QString hold_file = _settings->value("hold-file").toString();
-    QString nhold_file =  _ui->PaHoldFileEdit->text();
-
-    QString ring_file = _settings->value("ring-file").toString();
-    QString nring_file = _ui->PaRingFileEdit->text();
-
-    int ring_interval = _settings->value("ring-interval").toInt();
-    int nring_interval = _ui->PaRingIntervalSpin->value();
-
-    QString sample_rate = _settings->value("sample-rate").toString();
-    QString nsample_rate = _ui->PaSampleRateEdit->text();
-
-    QString codec_ms = _settings->value("codec-ms").toString();
-    QString ncodec_ms = _ui->PaCodecMSEdit->text();
-
+void PrefPortaudio::postWriteConfig() {
     QString result;
-
-    if (cid_name != ncid_name ||
-        cid_num != ncid_num ||
-        hold_file != nhold_file ||
-        ring_file != nring_file ||
-        ring_interval != nring_interval ||
-        sample_rate != nsample_rate||
-        codec_ms != ncodec_ms)
+    if (g_FSHost->sendCmd("reload", "mod_portaudio", &result) != SWITCH_STATUS_SUCCESS)
     {
-        if (g_FSHost->sendCmd("reload", "mod_portaudio", &result) == SWITCH_STATUS_SUCCESS)
-        {
-            _settings->setValue("cid-name", ncid_name);
-            _settings->setValue("cid-num", ncid_num);
-            _settings->setValue("ring-file", nring_file);
-            _settings->setValue("ring-interval", nring_interval);
-            _settings->setValue("hold-file", nhold_file);
-            _settings->setValue("sample-rate", nsample_rate);
-            _settings->setValue("codec-ms", ncodec_ms);
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while issuing reload command to mod_portaudio!\n");
-            QMessageBox::critical(0, tr("Unable to save settings"),
-                                  tr("There was an error saving your settings.\nPlease report this bug."),
-                                  QMessageBox::Ok);
-        }
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while issuing reload command to mod_portaudio!\n");
+        QMessageBox::critical(0, tr("Unable to save settings"),
+                              tr("There was an error saving your settings.\nPlease report this bug."),
+                              QMessageBox::Ok);
     }
-
-    int nindev = _ui->PaIndevCombo->itemData(_ui->PaIndevCombo->currentIndex(), Qt::UserRole).toInt();
-    int indev = _settings->value("indev").toInt();
-    int noutdev = _ui->PaOutdevCombo->itemData(_ui->PaOutdevCombo->currentIndex(), Qt::UserRole).toInt();
-    int outdev = _settings->value("outdev").toInt();
-    int nringdev = _ui->PaRingdevCombo->itemData(_ui->PaRingdevCombo->currentIndex(), Qt::UserRole).toInt();
-    int ringdev = _settings->value("ringdev").toInt();
-
-    if (nindev != indev)
-    {
-        if (g_FSHost->sendCmd("pa", QString("indev #%1").arg(nindev).toAscii().constData(), &result) == SWITCH_STATUS_SUCCESS)
-        {
-            _settings->setValue("indev", nindev);
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting indev from #%d to #%d on mod_portaudio!\n",
-                              indev, nindev);
-            QMessageBox::critical(0, tr("Unable to save settings"),
-                                  tr("There was an error changing the indev.\nPlease report this bug."),
-                                  QMessageBox::Ok);
-        }
-    }
-
-    if (noutdev!= outdev)
-    {
-        _settings->setValue("outdev", noutdev);
-    }
-    if (nringdev != ringdev)
-    {
-        _settings->setValue("ringdev", nringdev);
-    }
-
-    _settings->endGroup();
-    _settings->endGroup();
 }
 
 void PrefPortaudio::readConfig()
 {
-    getPaDevlist();
-    _settings->beginGroup("FreeSWITCH/conf");
+    getPaDevlist(); /* To populate the combo */
 
-    _settings->beginGroup("portaudio.conf/settings/params");
-    _ui->PaCallerIdNameEdit->setText(_settings->value("cid-name").toString());
-    _ui->PaCallerIdNumEdit->setText(_settings->value("cid-num").toString());
-    _ui->PaHoldFileEdit->setText(_settings->value("hold-file").toString());
-    _ui->PaRingFileEdit->setText(_settings->value("ring-file").toString());
-    _ui->PaRingIntervalSpin->setValue(_settings->value("ring-interval").toInt());
-    _ui->PaSampleRateEdit->setText(_settings->value("sample-rate").toString());
-    _ui->PaCodecMSEdit->setText(_settings->value("codec-ms").toString());
-    _settings->endGroup();
-
-    _settings->endGroup();
+    ISettings *_settings = new ISettings();
+    QDomElement cfg = _settings->getConfigNode("portaudio.conf");
+    QDomNodeList nl = cfg.elementsByTagName("param");
+    for (int i = 0; i < nl.count(); i++) {
+        QDomAttr var = nl.at(i).toElement().attributeNode("name");
+        QDomAttr val = nl.at(i).toElement().attributeNode("value");
+        /* Set when getting the device list */
+        if (var.value() == "indev") {
+        }
+        if (var.value() == "outdev") {
+        }
+        if (var.value() == "ringdev") {
+        }
+        if (var.value() == "ring-file") {
+            _ui->PaRingFileEdit->setText(val.value());
+        }
+        if (var.value() == "ring-interval") {
+            _ui->PaRingIntervalSpin->setValue(val.value().toInt());
+        }
+        if (var.value() == "hold-file") {
+            _ui->PaHoldFileEdit->setText(val.value());
+        }
+        /* Not yet used.
+        if (var.value() == "dialplan") {
+        }
+        if (var.value() == "timer-name") {
+        }
+        */
+        if (var.value() == "cid-name") {
+            _ui->PaCallerIdNameEdit->setText(val.value());
+        }
+        if (var.value() == "cid-num") {
+            _ui->PaCallerIdNumEdit->setText(val.value());
+        }
+        if (var.value() == "sample-rate") {
+            _ui->PaSampleRateEdit->setText(val.value());
+        }
+        if (var.value() == "codec-ms") {
+            _ui->PaCodecMSEdit->setText(val.value());
+        }
+    }
 }
 
 void PrefPortaudio::getPaDevlist()
@@ -259,6 +257,9 @@ void PrefPortaudio::getPaDevlist()
                               QMessageBox::Ok);
         return;
     }
+    _ui->PaOutdevCombo->clear();
+    _ui->PaIndevCombo->clear();
+    _ui->PaRingdevCombo->clear();
 
     if (!_xmlPaDevList.setContent(result, &errorMsg, &errorLine, &errorColumn))
     {

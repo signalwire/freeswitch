@@ -1,12 +1,10 @@
 #include <QtGui>
 #include "prefaccounts.h"
 #include "accountdialog.h"
-#include "fshost.h"
 
 PrefAccounts::PrefAccounts(Ui::PrefDialog *ui) :
         _ui(ui)
 {
-    _settings = new QSettings();
     _accDlg = NULL;
     connect(_ui->sofiaGwAddBtn, SIGNAL(clicked()), this, SLOT(addAccountBtnClicked()));
     connect(_ui->sofiaGwRemBtn, SIGNAL(clicked()), this, SLOT(remAccountBtnClicked()));
@@ -19,27 +17,15 @@ void PrefAccounts::addAccountBtnClicked()
 {
     if (!_accDlg)
     {
-        QString uuid;
-        if (g_FSHost->sendCmd("create_uuid", "", &uuid) != SWITCH_STATUS_SUCCESS)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create UUID for account. Reason: %s\n", uuid.toAscii().constData());
-            return;
-        }
-        _accDlg = new AccountDialog(uuid);
+        _accDlg = new AccountDialog();
         connect(_accDlg, SIGNAL(gwAdded(QString)), this, SLOT(readConfig()));
     }
     else
     {
-        QString uuid;
-        if (g_FSHost->sendCmd("create_uuid", "", &uuid) != SWITCH_STATUS_SUCCESS)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create UUID for account. Reason: %s\n", uuid.toAscii().constData());
-            return;
-        }
-        _accDlg->setAccId(uuid);
+        /* Needs to be set to empty because we are not editing */
+        _accDlg->setName(QString());
         _accDlg->clear();
     }
-
     _accDlg->show();
     _accDlg->raise();
     _accDlg->activateWindow();
@@ -53,18 +39,18 @@ void PrefAccounts::editAccountBtnClicked()
         return;
     QTableWidgetSelectionRange range = selList[0];
 
-    QString uuid = _ui->accountsTable->item(range.topRow(),0)->data(Qt::UserRole).toString();
+    /* Get the selected item */
+    QString gwName = _ui->accountsTable->item(range.topRow(),0)->text();
 
     if (!_accDlg)
     {
-        _accDlg = new AccountDialog(uuid);
+        /* TODO: We need a way to read this sucker... Might as well just already pass the profile name */
+        _accDlg = new AccountDialog();
         connect(_accDlg, SIGNAL(gwAdded(QString)), this, SLOT(readConfig()));
     }
-    else
-    {
-        _accDlg->setAccId(uuid);
-    }
 
+    /* TODO: Should pass the profile name someday */
+    _accDlg->setName(gwName);
     _accDlg->readConfig();
 
     _accDlg->show();
@@ -83,32 +69,28 @@ void PrefAccounts::remAccountBtnClicked()
         {
             QTableWidgetItem *item = _ui->accountsTable->item(row-offset,0);
 
-            _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
-            _settings->remove(item->data(Qt::UserRole).toString());
-            _settings->endGroup();
-            /* Fire event to remove account */
-            switch_event_t *event;
-            if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FSCOMM_EVENT_ACC_REMOVED) == SWITCH_STATUS_SUCCESS) {
-                QSharedPointer<Account> acc = g_FSHost->getAccountByUUID(item->data(Qt::UserRole).toString());
-                if (!acc.isNull())
-                {
-                    QString res;
-                    QString arg = QString("profile softphone killgw %1").arg(acc.data()->getName());
-
-                    if (g_FSHost->sendCmd("sofia", arg.toAscii().data() , &res) != SWITCH_STATUS_SUCCESS)
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not killgw %s from profile softphone.\n",
-                                          acc.data()->getName().toAscii().data());
-                    }
+            ISettings settings(this);
+            QDomElement cfg = settings.getConfigNode("sofia.conf");
+            QDomNodeList gws = cfg.elementsByTagName("gateway");
+            for (int i = 0; i < gws.count(); i++) {
+                QDomElement gw = gws.at(i).toElement();
+                if ( gw.attributeNode("name").value() == item->text()) {
+                    cfg.elementsByTagName("gateways").at(0).removeChild(gw);
+                    break;
                 }
             }
+            settings.setConfigNode(cfg, "sofia.conf");
+
+            /* Mark the account to be deleted */
+            _toDelete.append(item->text());
+
             _ui->accountsTable->removeRow(row-offset);
             offset++;
         }
     }
 
-    if (offset > 0)
-        readConfig(false);
+    if (offset)
+        readConfig();
 }
 
 void PrefAccounts::writeConfig()
@@ -116,46 +98,68 @@ void PrefAccounts::writeConfig()
     return;
 }
 
-void PrefAccounts::readConfig(bool reload)
+void PrefAccounts::postWriteConfig() {
+
+    QString res;
+    if (g_FSHost->sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
+    }
+
+    foreach (QString gw, _toDelete) {
+        if (g_FSHost->sendCmd("sofia", QString("profile softphone killgw %1").arg(gw).toAscii().constData(), &res) != SWITCH_STATUS_SUCCESS)
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not remove gateway from profile [%s].\n", gw.toAscii().constData());
+        }
+    }
+}
+
+void PrefAccounts::readConfig()
 {
 
     _ui->accountsTable->clearContents();
     _ui->accountsTable->setRowCount(0);
 
-    _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
-    
-    foreach(QString accId, _settings->childGroups())
-    {
-        _settings->beginGroup(accId);
-        _settings->beginGroup("gateway/attrs");
-        QTableWidgetItem *item0 = new QTableWidgetItem(_settings->value("name").toString());
-        item0->setData(Qt::UserRole, accId);
-        _settings->endGroup();
-        _settings->beginGroup("gateway/params");
-        QTableWidgetItem *item1 = new QTableWidgetItem(_settings->value("username").toString());
-        item1->setData(Qt::UserRole, accId);
-        _settings->endGroup();
-        _settings->endGroup();
+    ISettings settings(this);
+
+    QDomElement cfg = settings.getConfigNode("sofia.conf");
+
+    if ( cfg.elementsByTagName("gateways").count() == 0 ) {
+        QDomElement profile = cfg.elementsByTagName("profile").at(0).toElement();
+        QDomDocument d = profile.toDocument();
+        QDomElement gws = d.createElement("gateways");
+        profile.insertBefore(gws, QDomNode()); /* To make it look nicer */
+        settings.setConfigNode(cfg, "sofia.conf");
+        return;
+    }
+
+    QDomNodeList l = cfg.elementsByTagName("gateway");
+
+    for (int i = 0; i < l.count(); i++) {
+        QDomElement gw = l.at(i).toElement();
+        QTableWidgetItem *item0 = new QTableWidgetItem(gw.attribute("name"));
+        QTableWidgetItem *item1 = NULL;
+        /* Iterate until we find what we need */
+        QDomNodeList params = gw.elementsByTagName("param");
+        for(int j = 0; i < params.count(); j++) {
+            QDomElement e = params.at(j).toElement();
+            QString var = e.attributeNode("name").value();
+            if (var == "username" ) {
+                item1 = new QTableWidgetItem(e.attributeNode("value").value());
+                break; /* We found, so stop looping */
+            }
+        }
         _ui->accountsTable->setRowCount(_ui->accountsTable->rowCount()+1);
         _ui->accountsTable->setItem(_ui->accountsTable->rowCount()-1, 0, item0);
         _ui->accountsTable->setItem(_ui->accountsTable->rowCount()-1, 1, item1);
     }
+
     _ui->accountsTable->resizeRowsToContents();
     _ui->accountsTable->resizeColumnsToContents();
     _ui->accountsTable->horizontalHeader()->setStretchLastSection(true);
 
-    _settings->endGroup();
-
-    if (reload)
-    {
-        QString res;
-        if (g_FSHost->sendCmd("sofia", "profile softphone rescan", &res) != SWITCH_STATUS_SUCCESS)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rescan the softphone profile.\n");
-            return;
-        }
-    }
-
+    /*
+    TODO: We have to figure out what to do with the default account stuff!
     if (_ui->accountsTable->rowCount() == 1)
     {
         QString default_gateway = _settings->value(QString("/FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/%1/gateway/attrs/name").arg(_ui->accountsTable->item(0,0)->data(Qt::UserRole).toString())).toString();
@@ -163,6 +167,6 @@ void PrefAccounts::readConfig(bool reload)
         _settings->setValue("default_gateway", default_gateway);
         _settings->endGroup();
         switch_core_set_variable("default_gateway", default_gateway.toAscii().data());
-    }
+    }*/
 
 }

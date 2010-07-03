@@ -30,23 +30,20 @@
 #include <QtGui/QApplication>
 #include <QSplashScreen>
 #include "mainwindow.h"
+#include "isettings.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    QCoreApplication::setOrganizationName("FreeSWITCH");
-    QCoreApplication::setOrganizationDomain("freeswitch.org");
-    QCoreApplication::setApplicationName("FSComm");
-
+    QApplication::setOrganizationDomain("freeswitch.org");
     QPixmap image(":/images/splash.png");
     QSplashScreen *splash = new QSplashScreen(image);
     splash->show();
     splash->showMessage("Loading core, please wait...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
 
-	g_FSHost = new FSHost();
+    g_FSHost = new FSHost();
 
     QObject::connect(g_FSHost, SIGNAL(loadingModules(QString,int,QColor)), splash, SLOT(showMessage(QString,int,QColor)));
-
     QObject::connect(g_FSHost, SIGNAL(ready()), splash, SLOT(close()));
     MainWindow w;    
     QObject::connect(g_FSHost, SIGNAL(ready()), &w, SLOT(show()));

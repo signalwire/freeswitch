@@ -2,21 +2,20 @@
 #define ACCOUNTDIALOG_H
 
 #include <QDialog>
+#include "fscomm.h"
 
 namespace Ui {
     class AccountDialog;
 }
 
-class QSettings;
-
 class AccountDialog : public QDialog {
     Q_OBJECT
 public:
-    AccountDialog(QString accId, QWidget *parent = 0);
+    AccountDialog(QWidget *parent = 0);
     ~AccountDialog();
     void clear();
-    void setAccId(QString);
     void readConfig();
+    void setName(QString name) { _name = name; }
 
 signals:
     void gwAdded(QString);
@@ -32,9 +31,10 @@ protected:
     void changeEvent(QEvent *e);
 
 private:
-    QString _accId;
+    void setParam(QDomElement &parent, QString name, QString value);
+    /* Might need the profile as well someday */
+    QString _name; /* Needs to be empty when not editing */
     Ui::AccountDialog *ui;
-    QSettings *_settings;
 };
 
 #endif // ACCOUNTDIALOG_H

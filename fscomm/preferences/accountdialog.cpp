@@ -1,16 +1,12 @@
-#include <QSettings>
 #include <QtGui>
 #include "accountdialog.h"
 #include "ui_accountdialog.h"
-#include "fshost.h"
 
-AccountDialog::AccountDialog(QString accId, QWidget *parent) :
+AccountDialog::AccountDialog(QWidget *parent) :
     QDialog(parent),
-    _accId(accId),
     ui(new Ui::AccountDialog)
-{    
+{
     ui->setupUi(this);
-    _settings = new QSettings;
     connect(this, SIGNAL(accepted()), this, SLOT(writeConfig()));
     connect(ui->sofiaExtraParamAddBtn, SIGNAL(clicked()), this, SLOT(addExtraParam()));
     connect(ui->sofiaExtraParamRemBtn, SIGNAL(clicked()), this, SLOT(remExtraParam()));
@@ -83,100 +79,165 @@ void AccountDialog::addExtraParam()
     ui->sofiaExtraParamTable->horizontalHeader()->setStretchLastSection(true);
 }
 
+/* TODO: We need to figure out the callerID thing... */
 void AccountDialog::readConfig()
 {
-    _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
-    _settings->beginGroup(_accId);
 
-    _settings->beginGroup("gateway/attrs");
-    ui->sofiaGwNameEdit->setText(_settings->value("name").toString());
-    _settings->endGroup();
+    /* We already know the name of the gateway, so... */
+    ui->sofiaGwNameEdit->setText(_name);
 
-    _settings->beginGroup("gateway/params");
-    ui->sofiaGwUsernameEdit->setText(_settings->value("username").toString());
-    ui->sofiaGwRealmEdit->setText(_settings->value("realm").toString());
-    ui->sofiaGwPasswordEdit->setText(_settings->value("password").toString());
-    ui->sofiaGwExpireSecondsSpin->setValue(_settings->value("expire-seconds").toInt());
-    ui->sofiaGwRegisterCombo->setCurrentIndex(ui->sofiaGwRegisterCombo->findText(_settings->value("register").toString(),
-                                                                                 Qt::MatchExactly));
-    ui->sofiaGwRegisterTransportCombo->setCurrentIndex(ui->sofiaGwRegisterTransportCombo->findText(_settings->value("register-transport").toString(),
-                                                                                                   Qt::MatchExactly));
-    ui->sofiaGwRetrySecondsSpin->setValue(_settings->value("retry-seconds").toInt());
-    _settings->endGroup();
+    ISettings settings(this);
+    QDomElement cfg = settings.getConfigNode("sofia.conf");
 
-    _settings->beginGroup("gateway/customParams");
-    int row = 0;
-    ui->sofiaExtraParamTable->clearContents();
-    foreach(QString k, _settings->childKeys())
-    {
-        row++;
-        ui->sofiaExtraParamTable->setRowCount(row);
-        QTableWidgetItem *varName = new QTableWidgetItem(k);
-        QTableWidgetItem *varVal = new QTableWidgetItem(_settings->value(k).toString());
-        ui->sofiaExtraParamTable->setItem(row-1, 0,varName);
-        ui->sofiaExtraParamTable->setItem(row-1, 1,varVal);
+    QDomNodeList nl = cfg.elementsByTagName("gateway");
+
+    for (int i = 0; i < nl.count(); i++) {
+        QDomElement gw = nl.at(i).toElement();
+        if (gw.attributeNode("name").value() == _name) {
+            /* Iterate the params and set the values */
+            QDomNodeList params = gw.elementsByTagName("param");
+            int row = 0; /* Used for extra params */
+            ui->sofiaExtraParamTable->clearContents();
+            for (int j = 0; j < params.count(); j++) {
+                QDomElement param = params.at(j).toElement();
+                QString var = param.attributeNode("name").value();
+                QString val = param.attributeNode("value").value();
+                if ( var == "username" ) {
+                    ui->sofiaGwUsernameEdit->setText(val);
+                } else if ( var == "realm" ) {
+                    ui->sofiaGwRealmEdit->setText(val);
+                } else if ( var == "password" ) {
+                    ui->sofiaGwPasswordEdit->setText(val);
+                } else if ( var == "expire-seconds" ) {
+                    ui->sofiaGwExpireSecondsSpin->setValue(val.toInt());
+                } else if ( var == "register" ) {
+                    ui->sofiaGwRegisterCombo->setCurrentIndex(ui->sofiaGwRegisterCombo->findText(val, Qt::MatchExactly));
+                } else if ( var == "register-transport" ) {
+                    ui->sofiaGwRegisterTransportCombo->setCurrentIndex(ui->sofiaGwRegisterTransportCombo->findText(val, Qt::MatchExactly));
+                } else if ( var == "retry-seconds" ) {
+                    ui->sofiaGwRetrySecondsSpin->setValue(val.toInt());
+                } else {
+                    /* Set custom parameters */
+                    row++;
+                    ui->sofiaExtraParamTable->setRowCount(row);
+                    QTableWidgetItem *varName = new QTableWidgetItem(var);
+                    QTableWidgetItem *varVal = new QTableWidgetItem(val);
+                    ui->sofiaExtraParamTable->setItem(row-1, 0,varName);
+                    ui->sofiaExtraParamTable->setItem(row-1, 1,varVal);
+                }
+            }
+            /* Stop processing the gateway list */
+            break;
+        }
     }
-    _settings->endGroup();
-
-    _settings->endGroup();
-    _settings->endGroup();
 
     ui->sofiaExtraParamTable->resizeColumnsToContents();
     ui->sofiaExtraParamTable->resizeRowsToContents();
     ui->sofiaExtraParamTable->horizontalHeader()->setStretchLastSection(true);
 }
 
+/* TODO: Figure out the callerID thing... */
 void AccountDialog::writeConfig()
 {
-    QSharedPointer<Account> acc = g_FSHost->getAccountByUUID(_accId);
-    if (!acc.isNull())
-    {
-        g_FSHost->accountReloadCmd(acc);
-    }
-
-    _settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways");
-
-    _settings->beginGroup(_accId);
-
-    _settings->beginGroup("gateway/global_vars");
+    /* TODO: This is where we need to figure out the caller ID
     if (ui->clidSettingsCombo->currentIndex() == 0)
     {
-        _settings->remove("caller_id_name");
-        _settings->remove("caller_id_num");
+        settings->remove("caller_id_name");
+        settings->remove("caller_id_num");
     } else {
-        _settings->setValue("caller_id_name", ui->sofiaCallerIDName->text());
-        _settings->setValue("caller_id_num", ui->sofiaCallerIDNum->text());
+        settings->setValue("caller_id_name", ui->sofiaCallerIDName->text());
+        settings->setValue("caller_id_num", ui->sofiaCallerIDNum->text());
     }
-    _settings->endGroup();
-    
-    _settings->beginGroup("gateway/attrs");
-    _settings->setValue("name", ui->sofiaGwNameEdit->text());
-    _settings->endGroup();
+    */
+    ISettings settings(this);
+    QDomElement cfg = settings.getConfigNode("sofia.conf");
 
+    /* First check to see if we are editing */
+    if (!_name.isEmpty()) {
 
-    _settings->beginGroup("gateway/params");
-    _settings->setValue("username", ui->sofiaGwUsernameEdit->text());
-    _settings->setValue("realm", ui->sofiaGwRealmEdit->text());
-    _settings->setValue("password", ui->sofiaGwPasswordEdit->text());
-    _settings->setValue("expire-seconds", ui->sofiaGwExpireSecondsSpin->value());
-    _settings->setValue("register", ui->sofiaGwRegisterCombo->currentText());
-    _settings->setValue("register-transport", ui->sofiaGwRegisterTransportCombo->currentText());
-    _settings->setValue("retry-seconds", ui->sofiaGwRetrySecondsSpin->value());    
-    _settings->endGroup();
+        /* Find our gateway */
+        QDomElement gw;
+        QDomNodeList gws = cfg.elementsByTagName("gateway");
+        for (int i = 0; i < gws.count(); i++) {
+            if ( gws.at(i).toElement().attributeNode("name").value() == _name) {
+                gw = gws.at(i).toElement();
+                /* Set the new gateway name */
+                if ( _name != ui->sofiaGwNameEdit->text() ) {
+                    _name = ui->sofiaGwNameEdit->text();
+                    gws.at(i).toElement().attributeNode("name").setValue(ui->sofiaGwNameEdit->text());
+                }
+                break;
+            }
+        }
+        if ( gw.isNull() ) {
+            qDebug() << "Hey, there is no gateway!";
+            return;
+        }
 
-    _settings->beginGroup("gateway/customParams");
-    for (int i = 0; i< ui->sofiaExtraParamTable->rowCount(); i++)
-    {
-        _settings->setValue(ui->sofiaExtraParamTable->item(i, 0)->text(),
-                            ui->sofiaExtraParamTable->item(i, 1)->text());
+        /* Found the gateway, now iterate the parameters */
+        QDomNodeList params = gw.elementsByTagName("param");
+        for (int i = 0; i < params.count(); i++) {
+            QDomElement param = params.at(i).toElement();
+            QString var = param.attributeNode("name").value();
+            QDomAttr val = param.attributeNode("value");
+            if ( var == "username" ) {
+                val.setValue(ui->sofiaGwUsernameEdit->text());
+            } else if ( var == "realm" ) {
+                val.setValue(ui->sofiaGwRealmEdit->text());
+            } else if ( var == "password" ) {
+                val.setValue(ui->sofiaGwPasswordEdit->text());
+            } else if ( var == "expire-seconds" ) {
+                val.setValue(QString::number(ui->sofiaGwExpireSecondsSpin->value()));
+            } else if ( var == "register" ) {
+                val.setValue(ui->sofiaGwRegisterCombo->currentText());
+            } else if ( var == "register-transport" ) {
+                val.setValue(ui->sofiaGwRegisterTransportCombo->currentText());
+            } else if ( var == "retry-seconds" ) {
+                val.setValue(QString::number(ui->sofiaGwRetrySecondsSpin->value()));
+            }
+        }
+        /* Set extra parameters */
+        QDomDocument d = gw.toDocument();
+        for (int i = 0; i< ui->sofiaExtraParamTable->rowCount(); i++)
+        {
+            QDomElement ePar = d.createElement("param");
+            QDomAttr var = d.createAttribute(ui->sofiaExtraParamTable->item(i, 0)->text());
+            ePar.appendChild(var);
+            QDomAttr val = d.createAttribute(ui->sofiaExtraParamTable->item(i, 1)->text());
+            ePar.appendChild(val);
+            gw.appendChild(ePar);
+        }
+    } else {
+        QDomElement gws = cfg.elementsByTagName("gateways").at(0).toElement();
+        QDomDocument d = gws.toDocument();
+        QDomElement nGw = d.createElement("gateway");
+        gws.insertAfter(nGw, QDomNode());
+        nGw.setAttribute("name",ui->sofiaGwNameEdit->text());
+
+        /* Set each one of the parameters */
+        setParam(nGw, "username", ui->sofiaGwUsernameEdit->text());
+        setParam(nGw, "password", ui->sofiaGwPasswordEdit->text());
+        setParam(nGw, "register", ui->sofiaGwRegisterCombo->currentText());
+        setParam(nGw, "realm", ui->sofiaGwRealmEdit->text());
+        setParam(nGw, "expire-seconds", QString::number(ui->sofiaGwExpireSecondsSpin->value()));
+        setParam(nGw, "register-transport", ui->sofiaGwRegisterTransportCombo->currentText());
+        setParam(nGw, "retry-seconds", QString::number(ui->sofiaGwRetrySecondsSpin->value()));
+        for (int i = 0; i< ui->sofiaExtraParamTable->rowCount(); i++)
+        {
+            setParam(nGw, ui->sofiaExtraParamTable->item(i, 0)->text(), ui->sofiaExtraParamTable->item(i, 1)->text());
+        }
     }
-    _settings->endGroup();
 
-    _settings->endGroup();
+    settings.setConfigNode(cfg, "sofia.conf");
+    emit gwAdded(_name);
+}
 
-    _settings->endGroup();
-
-    emit gwAdded(_accId);
+void AccountDialog::setParam(QDomElement &parent, QString name, QString value) {
+    QDomDocument d = parent.toDocument();
+    QDomElement e = d.createElement("param");
+    e.setAttribute("name", name);
+    e.setAttribute("value", value);
+    parent.appendChild(e);
 }
 
 void AccountDialog::clear()
@@ -192,11 +253,6 @@ void AccountDialog::clear()
     ui->sofiaGwRegisterCombo->setCurrentIndex(0);
     ui->sofiaGwRegisterTransportCombo->setCurrentIndex(0);
     ui->sofiaGwRetrySecondsSpin->setValue(30);
-}
-
-void AccountDialog::setAccId(QString accId)
-{
-    _accId = accId;
 }
 
 void AccountDialog::changeEvent(QEvent *e)

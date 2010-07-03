@@ -3,12 +3,12 @@
 
 #include <QDialog>
 #include <QDomDocument>
-#include <QSettings>
-#include <fshost.h>
+#include "fscomm.h"
 
 class PrefPortaudio;
 class PrefSofia;
 class PrefAccounts;
+class QAbstractButton;
 
 namespace Ui {
     class PrefDialog;
@@ -25,13 +25,13 @@ protected:
 
 private slots:
     void writeConfig();
+    void clicked(QAbstractButton*);
 
 signals:
     void preprocessorsApplied(QStringList);
 
 private:
     void readConfig();
-    QSettings *_settings;
     PrefAccounts *_pref_accounts;
     Ui::PrefDialog *ui;
     PrefPortaudio *_mod_portaudio;

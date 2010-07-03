@@ -10,120 +10,242 @@ PrefSofia::PrefSofia(Ui::PrefDialog *ui, QObject *parent) :
 
 void PrefSofia::readConfig()
 {
-    QSettings settings;
+    ISettings *settings = new ISettings();
+    QDomElement cfg = settings->getConfigNode("sofia.conf");
+    if ( cfg.isNull() ) {
+        qDebug() << "Issue a big warning!";
+        return;
+    }
     int guess_mask;
     char guess_ip[80];
     switch_find_local_ip(guess_ip, sizeof(guess_ip), &guess_mask, AF_INET);
     _ui->sofiaRtpIpEdit->setText(QString(guess_ip));
     _ui->sofiaSipIpEdit->setText(QString(guess_ip));
 
-    settings.beginGroup("FreeSWITCH/conf");
-    settings.beginGroup("sofia.conf");
-
     /* General Settings */
-    settings.beginGroup("global_settings/params");
-    _ui->sofiaLogLevelSpin->setValue(settings.value("log-level").toInt());
-    _ui->sofiaAutoRestartCombo->setCurrentIndex(_ui->sofiaAutoRestartCombo->findText(settings.value("auto-restart").toString()));
-    _ui->sofiaDebugPresenceSpin->setValue(settings.value("debug-presence").toInt());
-    _ui->sofiaRewriteMulticastedFsPathCombo->setCurrentIndex(_ui->sofiaRewriteMulticastedFsPathCombo->findText(settings.value("rewrite-multicasted-fs-path").toString()));
-    settings.endGroup();
+    QDomNodeList l = cfg.elementsByTagName("global_settings");
+    QDomNodeList global_params = l.at(0).toElement().elementsByTagName("param");
+    for (int i = 0; i < global_params.count(); i++) {
+        QDomElement el = global_params.at(i).toElement();
+        if ( el.attribute("name") == "log-level" ) {
+            _ui->sofiaLogLevelSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "auto-restart") {
+            _ui->sofiaAutoRestartCombo->setCurrentIndex(_ui->sofiaAutoRestartCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "debug-presence") {
+            _ui->sofiaDebugPresenceSpin->setValue(el.attribute("value").toInt());
+        }
+    }
 
     /* Profile settings */
-    settings.beginGroup("profiles");
-    settings.beginGroup("profile");
+    /* Get only the first settings, meaning one profile supported so far */
+    QDomNodeList params = cfg.elementsByTagName("settings").at(0).toElement().elementsByTagName("param");
+    for (int i = 0; i < params.count(); i++) {
+        QDomElement el = params.at(i).toElement();
+        if ( el.attribute("name") == "user-agent-string") {
+            _ui->sofiaUserAgentStringEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "debug") {
+            _ui->sofiaDebugSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "sip-trace") {
+            _ui->sofiaSipTraceCombo->setCurrentIndex(_ui->sofiaSipTraceCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "context") {
+            _ui->sofiaContextEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "rfc2833-pt") {
+            _ui->sofiaRfc2833PtEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "sip-port") {
+            _ui->sofiaSipPortSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "dialplan") {
+            _ui->sofiaDialplanEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "dtmf-duration") {
+            _ui->sofiaDtmfDurationSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "codec-prefs") {
+            _ui->sofiaProfileCodecWidget->setCodecString(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "use-rtp-timer") {
+            _ui->sofiaUseRtpTimerCombo->setCurrentIndex(_ui->sofiaUseRtpTimerCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "rtp-timer-name") {
+            _ui->sofiaRtpTimerNameEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "rtp-ip") {
+            _ui->sofiaRtpIpEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "sip-ip") {
+            _ui->sofiaSipIpEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "hold-music") {
+            _ui->sofiaHoldMusicEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "apply-nat-acl") {
+            _ui->sofiaApplyNatAclEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "manage-presence") {
+            _ui->sofiaManagePresenceCombo->setCurrentIndex(_ui->sofiaManagePresenceCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "max-proceeding") {
+            _ui->sofiaMaxProceedingEdit->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "inbound-codec-negotiation") {
+            _ui->sofiaInboundCodecNegotiationCombo->setCurrentIndex(_ui->sofiaInboundCodecNegotiationCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "nonce-ttl") {
+            _ui->sofiaNonceTtlSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "auth-calls") {
+            _ui->sofiaAuthCallsCombo->setCurrentIndex(_ui->sofiaAuthCallsCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "auth-all-packets") {
+            _ui->sofiaAuthAllPacketsCombo->setCurrentIndex(_ui->sofiaAuthAllPacketsCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "ext-sip-ip") {
+            _ui->sofiaExtSipIpEdit->setText(el.attribute("value"));
+        }
+        if ( el.attribute("name") == "rtp-timeout-sec") {
+            _ui->sofiaRtpTimeoutSecSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "rtp-hold-timeout-sec") {
+            _ui->sofiaRtpHoldTimeoutSecSpin->setValue(el.attribute("value").toInt());
+        }
+        if ( el.attribute("name") == "disable-register") {
+            _ui->sofiaDisableRegisterCombo->setCurrentIndex(_ui->sofiaDisableRegisterCombo->findText(el.attribute("value")));
+        }
+        if ( el.attribute("name") == "challenge-realm") {
+            _ui->sofiaChallengeRealmCombo->setCurrentIndex(_ui->sofiaChallengeRealmCombo->findText(el.attribute("value")));
+        }
+    }
+    delete (settings);
 
+}
 
-    settings.beginGroup("settings/params");
-    _ui->sofiaUserAgentStringEdit->setText(settings.value("user-agent-string").toString());
-    _ui->sofiaDebugSpin->setValue(settings.value("debug").toInt());
-    _ui->sofiaSipTraceCombo->setCurrentIndex(_ui->sofiaSipTraceCombo->findText(settings.value("sip-trace").toString()));
-    _ui->sofiaContextEdit->setText(settings.value("context").toString());
-    _ui->sofiaRfc2833PtEdit->setText(settings.value("rfc2833-pt").toString());
-    _ui->sofiaSipPortSpin->setValue(settings.value("sip-port").toInt());
-    _ui->sofiaDialplanEdit->setText(settings.value("dialplan").toString());
-    _ui->sofiaDtmfDurationSpin->setValue(settings.value("dtmf-duration").toInt());
-    _ui->sofiaProfileCodecWidget->setCodecString(settings.value("codec-prefs").toString());
-    _ui->sofiaUseRtpTimerCombo->setCurrentIndex(_ui->sofiaUseRtpTimerCombo->findText(settings.value("use-rtp-timer").toString()));
-    _ui->sofiaRtpTimerNameEdit->setText(settings.value("rtp-timer-name").toString());
-    _ui->sofiaRtpIpEdit->setText(settings.value("rtp-ip").toString());
-    _ui->sofiaSipIpEdit->setText(settings.value("sip-ip").toString());
-    _ui->sofiaHoldMusicEdit->setText(settings.value("hold-music").toString());
-    _ui->sofiaApplyNatAclEdit->setText(settings.value("apply-nat-acl").toString());
-    _ui->sofiaManagePresenceCombo->setCurrentIndex(_ui->sofiaManagePresenceCombo->findText(settings.value("manage-presence").toString()));
-    _ui->sofiaMaxProceedingEdit->setValue(settings.value("max-proceeding").toInt());
-    _ui->sofiaInboundCodecNegotiationCombo->setCurrentIndex(_ui->sofiaInboundCodecNegotiationCombo->findText(settings.value("inbound-codec-negotiation").toString()));
-    _ui->sofiaNonceTtlSpin->setValue(settings.value("nonce-ttl").toInt());
-    _ui->sofiaAuthCallsCombo->setCurrentIndex(_ui->sofiaAuthCallsCombo->findText(settings.value("auth-calls").toString()));
-    _ui->sofiaAuthAllPacketsCombo->setCurrentIndex(_ui->sofiaAuthAllPacketsCombo->findText(settings.value("auth-all-packets").toString()));
-    _ui->sofiaExtRtpIpEdit->setText(settings.value("ext-rtp-ip").toString());
-    _ui->sofiaExtSipIpEdit->setText(settings.value("ext-sip-ip").toString());
-    _ui->sofiaRtpTimeoutSecSpin->setValue(settings.value("rtp-timeout-sec").toInt());
-    _ui->sofiaRtpHoldTimeoutSecSpin->setValue(settings.value("rtp-hold-timeout-sec").toInt());
-    _ui->sofiaDisableRegisterCombo->setCurrentIndex(_ui->sofiaDisableRegisterCombo->findText(settings.value("disable-register").toString()));
-    _ui->sofiaChallengeRealmCombo->setCurrentIndex(_ui->sofiaChallengeRealmCombo->findText(settings.value("challenge-realm").toString()));
-    settings.endGroup();
-
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
-
+void PrefSofia::postWriteConfig() {
+    /* Here, we have to know if we need to restart the profile or not */
+    return;
 }
 
 void PrefSofia::writeConfig()
 {
-    QSettings settings;
-    settings.beginGroup("FreeSWITCH/conf");
-    settings.beginGroup("sofia.conf");
 
+    ISettings *settings = new ISettings(this);
+
+    QDomElement e = settings->getConfigNode("sofia.conf");
+    QDomNodeList nl = e.elementsByTagName("global_settings").at(0).toElement().elementsByTagName("param");
     /* General Settings */
-    settings.beginGroup("global_settings/params");
-    settings.setValue("log-level", _ui->sofiaLogLevelSpin->value());
-    settings.setValue("auto-restart", _ui->sofiaAutoRestartCombo->currentText());
-    settings.setValue("debug-presence", _ui->sofiaDebugPresenceSpin->value());
-    settings.setValue("rewrite-multicasted-fs-path", _ui->sofiaRewriteMulticastedFsPathCombo->currentText());
-    settings.endGroup();
+    for (int i = 0; i < nl.count(); i++) {
+        QDomElement el = nl.at(i).toElement();
+        QDomAttr val = el.attributeNode("value");
+        QDomAttr var = el.attributeNode("name");
+        if ( var.value() == "log-level" ) {
+            val.setValue(QString::number(_ui->sofiaLogLevelSpin->value()));
+        }
+        if ( var.value() == "auto-restart" ) {
+            val.setValue(_ui->sofiaAutoRestartCombo->currentText());
+        }
+        if ( var.value() == "debug-presence" ) {
+            val.setValue(QString::number(_ui->sofiaDebugPresenceSpin->value()));
+        }
+        if ( var.value() == "rewrite-multicasted-fs-path" ) {
+            val.setValue(_ui->sofiaRewriteMulticastedFsPathCombo->currentText());
+        }
 
+    }
     /* Profile settings */
-    settings.beginGroup("profiles");
-    settings.beginGroup("profile");
+    /* Get only the first settings, meaning one profile supported so far */
+    QDomNodeList params = e.elementsByTagName("settings").at(0).toElement().elementsByTagName("param");
+    for (int i = 0; i < params.count(); i++) {
+        QDomElement el = params.at(i).toElement();
+        QDomAttr val = el.attributeNode("value");
+        if ( el.attribute("name") == "user-agent-string") {
+            val.setValue(_ui->sofiaUserAgentStringEdit->text());
+        }
+        if ( el.attribute("name") == "debug") {
+            val.setValue(QString::number(_ui->sofiaDebugSpin->value()));
+        }
+        if ( el.attribute("name") == "sip-trace") {
+            val.setValue(_ui->sofiaSipTraceCombo->currentText());
+        }
+        if ( el.attribute("name") == "context") {
+            val.setValue(_ui->sofiaContextEdit->text());
+        }
+        if ( el.attribute("name") == "rfc2833-pt") {
+            val.setValue(_ui->sofiaRfc2833PtEdit->text());
+        }
+        if ( el.attribute("name") == "sip-port") {
+            val.setValue(QString::number(_ui->sofiaSipPortSpin->value()));
+        }
+        if ( el.attribute("name") == "dialplan") {
+            val.setValue(_ui->sofiaDialplanEdit->text());
+        }
+        if ( el.attribute("name") == "dtmf-duration") {
+            val.setValue(QString::number(_ui->sofiaDtmfDurationSpin->value()));
+        }
+        if ( el.attribute("name") == "codec-prefs") {
+            val.setValue(_ui->sofiaProfileCodecWidget->getCodecString());
+        }
+        if ( el.attribute("name") == "use-rtp-timer") {
+            val.setValue(_ui->sofiaUseRtpTimerCombo->currentText());
+        }
+        if ( el.attribute("name") == "rtp-timer-name") {
+            val.setValue(_ui->sofiaRtpTimerNameEdit->text());
+        }
+        if ( el.attribute("name") == "rtp-ip") {
+            val.setValue(_ui->sofiaRtpIpEdit->text());
+        }
+        if ( el.attribute("name") == "sip-ip") {
+            val.setValue(_ui->sofiaSipIpEdit->text());
+        }
+        if ( el.attribute("name") == "hold-music") {
+            val.setValue(_ui->sofiaHoldMusicEdit->text());
+        }
+        if ( el.attribute("name") == "apply-nat-acl") {
+            val.setValue(_ui->sofiaApplyNatAclEdit->text());
+        }
+        if ( el.attribute("name") == "manage-presence") {
+            val.setValue(_ui->sofiaManagePresenceCombo->currentText());
+        }
+        if ( el.attribute("name") == "max-proceeding") {
+            val.setValue(_ui->sofiaMaxProceedingEdit->text());
+        }
+        if ( el.attribute("name") == "inbound-codec-negotiation") {
+            val.setValue(_ui->sofiaInboundCodecNegotiationCombo->currentText());
+        }
+        if ( el.attribute("name") == "nonce-ttl") {
+            val.setValue(QString::number(_ui->sofiaNonceTtlSpin->value()));
+        }
+        if ( el.attribute("name") == "auth-calls") {
+            val.setValue(_ui->sofiaAuthCallsCombo->currentText());
+        }
+        if ( el.attribute("name") == "auth-all-packets") {
+            val.setValue(_ui->sofiaAuthAllPacketsCombo->currentText());
+        }
+        if ( el.attribute("name") == "ext-rtp-ip") {
+            val.setValue(_ui->sofiaExtRtpIpEdit->text());
+        }
+        if ( el.attribute("name") == "ext-sip-ip") {
+            val.setValue(_ui->sofiaExtSipIpEdit->text());
+        }
+        if ( el.attribute("name") == "rtp-timeout-sec") {
+            val.setValue(QString::number(_ui->sofiaRtpTimeoutSecSpin->value()));
+        }
+        if ( el.attribute("name") == "rtp-hold-timeout-sec") {
+            val.setValue(QString::number(_ui->sofiaRtpHoldTimeoutSecSpin->value()));
+        }
+        if ( el.attribute("name") == "disable-register") {
+            val.setValue(_ui->sofiaDisableRegisterCombo->currentText());
+        }
+        if ( el.attribute("name") == "challenge-realm") {
+            val.setValue(_ui->sofiaChallengeRealmCombo->currentText());
+        }
+    }
 
-    settings.beginGroup("attrs");
-    settings.setValue("name", "softphone");
-    settings.endGroup();
-
-    settings.beginGroup("settings/params");
-    settings.setValue("user-agent-string", _ui->sofiaUserAgentStringEdit->text());
-    settings.setValue("debug", _ui->sofiaDebugSpin->value());
-    settings.setValue("sip-trace", _ui->sofiaSipTraceCombo->currentText());
-    settings.setValue("context", _ui->sofiaContextEdit->text());
-    settings.setValue("rfc2833-pt", _ui->sofiaRfc2833PtEdit->text());
-    settings.setValue("sip-port", _ui->sofiaSipPortSpin->value());
-    settings.setValue("dialplan", _ui->sofiaDialplanEdit->text());
-    settings.setValue("dtmf-duration", _ui->sofiaDtmfDurationSpin->value());
-    settings.setValue("codec-prefs", _ui->sofiaProfileCodecWidget->getCodecString());
-    settings.setValue("use-rtp-timer", _ui->sofiaUseRtpTimerCombo->currentText());
-    settings.setValue("rtp-timer-name", _ui->sofiaRtpTimerNameEdit->text());
-    settings.setValue("rtp-ip", _ui->sofiaRtpIpEdit->text());
-    settings.setValue("sip-ip", _ui->sofiaSipIpEdit->text());
-    settings.setValue("hold-music", _ui->sofiaHoldMusicEdit->text());
-    settings.setValue("apply-nat-acl", _ui->sofiaApplyNatAclEdit->text());
-    settings.setValue("manage-presence", _ui->sofiaManagePresenceCombo->currentText());
-    settings.setValue("max-proceeding", _ui->sofiaMaxProceedingEdit->text());
-    settings.setValue("inbound-codec-negotiation", _ui->sofiaInboundCodecNegotiationCombo->currentText());
-    settings.setValue("nonce-ttl", _ui->sofiaNonceTtlSpin->value());
-    settings.setValue("auth-calls", _ui->sofiaAuthCallsCombo->currentText());
-    settings.setValue("auth-all-packets", _ui->sofiaAuthAllPacketsCombo->currentText());
-    settings.setValue("ext-rtp-ip", _ui->sofiaExtRtpIpEdit->text());
-    settings.setValue("ext-sip-ip", _ui->sofiaExtSipIpEdit->text());
-    settings.setValue("rtp-timeout-sec", _ui->sofiaRtpTimeoutSecSpin->value());
-    settings.setValue("rtp-hold-timeout-sec", _ui->sofiaRtpHoldTimeoutSecSpin->value());
-    settings.setValue("disable-register", _ui->sofiaDisableRegisterCombo->currentText());
-    settings.setValue("challenge-realm", _ui->sofiaChallengeRealmCombo->currentText());
-    settings.endGroup();
-
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
-    settings.endGroup();
+    settings->setConfigNode(e, "sofia.conf");
+    delete(settings);
 }

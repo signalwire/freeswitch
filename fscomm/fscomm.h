@@ -1,6 +1,7 @@
 #ifndef FSCOMM_H
 #define FSCOMM_H
 
+#include "account.h"
 #include "isettings.h"
 #include "fshost.h"
 #include "accountmanager.h"
