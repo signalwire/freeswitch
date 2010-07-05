@@ -5458,7 +5458,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 
 void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 {
-	const char *uuid, *network_addr_a, *network_addr_b, *simplify, *simplify_other_channel;
+	const char *uuid, *network_addr_a = NULL, *network_addr_b = NULL, *simplify, *simplify_other_channel;
 	switch_channel_t *other_channel = NULL, *inbound_channel = NULL;
 	switch_core_session_t *other_session = NULL, *inbound_session = NULL;
 	uint8_t did_simplify = 0;
