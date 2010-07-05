@@ -445,7 +445,7 @@ static switch_bool_t db_check(char *sql)
 		}
 	}
 
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	return ret;
 }
 
@@ -581,7 +581,7 @@ static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback
 			retval = SWITCH_TRUE;
 		}
 	}
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	return retval;
 }
 
@@ -1175,7 +1175,7 @@ static switch_status_t lcr_load_config()
 	}
 
 done:
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	switch_xml_free(xml);
 	return status;
 }
