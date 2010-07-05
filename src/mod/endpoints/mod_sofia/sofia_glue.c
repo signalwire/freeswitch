@@ -3932,7 +3932,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			if (best_te) {
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 					te = tech_pvt->te = (switch_payload_t) best_te;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", map->rm_pt);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", best_te);
 					if (tech_pvt->rtp_session) {
 						switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t) best_te);
 					}
