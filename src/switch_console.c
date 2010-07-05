@@ -842,7 +842,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 }
 
 
-
+#ifdef SWITCH_HAVE_LIBEDIT
 /*
  * If a fnkey is configured then process the command
  */
@@ -868,6 +868,7 @@ static unsigned char console_fnkey_pressed(int i)
 
 	return CC_REDISPLAY;
 }
+#endif
 
 SWITCH_DECLARE(void) switch_console_save_history(void)
 {
