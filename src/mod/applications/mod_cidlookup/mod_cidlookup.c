@@ -143,7 +143,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 
   done:
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	return status;
 }
 
@@ -198,7 +198,7 @@ static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_ca
 		*err = switch_core_sprintf(cbt->pool, "Unable to get ODBC handle.  dsn: %s, dbh is %s\n", globals.odbc_dsn, dbh ? "not null" : "null");
 	}
 
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	return retval;
 }
 
