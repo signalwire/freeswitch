@@ -1571,7 +1571,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
-
+	
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
 
@@ -1613,10 +1613,12 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
-	if (!fmt)
-		return;
+	/* gcc 4.4 gets mad at us for testing if (ap) so let's try to work around it....*/
+	void *ap_ptr = (void *) (intptr_t) ap;
+	
+	if (!fmt) return;
 
-	if (ap) {
+	if (ap_ptr) {
 		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, fmt, ap);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, "%s", fmt);
