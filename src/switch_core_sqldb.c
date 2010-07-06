@@ -35,6 +35,8 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
+#define SQL_QUEUE_MAX = 
+
 static struct {
 	switch_cache_db_handle_t *event_db;
 	switch_queue_t *sql_queue[2];
@@ -1253,14 +1255,13 @@ static void core_event_handler(switch_event_t *event)
 	}
 
 	if (sql_idx) {
-		int i = 0;
+		int i = 0, x = 0;
 
 		for (i = 0; i < sql_idx; i++) {
-			if (switch_stristr("update channels", sql[i]) || switch_stristr("delete from channels", sql[i])) {
-				switch_queue_push(sql_manager.sql_queue[1], sql[i]);
-			} else {
-				switch_queue_push(sql_manager.sql_queue[0], sql[i]);
+			if (!switch_stristr("insert", sql[i])) {
+				x = 1;
 			}
+			switch_queue_push(sql_manager.sql_queue[x], sql[i]);
 			sql[i] = NULL;
 		}
 	}
