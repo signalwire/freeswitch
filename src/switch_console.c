@@ -842,7 +842,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 }
 
 
-#ifdef SWITCH_HAVE_LIBEDIT
+#if defined(SWITCH_HAVE_LIBEDIT) || defined(_MSC_VER)
 /*
  * If a fnkey is configured then process the command
  */
