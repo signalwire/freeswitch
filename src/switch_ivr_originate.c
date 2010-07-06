@@ -2412,7 +2412,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				} else {
 					if (oglobals.caller_profile_override) {
-						new_profile = switch_caller_profile_dup(oglobals.pool, caller_profile_override);
+						new_profile = switch_caller_profile_dup(oglobals.pool, oglobals.caller_profile_override);
 						new_profile->destination_number = switch_core_strdup(new_profile->pool, switch_str_nil(chan_data));
 						new_profile->uuid = SWITCH_BLANK_STRING;
 						new_profile->chan_name = SWITCH_BLANK_STRING;
