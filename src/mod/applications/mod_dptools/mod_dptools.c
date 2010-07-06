@@ -2781,7 +2781,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		if (session) {
 			channel = switch_core_session_get_channel(session);
 			if ((varval = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))
-				|| (varval = switch_event_get_header(var_event, "leg_timeout"))) {
+				|| (var_event && (varval = switch_event_get_header(var_event, "leg_timeout")))) {
 				timelimit = atoi(varval);
 			}
 
