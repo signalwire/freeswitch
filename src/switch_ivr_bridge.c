@@ -864,6 +864,7 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 	switch_channel_t *channel = NULL;
 	const char *key;
 	switch_core_session_message_t msg = { 0 };
+	switch_event_t *event = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -882,6 +883,13 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 	}
 
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE));
+
+	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1005,12 +1013,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 		switch_event_fire(&event);
 	}
-
-	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(caller_channel, event);
-		switch_event_fire(&event);
-	}
-
+	
 	switch_channel_set_state_flag(caller_channel, CF_RESET);
 	switch_channel_set_state_flag(peer_channel, CF_RESET);
 
