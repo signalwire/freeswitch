@@ -406,6 +406,7 @@ SWITCH_STANDARD_API(hash_api_function)
 		switch_assert(value);
 		switch_core_hash_insert(globals.db_hash, hash_key, value);
 		stream->write_function(stream, "+OK\n");
+		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	} else if (!strcasecmp(argv[0], "delete")) {
 		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
@@ -415,11 +416,13 @@ SWITCH_STANDARD_API(hash_api_function)
 		} else {
 			stream->write_function(stream, "-ERR Not found\n");
 		}
+		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	} else if (!strcasecmp(argv[0], "select")) {
 		switch_thread_rwlock_rdlock(globals.db_hash_rwlock);
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			stream->write_function(stream, "%s", value);
 		}
+		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	} else {
 		goto usage;
 	}
@@ -430,7 +433,7 @@ SWITCH_STANDARD_API(hash_api_function)
 	stream->write_function(stream, "-ERR Usage: hash %s\n", HASH_API_USAGE);
 
   done:
-	switch_thread_rwlock_unlock(globals.db_hash_rwlock);
+
 	switch_safe_free(mydata);
 	switch_safe_free(hash_key);
 
