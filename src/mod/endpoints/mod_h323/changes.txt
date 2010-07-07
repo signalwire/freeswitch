@@ -1,3 +1,6 @@
+initial t.38 support.
+remake logical channel opening.
+add missing param name in example config.
 add dtmfinband conf parameter.
 add endpoint-name conf parameter represents endpoint name.
 fix GK registration retrying in case of registration reject.

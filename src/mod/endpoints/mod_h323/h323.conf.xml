@@ -14,6 +14,7 @@
     <param name="jitter-size" value="60"/>  <!-- optional -->
     <param name="progress-indication" value="8"/> <!-- optional - PI value in progress message-->
     <param name="alerting-indication" value="8"/> <!-- optional - PI value in alerting message-->
+    <param name="endpoint-name" value="fs"/>
   </settings>
   <listeners>
     <listener name="default">

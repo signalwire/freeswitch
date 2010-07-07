@@ -10,7 +10,10 @@
 #include <h323pdu.h>
 #include <h323caps.h>
 #include <ptclib/delaychan.h>
-
+#include <h323t38.h>
+#include "t38proto.h"
+#include "t38.h"
+#include <mediafmt.h>
 #include <list>
 
 
@@ -25,7 +28,16 @@
 #include <switch.h>
 #include <switch_version.h>
 #define MODNAME "mod_h323"
+#define OpalT38_IFP_COR       GetOpalT38_IFP_COR()
+#define OpalT38_IFP_PRE       GetOpalT38_IFP_PRE()
 
+
+extern void SetT38_IFP_PRE();
+class OpalMediaFormat;
+class H245_T38FaxProfile;
+class OpalT38Protocol; 
+extern const OpalMediaFormat & GetOpalT38_IFP_COR();
+extern const OpalMediaFormat & GetOpalT38_IFP_PRE();
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -78,6 +90,7 @@ typedef struct {
 	switch_rtp_t *rtp_session;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *h323_mutex;
+	switch_mutex_t *h323_io_mutex;
 
 	FSH323Connection *me;
 } h323_private_t;
@@ -125,6 +138,7 @@ struct FSListener {
 };
 class FSGkRegThread;
 
+class OpalMediaFormat;
 class FSH323EndPoint:public H323EndPoint {
 
 	PCLASSINFO(FSH323EndPoint, H323EndPoint);
@@ -139,7 +153,7 @@ class FSH323EndPoint:public H323EndPoint {
 	virtual bool OnSetGatewayPrefixes(PStringList & prefixes) const;
 
 	bool Initialise(switch_loadable_module_interface_t *iface);
-
+	
 	switch_status_t ReadConfig(int reload);
 
 	void StartGkClient(int retry, PString * gkAddress, PString * gkIdentifer, PString * gkInterface);
@@ -152,7 +166,7 @@ class FSH323EndPoint:public H323EndPoint {
 	int m_ai;
 	int m_pi;
   protected:
-	    PStringList m_gkPrefixes;
+	PStringList m_gkPrefixes;
 	switch_endpoint_interface_t *m_freeswitch;
 	PString m_gkAddress;
 	PString m_gkIdentifer;
@@ -191,9 +205,9 @@ class FSH323Connection:public H323Connection {
   public:
 	FSH323Connection(FSH323EndPoint & endpoint,
 					 H323Transport * transport,
-					 unsigned callReference, switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel);
-
-	                ~FSH323Connection();
+					 unsigned callReference, switch_caller_profile_t *outbound_profile,
+					 switch_core_session_t *fsSession, switch_channel_t *fsChannel);
+	~FSH323Connection();
 
 	virtual H323Channel *CreateRealTimeLogicalChannel(const H323Capability & capability,
 													  H323Channel::Directions dir,
@@ -212,33 +226,39 @@ class FSH323Connection:public H323Connection {
 	virtual bool OnAlerting(const H323SignalPDU & alertingPDU, const PString & user);
 	virtual void AnsweringCall(AnswerCallResponse response);
 	virtual void OnEstablished();
+	virtual void OnModeChanged(const H245_ModeDescription & newMode);
+	virtual bool OnRequestModeChange(const H245_RequestMode & pdu,
+                                         H245_RequestModeAck & ack,
+                                         H245_RequestModeReject & reject,
+                                         PINDEX & selectedMode);
 	bool SetLocalCapabilities();
 	static bool decodeCapability(const H323Capability & capability, const char **dataFormat, int *payload = 0, PString * capabName = 0);
 	virtual H323Connection::AnswerCallResponse OnAnswerCall(const PString & caller, const H323SignalPDU & signalPDU, H323SignalPDU & connectPDU);
 	virtual bool OnReceivedCapabilitySet(const H323Capabilities & remoteCaps,
-										 const H245_MultiplexCapability * muxCap, H245_TerminalCapabilitySetReject & reject);
+	const H245_MultiplexCapability * muxCap, H245_TerminalCapabilitySetReject & reject);
 	switch_core_session_t *GetSession() const {
 		return m_fsSession;
-	} virtual void SendUserInputTone(char tone, unsigned duration = 0, unsigned logicalChannel = 0, unsigned rtpTimestamp = 0);
+	} 
+	virtual void SendUserInputTone(char tone, unsigned duration = 0, unsigned logicalChannel = 0, unsigned rtpTimestamp = 0);
 	virtual void OnUserInputTone(char, unsigned, unsigned, unsigned);
 	virtual void OnUserInputString(const PString & value);
-	      DECLARE_CALLBACK0(on_init);
-	      DECLARE_CALLBACK0(on_routing);
-	      DECLARE_CALLBACK0(on_execute);
+	void CleanUpOnCall();
+    
+	DECLARE_CALLBACK0(on_init);
+    DECLARE_CALLBACK0(on_routing);
+    DECLARE_CALLBACK0(on_execute);
+    DECLARE_CALLBACK0(on_exchange_media);
+    DECLARE_CALLBACK0(on_soft_execute);
+    DECLARE_CALLBACK1(kill_channel, int, sig);
+    DECLARE_CALLBACK1(send_dtmf, const switch_dtmf_t *, dtmf);
+    DECLARE_CALLBACK1(receive_message, switch_core_session_message_t *, msg);
+    DECLARE_CALLBACK1(receive_event, switch_event_t *, event);
+    DECLARE_CALLBACK0(state_change);
 
-	      DECLARE_CALLBACK0(on_exchange_media);
-	      DECLARE_CALLBACK0(on_soft_execute);
-
-	      DECLARE_CALLBACK1(kill_channel, int, sig);
-	    DECLARE_CALLBACK1(send_dtmf, const switch_dtmf_t *, dtmf);
-	              DECLARE_CALLBACK1(receive_message, switch_core_session_message_t *, msg);
-	                              DECLARE_CALLBACK1(receive_event, switch_event_t *, event);
-	               DECLARE_CALLBACK0(state_change);
-
-	               DECLARE_CALLBACK3(read_audio_frame, switch_frame_t **, frame, switch_io_flag_t, flags, int, stream_id);
-	    DECLARE_CALLBACK3(write_audio_frame, switch_frame_t *, frame, switch_io_flag_t, flags, int, stream_id);
-	    DECLARE_CALLBACK3(read_video_frame, switch_frame_t **, frame, switch_io_flag_t, flag, int, stream_id);
-	    DECLARE_CALLBACK3(write_video_frame, switch_frame_t *, frame, switch_io_flag_t, flag, int, stream_id);
+    DECLARE_CALLBACK3(read_audio_frame, switch_frame_t **, frame, switch_io_flag_t, flags, int, stream_id);
+    DECLARE_CALLBACK3(write_audio_frame, switch_frame_t *, frame, switch_io_flag_t, flags, int, stream_id);
+    DECLARE_CALLBACK3(read_video_frame, switch_frame_t **, frame, switch_io_flag_t, flag, int, stream_id);
+    DECLARE_CALLBACK3(write_video_frame, switch_frame_t *, frame, switch_io_flag_t, flag, int, stream_id);
 
 	bool m_callOnPreAnswer;
 	bool m_startRTP;
@@ -249,15 +269,19 @@ class FSH323Connection:public H323Connection {
 	unsigned char m_select_dtmf;
 	PSyncPoint m_rxAudioOpened;
 	PSyncPoint m_txAudioOpened;
+	unsigned m_active_sessionID;
+	bool m_active_chennel_fax;
+	int m_rtp_resetting;
+	bool m_isRequst_fax;
   protected:
-	           FSH323EndPoint * m_endpoint;
+	FSH323EndPoint * m_endpoint;
 	PString m_remoteAddr;
 	int m_remotePort;
 	switch_core_session_t *m_fsSession;
 	switch_channel_t *m_fsChannel;
-	                 PIPSocket::Address m_RTPlocalIP;
+	PIPSocket::Address m_RTPlocalIP;
 	WORD m_RTPlocalPort;
-	unsigned char m_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	unsigned char m_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];	
 };
 
 
@@ -278,7 +302,7 @@ class FSH323_ExternalRTPChannel:public H323_ExternalRTPChannel {
 
 
   private:
-	     FSH323Connection * m_conn;
+	FSH323Connection * m_conn;
 	const H323Capability *m_capability;
 	switch_core_session_t *m_fsSession;
 	switch_channel_t *m_fsChannel;
@@ -290,8 +314,8 @@ class FSH323_ExternalRTPChannel:public H323_ExternalRTPChannel {
 	WORD m_RTPremotePort;
 	PString m_RTPlocalIP;
 	WORD m_RTPlocalPort;
-	BYTE payloadCode;
-
+	BYTE payloadCode;	
+	unsigned m_sessionID;
 };
 
 class BaseG7231Capab:public H323AudioCapability {
@@ -342,17 +366,21 @@ class BaseG729Capab:public H323AudioCapability {
   public:
 	BaseG729Capab(const char *fname, unsigned type = H245_AudioCapability::e_g729)
   :	H323AudioCapability(24, 6), m_name(fname), m_type(type) {
-	} virtual PObject *Clone() const
-		// default copy constructor - take care!
+	} 
+	virtual PObject *Clone() const
 	{
 		return new BaseG729Capab(*this);
-	} virtual unsigned GetSubType() const {
+	} 
+	virtual unsigned GetSubType() const {
 		return m_type;
-	} virtual PString GetFormatName() const {
+	} 
+	virtual PString GetFormatName() const {
 		return m_name;
-	} virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
+	} 
+	virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
 		return 0;
-  } protected:
+	} 
+  protected:
 	const char *m_name;
 	unsigned m_type;
 };
@@ -398,6 +426,58 @@ class BaseGSM0610Cap:public H323AudioCapability {
 };
 
 
+class FSH323_T38Capability : public H323_T38Capability
+{
+    PCLASSINFO(FSH323_T38Capability, H323_T38Capability);
+  public:
+    FSH323_T38Capability(const OpalMediaFormat &_mediaFormat)
+      : H323_T38Capability(e_UDP),
+        mediaFormat(_mediaFormat) {
+	}
+    virtual PObject * Clone() const {
+		return new FSH323_T38Capability(*this);
+	}
+    virtual PString GetFormatName() const { 
+		return mediaFormat; 
+	}
+    virtual H323Channel * CreateChannel(
+      H323Connection & connection,
+      H323Channel::Directions dir,
+      unsigned sessionID,
+      const H245_H2250LogicalChannelParameters * param    ) const;
+  protected:
+    const OpalMediaFormat &mediaFormat;
+};
+
+class FSH323_T38CapabilityCor : public FSH323_T38Capability {
+  public:
+    FSH323_T38CapabilityCor() : FSH323_T38Capability(OpalT38_IFP_COR) {}
+};
+
+class FSH323_T38CapabilityPre : public FSH323_T38Capability {
+  public:
+    FSH323_T38CapabilityPre() : FSH323_T38Capability(OpalT38_IFP_PRE) {}
+};
+
+//H323_REGISTER_CAPABILITY(FSH323_T38CapabilityCor, OpalT38_IFP_COR)
+//H323_REGISTER_CAPABILITY(FSH323_T38CapabilityPre, OpalT38_IFP_PRE)
+
+
+H323Channel * FSH323_T38Capability::CreateChannel(
+    H323Connection & connection,
+    H323Channel::Directions direction,
+    unsigned int sessionID,
+    const H245_H2250LogicalChannelParameters * params) const
+{
+  PTRACE(1, "FSH323_T38Capability::CreateChannel "
+    << connection
+    << " sessionID=" << sessionID
+    << " direction=" << direction);
+
+  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params);
+}
+
+
 #define DEFINE_H323_CAPAB(cls,base,param,name) \
 class cls : public base { \
   public: \
@@ -406,17 +486,25 @@ class cls : public base { \
 H323_REGISTER_CAPABILITY(cls,name) \
 
 
+#define DEFINE_H323_CAPAB_m(cls,base,name) \
+class cls : public base { \
+  public: \
+    cls() : base(name) { } \
+}; \
+H323_REGISTER_CAPABILITY(cls,name) \
 
+
+//DEFINE_H323_CAPAB_m(FS_T38_COR,FSH323_T38Capability,OpalT38_IFP_COR)
+//DEFINE_H323_CAPAB_m(FS_T38_RPE,FSH323_T38Capability,OpalT38_IFP_PRE)
 
 DEFINE_H323_CAPAB(FS_G7231_5, BaseG7231Capab, false, OPAL_G7231_5k3 "{sw}")
-	DEFINE_H323_CAPAB(FS_G7231_6, BaseG7231Capab, false, OPAL_G7231_6k3 "{sw}")
-	DEFINE_H323_CAPAB(FS_G7231A_5, BaseG7231Capab, true, OPAL_G7231A_5k3 "{sw}")
-	DEFINE_H323_CAPAB(FS_G7231A_6, BaseG7231Capab, true, OPAL_G7231A_6k3 "{sw}")
-	DEFINE_H323_CAPAB(FS_G729, BaseG729Capab, H245_AudioCapability::e_g729, OPAL_G729 "{sw}")
-	DEFINE_H323_CAPAB(FS_G729A, BaseG729Capab, H245_AudioCapability::e_g729AnnexA, OPAL_G729A "{sw}")
-	DEFINE_H323_CAPAB(FS_G729B, BaseG729Capab, H245_AudioCapability::e_g729wAnnexB, OPAL_G729B "{sw}")
-	DEFINE_H323_CAPAB(FS_G729AB, BaseG729Capab, H245_AudioCapability::e_g729AnnexAwAnnexB, OPAL_G729AB "{sw}")
-	DEFINE_H323_CAPAB(FS_GSM, BaseGSM0610Cap, H245_AudioCapability::e_gsmFullRate, OPAL_GSM0610 "{sw}")
+DEFINE_H323_CAPAB(FS_G7231_6, BaseG7231Capab, false, OPAL_G7231_6k3 "{sw}")
+DEFINE_H323_CAPAB(FS_G7231A_5, BaseG7231Capab, true, OPAL_G7231A_5k3 "{sw}")
+DEFINE_H323_CAPAB(FS_G7231A_6, BaseG7231Capab, true, OPAL_G7231A_6k3 "{sw}")
+DEFINE_H323_CAPAB(FS_G729, BaseG729Capab, H245_AudioCapability::e_g729, OPAL_G729 "{sw}")
+DEFINE_H323_CAPAB(FS_G729A, BaseG729Capab, H245_AudioCapability::e_g729AnnexA, OPAL_G729A "{sw}")
+DEFINE_H323_CAPAB(FS_G729B, BaseG729Capab, H245_AudioCapability::e_g729wAnnexB, OPAL_G729B "{sw}")
+DEFINE_H323_CAPAB(FS_G729AB, BaseG729Capab, H245_AudioCapability::e_g729AnnexAwAnnexB, OPAL_G729AB "{sw}")
+DEFINE_H323_CAPAB(FS_GSM, BaseGSM0610Cap, H245_AudioCapability::e_gsmFullRate, OPAL_GSM0610 "{sw}")
 
-
-	 static FSProcess *h323_process = NULL;
+static FSProcess *h323_process = NULL;

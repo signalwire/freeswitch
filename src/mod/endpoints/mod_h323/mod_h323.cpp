@@ -1,8 +1,9 @@
 /*
-	Version 0.0.22
+	Version 0.0.25
 */
 
 #include "mod_h323.h"
+
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, mod_h323_globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, mod_h323_globals.context);
@@ -38,6 +39,47 @@ static const char* h323_formats[] = {
     0
 };
 
+static char encodingName_COR[7] = "t38";
+static char encodingName_PRE[7] = "t38pre";
+
+void SetT38_IFP_PRE()
+{
+  strcpy(encodingName_COR, "t38cor");
+  strcpy(encodingName_PRE, "t38");
+}
+
+const OpalMediaFormat & GetOpalT38_IFP_COR()
+{
+  static const OpalMediaFormat opalT38_IFP(
+    "T.38-IFP-COR",
+    OpalMediaFormat::DefaultDataSessionID,
+    RTP_DataFrame::IllegalPayloadType,
+    encodingName_COR,
+    FALSE, // No jitter for data
+    1440, // 100's bits/sec
+    0,
+    0,
+    0);
+
+  return opalT38_IFP;
+}
+
+const OpalMediaFormat & GetOpalT38_IFP_PRE()
+{
+  static const OpalMediaFormat opalT38_IFP(
+    "T.38-IFP-PRE",
+    OpalMediaFormat::DefaultDataSessionID,
+    RTP_DataFrame::IllegalPayloadType,
+    encodingName_PRE,
+    FALSE, // No jitter for data
+    1440, // 100's bits/sec
+    0,
+    0,
+    0);
+
+  return opalT38_IFP;
+}
+
 static switch_status_t on_hangup(switch_core_session_t *session);
 static switch_status_t on_destroy(switch_core_session_t *session);
 
@@ -71,7 +113,7 @@ static switch_state_handler_table_t h323fs_event_handlers = {
 
 static FSProcess *opal_process = NULL;
 SWITCH_MODULE_LOAD_FUNCTION(mod_h323_load){
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting loading mod_h323\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting loading mod_h323\n");
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 			
     if (!*module_interface) {
@@ -109,6 +151,7 @@ void h_timer(unsigned sec){
 	timeout.tv_usec = 0; 
 	select(NULL, NULL, NULL, NULL, &timeout);
 }
+
 
 #if PTRACING
 
@@ -250,12 +293,16 @@ PString GetH245CodecName(const H323Capability* cap){
 		case H245_AudioCapability::e_gsmEnhancedFullRate:
 			return "GSM";	
 	}
-	return "Unknown";
+	return "L16";
 }
 
 FSProcess::FSProcess()
   : PLibraryProcess("Test", "mod_h323", 1, 0, AlphaCode, 1)
   , m_h323endpoint(NULL){
+  
+	PTrace::SetLevel(10);
+    PTrace::SetOptions(PTrace::TraceLevel);
+    PTrace::SetStream(new FSTrace);
 }
 
 FSProcess::~FSProcess(){
@@ -273,9 +320,7 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface){
 	PTRACE(4, "mod_h323\t======>FSManager::Initialise " << *this);
     ReadConfig(false);
 
-    PTrace::SetLevel(mod_h323_globals.trace_level);        //just for fun and eyecandy ;)
-    PTrace::SetOptions(PTrace::TraceLevel);
-    PTrace::SetStream(new FSTrace);
+
 
     m_freeswitch = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(iface, SWITCH_ENDPOINT_INTERFACE);
     m_freeswitch->interface_name = modulename;
@@ -312,7 +357,7 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface){
 		}
 	}
 
-	
+	SetCapability(0, 0, new FSH323_T38Capability(OpalT38_IFP_PRE));
     AddAllUserInputCapabilities(0,1);
 	PTRACE(1, "OpenPhone\tCapability Table:\n" << setprecision(4) << capabilities);
 	
@@ -369,6 +414,7 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload){
     switch_xml_t xmlSettings = switch_xml_child(cfg, "settings");
 	m_pi = 8;
 	m_ai = 0;
+	m_endpointname = "FreeSwitch";
     if (xmlSettings) {
         for (switch_xml_t xmlParam = switch_xml_child(xmlSettings, "param"); xmlParam != NULL; xmlParam = xmlParam->next) {
             const char *var = switch_xml_attr_soft(xmlParam, "name");
@@ -570,7 +616,11 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 	, m_txChennel(false)
 	, m_ChennelAnswer(false)
 	, m_ChennelProgress(false)
-	, m_select_dtmf(0){
+	, m_select_dtmf(0)
+	, m_active_sessionID(0)
+	, m_active_chennel_fax(false)
+	, m_rtp_resetting(0)
+	, m_isRequst_fax(false){
 	PTRACE(4, "mod_h323\t======>FSH323Connection::FSH323Connection [" << *this<<"]");
 
     h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
@@ -579,6 +629,7 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 	
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
 	switch_mutex_init(&tech_pvt->h323_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
+	switch_mutex_init(&tech_pvt->h323_io_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
 	
     if (outbound_profile != NULL) {
         SetLocalPartyName(outbound_profile->caller_id_number);
@@ -777,8 +828,8 @@ H323Channel* FSH323Connection::CreateRealTimeLogicalChannel(const H323Capability
 
 PBoolean FSH323Connection::OnStartLogicalChannel(H323Channel & channel){
     PTRACE(4, "mod_h323\t======>FSH323Connection::OnStartLogicalChannel chennel = "<<&channel<<" ["<<*this<<"]");
-    
-	return true;
+    PTRACE(4, "mod_h323\t======>FSH323Connection::OnStartLogicalChannel connectionState  = "<<connectionState<<" ["<<*this<<"]");
+	return connectionState != ShuttingDownConnection;
 }
 
 PBoolean FSH323Connection::OnCreateLogicalChannel(const H323Capability& capability, H323Channel::Directions dir, unsigned& errorCode){
@@ -810,32 +861,46 @@ bool FSH323Connection::OnReceivedProgress(const H323SignalPDU &pdu)
 bool FSH323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU){
 
 	PTRACE(4, "mod_h323\t======>FSH323Connection::OnReceivedSignalSetup ["<<*this<<"]");
-	
+//	Lock();
 	if (!H323Connection::OnReceivedSignalSetup(setupPDU)) return false;
-	
+	PTRACE(4, "mod_h323\t---------> after FSH323Connection::OnReceivedSignalSetup connectionState = "<<connectionState<<" ["<<*this<<"]");
 	H323SignalPDU callProceedingPDU;
 	H225_CallProceeding_UUIE & callProceeding = callProceedingPDU.BuildCallProceeding(*this);
+	PTRACE(4, "mod_h323\t---------> after callProceedingPDU.BuildCallProceeding connectionState = "<<connectionState<<" ["<<*this<<"]");
+	if (connectionState == ShuttingDownConnection){
+		PTRACE(4, "mod_h323\t---------> connectionState = ShuttingDownConnection ["<<*this<<"]");
+//		Unlock();
+		return false; 
+	}
 	
 	if (SendFastStartAcknowledge(callProceeding.m_fastStart)){
 					callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastStart);
 	} else {
 		PTRACE(2, "H323\tSendFastStartAcknowledge = FALSE ");
 		if (connectionState == ShuttingDownConnection){
+//			Unlock();
 			return true;
 		}
 		earlyStart = TRUE;
 		if (!h245Tunneling && (controlChannel == NULL)) {
 			if (!StartControlChannel()){
+//				Unlock();
 				return true;
 			}
 			callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_h245Address);
 			controlChannel->SetUpTransportPDU(callProceeding.m_h245Address, TRUE);
 		}
 	}
-					
-	if (!WriteSignalPDU(callProceedingPDU))
+	if (connectionState == ShuttingDownConnection){
+//			Unlock();
+			return true;
+	}				
+	
+	if (!WriteSignalPDU(callProceedingPDU)){
+//		Unlock();
         return false;
-		
+	}
+//	Unlock();
 	return true;		
 }
 
@@ -874,7 +939,9 @@ bool FSH323Connection::OnSendReleaseComplete(H323SignalPDU & pdu)
 
 PBoolean FSH323Connection::OpenLogicalChannel(const H323Capability& capability, unsigned sessionID, H323Channel::Directions dir){
 	PTRACE(4, "mod_h323\t======>FSH323Connection::OpenLogicalChannel ('"<< (const char *)capability.GetFormatName()<<"', "<< sessionID<<", "<<dir <<") "<<*this);
-    
+//    if (m_rxChennel &&  m_txChennel)
+//		return true;
+		
     return H323Connection::OpenLogicalChannel(capability,sessionID,dir);
 }
 
@@ -884,6 +951,8 @@ bool FSH323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCa
 							H245_TerminalCapabilitySetReject & reject){
 	
 	PTRACE(4, "mod_h323\t======>FSH323Connection::OnReceivedCapabilitySet ["<<*this<<"]");
+	if (connectionState == ShuttingDownConnection)
+		return false;
 	if (!H323Connection::OnReceivedCapabilitySet(remoteCaps, muxCap, reject)) {
 		return false;
 	}
@@ -900,7 +969,7 @@ bool FSH323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCa
 	}
 	PTRACE(4, "mod_h323\t----> Capabilities not NULL ");
 	
-	return true;						
+	return connectionState != ShuttingDownConnection;						
 }
 
 
@@ -1016,9 +1085,107 @@ void FSH323Connection::OnEstablished(){
 	if(m_startRTP)		
 		switch_channel_mark_answered(m_fsChannel);
 	else m_ChennelAnswer = true;
+	if (m_active_chennel_fax)
+		RequestModeChangeT38();
+	else 
+		m_active_chennel_fax = true;
+}
+PBoolean FSH323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
+                                         H245_RequestModeAck & /*ack*/,
+                                         H245_RequestModeReject & /*reject*/,
+                                         PINDEX & selectedMode)
+{
+	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
+	switch_mutex_lock(tech_pvt->h323_mutex);
+	PTRACE(4, "mod_h323\t======>PFSH323Connection::OnRequestModeChange ["<<*this<<"]");
+	if (!m_isRequst_fax){
+		m_isRequst_fax = true;
+		switch_mutex_unlock(tech_pvt->h323_mutex);
+		return true;
+	}
+	return false;
+	switch_mutex_unlock(tech_pvt->h323_mutex);
 }
 
+void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode){
+	PTRACE(4, "mod_h323\t======>PFSH323Connection::OnModeChanged ["<<*this<<"]");
+	for (PINDEX i = 0; i < newMode.GetSize(); i++) {
+		H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
+		if (PAssertNULL(capability) != NULL)  {
+			PTRACE(1, "mod_h323\tOpen channel after mode change: " << *capability);			
+			if (capability->GetMainType() == H323Capability::e_Data){
+				PTRACE(1, "mod_h323\tcapability->GetMainType() = H323Capability::e_Data");
+				H245_DataMode & type = newMode[i].m_type;
+				if (type.m_application.GetTag() == H245_DataMode_application::e_t38fax){
+					PTRACE(1, "mod_h323\ttype.m_application.GetTag() = H245_DataMode_application::e_t38fax");
+					H245_DataMode_application_t38fax & fax = type.m_application;
+					H245_DataProtocolCapability & proto = fax.m_t38FaxProtocol; 
+					const H245_T38FaxProfile & profile = fax.m_t38FaxProfile;
+					switch_t38_options_t* t38_options = (switch_t38_options_t*)switch_channel_get_private(m_fsChannel, "t38_options");
 
+					if (!t38_options) {
+						t38_options = (switch_t38_options_t*)switch_core_session_alloc(m_fsSession, sizeof(* t38_options));
+						PTRACE(1, "mod_h323\tswitch_core_session_alloc t38_options");
+					}
+				
+//					t38_options->port = 0;
+//					t38_options->ip = NULL;
+					t38_options->T38VendorInfo = "0 0 0";
+					
+					t38_options->T38FaxVersion = profile.m_version;
+					PTRACE(1, "mod_h323\tT38FaxVersion:"<<profile.m_version);
+					t38_options->T38MaxBitRate = type.m_bitRate*100;
+					PTRACE(1, "mod_h323\tT38MaxBitRate:"<<t38_options->T38MaxBitRate);
+					if (profile.m_fillBitRemoval) 
+						t38_options->T38FaxFillBitRemoval = SWITCH_TRUE;
+					PTRACE(1, "mod_h323\tT38FaxFillBitRemoval:"<<profile.m_fillBitRemoval);
+					if (profile.m_transcodingMMR)
+						t38_options->T38FaxTranscodingMMR = SWITCH_TRUE;
+					PTRACE(1, "mod_h323\tT38FaxTranscodingMMR:"<<profile.m_transcodingMMR);
+					if (profile.m_transcodingJBIG) 
+						t38_options->T38FaxTranscodingJBIG = SWITCH_TRUE;
+					PTRACE(1, "mod_h323\tT38FaxTranscodingJBIG:"<<profile.m_transcodingJBIG);
+					if (profile.m_t38FaxRateManagement.GetTag() == H245_T38FaxRateManagement::e_transferredTCF)
+						t38_options->T38FaxRateManagement = "transferredTCF";
+					else
+						t38_options->T38FaxRateManagement = "localTCF";
+					PTRACE(1, "mod_h323\tT38FaxRateManagement:"<<t38_options->T38FaxRateManagement);
+					t38_options->T38FaxMaxBuffer = profile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer;
+					PTRACE(1, "mod_h323\tT38FaxMaxBuffer:"<<profile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer);
+					t38_options->T38FaxMaxDatagram = profile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram;
+					PTRACE(1, "mod_h323\tT38FaxMaxDatagram:"<<profile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram);
+					if (profile.m_t38FaxUdpOptions.m_t38FaxUdpEC.GetTag() == H245_T38FaxUdpOptions_t38FaxUdpEC::e_t38UDPFEC)
+						t38_options->T38FaxUdpEC = "t38UDPFEC";
+					else
+						t38_options->T38FaxUdpEC = "t38UDPRedundancy";
+					PTRACE(1, "mod_h323\tT38FaxUdpEC:"<<t38_options->T38FaxUdpEC);
+					const char *uuid = switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE); 
+					if (uuid != NULL){
+						PTRACE(1, "mod_h323\t uuid:"<<uuid);
+						switch_channel_set_private(switch_core_session_get_channel(switch_core_session_locate(switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE))), "t38_options", t38_options);
+					
+					
+						switch_core_session_message_t msg = { 0 };
+						int insist = 0;
+						const char *v;
+						if ((v = switch_channel_get_variable(m_fsChannel, "fax_enable_t38_insist"))) {
+							insist = switch_true(v);
+						} 
+						msg.from = switch_channel_get_name(m_fsChannel);
+						msg.message_id = SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA;
+						msg.numeric_arg = insist;
+						PTRACE(1, "mod_h323\tuuid:"<<switch_channel_get_uuid(switch_core_session_get_channel(switch_channel_get_session(m_fsChannel))));					
+						PTRACE(1, "mod_h323\tuuid:"<<uuid);
+						switch_core_session_message_send(uuid,&msg);
+					} else {
+						switch_channel_set_private(m_fsChannel, "t38_options", t38_options);
+					}
+				}
+			}
+		} 
+	}
+	H323Connection::OnModeChanged(newMode);
+}
 
 void FSH323Connection::setRemoteAddress(const char* remoteIP, WORD remotePort){
 	PTRACE(4, "mod_h323\t======>PFSH323Connection::setRemoteAddress remoteIP ="<<remoteIP<<", remotePort = "<<remotePort<<" "<<*this);
@@ -1062,6 +1229,7 @@ switch_status_t FSH323Connection::kill_channel(int sig){
 		m_rxAudioOpened.Signal();
 		m_txAudioOpened.Signal();        
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			PTRACE(3, "mod_h323\t--->Kill soket" << *this);
 			switch_rtp_kill_socket(tech_pvt->rtp_session);
 		}
         break;
@@ -1104,11 +1272,20 @@ void FSH323Connection::OnUserInputString(const PString &value)
 	}
 }
 
+void FSH323Connection::CleanUpOnCall(){
+	PTRACE(4, "mod_h323\t======>FSH323Connection::CleanUpOnCall [" << *this<<"]");
+//	Lock();
+	connectionState = ShuttingDownConnection;
+//	Unlock();
+	PTRACE(4, "mod_h323\t<======FSH323Connection::CleanUpOnCall [" << *this<<"]");
+}
 
 switch_status_t FSH323Connection::receive_message(switch_core_session_message_t *msg){
 	PTRACE(4, "mod_h323\t======>FSH323Connection::receive_message MSG=" << msg->message_id);
+//	Lock();
+//	Unlock();
     switch_channel_t *channel = switch_core_session_get_channel(m_fsSession);
-
+	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
     switch (msg->message_id) {
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
@@ -1138,7 +1315,9 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 			} else { 
 				m_callOnPreAnswer = true;
 				if (fastStartState == FastStartDisabled){
+					PTRACE(4, "mod_h323\t-------------------->m_txAudioOpened.Wait START" << *this);
 					m_txAudioOpened.Wait();
+					PTRACE(4, "mod_h323\t-------------------->m_rxAudioOpened.Wait STOP" << *this);
 				}
 			}
 			break;
@@ -1152,18 +1331,49 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 		
 			if (m_txChennel && m_rxChennel){
 				if (!switch_channel_test_flag(m_fsChannel, CF_EARLY_MEDIA)) {
-					PTRACE(4, "mod_h323\t-------------------->switch_channel_mark_answered(m_fsChannel) " << *this);
+					PTRACE(4, "mod_h323\t-------------------->switch_channel_mark_answered(m_fsChannel) " << *this);					
 					switch_channel_mark_answered(m_fsChannel);
 				}
 			} else{
 				m_ChennelAnswer =  true;
 				if (fastStartState == FastStartDisabled){
+					PTRACE(4, "mod_h323\t-------------------->m_txAudioOpened.Wait START" << *this);
+					PTRACE(4, "mod_h323\t-------------------->m_rxAudioOpened.Wait START" << *this);
 					m_txAudioOpened.Wait();
 					m_rxAudioOpened.Wait();
+					PTRACE(4, "mod_h323\t-------------------->m_txAudioOpened.Wait STOP" << *this);
+					PTRACE(4, "mod_h323\t-------------------->m_rxAudioOpened.Wait STOP" << *this);
 				}
 			}
 			break;
 		}
+		case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:	{
+			PTRACE(3, "mod_h323\tReceived message SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA on connection " << *this);
+			switch_mutex_lock(tech_pvt->h323_mutex);
+			if (!m_isRequst_fax)
+				m_isRequst_fax = true;									
+			switch_mutex_unlock(tech_pvt->h323_mutex);
+			if (m_active_chennel_fax)
+				RequestModeChangeT38();
+			else 
+				m_active_chennel_fax = true;
+			break;
+		}
+		case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:{
+			PTRACE(3, "mod_h323\tReceived message SWITCH_MESSAGE_INDICATE_UDPTL_MODE on connection " << *this);
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_udptl_mode(tech_pvt->rtp_session);
+			}
+			break;
+		}
+		case SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION:{
+			PTRACE(3, "mod_h323\tReceived message SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION on connection " << *this);
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_udptl_mode(tech_pvt->rtp_session);
+			}
+			break;
+		}
+
 		default:{
 			PTRACE(3, "mod_h323\tReceived message " << msg->message_id << " on connection " << *this);
 		}	
@@ -1218,33 +1428,42 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 		switch_clear_flag_locked(tech_pvt, TFLAG_READING);		
 	    return SWITCH_STATUS_FALSE;
     }
-
-    if (!switch_core_codec_ready(&tech_pvt->read_codec )) {
-		PTRACE(4, "mod_h323\t---------> RETURN");
-		switch_clear_flag_locked(tech_pvt, TFLAG_READING);
-        return SWITCH_STATUS_FALSE;
-    }
-
-	switch_status_t status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
-	if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+	switch_mutex_lock(tech_pvt->h323_io_mutex);
+	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		if (!switch_core_codec_ready(&tech_pvt->read_codec )) {
 			PTRACE(4, "mod_h323\t---------> RETURN");
 			switch_clear_flag_locked(tech_pvt, TFLAG_READING);
+			switch_mutex_unlock(tech_pvt->h323_io_mutex);
 			return SWITCH_STATUS_FALSE;
+		}
+
+		switch_status_t status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			PTRACE(4, "mod_h323\t---------> RETURN status = "<<status);
+			switch_clear_flag_locked(tech_pvt, TFLAG_READING);
+			switch_mutex_unlock(tech_pvt->h323_io_mutex);
+			return status;			
+		}
+	//	PTRACE(4, "mod_h323\t--------->\n source = "<<tech_pvt->read_frame.source<< "\n packetlen = "<<tech_pvt->read_frame.packetlen<<"\n datalen = "<<tech_pvt->read_frame.datalen<<"\n samples = "<<tech_pvt->read_frame.samples<<"\n rate = "<<tech_pvt->read_frame.rate<<"\n payload = "<<(int)tech_pvt->read_frame.payload<<"\n timestamp = "<<tech_pvt->read_frame.timestamp<<"\n seq = "<<tech_pvt->read_frame.seq<<"\n ssrc = "<<tech_pvt->read_frame.ssrc);
+		if (tech_pvt->read_frame.flags & SFF_CNG) {
+			tech_pvt->read_frame.buflen = sizeof(m_buf);
+			tech_pvt->read_frame.data = m_buf;
+			tech_pvt->read_frame.packet = NULL;
+			tech_pvt->read_frame.packetlen = 0;
+			tech_pvt->read_frame.timestamp = 0;
+			tech_pvt->read_frame.m = SWITCH_FALSE;
+			tech_pvt->read_frame.seq = 0;
+			tech_pvt->read_frame.ssrc = 0;
+			tech_pvt->read_frame.codec = &tech_pvt->read_codec ;
+		} else {
+			tech_pvt->read_frame.codec = &tech_pvt->read_codec ;
+		}
+	}else{		
+		switch_mutex_unlock(tech_pvt->h323_io_mutex);
+		PTRACE(4, "mod_h323\t--------->TFLAG_IO OFF");
+		switch_yield(10000);
 	}
-	PTRACE(4, "mod_h323\t--------->\n source = "<<tech_pvt->read_frame.source<< "\n packetlen = "<<tech_pvt->read_frame.packetlen<<"\n datalen = "<<tech_pvt->read_frame.datalen<<"\n samples = "<<tech_pvt->read_frame.samples<<"\n rate = "<<tech_pvt->read_frame.rate<<"\n payload = "<<(int)tech_pvt->read_frame.payload<<"\n timestamp = "<<tech_pvt->read_frame.timestamp<<"\n seq = "<<tech_pvt->read_frame.seq<<"\n ssrc = "<<tech_pvt->read_frame.ssrc);
-    if (tech_pvt->read_frame.flags & SFF_CNG) {
-        tech_pvt->read_frame.buflen = sizeof(m_buf);
-        tech_pvt->read_frame.data = m_buf;
-        tech_pvt->read_frame.packet = NULL;
-        tech_pvt->read_frame.packetlen = 0;
-        tech_pvt->read_frame.timestamp = 0;
-        tech_pvt->read_frame.m = SWITCH_FALSE;
-        tech_pvt->read_frame.seq = 0;
-        tech_pvt->read_frame.ssrc = 0;
-        tech_pvt->read_frame.codec = &tech_pvt->read_codec ;
-    } else {
-        tech_pvt->read_frame.codec = &tech_pvt->read_codec ;
-    }
+	switch_mutex_unlock(tech_pvt->h323_io_mutex);
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 	
     *frame = &tech_pvt->read_frame;
@@ -1315,12 +1534,13 @@ FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(
 	, m_conn(&connection)
 	, m_fsSession(connection.GetSession())
 	, m_capability(&capability)
-	, m_RTPlocalPort(dataPort){ 
-	
+	, m_RTPlocalPort(dataPort)
+	, m_sessionID(sessionID){ 
+
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
 	m_RTPlocalIP = (const char *)ip.AsString();
 	SetExternalAddress(H323TransportAddress(ip, dataPort), H323TransportAddress(ip, dataPort+1));
-    PTRACE(4, "mod_h323\t======>FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel "<< GetDirection()<< " addr="<< m_RTPlocalIP <<":"<< m_RTPlocalPort<<" ["<<*this<<"]");	
+    PTRACE(4, "mod_h323\t======>FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel sessionID="<<sessionID<<" :"<< GetDirection()<< " addr="<< m_RTPlocalIP <<":"<< m_RTPlocalPort<<" ["<<*this<<"]");	
 	
 	memset(&m_readFrame, 0, sizeof(m_readFrame));
     m_readFrame.codec = m_switchCodec;
@@ -1346,43 +1566,96 @@ FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(
 
 
 FSH323_ExternalRTPChannel::~FSH323_ExternalRTPChannel(){
-    PTRACE(4, "mod_h323\t======>FSH323_ExternalRTPChannel::~FSH323_ExternalRTPChannel  "<< GetDirection()<<" "<<*this);
-	
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
-	if (IsRunning()){
+	switch_mutex_lock(tech_pvt->h323_mutex);
+    PTRACE(4, "mod_h323\t======>FSH323_ExternalRTPChannel::~FSH323_ExternalRTPChannel  "<< GetDirection()<<" "<<*this);		
+/*	if (IsRunning()){
 		PTRACE(4, "mod_h323\t------------->Running");
-		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			switch_rtp_kill_socket(tech_pvt->rtp_session);
+		PTRACE(4, "mod_h323\t------------->m_sessionID = "<<m_sessionID<<" m_active_sessionID = "<<m_conn->m_active_sessionID);
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {			
+			if (m_sessionID == m_conn->m_active_sessionID ){
+				m_conn->m_rxChennel = false;
+				m_conn->m_txChennel = false;
+				switch_core_session_lock_codec_read(m_fsSession);
+				switch_core_session_lock_codec_write(m_fsSession);				
+				switch_mutex_lock(tech_pvt->h323_io_mutex);
+				switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+				switch_mutex_unlock(tech_pvt->h323_io_mutex);
+				m_conn->m_rtp_resetting = 1;
+				switch_core_codec_destroy(&tech_pvt->read_codec);
+				switch_core_codec_destroy(&tech_pvt->write_codec);
+				switch_rtp_destroy(&tech_pvt->rtp_session);
+				m_conn->m_startRTP = false;
+				switch_core_session_unlock_codec_read(m_fsSession);		
+				switch_core_session_unlock_codec_write(m_fsSession);				
+			}
 		}
 	}
+	*/
+	switch_mutex_unlock(tech_pvt->h323_mutex);
 }
 
 PBoolean FSH323_ExternalRTPChannel::Start(){
+	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
+	switch_mutex_lock(tech_pvt->h323_mutex);
     PTRACE(4, "mod_h323\t======>FSH323_ExternalRTPChannel::Start() "<<*this);
-	
 	const char *err = NULL;
 	switch_rtp_flag_t flags;
 	char * timer_name = NULL;
 	const char *var;
-    h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
-	if (!(m_conn && H323_ExternalRTPChannel::Start()))
+
+	PTRACE(4, "mod_h323\t------------->m_sessionID = "<<sessionID<<" m_active_sessionID = "<<m_conn->m_active_sessionID);    
+	if (!(m_conn && H323_ExternalRTPChannel::Start())){
+		switch_mutex_unlock(tech_pvt->h323_mutex);
 		return FALSE;
+	}
 	
+	if ((m_conn->m_active_sessionID != 0) && (m_conn->m_active_sessionID != sessionID)){
+		if (switch_core_codec_ready(&tech_pvt->read_codec) || switch_core_codec_ready(&tech_pvt->write_codec)) {
+			PTRACE(4, "mod_h323\t------------------->Changing Codec to "<<GetH245CodecName(m_capability));
+			m_conn->m_rxChennel = false;
+			m_conn->m_txChennel = false;
+			switch_core_session_lock_codec_read(m_fsSession);
+			switch_core_session_lock_codec_write(m_fsSession);
+			switch_mutex_lock(tech_pvt->h323_io_mutex);
+			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+			switch_mutex_unlock(tech_pvt->h323_io_mutex);
+			m_conn->m_rtp_resetting = 1;
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+			switch_rtp_destroy(&tech_pvt->rtp_session);
+			m_conn->m_startRTP = false;
+		}
+	}
+	m_conn->m_active_sessionID = sessionID;
 	bool isAudio;
-    if (m_capability->GetMainType() == H323Capability::e_Audio) {
-        isAudio = true;
-		PTRACE(4, "mod_h323\t------------------------->H323Capability::e_Audio");
-    } else if (m_capability->GetMainType() == H323Capability::e_Video) {
-        isAudio = false;
-		PTRACE(4, "mod_h323\t------------------------->H323Capability::e_Video");
-    }
-	
+	unsigned m_codec_ms = m_capability->GetTxFramesInPacket();
+	switch (m_capability->GetMainType()){
+		case H323Capability::e_Audio:{
+			PTRACE(4, "mod_h323\t------------------------->H323Capability::e_Audio");
+			isAudio = true;
+			break;
+		}
+		case H323Capability::e_Video:{
+			PTRACE(4, "mod_h323\t------------------------->H323Capability::e_Video");
+			isAudio = false;
+			break;
+		}
+		case H323Capability::e_Data:{
+			PTRACE(4, "mod_h323\t------------------------->H323Capability::e_Data");
+			isAudio = true;
+			m_codec_ms = 20;
+			switch_channel_set_app_flag(m_fsChannel, CF_APP_T38);
+			break;
+		}
+		default:break;
+	}
 	H323Codec *codec = GetCodec();
 		
 	PTRACE(4, "mod_h323\t------------------->GetFrameSize() return = "<<m_format->GetFrameSize());
 	PTRACE(4, "mod_h323\t------------------->GetFrameTime() return = "<<m_format->GetFrameTime());
 	PTRACE(4, "mod_h323\t------------------->payloadCode = "<<(int)payloadCode);
-	PTRACE(4, "mod_h323\t------------------->m_capability->GetTxFramesInPacket() return =  "<<m_capability->GetTxFramesInPacket());
+	PTRACE(4, "mod_h323\t------------------->m_codec_ms return =  "<<m_codec_ms);
 	PTRACE(4, "mod_h323\t------------------->m_capability->GetFormatName() return =  "<<m_capability->GetFormatName());
 	PTRACE(4, "mod_h323\t------------------->GetH245CodecName() return =  "<<GetH245CodecName(m_capability));
 	
@@ -1393,15 +1666,14 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 	}else{
 		m_switchCodec = isAudio ? &tech_pvt->write_codec : &tech_pvt->vid_write_codec;
 		m_conn->m_txChennel = true;
-	}
-	
-	if (m_conn->m_callOnPreAnswer && !(GetDirection() == IsReceiver)){
-		m_switchCodec = isAudio ? &tech_pvt->read_codec : &tech_pvt->vid_read_codec;
-        m_switchTimer = isAudio ? &tech_pvt->read_timer : &tech_pvt->vid_read_timer;
+		if (m_conn->m_callOnPreAnswer){
+			m_switchCodec = isAudio ? &tech_pvt->read_codec : &tech_pvt->vid_read_codec;
+			m_switchTimer = isAudio ? &tech_pvt->read_timer : &tech_pvt->vid_read_timer;
+		}
 	}
 	
 	if (switch_core_codec_init(m_switchCodec, GetH245CodecName(m_capability), NULL, // FMTP
-                               8000, m_capability->GetTxFramesInPacket(), 1,  // Channels
+                               8000, m_codec_ms, 1,  // Channels
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
                                switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
         
@@ -1412,9 +1684,10 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
             PTRACE(1, "mod_h323\t" << switch_channel_get_name(m_fsChannel)<< " Cannot initialise " << ((GetDirection() == IsReceiver)? " read" : " write") << ' '
                    << m_capability->GetMainType() << " codec " << m_capability << " for connection " << *this);
             switch_channel_hangup(m_fsChannel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+			switch_mutex_unlock(tech_pvt->h323_mutex);
             return false;
         }
-        PTRACE(2, "mod_h323\t" << switch_channel_get_name(m_fsChannel)<< " Unsupported ptime of " << m_capability->GetTxFramesInPacket() << " on " << ((GetDirection() == IsReceiver)? " read" : " write") << ' '
+        PTRACE(2, "mod_h323\t" << switch_channel_get_name(m_fsChannel)<< " Unsupported ptime of " << m_codec_ms << " on " << ((GetDirection() == IsReceiver)? " read" : " write") << ' '
                << m_capability->GetMainType() << " codec " << m_capability << " for connection " << *this);
     }
 
@@ -1434,9 +1707,12 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
                                        switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
                 switch_core_codec_destroy(m_switchCodec);
                 m_switchCodec = NULL;
+				switch_mutex_unlock(tech_pvt->h323_mutex);
                 return false;
             }
 			switch_channel_set_variable(m_fsChannel,"timer_name","soft");
+			if (m_conn->m_ChennelProgress)
+				switch_core_session_set_write_codec(m_fsSession, m_switchCodec);
         } else {
             switch_core_session_set_video_read_codec(m_fsSession, m_switchCodec);
             switch_channel_set_flag(m_fsChannel, CF_VIDEO);
@@ -1444,40 +1720,31 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
     } else {
         if (isAudio) {
             switch_core_session_set_write_codec(m_fsSession, m_switchCodec);
+			if (m_conn->m_callOnPreAnswer){
+				m_readFrame.rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
+				switch_core_session_set_read_codec(m_fsSession, m_switchCodec);
+				if (switch_core_timer_init(m_switchTimer,
+								   "soft",
+								   m_switchCodec->implementation->microseconds_per_packet / 1000,
+								   m_switchCodec->implementation->samples_per_packet,
+								   switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
+						switch_core_codec_destroy(m_switchCodec);
+						m_switchCodec = NULL;
+						switch_mutex_unlock(tech_pvt->h323_mutex);
+						return false;
+				}
+				switch_channel_set_variable(m_fsChannel,"timer_name","soft");
+			}	
         } else {
             switch_core_session_set_video_write_codec(m_fsSession, m_switchCodec);
             switch_channel_set_flag(m_fsChannel, CF_VIDEO);
         }
     }
-
-	if (m_conn->m_callOnPreAnswer && !(GetDirection() == IsReceiver)){
-		m_readFrame.rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
-
-        if (isAudio) {
-            switch_core_session_set_read_codec(m_fsSession, m_switchCodec);
-            if (switch_core_timer_init(m_switchTimer,
-                                       "soft",
-                                       m_switchCodec->implementation->microseconds_per_packet / 1000,
-                                       m_switchCodec->implementation->samples_per_packet,
-                                       switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
-                switch_core_codec_destroy(m_switchCodec);
-                m_switchCodec = NULL;
-                return false;
-            }
-			switch_channel_set_variable(m_fsChannel,"timer_name","soft");
-		}	
-	}
-	
-	if (m_conn->m_ChennelProgress && (GetDirection() == IsReceiver)){
-		if (isAudio) {
-            switch_core_session_set_write_codec(m_fsSession, m_switchCodec);
-        }
-	}
 	
     PTRACE(3, "mod_h323\tSet " << ((GetDirection() == IsReceiver)? " read" : " write") << ' '
            << m_capability->GetMainType() << " codec to << " << m_capability << " for connection " << *this);
-
-	switch_mutex_lock(tech_pvt->h323_mutex);
+	PTRACE(4, "mod_h323\t------------->h323_mutex_lock");
+	
 	
 	PIPSocket::Address remoteIpAddress;
     GetRemoteAddress(remoteIpAddress,m_RTPremotePort);	
@@ -1499,15 +1766,13 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 											   m_RTPremotePort,
 											   (switch_payload_t)payloadCode,
 											   m_switchCodec->implementation->samples_per_packet,	
-											   m_capability->GetTxFramesInPacket() * 1000,
+											   m_codec_ms * 1000,
 											   (switch_rtp_flag_t) flags, timer_name, &err,
 											   switch_core_session_get_pool(m_fsSession));
 		PTRACE(4, "mod_h323\t------------------------->tech_pvt->rtp_session = "<<tech_pvt->rtp_session);
 		m_conn->m_startRTP = true;
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			PTRACE(4, "mod_h323\t+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");		
 			switch_channel_set_flag(m_fsChannel, CF_FS_RTP);
-			
 		}else{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 			switch_channel_hangup(m_fsChannel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);			
@@ -1517,17 +1782,46 @@ PBoolean FSH323_ExternalRTPChannel::Start(){
 	}
 	
     PTRACE(4, "mod_h323\t------------->External RTP address "<<m_RTPremoteIP<<":"<<m_RTPremotePort);
-	switch_mutex_unlock(tech_pvt->h323_mutex);
+	PTRACE(4, "mod_h323\t------------->h323_mutex_unlock");
+	
+	if (m_conn->m_rtp_resetting) {
+		if (GetDirection() == IsReceiver) 
+			switch_core_session_unlock_codec_read(m_fsSession);		
+		else{
+			switch_core_session_unlock_codec_write(m_fsSession);	
+			if (m_conn->m_callOnPreAnswer)
+				switch_core_session_unlock_codec_read(m_fsSession);	
+		}
+	}
 	
 	if (GetDirection() == IsReceiver) m_conn->m_rxAudioOpened.Signal();
 	else m_conn->m_txAudioOpened.Signal();                             
 	
-	if ( m_conn->m_ChennelAnswer && m_conn->m_rxChennel &&  m_conn->m_txChennel)
-		switch_channel_mark_answered(m_fsChannel);
+	if ( m_conn->m_ChennelAnswer && m_conn->m_rxChennel &&  m_conn->m_txChennel){
+		switch_channel_mark_answered(m_fsChannel);		
+	}
 		
-	if ((m_conn->m_ChennelProgress && m_conn->m_rxChennel)||(m_conn->m_callOnPreAnswer && m_conn->m_txChennel))
+	if ((m_conn->m_ChennelProgress && m_conn->m_rxChennel)||(m_conn->m_callOnPreAnswer && m_conn->m_txChennel)){
 		switch_channel_mark_pre_answered(m_fsChannel);
-		
+	}
+	
+	PTRACE(4, "mod_h323\t------------->h323_io_mutex_lock");
+	switch_mutex_lock(tech_pvt->h323_io_mutex);
+	switch_set_flag_locked(tech_pvt, TFLAG_IO);
+	switch_mutex_unlock(tech_pvt->h323_io_mutex);
+	PTRACE(4, "mod_h323\t------------->h323_io_mutex_unlock");
+	if ((m_capability->GetMainType() == H323Capability::e_Data)  && m_conn->m_rxChennel &&  m_conn->m_txChennel ) {
+		const char *uuid = switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE); 
+		if (uuid != NULL){
+			PTRACE(4, "mod_h323\t------------------------->switch_rtp_udptl_mode");
+			switch_rtp_udptl_mode(tech_pvt->rtp_session);		
+			switch_core_session_message_t msg = { 0 };
+			msg.from = switch_channel_get_name(m_fsChannel);
+			msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
+			switch_core_session_message_send(uuid,&msg);
+		}
+	}
+	switch_mutex_unlock(tech_pvt->h323_mutex);
 	return true;
 }
 
@@ -1648,11 +1942,11 @@ static switch_status_t on_hangup(switch_core_session_t *session){
 
     switch_channel_t *channel = switch_core_session_get_channel(session);
     h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(session);
-    if (tech_pvt->me) {
-		PTRACE(4, "mod_h323\t----->");
+    if (tech_pvt->me) {	
+		PTRACE(4, "mod_h323\t----->"<<(const char *)(tech_pvt->me->GetCallToken()));
         Q931::CauseValues cause = (Q931::CauseValues)switch_channel_get_cause_q850(channel);
-        tech_pvt->me->SetQ931Cause(cause);
-        tech_pvt->me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
+        tech_pvt->me->SetQ931Cause(cause);		
+        tech_pvt->me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));		
         tech_pvt->me = NULL;
     }
 
