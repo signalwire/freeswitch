@@ -1356,7 +1356,11 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 			}
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
+		if (caller_profile) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed no caller_profile\n");
+		}
 	}
 
   done:
@@ -1397,6 +1401,9 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		routes.event = event;
 	}
 	routes.pool = pool;
+	if (!lcr_profile) {
+		lcr_profile = "default";
+	}
 	if (!(routes.profile = locate_profile(lcr_profile))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 		goto end;
@@ -1421,7 +1428,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", caller_profile->destination_number);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", caller_profile->destination_number, lcr_profile);
 	routes.lookup_number = caller_profile->destination_number;
 	routes.cid = (char *) caller_profile->caller_id_number;
 	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
@@ -1459,7 +1466,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 			switch_caller_extension_add_application(session, extension, app, argc);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n", caller_profile->destination_number, lcr_profile);
 	}
 
 end:
