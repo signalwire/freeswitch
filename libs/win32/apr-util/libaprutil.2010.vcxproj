@@ -112,7 +112,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(IntDir)libaprutil-1.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -170,7 +169,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(IntDir)libaprutil-1.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -232,7 +230,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(IntDir)libaprutil-1.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <BaseAddress>0x6EE60000</BaseAddress>
@@ -293,7 +290,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(IntDir)libaprutil-1.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <BaseAddress>0x6EE60000</BaseAddress>
