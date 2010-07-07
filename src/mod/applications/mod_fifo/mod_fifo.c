@@ -2855,6 +2855,7 @@ static switch_status_t load_config(int reload, int del_all)
 			const char *val;
 			int imp = 0, outbound_per_cycle = 0;
 			int simo_i = 1;
+			int taking_calls_i = 1;
 			int timeout_i = 60;
 			int lag_i = 10;
 			fifo_node_t *node;
@@ -2906,12 +2907,19 @@ static switch_status_t load_config(int reload, int del_all)
 				const char *simo = switch_xml_attr_soft(member, "simo");
 				const char *lag = switch_xml_attr_soft(member, "lag");
 				const char *timeout = switch_xml_attr_soft(member, "timeout");
+				const char *taking_calls = switch_xml_attr_soft(member, "taking_calls");
 				char *name_dup, *p;
 				char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 				switch_md5_string(digest, (void *) member->txt, strlen(member->txt));
 
 				if (simo) {
 					simo_i = atoi(simo);
+				}
+
+				if (taking_calls) {
+					if ((taking_calls_i = atoi(taking_calls)) < 1) {
+						taking_calls_i = 1;
+					}
 				}
 
 				if (timeout) {
@@ -2935,9 +2943,9 @@ static switch_status_t load_config(int reload, int del_all)
 
 				sql = switch_mprintf("insert into fifo_outbound "
 									 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
-									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-									 "values ('%q','%q','%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
-									 digest, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname);
+									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname, taking_calls) "
+									 "values ('%q','%q','%q',%d,%d,%d,%d,0,0,1,0,0,'%q',%d)",
+									 digest, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname, taking_calls_i);
 					
 				switch_assert(sql);
 				fifo_execute_sql(sql, globals.sql_mutex);
@@ -3000,7 +3008,7 @@ static switch_status_t load_config(int reload, int del_all)
 }
 
 
-static void fifo_member_add(char *fifo_name, char *originate_string, int simo_count, int timeout, int lag, time_t expires)
+static void fifo_member_add(char *fifo_name, char *originate_string, int simo_count, int timeout, int lag, time_t expires, int taking_calls)
 {
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char *sql, *name_dup, *p;
@@ -3030,9 +3038,9 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 
 	sql = switch_mprintf("insert into fifo_outbound "
 						 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, "
-						 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-						 "values ('%q','%q','%q',%d,%d,%d,%d,%d,%ld,0,0,0,'%q')",
-						 digest, fifo_name, originate_string, simo_count, 0, timeout, lag, 0, (long) expires, globals.hostname);
+						 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname, taking_calls) "
+						 "values ('%q','%q','%q',%d,%d,%d,%d,%d,%ld,0,0,0,'%q',%d)",
+						 digest, fifo_name, originate_string, simo_count, 0, timeout, lag, 0, (long) expires, globals.hostname, taking_calls);
 	switch_assert(sql);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	free(sql);
@@ -3074,7 +3082,7 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	switch_safe_free(sql);	
 }
 
-#define FIFO_MEMBER_API_SYNTAX "[add <fifo_name> <originate_string> [<simo_count>] [<timeout>] [<lag>] | del <fifo_name> <originate_string>]"
+#define FIFO_MEMBER_API_SYNTAX "[add <fifo_name> <originate_string> [<simo_count>] [<timeout>] [<lag>] [<taking_calls>] | del <fifo_name> <originate_string>]"
 SWITCH_STANDARD_API(fifo_member_api_function)
 {
 	char *fifo_name;
@@ -3082,6 +3090,7 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 	int simo_count = 1;
 	int timeout = 60;
 	int lag = 5;
+	int taking_calls = 1;
 	char *action;
 	char *mydata = NULL, *argv[8] = { 0 };
 	int argc;
@@ -3123,6 +3132,9 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 		if (argc > 6) {
 			expires = switch_epoch_time_now(NULL) + atoi(argv[6]);
 		}
+		if (argc > 7) {
+			taking_calls = atoi(argv[7]);
+		}
 		if (simo_count < 0) {
 			simo_count = 1;
 		}
@@ -3132,8 +3144,11 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 		if (lag < 0) {
 			lag = 5;
 		}
+		if (taking_calls < 1) {
+			taking_calls = 1;
+		}
 
-		fifo_member_add(fifo_name, originate_string, simo_count, timeout, lag, expires);
+		fifo_member_add(fifo_name, originate_string, simo_count, timeout, lag, expires, taking_calls);
 		stream->write_function(stream, "%s", "+OK\n");
 	} else if (action && !strcasecmp(action, "del")) {
 		fifo_member_del(fifo_name, originate_string);
