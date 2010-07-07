@@ -194,7 +194,6 @@ static switch_status_t fifo_queue_pop_nameval(fifo_queue_t *queue, const char *n
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static switch_status_t fifo_queue_popfly(fifo_queue_t *queue, const char *uuid)
 {
 	int i, j;
@@ -693,6 +692,12 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	fifo_queue_t *q = NULL;
 	int x = 0;
 	switch_event_t *event;
+	switch_uuid_t uuid;
+    char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+
+    switch_uuid_get(&uuid);
+    switch_uuid_format(uuid_str, &uuid);
+
 
 	if (!cbh->rowcount) {
 		goto end;
@@ -797,10 +802,15 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "fifo_bridge_uuid", id);
 	}
 
+	switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "fifo_originate_uuid", uuid_str);
+
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 		switch_core_session_t *session;
 		if (id && (session = switch_core_session_locate(id))) {
-			switch_channel_event_set_data(switch_core_session_get_channel(session), event);
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+
+			switch_channel_set_variable(channel, "fifo_originate_uuid", uuid_str);
+			switch_channel_event_set_data(channel, event);
 			switch_core_session_rwunlock(session);
 		}
 
@@ -817,8 +827,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 		switch_event_fire(&event);
 	}
-
 	switch_mutex_unlock(q->mutex);
+	pop = NULL;
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
 	
@@ -1097,11 +1107,13 @@ static void find_consumers(fifo_node_t *node)
 			}
 
 			fifo_execute_sql_callback(globals.sql_mutex, sql, place_call_ringall_callback, cbh);
-			
-			switch_threadattr_create(&thd_attr, cbh->pool);
-			switch_threadattr_detach_set(thd_attr, 1);
-			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_thread_create(&thread, thd_attr, ringall_thread_run, cbh, cbh->pool);
+
+			if (cbh->rowcount) {
+				switch_threadattr_create(&thd_attr, cbh->pool);
+				switch_threadattr_detach_set(thd_attr, 1);
+				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+				switch_thread_create(&thread, thd_attr, ringall_thread_run, cbh, cbh->pool);
+			}
 
 		}
 		break;
@@ -1183,6 +1195,23 @@ static int stop_node_thread(void)
 	return 0;
 }
 
+static void check_ocancel(switch_core_session_t *session)
+{
+	switch_channel_t *channel;
+	const char *var;
+
+	switch_assert(session);
+
+	channel = switch_core_session_get_channel(session);
+
+	if ((var = switch_channel_get_variable(channel, "fifo_originate_uuid"))) {
+		switch_core_session_hupall_matching_var("fifo_originate_uuid", var, 
+												switch_channel_test_flag(channel, CF_ANSWERED) ? 
+												SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_ORIGINATOR_CANCEL);
+	}
+}
+
+
 static void check_cancel(fifo_node_t *node)
 {
 	int ppl_waiting = node_consumer_wait_count(node);
@@ -1191,7 +1220,7 @@ static void check_cancel(fifo_node_t *node)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound call count (%d) exceeds required value for queue %s (%d), "
 						  "Ending extraneous calls\n", node->ring_consumer_count, node->name, ppl_waiting);
 
-
+		
 		switch_core_session_hupall_matching_var("fifo_hangup_check", node->name, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 	}
 }
@@ -1659,6 +1688,8 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 			switch_ivr_session_transfer(session, cd.orbit_exten, cd.orbit_dialplan, cd.orbit_context);
 		}
+
+		check_ocancel(session);
 
 		goto done;
 
