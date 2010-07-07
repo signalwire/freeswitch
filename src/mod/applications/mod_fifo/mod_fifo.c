@@ -1204,7 +1204,7 @@ static void check_ocancel(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 
-	if ((var = switch_channel_get_variable(channel, "fifo_originate_uuid"))) {
+	if (!switch_channel_test_flag(channel, CF_TRANSFER) && (var = switch_channel_get_variable(channel, "fifo_originate_uuid"))) {
 		switch_core_session_hupall_matching_var("fifo_originate_uuid", var, 
 												switch_channel_test_flag(channel, CF_ANSWERED) ? 
 												SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_ORIGINATOR_CANCEL);
