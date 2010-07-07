@@ -127,7 +127,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   top:
 
-	if (switch_channel_down(session->channel)) {
+	if (switch_channel_down(session->channel) || !switch_core_codec_ready(session->read_codec)) {
 		*frame = NULL;
 		status = SWITCH_STATUS_FALSE;
 		goto even_more_done;
@@ -170,13 +170,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 
-		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !session->read_codec->mutex) {
+		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !switch_core_codec_ready(session->read_codec)) {
 			*frame = NULL;
 			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_mutex_lock(session->codec_read_mutex);
 		switch_mutex_lock(session->read_codec->mutex);
+		if (!switch_core_codec_ready(session->read_codec)) {
+			*frame = NULL;
+			status = SWITCH_STATUS_FALSE;
+			goto even_more_done;			
+		}
+
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -273,10 +279,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			} else {
 				switch_codec_t *use_codec = read_frame->codec;
 				if (do_bugs) {
+					switch_thread_rwlock_wrlock(session->bug_rwlock);
 					if (!switch_core_codec_ready(&session->bug_codec)) {
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL);
 					}
 					use_codec = &session->bug_codec;
+					switch_thread_rwlock_unlock(session->bug_rwlock);
 				}
 
 				status = switch_core_codec_decode(use_codec,
@@ -630,7 +638,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_mutex_lock(session->codec_write_mutex);
 
-	if (!(session->write_codec && session->write_codec->mutex && frame->codec) ||
+	if (!(switch_core_codec_ready(session->write_codec) && frame->codec) ||
 		!switch_channel_ready(session->channel) || !switch_channel_media_ready(session->channel)) {
 		switch_mutex_unlock(session->codec_write_mutex);
 		return SWITCH_STATUS_FALSE;
@@ -639,7 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_mutex_lock(session->write_codec->mutex);
 	switch_mutex_lock(frame->codec->mutex);
 
-	if (!frame->codec->implementation || !session->write_codec->implementation) goto error;
+	if (!(switch_core_codec_ready(session->write_codec) && switch_core_codec_ready(frame->codec))) goto error;
 	
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id ||

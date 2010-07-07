@@ -126,6 +126,17 @@ QString CodecWidget::getCodecString()
 
 void CodecWidget::setCodecString(QString codecList)
 {
+    /* Mostly for backwards compatibility. */
+    if ( codecList.startsWith("$")) {
+        QStringList parsed = codecList.split("{");
+        QString var = parsed.at(1);
+        var = var.split("}").at(0);
+        var = switch_core_get_variable(var.toAscii().data());
+        if ( ! var.isEmpty() ) {
+            codecList = var;
+        }
+    }
+
     QStringList rawEnCodecs;
     QStringList split = codecList.split(",");
     foreach(QString s, split)

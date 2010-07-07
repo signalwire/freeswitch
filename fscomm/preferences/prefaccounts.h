@@ -3,10 +3,8 @@
 
 #include <QObject>
 #include "ui_prefdialog.h"
+#include "fscomm.h"
 
-#define FSCOMM_EVENT_ACC_REMOVED "fscomm::acc_removed"
-
-class QSettings;
 class AccountDialog;
 
 class PrefAccounts : public QObject {
@@ -14,9 +12,10 @@ class PrefAccounts : public QObject {
 public:
     explicit PrefAccounts(Ui::PrefDialog *ui);
     void writeConfig();
+    void postWriteConfig();
 
 public slots:
-    void readConfig(bool reload=true);
+    void readConfig();
 
 private slots:
     void addAccountBtnClicked();
@@ -24,9 +23,10 @@ private slots:
     void remAccountBtnClicked();
 
 private:
+    void markAccountToDelete(QString gwName); /* TODO: Might be interesting to pass the account instead */
     Ui::PrefDialog *_ui;
     AccountDialog *_accDlg;
-    QSettings *_settings;
+    QList<QString> _toDelete;
 };
 
 #endif // PREFACCOUNTS_H

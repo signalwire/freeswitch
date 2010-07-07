@@ -756,7 +756,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			}
 		}
 
-		stream.write_function(&stream, " and hostname='%s'", switch_core_get_variable("hostname"));
+		stream.write_function(&stream, " and hostname='%s' order by a1,a2,a3,a4,a5,a6,a7,a8,a9,a10", switch_core_get_variable("hostname"));
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
 
 		if (errmsg) {
@@ -842,7 +842,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 }
 
 
-
+#if defined(SWITCH_HAVE_LIBEDIT) || defined(_MSC_VER)
 /*
  * If a fnkey is configured then process the command
  */
@@ -868,6 +868,7 @@ static unsigned char console_fnkey_pressed(int i)
 
 	return CC_REDISPLAY;
 }
+#endif
 
 SWITCH_DECLARE(void) switch_console_save_history(void)
 {

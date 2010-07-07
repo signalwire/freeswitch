@@ -45,10 +45,6 @@
                         </routes>
                 </configuration>
 
-                <configuration name="qsettings.conf" description="configures our mod_qsettings">
-                        <bindings value="configuration" />
-                </configuration>
-
                 <configuration name="local_stream.conf" description="stream files from local dir">
                         <directory name="moh/48000" path="$${base_dir}/sounds/music/48000">
                                 <param name="rate" value="48000"/>
@@ -85,7 +81,7 @@
                                 <load module="mod_commands"/>
                                 <load module="mod_dptools"/>
                                 <load module="mod_dialplan_xml"/>
-                                <load module="mod_voipcodecs"/>
+                                <load module="mod_spandsp"/>
                                 <load module="mod_ilbc"/>
                                 <load module="mod_speex"/>
                                 <load module="mod_celt"/>

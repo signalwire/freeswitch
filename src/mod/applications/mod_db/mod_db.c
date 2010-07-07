@@ -122,7 +122,7 @@ static switch_status_t limit_execute_sql(char *sql)
 
   end:
 
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 
 	return status;
 }
@@ -148,7 +148,7 @@ static switch_bool_t limit_execute_sql_callback(char *sql, switch_core_db_callba
 
   end:
 
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 
 	return ret;
 }
@@ -292,7 +292,7 @@ static switch_status_t do_config()
 	limit_config_dsn.pool = globals.pool;
 
 	if (switch_xml_config_parse_module_settings("db.conf", SWITCH_FALSE, config_settings) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_TERM;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No config file found, defaulting to sqlite\n");
 	}
 
 	if (globals.odbc_dsn) {
@@ -344,7 +344,6 @@ static switch_status_t do_config()
 		sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
 		limit_execute_sql(sql);
 		switch_safe_free(sql);
-		switch_cache_db_dismiss_db_handle(&dbh); /* try to really free the connection */
 	}
 
 	return status;

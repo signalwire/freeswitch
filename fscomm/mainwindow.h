@@ -96,6 +96,7 @@ private:
     StateDebugDialog * _stateDebugDialog;
     QSystemTrayIcon *sysTray;
     QTimer *callTimer;
+    AccountManager _accountManager;
 };
 
 #endif // MAINWINDOW_H

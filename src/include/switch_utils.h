@@ -92,6 +92,47 @@ static inline switch_bool_t switch_is_moh(const char *s)
 	return SWITCH_TRUE;
 }
 
+/* find a character (find) in a string (in) and return a pointer to that point in the string where the character was found 
+   using the array (allowed) as allowed non-matching characters, when (allowed) is NULL, behaviour should be identical to strchr()
+ */
+static inline char *switch_strchr_strict(const char *in, char find, const char *allowed)
+{
+	const char *p;
+
+	switch_assert(in);
+
+	p = in;
+
+	while(p && *p) {
+		const char *a = allowed;
+		int acceptable = 0;
+
+		if (*p == find) break;
+
+		if (!a) {
+			acceptable = 1;
+		} else {
+
+			while(a && *a) {
+
+				if (*p == *a) {
+					acceptable = 1;
+					break;
+				}
+			
+				a++;
+			}
+
+		}
+		
+		if (!acceptable) return NULL;
+
+		p++;
+	}
+
+	return (char *) p;
+}
+
 #define switch_arraylen(_a) (sizeof(_a) / sizeof(_a[0]))
 #define switch_split(_data, _delim, _array) switch_separate_string(_data, _delim, _array, switch_arraylen(_array))
 

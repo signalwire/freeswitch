@@ -83,7 +83,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REINVITE "sofia::reinvite"
 #define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
 #define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
-#define MY_EVENT_RECOVERY "sofia::recovery"
+#define MY_EVENT_RECOVERY "sofia::recovery_recv"
 #define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
 
 #define MULTICAST_EVENT "multicast::event"

@@ -47,11 +47,6 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 		switch_buffer_destroy(&bug->raw_write_buffer);
 	}
 
-	if (switch_core_codec_ready(&bug->session->bug_codec)) {
-		switch_core_codec_destroy(&bug->session->bug_codec);
-		memset(&bug->session->bug_codec, 0, sizeof(bug->session->bug_codec));
-	}
-
 	if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bug->function);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bug->target);
@@ -424,7 +419,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 
 	if (switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
-		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
 
 	return status;
@@ -458,8 +452,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 	switch_media_bug_t *bp = NULL, *last = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	if (session->bugs) {
-		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if ((!bp->thread_id || bp->thread_id == switch_thread_self()) && bp->ready && bp == *bug) {
 				if (last) {
@@ -472,17 +466,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 
 			last = bp;
 		}
-		switch_thread_rwlock_unlock(session->bug_rwlock);
-		if (bp) {
-			status = switch_core_media_bug_close(&bp);
-		}
 	}
 
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
-		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
 
+	switch_thread_rwlock_unlock(session->bug_rwlock);
+
+	if (bp) {
+		status = switch_core_media_bug_close(&bp);
+	}
+	
 	return status;
 }
 
@@ -496,8 +491,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 
   top:
 
+	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	if (session->bugs) {
-		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_core_media_bug_test_flag(bp, SMBF_PRUNE)) {
 				if (last) {
@@ -510,19 +505,20 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 
 			last = bp;
 		}
-		switch_thread_rwlock_unlock(session->bug_rwlock);
-		if (bp) {
-			status = switch_core_media_bug_close(&bp);
-			ttl++;
-			goto top;
-		}
 	}
 
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
-		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
 
+	switch_thread_rwlock_unlock(session->bug_rwlock);
+
+	if (bp) {
+		status = switch_core_media_bug_close(&bp);
+		ttl++;
+		goto top;
+	}
+	
 	return ttl;
 }
 
@@ -532,9 +528,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 	switch_media_bug_t *cur = NULL, *bp = NULL, *last = NULL;
 	int total = 0;
 
+	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	if (session->bugs) {
-		switch_thread_rwlock_wrlock(session->bug_rwlock);
-
 		bp = session->bugs;
 		while (bp) {
 			cur = bp;
@@ -553,13 +548,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 				last = cur;
 			}
 		}
-		switch_thread_rwlock_unlock(session->bug_rwlock);
 	}
 
 	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
-		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
+
+	switch_thread_rwlock_unlock(session->bug_rwlock);
+
 
 	return total ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }

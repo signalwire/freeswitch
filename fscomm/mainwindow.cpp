@@ -151,11 +151,12 @@ void MainWindow::setDefaultAccount()
     if (accName.isEmpty())
         return;
 
-    QSettings settings;
-    settings.beginGroup("FreeSWITCH/conf/globals");
+    ISettings *settings = new ISettings();
+    //settings->beginGroup("FreeSWITCH/conf/globals");
     switch_core_set_variable("default_gateway", accName.toAscii().data());
-    settings.setValue("default_gateway", accName);
-    settings.endGroup();
+    //settings->setValue("default_gateway", accName);
+    //settings->endGroup();
+    delete (settings);
 }
 
 void MainWindow::debugEventsTriggered()
@@ -287,30 +288,31 @@ void MainWindow::makeCall()
 
     QSharedPointer<Account> acc = g_FSHost->getCurrentDefaultAccount();
     if (!acc.isNull()) {
-        QSettings settings;
-        settings.beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/");
-        settings.beginGroup(acc.data()->getUUID());
-        settings.beginGroup("gateway/global_vars");
-        QString cidName = settings.value("caller_id_name").toString();
-        QString cidNum = settings.value("caller_id_num").toString();
-        settings.endGroup();
-        settings.endGroup();
-        settings.endGroup();
+        /*QSettings *settings = fscommSettings();
+        settings->beginGroup("FreeSWITCH/conf/sofia.conf/profiles/profile/gateways/");
+        settings->beginGroup(acc.data()->getUUID());
+        settings->beginGroup("gateway/global_vars");
+        QString cidName = settings->value("caller_id_name").toString();
+        QString cidNum = settings->value("caller_id_num").toString();
+        settings->endGroup();
+        settings->endGroup();
+        settings->endGroup();
 
         if (cidName.isEmpty()) {
-            settings.beginGroup("FreeSWITCH/conf/portaudio.conf/settings/params");
-            cidName = settings.value("cid-name").toString();
-            settings.endGroup();
+            settings->beginGroup("FreeSWITCH/conf/portaudio.conf/settings/params");
+            cidName = settings->value("cid-name").toString();
+            settings->endGroup();
         }
         if (cidNum.isEmpty()) {
-            settings.beginGroup("FreeSWITCH/conf/portaudio.conf/settings/params");
-            cidNum = settings.value("cid-num").toString();
-            settings.endGroup();
-        }
+            settings->beginGroup("FreeSWITCH/conf/portaudio.conf/settings/params");
+            cidNum = settings->value("cid-num").toString();
+            settings->endGroup();
+        }*/
 
         /* Set the vars for this call */
-        switch_core_set_variable("fscomm_caller_id_name", cidName.toAscii().data());
-        switch_core_set_variable("fscomm_caller_id_num", cidNum.toAscii().data());
+        //switch_core_set_variable("fscomm_caller_id_name", cidName.toAscii().data());
+        //switch_core_set_variable("fscomm_caller_id_num", cidNum.toAscii().data());
+        //delete (settings);
 
     }
 

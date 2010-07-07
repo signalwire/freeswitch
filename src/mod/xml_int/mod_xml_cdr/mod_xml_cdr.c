@@ -179,7 +179,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
-	switch_xml_t cdr;
+	switch_xml_t cdr = NULL;
 	char *xml_text = NULL;
 	char *path = NULL;
 	char *curl_xml_text = NULL;

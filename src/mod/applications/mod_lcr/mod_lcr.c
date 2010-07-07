@@ -445,7 +445,7 @@ static switch_bool_t db_check(char *sql)
 		}
 	}
 
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	return ret;
 }
 
@@ -581,7 +581,7 @@ static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback
 			retval = SWITCH_TRUE;
 		}
 	}
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	return retval;
 }
 
@@ -1146,7 +1146,9 @@ static switch_status_t lcr_load_config()
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded lcr profile %s.\n", profile->name);
 				/* test the profile */
-				if (test_profile(profile->name) == SWITCH_TRUE) {
+				if (profile->custom_sql_has_vars) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "custom_sql has channel vars, skipping verification and assuming valid profile: %s.\n", profile->name);
+				} else if (test_profile(profile->name) == SWITCH_TRUE) {
 					if (!strcasecmp(profile->name, "default")) {
 						globals.default_profile = profile;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting user defined default profile: %s.\n", profile->name);
@@ -1175,7 +1177,7 @@ static switch_status_t lcr_load_config()
 	}
 
 done:
-	switch_cache_db_dismiss_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 	switch_xml_free(xml);
 	return status;
 }

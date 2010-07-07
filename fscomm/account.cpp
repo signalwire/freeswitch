@@ -1,5 +1,6 @@
 #include <QtGui>
 #include "account.h"
+#include "fscomm.h"
 
 Account::Account(QString name) :
     _name(name)

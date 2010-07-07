@@ -27,7 +27,7 @@
  * Neal Horman <neal at wanlink dot com>
  *
  *
- * mod_distributor.c -- Framework Demo Module
+ * mod_distributor.c -- Load distributor
  *
  */
 #include <switch.h>
@@ -240,14 +240,15 @@ static int reset_list(struct dist_list *list)
 	return 0;
 }
 
-static struct dist_node *find_next(struct dist_list *list)
+static struct dist_node *find_next(struct dist_list *list, int etotal, char **exceptions)
 {
 	struct dist_node *np, *match = NULL;
 	int x = 0, mx = 0;
 	int matches = 0, loops = 0;
 
 	for (;;) {
-
+	top:
+		
 		if (++loops > 1000) {
 			break;
 		}
@@ -259,7 +260,7 @@ static struct dist_node *find_next(struct dist_list *list)
 		match = NULL;
 		for (np = list->nodes; np; np = np->next) {
 			if (np->cur_weight < list->target_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s %d/%d\n", np->name, np->cur_weight, list->target_weight);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "%s %d/%d\n", np->name, np->cur_weight, list->target_weight);
 				matches++;
 				if (!match && x > list->last) {
 					match = np;
@@ -270,10 +271,23 @@ static struct dist_node *find_next(struct dist_list *list)
 		}
 
 		if (match) {
+			int i;
+			
 			match->cur_weight++;
 			list->lastnode = match;
 			list->last = mx;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choose %s\n", match->name);
+
+			for(i = 0; i < etotal; i++) {
+				if (!strcmp(match->name, exceptions[i])) {
+					if (matches == 1) {
+						reset_list(list);
+					}
+					goto top;
+				}
+			}
+			
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Choose %s\n", match->name);
 			return match;
 		}
 
@@ -284,7 +298,7 @@ static struct dist_node *find_next(struct dist_list *list)
 		}
 
 	}
-
+	
 	return NULL;
 }
 
@@ -294,11 +308,21 @@ static char *dist_engine(const char *name)
 	struct dist_node *np = NULL;
 	struct dist_list *lp;
 	char *str = NULL;
+	char *myname = strdup(name);
+	char *except;
+	int argc = 0;
+	char *argv[100] = { 0 };
+
+	
+	if ((except = strchr(myname, ' '))) {
+		*except++ = '\0';
+		argc = switch_split(except, ' ', argv);
+	}
 
 	switch_mutex_lock(globals.mod_lock);
 	for (lp = globals.list; lp; lp = lp->next) {
-		if (!strcasecmp(name, lp->name)) {
-			np = find_next(lp);
+		if (!strcasecmp(myname, lp->name)) {
+			np = find_next(lp, argc, argv);
 			break;
 		}
 	}
@@ -307,6 +331,8 @@ static char *dist_engine(const char *name)
 		str = strdup(np->name);
 	}
 	switch_mutex_unlock(globals.mod_lock);
+
+	free(myname);
 
 	return str;
 
@@ -374,9 +400,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_distributor_load)
 	load_config(SWITCH_FALSE);
 
 
-	SWITCH_ADD_API(api_interface, "distributor", "Distributor API", distributor_function, "<list name>");
+	SWITCH_ADD_API(api_interface, "distributor", "Distributor API", distributor_function, "<list name>[ <exception1> <exceptionN>]");
 	SWITCH_ADD_API(api_interface, "distributor_ctl", "Distributor API", distributor_ctl_function, "[reload]");
-	SWITCH_ADD_APP(app_interface, "distributor", "Distributor APP", "Distributor APP", distributor_exec, "<list name>",
+	SWITCH_ADD_APP(app_interface, "distributor", "Distributor APP", "Distributor APP", distributor_exec, "<list name>[ <exception1> <exceptionN>]",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 
 

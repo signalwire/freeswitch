@@ -37,6 +37,11 @@
 #include "call.h"
 #include "channel.h"
 #include "account.h"
+#include "fscomm.h"
+
+
+static void eventHandlerCallback(switch_event_t *);
+static switch_status_t loggerHandler(const switch_log_node_t *, switch_log_level_t);
 
 class FSHost : public QThread
 {
@@ -46,6 +51,7 @@ public:
     switch_status_t sendCmd(const char *cmd, const char *args, QString *res);
     void generalEventHandler(QSharedPointer<switch_event_t>event);
     void generalLoggerHandler(QSharedPointer<switch_log_node_t>node, switch_log_level_t level);
+    void printEventHeaders(QSharedPointer<switch_event_t>event);
     QSharedPointer<Call> getCallByUUID(QString uuid) { return _active_calls.value(uuid); }
     QSharedPointer<Call> getCurrentActiveCall();
     QList<QSharedPointer<Account> > getAccounts() { return _accounts.values(); }
@@ -90,7 +96,6 @@ private slots:
 private:
     /* Helper methods */
     void createFolders();
-    void printEventHeaders(QSharedPointer<switch_event_t>event);
 
     /*FSM State handlers*/
     /** Channel Related*/
@@ -123,29 +128,5 @@ private:
 };
 
 extern FSHost *g_FSHost;
-
-/*
-   Used to match callback from fs core. We dup the event and call the class
-   method callback to make use of the signal/slot infrastructure.
-  */
-static void eventHandlerCallback(switch_event_t *event)
-{
-    switch_event_t *clone = NULL;
-    if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-        QSharedPointer<switch_event_t> e(clone);
-        g_FSHost->generalEventHandler(e);
-    }
-}
-
-/*
-  Used to propagate logs on the application
-  */
-static switch_status_t loggerHandler(const switch_log_node_t *node, switch_log_level_t level)
-{
-    switch_log_node_t *clone = switch_log_node_dup(node);
-    QSharedPointer<switch_log_node_t> l(clone);
-    g_FSHost->generalLoggerHandler(l, level);
-    return SWITCH_STATUS_SUCCESS;
-}
 
 #endif // FSHOST_H

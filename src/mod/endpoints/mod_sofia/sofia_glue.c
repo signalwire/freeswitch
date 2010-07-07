@@ -3486,7 +3486,7 @@ switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *sess
 uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_sdp)
 {
 	uint8_t match = 0;
-	switch_payload_t te = 0, cng_pt = 0;
+	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	sdp_media_t *m;
 	sdp_attribute_t *attr;
@@ -3786,23 +3786,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					rm_encoding = "";
 				}
 
-				if (!te && !strcasecmp(rm_encoding, "telephone-event")) {
-					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-						te = tech_pvt->te = (switch_payload_t) map->rm_pt;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", map->rm_pt);
-						if (tech_pvt->rtp_session) {
-							switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t) map->rm_pt);
-						}
-					} else {
-						te = tech_pvt->recv_te = tech_pvt->te = (switch_payload_t) map->rm_pt;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
-						if (tech_pvt->rtp_session) {
-							switch_rtp_set_telephony_event(tech_pvt->rtp_session, te);
-							switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
-						}
+				if (!strcasecmp(rm_encoding, "telephone-event")) {
+					if (!best_te || map->rm_rate == tech_pvt->rm_rate) {
+						best_te = (switch_payload_t) map->rm_pt;
 					}
 				}
-
+				
 				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && !cng_pt && !strcasecmp(rm_encoding, "CN")) {
 					cng_pt = (switch_payload_t) map->rm_pt;
 					if (tech_pvt->rtp_session) {
@@ -3812,9 +3801,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 
 				if (match) {
-					if (te && cng_pt) {
-						break;
-					}
 					continue;
 				}
 
@@ -3942,6 +3928,24 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 			}
+
+			if (best_te) {
+				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					te = tech_pvt->te = (switch_payload_t) best_te;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", best_te);
+					if (tech_pvt->rtp_session) {
+						switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t) best_te);
+					}
+				} else {
+					te = tech_pvt->recv_te = tech_pvt->te = (switch_payload_t) best_te;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
+					if (tech_pvt->rtp_session) {
+						switch_rtp_set_telephony_event(tech_pvt->rtp_session, te);
+						switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
+					}
+				}
+			}
+
 
 			if (!match && greedy && mine < tech_pvt->num_codecs) {
 				mine++;
@@ -4615,6 +4619,7 @@ void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *se
 
 		if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS_EVENTS)) {
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY_SEND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sql", sql);
 				switch_event_fire(&event);
 			}
@@ -4657,6 +4662,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 			switch_event_t *event = NULL;
 			
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY_SEND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sql", sql);
 				switch_event_fire(&event);
 			}
@@ -5456,7 +5462,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 
 void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 {
-	const char *uuid, *network_addr_a, *network_addr_b, *simplify, *simplify_other_channel;
+	const char *uuid, *network_addr_a = NULL, *network_addr_b = NULL, *simplify, *simplify_other_channel;
 	switch_channel_t *other_channel = NULL, *inbound_channel = NULL;
 	switch_core_session_t *other_session = NULL, *inbound_session = NULL;
 	uint8_t did_simplify = 0;

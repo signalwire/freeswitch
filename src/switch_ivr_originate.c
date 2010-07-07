@@ -2313,7 +2313,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (p == end) {
-					end = strchr(p, '[');
+					end = switch_strchr_strict(p, '[', " ");
 				}
 
 				p++;
@@ -2412,7 +2412,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				} else {
 					if (oglobals.caller_profile_override) {
-						new_profile = switch_caller_profile_dup(oglobals.pool, caller_profile_override);
+						new_profile = switch_caller_profile_dup(oglobals.pool, oglobals.caller_profile_override);
 						new_profile->destination_number = switch_core_strdup(new_profile->pool, switch_str_nil(chan_data));
 						new_profile->uuid = SWITCH_BLANK_STRING;
 						new_profile->chan_name = SWITCH_BLANK_STRING;
@@ -2537,7 +2537,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				current_variable = NULL;
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 
-
 				if (vdata) {
 					char *var_array[1024] = { 0 };
 					int var_count = 0;
@@ -2552,7 +2551,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							char *pnext;
 							*next++ = '\0';
 
-							if ((pnext = strchr(next, '['))) {
+							if ((pnext = switch_strchr_strict(next, '[', " "))) {
 								next = pnext + 1;
 							}
 						}
@@ -3332,7 +3331,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			} else {
 				const char *cdr_var = NULL;
-				switch_xml_t cdr;
+				switch_xml_t cdr = NULL;
 				char *xml_text;
 				char buf[128] = "", buf2[128] = "";
 

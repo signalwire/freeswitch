@@ -175,6 +175,7 @@ typedef enum {
 	FTDM_SPAN_STOP_THREAD = (1 << 5),
 	FTDM_SPAN_USE_CHAN_QUEUE = (1 << 6),
 	FTDM_SPAN_SUGGEST_CHAN_ID = (1 << 7),
+	FTDM_SPAN_USE_AV_RATE = (1 << 8),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */

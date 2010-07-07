@@ -29,7 +29,6 @@
 
 #include <QtGui>
 #include "fshost.h"
-#include "mod_qsettings/mod_qsettings.h"
 
 /* Declare it globally */
 FSHost *g_FSHost;
@@ -144,12 +143,6 @@ void FSHost::run(void)
 
     if (switch_event_bind("FSHost", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, eventHandlerCallback, NULL) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-    }
-
-    /* Load our QSettings module */
-    if (mod_qsettings_load() != SWITCH_STATUS_SUCCESS)
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load mod_qsettings\n");
     }
 
     emit loadingModules("Loading modules...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
@@ -501,7 +494,7 @@ switch_status_t FSHost::sendCmd(const char *cmd, const char *args, QString *res)
     switch_status_t status = SWITCH_STATUS_FALSE;
     switch_stream_handle_t stream = { 0 };
     SWITCH_STANDARD_STREAM(stream);
-    qDebug() << "Sending command: " << cmd << args << endl;
+    //qDebug() << "Sending command: " << cmd << args << endl;
     status = switch_api_execute(cmd, args, NULL, &stream);
     *res = switch_str_nil((char *) stream.data);
     switch_safe_free(stream.data);
@@ -551,9 +544,34 @@ QSharedPointer<Account> FSHost::getAccountByName(QString accStr)
 
 QSharedPointer<Account> FSHost::getCurrentDefaultAccount()
 {
-    QSettings settings;
-    settings.beginGroup("FreeSWITCH/conf/globals");
-    QString accString = settings.value("default_gateway").toString();
-    settings.endGroup();
-    return getAccountByName(accString);
+    ISettings *settings = new ISettings();
+    //settings->beginGroup("FreeSWITCH/conf/globals");
+    //QString accString = settings->value("default_gateway").toString();
+    //settings->endGroup();
+    delete (settings);
+    return getAccountByName("Other"); /* Pay attention to this! */
+}
+
+/*
+   Used to match callback from fs core. We dup the event and call the class
+   method callback to make use of the signal/slot infrastructure.
+  */
+static void eventHandlerCallback(switch_event_t *event)
+{
+    switch_event_t *clone = NULL;
+    if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+        QSharedPointer<switch_event_t> e(clone);
+        g_FSHost->generalEventHandler(e);
+    }
+}
+
+/*
+  Used to propagate logs on the application
+  */
+static switch_status_t loggerHandler(const switch_log_node_t *node, switch_log_level_t level)
+{
+    switch_log_node_t *clone = switch_log_node_dup(node);
+    QSharedPointer<switch_log_node_t> l(clone);
+    g_FSHost->generalLoggerHandler(l, level);
+    return SWITCH_STATUS_SUCCESS;
 }

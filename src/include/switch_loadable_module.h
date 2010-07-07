@@ -456,7 +456,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 
 static inline switch_bool_t switch_core_codec_ready(switch_codec_t *codec)
 {
-	return (codec && codec->implementation && (codec->flags & SWITCH_CODEC_FLAG_READY)) ? SWITCH_TRUE : SWITCH_FALSE;
+	return (codec && (codec->flags & SWITCH_CODEC_FLAG_READY) && codec->mutex && codec->codec_interface && codec->implementation) ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
 

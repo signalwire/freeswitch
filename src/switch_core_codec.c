@@ -47,17 +47,14 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 	switch_mutex_t *mutex = NULL;
 
 	switch_mutex_lock(session->codec_read_mutex);
-	if (session->read_codec)
-		mutex = session->read_codec->mutex;
-	if (mutex)
-		switch_mutex_lock(mutex);
+	if (session->read_codec) mutex = session->read_codec->mutex;
+	if (mutex) switch_mutex_lock(mutex);
 	session->real_read_codec = session->read_codec = NULL;
 	session->raw_read_frame.codec = session->read_codec;
 	session->raw_write_frame.codec = session->read_codec;
 	session->enc_read_frame.codec = session->read_codec;
 	session->enc_write_frame.codec = session->read_codec;
-	if (mutex)
-		switch_mutex_unlock(mutex);
+	if (mutex) switch_mutex_unlock(mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 }
 
@@ -86,13 +83,10 @@ SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t
 	switch_mutex_t *mutex = NULL;
 
 	switch_mutex_lock(session->codec_write_mutex);
-	if (session->write_codec)
-		mutex = session->write_codec->mutex;
-	if (mutex)
-		switch_mutex_lock(mutex);
+	if (session->write_codec) mutex = session->write_codec->mutex;
+	if (mutex) switch_mutex_lock(mutex);
 	session->real_write_codec = session->write_codec = NULL;
-	if (mutex)
-		switch_mutex_unlock(mutex);
+	if (mutex) switch_mutex_unlock(mutex);
 	switch_mutex_unlock(session->codec_write_mutex);
 }
 
@@ -495,6 +489,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 
 	new_codec->implementation->init(new_codec, new_codec->flags, NULL);
 
+	switch_mutex_init(&new_codec->mutex, SWITCH_MUTEX_NESTED, new_codec->memory_pool);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -598,12 +594,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
-	if (codec->mutex)
-		switch_mutex_lock(codec->mutex);
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
 	status = codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len,
 										   decoded_rate, encoded_data, encoded_data_len, encoded_rate, flag);
-	if (codec->mutex)
-		switch_mutex_unlock(codec->mutex);
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
 
 	return status;
 
@@ -624,6 +618,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 
 	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
+		abort();
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
@@ -641,12 +636,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 		}
 	}
 	
-	if (codec->mutex)
-		switch_mutex_lock(codec->mutex);
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
 	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate,
 										   decoded_data, decoded_data_len, decoded_rate, flag);
-	if (codec->mutex)
-		switch_mutex_unlock(codec->mutex);
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
 
 	return status;
 }
@@ -659,7 +652,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 
 	switch_assert(codec != NULL);
 
-	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+	if (!switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
@@ -671,21 +664,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	pool = codec->memory_pool;
 	mutex = codec->mutex;
 
-	if (mutex)
+	if (mutex) {
 		switch_mutex_lock(mutex);
+		switch_clear_flag(codec, SWITCH_CODEC_FLAG_READY);
+		switch_mutex_unlock(mutex);
+		switch_mutex_lock(mutex);
+	}
 
 	codec->implementation->destroy(codec);
-	switch_clear_flag(codec, SWITCH_CODEC_FLAG_READY);
-
+	
 	UNPROTECT_INTERFACE(codec->codec_interface);
 
-	if (mutex)
+	if (mutex) {
 		switch_mutex_unlock(mutex);
-
+	}
+	
 	if (free_pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 
+	memset(codec, 0, sizeof(*codec));
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

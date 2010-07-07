@@ -581,7 +581,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
 	switch_threadattr_t *thd_attr;;
 
-	switch_assert(switch_arraylen(EVENT_NAMES)  == SWITCH_EVENT_ALL + 1);
+	/* 
+	   This statement doesn't do anything commenting it out for now.
+
+	   switch_assert(switch_arraylen(EVENT_NAMES)  == SWITCH_EVENT_ALL + 1);
+	 */
+	
 
 	switch_assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
@@ -1064,7 +1069,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	
 	check_a = end;
 	
-	while (check_a && (check_b = strchr(check_a, a))) {
+	while (check_a && (check_b = switch_strchr_strict(check_a, a, " "))) {
 		if ((check_b = switch_find_end_paren(check_b, a, b))) {
 			check_a = check_b;
 		}
@@ -1090,7 +1095,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 			char *pnext;
 			*next++ = '\0';
 
-			if ((pnext = strchr(next, a))) {
+			if ((pnext = switch_strchr_strict(next, a, " "))) {
 				next = pnext + 1;
 			}
 		}
