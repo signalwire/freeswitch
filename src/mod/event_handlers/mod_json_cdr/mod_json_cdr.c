@@ -345,7 +345,7 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 			}
 
 			json_object_object_add(j_application, "app_name", json_object_new_string(ap->app));
-			json_object_object_add(j_application, "app_data", json_object_new_string(ap->arg));
+			json_object_object_add(j_application, "app_data", json_object_new_string(ap->arg ? ap->arg : ""));
 
 			json_object_object_add(j_apps, "application", j_application);
 		}
