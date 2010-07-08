@@ -756,7 +756,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			}
 		}
 
-		stream.write_function(&stream, " and hostname='%s' order by a1,a2,a3,a4,a5,a6,a7,a8,a9,a10", switch_core_get_variable("hostname"));
+		stream.write_function(&stream, " and hostname='%s' order by a%d", switch_core_get_variable("hostname"), h.words + 1);
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
 
 		if (errmsg) {
