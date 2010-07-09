@@ -1375,8 +1375,13 @@ static void __inline__ calculate_best_rate(ftdm_channel_t *check, ftdm_channel_t
 {
 	if (ftdm_test_flag(check->span, FTDM_SPAN_USE_AV_RATE)) {
 		ftdm_mutex_lock(check->mutex);
-		if (!ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP) 
-	 	    && check->availability_rate > *best_rate) {
+		if (ftdm_test_flag(check, FTDM_CHANNEL_INUSE)) {
+			/* twiddle */
+		} else if (ftdm_test_flag(check, FTDM_CHANNEL_SIG_UP)) {
+			/* twiddle */
+		} else if (check->availability_rate > *best_rate){
+			/* the channel is not in use and the signaling status is down, 
+			 * it is a potential candidate to place a call */
 			*best_rated = check;
 			*best_rate = check->availability_rate;
 		}
@@ -1384,6 +1389,35 @@ static void __inline__ calculate_best_rate(ftdm_channel_t *check, ftdm_channel_t
 	}
 }
 
+static ftdm_status_t __inline__ get_best_rated(ftdm_channel_t **fchan, ftdm_channel_t *best_rated)
+{
+	ftdm_status_t status;
+
+	if (!best_rated) {
+		return FTDM_FAIL;
+	}
+
+	ftdm_mutex_lock(best_rated->mutex);
+
+	if (ftdm_test_flag(best_rated, FTDM_CHANNEL_INUSE)) {
+		ftdm_mutex_unlock(best_rated->mutex);
+		return FTDM_FAIL;
+	}
+
+	ftdm_log_chan_msg(best_rated, FTDM_LOG_DEBUG, "I may not be available but I had the best availability rate, trying to open I/O now\n");
+
+	status = ftdm_channel_open_chan(best_rated);
+	if (status != FTDM_SUCCESS) {
+		ftdm_mutex_unlock(best_rated->mutex);
+		return FTDM_FAIL;
+	}
+	*fchan = best_rated;
+	ftdm_set_flag(best_rated, FTDM_CHANNEL_OUTBOUND);
+	
+	ftdm_mutex_unlock(best_rated->mutex);
+
+	return FTDM_SUCCESS;
+}
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -1447,10 +1481,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 		}
 	}
 
-	if (status == FTDM_FAIL && best_rated) {
-		ftdm_log_chan(best_rated, FTDM_LOG_DEBUG, "I may not be available but I had the best availability rate %d\n", best_rate);
-		*ftdmchan = best_rated;
-		status = FTDM_SUCCESS;
+	if (status == FTDM_FAIL) {
+		status = get_best_rated(ftdmchan, best_rated);
 	}
 
 	ftdm_mutex_unlock(group->mutex);
@@ -1554,10 +1586,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 		}
 	}
 
-	if (status == FTDM_FAIL && best_rated) {
-		ftdm_log_chan(best_rated, FTDM_LOG_DEBUG, "I may not be available but I had the best availability rate %d\n", best_rate);
-		*ftdmchan = best_rated;
-		status = FTDM_SUCCESS;
+	if (status == FTDM_FAIL) {
+		status = get_best_rated(ftdmchan, best_rated);
 	}
 
 	ftdm_mutex_unlock(span->mutex);
