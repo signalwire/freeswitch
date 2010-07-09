@@ -833,6 +833,15 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
 	
 	if (status != SWITCH_STATUS_SUCCESS) {
+		for (i = 0; i < cbh->rowcount; i++) {
+			struct call_helper *h = cbh->rows[i];
+			char *sql = switch_mprintf("update fifo_outbound set outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%q'",
+								 (long) switch_epoch_time_now(NULL), h->uuid);
+			fifo_execute_sql(sql, globals.sql_mutex);
+			switch_safe_free(sql);
+
+		}
+		
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
@@ -1071,7 +1080,7 @@ static void find_consumers(fifo_node_t *node)
 						 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname "
 						 "from fifo_outbound "
 						 "where taking_calls = 1 and (fifo_name = '%q') and (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) "
-						 "order by next_avail ",
+						 "order by next_avail, outbound_fail_count, outbound_call_count",
 						 node->name, (long) switch_epoch_time_now(NULL)
 						 );
 	
@@ -2065,7 +2074,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 
 				if (outbound_id) {
-					sql = switch_mprintf("update fifo_outbound set use_count=use_count+1 where uuid='%s'", outbound_id);
+					sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", outbound_id);
 
 					fifo_execute_sql(sql, globals.sql_mutex);
 					switch_safe_free(sql);
@@ -2090,7 +2099,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 				
 				if (outbound_id) {
-					sql = switch_mprintf("update fifo_outbound set use_count=use_count-1 where uuid='%s' and use_count > 0", outbound_id);
+					sql = switch_mprintf("update fifo_outbound set use_count=use_count-1, outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s' and use_count > 0", (long) switch_epoch_time_now(NULL), outbound_id);
 
 					fifo_execute_sql(sql, globals.sql_mutex);
 					switch_safe_free(sql);
