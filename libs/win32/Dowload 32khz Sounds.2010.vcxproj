@@ -59,7 +59,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="32khzsound\cleancount">
+    <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading 32khzsound.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\sounds\en\us\callie\voicemail\32000" cscript /nologo "$(ProjectDir)util.vbs" GetUnzipSounds en-us-callie 32000 "$(ProjectDir)..\sounds" "$(ProjectDir)..\..\build\sounds_version.txt"</Command>
