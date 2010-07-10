@@ -267,8 +267,6 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>
-      </OutputFile>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\libs\openldap\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>

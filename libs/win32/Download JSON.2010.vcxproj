@@ -37,10 +37,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\JSON\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\JSON\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <BuildLog>
@@ -74,11 +72,6 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\json-c-0.9" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz "$(ProjectDir).."</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\JSON;%(Outputs)</Outputs>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="Download FLITE.2010.vcxproj">
-      <Project>{d5d2bf72-29fe-4982-a9fa-82fdd086db1b}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

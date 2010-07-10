@@ -45,30 +45,26 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -94,12 +90,8 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>$(IntDir)libaprutil.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;APU_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -115,9 +107,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <SubSystem>Windows</SubSystem>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(IntDir)libaprutil-1.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
@@ -153,10 +142,8 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>$(IntDir)libaprutil.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;APU_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -172,9 +159,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <SubSystem>Windows</SubSystem>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)libaprutil-1.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <Bscmake>
@@ -212,12 +196,8 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>$(IntDir)libaprutil.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <ObjectFileName>.\Release/</ObjectFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;APU_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -234,8 +214,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <OptimizeReferences>true</OptimizeReferences>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
       <ImportLibrary>$(IntDir)libaprutil-1.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
@@ -274,10 +252,8 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>$(IntDir)libaprutil.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;APU_VERSION_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -294,9 +270,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <OptimizeReferences>true</OptimizeReferences>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)libaprutil-1.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <Bscmake>

@@ -45,30 +45,26 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extdll.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(PlatformName)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,8 +80,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
       <TypeLibraryName>$(IntDir)js.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
@@ -95,11 +89,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>$(IntDir)js.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>
-      </AssemblerListingLocation>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
@@ -115,9 +104,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(IntDir)js32.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
@@ -142,8 +128,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
       <TypeLibraryName>$(IntDir)js.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
@@ -153,11 +137,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>$(IntDir)js.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>
-      </AssemblerListingLocation>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
@@ -173,9 +152,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)js32.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <Bscmake>
@@ -200,8 +176,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
       <TypeLibraryName>$(IntDir)js.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -209,14 +183,8 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <PreprocessorDefinitions>_DEBUG;DEBUG;_X86_=1;_WINDOWS;WIN32;XP_WIN;JSFILE;EXPORT_JS_API;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;JS_THREADSAFE;OSSP;_NSPR_BUILD_;JS_HAS_FILE_OBJECT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>$(IntDir)js.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>
-      </AssemblerListingLocation>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -228,9 +196,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(IntDir)js32.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
@@ -256,8 +221,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
       <TypeLibraryName>$(IntDir)js.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -265,14 +228,8 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <PreprocessorDefinitions>_DEBUG;DEBUG;_AMD64_=1;_WINDOWS;WIN32;XP_WIN;JSFILE;EXPORT_JS_API;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;JS_THREADSAFE;OSSP;_NSPR_BUILD_;JS_HAS_FILE_OBJECT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>$(IntDir)js.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>
-      </AssemblerListingLocation>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -285,9 +242,6 @@ if not exist "$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h" type "$(Proje
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)js32.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <Bscmake>
