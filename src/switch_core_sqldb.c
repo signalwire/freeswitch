@@ -964,6 +964,45 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	return NULL;
 }
 
+static char *parse_presence_data_cols(switch_event_t *event)
+{
+	char *cols[25] = { 0 };
+	int col_count = 0;
+	char *data_copy;
+	switch_stream_handle_t stream = { 0 };
+	int i;
+	char *r;
+	char col_name[128] = "";
+	const char *data = switch_event_get_header(event, "variable_presence_data_cols");
+
+	if (zstr(data)) {
+		return NULL;
+	}
+
+	data_copy = strdup(data);
+	
+	col_count = switch_split(data_copy, ':', cols);
+
+	SWITCH_STANDARD_STREAM(stream);
+
+	for (i = 0; i < col_count; i++) {
+		switch_snprintf(col_name, sizeof(col_name), "variable_%s", cols[i]);
+		stream.write_function(&stream, "%q='%q',", cols[i], switch_event_get_header_nil(event, col_name));
+	}
+
+	r = (char *) stream.data;
+
+	if (end_of(r) == ',') {
+		end_of(r) = '\0';
+	}
+
+	switch_safe_free(data_copy);
+	
+	return r;
+	
+}
+
+
 #define MAX_SQL 5
 #define new_sql() switch_assert(sql_idx+1 < MAX_SQL); sql[sql_idx++]
 
@@ -971,6 +1010,7 @@ static void core_event_handler(switch_event_t *event)
 {
 	char *sql[MAX_SQL] = { 0 };
 	int sql_idx = 0;
+	char *extra_cols;
 
 	switch_assert(event);
 
@@ -1053,26 +1093,57 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CHANNEL_HOLD:
 	case SWITCH_EVENT_CHANNEL_UNHOLD:
-	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
-								   "presence_id='%q',presence_data='%q' where uuid='%q' and hostname='%q'",
-								   switch_event_get_header_nil(event, "application"),
-								   switch_event_get_header_nil(event, "application-data"),
-								   switch_event_get_header_nil(event, "channel-presence-id"),
-								   switch_event_get_header_nil(event, "channel-presence-data"),
-								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
+	case SWITCH_EVENT_CHANNEL_EXECUTE: {
 
-								   );
+		if ((extra_cols = parse_presence_data_cols(event))) {
+
+			new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
+									   "presence_id='%q',presence_data='%q',%s where uuid='%q' and hostname='%q'",
+									   switch_event_get_header_nil(event, "application"),
+									   switch_event_get_header_nil(event, "application-data"),
+									   switch_event_get_header_nil(event, "channel-presence-id"),
+									   switch_event_get_header_nil(event, "channel-presence-data"),
+									   extra_cols,
+									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
+									   
+									   );
+			
+			free(extra_cols);
+
+		} else {
+		
+			new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
+									   "presence_id='%q',presence_data='%q' where uuid='%q' and hostname='%q'",
+									   switch_event_get_header_nil(event, "application"),
+									   switch_event_get_header_nil(event, "application-data"),
+									   switch_event_get_header_nil(event, "channel-presence-id"),
+									   switch_event_get_header_nil(event, "channel-presence-data"),
+									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
+									   
+									   );
+		}
+	}
 		break;
 
 	case SWITCH_EVENT_CHANNEL_ORIGINATE:
 		{
-			new_sql() = switch_mprintf("update channels set "
-									   "presence_id='%q',presence_data='%q', call_uuid='%q' where uuid='%q' and hostname='%q'",
-									   switch_event_get_header_nil(event, "channel-presence-id"),
-									   switch_event_get_header_nil(event, "channel-presence-data"),
-									   switch_event_get_header_nil(event, "channel-call-uuid"),
-									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+			if ((extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set "
+										   "presence_id='%q',presence_data='%q', call_uuid='%q',%s where uuid='%q' and hostname='%q'",
+										   switch_event_get_header_nil(event, "channel-presence-id"),
+										   switch_event_get_header_nil(event, "channel-presence-data"),
+										   switch_event_get_header_nil(event, "channel-call-uuid"),
+										   extra_cols,
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+				free(extra_cols);
+			} else {
+				new_sql() = switch_mprintf("update channels set "
+										   "presence_id='%q',presence_data='%q', call_uuid='%q' where uuid='%q' and hostname='%q'",
+										   switch_event_get_header_nil(event, "channel-presence-id"),
+										   switch_event_get_header_nil(event, "channel-presence-data"),
+										   switch_event_get_header_nil(event, "channel-call-uuid"),
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+			}
 
 		}
 
@@ -1124,19 +1195,37 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DESTROY:
 				break;
 			case CS_ROUTING:
-				new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
-										   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
-										   "where uuid='%s' and hostname='%q'",
-										   switch_event_get_header_nil(event, "channel-state"),
-										   switch_event_get_header_nil(event, "caller-caller-id-name"),
-										   switch_event_get_header_nil(event, "caller-caller-id-number"),
-										   switch_event_get_header_nil(event, "caller-network-addr"),
-										   switch_event_get_header_nil(event, "caller-destination-number"),
-										   switch_event_get_header_nil(event, "caller-dialplan"),
-										   switch_event_get_header_nil(event, "caller-context"),
-										   switch_event_get_header_nil(event, "channel-presence-id"),
-										   switch_event_get_header_nil(event, "channel-presence-data"),
-										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+				if ((extra_cols = parse_presence_data_cols(event))) {
+					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
+											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q',%s "
+											   "where uuid='%s' and hostname='%q'",
+											   switch_event_get_header_nil(event, "channel-state"),
+											   switch_event_get_header_nil(event, "caller-caller-id-name"),
+											   switch_event_get_header_nil(event, "caller-caller-id-number"),
+											   switch_event_get_header_nil(event, "caller-network-addr"),
+											   switch_event_get_header_nil(event, "caller-destination-number"),
+											   switch_event_get_header_nil(event, "caller-dialplan"),
+											   switch_event_get_header_nil(event, "caller-context"),
+											   switch_event_get_header_nil(event, "channel-presence-id"),
+											   switch_event_get_header_nil(event, "channel-presence-data"),
+											   extra_cols,
+											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+					free(extra_cols);
+				} else {
+					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
+											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
+											   "where uuid='%s' and hostname='%q'",
+											   switch_event_get_header_nil(event, "channel-state"),
+											   switch_event_get_header_nil(event, "caller-caller-id-name"),
+											   switch_event_get_header_nil(event, "caller-caller-id-number"),
+											   switch_event_get_header_nil(event, "caller-network-addr"),
+											   switch_event_get_header_nil(event, "caller-destination-number"),
+											   switch_event_get_header_nil(event, "caller-dialplan"),
+											   switch_event_get_header_nil(event, "caller-context"),
+											   switch_event_get_header_nil(event, "channel-presence-id"),
+											   switch_event_get_header_nil(event, "channel-presence-data"),
+											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+				}
 				break;
 			default:
 				new_sql() = switch_mprintf("update channels set state='%s' where uuid='%s' and hostname='%q'",
