@@ -1031,6 +1031,10 @@ tryagain:
 	ftdm_set_string(ftdmchan->caller_data.ani.digits, (char *)event->calling.digits);
 	ftdm_set_string(ftdmchan->caller_data.dnis.digits, (char *)event->called.digits);
 	ftdm_set_string(ftdmchan->caller_data.rdnis.digits, (char *)event->rdnis.digits);
+	if (event->custom_data_size) {
+		ftdm_set_string(ftdmchan->caller_data.raw_data, event->custom_data);
+		ftdmchan->caller_data.raw_data_len = event->custom_data_size;
+	}
 
 	if (strlen(event->calling_name)) {
 		ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)event->calling_name);
