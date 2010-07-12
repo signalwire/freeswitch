@@ -729,6 +729,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		char *parsed = NULL;
 
 		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed);
+		switch_event_del_header(ovars, "fifo_outbound_uuid");
 		
 		if (!h->timeout) h->timeout = 60;
 		if (timeout < h->timeout) timeout = h->timeout;
@@ -1363,6 +1364,46 @@ SWITCH_STANDARD_API(fifo_add_outbound_function)
 
 }
 
+static switch_status_t hanguphook(switch_core_session_t *session)
+{
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_channel_state_t state = switch_channel_get_state(channel);
+    const char *uuid = NULL;
+    char sql[256] = "";
+
+    if (state == CS_HANGUP || state == CS_ROUTING) {
+        if ((uuid = switch_channel_get_variable(channel, "fifo_outbound_uuid"))) {
+            switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, "
+                            "outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s'",
+                            (long)switch_epoch_time_now(NULL), uuid);
+
+            fifo_execute_sql(sql, globals.sql_mutex);
+        }
+        switch_core_event_hook_remove_state_change(session, hanguphook);
+    }
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_STANDARD_APP(fifo_member_usage_function)
+{
+	char *sql;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid!\n");
+		return;
+	}
+
+	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
+	sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", data);
+	
+	fifo_execute_sql(sql, globals.sql_mutex);
+	switch_safe_free(sql);
+
+	switch_core_event_hook_add_state_change(session, hanguphook);
+
+}
 
 typedef enum {
 	STRAT_MORE_PPL,
@@ -2772,6 +2813,26 @@ const char bridge_sql[] =
 	");\n"
 ;
 
+
+
+static void extract_fifo_outbound_uuid(char *string, char *uuid, switch_size_t len)
+{
+	switch_event_t *ovars;
+	char *parsed = NULL;
+	const char *fifo_outbound_uuid;
+	
+	switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
+	
+	switch_event_create_brackets(string, '{', '}', ',', &ovars, &parsed);
+	
+	if ((fifo_outbound_uuid = switch_event_get_header(ovars, "fifo_outbound_uuid"))) {
+		switch_snprintf(uuid, len, "%s", fifo_outbound_uuid);
+	}
+
+	switch_safe_free(parsed);
+	switch_event_destroy(&ovars);
+}
+
 static switch_status_t load_config(int reload, int del_all)
 {
 	char *cf = "fifo.conf";
@@ -2919,8 +2980,13 @@ static switch_status_t load_config(int reload, int del_all)
 				const char *taking_calls = switch_xml_attr_soft(member, "taking_calls");
 				char *name_dup, *p;
 				char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
-				switch_md5_string(digest, (void *) member->txt, strlen(member->txt));
 
+				if (switch_stristr("fifo_outbound_uuid=", member->txt)) {
+					extract_fifo_outbound_uuid(member->txt, digest, sizeof(digest));
+				} else {
+					switch_md5_string(digest, (void *) member->txt, strlen(member->txt));
+				}
+				
 				if (simo) {
 					simo_i = atoi(simo);
 				}
@@ -3023,7 +3089,11 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 	char *sql, *name_dup, *p;
 	fifo_node_t *node = NULL;
 
-	switch_md5_string(digest, (void *) originate_string, strlen(originate_string));
+	if (switch_stristr("fifo_outbound_uuid=", originate_string)) {
+		extract_fifo_outbound_uuid(originate_string, digest, sizeof(digest));
+	} else {
+		switch_md5_string(digest, (void *) originate_string, strlen(originate_string));		
+	}
 
 	sql = switch_mprintf("delete from fifo_outbound where fifo_name='%q' and uuid = '%q'", fifo_name, digest);
 	switch_assert(sql);
@@ -3065,7 +3135,11 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	callback_t cbt = { 0 };
 	fifo_node_t *node = NULL;
 
-	switch_md5_string(digest, (void *) originate_string, strlen(originate_string));
+	if (switch_stristr("fifo_outbound_uuid=", originate_string)) {
+		extract_fifo_outbound_uuid(originate_string, digest, sizeof(digest));
+	} else {
+		switch_md5_string(digest, (void *) originate_string, strlen(originate_string));		
+	}
 
 	sql = switch_mprintf("delete from fifo_outbound where fifo_name='%q' and uuid = '%q' and hostname='%q'", fifo_name, digest, globals.hostname);
 	switch_assert(sql);
@@ -3212,6 +3286,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "fifo", "Park with FIFO", FIFO_DESC, fifo_function, FIFO_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "fifo_member_usage", "increment a member usage until the call ends", 
+				   "", fifo_member_usage_function, "<fifo_outbound_uuid>", SAF_NONE);
 	SWITCH_ADD_API(commands_api_interface, "fifo", "Return data about a fifo", fifo_api_function, FIFO_API_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fifo_member", "Add members to a fifo", fifo_member_api_function, FIFO_MEMBER_API_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "fifo_add_outbound", "Add outbound members to a fifo", fifo_add_outbound_function, "<node> <url> [<priority>]");
