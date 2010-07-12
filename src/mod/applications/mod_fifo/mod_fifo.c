@@ -136,7 +136,11 @@ static switch_status_t fifo_queue_pop(fifo_queue_t *queue, switch_event_t **pop,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*pop = queue->data[0];
+	if (remove) {
+		*pop = queue->data[0];
+	} else {
+		switch_event_dup(pop, queue->data[0]);
+	}
 
 	if (remove) {
 		for (i = 1; i < queue->idx; i++) {
@@ -169,7 +173,12 @@ static switch_status_t fifo_queue_pop_nameval(fifo_queue_t *queue, const char *n
 	for (j = 0; j < queue->idx; j++) {
 		const char *j_val = switch_event_get_header(queue->data[j], name);
 		if (j_val && val && !strcmp(j_val, val)) {
-			*pop = queue->data[j];
+
+			if (remove) {
+				*pop = queue->data[j];
+			} else {
+				switch_event_dup(pop, queue->data[j]);
+			}
 			break;
 		}
 	}
@@ -178,7 +187,7 @@ static switch_status_t fifo_queue_pop_nameval(fifo_queue_t *queue, const char *n
 		switch_mutex_unlock(queue->mutex);
 		return SWITCH_STATUS_FALSE;
 	}
-
+	
 	if (remove) {
 		for (i = j+1; i < queue->idx; i++) {
 			queue->data[i-1] = queue->data[i];
@@ -688,7 +697,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
 	char *caller_id_name = NULL, *cid_num = NULL, *id = NULL;
-	switch_event_t *pop = NULL;
+	switch_event_t *pop = NULL, *pop_dup = NULL;
 	fifo_queue_t *q = NULL;
 	int x = 0;
 	switch_event_t *event;
@@ -697,8 +706,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
     switch_uuid_get(&uuid);
     switch_uuid_format(uuid_str, &uuid);
-
-
+	
 	if (!cbh->rowcount) {
 		goto end;
 	}
@@ -712,7 +720,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	if (node) {
 		switch_mutex_lock(node->mutex);
 		node->busy++;
-		node->ring_consumer_count++;
+		node->ring_consumer_count = cbh->rowcount;
 		switch_mutex_unlock(node->mutex);
 	} else {
 		goto end;
@@ -748,41 +756,28 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	
 	if (!timeout) timeout = 60;
 	
+	pop = pop_dup = NULL;
+
 	for (x = 0; x < MAX_PRI; x++) {
 		q = node->fifo_list[x];
-		switch_mutex_lock(q->mutex);
-
-		if (fifo_queue_pop_nameval(q, "variable_fifo_vip", "true", &pop, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop) {
-			goto found;
+		if (fifo_queue_pop_nameval(q, "variable_fifo_vip", "true", &pop_dup, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop_dup) {
+			pop = pop_dup;
 		}
-		switch_mutex_unlock(q->mutex);
-		q = NULL;
 	}
 
 	if (!pop) {
 		for (x = 0; x < MAX_PRI; x++) {
 			q = node->fifo_list[x];
-			switch_mutex_lock(q->mutex);
-
-			if (fifo_queue_pop(node->fifo_list[x], &pop, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop) {
-				goto found;
+			if (fifo_queue_pop(node->fifo_list[x], &pop_dup, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop_dup) {
+				pop = pop_dup;
 			}
 		}
-		switch_mutex_unlock(q->mutex);
-		q = NULL;
 	}
-
- found:
-
-
-	if (!q) goto end;
 
 	if (!pop) {
-		if (q) switch_mutex_unlock(q->mutex);
 		goto end;
 	}
-
-
+	
 	if (!switch_event_get_header(ovars, "origination_caller_id_name")) {
 		if ((caller_id_name = switch_event_get_header(pop, "caller-caller-id-name"))) {
 			if (node->outbound_name) {
@@ -828,8 +823,6 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 		switch_event_fire(&event);
 	}
-	switch_mutex_unlock(q->mutex);
-	pop = NULL;
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
 	
@@ -886,11 +879,14 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	switch_safe_free(originate_string);
 
 	switch_event_destroy(&ovars);
+
+	if (pop_dup) {
+		switch_event_destroy(&pop_dup);
+	}
+
 	if (node) {
 		switch_mutex_lock(node->mutex);
-		if (node->ring_consumer_count-- < 0) {
-			node->ring_consumer_count = 0;
-		}
+		node->ring_consumer_count = 0;
 		if (node->busy) node->busy--;
 		switch_mutex_unlock(node->mutex);
 	}
@@ -3147,11 +3143,11 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	free(sql);
 
 	switch_mutex_lock(globals.mutex);
-        if (!(node = switch_core_hash_find(globals.fifo_hash, fifo_name))) {
-                node = create_node(fifo_name, 0, globals.sql_mutex);
-                node->ready = 1;
-        }
-        switch_mutex_unlock(globals.mutex);
+	if (!(node = switch_core_hash_find(globals.fifo_hash, fifo_name))) {
+		node = create_node(fifo_name, 0, globals.sql_mutex);
+		node->ready = 1;
+	}
+	switch_mutex_unlock(globals.mutex);
 
 	cbt.buf = outbound_count;
 	cbt.len = sizeof(outbound_count);
