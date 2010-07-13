@@ -2339,7 +2339,7 @@ struct xml_helper {
 static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct xml_helper *h = (struct xml_helper *) pArg;
-	switch_xml_t x_tmp, x_out;
+	switch_xml_t x_out;
 	int c_off = 0;
 	char exp_buf[128] = "";
 	switch_time_exp_t tm;
@@ -2357,9 +2357,9 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 		}
 	}
 
-	x_tmp = switch_xml_add_child_d(h->xml, h->container, h->cc_off++);
+	
 
-	x_out = switch_xml_add_child_d(x_tmp, h->tag, c_off++);
+	x_out = switch_xml_add_child_d(h->xml, h->tag, c_off++);
 	switch_xml_set_attr_d(x_out, "simo", argv[3]);
 	switch_xml_set_attr_d(x_out, "use_count", argv[4]);
 	switch_xml_set_attr_d(x_out, "timeout", argv[5]);
@@ -2389,6 +2389,8 @@ static int xml_outbound(switch_xml_t xml, fifo_node_t *node, char *container, ch
 	h.cc_off = cc_off;
 	h.row_off = 0;
 	h.verbose = verbose;
+
+	h.xml = switch_xml_add_child_d(h.xml, h.container, h.cc_off++);
 
 	fifo_execute_sql_callback(globals.sql_mutex, sql, xml_callback, &h);
 
