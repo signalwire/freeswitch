@@ -1761,6 +1761,11 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
 	}
 
+
+	if ((v = switch_channel_get_variable(channel, "presence_data_cols"))) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Data-Cols", v);
+	}
+
 	if ((v = switch_channel_get_variable(channel, "call_uuid"))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", v);
 	}
@@ -1813,13 +1818,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *channel, switch_event_t *event)
 {
 	switch_event_header_t *hi;
-	int x, global_verbos_events = 0;
+	int x, global_verbose_events = 0;
 
 	switch_mutex_lock(channel->profile_mutex);
 
-	switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &global_verbos_events);
+	switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &global_verbose_events);
 
-	if (global_verbos_events || switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) ||
+	if (global_verbose_events || 
+		switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) ||
+		switch_event_get_header(event, "presence-data-cols") ||
 		event->event_id == SWITCH_EVENT_CHANNEL_CREATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||

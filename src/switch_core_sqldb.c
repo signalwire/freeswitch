@@ -973,7 +973,7 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	int i;
 	char *r;
 	char col_name[128] = "";
-	const char *data = switch_event_get_header(event, "variable_presence_data_cols");
+	const char *data = switch_event_get_header(event, "presence-data-cols");
 
 	if (zstr(data)) {
 		return NULL;
@@ -1094,34 +1094,16 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_HOLD:
 	case SWITCH_EVENT_CHANNEL_UNHOLD:
 	case SWITCH_EVENT_CHANNEL_EXECUTE: {
-
-		if ((extra_cols = parse_presence_data_cols(event))) {
-
-			new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
-									   "presence_id='%q',presence_data='%q',%s where uuid='%q' and hostname='%q'",
-									   switch_event_get_header_nil(event, "application"),
-									   switch_event_get_header_nil(event, "application-data"),
-									   switch_event_get_header_nil(event, "channel-presence-id"),
-									   switch_event_get_header_nil(event, "channel-presence-data"),
-									   extra_cols,
-									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
-									   
-									   );
-			
-			free(extra_cols);
-
-		} else {
 		
-			new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
-									   "presence_id='%q',presence_data='%q' where uuid='%q' and hostname='%q'",
-									   switch_event_get_header_nil(event, "application"),
-									   switch_event_get_header_nil(event, "application-data"),
-									   switch_event_get_header_nil(event, "channel-presence-id"),
-									   switch_event_get_header_nil(event, "channel-presence-data"),
-									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
-									   
-									   );
-		}
+		new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
+								   "presence_id='%q',presence_data='%q' where uuid='%q' and hostname='%q'",
+								   switch_event_get_header_nil(event, "application"),
+								   switch_event_get_header_nil(event, "application-data"),
+								   switch_event_get_header_nil(event, "channel-presence-id"),
+								   switch_event_get_header_nil(event, "channel-presence-data"),
+								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
+								   );
+
 	}
 		break;
 
