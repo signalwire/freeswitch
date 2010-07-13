@@ -1075,11 +1075,14 @@ static int place_call_ringall_callback(void *pArg, int argc, char **argv, char *
 	
 	cbh->rows[cbh->rowcount++] = h;
 
-	cbh->need--;
-
 	if (cbh->rowcount == MAX_ROWS) return -1;
-	
-	return cbh->need ? 0 : -1;
+
+	if (cbh->need) {
+		cbh->need--;
+		return cbh->need ? 0 : -1;
+	}
+
+	return 0;
 	
 }
 
@@ -1150,9 +1153,9 @@ static void find_consumers(fifo_node_t *node)
 			switch_core_new_memory_pool(&pool);
 			cbh = switch_core_alloc(pool, sizeof(*cbh));
 			cbh->pool = pool;
-			cbh->need = node_consumer_wait_count(node);
+			cbh->need = 1;
 
-			if (node->outbound_per_cycle && node->outbound_per_cycle < cbh->need) {
+			if (node->outbound_per_cycle != cbh->need) {
 				cbh->need = node->outbound_per_cycle;
 			}
 
@@ -2916,6 +2919,8 @@ static switch_status_t load_config(int reload, int del_all)
 	switch_cache_db_test_reactive(dbh, "delete from fifo_bridge", "drop table fifo_bridge", bridge_sql);
 	switch_cache_db_release_db_handle(&dbh);
 
+	fifo_execute_sql("update fifo_outbound set use_count=0,outbound_call_count=0,outbound_fail_count=0", globals.sql_mutex);
+
 	if (reload) {
 		switch_hash_index_t *hi;
 		fifo_node_t *node;
@@ -2945,7 +2950,7 @@ static switch_status_t load_config(int reload, int del_all)
 		for (fifo = switch_xml_child(fifos, "fifo"); fifo; fifo = fifo->next) {
 			const char *name, *outbound_strategy;
 			const char *val;
-			int imp = 0, outbound_per_cycle = 0;
+			int imp = 0, outbound_per_cycle = 1;
 			int simo_i = 1;
 			int taking_calls_i = 1;
 			int timeout_i = 60;
