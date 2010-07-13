@@ -846,7 +846,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	for (i = 0; i < cbh->rowcount; i++) {
 		struct call_helper *h = cbh->rows[i];
-		char *sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", h->uuid);
+		char *sql = switch_mprintf("update fifo_outbound set use_count=use_count+1 where uuid='%s'", h->uuid);
 		
 		fifo_execute_sql(sql, globals.sql_mutex);
 		switch_safe_free(sql);
@@ -984,7 +984,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	}
 
 	
-	sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", h->uuid);
+	sql = switch_mprintf("update fifo_outbound set use_count=use_count+1 where uuid='%s'", h->uuid);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	switch_safe_free(sql);
 
