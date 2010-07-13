@@ -782,6 +782,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		q = node->fifo_list[x];
 		if (fifo_queue_pop_nameval(q, "variable_fifo_vip", "true", &pop_dup, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop_dup) {
 			pop = pop_dup;
+			break;
 		}
 	}
 
@@ -790,6 +791,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 			q = node->fifo_list[x];
 			if (fifo_queue_pop(node->fifo_list[x], &pop_dup, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop_dup) {
 				pop = pop_dup;
+				break;
 			}
 		}
 	}
