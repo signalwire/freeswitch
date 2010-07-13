@@ -679,6 +679,26 @@ struct callback_helper {
 };
 
 
+static switch_status_t hanguphook(switch_core_session_t *session)
+{
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_channel_state_t state = switch_channel_get_state(channel);
+    const char *uuid = NULL;
+    char sql[256] = "";
+
+    if (state == CS_HANGUP || state == CS_ROUTING) {
+        if ((uuid = switch_channel_get_variable(channel, "fifo_outbound_uuid"))) {
+            switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, "
+                            "outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s' and use_count > 0",
+                            (long)switch_epoch_time_now(NULL), uuid);
+
+            fifo_execute_sql(sql, globals.sql_mutex);
+        }
+        switch_core_event_hook_remove_state_change(session, hanguphook);
+    }
+    return SWITCH_STATUS_SUCCESS;
+}
+
 
 static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -824,13 +844,23 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		switch_event_fire(&event);
 	}
 
+	for (i = 0; i < cbh->rowcount; i++) {
+		struct call_helper *h = cbh->rows[i];
+		char *sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", h->uuid);
+		
+		fifo_execute_sql(sql, globals.sql_mutex);
+		switch_safe_free(sql);
+		
+	}
+
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
 	
 	if (status != SWITCH_STATUS_SUCCESS) {
 		for (i = 0; i < cbh->rowcount; i++) {
 			struct call_helper *h = cbh->rows[i];
-			char *sql = switch_mprintf("update fifo_outbound set outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%q'",
-								 (long) switch_epoch_time_now(NULL), h->uuid);
+			char *sql = switch_mprintf("update fifo_outbound set use_count=use_count-1, "
+									   "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%q' and use_count > 0",
+									   (long) switch_epoch_time_now(NULL), h->uuid);
 			fifo_execute_sql(sql, globals.sql_mutex);
 			switch_safe_free(sql);
 
@@ -865,6 +895,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 
 	switch_channel_set_variable(channel, "fifo_pop_order", NULL);
+	switch_core_event_hook_add_state_change(session, hanguphook);
 
 	app_name = "fifo";
 	arg = switch_core_session_sprintf(session, "%s out nowait", node_name);
@@ -910,6 +941,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_event_t *ovars = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
+	char *sql = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	node = switch_core_hash_find(globals.fifo_hash, h->node_name);
@@ -951,6 +983,11 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 		switch_event_fire(&event);
 	}
 
+	
+	sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", h->uuid);
+	fifo_execute_sql(sql, globals.sql_mutex);
+	switch_safe_free(sql);
+
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
 	free(originate_string);
@@ -958,6 +995,12 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 	if (status != SWITCH_STATUS_SUCCESS) {
 
+		sql = switch_mprintf("update fifo_outbound set use_count=use_count-1, "
+							 "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%q' and use_count > 0",
+							 (long) switch_epoch_time_now(NULL), h->uuid);
+		fifo_execute_sql(sql, globals.sql_mutex);
+		switch_safe_free(sql);
+		
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
@@ -992,6 +1035,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	switch_core_event_hook_add_state_change(session, hanguphook);
 	switch_channel_set_variable(channel, "fifo_outbound_uuid", h->uuid);
 	app_name = "fifo";
 	arg = switch_core_session_sprintf(session, "%s out %s", h->node_name, member_wait ? member_wait : "wait");
@@ -1359,27 +1403,6 @@ SWITCH_STANDARD_API(fifo_add_outbound_function)
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
-static switch_status_t hanguphook(switch_core_session_t *session)
-{
-    switch_channel_t *channel = switch_core_session_get_channel(session);
-    switch_channel_state_t state = switch_channel_get_state(channel);
-    const char *uuid = NULL;
-    char sql[256] = "";
-
-    if (state == CS_HANGUP || state == CS_ROUTING) {
-        if ((uuid = switch_channel_get_variable(channel, "fifo_outbound_uuid"))) {
-            switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, "
-                            "outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s'",
-                            (long)switch_epoch_time_now(NULL), uuid);
-
-            fifo_execute_sql(sql, globals.sql_mutex);
-        }
-        switch_core_event_hook_remove_state_change(session, hanguphook);
-    }
-    return SWITCH_STATUS_SUCCESS;
-}
-
 
 SWITCH_STANDARD_APP(fifo_member_usage_function)
 {
@@ -1762,7 +1785,12 @@ SWITCH_STANDARD_APP(fifo_function)
 		const char *caller_uuid = NULL;
 		switch_event_t *call_event;
 		const char *outbound_id = switch_channel_get_variable(channel, "fifo_outbound_uuid");
+		const char *track_use_count = switch_channel_get_variable(channel, "fifo_track_use_count");
 		
+		if (!switch_true(track_use_count)) {
+			outbound_id = NULL;
+		}
+
 				
 		if (!zstr(strat_str)) {
 			if (!strcasecmp(strat_str, "more_ppl")) {
