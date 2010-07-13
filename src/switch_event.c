@@ -1062,8 +1062,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	int var_count = 0;
 	char *next;
 	
-	vdata = strdup(data);
-	vdatap = vdata;
+	vdatap = strdup(data);
+	vdata = vdatap;
 
 	end = switch_find_end_paren(vdata, a, b);
 	
@@ -1081,7 +1081,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 		vdata++;
 		*end++ = '\0';
 	} else {
-		vdata = NULL;
+		free(vdatap);
 		return SWITCH_STATUS_FALSE;
 	}
 	
