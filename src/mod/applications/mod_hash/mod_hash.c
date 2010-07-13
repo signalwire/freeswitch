@@ -486,7 +486,34 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 {
+	switch_hash_index_t *hi = NULL;
+	
 	switch_scheduler_del_task_group("mod_hash");
+
+	switch_thread_rwlock_wrlock(globals.limit_hash_rwlock);
+	switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
+	
+	while ((hi = switch_hash_first(NULL, globals.limit_hash))) {
+		void *val = NULL;
+		const void *key;
+		switch_ssize_t keylen;
+		switch_hash_this(hi, &key, &keylen, &val);
+		free(val);
+		switch_core_hash_delete(globals.limit_hash, key);
+	}
+	
+	while ((hi = switch_hash_first(NULL, globals.db_hash))) {
+		void *val = NULL;
+		const void *key;
+		switch_ssize_t keylen;
+		switch_hash_this(hi, &key, &keylen, &val);
+		free(val);
+		switch_core_hash_delete(globals.db_hash, key);
+	}
+	
+
+	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
+	switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 
 	switch_thread_rwlock_destroy(globals.db_hash_rwlock);
 	switch_thread_rwlock_destroy(globals.limit_hash_rwlock);
