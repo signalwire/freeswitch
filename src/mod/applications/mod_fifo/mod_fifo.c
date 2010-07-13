@@ -1786,12 +1786,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_event_t *call_event;
 		const char *outbound_id = switch_channel_get_variable(channel, "fifo_outbound_uuid");
 		const char *track_use_count = switch_channel_get_variable(channel, "fifo_track_use_count");
-		
-		if (!switch_true(track_use_count)) {
-			outbound_id = NULL;
-		}
+		int do_track = switch_true(track_use_count);
 
-				
 		if (!zstr(strat_str)) {
 			if (!strcasecmp(strat_str, "more_ppl")) {
 				strat = STRAT_MORE_PPL;
@@ -2138,7 +2134,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_event_fire(&event);
 				}
 
-				if (outbound_id) {
+				if (outbound_id && do_track) {
 					sql = switch_mprintf("update fifo_outbound set use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", outbound_id);
 
 					fifo_execute_sql(sql, globals.sql_mutex);
@@ -2163,7 +2159,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 				
-				if (outbound_id) {
+				if (outbound_id && do_track) {
 					sql = switch_mprintf("update fifo_outbound set use_count=use_count-1, outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s' and use_count > 0", (long) switch_epoch_time_now(NULL), outbound_id);
 
 					fifo_execute_sql(sql, globals.sql_mutex);
