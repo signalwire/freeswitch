@@ -1311,11 +1311,11 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 		if (channel) {
 			if (zstr(switch_channel_get_variable(channel, "import"))) {
-				switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
+				switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate,lcr_user_rate");
 			} else {
 				const char *tmp = switch_channel_get_variable(channel, "import");
-				if (!strstr(tmp, "lcr_carrier,lcr_rate")) {
-					switch_channel_set_variable_printf(channel, "import", "%s,lcr_carrier,lcr_rate", tmp);
+				if (!strstr(tmp, "lcr_carrier,lcr_rate,lcr_user_rate")) {
+					switch_channel_set_variable_printf(channel, "import", "%s,lcr_carrier,lcr_rate,lcr_user_rate", tmp);
 				}
 			}
 		}
@@ -1440,11 +1440,11 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		switch_channel_set_variable(channel, SWITCH_CONTINUE_ON_FAILURE_VARIABLE, "true");
 		switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 		if (zstr(switch_channel_get_variable(channel, "import"))) {
-			switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
+			switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate,lcr_user_rate");
 		} else {
 			const char *tmp = switch_channel_get_variable(channel, "import");
-			if (!strstr(tmp, "lcr_carrier,lcr_rate")) {
-				switch_channel_set_variable_printf(channel, "import", "%s,lcr_carrier,lcr_rate", tmp);
+			if (!strstr(tmp, "lcr_carrier,lcr_rate,lcr_user_rate")) {
+				switch_channel_set_variable_printf(channel, "import", "%s,lcr_carrier,lcr_rate,lcr_user_rate", tmp);
 			}
 		}
 
@@ -1589,11 +1589,11 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			switch_channel_set_variable(channel, "lcr_route_count", vbuf);
 			switch_channel_set_variable(channel, "lcr_auto_route", (char *)dig_stream.data);
 			if (zstr(switch_channel_get_variable(channel, "import"))) {
-				switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
+				switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate,lcr_user_rate");
 			} else {
 				const char *tmp = switch_channel_get_variable(channel, "import");
-				if (!strstr(tmp, "lcr_carrier,lcr_rate")) {
-					switch_channel_set_variable_printf(channel, "import", "%s,lcr_carrier,lcr_rate", tmp);
+				if (!strstr(tmp, "lcr_carrier,lcr_rate,lcr_user_rate")) {
+					switch_channel_set_variable_printf(channel, "import", "%s,lcr_carrier,lcr_rate,lcr_user_rate", tmp);
 				}
 			}
 			free(dig_stream.data);
