@@ -355,7 +355,7 @@ const char *ESLevent::serialize(const char *format)
 		return "";
 	}
 
-	if (!strcasecmp(format, "json")) {
+	if (format && !strcasecmp(format, "json")) {
 		esl_event_serialize_json(event, &serialized_string);
 		return serialized_string;
 	}
