@@ -710,6 +710,11 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			const char *col1 = NULL, *col2 = NULL;
+			long epoch_start = 0;
+			char date[80] = "";
+			switch_time_t ts;
+			switch_time_exp_t tm;
+			switch_size_t retsize;
 			
 			if (switch_true(switch_channel_get_variable(channel, "fifo_bridged"))) {
 				return SWITCH_STATUS_SUCCESS;
@@ -760,6 +765,29 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_safe_free(sql);
 			
 
+			epoch_start = (long)switch_epoch_time_now(NULL);
+
+			ts = switch_micro_time_now();
+			switch_time_exp_lt(&tm, ts);
+			epoch_start = (long)switch_epoch_time_now(NULL);
+			switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+			switch_channel_set_variable(consumer_channel, "fifo_status", "TALKING");
+			switch_channel_set_variable(consumer_channel, "fifo_target", switch_core_session_get_uuid(caller_session));
+			switch_channel_set_variable(consumer_channel, "fifo_timestamp", date);
+			switch_channel_set_variable_printf(consumer_channel, "fifo_epoch_start_bridge", "%ld", epoch_start);
+			switch_channel_set_variable(consumer_channel, "fifo_role", "consumer");
+			
+			switch_channel_set_variable(caller_channel, "fifo_status", "TALKING");
+			switch_channel_set_variable(caller_channel, "fifo_timestamp", date);
+			switch_channel_set_variable_printf(caller_channel, "fifo_epoch_start_bridge", "%ld", epoch_start);
+			switch_channel_set_variable(caller_channel, "fifo_target", switch_core_session_get_uuid(session));
+			switch_channel_set_variable(caller_channel, "fifo_role", "caller");
+
+
+
+			switch_channel_set_variable(consumer_channel, "fifo_role", "consumer");
+			switch_channel_set_variable(caller_channel, "fifo_role", "caller");
+
 			switch_channel_set_variable(consumer_channel, "fifo_bridged", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_manual_bridge", "true");
 
@@ -772,24 +800,37 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				switch_time_exp_t tm;
 				switch_time_t ts = switch_micro_time_now();
 				switch_size_t retsize;
-			
+				long epoch_start = 0, epoch_end = 0;
+				const char *epoch_start_a = NULL;
+
 				switch_channel_set_variable(channel, "fifo_bridged", NULL);
 				
 				ts = switch_micro_time_now();
 				switch_time_exp_lt(&tm, ts);
 				switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-
+				
 				sql = switch_mprintf("delete from fifo_bridge where consumer_uuid='%q'", switch_core_session_get_uuid(consumer_session));
 				fifo_execute_sql(sql, globals.sql_mutex);
 				switch_safe_free(sql);
 
 				switch_channel_set_variable(consumer_channel, "fifo_status", "WAITING");
 				switch_channel_set_variable(consumer_channel, "fifo_timestamp", date);
-			
+				
 				switch_channel_set_variable(caller_channel, "fifo_status", "DONE");
 				switch_channel_set_variable(caller_channel, "fifo_timestamp", date);
 
+				if ((epoch_start_a = switch_channel_get_variable(consumer_channel, "fifo_epoch_start_bridge"))) {
+					epoch_start = atol(epoch_start_a);
+				}
+				
+				epoch_end = (long)switch_epoch_time_now(NULL);
 
+				switch_channel_set_variable_printf(consumer_channel, "fifo_epoch_stop_bridge", "%ld", epoch_end);
+				switch_channel_set_variable_printf(consumer_channel, "fifo_bridge_seconds", "%d", epoch_end - epoch_start);
+				
+				switch_channel_set_variable_printf(caller_channel, "fifo_epoch_stop_bridge", "%ld", epoch_end);
+				switch_channel_set_variable_printf(caller_channel, "fifo_bridge_seconds", "%d", epoch_end - epoch_start);
+				
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(consumer_channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", MANUAL_QUEUE_NAME);
@@ -2207,7 +2248,8 @@ SWITCH_STANDARD_APP(fifo_function)
 				const char *record_template = switch_channel_get_variable(channel, "fifo_record_template");
 				char *expanded = NULL;
 				char *sql = NULL;
-				
+				long epoch_start, epoch_end;
+
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
@@ -2274,14 +2316,19 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				ts = switch_micro_time_now();
 				switch_time_exp_lt(&tm, ts);
+				epoch_start = (long)switch_epoch_time_now(NULL);
 				switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 				switch_channel_set_variable(channel, "fifo_status", "TALKING");
 				switch_channel_set_variable(channel, "fifo_target", caller_uuid);
 				switch_channel_set_variable(channel, "fifo_timestamp", date);
+				switch_channel_set_variable_printf(channel, "fifo_epoch_start_bridge", "%ld", epoch_start);
+				switch_channel_set_variable(channel, "fifo_role", "consumer");
 
 				switch_channel_set_variable(other_channel, "fifo_status", "TALKING");
 				switch_channel_set_variable(other_channel, "fifo_timestamp", date);
+				switch_channel_set_variable_printf(other_channel, "fifo_epoch_start_bridge", "%ld", epoch_start);
 				switch_channel_set_variable(other_channel, "fifo_target", switch_core_session_get_uuid(session));
+				switch_channel_set_variable(other_channel, "fifo_role", "caller");
 
 				send_presence(node);
 
@@ -2354,6 +2401,14 @@ SWITCH_STANDARD_APP(fifo_function)
 					fifo_execute_sql(sql, globals.sql_mutex);
 					switch_safe_free(sql);
 				}
+
+				epoch_end = (long)switch_epoch_time_now(NULL);
+
+				switch_channel_set_variable_printf(channel, "fifo_epoch_stop_bridge", "%ld", epoch_end);
+				switch_channel_set_variable_printf(channel, "fifo_bridge_seconds", "%d", epoch_end - epoch_start);
+
+				switch_channel_set_variable_printf(other_channel, "fifo_epoch_stop_bridge", "%ld", epoch_end);
+				switch_channel_set_variable_printf(other_channel, "fifo_bridge_seconds", "%d", epoch_end - epoch_start);
 
 				sql = switch_mprintf("delete from fifo_bridge where consumer_uuid='%q'", switch_core_session_get_uuid(session));
 				fifo_execute_sql(sql, globals.sql_mutex);
