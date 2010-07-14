@@ -756,7 +756,6 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			}
 
 			sql = switch_mprintf("update fifo_outbound set %s=%s+1,%s=%s+1 where uuid='%q'", col1, col1, col2, col2, outbound_id);
-			printf("WTF [%s]\n", sql);
 			fifo_execute_sql(sql, globals.sql_mutex);
 			switch_safe_free(sql);
 			
