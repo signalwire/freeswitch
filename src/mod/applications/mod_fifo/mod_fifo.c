@@ -688,6 +688,14 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	const char *outbound_id;
 	char *sql;
 
+	switch (msg->message_id) {
+    case SWITCH_MESSAGE_INDICATE_BRIDGE:
+    case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+        break;
+    default:
+        return SWITCH_STATUS_SUCCESS;
+    }
+
 	channel = switch_core_session_get_channel(session);
 	outbound_id = switch_channel_get_variable(channel, "fifo_outbound_uuid");
 
