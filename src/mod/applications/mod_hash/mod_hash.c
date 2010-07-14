@@ -486,7 +486,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 {
-	switch_hash_index_t *hi = NULL;
+	switch_hash_index_t *hi;
 	
 	switch_scheduler_del_task_group("mod_hash");
 
