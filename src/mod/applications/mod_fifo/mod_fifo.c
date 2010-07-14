@@ -3218,7 +3218,7 @@ static switch_status_t load_config(int reload, int del_all)
 		goto done;
 	}
 
-	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or manual_calls_in < 0", "drop table fifo_outbound", outbound_sql);
+	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or manual_calls_in_total_count < 0", "drop table fifo_outbound", outbound_sql);
 	switch_cache_db_test_reactive(dbh, "delete from fifo_bridge", "drop table fifo_bridge", bridge_sql);
 	switch_cache_db_release_db_handle(&dbh);
 
