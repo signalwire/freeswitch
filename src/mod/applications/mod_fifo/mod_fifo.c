@@ -2663,10 +2663,19 @@ static int xml_outbound(switch_xml_t xml, fifo_node_t *node, char *container, ch
 	char *sql;
 
 	if (!strcmp(node->name, MANUAL_QUEUE_NAME)) {
-		sql = strdup("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, "
-					 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, "
-					 "hostname, taking_calls, status, outbound_call_total_count, outbound_fail_total_count, active_time, inactive_time, "
-					 "manual_calls_out_count, manual_calls_in_count, manual_calls_out_total_count, manual_calls_in_total_count from fifo_outbound");
+
+		sql = switch_mprintf("select uuid, '%s', originate_string, simo_count, use_count, timeout,"
+							 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count,"
+							 "hostname, taking_calls, status, outbound_call_total_count, outbound_fail_total_count, active_time, inactive_time,"
+							 "manual_calls_out_count, manual_calls_in_count, manual_calls_out_total_count, manual_calls_in_total_count from fifo_outbound "
+							 "group by "
+							 "uuid, originate_string, simo_count, use_count, timeout,"
+							 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count,"
+							 "hostname, taking_calls, status, outbound_call_total_count, outbound_fail_total_count, active_time, inactive_time,"
+							 "manual_calls_out_count, manual_calls_in_count, manual_calls_out_total_count, manual_calls_in_total_count",
+							 MANUAL_QUEUE_NAME);
+
+
 	} else {
 		sql = switch_mprintf("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, "
 							 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, "
