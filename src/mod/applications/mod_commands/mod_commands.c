@@ -4279,12 +4279,17 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define LIMIT_HASH_USAGE_USAGE "<backend> <realm> <id> [rate]"
+#define LIMIT_HASH_USAGE_USAGE "<realm> <id> [rate] (Using deprecated limit api, check limit_usage with backend param)"
 SWITCH_STANDARD_API(limit_hash_usage_function)
 {
 	char *mydata = NULL;
-	mydata = switch_core_session_sprintf(session, "hash %s", cmd);
-	return limit_usage_function(mydata, session, stream);
+	if (!zstr(cmd)) {
+		mydata = switch_core_session_sprintf(session, "hash %s", cmd);
+		return limit_usage_function(mydata, session, stream);
+	} else {
+		stream->write_function(stream, "USAGE: limit_hash_usage %s\n", LIMIT_HASH_USAGE_USAGE);
+		return SWITCH_STATUS_SUCCESS;
+	}
 }
 
 #define LIMIT_STATUS_USAGE "<backend>"
