@@ -691,6 +691,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	switch (msg->message_id) {
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+    case SWITCH_MESSAGE_INDICATE_DISPLAY:
         break;
     default:
         return SWITCH_STATUS_SUCCESS;
@@ -718,7 +719,9 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		sql = switch_mprintf("update fifo_bridge set caller_caller_id_name='%q', caller_caller_id_number='%q' where consumer_uuid='%q'",
 							 switch_core_session_get_uuid(session));
-		break;
+		fifo_execute_sql(sql, globals.sql_mutex);
+		switch_safe_free(sql);
+		return SWITCH_STATUS_SUCCESS;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			const char *col1 = NULL, *col2 = NULL;
