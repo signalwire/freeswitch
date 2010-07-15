@@ -1979,6 +1979,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
+SWITCH_DECLARE(switch_time_t) switch_time_ref(void);
 SWITCH_DECLARE(void) switch_time_sync(void);
 /*! 
  \brief Get the current epoch time

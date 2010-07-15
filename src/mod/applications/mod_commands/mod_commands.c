@@ -235,9 +235,9 @@ SWITCH_STANDARD_API(time_test_function)
 	}
 
 	for (x = 1; x <= max; x++) {
-		then = switch_time_now();
+		then = switch_time_ref();
 		switch_yield(mss);
-		now = switch_time_now();
+		now = switch_time_ref();
 		diff = (int) (now - then);
 		stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
 		total += diff;
@@ -299,17 +299,17 @@ SWITCH_STANDARD_API(timer_test_function)
 		goto end;
 	}
 
-	start = switch_time_now();
+	start = switch_time_ref();
 	for (x = 1; x <= max; x++) {
-		then = switch_time_now();
+		then = switch_time_ref();
 		switch_core_timer_next(&timer);
-		now = switch_time_now();
+		now = switch_time_ref();
 		diff = (int) (now - then);
 		//stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: %d sleep %d %d\n", x, mss, diff);
 		total += diff;
 	}
-	end = switch_time_now();
+	end = switch_time_ref();
 
 	switch_yield(250000);
 
