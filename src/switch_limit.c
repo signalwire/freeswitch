@@ -81,19 +81,18 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	const char *vval = switch_channel_get_variable(channel, LIMIT_IGNORE_TRANSFER_VARIABLE);
 	const char *backendlist = switch_channel_get_variable(channel, LIMIT_BACKEND_VARIABLE);
-	int argc = 0;
-	char *argv[6] = { 0 };
-	char *mydata = NULL;
 	
 	if (zstr(backendlist)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unset limit backendlist!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unset limit backendlist!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	mydata = strdup(backendlist);
-	
 	if (state >= CS_HANGUP || (state == CS_ROUTING && !switch_true(vval))) {
+		int argc = 0;
+		char *argv[6] = { 0 };
+		char *mydata = strdup(backendlist);
 		int x;
+		
 		argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 		for (x = 0; x < argc; x++) {
 			switch_limit_release(argv[x], session, NULL, NULL);
@@ -101,7 +100,10 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 		switch_core_event_hook_remove_state_change(session, limit_state_handler);
 		/* Remove limit_realm variable so we register another hook if limit is called again */
 		switch_channel_set_variable(channel, "limit_realm", NULL);
+		
+		free(mydata);
 	}
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -117,7 +119,7 @@ SWITCH_DECLARE(switch_status_t) switch_limit_incr(const char *backend, switch_co
 
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
 
@@ -149,7 +151,7 @@ SWITCH_DECLARE(switch_status_t) switch_limit_release(const char *backend, switch
 	
 	/* locate impl, call appropriate func */
 	if (!(limit = get_backend(backend))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
 	
