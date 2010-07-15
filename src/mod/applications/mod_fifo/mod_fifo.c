@@ -730,7 +730,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_time_t ts;
 			switch_time_exp_t tm;
 			switch_size_t retsize;
-			const char *cid_name, *cid_number;
+			const char *ced_name, *ced_number, *cid_name, *cid_number;
 
 			if (switch_true(switch_channel_get_variable(channel, "fifo_bridged"))) {
 				return SWITCH_STATUS_SUCCESS;
@@ -753,16 +753,19 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				switch_event_fire(&event);
 			}
 			
-			cid_name = switch_channel_get_variable(consumer_channel, "callee_id_name");
-			cid_number = switch_channel_get_variable(consumer_channel, "callee_id_number");
+			ced_name = switch_channel_get_variable(consumer_channel, "callee_id_name");
+			ced_number = switch_channel_get_variable(consumer_channel, "callee_id_number");
 
-			if (zstr(cid_name)) {
-				cid_name = cid_number;
+			cid_name = switch_channel_get_variable(consumer_channel, "caller_id_name");
+			cid_number = switch_channel_get_variable(consumer_channel, "caller_id_number");
+			
+			if (zstr(ced_name) || !strcmp(ced_name, cid_name)) {
+				ced_name = ced_number;
 			}
 
-			if (zstr(cid_number)) {
-				cid_name = switch_channel_get_variable(consumer_channel, "destination_number");
-				cid_number = cid_name;
+			if (zstr(ced_number) || !strcmp(ced_number, cid_number)) {
+				ced_name = switch_channel_get_variable(consumer_channel, "destination_number");
+				ced_number = ced_name;
 			}
 			
 			sql = switch_mprintf("insert into fifo_bridge "
@@ -770,8 +773,8 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 								 "values ('%q','%q','%q','%q','%q','%q',%ld)",
 								 MANUAL_QUEUE_NAME,
 								 switch_core_session_get_uuid(other_session),
-								 cid_name,
-								 cid_number,
+								 ced_name,
+								 ced_number,
 								 switch_core_session_get_uuid(session),
 								 switch_str_nil(outbound_id),
 								 (long) switch_epoch_time_now(NULL)
