@@ -38,6 +38,16 @@
 
 struct switch_session_manager session_manager;
 
+SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec)
+{
+	session->soft_lock = sec;
+}
+
+SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session)
+{
+	session->soft_lock = 0;
+}
+
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)
 #else
@@ -1174,6 +1184,21 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 
 	switch_core_session_run(session);
 	switch_core_media_bug_remove_all(session);
+
+	if (session->soft_lock) {
+		uint32_t loops = session->soft_lock * 10;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Soft-Locked, "
+						  "Waiting %u for external entities\n",
+						  session->id, switch_channel_get_name(session->channel), session->soft_lock);
+
+		while(--loops > 0) {
+			if (!session->soft_lock) break;
+			switch_yield(100000);
+		}
+
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Locked, Waiting on external entities\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
