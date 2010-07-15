@@ -1230,7 +1230,9 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 
 	switch_mutex_lock(channel->flag_mutex);
 	if (flag == CF_LEG_HOLDING && !channel->flags[flag] && channel->flags[CF_ANSWERED]) {
+		switch_mutex_unlock(channel->flag_mutex);
 		switch_channel_set_callstate(channel, CCS_HELD);
+		switch_mutex_lock(channel->flag_mutex);
 	}
 	channel->flags[flag] = value;
 	switch_mutex_unlock(channel->flag_mutex);
