@@ -715,6 +715,10 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_DISPLAY:
+		sql = switch_mprintf("update fifo_bridge set caller_caller_id_name='%q', caller_caller_id_number='%q' where consumer_uuid='%q'",
+							 switch_core_session_get_uuid(session));
+		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			const char *col1 = NULL, *col2 = NULL;
@@ -723,7 +727,8 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_time_t ts;
 			switch_time_exp_t tm;
 			switch_size_t retsize;
-			
+			const char *cid_name, *cid_number;
+
 			if (switch_true(switch_channel_get_variable(channel, "fifo_bridged"))) {
 				return SWITCH_STATUS_SUCCESS;
 			}
@@ -745,13 +750,25 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				switch_event_fire(&event);
 			}
 			
+			cid_name = switch_channel_get_variable(consumer_channel, "callee_id_name");
+			cid_number = switch_channel_get_variable(consumer_channel, "callee_id_number");
+
+			if (zstr(cid_name)) {
+				cid_name = cid_number;
+			}
+
+			if (zstr(cid_number)) {
+				cid_name = switch_channel_get_variable(consumer_channel, "destination_number");
+				cid_number = cid_name;
+			}
+			
 			sql = switch_mprintf("insert into fifo_bridge "
 								 "(fifo_name,caller_uuid,caller_caller_id_name,caller_caller_id_number,consumer_uuid,consumer_outgoing_uuid,bridge_start) "
 								 "values ('%q','%q','%q','%q','%q','%q',%ld)",
 								 MANUAL_QUEUE_NAME,
 								 switch_core_session_get_uuid(other_session),
-								 switch_str_nil(switch_channel_get_variable(other_channel, "caller_id_name")),
-								 switch_str_nil(switch_channel_get_variable(other_channel, "caller_id_number")),
+								 cid_name,
+								 cid_number,
 								 switch_core_session_get_uuid(session),
 								 switch_str_nil(outbound_id),
 								 (long) switch_epoch_time_now(NULL)
