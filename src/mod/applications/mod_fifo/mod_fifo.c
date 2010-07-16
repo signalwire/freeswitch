@@ -1111,27 +1111,53 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	
 	if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
-		for (i = 0; i < cbh->rowcount; i++) {
-			struct call_helper *h = cbh->rows[i];
-			char *sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1, "
-									   "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%q' and ring_count > 0",
-									   (long) switch_epoch_time_now(NULL), h->uuid);
-			fifo_execute_sql(sql, globals.sql_mutex);
-			switch_safe_free(sql);
-
-		}
+		const char *acceptable = "false";
 		
+		switch (cause) {
+		case SWITCH_CAUSE_ORIGINATOR_CANCEL:
+		case SWITCH_CAUSE_PICKED_OFF:
+			{
+				acceptable = "true";
+
+				for (i = 0; i < cbh->rowcount; i++) {
+					struct call_helper *h = cbh->rows[i];
+					char *sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1 "
+											   "where uuid='%q' and ring_count > 0", h->uuid);
+					fifo_execute_sql(sql, globals.sql_mutex);
+					switch_safe_free(sql);
+				}
+		
+			}
+			break;
+		default:
+			{
+				for (i = 0; i < cbh->rowcount; i++) {
+					struct call_helper *h = cbh->rows[i];
+					char *sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1, "
+											   "outbound_fail_count=outbound_fail_count+1, "
+											   "outbound_fail_total_count = outbound_fail_total_count+1, "
+											   "next_avail=%ld + lag where uuid='%q' and ring_count > 0",
+											   (long) switch_epoch_time_now(NULL), h->uuid);
+					fifo_execute_sql(sql, globals.sql_mutex);
+					switch_safe_free(sql);
+
+				}
+			}
+		}
+
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", node->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "post-dial");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "outbound-strategy", "ringall");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller-uuid", id);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "result", "failure");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "acceptable", acceptable);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cause", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "originate_string", originate_string);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Outbound-UUID-List", uuid_list);
 			switch_event_fire(&event);
 		}
+		
 		goto end;
 	}
 
@@ -1512,32 +1538,29 @@ static int stop_node_thread(void)
 
 static void check_ocancel(switch_core_session_t *session)
 {
-	switch_channel_t *channel;
-	const char *var;
+	//switch_channel_t *channel;
+	//const char *var;
 
 	switch_assert(session);
 
-	channel = switch_core_session_get_channel(session);
+	//channel = switch_core_session_get_channel(session);
 
-	if (!switch_channel_test_flag(channel, CF_TRANSFER) && (var = switch_channel_get_variable(channel, "fifo_originate_uuid"))) {
-		switch_core_session_hupall_matching_var("fifo_originate_uuid", var, 
-												switch_channel_test_flag(channel, CF_ANSWERED) ? 
-												SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_ORIGINATOR_CANCEL);
-	}
+	cancel_outbound_call(switch_core_session_get_uuid(session), SWITCH_CAUSE_ORIGINATOR_CANCEL);
+
 }
 
 
 static void check_cancel(fifo_node_t *node)
 {
-	int ppl_waiting = node_consumer_wait_count(node);
+    int ppl_waiting = node_consumer_wait_count(node);
 
-	if (node->ring_consumer_count > 0 && ppl_waiting < 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound call count (%d) exceeds required value for queue %s (%d), "
-						  "Ending extraneous calls\n", node->ring_consumer_count, node->name, ppl_waiting);
+    if (node->ring_consumer_count > 0 && ppl_waiting < 1) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound call count (%d) exceeds required value for queue %s (%d), "
+                          "Ending extraneous calls\n", node->ring_consumer_count, node->name, ppl_waiting);
 
-		
-		switch_core_session_hupall_matching_var("fifo_hangup_check", node->name, SWITCH_CAUSE_ORIGINATOR_CANCEL);
-	}
+
+        switch_core_session_hupall_matching_var("fifo_hangup_check", node->name, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+    }
 }
 
 static void send_presence(fifo_node_t *node)
