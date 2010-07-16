@@ -32,6 +32,8 @@
  */
 
 #include <switch.h>
+#define QUOTED_ESC_COMMA 1
+#define UNQUOTED_ESC_COMMA 2
 
 static const switch_state_handler_table_t originate_state_handlers;
 
@@ -2268,6 +2270,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		for (r = 0; r < or_argc; r++) {
 			char *p, *end = NULL;
 			const char *var_begin, *var_end;
+			int q = 0;
 			oglobals.hups = 0;
 
 			reason = SWITCH_CAUSE_NONE;
@@ -2287,6 +2290,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			oglobals.sent_ring = 0;
 			oglobals.progress = 0;
 			myflags = dftflags;
+			
 
 			if (try > 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries,
@@ -2308,8 +2312,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					end = switch_find_end_paren(p, '[', ']');
 				}
 
+				if (*p == '\'') {
+					q = !q;
+				}
+
 				if (end && p < end && *p == ',') {
-					*p = '|';
+					if (q) {
+						*p = QUOTED_ESC_COMMA;
+					} else {
+						*p = UNQUOTED_ESC_COMMA;
+					}
 				}
 
 				if (p == end) {
@@ -2450,7 +2462,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (vdata && (var_begin = switch_stristr("origination_uuid=", vdata))) {
 					char tmp[512] = "";
 					var_begin += strlen("origination_uuid=");
-					var_end = strchr(var_begin, '|');
+					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
 
 					if (var_end) {
 						strncpy(tmp, var_begin, var_end - var_begin);
@@ -2467,7 +2479,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (vdata && (var_begin = switch_stristr("origination_caller_id_number=", vdata))) {
 					var_begin += strlen("origination_caller_id_number=");
-					var_end = strchr(var_begin, '|');
+					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
 
 					if (var_end) {
 						strncpy(variable_buffer, var_begin, var_end - var_begin);
@@ -2487,7 +2499,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (vdata && (var_begin = switch_stristr("origination_caller_id_name=", vdata))) {
 					var_begin += strlen("origination_caller_id_name=");
-					var_end = strchr(var_begin, '|');
+					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
 
 					if (var_end) {
 						strncpy(variable_buffer, var_begin, var_end - var_begin);
@@ -2507,7 +2519,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (vdata && (var_begin = switch_stristr("origination_privacy=", vdata))) {
 					var_begin += strlen("origination_privacy=");
-					var_end = strchr(var_begin, '|');
+					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
 
 					if (var_end) {
 						strncpy(variable_buffer, var_begin, var_end - var_begin);
@@ -2556,16 +2568,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 						}
 						
-						if ((var_count = switch_separate_string(vdata, '|', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+						if ((var_count = switch_separate_string(vdata, UNQUOTED_ESC_COMMA, var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
 							int x = 0;
 							for (x = 0; x < var_count; x++) {
 								char *inner_var_array[2] = { 0 };
 								int inner_var_count;
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "local variable string %d = [%s]\n", 
-												  x, var_array[x]);
+								char *p;
+
+								for (p = var_array[x]; p && *p; p++) {
+									if (*p == QUOTED_ESC_COMMA) {
+										*p = ',';
+									}
+								}
+
+
+								
 								if ((inner_var_count =
 									 switch_separate_string(var_array[x], '=',
 														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+									
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "local variable string %d = [%s=%s]\n", 
+													  x, inner_var_array[0], inner_var_array[1]);
 									switch_event_add_header_string(local_var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 									
 								}
