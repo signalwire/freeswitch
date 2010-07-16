@@ -1226,17 +1226,21 @@ SWITCH_DECLARE(char *) switch_channel_get_cap_string(switch_channel_t *channel)
 
 SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, switch_channel_flag_t flag, uint32_t value)
 {
+	int HELD = 0;
+	
 	switch_assert(channel);
 	switch_assert(channel->flag_mutex);
 
 	switch_mutex_lock(channel->flag_mutex);
 	if (flag == CF_LEG_HOLDING && !channel->flags[flag] && channel->flags[CF_ANSWERED]) {
-		switch_mutex_unlock(channel->flag_mutex);
-		switch_channel_set_callstate(channel, CCS_HELD);
-		switch_mutex_lock(channel->flag_mutex);
+		HELD = 1;
 	}
 	channel->flags[flag] = value;
 	switch_mutex_unlock(channel->flag_mutex);
+
+	if (HELD) {
+		switch_channel_set_callstate(channel, CCS_HELD);
+	}
 
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", "true");
@@ -1319,15 +1323,21 @@ SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, sw
 
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
+	int ACTIVE = 0;
+
 	switch_assert(channel != NULL);
 	switch_assert(channel->flag_mutex);
 
 	switch_mutex_lock(channel->flag_mutex);
 	if (flag == CF_LEG_HOLDING && channel->flags[flag] && channel->flags[CF_ANSWERED]) {
-		switch_channel_set_callstate(channel, CCS_ACTIVE);
+		ACTIVE = 1;
 	}
 	channel->flags[flag] = 0;
 	switch_mutex_unlock(channel->flag_mutex);
+
+	if (ACTIVE) {
+		switch_channel_set_callstate(channel, CCS_ACTIVE);
+	}
 
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", NULL);
