@@ -1599,7 +1599,7 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = atoi(argv[1]);
 			}
 			switch_core_session_ctl(SCSC_MAX_SESSIONS, &arg);
-			stream->write_function(stream, "+OK max sessions: %f\n", arg);
+			stream->write_function(stream, "+OK max sessions: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "min_idle_cpu")) {
 			double d = -1;
 			
