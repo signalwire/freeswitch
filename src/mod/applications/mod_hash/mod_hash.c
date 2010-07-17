@@ -597,14 +597,14 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 {
 	limit_remote_t *remote = (limit_remote_t*)obj;
 	while (remote->state > REMOTE_OFF) {
-		if (remote->state == REMOTE_OFF) {
+		if (remote->state != REMOTE_UP) {
 			if  (esl_connect(&remote->handle, remote->host, remote->port, remote->username, remote->password) == ESL_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH at %s:%d\n",
 					remote->host, remote->port);
 				
 				remote->state = REMOTE_UP;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't connect to remote FreeSWITCH at %s;%d\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't connect to remote FreeSWITCH at %s:%d\n",
 					remote->host, remote->port);
 			}
 		} else {
@@ -661,6 +661,7 @@ static void do_config()
 				switch_thread_create(&remote->thread, thd_attr, limit_remote_thread, remote, remote->pool);
 			}
 		}
+		switch_xml_free(xml);
 	}
 }
 
