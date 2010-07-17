@@ -2077,12 +2077,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
-	if ((rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
-		*bytes < rtp_header_len ||
-		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+	if (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
@@ -2539,11 +2537,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-		if (bytes < rtp_header_len) {
-			bytes = 0;
-			goto do_continue;
-		}
-
 		if (bytes) {
 			rtp_session->missed_count = 0;
 
@@ -2674,7 +2667,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		   we put up with as much as we can so we don't have to deal with being punished for
 		   doing it right. Nice guys finish last!
 		*/
-		if (bytes > rtp_header_len && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
+		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 			switch_size_t len = bytes - rtp_header_len;
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
@@ -2966,9 +2959,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 		*datalen = 0;
 		return SWITCH_STATUS_BREAK;
 	} else {
-		if (bytes > rtp_header_len) {
-			bytes -= rtp_header_len;
-		}
+		bytes -= rtp_header_len;
 	}
 
 	*datalen = bytes;
@@ -3078,7 +3069,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	if (bytes < 0) {
 		frame->datalen = 0;
 		return bytes == -2 ? SWITCH_STATUS_TIMEOUT : SWITCH_STATUS_GENERR;
-	} else if (bytes < rtp_header_len) {
+	} else if (bytes == 0) {
 		frame->datalen = 0;
 		return SWITCH_STATUS_BREAK;
 	} else {
@@ -3107,9 +3098,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 		*datalen = 0;
 		return SWITCH_STATUS_GENERR;
 	} else {
-		if (bytes > rtp_header_len) {
-			bytes -= rtp_header_len;
-		}
+		bytes -= rtp_header_len;
 	}
 
 	*datalen = bytes;
@@ -3137,9 +3126,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			send_msg->header.pt = rtp_session->te;
 		}
 		data = send_msg->body;
-		if (datalen > rtp_header_len) {
-			datalen -= rtp_header_len;
-		}
+		datalen -= rtp_header_len;
 	} else {
 		uint8_t m = 0;
 
