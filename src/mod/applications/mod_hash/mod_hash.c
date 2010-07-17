@@ -484,9 +484,9 @@ SWITCH_STANDARD_API(hash_dump_function)
 	if (!strcmp(cmd, "all")) {
 		mode = 3;
 	} else if (!strcmp(cmd, "limit")) {
-		mode = 2;
-	} else if (!strcmp(cmd, "db")) {
 		mode = 1;
+	} else if (!strcmp(cmd, "db")) {
+		mode = 2;
 	} else {
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -608,13 +608,14 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 					remote->host, remote->port);
 			}
 		} else {
-			if (esl_send_recv(&remote->handle, "api hash_dump limit") != SWITCH_STATUS_SUCCESS) {
+			if (esl_send_recv(&remote->handle, "api hash_dump limit") != ESL_SUCCESS) {
 				esl_disconnect(&remote->handle);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Disconnected from remote FreeSWITCH at %s:%d\n",
 					remote->host, remote->port);
 				memset(&remote->handle, 0, sizeof(remote->handle));
+				remote->state = REMOTE_DOWN;
 			} else {
-				const char *data = remote->handle.last_sr_reply;
+				const char *data = esl_event_get_header(remote->handle.last_sr_event, "reply-text");
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RECV: %s\n", data);
 			}
 		}
