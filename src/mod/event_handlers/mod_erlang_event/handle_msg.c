@@ -205,18 +205,22 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 			/* Relay the status back to the fetch responder. */
 			if (status == is_waiting) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", uuid_str);
+				ei_x_encode_tuple_header(rbuf, 2);
 				ei_x_encode_atom(rbuf, "ok");
+				_ei_x_encode_string(rbuf, uuid_str);
 				/* Return here to avoid freeing the reply. */
 				return SWITCH_STATUS_SUCCESS;
 			} else if (status == is_timeout) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", uuid_str);
-				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_tuple_header(rbuf, 3);
 				ei_x_encode_atom(rbuf, "error");
+				_ei_x_encode_string(rbuf, uuid_str);
 				ei_x_encode_atom(rbuf, "timeout");
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", uuid_str);
-				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_tuple_header(rbuf, 3);
 				ei_x_encode_atom(rbuf, "error");
+				_ei_x_encode_string(rbuf, uuid_str);
 				ei_x_encode_atom(rbuf, "duplicate_response");
 			}
 		} else {

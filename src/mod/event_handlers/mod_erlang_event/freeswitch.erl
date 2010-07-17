@@ -19,7 +19,7 @@
 		get_event_header/2, get_event_body/1,
 		get_event_name/1, getpid/1, sendmsg/3,
 		sendevent/3, sendevent_custom/3, handlecall/2, handlecall/3, start_fetch_handler/5,
-		start_log_handler/4, start_event_handler/4]).
+		start_log_handler/4, start_event_handler/4, fetch_reply/3]).
 -define(TIMEOUT, 5000).
 
 %% @doc Return the value for a specific header in an event or `{error,notfound}'.
@@ -55,8 +55,20 @@ send(Node, Term) ->
 		Response ->
 			Response
 	after ?TIMEOUT ->
-		timeout
+			timeout
 	end.
+
+fetch_reply(Node, FetchID, Reply) ->
+	{send, Node} ! {fetch_reply, FetchID, Reply},
+	receive
+		{ok, FetchID} ->
+			ok;
+		{error, FetchID, Reason} ->
+			{error, Reason}
+	after ?TIMEOUT ->
+			timeout
+	end.
+
 
 %% @doc Make a blocking API call to FreeSWITCH. The result of the API call is
 %% returned or `timeout' if FreeSWITCH fails to respond.
@@ -268,7 +280,6 @@ start_handler(Node, Type, Module, Function, State) ->
 		{foo, Node} ! Type,
 		receive
 			ok ->
-				io:format("OK!!!!!!!~n"),
 				Self ! {Type, {ok, self()}},
 				apply(Module, Function, [Node, State]);
 			{error,Reason} ->

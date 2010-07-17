@@ -460,6 +460,11 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
 
+	if (type == ERL_NIL_EXT) {
+		// empty string returned
+		goto cleanup;
+	}
+
 	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) {	/* XXX no unicode or character codes > 255 */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XML fetch response contained non ASCII characters? (was type %d of size %d)\n", type,
 						  size);
