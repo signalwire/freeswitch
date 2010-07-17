@@ -172,7 +172,7 @@ struct esl_event {
 };
 
 typedef enum {
-	EF_UNIQ_HEADERS = (1 << 0)
+	ESL_UNIQ_HEADERS = (1 << 0)
 } esl_event_flag_t;
 
 
