@@ -684,6 +684,12 @@ void sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
+
+	if (!sofia_test_pflag(profile, PFLAG_RUNNING)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile is shutting down.\n");
+		return;
+	}
+
 	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be 
 	  freed whenever the request is done */
 	if (nh && sofia_private == &mod_sofia_globals.keep_private) {

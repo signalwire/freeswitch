@@ -1823,7 +1823,7 @@ static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, j
 
 		var = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		val = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		switch_channel_set_variable(channel, var, val);
+		switch_channel_set_variable_var_check(channel, var, val, SWITCH_FALSE);
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 	} else {
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);

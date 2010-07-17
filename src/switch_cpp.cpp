@@ -623,7 +623,7 @@ SWITCH_DECLARE(void) CoreSession::setVariable(char *var, char *val)
 {
 	this_check_void();
 	sanity_check_noreturn;
-    switch_channel_set_variable(channel, var, val);
+	switch_channel_set_variable_var_check(channel, var, val, SWITCH_FALSE);
 }
 
 SWITCH_DECLARE(const char *)CoreSession::getVariable(char *var)

@@ -38,6 +38,16 @@
 
 struct switch_session_manager session_manager;
 
+SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec)
+{
+	session->soft_lock = sec;
+}
+
+SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session)
+{
+	session->soft_lock = 0;
+}
+
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)
 #else
@@ -569,14 +579,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	switch_assert(session != NULL);
 
-	if (switch_channel_down(session->channel)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if ((status = switch_core_session_read_lock(session)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_session_read_lock_hangup(session)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
-
+	
 	if (!message->_file) {
 		message->_file = file;
 	}
@@ -610,7 +616,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		goto end;
 	}
 
-	if (session->endpoint_interface->io_routines->receive_message) {
+	if (switch_channel_down(session->channel)) {
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
+					  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s skip receive message [%s] (channel is hungup already)\n",
+					  switch_channel_get_name(session->channel), message_names[message->message_id]);
+	
+	} else if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
 	}
 
@@ -626,28 +637,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	message->_func = NULL;
 	message->_line = 0;
 
-
-	switch (message->message_id) {
-	case SWITCH_MESSAGE_REDIRECT_AUDIO:
-	case SWITCH_MESSAGE_INDICATE_ANSWER:
-	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-	case SWITCH_MESSAGE_INDICATE_TRANSFER:
-	case SWITCH_MESSAGE_INDICATE_RINGING:
-	case SWITCH_MESSAGE_INDICATE_MEDIA:
-	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
-	case SWITCH_MESSAGE_INDICATE_HOLD:
-	case SWITCH_MESSAGE_INDICATE_UNHOLD:
-	case SWITCH_MESSAGE_INDICATE_REDIRECT:
-	case SWITCH_MESSAGE_INDICATE_RESPOND:
-	case SWITCH_MESSAGE_INDICATE_BROADCAST:
-	case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
-	case SWITCH_MESSAGE_INDICATE_DEFLECT:
-		switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
-		break;
-	default:
-		break;
+	if (switch_channel_up(session->channel)) {
+		switch (message->message_id) {
+		case SWITCH_MESSAGE_REDIRECT_AUDIO:
+		case SWITCH_MESSAGE_INDICATE_ANSWER:
+		case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		case SWITCH_MESSAGE_INDICATE_TRANSFER:
+		case SWITCH_MESSAGE_INDICATE_RINGING:
+		case SWITCH_MESSAGE_INDICATE_MEDIA:
+		case SWITCH_MESSAGE_INDICATE_NOMEDIA:
+		case SWITCH_MESSAGE_INDICATE_HOLD:
+		case SWITCH_MESSAGE_INDICATE_UNHOLD:
+		case SWITCH_MESSAGE_INDICATE_REDIRECT:
+		case SWITCH_MESSAGE_INDICATE_RESPOND:
+		case SWITCH_MESSAGE_INDICATE_BROADCAST:
+		case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
+		case SWITCH_MESSAGE_INDICATE_DEFLECT:
+			switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+			break;
+		default:
+			break;
+		}
 	}
 
   end:
@@ -1172,6 +1184,21 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 
 	switch_core_session_run(session);
 	switch_core_media_bug_remove_all(session);
+
+	if (session->soft_lock) {
+		uint32_t loops = session->soft_lock * 10;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Soft-Locked, "
+						  "Waiting %u for external entities\n",
+						  session->id, switch_channel_get_name(session->channel), session->soft_lock);
+
+		while(--loops > 0) {
+			if (!session->soft_lock) break;
+			switch_yield(100000);
+		}
+
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session %" SWITCH_SIZE_T_FMT " (%s) Locked, Waiting on external entities\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);

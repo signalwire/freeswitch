@@ -7,13 +7,15 @@ freeswitch (1.0.7)
 	build: apply fix for MODSOFIA-71 to windows build
 	build: Add more excludes to .gitignore (for Windows) (r:b6628d26/FSBUILD-269)
 	build: Bump version of en-us-callie sounds to 1.0.13 (r:ca0a69a3)
-	build: change build to use mod_spandsp instead of mod_fax and mod_voipcodecs (r: 988147a7)
-	build: add mod_spandsp to windows build (r: 4fa8be62)
+	build: change build to use mod_spandsp instead of mod_fax and mod_voipcodecs (r:988147a7)
+	build: add mod_spandsp to windows build (r:4fa8be62)
+	build: merge -j option for bootstrap (r:abb7d2e5/FSBUILD-237)
+	build: dont fail on bootstrap due to missing libs (r:ff960d78)
 	config: move limit.conf to db.conf
 	config: Update VM phrase macros to voice option then action on main, config menus
 	config: Remove 99xx extension numbers to avoid dp conflicts (r:0c9bb174/DP-17)
 	config: update config example for caller-id-type (r:8f03a7cd)
-	config: default to 48k since most sound cards can do that (r: 170404a4)
+	config: default to 48k since most sound cards can do that (r:170404a4)
 	core: Add RTCP support (FSRTP-14)
 	core: handle some errors on missing db handle conditions
 	core: add ... and shutdown as a fail-safe when no modules are loaded
@@ -45,8 +47,9 @@ freeswitch (1.0.7)
 	core: (Win) bridge fails because session read lock failure (r:f8f91362/FSCORE-606)
 	core: Add option to hangup channel if record fails (r:a3e6bead/FSBUILD-591)
 	core: Crash when using tab completion on uuid_ commands (r:9637b89e/FSCORE-613)
-	core: fix uuid_media state change (r: 2cc59f1e/FSCORE-615)
-	core: add new callstate field to channels table (r: 0f133eae)
+	core: fix uuid_media state change (r:2cc59f1e/FSCORE-615)
+	core: add new callstate field to channels table (r:0f133eae)
+	core: fix leg_timeout issue (r:3fbd9e21/MODAPP-433)
 	embedded languages: Provide core level support for conditional Set Global Variable (r:c017c24b/FSCORE-612)
 	lang: Improve French phrase files (FSCONFIG-23)
 	libdingaling: fix race on shutdown causing crash (FSMOD-47)
@@ -59,7 +62,7 @@ freeswitch (1.0.7)
 	libsopenzap: Add CLI tracing
 	libspandsp: Fixed a typo in spandsp's msvc/inttypes.h Updated sig_tone processing in spandsp to the latest, to allow moy to proceed with his signaling work.
 	libspandsp: removed a saturate16 from spandsp that was causing problems fixed a typo in the MSVC inttypes.h file for spandsp
-	libspandsp: Changes to the signaling tone detector to detect concurrent 2400Hz + 2600Hz tones. This passes voice immunity and other key tests, but it bounces a bit when transitions like 2400 -> 2400+2600 -> 2600 occur. Transitions between tone off and tone on are clean. (r: bc13e944)
+	libspandsp: Changes to the signaling tone detector to detect concurrent 2400Hz + 2600Hz tones. This passes voice immunity and other key tests, but it bounces a bit when transitions like 2400 -> 2400+2600 -> 2600 occur. Transitions between tone off and tone on are clean. (r:bc13e944)
 	mod_avmd: Initial check in - Advanced Voicemail Detect (r:10c6a30a) (by Eric Des Courtis)
 	mod_avmd: Add to windows build (r:df4bd935)
 	mod_cidlookup: null xml is bad (r:095815f8)
@@ -67,9 +70,8 @@ freeswitch (1.0.7)
 	mod_commands: make break uuid_break and add cascade flag 
 	mod_commands: add uuid_autoanswer command (now uuid_phone_event)
 	mod_commands: expand last patch to do hold as well and rename the command to uuid_phone_event
-	mod_commands: make break uuid_break and add cascade flag
-	mod_commands: allow uuid_break to interrupt one or all in a delimited string of files the same as several individual files (r: eba05c3c)
-	mod_commands: add show channels count auto-completion for mod_commands (r: 5ffc57e5/FSMOD-54)
+	mod_commands: allow uuid_break to interrupt one or all in a delimited string of files the same as several individual files (r:eba05c3c)
+	mod_commands: add show channels count auto-completion for mod_commands (r:5ffc57e5/FSMOD-54)
 	mod_conference: Fix reporting of volume up/down (MODAPP-419)
 	mod_conference: add last talking time per member to conference xml list
 	mod_conference: add terminate-on-silence conference param
@@ -78,6 +80,8 @@ freeswitch (1.0.7)
 	mod_conference: fix relate nohear (r:f029ce07/MODAPP-428)
 	mod_db: fix stack corruption (MODAPP-407)
 	mod_dptools: add eavesdrop_enable_dtmf chan var (r:596c0012)
+	mod_dptools: Make park app not send 183 session progress (r:76932995/FSCORE-567)
+	mod_dptools: add block_dtmf and unblock_dtmf apps (r:d9eb0197)
 	mod_fifo: allow multiple dtmf to exit fifo, set fifo_caller_exit_key to specify which (MODAPP-420)
 	mod_freetdm: Fix for TON and NPI not passed through to channel variables on incoming calls
 	mod_freetdm: add pvt data to freetdm channels fix fxs features (r:9d456900)
@@ -93,19 +97,19 @@ freeswitch (1.0.7)
 	mod_freetdm: run sched in the background if requested (r:22e8a442)
 	mod_freetdm: fix makefile and remove binary app (r:63d9768d)
 	mod_freetdm: add trace/notrace commands to trace input and output from channels (r:f4da0e5c)
-	mod_freetdm: add logging when failing to read a frame in mod_freetdm (r: e596fc2e)
-	mod_freetdm: add new logging macro (r: 75be3da8)
-	mod_freetdm: check for hw dtmf before enabling (r: b1fd88d7)
-	mod_freetdm: adding ftmod_sangoma_ss7 support (r: 94283355)
-	mod_freetdm: added SIGEVENT_COLLISION (r: 501f8704)
+	mod_freetdm: add logging when failing to read a frame in mod_freetdm (r:e596fc2e)
+	mod_freetdm: add new logging macro (r:75be3da8)
+	mod_freetdm: check for hw dtmf before enabling (r:b1fd88d7)
+	mod_freetdm: adding ftmod_sangoma_ss7 support (r:94283355)
+	mod_freetdm: added SIGEVENT_COLLISION (r:501f8704)
 	mod_gsmopen: copy from branch
 	mod_java: fix eventConsumer issue and add flush() method (r:7fd3aff6)
-	mod_java: Allow user defined java methods to be called at startup and shutdown of JVM (r: 1339e218/MODLANG-117)
+	mod_java: Allow user defined java methods to be called at startup and shutdown of JVM (r:1339e218/MODLANG-117)
 	mod_lcr: Expand variables (MODAPP-418)
 	mod_lcr: add enable_sip_redir parameter (r:70bf7a0a/MODAPP-427)
 	mod_loopback: add loopback_bowout_on_execute var to make 1 legged loopback calls bow out of the picture
-	mod_loopback: only execute app once in app mode (r: 64f58f2d)
-	mod_managed: Added wrapper for switch_event_bind for .net (r: a5f07a80/MODLANG-165)
+	mod_loopback: only execute app once in app mode (r:64f58f2d)
+	mod_managed: Added wrapper for switch_event_bind for .net (r:a5f07a80/MODLANG-165)
 	mod_mp4v: MP4V-ES passthru for washibechi on IRC
 	mod_nibblebill: free allocated mem at shutdown; free properly if using custom_sql
 	mod_nibblebill: Add SAF_SUPPORT_NOMEDIA to nibblebill
@@ -122,7 +126,7 @@ freeswitch (1.0.7)
 	mod_sangoma_codec: Add sample config file
 	mod_sangoma_codec: added load/noload options for the supported codecs
 	mod_sangoma_codec: rename load/noload to register/noregister
-	mod_sangoma_codec: silence suppression (r: 73d9d56f)
+	mod_sangoma_codec: silence suppression (r:73d9d56f)
 	mod_say_es: fix grammar when saying dates and time (r:6bed19b2/MODAPP-429)
 	mod_say_zh: Number reading should now be OK for the whole range of integers for Cantonese and Mandarin
 	mod_skinny: Add the missing api files
@@ -154,12 +158,14 @@ freeswitch (1.0.7)
 	mod_sofia: fire an event for gateway ping
 	mod_sofia: initial handling of udptl and t.38 re-invite
 	mod_sofia: Implement "redirect server" functionality with 300 Multiple Choices (r:e15abcf9/BOUNTY-18)
-	mod_sofia: allow video negotiation on re-invite (r: be92e5d/SFSIP-211)
-	mod_sofia: use rfc recommended default session timeout of 30 min according to RFC 4028 4.2 (r: 52cd8cdd/MODSOFIA-76)
-	mod_sofia: add sip_force_audio_fmtp (r: 6360264f)
-	mod_sofia: add sip_copy_multipart to work like sip_copy_custom_headers (r: a291af57)
-	mod_sofia: Rename sofia_glue_get_user_host to switch_split_user_domain and move to switch_utils. To allow use by other modules. (r: 3f7cafd7)
-	mod_sofia: allow the profile gateway config to set sip_cid_type for each gateway (r: 0152706f/BOUNTY-19)
+	mod_sofia: allow video negotiation on re-invite (r:be92e5d/SFSIP-211)
+	mod_sofia: use rfc recommended default session timeout of 30 min according to RFC 4028 4.2 (r:52cd8cdd/MODSOFIA-76)
+	mod_sofia: add sip_force_audio_fmtp (r:6360264f)
+	mod_sofia: add sip_copy_multipart to work like sip_copy_custom_headers (r:a291af57)
+	mod_sofia: Rename sofia_glue_get_user_host to switch_split_user_domain and move to switch_utils. To allow use by other modules. (r:3f7cafd7)
+	mod_sofia: allow the profile gateway config to set sip_cid_type for each gateway (r:0152706f/BOUNTY-19)
+	mod_sofia: Adding subject to SEND_MESSAGE (r:2e347c93)
+	mod_sofia: add multiple rtp-ip support to sofia profiles add extra rtp-ip params to a profile to add more ip which will be used round-robin as new calls progress. (r:22569d4a)
 	mod_spandsp: initial checkin of mod_fax/mod_voipcodecs merge into mod_spandsp (r:fa9a59a8)
 	mod_spandsp: rework of new mod_spandsp to have functions broken up into different c files (r:65400642)
 	mod_spandsp: improve duplicate digit detection and add 'min_dup_digit_spacing_ms' channel variable for use with the dtmf detector (r:eab4f246/FSMOD-45)
@@ -175,9 +181,9 @@ freeswitch (1.0.7)
 	mod_xml_cdr: add force_process_cdr var to process b leg cdr on a case by case basis when b leg cdr is disabled (XML-17)
 	mod_xml_cdr: add leg param to query string (XML-24)
 	mod_xml_cdr: fix locked sessions (XML-26)
-	mod_xml_cdr: fix minor memory leaks and config bug (r: 19253d83/MODEVENT-62)
+	mod_xml_cdr: fix minor memory leaks and config bug (r:19253d83/MODEVENT-62)
 	sofia-sip: fix null derefernce segfault in soa (r:f356c5e6)
-	sofia-sip: extend timeout for session expires on short timeouts to be 90% of timeout instead of 1/3 to handle devices that do not refresh in time such as polycom (r: a7f48928/SFSIP-212)
+	sofia-sip: extend timeout for session expires on short timeouts to be 90% of timeout instead of 1/3 to handle devices that do not refresh in time such as polycom (r:a7f48928/SFSIP-212)
 	
 freeswitch (1.0.6)
 

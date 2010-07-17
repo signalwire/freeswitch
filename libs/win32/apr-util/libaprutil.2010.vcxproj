@@ -73,17 +73,10 @@
 if not exist "$(ProjectDir)..\..\apr-util\include\apu.h" type "$(ProjectDir)..\..\apr-util\include\apu.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_config.h" type "$(ProjectDir)..\..\apr-util\include\apu_config.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_config.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h" type "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h"
-if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir)..\..\apr-util\include\apu_want.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_want.h"</Command>
+if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir)..\..\apr-util\include\apu_want.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_want.h"
+xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
+</Command>
     </PreBuildEvent>
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>$(IntDir)libaprutil.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
@@ -100,7 +93,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -111,12 +103,7 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libaprutil.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
@@ -125,17 +112,9 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu.h" type "$(ProjectDir)..\.
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_config.h" type "$(ProjectDir)..\..\apr-util\include\apu_config.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_config.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h" type "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir)..\..\apr-util\include\apu_want.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_want.h"
+xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
-    <Midl>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>$(IntDir)libaprutil.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
@@ -152,7 +131,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -163,12 +141,7 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libaprutil.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
@@ -177,17 +150,9 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu.h" type "$(ProjectDir)..\.
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_config.h" type "$(ProjectDir)..\..\apr-util\include\apu_config.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_config.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h" type "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir)..\..\apr-util\include\apu_want.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_want.h"
+xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
-    <Midl>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>$(IntDir)libaprutil.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -206,7 +171,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -214,17 +178,11 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
       <OptimizeReferences>true</OptimizeReferences>
       <BaseAddress>0x6EE60000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <ImportLibrary>$(IntDir)libaprutil-1.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libaprutil.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
@@ -233,17 +191,9 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu.h" type "$(ProjectDir)..\.
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_config.h" type "$(ProjectDir)..\..\apr-util\include\apu_config.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_config.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h" type "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h"
 if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir)..\..\apr-util\include\apu_want.hw" &gt; "$(ProjectDir)..\..\apr-util\include\apu_want.h"
+xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
-    <Midl>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MkTypLibCompatible>true</MkTypLibCompatible>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>$(IntDir)libaprutil.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
-    </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -262,7 +212,6 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -274,12 +223,7 @@ if not exist "$(ProjectDir)..\..\apr-util\include\apu_want.h" type "$(ProjectDir
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libaprutil.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\apr-util\buckets\apr_brigade.c">

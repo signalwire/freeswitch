@@ -483,6 +483,7 @@ SWITCH_DECLARE(unsigned int) switch_core_session_started(_In_ switch_core_sessio
 
 SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(_In_ switch_size_t memory, _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
+
 /*! 
   \brief Allocate memory from the main pool with no intention of returning it
   \param _memory the number of bytes to allocate
@@ -697,6 +698,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_ses
   \return the log level
 */
 SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
+
+
+SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
+SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
+
 
 /*! 
   \brief Retrieve the unique identifier from the core
@@ -1973,6 +1979,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
+SWITCH_DECLARE(switch_time_t) switch_time_ref(void);
 SWITCH_DECLARE(void) switch_time_sync(void);
 /*! 
  \brief Get the current epoch time

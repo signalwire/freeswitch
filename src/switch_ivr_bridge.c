@@ -515,12 +515,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_safe_free(stream.data);
 	}
 
-
-	msg.string_arg = data->b_uuid;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
-	msg.from = __FILE__;
-	switch_core_session_receive_message(session_a, &msg);
-
 	if (!inner_bridge && switch_channel_up(chan_a)) {
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
@@ -1048,6 +1042,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	int inner_bridge = switch_channel_test_flag(caller_channel, CF_INNER_BRIDGE);
 	const char *var;
 	switch_call_cause_t cause;
+	switch_core_session_message_t msg = { 0 };
 
 	if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Call has no media... Redirecting to signal bridge.\n");
@@ -1084,7 +1079,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) ||
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
-		switch_core_session_message_t msg = { 0 };
 		const char *app, *data;
 
 		switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
@@ -1249,6 +1243,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_channel_event_set_data(caller_channel, event);
 		switch_event_fire(&event);
 	}
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+	msg.from = __FILE__;
+	msg.string_arg = switch_core_session_strdup(peer_session, switch_core_session_get_uuid(session));
+	switch_core_session_receive_message(peer_session, &msg);
+
+	msg.string_arg = switch_core_session_strdup(session, switch_core_session_get_uuid(peer_session));
+	switch_core_session_receive_message(session, &msg);
 
 	state = switch_channel_get_state(caller_channel);
 

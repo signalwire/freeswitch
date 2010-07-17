@@ -235,9 +235,9 @@ SWITCH_STANDARD_API(time_test_function)
 	}
 
 	for (x = 1; x <= max; x++) {
-		then = switch_time_now();
+		then = switch_time_ref();
 		switch_yield(mss);
-		now = switch_time_now();
+		now = switch_time_ref();
 		diff = (int) (now - then);
 		stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
 		total += diff;
@@ -299,17 +299,17 @@ SWITCH_STANDARD_API(timer_test_function)
 		goto end;
 	}
 
-	start = switch_time_now();
+	start = switch_time_ref();
 	for (x = 1; x <= max; x++) {
-		then = switch_time_now();
+		then = switch_time_ref();
 		switch_core_timer_next(&timer);
-		now = switch_time_now();
+		now = switch_time_ref();
 		diff = (int) (now - then);
 		//stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: %d sleep %d %d\n", x, mss, diff);
 		total += diff;
 	}
-	end = switch_time_now();
+	end = switch_time_ref();
 
 	switch_yield(250000);
 
@@ -1599,7 +1599,7 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = atoi(argv[1]);
 			}
 			switch_core_session_ctl(SCSC_MAX_SESSIONS, &arg);
-			stream->write_function(stream, "+OK max sessions: %f\n", arg);
+			stream->write_function(stream, "+OK max sessions: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "min_idle_cpu")) {
 			double d = -1;
 			
@@ -4279,12 +4279,17 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define LIMIT_HASH_USAGE_USAGE "<backend> <realm> <id> [rate]"
+#define LIMIT_HASH_USAGE_USAGE "<realm> <id> [rate] (Using deprecated limit api, check limit_usage with backend param)"
 SWITCH_STANDARD_API(limit_hash_usage_function)
 {
 	char *mydata = NULL;
-	mydata = switch_core_session_sprintf(session, "hash %s", cmd);
-	return limit_usage_function(mydata, session, stream);
+	if (!zstr(cmd)) {
+		mydata = switch_core_session_sprintf(session, "hash %s", cmd);
+		return limit_usage_function(mydata, session, stream);
+	} else {
+		stream->write_function(stream, "USAGE: limit_hash_usage %s\n", LIMIT_HASH_USAGE_USAGE);
+		return SWITCH_STATUS_SUCCESS;
+	}
 }
 
 #define LIMIT_STATUS_USAGE "<backend>"

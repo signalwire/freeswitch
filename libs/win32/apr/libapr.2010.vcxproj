@@ -70,6 +70,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
       <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -88,7 +89,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;rpcrt4.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -100,16 +100,12 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libapr.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
       <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -128,7 +124,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;rpcrt4.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -138,16 +133,12 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libapr.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
       <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -168,7 +159,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;rpcrt4.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -179,16 +169,12 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libapr.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
       <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -209,7 +195,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;mswsock.lib;rpcrt4.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -220,12 +205,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)libapr.bsc</OutputFile>
     </Bscmake>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\apr\atomic\win32\apr_atomic.c" />

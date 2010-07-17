@@ -48,19 +48,19 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\w32\extlib.props" />
+    <Import Project="..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\w32\extlib.props" />
+    <Import Project="..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\w32\extlib.props" />
+    <Import Project="..\..\w32\extdll.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\w32\extlib.props" />
+    <Import Project="..\..\w32\extdll.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -79,7 +79,6 @@
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectDir)teletone.def</ModuleDefinitionFile>
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -102,7 +101,6 @@
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectDir)teletone.def</ModuleDefinitionFile>
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -120,7 +118,6 @@
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectDir)teletone.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
   </ItemDefinitionGroup>
@@ -137,7 +134,6 @@
       <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectDir)teletone.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
