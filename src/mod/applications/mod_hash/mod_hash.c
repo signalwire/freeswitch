@@ -39,9 +39,8 @@
 #define LIMIT_HASH_CLEANUP_INTERVAL 900
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load);
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_hash_runtime);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown);
-SWITCH_MODULE_DEFINITION(mod_hash, mod_hash_load, mod_hash_shutdown, mod_hash_runtime);
+SWITCH_MODULE_DEFINITION(mod_hash, mod_hash_load, mod_hash_shutdown, NULL);
 
 /* CORE STUFF */
 static struct {
