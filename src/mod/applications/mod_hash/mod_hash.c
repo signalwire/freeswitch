@@ -579,7 +579,7 @@ SWITCH_STANDARD_API(hash_remote_function)
 	argc = switch_split(dup, ' ', argv);
 	if (argv[0] && !strcmp(argv[0], "list")) {
 		switch_hash_index_t *hi;
-		stream->write_function(stream, "Remote connections:\nName\tState\n");
+		stream->write_function(stream, "Remote connections:\nName\t\t\tState\n");
 		
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 		for (hi = switch_hash_first(NULL, globals.remote_hash); hi; hi = switch_hash_next(hi)) {
@@ -590,7 +590,7 @@ SWITCH_STANDARD_API(hash_remote_function)
 			switch_hash_this(hi, &key, &keylen, &val);
 								
 			item = (limit_remote_t *)val;
-			stream->write_function(stream, "%s\t%s\n", item->name, state_str(item->state));	
+			stream->write_function(stream, "%s\t\t\t%s\n", item->name, state_str(item->state));	
 		}
 		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
 		stream->write_function(stream, "+OK\n");
@@ -741,9 +741,6 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 					remote->host, remote->port);
 				
 				remote->state = REMOTE_UP;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't connect to remote FreeSWITCH at %s:%d\n",
-					remote->host, remote->port);
 			}
 		} else {
 			if (esl_send_recv(&remote->handle, "api hash_dump limit") != ESL_SUCCESS) {
