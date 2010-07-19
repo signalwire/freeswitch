@@ -80,6 +80,18 @@ typedef enum {
 	REMOTE_UP		/* < All good */
 } limit_remote_state_t;
 
+static inline const char *state_str(limit_remote_state_t state) {
+	switch (state) {
+		case REMOTE_OFF:
+			return "Off";
+		case REMOTE_DOWN:
+			return "Down";
+		case REMOTE_UP:
+			return "Up";
+	}
+	return "";
+}
+
 typedef struct {
 	const char *name;
 	const char *host;
@@ -102,6 +114,9 @@ typedef struct {
 } limit_remote_t;
 
 static limit_hash_item_t get_remote_usage(const char *key);
+void limit_remote_destroy(limit_remote_t **r);
+static void do_config(switch_bool_t reload);
+
 
 /* \brief Enforces limit_hash restrictions
  * \param session current session
@@ -550,6 +565,66 @@ SWITCH_STANDARD_API(hash_dump_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define HASH_REMOTE_SYNTAX "list|kill [name]|rescan"
+SWITCH_STANDARD_API(hash_remote_function) 
+{
+	int argc;
+	char *argv[10];
+	char *dup = NULL;
+	
+	if (!zstr(cmd)) {
+		dup = strdup(cmd);
+	}
+	
+	argc = switch_split(dup, ' ', argv);
+	if (argv[0] && !strcmp(argv[0], "list")) {
+		switch_hash_index_t *hi;
+		stream->write_function(stream, "Remote connections:\nName\tState\n");
+		
+		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
+		for (hi = switch_hash_first(NULL, globals.remote_hash); hi; hi = switch_hash_next(hi)) {
+			void *val;	
+			const void *key;
+			switch_ssize_t keylen;
+			limit_remote_t *item;
+			switch_hash_this(hi, &key, &keylen, &val);
+								
+			item = (limit_remote_t *)val;
+			stream->write_function(stream, "%s\t%s\n", item->name, state_str(item->state));	
+		}
+		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
+		stream->write_function(stream, "+OK\n");
+		
+	} else if (argv[0] && !strcmp(argv[0], "kill")) {
+		const char *name = argv[1];
+		limit_remote_t *remote;
+		if (zstr(name)) {
+			stream->write_function(stream, "-ERR "HASH_REMOTE_SYNTAX"\n");
+			goto done;
+		}
+		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
+		remote = switch_core_hash_find(globals.remote_hash, name);
+		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
+		
+		limit_remote_destroy(&remote);
+		
+		switch_thread_rwlock_wrlock(globals.remote_hash_rwlock);
+		switch_core_hash_delete(globals.remote_hash, name);
+		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
+		
+		stream->write_function(stream, "+OK\n");
+	} else if (argv[0] && !strcmp(argv[0], "rescan")) {
+		do_config(SWITCH_TRUE);
+		stream->write_function(stream, "+OK\n");
+	}
+	
+done:
+	if (dup) {
+		free(dup);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t port, const char *username, const char *password, int interval) 
 {
 	limit_remote_t *r;
@@ -594,7 +669,8 @@ void limit_remote_destroy(limit_remote_t **r)
 		(*r)->state = REMOTE_OFF;
 
 		if ((*r)->thread) {
-			switch_thread_join(NULL, (*r)->thread);
+			switch_status_t retval;
+			switch_thread_join(&retval, (*r)->thread);
 		}
 
 		switch_thread_rwlock_wrlock((*r)->rwlock);
@@ -737,7 +813,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 	return NULL;
 }
 
-static void do_config()
+static void do_config(switch_bool_t reload)
 {
 	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
 	if ((xml = switch_xml_open_cfg("hash.conf", &cfg, NULL))) {
@@ -752,6 +828,15 @@ static void do_config()
 				int port = 0,  interval = 0;
 				limit_remote_t *remote;
 				switch_threadattr_t *thd_attr = NULL;
+				
+				if (reload) {
+					switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
+					if (switch_core_hash_find(globals.remote_hash, name)) {
+						switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
+						continue;
+					}
+					switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
+				}
 
 				if (!zstr(szport)) {
 					port = atoi(szport);
@@ -811,12 +896,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA)
 	SWITCH_ADD_API(commands_api_interface, "hash", "hash get/set", hash_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	SWITCH_ADD_API(commands_api_interface, "hash_dump", "dump hash/limit_hash data (used for synchronization)", hash_dump_function, HASH_DUMP_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "hash_remote", "hash remote", hash_remote_function, HASH_REMOTE_SYNTAX);
 	
 	switch_console_set_complete("add hash insert");
 	switch_console_set_complete("add hash delete");
 	switch_console_set_complete("add hash select");
 	
-	do_config();
+	do_config(SWITCH_FALSE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;	
