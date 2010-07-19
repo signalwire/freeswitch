@@ -638,7 +638,6 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	
-	gethostbyname(host);
 	if (getaddrinfo(host, NULL, &hints, &result)) {
 		strncpy(handle->err, "Cannot resolve host", sizeof(handle->err));
 		goto fail;
