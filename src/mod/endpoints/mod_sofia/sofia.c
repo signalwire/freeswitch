@@ -685,11 +685,6 @@ void sofia_event_callback(nua_event_t event,
 	int check_destroy = 1;
 
 
-	if (!sofia_test_pflag(profile, PFLAG_RUNNING)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile is shutting down.\n");
-		return;
-	}
-
 	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be 
 	  freed whenever the request is done */
 	if (nh && sofia_private == &mod_sofia_globals.keep_private) {
@@ -1486,7 +1481,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (profile->pres_type) {
 		sofia_presence_establish_presence(profile);
 	}
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
 	profile->started = switch_epoch_time_now(NULL);
