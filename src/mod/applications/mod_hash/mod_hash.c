@@ -684,7 +684,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 					switch_time_t now = switch_epoch_time_now(NULL);
 					while (p && *p) {
 						/* We are getting the limit data as:
-							L/a_c/1/0/0/0 
+							L/key/usage/rate/interval/last_checked 
 						*/
 						if ((p2 = strchr(p, '\n'))) {
 							*p2++ = '\0';
@@ -693,7 +693,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 						/* Now p points at the beginning of the current line, 
 						p2 at the start of the next one */
 						if (*p == 'L') { /* Limit data */
-							char *argv[5];
+							char *argv[5]; 
 							int argc = switch_split(p+2, '/', argv);
 							
 							if (argc < 5) {
@@ -711,8 +711,9 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 								item->last_check = atoi(argv[4]);
 								item->last_update = now;
 								switch_thread_rwlock_unlock(remote->rwlock);
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Imported key %s %d %d/%d (%d - %d)\n",
-									argv[0], item->total_usage, item->rate_usage, item->interval, (int)item->last_check, (int)item->last_update);
+								
+								/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Imported key %s %d %d/%d (%d - %d)\n",
+									argv[0], item->total_usage, item->rate_usage, item->interval, (int)item->last_check, (int)item->last_update);*/
 							}
 						}
 						
@@ -765,7 +766,7 @@ static void do_config()
 				remote->state = REMOTE_DOWN;	
 				
 				switch_threadattr_create(&thd_attr, remote->pool);
-				switch_threadattr_detach_set(thd_attr, 1);
+				//switch_threadattr_detach_set(thd_attr, 1);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&remote->thread, thd_attr, limit_remote_thread, remote, remote->pool);
 			}
