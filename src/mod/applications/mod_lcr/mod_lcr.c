@@ -851,6 +851,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
 	if (!safe_sql) {
 		switch_core_hash_destroy(&cb_struct->dedup_hash);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_ERROR, "Unable to format SQL\n");
 		return SWITCH_STATUS_GENERR;
 	}
 	SWITCH_STANDARD_STREAM(sql_stream);
@@ -1148,6 +1149,10 @@ static switch_status_t lcr_load_config()
 				/* test the profile */
 				if (profile->custom_sql_has_vars) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "custom_sql has channel vars, skipping verification and assuming valid profile: %s.\n", profile->name);
+					if (!strcasecmp(profile->name, "default")) {
+						globals.default_profile = profile;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting user defined default profile: %s.\n", profile->name);
+					}
 				} else if (test_profile(profile->name) == SWITCH_TRUE) {
 					if (!strcasecmp(profile->name, "default")) {
 						globals.default_profile = profile;
@@ -1356,11 +1361,7 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 			}
 		}
 	} else {
-		if (caller_profile) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed no caller_profile\n");
-		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
 	}
 
   done:
@@ -1376,7 +1377,7 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	if (cause == SWITCH_CAUSE_NONE) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
-
+	
 	return cause;
 }
 
@@ -1401,9 +1402,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		routes.event = event;
 	}
 	routes.pool = pool;
-	if (!lcr_profile) {
-		lcr_profile = "default";
-	}
+
 	if (!(routes.profile = locate_profile(lcr_profile))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 		goto end;
