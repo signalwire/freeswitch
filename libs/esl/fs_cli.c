@@ -1004,7 +1004,7 @@ int main(int argc, char *argv[])
 	char argv_command[256] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
-	
+	int loops = 0;
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1026,7 +1026,7 @@ int main(int argc, char *argv[])
 	
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qh?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qrh?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt)
 		{
@@ -1070,7 +1070,9 @@ int main(int argc, char *argv[])
 			case 'q':
 				argv_quiet = 1;
 				break;
-				
+		    case 'r':
+				loops = 120;
+				break;
 			case 'h':
 			case '?':
 				print_banner(stdout);
@@ -1188,11 +1190,25 @@ int main(int argc, char *argv[])
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
 	}
 
-	if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
-		esl_global_set_default_logger(7);
-		esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
-		if (!argv_exec) usage(argv[0]);
-		return -1;
+	while (--loops > 0) {
+		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
+			esl_global_set_default_logger(7);
+			esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
+			if (loops == 1) {
+				if (!argv_exec) usage(argv[0]);
+				return -1;
+			} else {
+				sleep(1);
+				esl_log(ESL_LOG_INFO, "Retrying\n");
+			}
+		} else {
+			if (temp_log < 0 ) {
+				esl_global_set_default_logger(profile->debug);
+			} else {
+				esl_global_set_default_logger(temp_log);
+			}
+			break;
+		}
 	}
 
 
