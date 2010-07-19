@@ -606,11 +606,10 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password)
 {
-
-	struct hostent *result;
 	char sendbuf[256];
 	int rval = 0;
 	const char *hval;
+	struct addrinfo hints = { 0 }, *result;
 #ifdef WIN32
 	WORD wVersionRequested = MAKEWORD(2, 0);
 	WSADATA wsaData;
@@ -633,26 +632,23 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 		return ESL_FAIL;
 	}
 
-    memset(&handle->sockaddr, 0, sizeof(handle->sockaddr));
-	handle->sockaddr.sin_family = AF_INET;
-    handle->sockaddr.sin_port = htons(port);
 
-    memset(&handle->hostent, 0, sizeof(handle->hostent));
-
-	if ((result = gethostbyname(host))) {
-		handle->hostent = *result;
-	} else {
-		rval = -1;
-	}
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
 	
-	if (rval) {
-		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
+	if (getaddrinfo(host, NULL, &hints, &result)) {
+		strncpy(handle->err, "Cannot resolve host", sizeof(handle->err));
 		goto fail;
 	}
 
-	memcpy(&handle->sockaddr.sin_addr, result->h_addr_list[0], result->h_length);
+	memcpy(&handle->sockaddr, result->ai_addr, result->ai_addrlen);	
+	handle->sockaddr.sin_family = AF_INET;
+	handle->sockaddr.sin_port = htons(port);
+
+	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, sizeof(handle->sockaddr));
 	
-	rval = connect(handle->sock, (struct sockaddr *) &handle->sockaddr, sizeof(handle->sockaddr));
+	freeaddrinfo(result);
+	result = NULL;
 	
 	if (rval) {
 		snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
