@@ -572,9 +572,12 @@ SWITCH_STANDARD_API(hash_remote_function)
 	char *argv[10];
 	char *dup = NULL;
 	
-	if (!zstr(cmd)) {
-		dup = strdup(cmd);
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR Usage: "HASH_REMOTE_SYNTAX"\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	dup = strdup(cmd);
 	
 	argc = switch_split(dup, ' ', argv);
 	if (argv[0] && !strcmp(argv[0], "list")) {
