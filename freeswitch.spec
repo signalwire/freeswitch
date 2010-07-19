@@ -614,6 +614,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/event_socket.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fifo.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/hash.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/lcr.conf.xml
@@ -926,6 +927,8 @@ fi
 #
 ###############################################################################################################################
 %changelog
+* Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
+- new hash module config file added to freeswitch.spec
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
 - Adjusted sphinxbase
 - Fixed Version Revisions for head versions
