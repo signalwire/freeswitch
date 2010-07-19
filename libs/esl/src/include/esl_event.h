@@ -183,7 +183,7 @@ typedef enum {
   \param event a NULL pointer on which to create the event
   \param event_id the event id enumeration of the desired event
   \param subclass_name the subclass name for custom event (only valid when event_id is ESL_EVENT_CUSTOM)
-  \return ESL_STATUS_SUCCESS on success
+  \return ESL_SUCCESS on success
 */
 ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_event_types_t event_id, const char *subclass_name);
 
@@ -191,7 +191,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
   \brief Set the priority of an event
   \param event the event to set the priority on
   \param priority the event priority
-  \return ESL_STATUS_SUCCESS
+  \return ESL_SUCCESS
 */
 ESL_DECLARE(esl_status_t) esl_event_set_priority(esl_event_t *event, esl_priority_t priority);
 
@@ -216,7 +216,7 @@ ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event);
   \param stack the stack sense (stack it on the top or on the bottom)
   \param header_name the name of the header to add
   \param fmt the value of the header (varargs see standard sprintf family)
-  \return ESL_STATUS_SUCCESS if the header was added
+  \return ESL_SUCCESS if the header was added
 */
 ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t stack,
 											   const char *header_name, const char *fmt, ...); //PRINTF_FUNCTION(4, 5);
@@ -227,7 +227,7 @@ ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t s
   \param stack the stack sense (stack it on the top or on the bottom)
   \param header_name the name of the header to add
   \param data the value of the header
-  \return ESL_STATUS_SUCCESS if the header was added
+  \return ESL_SUCCESS if the header was added
 */
 ESL_DECLARE(esl_status_t) esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *data);
 
@@ -245,7 +245,7 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event);
   \brief Duplicate an event
   \param event a NULL pointer on which to duplicate the event
   \param todup an event to duplicate
-  \return ESL_STATUS_SUCCESS if the event was duplicated
+  \return ESL_SUCCESS if the event was duplicated
 */
 ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup);
 
@@ -260,7 +260,7 @@ ESL_DECLARE(const char *)esl_event_name(esl_event_types_t event);
   \brief return the event id that matches a given event name
   \param name the name of the event
   \param type the event id to return
-  \return ESL_STATUS_SUCCESS if there was a match
+  \return ESL_SUCCESS if there was a match
 */
 ESL_DECLARE(esl_status_t) esl_name_event(const char *name, esl_event_types_t *type);
 
@@ -269,7 +269,7 @@ ESL_DECLARE(esl_status_t) esl_name_event(const char *name, esl_event_types_t *ty
   \param event the event to render
   \param str a string pointer to point at the allocated data
   \param encode url encode the headers
-  \return ESL_STATUS_SUCCESS if the operation was successful
+  \return ESL_SUCCESS if the operation was successful
   \note you must free the resulting string when you are finished with it
 */
 ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode);
@@ -279,7 +279,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char 
   \brief Add a body to an event
   \param event the event to add to body to
   \param fmt optional body of the event (varargs see standard sprintf family)
-  \return ESL_STATUS_SUCCESS if the body was added to the event
+  \return ESL_SUCCESS if the body was added to the event
   \note the body parameter can be shadowed by the esl_event_reserve_subclass_detailed function
 */
 ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt, ...);
@@ -288,7 +288,7 @@ ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt
   \brief Create a new event assuming it will not be custom event and therefore hiding the unused parameters
   \param event a NULL pointer on which to create the event
   \param id the event id enumeration of the desired event
-  \return ESL_STATUS_SUCCESS on success
+  \return ESL_SUCCESS on success
 */
 #define esl_event_create(event, id) esl_event_create_subclass(event, id, ESL_EVENT_SUBCLASS_ANY)
 
