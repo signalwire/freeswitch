@@ -1004,7 +1004,7 @@ int main(int argc, char *argv[])
 	char argv_command[256] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
-	int loops = 0;
+	int loops = 2;
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1071,7 +1071,7 @@ int main(int argc, char *argv[])
 				argv_quiet = 1;
 				break;
 		    case 'r':
-				loops = 120;
+				loops += 120;
 				break;
 			case 'h':
 			case '?':
@@ -1191,6 +1191,7 @@ int main(int argc, char *argv[])
 	}
 
 	while (--loops > 0) {
+		memset(&handle, 0, sizeof(handle));
 		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
 			esl_global_set_default_logger(7);
 			esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
