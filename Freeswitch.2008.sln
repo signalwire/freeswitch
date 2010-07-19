@@ -1098,6 +1098,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_hash", "src\mod\applications\mod_hash\mod_hash.2008.vcproj", "{2E250296-0C08-4342-9C8A-BCBDD0E7DF65}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+		{CF405366-9558-4AE8-90EF-5E21B51CCB4E} = {CF405366-9558-4AE8-90EF-5E21B51CCB4E}
 	EndProjectSection
 EndProject
 Global

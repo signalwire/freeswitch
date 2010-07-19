@@ -42,6 +42,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\..\..\libs\esl\src\include;"
+				PreprocessorDefinitions="ESL_DECLARE_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -104,6 +106,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\..\..\libs\esl\src\include;"
+				PreprocessorDefinitions="ESL_DECLARE_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -167,6 +171,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\..\..\libs\esl\src\include;"
+				PreprocessorDefinitions="ESL_DECLARE_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -229,6 +235,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\..\..\libs\esl\src\include;"
+				PreprocessorDefinitions="ESL_DECLARE_STATIC"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
