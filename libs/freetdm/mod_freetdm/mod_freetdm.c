@@ -1158,12 +1158,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI-TON");
 		if (sipvar) {
-			caller_data.ani.type = atoi(sipvar);
+			caller_data.ani.type = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI-Plan");
 		if (sipvar) {
-			caller_data.ani.plan = atoi(sipvar);
+			caller_data.ani.plan = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI2");
@@ -1178,12 +1178,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-TON");
 		if (sipvar) {
-			caller_data.dnis.type = atoi(sipvar);
+			caller_data.dnis.type = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-Plan");
 		if (sipvar) {
-			caller_data.dnis.plan = atoi(sipvar);
+			caller_data.dnis.plan = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
@@ -1193,22 +1193,22 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-TON");
 		if (sipvar) {
-			caller_data.rdnis.type = atoi(sipvar);
+			caller_data.rdnis.type = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Plan");
 		if (sipvar) {
-			caller_data.rdnis.plan = atoi(sipvar);
+			caller_data.rdnis.plan = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
-			caller_data.screen = atoi(sipvar);
+			caller_data.screen = (uint8_t)atoi(sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Presentation");
 		if (sipvar) {
-			caller_data.pres = atoi(sipvar);
+			caller_data.pres = (uint8_t)atoi(sipvar);
 		}
 	}
 	
