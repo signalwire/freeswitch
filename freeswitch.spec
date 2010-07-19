@@ -60,7 +60,7 @@ Source5:		http://files.freeswitch.org/downloads/libs/mpg123.tar.gz
 Source6:		http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source7:		http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
 Source8:		http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
-Source9:		http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
+Source9:		http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
 Source10:		http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source11:		http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Prefix:         %{prefix}
@@ -926,6 +926,10 @@ fi
 #
 ###############################################################################################################################
 %changelog
+* Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
+- Adjusted sphinxbase
+- Fixed Version Revisions for head versions
+- Renamed packages to head to comply with git
 * Tue Jun 22 2010 - michal.bielicki@seventhsignal.de
 - Added comments and made the spec file sections more transparent
 - Added proper header to the Spec file
