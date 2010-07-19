@@ -197,9 +197,9 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 		switch_core_hash_insert(pvt->hash, hashkey, item);
 
 		if (max == -1) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage + remote_usage.total_usage);
 		} else if (interval == 0) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage + remote_usage.total_usage, max);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey,
 							  item->rate_usage, max, interval);
@@ -609,13 +609,17 @@ SWITCH_STANDARD_API(hash_remote_function)
 		remote = switch_core_hash_find(globals.remote_hash, name);
 		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
 		
-		limit_remote_destroy(&remote);
-		
-		switch_thread_rwlock_wrlock(globals.remote_hash_rwlock);
-		switch_core_hash_delete(globals.remote_hash, name);
-		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
-		
-		stream->write_function(stream, "+OK\n");
+		if (remote) {
+			limit_remote_destroy(&remote);
+
+			switch_thread_rwlock_wrlock(globals.remote_hash_rwlock);
+			switch_core_hash_delete(globals.remote_hash, name);
+			switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
+			
+			stream->write_function(stream, "+OK\n");			
+		} else {
+			stream->write_function(stream, "-ERR No such remote instance %s\n", name);
+		}
 	} else if (argv[0] && !strcmp(argv[0], "rescan")) {
 		do_config(SWITCH_TRUE);
 		stream->write_function(stream, "+OK\n");
@@ -790,9 +794,6 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 								item->last_check = atoi(argv[4]);
 								item->last_update = now;
 								switch_thread_rwlock_unlock(remote->rwlock);
-								
-								/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Imported key %s %d %d/%d (%d - %d)\n",
-									argv[0], item->total_usage, item->rate_usage, item->interval, (int)item->last_check, (int)item->last_update);*/
 							}
 						}
 						
@@ -800,7 +801,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 					}
 					free(data);
 					
-					/* Now free up anything that wasnt in this update since it means their usage is 0 */
+					/* Now free up anything that wasn't in this update since it means their usage is 0 */
 					switch_thread_rwlock_wrlock(remote->rwlock);
 					switch_core_hash_delete_multi(remote->index, limit_hash_remote_cleanup_callback, (void*)(intptr_t)now);
 					switch_thread_rwlock_unlock(remote->rwlock);
@@ -854,7 +855,6 @@ static void do_config(switch_bool_t reload)
 				remote->state = REMOTE_DOWN;	
 				
 				switch_threadattr_create(&thd_attr, remote->pool);
-				//switch_threadattr_detach_set(thd_attr, 1);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&remote->thread, thd_attr, limit_remote_thread, remote, remote->pool);
 			}
