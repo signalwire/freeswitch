@@ -98,8 +98,8 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 			switch_limit_release(argv[x], session, NULL, NULL);
 		}
 		switch_core_event_hook_remove_state_change(session, limit_state_handler);
-		/* Remove limit_realm variable so we register another hook if limit is called again */
-		switch_channel_set_variable(channel, "limit_realm", NULL);
+		/* Remove limit_backend variable so we register another hook if limit is called again */
+		switch_channel_set_variable(channel, LIMIT_BACKEND_VARIABLE, NULL);
 		
 		free(mydata);
 	}
