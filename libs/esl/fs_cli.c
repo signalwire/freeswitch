@@ -1199,7 +1199,11 @@ int main(int argc, char *argv[])
 				if (!argv_exec) usage(argv[0]);
 				return -1;
 			} else {
+#ifndef WIN32
 				sleep(1);
+#else
+				Sleep(1000);
+#endif
 				esl_log(ESL_LOG_INFO, "Retrying\n");
 			}
 		} else {
