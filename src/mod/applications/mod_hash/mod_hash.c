@@ -744,16 +744,16 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 	while (remote->state > REMOTE_OFF) {
 		if (remote->state != REMOTE_UP) {
 			if  (esl_connect(&remote->handle, remote->host, remote->port, remote->username, remote->password) == ESL_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH at %s:%d\n",
-					remote->host, remote->port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH (%s) at %s:%d\n",
+					remote->name, remote->host, remote->port);
 				
 				remote->state = REMOTE_UP;
 			}
 		} else {
 			if (esl_send_recv(&remote->handle, "api hash_dump limit") != ESL_SUCCESS) {
 				esl_disconnect(&remote->handle);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Disconnected from remote FreeSWITCH at %s:%d\n",
-					remote->host, remote->port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnected from remote FreeSWITCH (%s) at %s:%d\n",
+					remote->name, remote->host, remote->port);
 				memset(&remote->handle, 0, sizeof(remote->handle));
 				remote->state = REMOTE_DOWN;
 				/* Delete all remote tracking entries */
@@ -780,7 +780,8 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 							int argc = switch_split(p+2, '/', argv);
 							
 							if (argc < 5) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Protocol error: missing argument in line: %s\n", p);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "[%s] Protocol error: missing argument in line: %s\n", 
+									remote->name, p);
 							} else {
 								limit_hash_item_t *item;
 								switch_thread_rwlock_wrlock(remote->rwlock);
