@@ -599,7 +599,7 @@ SWITCH_STANDARD_API(hash_remote_function)
 		const char *name = argv[1];
 		limit_remote_t *remote;
 		if (zstr(name)) {
-			stream->write_function(stream, "-ERR "HASH_REMOTE_SYNTAX"\n");
+			stream->write_function(stream, "-ERR Usage: "HASH_REMOTE_SYNTAX"\n");
 			goto done;
 		}
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
@@ -616,6 +616,9 @@ SWITCH_STANDARD_API(hash_remote_function)
 	} else if (argv[0] && !strcmp(argv[0], "rescan")) {
 		do_config(SWITCH_TRUE);
 		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR Usage: "HASH_REMOTE_SYNTAX"\n");
+		
 	}
 	
 done:
@@ -901,6 +904,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	switch_console_set_complete("add hash insert");
 	switch_console_set_complete("add hash delete");
 	switch_console_set_complete("add hash select");
+	
+	switch_console_set_complete("add hash_remote list");
+	switch_console_set_complete("add hash_remote kill");
+	switch_console_set_complete("add hash_remote rescan");
 	
 	do_config(SWITCH_FALSE);
 
