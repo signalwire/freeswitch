@@ -1115,7 +1115,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		char nstr[256] = "";
 		
 		if (strcasecmp(codec, "PCMU") && strcasecmp(codec, "PCMA")) {
-			switch_snprintf(nstr, sizeof(nstr), "%s@%si@%sh,PCMU@%di,PCMA@%di", codec, ptime, rate, ptime, ptime);
+			switch_snprintf(nstr, sizeof(nstr), "%s@%si@%sh,PCMU@%si,PCMA@%si", codec, ptime, rate, ptime, ptime);
 		} else {
 			switch_snprintf(nstr, sizeof(nstr), "%s@%si@%sh", codec, ptime, rate);
 		}
