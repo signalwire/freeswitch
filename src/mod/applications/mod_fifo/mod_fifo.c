@@ -264,6 +264,11 @@ struct fifo_node {
 
 typedef struct fifo_node fifo_node_t;
 
+static void fifo_caller_add(fifo_node_t *node, switch_core_session_t *session);
+static void fifo_caller_del(const char *uuid);
+
+
+
 struct callback {
 	char *buf;
 	size_t len;
@@ -410,6 +415,8 @@ static void node_remove_uuid(fifo_node_t *node, const char *uuid)
 	if (!node_consumer_wait_count(node)) {
 		node->start_waiting = 0;
 	}
+
+	fifo_caller_del(uuid);
 
 	return;
 }
@@ -920,7 +927,6 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 static void add_outbound_call(const char *key, switch_call_cause_t *cancel_cause)
 {
 	switch_mutex_lock(globals.orig_mutex);
@@ -944,6 +950,9 @@ static void cancel_outbound_call(const char *key, switch_call_cause_t cause)
 		*cancel_cause = cause;
 	}
     switch_mutex_unlock(globals.orig_mutex);
+
+	fifo_caller_del(key);
+
 }
 
 static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void *obj)
@@ -1781,7 +1790,7 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		col2 = "manual_calls_out_total_count";
 	}
 
-	sql = switch_mprintf("update fifo_outbound set start_time=%ld,outbound_fail_count=0,use_count=use_count+1,%s=%s+1,%s=%s+1 where uuid='%q'", 
+	sql = switch_mprintf("update fifo_outbound set stop_time=0,start_time=%ld,outbound_fail_count=0,use_count=use_count+1,%s=%s+1,%s=%s+1 where uuid='%q'", 
 						 (long) switch_epoch_time_now(NULL), col1, col1, col2, col2, data);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	switch_safe_free(sql);
@@ -1807,6 +1816,41 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 	switch_core_event_hook_add_receive_message(session, messagehook);
 	switch_core_event_hook_add_state_change(session, hanguphook);
 }
+
+
+static void fifo_caller_add(fifo_node_t *node, switch_core_session_t *session)
+{
+	char *sql;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	sql = switch_mprintf("insert into fifo_callers (fifo_name,uuid,caller_caller_id_name,caller_caller_id_number,timestamp) "
+						 "values ('%q','%q','%q','%q',%ld)",
+						 node->name,
+						 switch_core_session_get_uuid(session),
+						 switch_str_nil(switch_channel_get_variable(channel, "caller_id_name")),
+						 switch_str_nil(switch_channel_get_variable(channel, "caller_id_number")),
+						 switch_epoch_time_now(NULL));
+
+	fifo_execute_sql(sql, globals.sql_mutex);
+	switch_safe_free(sql);
+}
+
+static void fifo_caller_del(const char *uuid)
+{
+	char *sql;
+	
+	if (uuid) {
+		sql = switch_mprintf("delete from fifo_callers where uuid='%q'", uuid);
+	} else {
+		sql = switch_mprintf("delete from fifo_callers", uuid);
+	}
+	
+	fifo_execute_sql(sql, globals.sql_mutex);
+	switch_safe_free(sql);
+	
+}
+
+
 
 typedef enum {
 	STRAT_MORE_PPL,
@@ -2017,6 +2061,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		
 
 		fifo_queue_push(node->fifo_list[p], call_event);
+		fifo_caller_add(node, session);
+
 		call_event = NULL;
 		switch_snprintf(tmp, sizeof(tmp), "%d", fifo_queue_size(node->fifo_list[p]));
 		switch_channel_set_variable(channel, "fifo_position", tmp);
@@ -2343,6 +2389,11 @@ SWITCH_STANDARD_APP(fifo_function)
 					}
 				}
 
+				if (pop) {
+					fifo_caller_del(switch_str_nil(switch_event_get_header(pop, "unique-id")));
+				}
+
+
 				if (pop && !node_consumer_wait_count(node)) {
 					switch_mutex_lock(node->mutex);
 					node->start_waiting = 0;
@@ -2531,7 +2582,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 
 				if (outbound_id) {
-					sql = switch_mprintf("update fifo_outbound set start_time=%ld,use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", 
+					sql = switch_mprintf("update fifo_outbound set stop_time=0,start_time=%ld,use_count=use_count+1,outbound_fail_count=0 where uuid='%s'", 
 										 switch_epoch_time_now(NULL), outbound_id);
 					fifo_execute_sql(sql, globals.sql_mutex);
 					switch_safe_free(sql);
@@ -3356,6 +3407,16 @@ const char bridge_sql[] =
 	");\n"
 ;
 
+const char callers_sql[] =
+	"create table fifo_callers (\n"
+	" fifo_name varchar(255) not null,\n"
+	" uuid varchar(255) not null,\n"
+	" caller_caller_id_name varchar(255),\n"
+	" caller_caller_id_number varchar(255),\n"
+	" timestamp integer\n"
+	");\n"
+;
+
 
 
 static void extract_fifo_outbound_uuid(char *string, char *uuid, switch_size_t len)
@@ -3437,6 +3498,7 @@ static switch_status_t load_config(int reload, int del_all)
 	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or stop_time < 0", 
 								  "drop table fifo_outbound", outbound_sql);
 	switch_cache_db_test_reactive(dbh, "delete from fifo_bridge", "drop table fifo_bridge", bridge_sql);
+	switch_cache_db_test_reactive(dbh, "delete from fifo_callers", "drop table fifo_callers", callers_sql);
 	switch_cache_db_release_db_handle(&dbh);
 
 	fifo_execute_sql("update fifo_outbound set start_time=0,stop_time=0,ring_count=0,use_count=0,"
@@ -3633,6 +3695,8 @@ static switch_status_t load_config(int reload, int del_all)
 				goto top;
 			}
 		}
+
+		fifo_caller_del(NULL);
 		switch_mutex_unlock(globals.mutex);
 	}
 
