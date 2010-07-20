@@ -387,8 +387,11 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
     \param port Port to be connected
     \param password FreeSWITCH server username (optional)
     \param password FreeSWITCH server password
+	\param timeout Connection timeout, in miliseconds
 */
-ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password);
+ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, long timeout);
+#define esl_connect(_handle, _host, _port, _user, _password) esl_connect_timeout(_handle, _host, _port, _user, _password, -1)
+
 /*!
     \brief Disconnect a handle
     \param handle Handle to be disconnected

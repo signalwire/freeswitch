@@ -34,6 +34,7 @@
 #include <esl.h>
 #ifndef WIN32
 #define closesocket(x) close(x)
+#include <fcntl.h>
 #else
 #include <Ws2tcpip.h>
 #endif
@@ -606,12 +607,13 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 }
 
-ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password)
+ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, long timeout)
 {
 	char sendbuf[256];
 	int rval = 0;
 	const char *hval;
 	struct addrinfo hints = { 0 }, *result;
+	int fd_flags;
 #ifdef WIN32
 	WORD wVersionRequested = MAKEWORD(2, 0);
 	WSADATA wsaData;
@@ -647,7 +649,57 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 	handle->sockaddr.sin_family = AF_INET;
 	handle->sockaddr.sin_port = htons(port);
 
+	if (timeout != -1) {
+#ifdef WIN32
+		u_long arg = 1;
+		if (ioctlsocket(handle->sock, FIONBIO, &arg) == SOCKET_ERROR) {
+			snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+			goto fail;
+		}
+#else
+		fd_flags = fcntl(handle->sock, F_GETFL, 0);
+		if (fcntl(handle->sock, F_SETFL, fd_flags | O_NONBLOCK)) {
+			snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+			goto fail;
+		}
+#endif
+	}
+
 	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, sizeof(handle->sockaddr));
+	
+	if (timeout != -1) {
+		fd_set wfds;
+		struct timeval tv = { timeout / 1000, (timeout % 1000) * 1000 };
+		int r;
+
+		FD_ZERO(&wfds);
+        FD_SET(handle->sock, &wfds);
+
+        r = select(handle->sock + 1, NULL, &wfds, NULL, &tv);
+		
+		if (r <= 0) {
+			snprintf(handle->err, sizeof(handle->err), "Connection timed out");
+			goto fail;
+		}
+
+		if (!FD_ISSET(handle->sock, &wfds)) {
+			snprintf(handle->err, sizeof(handle->err), "Connection timed out");
+			goto fail;
+		}
+
+#ifdef WIN32
+		{
+			u_long arg = 0;
+			if (ioctlsocket(handle->sock, FIONBIO, &arg) == SOCKET_ERROR) {
+				snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+				goto fail;
+			}
+		}
+#else
+		fcntl(handle->sock, F_SETFL, fd_flags);
+#endif	
+		rval = 0;
+	}
 	
 	freeaddrinfo(result);
 	result = NULL;
