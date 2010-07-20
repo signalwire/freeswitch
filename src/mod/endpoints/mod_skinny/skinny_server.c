@@ -898,8 +898,8 @@ switch_status_t skinny_hold_active_calls(listener_t *listener)
 				"ON skinny_active_lines.device_name = skinny_lines.device_name "
 				"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
 				"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-			"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d AND call_state=%d",
-			listener->device_name, listener->device_instance, SKINNY_CONNECTED))) {
+			"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d AND (call_state=%d OR call_state=%d)",
+			listener->device_name, listener->device_instance, SKINNY_PROCEED, SKINNY_CONNECTED))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_hold_active_calls_callback, &helper);
 		switch_safe_free(sql);
 	}

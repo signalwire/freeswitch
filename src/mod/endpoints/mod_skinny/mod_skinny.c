@@ -756,7 +756,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, device_name, device_instance, &listener);
 	if(listener) {
-		if(call_state == SKINNY_CONNECTED) {
+		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
 			send_stop_tone(listener, line_instance, call_id);
 		}
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
@@ -776,7 +776,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			default:
 				send_display_prompt_status(listener, 0, switch_channel_cause2str(helper->cause), line_instance, call_id);
 		}
-		if(call_state == SKINNY_CONNECTED) { /* calling parties */
+		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
 			skinny_session_stop_media(helper->tech_pvt->session, listener, line_instance);
 		}
 
