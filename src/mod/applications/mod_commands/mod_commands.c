@@ -4283,9 +4283,12 @@ end:
 SWITCH_STANDARD_API(limit_hash_usage_function)
 {
 	char *mydata = NULL;
+	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	if (!zstr(cmd)) {
-		mydata = switch_core_session_sprintf(session, "hash %s", cmd);
-		return limit_usage_function(mydata, session, stream);
+		mydata = switch_mprintf("hash %s", cmd);
+		ret = limit_usage_function(mydata, session, stream);
+		switch_safe_free(mydata);
+		return ret;
 	} else {
 		stream->write_function(stream, "USAGE: limit_hash_usage %s\n", LIMIT_HASH_USAGE_USAGE);
 		return SWITCH_STATUS_SUCCESS;
