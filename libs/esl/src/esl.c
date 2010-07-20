@@ -713,7 +713,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 
 	handle->connected = 1;
 
-	if (esl_recv(handle)) {
+	if (esl_recv_timed(handle, timeout)) {
 		snprintf(handle->err, sizeof(handle->err), "Connection Error");
 		goto fail;
 	}
@@ -734,7 +734,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	esl_send(handle, sendbuf);
 
 	
-	if (esl_recv(handle)) {
+	if (esl_recv_timed(handle, timeout)) {
 		snprintf(handle->err, sizeof(handle->err), "Authentication Error");
 		goto fail;
 	}
@@ -812,6 +812,10 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 			return esl_recv_event(handle, check_q, save_event);
 		}
 		esl_mutex_unlock(handle->mutex);
+	}
+	
+	if (ms == -1) {
+		ms = 30000;
 	}
 
 	tv.tv_usec = ms * 1000;
