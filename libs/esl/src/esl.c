@@ -613,8 +613,9 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	int rval = 0;
 	const char *hval;
 	struct addrinfo hints = { 0 }, *result;
+#ifndef WIN32
 	int fd_flags;
-#ifdef WIN32
+#else
 	WORD wVersionRequested = MAKEWORD(2, 0);
 	WSADATA wsaData;
 	int err = WSAStartup(wVersionRequested, &wsaData);
@@ -669,11 +670,20 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	
 	if (timeout) {
 		fd_set wfds;
-		struct timeval tv = { timeout / 1000, (timeout % 1000) * 1000 };
+		struct timeval tv;
 		int r;
 
+		tv.tv_sec = timeout / 1000;
+		tv.tv_usec = (timeout % 1000) * 1000;
 		FD_ZERO(&wfds);
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(handle->sock, &wfds);
+#pragma warning( pop ) 
+#else
         FD_SET(handle->sock, &wfds);
+#endif
 
         r = select(handle->sock + 1, NULL, &wfds, NULL, &tv);
 		
