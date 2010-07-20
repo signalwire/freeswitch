@@ -743,7 +743,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 	limit_remote_t *remote = (limit_remote_t*)obj;
 	while (remote->state > REMOTE_OFF) {
 		if (remote->state != REMOTE_UP) {
-			if  (esl_connect(&remote->handle, remote->host, remote->port, remote->username, remote->password) == ESL_SUCCESS) {
+			if  (esl_connect_timeout(&remote->handle, remote->host, remote->port, remote->username, remote->password, 5000) == ESL_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
 				
