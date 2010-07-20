@@ -364,6 +364,8 @@ static switch_status_t remove_interface(char *the_interface)
 		if (tech_pvt->running && tech_pvt->SkypopenHandles.disp) {
 			XEvent e;
 			Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
+			switch_sleep(1000);//giovanni
+			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
 			memset(&e, 0, sizeof(e));
 			e.xclient.type = ClientMessage;
 			e.xclient.message_type = atom1;	/*  leading message */
@@ -372,7 +374,8 @@ static switch_status_t remove_interface(char *the_interface)
 			e.xclient.format = 8;
 
 			XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-			XSync(tech_pvt->SkypopenHandles.disp, False);
+			//giovanni XSync(tech_pvt->SkypopenHandles.disp, False);
+			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
 		}
 #endif
 	}
@@ -1500,6 +1503,7 @@ static switch_status_t load_config(int reload_type)
 						 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].skype_user);
 
 
+/* giovanni*/
 					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "PROTOCOL 7");
 					switch_sleep(10000);
 					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "SET AUTOAWAY OFF");
@@ -1516,6 +1520,7 @@ static switch_status_t load_config(int reload_type)
 						skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "SET SILENT_MODE ON");
 						switch_sleep(10000);
 					}
+/*  giovanni */
 				} else {
 					ERRORA
 						("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypopen exiting now\n",
@@ -1742,6 +1747,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 					XEvent e;
 					Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
 											 False);
+			switch_sleep(1000);//giovanni
+			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
 					memset(&e, 0, sizeof(e));
 					e.xclient.type = ClientMessage;
 					e.xclient.message_type = atom1;	/*  leading message */
@@ -1750,7 +1757,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 					e.xclient.format = 8;
 
 					XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-					XSync(tech_pvt->SkypopenHandles.disp, False);
+					//giovanni XSync(tech_pvt->SkypopenHandles.disp, False);
+			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
 				}
 #endif
 			}

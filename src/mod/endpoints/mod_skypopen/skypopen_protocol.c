@@ -1458,6 +1458,9 @@ int skypopen_send_message(private_t * tech_pvt, const char *message_P)
 	unsigned int len = strlen(message_P);
 	XEvent e;
 
+skypopen_sleep(1000);//giovanni
+	XFlush(disp);//giovanni
+
 	memset(&e, 0, sizeof(e));
 	e.xclient.type = ClientMessage;
 	e.xclient.message_type = atom1;	/*  leading message */
@@ -1476,7 +1479,8 @@ int skypopen_send_message(private_t * tech_pvt, const char *message_P)
 		pos += i;
 	} while (pos <= len);
 
-	XSync(disp, False);
+	//giovanni XSync(disp, False);
+	XFlush(disp);
 	ok = X11_errors_untrap();
 
 	if (!ok) {

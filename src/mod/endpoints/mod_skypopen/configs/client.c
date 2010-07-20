@@ -87,7 +87,8 @@ int skypopen_send_message(struct SkypopenHandles *SkypopenHandles, const char *m
 		pos += i;
 	} while (pos <= len);
 
-	XSync(disp, False);
+	//giovanni XSync(disp, False);
+	XFlush(disp);
 	ok = X11_errors_untrap();
 
 	if (!ok)
