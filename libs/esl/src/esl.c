@@ -607,7 +607,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 }
 
-ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, uint32_t timeout)
+ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, long timeout)
 {
 	char sendbuf[256];
 	int rval = 0;
@@ -649,7 +649,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	handle->sockaddr.sin_family = AF_INET;
 	handle->sockaddr.sin_port = htons(port);
 
-	if (timeout) {
+	if (timeout != -1) {
 #ifdef WIN32
 		u_long arg = 1;
 		if (ioctlsocket(handle->sock, FIONBIO, &arg) == SOCKET_ERROR) {
@@ -667,7 +667,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 
 	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, sizeof(handle->sockaddr));
 	
-	if (timeout) {
+	if (timeout != -1) {
 		fd_set wfds;
 		struct timeval tv = { timeout / 1000, (timeout % 1000) * 1000 };
 		int r;
@@ -713,7 +713,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 
 	handle->connected = 1;
 
-	if (esl_recv_timed(handle, timeout)) {
+	if (esl_recv(handle)) {
 		snprintf(handle->err, sizeof(handle->err), "Connection Error");
 		goto fail;
 	}
@@ -734,7 +734,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	esl_send(handle, sendbuf);
 
 	
-	if (esl_recv_timed(handle, timeout)) {
+	if (esl_recv(handle)) {
 		snprintf(handle->err, sizeof(handle->err), "Authentication Error");
 		goto fail;
 	}
@@ -800,10 +800,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	struct timeval tv = { 0 };
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
-	
-	if (!ms) {
-		return esl_recv_event(handle, check_q, save_event);
-	}
 
 	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
@@ -819,6 +815,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	}
 
 	tv.tv_usec = ms * 1000;
+
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&efds);
@@ -1145,7 +1142,7 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 }
 
 
-ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *cmd, uint32_t ms)
+ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 {
 	const char *hval;
 	esl_status_t status;
@@ -1175,7 +1172,7 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 
  recv:	
 
-	status = esl_recv_event_timed(handle, ms, 0, &handle->last_sr_event);
+	status = esl_recv_event(handle, 0, &handle->last_sr_event);
 
 	if (handle->last_sr_event) {
 		char *ct = esl_event_get_header(handle->last_sr_event,"content-type");
