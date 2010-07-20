@@ -975,7 +975,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		pvt->filename = switch_core_session_strdup(session, data);
 		if (pvt->app_mode == FUNCTION_TX) {
 			if ((switch_file_exists(pvt->filename, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot send inexistant fax file [%s]\n",
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot send non-existant fax file [%s]\n",
 								  switch_str_nil(pvt->filename));
 				goto done;
 			}
