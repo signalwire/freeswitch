@@ -360,6 +360,24 @@ SWITCH_LIMIT_RESET(limit_reset_hash)
 	return SWITCH_STATUS_GENERR;
 }
 
+SWITCH_LIMIT_INTERVAL_RESET(limit_interval_reset_hash)
+{
+	char *hash_key = NULL;
+	limit_hash_item_t *item = NULL;
+
+	switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
+
+	hash_key = switch_mprintf("%s_%s", realm, resource);
+	if ((item = switch_core_hash_find(globals.limit_hash, hash_key))) {
+		item->rate_usage = 0;
+		item->last_check = switch_epoch_time_now(NULL);
+	}
+
+ 	switch_safe_free(hash_key);
+	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_LIMIT_STATUS(limit_status_hash)
 {
 	/*
@@ -892,7 +910,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* register limit interfaces */
-	SWITCH_ADD_LIMIT(limit_interface, "hash", limit_incr_hash, limit_release_hash, limit_usage_hash, limit_reset_hash, limit_status_hash);
+	SWITCH_ADD_LIMIT(limit_interface, "hash", limit_incr_hash, limit_release_hash, limit_usage_hash, limit_reset_hash, limit_status_hash, limit_interval_reset_hash);
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL, limit_hash_cleanup_callback, "limit_hash_cleanup", "mod_hash", 0, NULL,
 						  SSHF_NONE);

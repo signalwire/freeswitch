@@ -324,13 +324,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	break; \
 	}
 
-#define SWITCH_ADD_LIMIT(limit_int, int_name, incrptr, releaseptr, usageptr, resetptr, statusptr) \
+#define SWITCH_ADD_LIMIT(limit_int, int_name, incrptr, releaseptr, usageptr, resetptr, statusptr, interval_resetptr) \
 	for (;;) { \
 	limit_int = (switch_limit_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_LIMIT_INTERFACE); \
 	limit_int->incr = incrptr; \
 	limit_int->release = releaseptr; \
 	limit_int->usage = usageptr; \
 	limit_int->reset = resetptr; \
+	limit_int->interval_reset = interval_resetptr; \
 	limit_int->status = statusptr; \
 	limit_int->interface_name = int_name; \
 	break; \

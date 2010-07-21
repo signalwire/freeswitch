@@ -196,6 +196,28 @@ end:
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_limit_interval_reset(const char *backend, const char *realm, const char *resource) {
+	switch_limit_interface_t *limit = NULL;
+	int status = SWITCH_STATUS_SUCCESS;
+	
+	/* locate impl, call appropriate func */
+	if (!(limit = get_backend(backend))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s not found!\n", backend);
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
+	
+	if (!limit->interval_reset) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Limit subsystem %s does not implement interval_reset!\n", backend);
+		switch_goto_status(SWITCH_STATUS_GENERR, end);
+	}
+
+	status = limit->interval_reset(realm, resource);
+	
+end:
+	release_backend(limit);
+	return status;
+}
+
 SWITCH_DECLARE(char *) switch_limit_status(const char *backend) {
 	switch_limit_interface_t *limit = NULL;
 	char *status = NULL;

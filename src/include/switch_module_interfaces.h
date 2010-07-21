@@ -526,6 +526,8 @@ struct switch_limit_interface {
 	switch_status_t (*reset) (void);
 	/*! freform status */
 	char * (*status) (void);
+	/*! reset interval counter */
+	switch_status_t (*interval_reset) (const char *realm, const char *resource);
 	/* internal */
 	switch_thread_rwlock_t *rwlock;
 	int refs;

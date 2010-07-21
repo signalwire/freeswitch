@@ -620,7 +620,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* register limit interfaces */
-	SWITCH_ADD_LIMIT(limit_interface, "db", limit_incr_db, limit_release_db, limit_usage_db, limit_reset_db, limit_status_db);
+	SWITCH_ADD_LIMIT(limit_interface, "db", limit_incr_db, limit_release_db, limit_usage_db, limit_reset_db, limit_status_db, NULL);
 
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
