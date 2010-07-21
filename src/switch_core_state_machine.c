@@ -442,14 +442,48 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 	return;
 }
 
+static void api_hook(switch_core_session_t *session, const char *hook_var, int use_session)
+{
+	if (!zstr(hook_var)) {
+		switch_stream_handle_t stream = { 0 };
+		char *cmd = switch_core_session_strdup(session, hook_var);
+		char *arg = NULL;
+		char *expanded = NULL;
+
+		if ((arg = strchr(cmd, ':')) && *(arg + 1) == ':') {
+			*arg++ = '\0';
+			*arg++ = '\0';
+		} else {
+			if ((arg = strchr(cmd, ' '))) {
+				*arg++ = '\0';
+			}
+		}
+
+		SWITCH_STANDARD_STREAM(stream);
+
+		switch_channel_get_variables(session->channel, &stream.param_event);
+		switch_channel_event_set_data(session->channel, stream.param_event);
+		expanded = switch_channel_expand_variables(session->channel, arg);
+
+		switch_api_execute(cmd, expanded, use_session ? session : NULL, &stream);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Hangup Command %s %s(%s):\n%s\n",
+						  use_session ? "with Session" : "with no Session", cmd, switch_str_nil(expanded),
+						  switch_str_nil((char *) stream.data) );
+
+		if (expanded != arg) {
+			switch_safe_free(expanded);
+		}
+		switch_safe_free(stream.data);
+	}
+}
+
+
 
 SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *session, switch_bool_t force)
 {
-	const char *hook_var;
-	switch_core_session_t *use_session = NULL;
 	switch_call_cause_t cause = switch_channel_get_cause(session->channel);
 	switch_call_cause_t cause_q850 = switch_channel_get_cause_q850(session->channel);
-	switch_event_t *event;
 	int proceed = 1;
 	int global_proceed = 1;
 	int do_extra_handlers = 1;
@@ -459,7 +493,8 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
-
+	const char *hook_var;
+	int use_session;
 
 	if (!force) {
 		if (!switch_channel_test_flag(session->channel, CF_EARLY_HANGUP) && !switch_test_flag((&runtime), SCF_EARLY_HANGUP)) {
@@ -499,48 +534,13 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 
 	STATE_MACRO(hangup, "HANGUP");
 
-	hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE);
-	if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
-		use_session = session;
-	}
+	if ((hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE))) {
 
-	if (!zstr(hook_var)) {
-		switch_stream_handle_t stream = { 0 };
-		char *cmd = switch_core_session_strdup(session, hook_var);
-		char *arg = NULL;
-		char *expanded = NULL;
-
-		if ((arg = strchr(cmd, ':')) && *(arg + 1) == ':') {
-			*arg++ = '\0';
-			*arg++ = '\0';
-		} else {
-			if ((arg = strchr(cmd, ' '))) {
-				*arg++ = '\0';
-			}
+		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
+			use_session = 1;
 		}
 
-		SWITCH_STANDARD_STREAM(stream);
-
-		switch_channel_get_variables(session->channel, &stream.param_event);
-		switch_channel_event_set_data(session->channel, stream.param_event);
-		expanded = switch_channel_expand_variables(session->channel, arg);
-
-		switch_api_execute(cmd, expanded, use_session, &stream);
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Hangup Command %s %s(%s):\n%s\n",
-						  use_session ? "with Session" : "with no Session", cmd, switch_str_nil(expanded),
-						  switch_str_nil((char *) stream.data) );
-
-		if (expanded != arg) {
-			switch_safe_free(expanded);
-		}
-		switch_safe_free(stream.data);
-	}
-
-	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(cause));
-		switch_channel_event_set_data(session->channel, event);
-		switch_event_fire(&event);
+		api_hook(session, hook_var, use_session);
 	}
 
 	switch_set_flag(session, SSF_HANGUP);
@@ -559,6 +559,10 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	int silly = 0;
 	int index = 0;
 	const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
+	const char *hook_var;
+	int use_session;
+	switch_event_t *event;
+	switch_call_cause_t cause = switch_channel_get_cause(session->channel);
 
 	if (switch_channel_test_flag(session->channel, CF_REPORTING)) {
 		return;
@@ -589,6 +593,23 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	}
 
 	STATE_MACRO(reporting, "REPORTING");
+
+	if ((hook_var = switch_channel_get_variable(session->channel, SWITCH_API_REPORTING_HOOK_VARIABLE))) {
+
+		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
+			use_session = 1;
+		}
+
+		api_hook(session, hook_var, use_session);
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(cause));
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_fire(&event);
+	}
+
+
 
 	return;
 }
