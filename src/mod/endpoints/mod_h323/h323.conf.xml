@@ -15,6 +15,7 @@
     <param name="progress-indication" value="8"/> <!-- optional - PI value in progress message-->
     <param name="alerting-indication" value="8"/> <!-- optional - PI value in alerting message-->
     <param name="endpoint-name" value="fs"/>
+    <param name="fax-old-asn" value="true"/>
   </settings>
   <listeners>
     <listener name="default">
