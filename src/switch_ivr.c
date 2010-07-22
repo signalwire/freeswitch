@@ -1353,6 +1353,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	const char *max_forwards;
 	const char *forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 	int forwardval = 70;
+	const char *use_dialplan = dialplan, *use_context = context;
 
 	if (!zstr(forwardvar)) {
 		forwardval = atoi(forwardvar) - 1;
@@ -1374,41 +1375,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	if ((profile = switch_channel_get_caller_profile(channel))) {
 		const char *var;
 
-		if (zstr(dialplan)) {
-			dialplan = profile->dialplan;
-			if (!zstr(dialplan) && !strcasecmp(dialplan, "inline")) {
-				dialplan = NULL;
+		if (zstr(use_dialplan)) {
+			use_dialplan = profile->dialplan;
+			if (!zstr(use_dialplan) && !strcasecmp(use_dialplan, "inline")) {
+				use_dialplan = NULL;
 			}
 		}
 
-		if (zstr(context)) {
-			context = profile->context;
+		if (zstr(use_context)) {
+			use_context = profile->context;
 		}
 
-		if (zstr(dialplan)) {
-			dialplan = "XML";
+		if (zstr(use_dialplan)) {
+			use_dialplan = "XML";
 		}
 
-		if (zstr(context)) {
-			context = "default";
+		if (zstr(use_context)) {
+			use_context = "default";
 		}
 
 		if (zstr(extension)) {
 			extension = "service";
 		}
 
-		if ((var = switch_channel_get_variable(channel, "force_transfer_dialplan"))) {
-			dialplan = var;
+		if (zstr(dialplan) && (var = switch_channel_get_variable(channel, "force_transfer_dialplan"))) {
+			use_dialplan = var;
 		}
 
-		if ((var = switch_channel_get_variable(channel, "force_transfer_context"))) {
-			context = var;
+		if (zstr(context) && (var = switch_channel_get_variable(channel, "force_transfer_context"))) {
+			use_context = var;
 		}
 
 		new_profile = switch_caller_profile_clone(session, profile);
 
-		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);
-		new_profile->context = switch_core_strdup(new_profile->pool, context);
+		new_profile->dialplan = switch_core_strdup(new_profile->pool, use_dialplan);
+		new_profile->context = switch_core_strdup(new_profile->pool, use_context);
 		new_profile->destination_number = switch_core_strdup(new_profile->pool, extension);
 		new_profile->rdnis = switch_core_strdup(new_profile->pool, profile->destination_number);
 
@@ -1472,8 +1473,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		msg.from = __FILE__;
 		switch_core_session_receive_message(session, &msg);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), dialplan,
-						  extension, context);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), use_dialplan,
+						  extension, use_context);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
