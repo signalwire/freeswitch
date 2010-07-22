@@ -460,6 +460,13 @@ switch_status_t skinny_api_register(switch_loadable_module_interface_t **module_
     return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_api_unregister()
+{
+	switch_console_set_complete("del skinny");
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

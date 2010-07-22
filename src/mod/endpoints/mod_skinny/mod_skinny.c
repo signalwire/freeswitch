@@ -2031,6 +2031,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	switch_mutex_t *mutex = globals.mutex;
 	int sanity = 0;
 
+	skinny_api_unregister();
+	
 	/* release events */
 	switch_event_unbind(&globals.heartbeat_node);
 	switch_event_unbind(&globals.call_state_node);

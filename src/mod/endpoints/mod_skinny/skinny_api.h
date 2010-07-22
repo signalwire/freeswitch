@@ -34,6 +34,7 @@
 #define _SKINNY_API_H
 
 switch_status_t skinny_api_register(switch_loadable_module_interface_t **module_interface);
+switch_status_t skinny_api_unregister();
 
 #endif /* _SKINNY_API_H */
 
