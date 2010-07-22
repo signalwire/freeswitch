@@ -1311,7 +1311,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 
 			if (other_channel) {
 				if (!switch_core_session_in_thread(session)) {
-					switch_channel_wait_for_state(channel, channel, CS_PARK);
+					switch_channel_wait_for_state(channel, NULL, CS_PARK);
 					switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 					switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 					switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);

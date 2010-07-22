@@ -804,11 +804,10 @@ static switch_status_t loopback_bowout_on_execute_state_handler(switch_core_sess
 
 			switch_channel_caller_extension_masquerade(channel, other_channel, 0);
 			switch_channel_set_state(other_channel, CS_RESET);
-			switch_channel_wait_for_state(other_channel, other_channel, CS_RESET);
+			switch_channel_wait_for_state(other_channel, NULL, CS_RESET);
 			switch_channel_set_variable(channel, "process_cdr", "false");
 			switch_channel_set_variable(b_channel, "process_cdr", "false");
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			switch_channel_hangup(b_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_channel_set_state(other_channel, CS_EXECUTE);
 			switch_core_session_rwunlock(other_session);
 		}
