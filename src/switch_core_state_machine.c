@@ -494,7 +494,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	const char *hook_var;
-	int use_session;
+	int use_session = 0;
 
 	if (!force) {
 		if (!switch_channel_test_flag(session->channel, CF_EARLY_HANGUP) && !switch_test_flag((&runtime), SCF_EARLY_HANGUP)) {
@@ -560,7 +560,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	int index = 0;
 	const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
 	const char *hook_var;
-	int use_session;
+	int use_session = 0;
 	switch_event_t *event;
 	switch_call_cause_t cause = switch_channel_get_cause(session->channel);
 
