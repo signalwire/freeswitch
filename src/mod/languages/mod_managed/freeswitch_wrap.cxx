@@ -1235,6 +1235,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_API_HANGUP_HOOK_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_API_REPORTING_HOOK_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_reporting_hook";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -6981,6 +6992,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_get_loglevel(void * jarg1)
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_soft_lock(void * jarg1, unsigned long jarg2) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  switch_core_session_soft_lock(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_soft_unlock(void * jarg1) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  switch_core_session_soft_unlock(arg1);
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_uuid() {
   char * jresult ;
   char *result = 0 ;
@@ -9233,6 +9262,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_memory_reclaim_all() {
 
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_setrlimits() {
   switch_core_setrlimits();
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_time_ref() {
+  void * jresult ;
+  switch_time_t result;
+  
+  result = switch_time_ref();
+  jresult = new switch_time_t((switch_time_t &)result); 
+  return jresult;
 }
 
 
@@ -18854,6 +18893,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_limit_interface_status_get(void * ja
   
   arg1 = (switch_limit_interface *)jarg1; 
   result = (char *(*)(void)) ((arg1)->status);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_limit_interface_interval_reset_set(void * jarg1, void * jarg2) {
+  switch_limit_interface *arg1 = (switch_limit_interface *) 0 ;
+  switch_status_t (*arg2)(char const *,char const *) = (switch_status_t (*)(char const *,char const *)) 0 ;
+  
+  arg1 = (switch_limit_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(char const *,char const *))jarg2; 
+  if (arg1) (arg1)->interval_reset = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_limit_interface_interval_reset_get(void * jarg1) {
+  void * jresult ;
+  switch_limit_interface *arg1 = (switch_limit_interface *) 0 ;
+  switch_status_t (*result)(char const *,char const *) = 0 ;
+  
+  arg1 = (switch_limit_interface *)jarg1; 
+  result = (switch_status_t (*)(char const *,char const *)) ((arg1)->interval_reset);
   jresult = (void *)result; 
   return jresult;
 }
