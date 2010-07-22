@@ -1654,7 +1654,9 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 			);
 
 		switch_set_flag_locked(tech_pvt, TFLAG_IO);
-		switch_channel_mark_answered(channel);
+		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			switch_channel_mark_answered(channel);
+		}
 		if (switch_channel_test_flag(channel, CF_HOLD)) {
 			switch_ivr_unhold(session);
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
