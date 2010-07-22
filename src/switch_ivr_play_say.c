@@ -916,6 +916,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int timeout_samples = 0;
 	const char *var;
 
+	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	if ((var = switch_channel_get_variable(channel, "playback_timeout_sec"))) {
@@ -934,10 +938,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				sleep_val_i = tmp;
 			}
 		}
-	}
-
-	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
 	}
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
