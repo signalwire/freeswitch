@@ -1106,7 +1106,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
         switch (pvt->t38_mode) {
         case T38_MODE_REQUESTED:
             {
-                if (switch_channel_test_app_flag(channel, CF_APP_T38)) {
+                if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     switch_core_session_message_t msg = { 0 };
                     pvt->t38_mode = T38_MODE_NEGOTIATED;
                     spanfax_init(pvt, T38_MODE);
@@ -1122,7 +1122,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
             break;
         case T38_MODE_UNKNOWN:
             {
-                if (switch_channel_test_app_flag(channel, CF_APP_T38)) {
+                if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     if (negotiate_t38(pvt) == T38_MODE_NEGOTIATED) {
                         /* is is safe to call this again, it was already called above in AUDIO_MODE */
                         /* but this is the only way to set up the t38 stuff */
@@ -1338,7 +1338,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
     msg.string_arg = peer_uuid;
     switch_core_session_receive_message(session, &msg);
 
-    while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag(channel, CF_APP_T38)) {
+    while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
@@ -1359,7 +1359,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
         goto end_unlock;
     }
 
-    if (!switch_channel_test_app_flag(channel, CF_APP_T38)) {
+    if (!switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Could not negotiate T38\n", switch_channel_get_name(channel));
         goto end_unlock;
@@ -1387,7 +1387,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 
     /* wake up the audio side */
     switch_channel_set_private(channel, "_t38_pvt", pvt);
-    switch_channel_set_app_flag(other_channel, CF_APP_T38);
+    switch_channel_set_app_flag_key("T38", other_channel, CF_APP_T38);
 
 
 	while (switch_channel_ready(channel) && switch_channel_up(other_channel)) {
@@ -1469,7 +1469,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 		switch_event_fire(&event);
 	}
 
-    while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag(channel, CF_APP_T38)) {
+    while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
         
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -1490,7 +1490,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
         goto end_unlock;
     }
 
-    if (!switch_channel_test_app_flag(channel, CF_APP_T38)) {
+    if (!switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
         switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
         goto end_unlock;
     }

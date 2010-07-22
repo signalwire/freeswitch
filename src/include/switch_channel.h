@@ -561,9 +561,15 @@ SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, 
 SWITCH_DECLARE(void) switch_channel_clear_private_flag(switch_channel_t *channel, uint32_t flags);
 SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, uint32_t flags);
 
-SWITCH_DECLARE(void) switch_channel_set_app_flag(switch_channel_t *channel, uint32_t flags);
-SWITCH_DECLARE(void) switch_channel_clear_app_flag(switch_channel_t *channel, uint32_t flags);
-SWITCH_DECLARE(int) switch_channel_test_app_flag(switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(void) switch_channel_set_app_flag_key(const char *app, switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(void) switch_channel_clear_app_flag_key(const char *app, switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *app, switch_channel_t *channel, uint32_t flags);
+
+#define switch_channel_set_app_flag(_c, _f) switch_channel_set_app_flag_key(__FILE__, _c, _f)
+#define switch_channel_clear_app_flag(_c, _f) switch_channel_clear_app_flag_key(__FILE__, _c, _f)
+#define switch_channel_test_app_flag(_c, _f) switch_channel_test_app_flag_key(__FILE__, _c, _f)
+
+
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel);
 SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel);

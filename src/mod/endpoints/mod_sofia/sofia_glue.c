@@ -3446,7 +3446,7 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 	switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
 	switch_channel_set_private(tech_pvt->channel, "t38_options", t38_options);
-	switch_channel_set_app_flag(tech_pvt->channel, CF_APP_T38);
+	switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 
 	return t38_options;
 }

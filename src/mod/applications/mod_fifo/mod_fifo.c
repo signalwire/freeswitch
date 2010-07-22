@@ -58,6 +58,10 @@ typedef struct {
 	switch_mutex_t *mutex;
 } fifo_queue_t;
 
+typedef enum {
+	FIFO_APP_BRIDGE_TAG = (1 << 0),
+	FIFO_APP_TRACKING = (1 << 1)
+} fifo_app_flag_t;
 
 
 
@@ -894,11 +898,11 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_size_t retsize;
 			const char *ced_name, *ced_number, *cid_name, *cid_number;
 			
-			if (switch_channel_test_app_flag(consumer_channel, CF_APP_TAGGED)) {
+			if (switch_channel_test_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 				goto end;
 			}
 
-			switch_channel_set_app_flag(consumer_channel, CF_APP_TAGGED);
+			switch_channel_set_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG);
 			
 			switch_channel_set_variable(consumer_channel, "fifo_bridged", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_manual_bridge", "true");
@@ -1002,7 +1006,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		{
-			if (switch_channel_test_app_flag(consumer_channel, CF_APP_TAGGED)) {
+			if (switch_channel_test_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 				char date[80] = "";
 				switch_time_exp_t tm;
 				switch_time_t ts = switch_micro_time_now();
@@ -1010,7 +1014,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				long epoch_start = 0, epoch_end = 0;
 				const char *epoch_start_a = NULL;
 
-				switch_channel_clear_app_flag(consumer_channel, CF_APP_TAGGED);
+				switch_channel_clear_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG);
 				switch_channel_set_variable(consumer_channel, "fifo_bridged", NULL);
 				
 				ts = switch_micro_time_now();
@@ -1987,12 +1991,14 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		return;
 	}
 
-	if (switch_true(switch_channel_get_variable(channel, "fifo_track_call"))) {
+	if (switch_channel_test_app_flag(channel, FIFO_APP_TRACKING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s trying to double-track call!\n", switch_channel_get_name(channel));
 		return;
 	}
 
 	add_bridge_call(data);
+
+	switch_channel_set_app_flag(channel, FIFO_APP_TRACKING);
 
 	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
 	switch_channel_set_variable(channel, "fifo_track_call", "true");
@@ -2297,7 +2303,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
 		switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 
-		switch_channel_set_app_flag(channel, CF_APP_TAGGED);
+		switch_channel_set_app_flag(channel, FIFO_APP_BRIDGE_TAG);
 
 		if (chime_list) {
 			char *list_dup = switch_core_session_strdup(session, chime_list);
@@ -2370,7 +2376,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-		switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
+		switch_channel_clear_app_flag(channel, FIFO_APP_BRIDGE_TAG);
 
 	  abort:
 		
@@ -2724,7 +2730,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
-				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_app_flag(other_channel, CF_APP_TAGGED)) {
+				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_app_flag(other_channel, FIFO_APP_BRIDGE_TAG)) {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
@@ -3028,7 +3034,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_mutex_unlock(globals.mutex);
 
 
-	switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
+	switch_channel_clear_app_flag(channel, FIFO_APP_BRIDGE_TAG);
 
 	switch_core_media_bug_resume(session);
 

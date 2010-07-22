@@ -127,12 +127,12 @@ struct switch_channel {
 	uint32_t caps[CC_FLAG_MAX];
 	uint8_t state_flags[CF_FLAG_MAX];
 	uint32_t private_flags;
-	uint32_t app_flags;
 	switch_caller_profile_t *caller_profile;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_event_t *variables;
 	switch_hash_t *private_hash;
+	switch_hash_t *app_flag_hash;
 	switch_call_cause_t hangup_cause;
 	int vi;
 	int event_count;
@@ -1285,30 +1285,55 @@ SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, 
 	return (channel->private_flags & flags);
 }
 
-SWITCH_DECLARE(void) switch_channel_set_app_flag(switch_channel_t *channel, uint32_t flags)
+SWITCH_DECLARE(void) switch_channel_set_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
+	uint32_t *flagp = NULL;
+	
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->flag_mutex);
-	channel->app_flags |= flags;
+	
+	if (channel->app_flag_hash) {
+		flagp = switch_core_hash_find(channel->app_flag_hash, key);
+	} else {
+		switch_core_hash_init(&channel->app_flag_hash, switch_core_session_get_pool(channel->session));
+		flagp = switch_core_session_alloc(channel->session, sizeof(uint32_t));
+		switch_core_hash_insert(channel->app_flag_hash, key, flagp);
+	}
+
+	if (flagp) *flagp |= flags;
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
-SWITCH_DECLARE(void) switch_channel_clear_app_flag(switch_channel_t *channel, uint32_t flags)
+SWITCH_DECLARE(void) switch_channel_clear_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
+	uint32_t *flagp = NULL;
+	
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->flag_mutex);
-	if (!flags) {
-		channel->app_flags = 0;
-	} else {
-		channel->app_flags &= ~flags;
+	if (channel->app_flag_hash && (flagp = switch_core_hash_find(channel->app_flag_hash, key))) {
+		if (!flags) {
+			*flagp = 0;
+		} else {
+			*flagp &= ~flags;
+		}
 	}
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
-SWITCH_DECLARE(int) switch_channel_test_app_flag(switch_channel_t *channel, uint32_t flags)
+SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
+	int r = 0;
+	uint32_t *flagp = NULL;
 	switch_assert(channel != NULL);
-	return (channel->app_flags & flags);
+
+	switch_mutex_lock(channel->flag_mutex);
+	if (channel->app_flag_hash && (flagp = switch_core_hash_find(channel->app_flag_hash, key))) {
+		r = (*flagp & flags);
+	}
+	switch_mutex_unlock(channel->flag_mutex);
+	
+
+	return r;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flag)
