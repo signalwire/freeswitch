@@ -1,3 +1,4 @@
+apply changes from mod_h323-patch.diff by Peter Olsson.
 some t.38 and lockinng improvements.
 replace ptrace with switch_log_printf.
 initial t.38 support.

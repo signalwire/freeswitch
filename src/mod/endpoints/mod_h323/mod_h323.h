@@ -1,4 +1,30 @@
-
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ *
+ * mod_h323.h -- H323 endpoint
+ *
+ */
 
 #if defined(__GNUC__) && defined(HAVE_VISIBILITY)
 #pragma GCC visibility push(default)
@@ -39,34 +65,34 @@ const char* const GetDirections[H323Channel::NumDirections+1] = {
 };
 
 const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType] = {
-  "PCMU",
-  "FS1016",
-  "G721",
-  "GSM",
-  "G7231",
-  "DVI4_8k",
-  "DVI4_16k",
-  "LPC",
-  "PCMA",
-  "G722",
-  "L16_Stereo",
-  "L16_Mono",
-  "G723",
-  "CN",
-  "MPA",
-  "G728",
-  "DVI4_11k",
-  "DVI4_22k",
-  "G729",
-  "CiscoCN",
-  NULL, NULL, NULL, NULL, NULL,
-  "CelB",
-  "JPEG",
-  NULL, NULL, NULL, NULL,
-  "H261",
-  "MPV",
-  "MP2T",
-  "H263"
+	"PCMU",
+	"FS1016",
+	"G721",
+	"GSM",
+	"G7231",
+	"DVI4_8k",
+	"DVI4_16k",
+	"LPC",
+	"PCMA",
+	"G722",
+	"L16_Stereo",
+	"L16_Mono",
+	"G723",
+	"CN",
+	"MPA",
+	"G728",
+	"DVI4_11k",
+	"DVI4_22k",
+	"G729",
+	"CiscoCN",
+	NULL, NULL, NULL, NULL, NULL,
+	"CelB",
+	"JPEG",
+	NULL, NULL, NULL, NULL,
+	"H261",
+	"MPV",
+	"MP2T",
+	"H263"
 };
 
 
@@ -93,7 +119,6 @@ const char* const GetMainTypes[H323Capability::e_NumMainTypes+1] = {
 	"ConferenceControl",
 	"NumMainTypes"	
 };
-
 
 extern void SetT38_IFP_PRE();
 class OpalMediaFormat;
@@ -133,6 +158,9 @@ struct mod_h323_globals {
 	char *codec_string;
 	char *context;
 	char *dialplan;
+	int use_rtp_timer;
+	char *rtp_timer_name;
+	int ptime_override_value;
 };
 
 extern struct mod_h323_globals mod_h323_globals;
@@ -161,24 +189,27 @@ typedef struct {
 #define DECLARE_CALLBACK0(name)                           \
     static switch_status_t name(switch_core_session_t *session) {       \
         h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(session); \
-        return tech_pvt && tech_pvt->me != NULL ? tech_pvt->me->name() : SWITCH_STATUS_FALSE; } \
+	FSH323Connection *me = (tech_pvt && tech_pvt->me != NULL) ? tech_pvt->me : NULL; \
+        return me != NULL ? me->name() : SWITCH_STATUS_FALSE; } \
 switch_status_t name()
 
 #define DECLARE_CALLBACK1(name, type1, name1)                           \
     static switch_status_t name(switch_core_session_t *session, type1 name1) { \
         h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(session); \
-        return tech_pvt && tech_pvt->me != NULL ? tech_pvt->me->name(name1) : SWITCH_STATUS_FALSE; } \
+	FSH323Connection *me = (tech_pvt && tech_pvt->me != NULL) ? tech_pvt->me : NULL; \
+        return me != NULL ? me->name(name1) : SWITCH_STATUS_FALSE; } \
 switch_status_t name(type1 name1)
 
 #define DECLARE_CALLBACK3(name, type1, name1, type2, name2, type3, name3) \
     static switch_status_t name(switch_core_session_t *session, type1 name1, type2 name2, type3 name3) { \
         h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(session); \
-        return tech_pvt && tech_pvt->me != NULL ? tech_pvt->me->name(name1, name2, name3) : SWITCH_STATUS_FALSE; } \
+	FSH323Connection *me = (tech_pvt && tech_pvt->me != NULL) ? tech_pvt->me : NULL; \
+        return me != NULL ? me->name(name1, name2, name3) : SWITCH_STATUS_FALSE; } \
 switch_status_t name(type1 name1, type2 name2, type3 name3)
 
 class FSH323EndPoint;
-class FSProcess:public PLibraryProcess {
-	PCLASSINFO(FSProcess, PLibraryProcess);
+class FSProcess:public PProcess {
+	PCLASSINFO(FSProcess, PProcess);
 
   public:
 	FSProcess();
@@ -186,6 +217,8 @@ class FSProcess:public PLibraryProcess {
 
 	bool Initialise(switch_loadable_module_interface_t *iface);
 
+	void Main()
+		{ }
 	     FSH323EndPoint & GetH323EndPoint() const {
 		return *m_h323endpoint;
   } protected:
@@ -193,8 +226,9 @@ class FSProcess:public PLibraryProcess {
 };
 
 struct FSListener {
-	FSListener() {
-	} PString name;
+	FSListener()
+		{ }
+	PString name;
 	H323ListenerTCP *listenAddress;
 	PString localUserName;
 	PString gatekeeper;
@@ -210,13 +244,12 @@ class FSH323EndPoint:public H323EndPoint {
 	~FSH323EndPoint();
 
 
-	 /**Create a connection that uses the specified call.
-      */
+	 /* Create a connection that uses the specified call. */
 	virtual H323Connection *CreateConnection(unsigned callReference, void *userData, H323Transport * transport, H323SignalPDU * setupPDU);
 	virtual bool OnSetGatewayPrefixes(PStringList & prefixes) const;
 
 	bool Initialise(switch_loadable_module_interface_t *iface);
-	
+
 	switch_status_t ReadConfig(int reload);
 
 	void StartGkClient(int retry, PString * gkAddress, PString * gkIdentifer, PString * gkInterface);
@@ -224,8 +257,9 @@ class FSH323EndPoint:public H323EndPoint {
 
 	switch_endpoint_interface_t *GetSwitchInterface() const {
 		return m_freeswitch;
-	} FSH323Connection *FSMakeCall(const PString & dest, void *userData);
-	                 list < FSListener > m_listeners;
+	} 
+	FSH323Connection *FSMakeCall(const PString & dest, void *userData);
+	list < FSListener > m_listeners;
 	int m_ai;
 	int m_pi;
   protected:
@@ -274,8 +308,8 @@ class FSH323Connection:public H323Connection {
 	~FSH323Connection();
 
 	virtual H323Channel *CreateRealTimeLogicalChannel(const H323Capability & capability,
-													  H323Channel::Directions dir,
-													  unsigned sessionID, const H245_H2250LogicalChannelParameters * param, RTP_QOS * rtpqos = NULL);
+							H323Channel::Directions dir,
+							unsigned sessionID, const H245_H2250LogicalChannelParameters * param, RTP_QOS * rtpqos = NULL);
 	virtual PBoolean OnStartLogicalChannel(H323Channel & channel);
 	virtual PBoolean OnCreateLogicalChannel(const H323Capability & capability, H323Channel::Directions dir, unsigned &errorCode);
 	virtual bool OnReceivedSignalSetup(const H323SignalPDU & setupPDU);
@@ -313,32 +347,32 @@ class FSH323Connection:public H323Connection {
 	void CleanUpOnCall();
     
 	DECLARE_CALLBACK0(on_init);
-    DECLARE_CALLBACK0(on_routing);
-    DECLARE_CALLBACK0(on_execute);
-    DECLARE_CALLBACK0(on_exchange_media);
-    DECLARE_CALLBACK0(on_soft_execute);
-    DECLARE_CALLBACK1(kill_channel, int, sig);
-    DECLARE_CALLBACK1(send_dtmf, const switch_dtmf_t *, dtmf);
-    DECLARE_CALLBACK1(receive_message, switch_core_session_message_t *, msg);
-    DECLARE_CALLBACK1(receive_event, switch_event_t *, event);
-    DECLARE_CALLBACK0(state_change);
+	DECLARE_CALLBACK0(on_routing);
+	DECLARE_CALLBACK0(on_execute);
+	DECLARE_CALLBACK0(on_exchange_media);
+	DECLARE_CALLBACK0(on_soft_execute);
+	DECLARE_CALLBACK1(kill_channel, int, sig);
+	DECLARE_CALLBACK1(send_dtmf, const switch_dtmf_t *, dtmf);
+	DECLARE_CALLBACK1(receive_message, switch_core_session_message_t *, msg);
+	DECLARE_CALLBACK1(receive_event, switch_event_t *, event);
+	DECLARE_CALLBACK0(state_change);
 
-    DECLARE_CALLBACK3(read_audio_frame, switch_frame_t **, frame, switch_io_flag_t, flags, int, stream_id);
-    DECLARE_CALLBACK3(write_audio_frame, switch_frame_t *, frame, switch_io_flag_t, flags, int, stream_id);
-    DECLARE_CALLBACK3(read_video_frame, switch_frame_t **, frame, switch_io_flag_t, flag, int, stream_id);
-    DECLARE_CALLBACK3(write_video_frame, switch_frame_t *, frame, switch_io_flag_t, flag, int, stream_id);
+	DECLARE_CALLBACK3(read_audio_frame, switch_frame_t **, frame, switch_io_flag_t, flags, int, stream_id);
+	DECLARE_CALLBACK3(write_audio_frame, switch_frame_t *, frame, switch_io_flag_t, flags, int, stream_id);
+	DECLARE_CALLBACK3(read_video_frame, switch_frame_t **, frame, switch_io_flag_t, flag, int, stream_id);
+	DECLARE_CALLBACK3(write_video_frame, switch_frame_t *, frame, switch_io_flag_t, flag, int, stream_id);
 
 	bool m_callOnPreAnswer;
 	bool m_startRTP;
-	bool m_rxChennel;
-	bool m_txChennel;
-	bool m_ChennelAnswer;
-	bool m_ChennelProgress;
+	bool m_rxChannel;
+	bool m_txChannel;
+	bool m_ChannelAnswer;
+	bool m_ChannelProgress;
 	unsigned char m_select_dtmf;
 	PSyncPoint m_rxAudioOpened;
 	PSyncPoint m_txAudioOpened;
 	unsigned m_active_sessionID;
-	bool m_active_chennel_fax;
+	bool m_active_channel_fax;
 	int m_rtp_resetting;
 	bool m_isRequst_fax;
 	bool m_channel_hangup;
@@ -350,7 +384,7 @@ class FSH323Connection:public H323Connection {
 	switch_channel_t *m_fsChannel;
 	PIPSocket::Address m_RTPlocalIP;
 	WORD m_RTPlocalPort;
-	unsigned char m_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];	
+	unsigned char m_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
 
@@ -358,10 +392,9 @@ class FSH323_ExternalRTPChannel:public H323_ExternalRTPChannel {
 	PCLASSINFO(FSH323_ExternalRTPChannel, H323_ExternalRTPChannel);
   public:
 	/* Create a new channel. */
-	FSH323_ExternalRTPChannel(FSH323Connection & connection,
-							  const H323Capability & capability, Directions direction, unsigned sessionID, const PIPSocket::Address & ip, WORD dataPort);
+	FSH323_ExternalRTPChannel(FSH323Connection & connection, const H323Capability & capability, Directions direction, unsigned sessionID, const PIPSocket::Address & ip, WORD dataPort);
 	/* Destructor */
-	     ~FSH323_ExternalRTPChannel();
+	~FSH323_ExternalRTPChannel();
 
 	virtual PBoolean Start();
 	virtual PBoolean OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param);
@@ -375,15 +408,12 @@ class FSH323_ExternalRTPChannel:public H323_ExternalRTPChannel {
 	const H323Capability *m_capability;
 	switch_core_session_t *m_fsSession;
 	switch_channel_t *m_fsChannel;
-	switch_codec_t *m_switchCodec;
 	OpalMediaFormat *m_format;
-	switch_frame_t m_readFrame;
-	switch_timer_t *m_switchTimer;
 	PString m_RTPremoteIP;
 	WORD m_RTPremotePort;
 	PString m_RTPlocalIP;
 	WORD m_RTPlocalPort;
-	BYTE payloadCode;	
+	BYTE payloadCode;
 	unsigned m_sessionID;
 	int m_rtp_resetting;
 };
@@ -393,15 +423,20 @@ class BaseG7231Capab:public H323AudioCapability {
   public:
 	BaseG7231Capab(const char *fname, bool annexA = true)
   :	H323AudioCapability(7, 4), m_name(fname), m_aa(annexA) {
-	} virtual PObject *Clone() const {
+	} 
+	virtual PObject *Clone() const {
 		return new BaseG7231Capab(*this);
-	} virtual unsigned GetSubType() const {
+	} 
+	virtual unsigned GetSubType() const {
 		return H245_AudioCapability::e_g7231;
-	} virtual PString GetFormatName() const {
+	} 
+	virtual PString GetFormatName() const {
 		return m_name;
-	} virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
+	} 
+	virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
 		return 0;
-	} virtual Comparison Compare(const PObject & obj) const {
+	} 
+	virtual Comparison Compare(const PObject & obj) const {
 		Comparison res = H323AudioCapability::Compare(obj);
 		if         (res != EqualTo)
 			           return res;
@@ -411,13 +446,15 @@ class BaseG7231Capab:public H323AudioCapability {
 		if    (m_aa && !aa)
 			      return GreaterThan;
 		      return EqualTo;
-	} virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const {
+	} 
+	virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const {
 		pdu.SetTag(GetSubType());
 		H245_AudioCapability_g7231 & g7231 = pdu;
 		g7231.m_maxAl_sduAudioFrames = packetSize;
 		g7231.m_silenceSuppression = m_aa;
 		return true;
-	} virtual bool OnReceivedPDU(const H245_AudioCapability & pdu, unsigned &packetSize) {
+	}
+	virtual bool OnReceivedPDU(const H245_AudioCapability & pdu, unsigned &packetSize) {
 		if (pdu.GetTag() != H245_AudioCapability::e_g7231)
 			return false;
 		const H245_AudioCapability_g7231 & g7231 = pdu;
@@ -440,13 +477,13 @@ class BaseG729Capab:public H323AudioCapability {
 	virtual PObject *Clone() const
 	{
 		return new BaseG729Capab(*this);
-	} 
+	}
 	virtual unsigned GetSubType() const {
 		return m_type;
-	} 
+	}
 	virtual PString GetFormatName() const {
 		return m_name;
-	} 
+	}
 	virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
 		return 0;
 	} 
@@ -462,23 +499,29 @@ class BaseGSM0610Cap:public H323AudioCapability {
 
 	BaseGSM0610Cap(const char *fname, unsigned type = H245_AudioCapability::e_gsmFullRate)
   :	H323AudioCapability(24, 2), m_name(fname), m_type(type), m_comfortNoise(0), m_scrambled(0) {
-	} virtual PObject *Clone() const {
+	} 
+	virtual PObject *Clone() const {
 		return new BaseGSM0610Cap(*this);
-	} virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
+	}
+	virtual H323Codec *CreateCodec(H323Codec::Direction direction) const {
 		return 0;
-	} virtual unsigned GetSubType() const {
+	}
+	virtual unsigned GetSubType() const {
 		return H245_AudioCapability::e_gsmFullRate;
-	} virtual PString GetFormatName() const {
+	}
+	virtual PString GetFormatName() const {
 		return m_name;
-	} virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const {
+	}
+	virtual bool OnSendingPDU(H245_AudioCapability & pdu, unsigned packetSize) const {
 		pdu.SetTag(H245_AudioCapability::e_gsmFullRate);
 		H245_GSMAudioCapability & gsm = pdu;
 		gsm.m_audioUnitSize = packetSize * 33;
 		gsm.m_comfortNoise = m_comfortNoise;
 		gsm.m_scrambled = m_scrambled;
 		return true;
-	} virtual bool OnReceivedPDU(const H245_AudioCapability & pdu, unsigned &packetSize) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"==============>BaseGSM0610Cap::OnReceivedPDU [%p]\n",this);
+	}
+	virtual bool OnReceivedPDU(const H245_AudioCapability & pdu, unsigned &packetSize) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"==============>BaseGSM0610Cap::OnReceivedPDU [%p]\n", this);
 		if (pdu.GetTag() != H245_AudioCapability::e_gsmFullRate)
 			return false;
 		const H245_GSMAudioCapability & gsm = pdu;
@@ -537,9 +580,9 @@ H323Channel * FSH323_T38Capability::CreateChannel(
     const H245_H2250LogicalChannelParameters * params) const
 {
  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"FSH323_T38Capability::CreateChannel %p  sessionID= %u direction=%s [%p]\n"
-    ,&connection
-    ,sessionID
-    ,GetDirections[direction]);
+    , &connection
+    , sessionID
+    , GetDirections[direction]);
 
   return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params);
 }

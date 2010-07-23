@@ -4,6 +4,9 @@
     <param name="context" value="default"/>
     <param name="dialplan" value="XML"/>
     <param name="codec-prefs" value="PCMA,PCMU,GSM,G729"/>
+    <param name="use-rtp-timer" value="true"/> <!-- enable RTP timer - should always be enabled -->
+    <param name="rtp-timer-name" value="soft"/> <!-- Timer name, soft is default -->
+    <!-- <param name="ptime-override-value" value="20"/> --> <!-- Override negotiated ptime value with this value -->
     <param name="gk-address" value=""/>    <!-- empty to disable, "*" to search LAN -->
     <param name="gk-identifer" value=""/>  <!-- optional name of gk -->
     <param name="gk-interface" value=""/>  <!-- mandatory listener interface name -->
@@ -15,7 +18,6 @@
     <param name="progress-indication" value="8"/> <!-- optional - PI value in progress message-->
     <param name="alerting-indication" value="8"/> <!-- optional - PI value in alerting message-->
     <param name="endpoint-name" value="fs"/>
-    <param name="fax-old-asn" value="true"/>
   </settings>
   <listeners>
     <listener name="default">
