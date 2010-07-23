@@ -1235,6 +1235,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.max_dtmf_duration = SWITCH_MAX_DTMF_DURATION;
 	runtime.default_dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
+	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
