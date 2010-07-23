@@ -720,6 +720,8 @@ static switch_status_t fifo_execute_sql(char *sql, switch_mutex_t *mutex)
 		goto end;
 	}
 
+	if (globals.debug > 1) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "sql: %s\n", sql);
+	
 	status = switch_cache_db_execute_sql(dbh, sql, NULL);
 
   end:
@@ -1135,8 +1137,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	const char *codec;
 	struct call_helper *rows[MAX_ROWS] = { 0 };
 	int rowcount = 0;
-
-
+	switch_memory_pool_t *pool;
+	
 	if (!globals.running) return NULL;
 
     switch_uuid_get(&uuid);
@@ -1322,6 +1324,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	add_caller_outbound_call(id, &cancel_cause);
 
+	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s dialing: %s\n", node->name, originate_string);
+
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, &cancel_cause);
 
 	del_caller_outbound_call(id);
@@ -1447,7 +1451,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		switch_event_destroy(&pop_dup);
 	}
 	
-	switch_core_destroy_memory_pool(&cbh->pool);
+	pool = cbh->pool;
+	switch_core_destroy_memory_pool(&pool);
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads--;
@@ -1687,14 +1692,14 @@ static void find_consumers(fifo_node_t *node)
 		{
 			switch_thread_t *thread;
 			switch_threadattr_t *thd_attr = NULL;
-			struct callback_helper *cbh;
+			struct callback_helper *cbh = NULL;
 			switch_memory_pool_t *pool = NULL;
-			
+
 			switch_core_new_memory_pool(&pool);
 			cbh = switch_core_alloc(pool, sizeof(*cbh));
 			cbh->pool = pool;
 			cbh->need = 1;
-
+			
 			if (node->outbound_per_cycle != cbh->need) {
 				cbh->need = node->outbound_per_cycle;
 			}
@@ -1706,6 +1711,8 @@ static void find_consumers(fifo_node_t *node)
 				switch_threadattr_detach_set(thd_attr, 1);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&thread, thd_attr, ringall_thread_run, cbh, cbh->pool);
+			} else {
+				switch_core_destroy_memory_pool(&pool);
 			}
 
 		}
@@ -1733,9 +1740,8 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 		
 		switch_mutex_lock(globals.mutex);
 
-		if (globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trying priority: %d\n", cur_priority);
-		}
+		if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trying priority: %d\n", cur_priority);
+		
 
 		for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
@@ -3507,8 +3513,52 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 }
 
 
+void dump_hash(switch_hash_t *hash, switch_stream_handle_t *stream)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	const void *var;
 
-#define FIFO_API_SYNTAX "list|list_verbose|count|importance [<fifo name>]|reparse [del_all]"
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		stream->write_function(stream, "  %s: %s\n", (char *)var, (char *)val);
+	}
+	switch_mutex_unlock(globals.mutex);
+}
+
+void node_dump(switch_stream_handle_t *stream)
+{
+
+
+	switch_hash_index_t *hi;
+	fifo_node_t *node;
+	void *val;
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		if ((node = (fifo_node_t *) val)) {
+			stream->write_function(stream, "node: %s outbound_name=%s outbound_per_cycle=%d outbound_priority=%d outbound_strategy=%s\n", 
+								   node->name, node->outbound_name, node->outbound_per_cycle, 
+								   node->outbound_priority, strat_parse(node->outbound_strategy));
+		}
+	}
+
+	stream->write_function(stream, " caller_orig:\n");
+	dump_hash(globals.caller_orig_hash, stream);
+	stream->write_function(stream, " consumer_orig:\n");
+	dump_hash(globals.consumer_orig_hash, stream);
+	stream->write_function(stream, " bridge:\n");
+	dump_hash(globals.bridge_hash, stream);
+	
+	switch_mutex_unlock(globals.mutex);
+	
+	
+}
+
+
+
+#define FIFO_API_SYNTAX "list|list_verbose|count|debug|status|importance [<fifo name>]|reparse [del_all]"
 SWITCH_STANDARD_API(fifo_api_function)
 {
 	int len = 0;
@@ -3538,9 +3588,18 @@ SWITCH_STANDARD_API(fifo_api_function)
 		goto done;
 	}
 
+	if (!strcasecmp(argv[0], "status")) {
+		node_dump(stream);
+        goto done;
+	}
+
 	if (!strcasecmp(argv[0], "debug")) {
-		globals.debug = !globals.debug;
-		stream->write_function(stream, "debug %s\n", globals.debug ? "on" : "off");
+		if (argv[1]) {
+			if ((globals.debug = atoi(argv[1])) < 0) {
+				globals.debug = 0;
+			}
+		}
+		stream->write_function(stream, "debug %d\n", globals.debug);
         goto done;
 	}
 
@@ -4252,9 +4311,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 	globals.running = 0;
 	/* Cleanup */
 
-	if (globals.node_thread_running) {
-		stop_node_thread();
-	}
+	stop_node_thread();
 	
 	while(globals.threads) {
 		switch_cond_next();
