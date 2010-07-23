@@ -160,6 +160,11 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		strcpy((char *) sql, "select 1");
 	}
 
+	if (stmt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		stmt = NULL;
+	}
+
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
 		code = __LINE__;
 		goto error;
@@ -370,12 +375,12 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *) resbuf, (SQLLEN) len, NULL);
 
 		sstatus = SWITCH_ODBC_SUCCESS;
-	} else {
-		return sstatus;
 	}
 
-  done:
+	done:
+
 	switch_odbc_statement_handle_free(&stmt);
+
 	return sstatus;
 #else
 	return SWITCH_ODBC_FAIL;

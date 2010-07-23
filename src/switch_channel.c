@@ -536,6 +536,9 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 		switch_safe_free(pop);
 	}
 	switch_core_hash_destroy(&channel->private_hash);
+	if (channel->app_flag_hash) {
+		switch_core_hash_destroy(&channel->app_flag_hash);
+	}
 	switch_mutex_lock(channel->profile_mutex);
 	switch_event_destroy(&channel->variables);
 	switch_mutex_unlock(channel->profile_mutex);

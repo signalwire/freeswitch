@@ -4920,6 +4920,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			switch_odbc_handle_exec(odbc_dbh, dialog_sql, NULL, NULL);
 		}
 
+		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {

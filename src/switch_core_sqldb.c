@@ -425,11 +425,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
 		{
-			switch_odbc_statement_handle_t stmt = NULL;
-			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt, NULL)) != SWITCH_STATUS_SUCCESS) {
-				errmsg = switch_odbc_handle_get_error(dbh->native_handle.odbc_dbh, stmt);
-			}
-			switch_odbc_statement_handle_free(&stmt);
+			status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, NULL, &errmsg);
 		}
 		break;
 	case SCDB_TYPE_CORE_DB:
