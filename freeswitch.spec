@@ -810,11 +810,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/zt.conf
 %{prefix}/lib/libopenzap.so*
 %{prefix}/mod/mod_openzap.so*
-%{prefix}/mod/ozmod_analog.so*
-%{prefix}/mod/ozmod_analog_em.so*
-%{prefix}/mod/ozmod_isdn.so*
-%{prefix}/mod/ozmod_skel.so*
-%{prefix}/mod/ozmod_zt.so*
+%{prefix}/mod/ozmod_*.so*
 
 ###############################################################################################################################
 #
