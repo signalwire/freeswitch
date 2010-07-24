@@ -21,47 +21,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t4_tx.h,v 1.7.2.4 2009/12/21 17:18:40 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_T4_TX_H_)
 #define _SPANDSP_PRIVATE_T4_TX_H_
-
-typedef struct t4_t6_encode_state_s t4_t6_encode_state_t;
-
-/*!
-    T.4 1D, T4 2D and T6 compressor state.
-*/
-struct t4_t6_encode_state_s
-{
-    /*! \brief The minimum number of encoded bits per row. This is a timing thing
-               for hardware FAX machines. */
-    int min_bits_per_row;
-    /*! \brief The current maximum contiguous rows that may be 2D encoded. */
-    int max_rows_to_next_1d_row;
-
-    /*! \brief The text which will be used in FAX page header. No text results
-               in no header line. */
-    const char *header_info;
-
-    /*! \brief Number of rows left that can be 2D encoded, before a 1D encoded row
-               must be used. */
-    int rows_to_next_1d_row;
-
-    /*! \brief The number of runs currently in the reference row. */
-    int ref_steps;
-
-    /*! \brief Pointer to the byte containing the next image bit to transmit. */
-    int bit_pos;
-    /*! \brief Pointer to the bit within the byte containing the next image bit to transmit. */
-    int bit_ptr;
-
-    /*! \brief Callback function to read a row of pixels from the image source. */
-    t4_row_read_handler_t row_read_handler;
-    /*! \brief Opaque pointer passed to row_read_handler. */
-    void *row_read_user_data;
-};
 
 /*!
     T.4 FAX compression/decompression descriptor. This defines the working state
@@ -78,6 +41,12 @@ struct t4_state_s
 
     /*! \brief The time at which handling of the current page began. */
     time_t page_start_time;
+
+    /*! \brief The text which will be used in FAX page header. No text results
+               in no header line. */
+    const char *header_info;
+    /*! \brief Optional per instance time zone for the FAX pager header timestamp. */
+    struct tz_s *tz;
 
     /*! \brief The size of the compressed image on the line side, in bits. */
     int line_image_size;

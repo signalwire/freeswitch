@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: test_utils.c,v 1.14 2009/06/01 16:27:12 steveu Exp $
  */
 
 /*! \file */

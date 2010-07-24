@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bitstream.h,v 1.14.4.1 2009/12/28 12:20:47 steveu Exp $
  */
 
 /*! \file */
@@ -58,7 +56,15 @@ SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t val
     \return The value retrieved from the input buffer. */
 SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits);
 
-/*! \brief Flush any residual bit to the output buffer.
+/*! \brief Emit any residual bits to the output buffer, without actually flushing them.
+           This is useful for getting the buffer fully up to date, ready for things
+           like CRC calculations, while allowing bitstream_put() to be used to continue
+           the message later.
+    \param s A pointer to the bitstream context.
+    \param c A pointer to the bitstream output buffer. */
+SPAN_DECLARE(void) bitstream_emit(bitstream_state_t *s, uint8_t **c);
+
+/*! \brief Flush any residual bits to the output buffer.
     \param s A pointer to the bitstream context.
     \param c A pointer to the bitstream output buffer. */
 SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c);

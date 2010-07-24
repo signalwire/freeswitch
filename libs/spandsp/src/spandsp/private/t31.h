@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t31.h,v 1.7 2009/02/12 12:38:39 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_T31_H_)
@@ -35,6 +33,7 @@
 typedef struct
 {
     fax_modems_state_t modems;
+    //v8_state_t v8;
 
     /*! The transmit signal handler to be used when the current one has finished sending. */
     span_tx_handler_t *next_tx_handler;

@@ -23,8 +23,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v17_v32bis_tx_constellation_maps.h,v 1.1.4.1 2009/12/24 16:52:30 steveu Exp $
  */
 
 #if defined(SPANDSP_USE_FIXED_POINTx)

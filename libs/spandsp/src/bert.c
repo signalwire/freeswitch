@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bert.c,v 1.33 2009/04/14 16:04:53 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v8_tests.c,v 1.36.4.1 2009/12/28 12:32:53 steveu Exp $
  */
 
 /*! \page v8_tests_page V.8 tests
@@ -56,63 +54,108 @@
 
 int negotiations_ok = 0;
 
+#if 0
 static int select_modulation(int mask)
 {
     /* Select the fastest data modem available */
     if (mask & V8_MOD_V90)
         return V8_MOD_V90;
+    /*endif*/
     if (mask & V8_MOD_V34)
         return V8_MOD_V34;
+    /*endif*/
     if (mask & V8_MOD_V32)
         return V8_MOD_V32;
+    /*endif*/
     if (mask & V8_MOD_V23)
         return V8_MOD_V23;
+    /*endif*/
     if (mask & V8_MOD_V21)
         return V8_MOD_V21;
-    return V8_MOD_FAILED;
+    /*endif*/
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static void handler(void *user_data, v8_parms_t *result)
 {
     const char *s;
     
     s = (const char *) user_data;
-    
-    if (result == NULL)
+
+    printf("%s ", s);
+    switch (result->status)
     {
-        printf("%s V.8 negotiation failed\n", s);
+    case V8_STATUS_IN_PROGRESS:
+        printf("V.8 negotiation in progress\n");
         return;
+        break;
+    case V8_STATUS_V8_OFFERED:
+        printf("V.8 offered by the other party\n");
+        break;
+    case V8_STATUS_V8_CALL:
+        printf("V.8 call negotiation successful\n");
+        break;
+    case V8_STATUS_NON_V8_CALL:
+        printf("Non-V.8 call negotiation successful\n");
+        break;
+    case V8_STATUS_FAILED:
+        printf("V.8 call negotiation failed\n");
+        return;
+    default:
+        printf("Unexpected V.8 status %d\n", result->status);
+        break;
     }
-    if (result->modem_connect_tone == MODEM_CONNECT_TONES_ANSAM
-        ||
-        result->modem_connect_tone == MODEM_CONNECT_TONES_ANSAM_PR
-        ||
-        result->modem_connect_tone == MODEM_CONNECT_TONES_NONE)
+    /*endswitch*/
+
+    printf("  Modem connect tone '%s' (%d)\n", modem_connect_tone_to_str(result->modem_connect_tone), result->modem_connect_tone);
+    printf("  Call function '%s' (%d)\n", v8_call_function_to_str(result->call_function), result->call_function);
+    printf("  Far end modulations 0x%X\n", result->modulations);
+    printf("  Protocol '%s' (%d)\n", v8_protocol_to_str(result->protocol), result->protocol);
+    printf("  PSTN access '%s' (%d)\n", v8_pstn_access_to_str(result->pstn_access), result->pstn_access);
+    printf("  PCM modem availability '%s' (%d)\n", v8_pcm_modem_availability_to_str(result->pcm_modem_availability), result->pcm_modem_availability);
+    if (result->t66 >= 0)
+        printf("  T.66 '%s' (%d)\n", v8_t66_to_str(result->t66), result->t66);
+    /*endif*/
+    if (result->nsf >= 0)
+        printf("  NSF %d\n", result->nsf);
+    /*endif*/
+
+    switch (result->status)
     {
-        printf("%s V.8 negotiation result:\n", s);
-        printf("  Modem connect tone '%s' (%d)\n", modem_connect_tone_to_str(result->modem_connect_tone), result->modem_connect_tone);
-        printf("  Call function '%s' (%d)\n", v8_call_function_to_str(result->call_function), result->call_function);
-        printf("  Far end modulations 0x%X\n", result->modulations);
-        printf("  Protocol '%s' (%d)\n", v8_protocol_to_str(result->protocol), result->protocol);
-        printf("  PSTN access '%s' (%d)\n", v8_pstn_access_to_str(result->pstn_access), result->pstn_access);
-        printf("  PCM modem availability '%s' (%d)\n", v8_pcm_modem_availability_to_str(result->pcm_modem_availability), result->pcm_modem_availability);
-        if (result->t66 >= 0)
-            printf("  T.66 '%s' (%d)\n", v8_t66_to_str(result->t66), result->t66);
-        if (result->nsf >= 0)
-            printf("  NSF %d\n", result->nsf);
+    case V8_STATUS_V8_OFFERED:
+        /* Edit the result information appropriately */
+        //result->call_function = V8_CALL_T30_TX;
+        result->modulations &= (V8_MOD_V17
+                              | V8_MOD_V21
+                              //| V8_MOD_V22
+                              //| V8_MOD_V23HDX
+                              //| V8_MOD_V23
+                              //| V8_MOD_V26BIS
+                              //| V8_MOD_V26TER
+                              | V8_MOD_V27TER
+                              | V8_MOD_V29
+                              //| V8_MOD_V32
+                              | V8_MOD_V34HDX
+                              //| V8_MOD_V34
+                              //| V8_MOD_V90
+                              | V8_MOD_V92);
+        break;
+    case V8_STATUS_V8_CALL:
         if (result->call_function == V8_CALL_V_SERIES
             &&
             result->protocol == V8_PROTOCOL_LAPM_V42)
         {
             negotiations_ok++;
         }
+        /*endif*/
+        break;
+    case V8_STATUS_NON_V8_CALL:
+        negotiations_ok = 42;
+        break;
     }
-    else
-    {
-        printf("%s V.8 negotiation result:\n", s);
-        printf("  Modem connect tone '%s' (%d)\n", modem_connect_tone_to_str(result->modem_connect_tone), result->modem_connect_tone);
-    }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -136,28 +179,28 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
     caller_available_modulations = V8_MOD_V17
                                  | V8_MOD_V21
                                  | V8_MOD_V22
-                                 | V8_MOD_V23HALF
+                                 | V8_MOD_V23HDX
                                  | V8_MOD_V23
                                  | V8_MOD_V26BIS
                                  | V8_MOD_V26TER
                                  | V8_MOD_V27TER
                                  | V8_MOD_V29
                                  | V8_MOD_V32
-                                 | V8_MOD_V34HALF
+                                 | V8_MOD_V34HDX
                                  | V8_MOD_V34
                                  | V8_MOD_V90
                                  | V8_MOD_V92;
     answerer_available_modulations = V8_MOD_V17
                                    | V8_MOD_V21
                                    | V8_MOD_V22
-                                   | V8_MOD_V23HALF
+                                   | V8_MOD_V23HDX
                                    | V8_MOD_V23
                                    | V8_MOD_V26BIS
                                    | V8_MOD_V26TER
                                    | V8_MOD_V27TER
                                    | V8_MOD_V29
                                    | V8_MOD_V32
-                                   | V8_MOD_V34HALF
+                                   | V8_MOD_V34HDX
                                    | V8_MOD_V34
                                    | V8_MOD_V90
                                    | V8_MOD_V92;
@@ -200,33 +243,44 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
         samples = v8_tx(v8_caller, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
+        /*endif*/
         span_log_bump_samples(caller_logging, samples);
         remnant = v8_rx(v8_answerer, amp, samples);
         for (i = 0;  i < samples;  i++)
             out_amp[2*i] = amp[i];
-        
+        /*endfor*/
+
         samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
+        /*endif*/
         span_log_bump_samples(answerer_logging, samples);
         if (v8_rx(v8_caller, amp, samples)  &&  remnant)
             break;
+        /*endif*/
         for (i = 0;  i < samples;  i++)
             out_amp[2*i + 1] = amp[i];
+        /*endfor*/
 
-        outframes = sf_writef_short(outhandle, out_amp, samples);
-        if (outframes != samples)
+        if (outhandle)
         {
-            fprintf(stderr, "    Error writing audio file\n");
-            exit(2);
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     v8_free(v8_caller);
     v8_free(v8_answerer);
 
@@ -235,6 +289,7 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
         printf("Tests failed.\n");
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -258,14 +313,14 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
     answerer_available_modulations = V8_MOD_V17
                                    | V8_MOD_V21
                                    | V8_MOD_V22
-                                   | V8_MOD_V23HALF
+                                   | V8_MOD_V23HDX
                                    | V8_MOD_V23
                                    | V8_MOD_V26BIS
                                    | V8_MOD_V26TER
                                    | V8_MOD_V27TER
                                    | V8_MOD_V29
                                    | V8_MOD_V32
-                                   | V8_MOD_V34HALF
+                                   | V8_MOD_V34HDX
                                    | V8_MOD_V34
                                    | V8_MOD_V90
                                    | V8_MOD_V92;
@@ -295,21 +350,25 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
         samples = silence_gen(non_v8_caller_tx, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
+        /*endif*/
         remnant = v8_rx(v8_answerer, amp, samples);
         if (remnant)
             break;
+        /*endif*/
         for (i = 0;  i < samples;  i++)
             out_amp[2*i] = amp[i];
-        
+        /*endfor*/
+    
         samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
+        /*endif*/
         span_log_bump_samples(answerer_logging, samples);
         modem_connect_tones_rx(non_v8_caller_rx, amp, samples);
         if ((tone = modem_connect_tones_rx_get(non_v8_caller_rx)) != MODEM_CONNECT_TONES_NONE)
@@ -317,17 +376,26 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
             printf("Detected %s (%d)\n", modem_connect_tone_to_str(tone), tone);
             if (tone == MODEM_CONNECT_TONES_ANSAM_PR)
                 negotiations_ok++;
+            /*endif*/
         }
+        /*endif*/
         for (i = 0;  i < samples;  i++)
             out_amp[2*i + 1] = amp[i];
+        /*endfor*/
 
-        outframes = sf_writef_short(outhandle, out_amp, samples);
-        if (outframes != samples)
+        if (outhandle)
         {
-            fprintf(stderr, "    Error writing audio file\n");
-            exit(2);
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     silence_gen_free(non_v8_caller_tx);
     modem_connect_tones_rx_free(non_v8_caller_rx);
     v8_free(v8_answerer);
@@ -337,6 +405,7 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
         printf("Tests failed.\n");
         exit(2);
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -357,14 +426,14 @@ static int v8_calls_non_v8_tests(SNDFILE *outhandle)
     caller_available_modulations = V8_MOD_V17
                                  | V8_MOD_V21
                                  | V8_MOD_V22
-                                 | V8_MOD_V23HALF
+                                 | V8_MOD_V23HDX
                                  | V8_MOD_V23
                                  | V8_MOD_V26BIS
                                  | V8_MOD_V26TER
                                  | V8_MOD_V27TER
                                  | V8_MOD_V29
                                  | V8_MOD_V32
-                                 | V8_MOD_V34HALF
+                                 | V8_MOD_V34HDX
                                  | V8_MOD_V34
                                  | V8_MOD_V90
                                  | V8_MOD_V92;
@@ -392,41 +461,51 @@ static int v8_calls_non_v8_tests(SNDFILE *outhandle)
         samples = v8_tx(v8_caller, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
+        /*endif*/
         span_log_bump_samples(caller_logging, samples);
         for (i = 0;  i < samples;  i++)
             out_amp[2*i] = amp[i];
-        
+        /*endfor*/
+    
         samples = modem_connect_tones_tx(non_v8_answerer_tx, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
+            vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
+        /*endif*/
         if (v8_rx(v8_caller, amp, samples))
             break;
+        /*endif*/
         for (i = 0;  i < samples;  i++)
             out_amp[2*i + 1] = amp[i];
+        /*endfor*/
 
-        outframes = sf_writef_short(outhandle, out_amp, samples);
-        if (outframes != samples)
+        if (outhandle)
         {
-            fprintf(stderr, "    Error writing audio file\n");
-            exit(2);
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+            /*endif*/
         }
+        /*endif*/
     }
+    /*endfor*/
     v8_free(v8_caller);
     modem_connect_tones_tx_free(non_v8_answerer_tx);
 
-#if 0
-    if (negotiations_ok != 1)
+    if (negotiations_ok != 42)
     {
         printf("Tests failed.\n");
         exit(2);
     }
-#endif
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -441,6 +520,7 @@ int main(int argc, char *argv[])
     SNDFILE *inhandle;
     SNDFILE *outhandle;
     int opt;
+    int log_audio;
     char *decode_test_file;
     v8_state_t *v8_caller;
     v8_state_t *v8_answerer;
@@ -449,12 +529,16 @@ int main(int argc, char *argv[])
     logging_state_t *logging;
 
     decode_test_file = NULL;
-    while ((opt = getopt(argc, argv, "d:")) != -1)
+    log_audio = FALSE;
+    while ((opt = getopt(argc, argv, "d:l")) != -1)
     {
         switch (opt)
         {
         case 'd':
             decode_test_file = optarg;
+            break;
+        case 'l':
+            log_audio = TRUE;
             break;
         default:
             //usage();
@@ -463,62 +547,37 @@ int main(int argc, char *argv[])
         }
     }
 
-    caller_available_modulations = V8_MOD_V17
-                                 | V8_MOD_V21
-                                 | V8_MOD_V22
-                                 | V8_MOD_V23HALF
-                                 | V8_MOD_V23
-                                 | V8_MOD_V26BIS
-                                 | V8_MOD_V26TER
-                                 | V8_MOD_V27TER
-                                 | V8_MOD_V29
-                                 | V8_MOD_V32
-                                 | V8_MOD_V34HALF
-                                 | V8_MOD_V34
-                                 | V8_MOD_V90
-                                 | V8_MOD_V92;
-    answerer_available_modulations = V8_MOD_V17
-                                   | V8_MOD_V21
-                                   | V8_MOD_V22
-                                   | V8_MOD_V23HALF
-                                   | V8_MOD_V23
-                                   | V8_MOD_V26BIS
-                                   | V8_MOD_V26TER
-                                   | V8_MOD_V27TER
-                                   | V8_MOD_V29
-                                   | V8_MOD_V32
-                                   | V8_MOD_V34HALF
-                                   | V8_MOD_V34
-                                   | V8_MOD_V90
-                                   | V8_MOD_V92;
-    
-    if (decode_test_file == NULL)
+    if (decode_test_file)
     {
-        if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 2)) == NULL)
-        {
-            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
-            exit(2);
-        }
+        caller_available_modulations = V8_MOD_V17
+                                     | V8_MOD_V21
+                                     | V8_MOD_V22
+                                     | V8_MOD_V23HDX
+                                     | V8_MOD_V23
+                                     | V8_MOD_V26BIS
+                                     | V8_MOD_V26TER
+                                     | V8_MOD_V27TER
+                                     | V8_MOD_V29
+                                     | V8_MOD_V32
+                                     | V8_MOD_V34HDX
+                                     | V8_MOD_V34
+                                     | V8_MOD_V90
+                                     | V8_MOD_V92;
+        answerer_available_modulations = V8_MOD_V17
+                                       | V8_MOD_V21
+                                       | V8_MOD_V22
+                                       | V8_MOD_V23HDX
+                                       | V8_MOD_V23
+                                       | V8_MOD_V26BIS
+                                       | V8_MOD_V26TER
+                                       | V8_MOD_V27TER
+                                       | V8_MOD_V29
+                                       | V8_MOD_V32
+                                       | V8_MOD_V34HDX
+                                       | V8_MOD_V34
+                                       | V8_MOD_V90
+                                       | V8_MOD_V92;
 
-        printf("Test 1: V.8 terminal calls V.8 terminal\n");
-        v8_calls_v8_tests(outhandle);
-
-        printf("Test 2: non-V.8 terminal calls V.8 terminal\n");
-        non_v8_calls_v8_tests(outhandle);
-
-        printf("Test 3: V.8 terminal calls non-V.8 terminal\n");
-        v8_calls_non_v8_tests(outhandle);
-
-        if (sf_close(outhandle))
-        {
-            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
-            exit(2);
-        }
-        
-        printf("Tests passed.\n");
-    }
-    else
-    {
         printf("Decode file '%s'\n", decode_test_file);
         v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
         v8_call_parms.call_function = V8_CALL_V_SERIES;
@@ -579,7 +638,43 @@ int main(int argc, char *argv[])
         }
         /*endif*/
     }
-    return  0;
+    else
+    {
+        outhandle = NULL;
+        if (log_audio)
+        {
+            if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 2)) == NULL)
+            {
+                fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
+                exit(2);
+            }
+            /*endif*/
+        }
+        /*endif*/
+
+        printf("Test 1: V.8 terminal calls V.8 terminal\n");
+        v8_calls_v8_tests(outhandle);
+
+        printf("Test 2: non-V.8 terminal calls V.8 terminal\n");
+        non_v8_calls_v8_tests(outhandle);
+
+        printf("Test 3: V.8 terminal calls non-V.8 terminal\n");
+        v8_calls_non_v8_tests(outhandle);
+
+        if (outhandle)
+        {
+            if (sf_close(outhandle))
+            {
+                fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
+                exit(2);
+            }
+            /*endif*/
+        }
+        /*endif*/
+
+        printf("Tests passed.\n");
+    }
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-# $Id: regression_tests.sh,v 1.59 2009/09/22 13:28:18 steveu Exp $
-#
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
 MIXEDSIZES_TIF=../test-data/itu/fax/mixed_size_pages.tif
@@ -224,7 +221,7 @@ rm -f fax_tests_1.tif
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo fax_tests failed!
+    echo fax_tests mixed-sizes failed!
     exit $RETVAL
 fi
 # Now use tiffcmp to check the results. It will return non-zero if any page images differ. The -t
@@ -233,7 +230,7 @@ tiffcmp -t ${MIXEDSIZES_TIF} fax_tests_1.tif >/dev/null
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
-    echo fax_tests failed!
+    echo fax_tests mixed-sizes failed!
     exit $RETVAL
 fi
 echo fax_tests completed OK
@@ -309,6 +306,15 @@ then
     exit $RETVAL
 fi
 echo ima_adpcm_tests completed OK
+
+./image_translate_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo image_translate_tests failed!
+    exit $RETVAL
+fi
+echo image_translate_tests completed OK
 
 ./logging_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
@@ -428,6 +434,15 @@ echo r2_mf_tx_tests completed OK
 #    exit $RETVAL
 #fi
 #echo rfc2198_sim_tests completed OK
+
+./saturated_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo saturated_tests failed!
+    exit $RETVAL
+fi
+echo saturated_tests completed OK
 
 ./schedule_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
@@ -666,6 +681,37 @@ then
 fi
 echo t4_tests completed OK
 
+#rm -f t4_t6_tests_receive.tif
+#./t4_t6_tests >$STDOUT_DEST 2>$STDERR_DEST
+#RETVAL=$?
+#if [ $RETVAL != 0 ]
+#then
+#    echo t4_t6_tests failed!
+#    exit $RETVAL
+#fi
+#echo t4_t6_tests completed OK
+#rm -f t81_t82_arith_coding_tests_receive.tif
+#./t4_tests >$STDOUT_DEST 2>$STDERR_DEST
+#RETVAL=$?
+#if [ $RETVAL != 0 ]
+#then
+#    echo t81_t82_arith_coding_tests failed!
+#    exit $RETVAL
+#fi
+#echo t81_t82_arith_coding_tests completed OK
+echo t81_t82_arith_coding_tests not enabled
+
+#rm -f t85_tests_receive.tif
+#./t4_tests >$STDOUT_DEST 2>$STDERR_DEST
+#RETVAL=$?
+#if [ $RETVAL != 0 ]
+#then
+#    echo t85_tests failed!
+#    exit $RETVAL
+#fi
+#echo t85_tests completed OK
+echo t85_tests not enabled
+
 #./time_scale_tests >$STDOUT_DEST 2>$STDERR_DEST
 #RETVAL=$?
 #if [ $RETVAL != 0 ]
@@ -675,6 +721,15 @@ echo t4_tests completed OK
 #fi
 #echo time_scale_tests completed OK
 echo time_scale_tests not enabled
+
+./timezone_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo timezone_tests failed!
+    exit $RETVAL
+fi
+echo timezone_tests completed OK
 
 #./tone_detect_tests >$STDOUT_DEST 2>$STDERR_DEST
 #RETVAL=$?
@@ -782,6 +837,15 @@ then
 fi
 echo v29_tests completed OK
 
+#./v32bis_tests -b 14400 -s -42 -n -66 >$STDOUT_DEST 2>$STDERR_DEST
+#RETVAL=$?
+#if [ $RETVAL != 0 ]
+#then
+#    echo v32bis_tests failed!
+#    exit $RETVAL
+#fi
+#echo v32bis_tests completed OK
+
 #./v42_tests >$STDOUT_DEST 2>$STDERR_DEST
 #RETVAL=$?
 #if [ $RETVAL != 0 ]
@@ -792,14 +856,15 @@ echo v29_tests completed OK
 #echo v42_tests completed OK
 echo v42_tests not enabled
 
-./v42bis_tests.sh >/dev/null
-RETVAL=$?
-if [ $RETVAL != 0 ]
-then
-    echo v42bis_tests failed!
-    exit $RETVAL
-fi
-echo v42bis_tests completed OK
+#./v42bis_tests.sh >/dev/null
+#RETVAL=$?
+#if [ $RETVAL != 0 ]
+#then
+#    echo v42bis_tests failed!
+#    exit $RETVAL
+#fi
+#echo v42bis_tests completed OK
+echo v42bis_tests not enabled
 
 ./v8_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: logging.h,v 1.1 2008/11/30 13:44:35 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_LOGGING_H_)

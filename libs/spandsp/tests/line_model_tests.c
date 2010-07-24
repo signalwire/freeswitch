@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: line_model_tests.c,v 1.28 2009/09/23 16:02:59 steveu Exp $
  */
 
 /*! \page line_model_tests_page Telephony line model tests
@@ -209,7 +207,16 @@ static void test_both_ways_model(int line_model_no, int speech_test)
     awgn_state_t noise1;
     awgn_state_t noise2;
     
-    if ((model = both_ways_line_model_init(line_model_no, -50, line_model_no + 1, -35, channel_codec, rbs_pattern)) == NULL)
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           -50,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no + 1,
+                                           -35,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
     {
         fprintf(stderr, "    Failed to create line model\n");
         exit(2);

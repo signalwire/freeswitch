@@ -27,8 +27,6 @@
  *****    Copyright (c) CMU    1993      *****
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
- *
- * $Id: g722.h,v 1.26 2009/04/12 09:12:10 steveu Exp $
  */
 
 

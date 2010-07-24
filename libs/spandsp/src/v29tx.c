@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v29tx.c,v 1.89 2009/06/02 16:03:56 steveu Exp $
  */
 
 /*! \file */
@@ -49,6 +47,8 @@
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
+#include "spandsp/vector_int.h"
+#include "spandsp/complex_vector_int.h"
 #include "spandsp/async.h"
 #include "spandsp/dds.h"
 #include "spandsp/power_meter.h"
@@ -105,7 +105,7 @@ static __inline__ int get_scrambled_bit(v29_tx_state_t *s)
         s->in_training = TRUE;
         bit = 1;
     }
-    out_bit = (bit ^ (s->scramble_reg >> 17) ^ (s->scramble_reg >> 22)) & 1;
+    out_bit = (bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
     s->scramble_reg = (s->scramble_reg << 1) | out_bit;
     return out_bit;
 }
@@ -349,7 +349,7 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep)
         return -1;
     }
 #if defined(SPANDSP_USE_FIXED_POINT)
-    memset(s->rrc_filter, 0, sizeof(s->rrc_filter));
+    cvec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #else
     cvec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #endif

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: complex_vector_float_tests.c,v 1.3 2009/04/26 07:00:39 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)

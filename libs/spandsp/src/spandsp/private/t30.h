@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t30.h,v 1.5.4.1 2009/12/19 09:47:56 steveu Exp $
  */
 
 /*! \file */
@@ -36,23 +34,50 @@
 */
 struct t30_state_s
 {
-    /* This must be kept the first thing in the structure, so it can be pointed
-       to reliably as the structures change over time. */
     /*! \brief T.4 context for reading or writing image data. */
-    t4_state_t t4;
-    
+    union
+    {
+        t4_state_t rx;
+        t4_state_t tx;
+    } t4;
     /*! \brief The type of FAX operation currently in progress */
     int operation_in_progress;
 
     /*! \brief TRUE if behaving as the calling party */
     int calling_party;
     
+    /*! \brief Internet aware FAX mode bit mask. */
+    int iaf;
+    /*! \brief A bit mask of the currently supported modem types. */
+    int supported_modems;
+    /*! \brief A bit mask of the currently supported image compression modes. */
+    int supported_compressions;
+    /*! \brief A bit mask of the currently supported image resolutions. */
+    int supported_resolutions;
+    /*! \brief A bit mask of the currently supported image sizes. */
+    int supported_image_sizes;
+    /*! \brief A bit mask of the currently supported T.30 special features. */
+    int supported_t30_features;
+    /*! \brief TRUE is ECM mode handling is enabled. */
+    int ecm_allowed;
+#if 0
+    /*! \brief TRUE if we are capable of retransmitting pages */
+    int retransmit_capable;
+#endif
+
     /*! \brief The received DCS, formatted as an ASCII string, for inclusion
                in the TIFF file. */
     char rx_dcs_string[T30_MAX_DIS_DTC_DCS_LEN*3 + 1];
     /*! \brief The text which will be used in FAX page header. No text results
                in no header line. */
     char header_info[T30_MAX_PAGE_HEADER_INFO + 1];
+#if 0
+    /*! \brief TRUE for FAX page headers to overlay (i.e. replace) the beginning of the
+               page image. FALSE for FAX page headers to add to the overall length of
+               the page. */
+    int header_overlays_image;
+#endif
+
     /*! \brief The information fields received. */
     t30_exchanged_info_t rx_info;
     /*! \brief The information fields to be transmitted. */
@@ -133,9 +158,6 @@ struct t30_state_s
     int far_dis_dtc_len;
     /*! \brief TRUE if a valid DIS has been received from the far end. */
     int dis_received;
-
-    /*! \brief A flag to indicate a message is in progress. */
-    int in_message;
 
     /*! \brief TRUE if the short training sequence should be used. */
     int short_train;
@@ -253,27 +275,18 @@ struct t30_state_s
     int tx_stop_page;
     /*! \brief The current completion status. */
     int current_status;
-    /*! \brief Internet aware FAX mode bit mask. */
-    int iaf;
-    /*! \brief A bit mask of the currently supported modem types. */
-    int supported_modems;
-    /*! \brief A bit mask of the currently supported image compression modes. */
-    int supported_compressions;
-    /*! \brief A bit mask of the currently supported image resolutions. */
-    int supported_resolutions;
-    /*! \brief A bit mask of the currently supported image sizes. */
-    int supported_image_sizes;
-    /*! \brief A bit mask of the currently supported T.30 special features. */
-    int supported_t30_features;
-    /*! \brief TRUE is ECM mode handling is enabled. */
-    int ecm_allowed;
-    
+
+#if 0
+    /*! \brief The number of RTP events */
+    int rtp_events;
+    /*! \brief The number of RTN events */
+    int rtn_events;
+#endif
+
     /*! \brief the FCF2 field of the last PPS message we received. */
     uint8_t last_pps_fcf2;
-    /*! \brief The number of the first ECM frame which we do not currently received correctly. For
-        a partial page received correctly, this will be one greater than the number of frames it
-        contains. */
-    int ecm_first_bad_frame;
+    /*! \brief TRUE if all frames of the current received ECM block are now OK */
+    int rx_ecm_block_ok;
     /*! \brief A count of successfully received ECM frames, to assess progress as a basis for
         deciding whether to continue error correction when PPRs keep repeating. */
     int ecm_progress;

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t4_t6_decode_states.h,v 1.1.2.4 2009/12/19 10:21:43 steveu Exp $
  */
 
 /* Legitimate runs of zero bits which are the tail end of one code

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t38_terminal.h,v 1.41 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -39,6 +37,19 @@
 /* Make sure the HDLC frame buffers are big enough for ECM frames. */
 #define T38_MAX_HDLC_LEN        260
 
+enum
+{
+    /*! This option enables the continuous streaming of FAX data, with no allowance for
+        FAX machine speeds. This is usually used with TCP/TPKT transmission of T.38 FAXes */
+    T38_TERMINAL_OPTION_NO_PACING = 0x01,
+    /*! This option enables the regular repeat transmission of indicator signals,
+        during periods when no FAX signal transmission occurs. */
+    T38_TERMINAL_OPTION_REGULAR_INDICATORS = 0x02,
+    /*! This option enables the regular repeat transmission of indicator signals for the 
+        first 2s, during periods when no FAX signal transmission occurs. */
+    T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS = 0x04
+};
+
 typedef struct t38_terminal_state_s t38_terminal_state_t;
 
 #if defined(__cplusplus)
@@ -48,7 +59,12 @@ extern "C"
 
 SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples);
 
-SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int without_pacing);
+/*! Set configuration options.
+    \brief Set configuration options.
+    \param s The T.38 context.
+    \param config A combinations of T38_TERMINAL_OPTION_* bits.
+*/
+SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config);
 
 /*! Select whether the time for talker echo protection tone will be allowed for when sending.
     \brief Select whether TEP time will be allowed for.
@@ -86,6 +102,14 @@ SPAN_DECLARE(t38_core_state_t *) t38_terminal_get_t38_core_state(t38_terminal_st
     \return A pointer to the logging context, or NULL.
 */
 SPAN_DECLARE(logging_state_t *) t38_terminal_get_logging_state(t38_terminal_state_t *s);
+
+/*! \brief Reinitialise a termination mode T.38 context.
+    \param s The T.38 context.
+    \param calling_party TRUE if the context is for a calling party. FALSE if the
+           context is for an answering party.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
+                                       int calling_party);
 
 /*! \brief Initialise a termination mode T.38 context.
     \param s The T.38 context.

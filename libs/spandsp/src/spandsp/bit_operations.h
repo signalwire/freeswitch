@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bit_operations.h,v 1.27 2009/07/10 13:15:56 steveu Exp $
  */
 
 /*! \file */

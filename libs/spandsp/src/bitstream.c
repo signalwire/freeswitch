@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bitstream.c,v 1.18.4.1 2009/12/28 12:20:46 steveu Exp $
  */
 
 /*! \file */
@@ -74,15 +72,27 @@ SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t val
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) bitstream_emit(bitstream_state_t *s, uint8_t **c)
+{
+    uint32_t bitstream;
+
+    if (s->residue > 0)
+    {
+        bitstream = s->bitstream & ((1 << s->residue) - 1);
+        if (s->lsb_first)
+            *(*c) = (uint8_t) bitstream;
+        else
+            *(*c) = (uint8_t) (bitstream << (8 - s->residue));
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c)
 {
     if (s->residue > 0)
     {
-        s->bitstream &= ((1 << s->residue) - 1);
-        if (s->lsb_first)
-            *(*c)++ = (uint8_t) s->bitstream;
-        else
-            *(*c)++ = (uint8_t) (s->bitstream << (8 - s->residue));
+        bitstream_emit(s, c);
+        (*c)++;
         s->residue = 0;
     }
     s->bitstream = 0;

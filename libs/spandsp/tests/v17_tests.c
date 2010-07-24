@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v17_tests.c,v 1.104 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \page v17_tests_page V.17 modem tests
@@ -63,6 +61,10 @@ display of modem status is maintained.
 #include <unistd.h>
 #include <string.h>
 #include <sndfile.h>
+#include <signal.h>
+#if defined(HAVE_FENV_H)
+#include <fenv.h>
+#endif
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -219,6 +221,64 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(HAVE_FENV_H)
+static void sigfpe_handler(int sig_num, siginfo_t *info, void *data)
+{
+    switch (sig_num)
+    {
+    case SIGFPE:
+        switch (info->si_code)
+        {
+        case FPE_INTDIV:
+            fprintf(stderr, "integer divide by zero at %p\n", info->si_addr);
+            break;
+        case FPE_INTOVF:
+            fprintf(stderr, "integer overflow at %p\n", info->si_addr);
+            break;
+        case FPE_FLTDIV:
+            fprintf(stderr, "FP divide by zero at %p\n", info->si_addr);
+            break;
+        case FPE_FLTOVF:
+            fprintf(stderr, "FP overflow at %p\n", info->si_addr);
+            break;
+        case FPE_FLTUND:
+            fprintf(stderr, "FP underflow at %p\n", info->si_addr);
+            break;
+        case FPE_FLTRES:
+            fprintf(stderr, "FP inexact result at %p\n", info->si_addr);
+            break;
+        case FPE_FLTINV:
+            fprintf(stderr, "FP invalid operation at %p\n", info->si_addr);
+            break;
+        case FPE_FLTSUB:
+            fprintf(stderr, "subscript out of range at %p\n", info->si_addr);
+            break;
+        }
+        break;
+    default:
+        fprintf(stderr, "Unexpected signal %d\n", sig_num);
+        break;
+    }
+    exit(2);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void fpe_trap_setup(void)
+{
+    struct sigaction trap;
+
+    sigemptyset(&trap.sa_mask);
+    trap.sa_flags = SA_SIGINFO;
+    trap.sa_sigaction = sigfpe_handler;
+
+    sigaction(SIGFPE, &trap, NULL);
+    //feenableexcept(FE_DIVBYZERO | FE_INEXACT | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW);
+    //feenableexcept(FE_ALL_EXCEPT);
+    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
 int main(int argc, char *argv[])
 {
     v17_rx_state_t *rx;
@@ -259,8 +319,17 @@ int main(int argc, char *argv[])
         {
         case 'b':
             test_bps = atoi(optarg);
-            if (test_bps != 14400  &&  test_bps != 12000  &&  test_bps != 9600  &&  test_bps != 7200)
+            if (test_bps != 14400
+                &&
+                test_bps != 12000
+                &&
+                test_bps != 9600
+                &&
+                test_bps != 7200
+                &&
+                test_bps != 4800)
             {
+                /* 4800 is an extension of V.17, to provide full coverage of the V.32bis modes */
                 fprintf(stderr, "Invalid bit rate specified\n");
                 exit(2);
             }
@@ -308,6 +377,10 @@ int main(int argc, char *argv[])
     }
     inhandle = NULL;
     outhandle = NULL;
+
+#if defined(HAVE_FENV_H)
+    fpe_trap_setup();
+#endif
 
     if (log_audio)
     {
@@ -401,7 +474,7 @@ int main(int argc, char *argv[])
                 printf("Restarting on zero output\n");
 
                 /* Push a little silence through, to ensure all the data bits get out of the buffers */
-                memset(amp, 0, BLOCK_LEN*sizeof(int16_t));
+                vec_zeroi16(amp, BLOCK_LEN);
                 v17_rx(rx, amp, BLOCK_LEN);
 
                 /* Note that we might get a few bad bits as the carrier shuts down. */

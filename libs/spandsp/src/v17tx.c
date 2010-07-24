@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v17tx.c,v 1.75.4.1 2009/12/24 16:52:30 steveu Exp $
  */
 
 /*! \file */
@@ -49,6 +47,8 @@
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
+#include "spandsp/vector_int.h"
+#include "spandsp/complex_vector_int.h"
 #include "spandsp/async.h"
 #include "spandsp/dds.h"
 #include "spandsp/power_meter.h"
@@ -410,7 +410,7 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int s
     /* NB: some modems seem to use 3 instead of 1 for long training */
     s->diff = (short_train)  ?  0  :  1;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    memset(s->rrc_filter, 0, sizeof(s->rrc_filter));
+    cvec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #else
     cvec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #endif

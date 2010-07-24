@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v42bis.c,v 1.37 2009/02/10 13:06:47 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. 
@@ -57,6 +55,9 @@
 #define V42BIS_N4               256 /* Number of characters in the alphabet */
 #define V42BIS_N5               (V42BIS_N4 + V42BIS_N6)  /* Index number of first dictionary entry used to store a string */
 #define V42BIS_N6               3   /* Number of control codewords */
+
+/* V.42bis/9.2 */
+#define V42BIS_ESC_STEP         51
 
 /* Control code words in compressed mode */
 enum
@@ -134,8 +135,16 @@ SPAN_DECLARE(int) v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len
     {
         octet = buf[ptr++];
         ss->string_code = octet + V42BIS_N6;
-        if (ss->transparent)
+        if (octet == ss->escape_code)
+        {
+            push_compressed_octet(ss, ss->escape_code);
+            ss->escape_code += V42BIS_ESC_STEP;
+            push_compressed_octet(ss, V42BIS_EID);
+        }
+        else
+        {
             push_compressed_octet(ss, octet);
+        }
         ss->first = FALSE;
     }
     while (ptr < len)
@@ -273,17 +282,19 @@ SPAN_DECLARE(int) v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len
                         printf("Going compressed\n");
                         /* 7.8.1 Transition to compressed mode */
                         /* Switch out of transparent now, between codes. We need to send the octet which did not
-                        match, just before switching. */
+                           match, just before switching. */
                         if (octet == ss->escape_code)
                         {
-                            push_compressed_octet(ss, ss->escape_code++);
+                            push_compressed_octet(ss, ss->escape_code);
+                            ss->escape_code += V42BIS_ESC_STEP;
                             push_compressed_octet(ss, V42BIS_EID);
                         }
                         else
                         {
                             push_compressed_octet(ss, octet);
                         }
-                        push_compressed_octet(ss, ss->escape_code++);
+                        push_compressed_octet(ss, ss->escape_code);
+                        ss->escape_code += V42BIS_ESC_STEP;
                         push_compressed_octet(ss, V42BIS_ECM);
                         ss->transparent = FALSE;
                     }
@@ -310,7 +321,8 @@ SPAN_DECLARE(int) v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len
         {
             if (octet == ss->escape_code)
             {
-                push_compressed_octet(ss, ss->escape_code++);
+                push_compressed_octet(ss, ss->escape_code);
+                ss->escape_code += V42BIS_ESC_STEP;
                 push_compressed_octet(ss, V42BIS_EID);
             }
             else
@@ -396,7 +408,7 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t *buf, int l
     for (;;)
     {
         /* Fill up the bit buffer. */
-        while (ss->input_bit_count < 32 - 8  &&  ptr < len)
+        while (ss->input_bit_count < (32 - 8)  &&  ptr < len)
         {
             ss->input_bit_count += 8;
             ss->input_bit_buffer |= (uint32_t) buf[ptr++] << (32 - ss->input_bit_count);
@@ -412,34 +424,33 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t *buf, int l
             if (ss->escaped)
             {
                 ss->escaped = FALSE;
-                if (code == V42BIS_ECM)
+                switch (code)
                 {
+                case V42BIS_ECM:
                     printf("Hit V42BIS_ECM\n");
                     ss->transparent = FALSE;
                     code_len = ss->v42bis_parm_c2;
-                }
-                else if (code == V42BIS_EID)
-                {
+                    break;
+                case V42BIS_EID:
                     printf("Hit V42BIS_EID\n");
-                    ss->output_buf[ss->output_octet_count++] = ss->escape_code - 1;
+                    ss->output_buf[ss->output_octet_count++] = ss->escape_code;
+                    ss->escape_code += V42BIS_ESC_STEP;
                     if (ss->output_octet_count >= ss->max_len - s->v42bis_parm_n7)
                     {
                         ss->handler(ss->user_data, ss->output_buf, ss->output_octet_count);
                         ss->output_octet_count = 0;
                     }
-                }
-                else if (code == V42BIS_RESET)
-                {
+                    break;
+                case V42BIS_RESET:
                     printf("Hit V42BIS_RESET\n");
-                }
-                else
-                {
+                    break;
+                default:
                     printf("Hit V42BIS_???? - %" PRIu32 "\n", code);
+                    break;
                 }
             }
             else if (code == ss->escape_code)
             {
-                ss->escape_code++;
                 ss->escaped = TRUE;
             }
             else
@@ -515,6 +526,11 @@ if (code > 4095) {printf("Code is 0x%" PRIu32 "\n", code); exit(2);}
             ss->octet = code - V42BIS_N6;
             /* Output the decoded string. */
             this_length = V42BIS_MAX_STRING_SIZE - (int) (string - decode_buf);
+            for (i = 0;  i < this_length;  i++)
+            {
+                if (string[i] == ss->escape_code)
+                    ss->escape_code += V42BIS_ESC_STEP;
+            }
             memcpy(ss->output_buf + ss->output_octet_count, string, this_length);
             ss->output_octet_count += this_length;
             if (ss->output_octet_count >= ss->max_len - s->v42bis_parm_n7)
@@ -627,9 +643,9 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
 {
     int i;
 
-    if (negotiated_p1 < 512  ||  negotiated_p1 > 65535)
+    if (negotiated_p1 < V42BIS_MIN_DICTIONARY_SIZE  ||  negotiated_p1 > 65535)
         return NULL;
-    if (negotiated_p2 < 6  ||  negotiated_p2 > V42BIS_MAX_STRING_SIZE)
+    if (negotiated_p2 < V42BIS_MIN_STRING_SIZE  ||  negotiated_p2 > V42BIS_MAX_STRING_SIZE)
         return NULL;
     if (s == NULL)
     {
@@ -677,9 +693,13 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
         s->decompress.dict[i].parent_code = (uint16_t) i;
     s->compress.string_code = 0xFFFFFFFF;
     s->compress.latest_code = 0xFFFFFFFF;
-    
+    s->compress.transparent = TRUE;
+    s->compress.first = TRUE;
+
     s->decompress.last_old_code = 0xFFFFFFFF;
     s->decompress.last_extra_octet = -1;
+    s->decompress.transparent = TRUE;
+    s->compress.first = TRUE;
 
     s->compress.compression_mode = V42BIS_COMPRESSION_MODE_DYNAMIC;
 

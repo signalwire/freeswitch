@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t38_gateway_tests.c,v 1.82.4.1 2009/12/19 09:47:57 steveu Exp $
  */
 
 /*! \file */
@@ -73,10 +71,6 @@ These tests exercise the path
 #define INPUT_FILE_NAME         "../test-data/itu/fax/itutests.tif"
 #define OUTPUT_FILE_NAME        "t38.tif"
 #define OUTPUT_FILE_NAME_WAVE   "t38_gateway.wav"
-#define OUTPUT_FILE_NAME_T30A   "t38_gateway_t30a.wav"
-#define OUTPUT_FILE_NAME_T38A   "t38_gateway_t38a.wav"
-#define OUTPUT_FILE_NAME_T30B   "t38_gateway_t30b.wav"
-#define OUTPUT_FILE_NAME_T38B   "t38_gateway_t38b.wav"
 
 fax_state_t *fax_state_a;
 t38_gateway_state_t *t38_state_a;
@@ -243,14 +237,16 @@ int main(int argc, char *argv[])
     const char *input_file_name;
     int i;
     int seq_no;
-    int model_no;
-    int speed_pattern_no;
+    int g1050_model_no;
+    int g1050_speed_pattern_no;
     double tx_when;
     double rx_when;
     int supported_modems;
     int fill_removal;
     int use_gui;
     int opt;
+    int drop_frame;
+    int drop_frame_rate;
     t38_stats_t stats;
     fax_state_t *fax;
     t30_state_t *t30;
@@ -263,18 +259,24 @@ int main(int argc, char *argv[])
     t38_version = 1;
     input_file_name = INPUT_FILE_NAME;
     simulate_incrementing_repeats = FALSE;
-    model_no = 0;
-    speed_pattern_no = 1;
+    g1050_model_no = 0;
+    g1050_speed_pattern_no = 1;
     fill_removal = FALSE;
     use_gui = FALSE;
     use_tep = FALSE;
     feedback_audio = FALSE;
     use_transmit_on_idle = TRUE;
     supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    while ((opt = getopt(argc, argv, "efFgi:Ilm:M:s:tv:")) != -1)
+    drop_frame = 0;
+    drop_frame_rate = 0;
+    while ((opt = getopt(argc, argv, "D:efFgi:Ilm:M:s:tv:")) != -1)
     {
         switch (opt)
         {
+        case 'D':
+            drop_frame_rate =
+            drop_frame = atoi(optarg);
+            break;
         case 'e':
             use_ecm = TRUE;
             break;
@@ -305,10 +307,10 @@ int main(int argc, char *argv[])
             supported_modems = atoi(optarg);
             break;
         case 'M':
-            model_no = optarg[0] - 'A' + 1;
+            g1050_model_no = optarg[0] - 'A' + 1;
             break;
         case 's':
-            speed_pattern_no = atoi(optarg);
+            g1050_speed_pattern_no = atoi(optarg);
             break;
         case 't':
             use_tep = TRUE;
@@ -339,12 +341,12 @@ int main(int argc, char *argv[])
     memset(silence, 0, sizeof(silence));
  
     srand48(0x1234567);
-    if ((path_a_to_b = g1050_init(model_no, speed_pattern_no, 100, 33)) == NULL)
+    if ((path_a_to_b = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
     {
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
     }
-    if ((path_b_to_a = g1050_init(model_no, speed_pattern_no, 100, 33)) == NULL)
+    if ((path_b_to_a = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
     {
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
@@ -514,8 +516,17 @@ int main(int argc, char *argv[])
                 t30_amp_a[i] += t38_amp_hist_a[hist_ptr][i] >> 1;
             memcpy(t38_amp_hist_a[hist_ptr], t38_amp_a, sizeof(int16_t)*SAMPLES_PER_CHUNK);
         }
-        if (t38_gateway_rx(t38_state_a, t30_amp_a, t30_len_a))
-            break;
+        if (drop_frame_rate  &&  --drop_frame == 0)
+        {
+            drop_frame = drop_frame_rate;
+            if (t38_gateway_rx_fillin(t38_state_a, t30_len_a))
+                break;
+        }
+        else
+        {
+            if (t38_gateway_rx(t38_state_a, t30_amp_a, t30_len_a))
+                break;
+        }
 
         t38_len_a = t38_gateway_tx(t38_state_a, t38_amp_a, SAMPLES_PER_CHUNK);
         if (!use_transmit_on_idle)
@@ -557,8 +568,17 @@ int main(int argc, char *argv[])
                 t30_amp_b[i] += t38_amp_hist_b[hist_ptr][i] >> 1;
             memcpy(t38_amp_hist_b[hist_ptr], t38_amp_b, sizeof(int16_t)*SAMPLES_PER_CHUNK);
         }
-        if (t38_gateway_rx(t38_state_b, t30_amp_b, t30_len_b))
-            break;
+        if (drop_frame_rate  &&  --drop_frame == 0)
+        {
+            drop_frame = drop_frame_rate;
+            if (t38_gateway_rx_fillin(t38_state_b, t30_len_b))
+                break;
+        }
+        else
+        {
+            if (t38_gateway_rx(t38_state_b, t30_amp_b, t30_len_b))
+                break;
+        }
 
         t38_len_b = t38_gateway_tx(t38_state_b, t38_amp_b, SAMPLES_PER_CHUNK);
         if (!use_transmit_on_idle)

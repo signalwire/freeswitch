@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v22bis.h,v 1.12 2009/11/04 15:52:06 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V22BIS_H_)
@@ -37,7 +35,7 @@
 #define V22BIS_TX_FILTER_STEPS  9
 
 /*! The number of taps in the receive pulse shaping/bandpass filter */
-#define V22BIS_RX_FILTER_STEPS  37
+#define V22BIS_RX_FILTER_STEPS  27
 
 /*! Segments of the training sequence on the receive side */
 enum
@@ -96,12 +94,16 @@ struct v22bis_state_s
     struct
     {
         /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
-        float rrc_filter[2*V22BIS_RX_FILTER_STEPS];
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        int16_t rrc_filter[V22BIS_RX_FILTER_STEPS];
+#else
+        float rrc_filter[V22BIS_RX_FILTER_STEPS];
+#endif
         /*! \brief Current offset into the RRC pulse shaping filter buffer. */
         int rrc_filter_step;
 
         /*! \brief The register for the data scrambler. */
-        unsigned int scramble_reg;
+        uint32_t scramble_reg;
         /*! \brief A counter for the number of consecutive bits of repeating pattern through
                    the scrambler. */
         int scrambler_pattern_count;

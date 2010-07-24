@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax_tests.c,v 1.102 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page fax_tests_page FAX tests
@@ -206,6 +204,7 @@ int main(int argc, char *argv[])
     float signal_scaling;
     time_t start_time;
     time_t end_time;
+    int scan_line_time;
     char *page_header_info;
     int opt;
     t30_state_t *t30;
@@ -225,8 +224,9 @@ int main(int argc, char *argv[])
     use_page_limits = FALSE;
     signal_level = 0;
     noise_level = -99;
+    scan_line_time = 0;
     supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    while ((opt = getopt(argc, argv, "ehH:i:I:lm:n:prRs:tTw:")) != -1)
+    while ((opt = getopt(argc, argv, "ehH:i:I:lm:n:prRs:S:tTw:")) != -1)
     {
         switch (opt)
         {
@@ -265,6 +265,9 @@ int main(int argc, char *argv[])
             break;
         case 's':
             signal_level = atoi(optarg);
+            break;
+        case 'S':
+            scan_line_time = atoi(optarg);
             break;
         case 't':
             use_tep = TRUE;
@@ -340,7 +343,7 @@ int main(int argc, char *argv[])
                                      | T30_SUPPORT_SUB_ADDRESSING);
 
         if ((mc->chan & 1))
-            t30_set_minimum_scan_line_time(t30, 40);
+            t30_set_minimum_scan_line_time(t30, scan_line_time);
         t30_set_supported_image_sizes(t30,
                                       T30_SUPPORT_US_LETTER_LENGTH
                                     | T30_SUPPORT_US_LEGAL_LENGTH
@@ -363,7 +366,11 @@ int main(int argc, char *argv[])
                                     | T30_SUPPORT_600_1200_RESOLUTION);
         t30_set_supported_modems(t30, supported_modems);
         if (use_ecm)
+#if defined(SPANDSP_SUPPORT_T85)
+            t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION | T30_SUPPORT_T85_COMPRESSION);
+#else
             t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
+#endif
         if ((mc->chan & 1))
         {
             if (polled_mode)
@@ -406,9 +413,16 @@ int main(int argc, char *argv[])
         logging = t30_get_logging_state(t30);
         span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         span_log_set_tag(logging, mc->tag);
-        span_log_set_level(&t30->t4.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
-        span_log_set_tag(&t30->t4.logging, mc->tag);
-
+        if ((j & 1))
+        {
+            span_log_set_level(&t30->t4.rx.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+            span_log_set_tag(&t30->t4.rx.logging, mc->tag);
+        }
+        else
+        {
+            span_log_set_level(&t30->t4.tx.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+            span_log_set_tag(&t30->t4.tx.logging, mc->tag);
+        }
         logging = fax_get_logging_state(mc->fax);
         span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         span_log_set_tag(logging, mc->tag);

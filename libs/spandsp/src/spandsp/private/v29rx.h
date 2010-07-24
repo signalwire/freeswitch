@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v29rx.h,v 1.2 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V29RX_H_)
@@ -30,10 +28,10 @@
 
 /* Target length for the equalizer is about 63 taps, to deal with the worst stuff
    in V.56bis. */
+/*! The length of the equalizer buffer */
+#define V29_EQUALIZER_LEN       33
 /*! Samples before the target position in the equalizer buffer */
 #define V29_EQUALIZER_PRE_LEN   16
-/*! Samples after the target position in the equalizer buffer */
-#define V29_EQUALIZER_POST_LEN  14
 
 /*! The number of taps in the pulse shaping/bandpass filter */
 #define V29_RX_FILTER_STEPS     27
@@ -73,7 +71,7 @@ struct v29_rx_state_s
     int rrc_filter_step;
 
     /*! \brief The register for the data scrambler. */
-    unsigned int scramble_reg;
+    uint32_t scramble_reg;
     /*! \brief The register for the training scrambler. */
     uint8_t training_scramble_reg;
     /*! \brief The current step in the table of CD constellation positions. */
@@ -146,11 +144,11 @@ struct v29_rx_state_s
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     int16_t eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
-    complexi16_t eq_coeff[V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN];
+    complexi16_t eq_coeff[V29_EQUALIZER_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    complexi16_t eq_coeff_save[V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN];
+    complexi16_t eq_coeff_save[V29_EQUALIZER_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexi16_t eq_buf[V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN];
+    complexi16_t eq_buf[V29_EQUALIZER_LEN];
 
     /*! Low band edge filter for symbol sync. */
     int32_t symbol_sync_low[2];
@@ -169,11 +167,11 @@ struct v29_rx_state_s
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     float eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
-    complexf_t eq_coeff[V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN];
+    complexf_t eq_coeff[V29_EQUALIZER_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    complexf_t eq_coeff_save[V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN];
+    complexf_t eq_coeff_save[V29_EQUALIZER_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexf_t eq_buf[V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN];
+    complexf_t eq_buf[V29_EQUALIZER_LEN];
 
     /*! Low band edge filter for symbol sync. */
     float symbol_sync_low[2];

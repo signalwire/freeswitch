@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: g711.h,v 1.19 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -112,9 +110,9 @@ extern "C"
  */
 
 /* Enable the trap as per the MIL-STD */
-//#define ULAW_ZEROTRAP
+//#define G711_ULAW_ZEROTRAP
 /*! Bias for u-law encoding from linear. */
-#define ULAW_BIAS        0x84
+#define G711_ULAW_BIAS      0x84
 
 /*! \brief Encode a linear sample to u-law
     \param linear The sample to encode.
@@ -129,12 +127,12 @@ static __inline__ uint8_t linear_to_ulaw(int linear)
     /* Get the sign and the magnitude of the value. */
     if (linear >= 0)
     {
-        linear = ULAW_BIAS + linear;
+        linear = G711_ULAW_BIAS + linear;
         mask = 0xFF;
     }
     else
     {
-        linear = ULAW_BIAS - linear;
+        linear = G711_ULAW_BIAS - linear;
         mask = 0x7F;
     }
 
@@ -148,7 +146,7 @@ static __inline__ uint8_t linear_to_ulaw(int linear)
         u_val = (uint8_t) (0x7F ^ mask);
     else
         u_val = (uint8_t) (((seg << 4) | ((linear >> (seg + 3)) & 0xF)) ^ mask);
-#ifdef ULAW_ZEROTRAP
+#if defined(G711_ULAW_ZEROTRAP)
     /* Optional ITU trap */
     if (u_val == 0)
         u_val = 0x02;
@@ -171,8 +169,8 @@ static __inline__ int16_t ulaw_to_linear(uint8_t ulaw)
      * Extract and bias the quantization bits. Then
      * shift up by the segment number and subtract out the bias.
      */
-    t = (((ulaw & 0x0F) << 3) + ULAW_BIAS) << (((int) ulaw & 0x70) >> 4);
-    return  (int16_t) ((ulaw & 0x80)  ?  (ULAW_BIAS - t)  :  (t - ULAW_BIAS));
+    t = (((ulaw & 0x0F) << 3) + G711_ULAW_BIAS) << (((int) ulaw & 0x70) >> 4);
+    return  (int16_t) ((ulaw & 0x80)  ?  (G711_ULAW_BIAS - t)  :  (t - G711_ULAW_BIAS));
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -195,7 +193,7 @@ static __inline__ int16_t ulaw_to_linear(uint8_t ulaw)
  */
 
 /*! The A-law alternate mark inversion mask */
-#define ALAW_AMI_MASK       0x55
+#define G711_ALAW_AMI_MASK      0x55
 
 /*! \brief Encode a linear sample to A-law
     \param linear The sample to encode.
@@ -209,12 +207,12 @@ static __inline__ uint8_t linear_to_alaw(int linear)
     if (linear >= 0)
     {
         /* Sign (bit 7) bit = 1 */
-        mask = ALAW_AMI_MASK | 0x80;
+        mask = G711_ALAW_AMI_MASK | 0x80;
     }
     else
     {
         /* Sign (bit 7) bit = 0 */
-        mask = ALAW_AMI_MASK;
+        mask = G711_ALAW_AMI_MASK;
         linear = -linear - 1;
     }
 
@@ -244,7 +242,7 @@ static __inline__ int16_t alaw_to_linear(uint8_t alaw)
     int i;
     int seg;
 
-    alaw ^= ALAW_AMI_MASK;
+    alaw ^= G711_ALAW_AMI_MASK;
     i = ((alaw & 0x0F) << 4);
     seg = (((int) alaw & 0x70) >> 4);
     if (seg)

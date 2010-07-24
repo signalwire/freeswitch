@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: dc_restore_tests.c,v 1.24 2008/11/30 12:38:27 steveu Exp $
  */
 
 /*! \page dc_restore_tests_page DC restoration tests

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v42bis.h,v 1.27 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \page v42bis_page V.42bis modem data compression
@@ -36,10 +34,12 @@ conjunction with the error correction scheme defined in V.42.
 #if !defined(_SPANDSP_V42BIS_H_)
 #define _SPANDSP_V42BIS_H_
 
-#define V42BIS_MAX_BITS         12
-#define V42BIS_MAX_CODEWORDS    4096    /* 2^V42BIS_MAX_BITS */
-#define V42BIS_TABLE_SIZE       5021    /* This should be a prime >(2^V42BIS_MAX_BITS) */
-#define V42BIS_MAX_STRING_SIZE  250
+#define V42BIS_MIN_STRING_SIZE      6
+#define V42BIS_MAX_STRING_SIZE      250
+#define V42BIS_MIN_DICTIONARY_SIZE  512
+#define V42BIS_MAX_BITS             12
+#define V42BIS_MAX_CODEWORDS        4096    /* 2^V42BIS_MAX_BITS */
+#define V42BIS_TABLE_SIZE           5021    /* This should be a prime >(2^V42BIS_MAX_BITS) */
 
 enum
 {

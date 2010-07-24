@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v27ter_rx.h,v 1.2 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V27TER_RX_H_)
@@ -30,10 +28,10 @@
 
 /* Target length for the equalizer is about 43 taps for 4800bps and 32 taps for 2400bps
    to deal with the worst stuff in V.56bis. */
-/*! Samples before the target position in the equalizer buffer */
-#define V27TER_EQUALIZER_PRE_LEN        16  /* This much before the real event */
-/*! Samples after the target position in the equalizer buffer */
-#define V27TER_EQUALIZER_POST_LEN       14  /* This much after the real event (must be even) */
+/*! The length of the equalizer buffer. Must be a power of 2 */
+#define V27TER_EQUALIZER_LEN            32
+/*! Samples before the target central position in the equalizer buffer */
+#define V27TER_EQUALIZER_PRE_LEN        16
 
 /*! The number of taps in the 4800bps pulse shaping/bandpass filter */
 #define V27TER_RX_4800_FILTER_STEPS     27
@@ -155,11 +153,11 @@ struct v27ter_rx_state_s
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     float eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
-    /*complexi16_t*/ complexf_t  eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*complexi16_t*/ complexf_t  eq_coeff[V27TER_EQUALIZER_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    /*complexi16_t*/ complexf_t  eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*complexi16_t*/ complexf_t  eq_coeff_save[V27TER_EQUALIZER_LEN];
     /*! \brief The equalizer signal buffer. */
-    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_LEN];
 #else
     /*! \brief The scaling factor accessed by the AGC algorithm. */
     float agc_scaling;
@@ -169,11 +167,11 @@ struct v27ter_rx_state_s
     /*! \brief The current delta factor for updating the equalizer coefficients. */
     float eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
-    complexf_t eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    complexf_t eq_coeff[V27TER_EQUALIZER_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    complexf_t eq_coeff_save[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    complexf_t eq_coeff_save[V27TER_EQUALIZER_LEN];
     /*! \brief The equalizer signal buffer. */
-    complexf_t eq_buf[V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN];
+    complexf_t eq_buf[V27TER_EQUALIZER_LEN];
 #endif
 
     /*! \brief Integration variable for damping the Gardner algorithm tests. */

@@ -2,7 +2,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * t4_tx.c - ITU T.4 FAX transmit processing
+ * t4_tx.c - ITU T.4 FAX image transmit processing
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t4_tx.c,v 1.13.2.9 2009/12/21 17:18:40 steveu Exp $
  */
 
 /*
@@ -81,11 +79,23 @@
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#include "spandsp/version.h"
+#if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/t81_t82_arith_coding.h"
+#include "spandsp/t85.h"
+#endif
+#include "spandsp/t4_t6_decode.h"
+#include "spandsp/t4_t6_encode.h"
 
 #include "spandsp/private/logging.h"
+#if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/private/t81_t82_arith_coding.h"
+#include "spandsp/private/t85.h"
+#endif
+#include "spandsp/private/t4_t6_decode.h"
+#include "spandsp/private/t4_t6_encode.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 
@@ -371,7 +381,10 @@ static void make_header(t4_state_t *s, char *header)
     };
 
     time(&now);
-    tm = *localtime(&now);
+    if (s->tz)
+        tz_localtime(s->tz, &tm, now);
+    else
+        tm = *localtime(&now);
     snprintf(header,
              132,
              "  %2d-%s-%d  %02d:%02d    %-50s %-21s   p.%d",
@@ -380,8 +393,8 @@ static void make_header(t4_state_t *s, char *header)
              tm.tm_year + 1900,
              tm.tm_hour,
              tm.tm_min,
-             s->t4_t6_tx.header_info,
-             s->tiff.local_ident,
+             s->header_info,
+             (s->tiff.local_ident)  ?  s->tiff.local_ident  :  "",
              s->current_page + 1);
 }
 /*- End of function --------------------------------------------------------*/
@@ -1321,7 +1334,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     s->min_row_bits = INT_MAX;
     s->max_row_bits = 0;
 
-    if (s->t4_t6_tx.header_info  &&  s->t4_t6_tx.header_info[0])
+    if (s->header_info  &&  s->header_info[0])
     {
         if (t4_tx_put_fax_header(s))
             return -1;
@@ -1482,7 +1495,7 @@ SPAN_DECLARE(void) t4_tx_set_tx_encoding(t4_state_t *s, int encoding)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t4_tx_set_min_row_bits(t4_state_t *s, int bits)
+SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_state_t *s, int bits)
 {
     s->t4_t6_tx.min_bits_per_row = bits;
 }
@@ -1496,7 +1509,13 @@ SPAN_DECLARE(void) t4_tx_set_local_ident(t4_state_t *s, const char *ident)
 
 SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info)
 {
-    s->t4_t6_tx.header_info = (info  &&  info[0])  ?  info  :  NULL;
+    s->header_info = (info  &&  info[0])  ?  info  :  NULL;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, const char *tzstring)
+{
+    s->tz = tz_init(s->tz, tzstring);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1534,6 +1553,21 @@ SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_state_t *s)
 SPAN_DECLARE(int) t4_tx_get_current_page_in_file(t4_state_t *s)
 {
     return s->current_page;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_state_t *s, t4_stats_t *t)
+{
+    t->pages_transferred = s->current_page - s->tiff.start_page;
+    t->pages_in_file = s->tiff.pages_in_file;
+    t->width = s->image_width;
+    t->length = s->image_length;
+    t->bad_rows = s->t4_t6_rx.bad_rows;
+    t->longest_bad_row_run = s->t4_t6_rx.longest_bad_row_run;
+    t->x_resolution = s->x_resolution;
+    t->y_resolution = s->y_resolution;
+    t->encoding = s->line_encoding;
+    t->line_image_size = s->line_image_size/8;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

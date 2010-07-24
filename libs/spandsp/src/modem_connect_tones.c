@@ -2,7 +2,7 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * modem_connect_tones.c - Generation and detection of tones
- * associated with modems calling and answering calls.
+ *                         associated with modems calling and answering calls.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: modem_connect_tones.c,v 1.41 2009/11/06 19:21:33 steveu Exp $
  */
  
 /*! \file */

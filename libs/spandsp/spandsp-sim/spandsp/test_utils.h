@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: test_utils.h,v 1.9 2009/05/31 14:47:10 steveu Exp $
  */
 
 /*! \file */

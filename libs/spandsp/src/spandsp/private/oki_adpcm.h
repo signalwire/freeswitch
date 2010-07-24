@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: oki_adpcm.h,v 1.1 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */

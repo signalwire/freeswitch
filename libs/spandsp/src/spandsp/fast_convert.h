@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fast_convert.h,v 1.9 2009/10/03 04:37:25 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)
@@ -82,12 +80,12 @@ extern "C"
  */
 
 #if defined(__CYGWIN__)
-#if !defined(__cplusplus)
+#if !defined(__cplusplus)  &&  (__GNUC__ < 4)
     /*
-     *    CYGWIN has lrint and lrintf functions, but they are slow and buggy:
+     *    CYGWIN versions prior to 1.7.1 have lrint and lrintf functions, but
+     *    they are slow and buggy:
      *        http://sourceware.org/ml/cygwin/2005-06/msg00153.html
      *        http://sourceware.org/ml/cygwin/2005-09/msg00047.html
-     *    The latest version of cygwin seems to have made no effort to fix this.
      *    These replacement functions (pulled from the Public Domain MinGW
      *    math.h header) replace the native versions.
      */

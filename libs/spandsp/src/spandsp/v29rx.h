@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v29rx.h,v 1.72 2009/07/09 13:52:09 steveu Exp $
  */
 
 /*! \file */
@@ -196,7 +194,7 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
     \param s The modem context.
     \param len The number of samples to fake.
     \return The number of samples unprocessed. */
-SPAN_DECLARE(int) v29_rx_fillin(v29_rx_state_t *s, int len);
+SPAN_DECLARE_NONSTD(int) v29_rx_fillin(v29_rx_state_t *s, int len);
 
 /*! Get a snapshot of the current equalizer coefficients.
     \brief Get a snapshot of the current equalizer coefficients.

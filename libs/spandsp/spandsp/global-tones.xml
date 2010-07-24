@@ -365,6 +365,7 @@
       <step freq="525" level="-12" length="0.1"/>
       <step length="0.1"/>
     </offering-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Austria" uncode="at">
     <dial-tone>
@@ -444,6 +445,7 @@
       <step freq="380+420" level="-12" length="0.4"/>
       <step length="0.4"/>
     </negative-indication-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Bahamas" uncode="bs">
     <ringback-tone>
@@ -596,6 +598,7 @@
       <step freq="1380" level="-12" length="0.333"/>
       <step freq="1860" level="-12" length="0.333"/>
     </special-information-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Benin" uncode="bj">
     <ringback-tone>
@@ -1080,6 +1083,7 @@
       <step freq="440" level="-12" length="0.05"/>
       <step length="0.05"/>
     </route-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Canada" uncode="ca">
     <dial-tone>
@@ -1201,6 +1205,7 @@
       <step freq="12000" level="-12" length="0.15"/>
       <step length="0.15"/>
     </pay-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Channel Islands: Jersey" uncode="??">
     <dial-tone>
@@ -1647,6 +1652,7 @@
       <step freq="425" level="-12" length="0.333"/>
       <step length="1.5"/>
     </offering-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Denmark" uncode="dk">
     <dial-tone>
@@ -1700,6 +1706,7 @@
       <step freq="1400+950" level="-12" length="0.2"/>
       <step length="2.0"/>
     </payphone-recognition-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Diego Garcia" uncode="??">
     <dial-tone>
@@ -1967,6 +1974,7 @@
       <step freq="1800" level="-12" length="0.33"/>
       <step length="0.3"/>
     </waiting-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Ethiopia" uncode="et">
     <dial-tone>
@@ -2181,6 +2189,7 @@
       <step freq="425" level="-12" length="0.15"/>
       <step length="8.0"/>
     </waiting-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="France" uncode="fr">
     <dial-tone>
@@ -2210,6 +2219,7 @@
       <step freq="440" level="-12" length="0.05"/>
       <step length="0.05"/>
     </route-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="French Polynesia" uncode="pf">
     <dial-tone>
@@ -2419,6 +2429,7 @@
         <step length="2.0"/>
       </step>
     </payphone-recognition-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Ghana" uncode="gh">
     <dial-tone>
@@ -2571,6 +2582,7 @@
         <step freq="450" level="-12"/>
       </step>
     </number-unobtainable-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Greenland" uncode="gl">
     <dial-tone>
@@ -3136,6 +3148,7 @@
       <step freq="750+1450" level="-12" length="0.2"/>
       <step length="2.0"/>
     </payphone-recognition-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Israel" uncode="il">
     <dial-tone>
@@ -3227,6 +3240,7 @@
       <step freq="400" level="-12" length="0.05"/>
       <step length="2.0"/>
     </holding-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Italy" uncode="it">
     <dial-tone>
@@ -3247,6 +3261,7 @@
         <step length="0.2"/>
       </step>
     </busy-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Ivory Coast" uncode="ci">
     <dial-tone>
@@ -3268,6 +3283,7 @@
       <step freq="425" level="-12" length="0.05"/>
       <step length="0.05"/>
     </route-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Jamaica" uncode="jm">
     <dial-tone>
@@ -4181,6 +4197,7 @@
       <step freq="400" level="-12" length="0.15"/>
       <step length="0.15"/>
     </pay-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Martinique (French Dep.)" uncode="mq">
     <dial-tone>
@@ -4622,6 +4639,7 @@
       <step freq="425 || 450" level="-12" length="0.0625"/>
       <step length="0.0625"/>
     </negative-indication-tone>
+    <!-- Billing signal: 50Hz/~50Vrms, longitudinal/~160ms -->
   </tone-set>
   <tone-set country="New Caledonia" uncode="nc">
     <dial-tone>
@@ -4858,6 +4876,7 @@
         <step length="2.0"/>
       </step>
     </payphone-recognition-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Oman" uncode="om">
     <dial-tone>
@@ -5248,6 +5267,7 @@
       <step freq="941" level="-12" length="0.2"/>
       <step length="2.0"/>
     </payphone-recognition-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Puerto Rico" uncode="pr">
     <payphone-recognition-tone>
@@ -5412,6 +5432,7 @@
       <step freq="440" level="-12" length="0.05"/>
       <step length="0.05"/>
     </route-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="St. Helena" uncode="sh">
     <dial-tone>
@@ -5902,6 +5923,7 @@
     <warning-tone type="conference">
       <step freq="425" level="-12" length="0.66"/>
     </warning-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Slovenia" uncode="si">
     <dial-tone>
@@ -6144,6 +6166,7 @@
       <step freq="1600" level="-12" length="0.05"/>
       <step length="1.5"/>
     </payphone-recognition-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Sri Lanka" uncode="lk">
     <dial-tone>
@@ -6357,6 +6380,7 @@
         <step length="3.6"/>
       </step>
     </pay-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Switzerland" uncode="ch">
     <dial-tone>
@@ -6417,6 +6441,7 @@
       <step freq="750+1450" level="-12" length="0.2"/>
       <step length="2.0"/>
     </payphone-recognition-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Syria" uncode="sy">
     <dial-tone>
@@ -6634,6 +6659,7 @@
         <step length="0.167"/>
       </step>
     </congestion-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Turkey" uncode="tr">
     <dial-tone>
@@ -6701,6 +6727,7 @@
       <step freq="450" level="-12" length="0.04"/>
       <step length="0.04"/>
     </confirmation-tone>
+    <!-- Billing signal: 12kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Turkmenistan" uncode="tm">
     <dial-tone>
@@ -6907,6 +6934,7 @@
         <step length="0.125"/>
       </step>
     </pay-tone>
+    <!-- Billing signal: 50Hz/~50Vrms, longitudinal/~160ms -->
   </tone-set>
   <tone-set country="United States" uncode="us">
     <dial-tone>
@@ -7246,6 +7274,7 @@
       <step freq="1800" level="-12" length="0.333"/>
       <step length="1.0"/>
     </special-information-tone>
+    <!-- Billing signal: 16kHz/~2Vrms, differential/~125ms -->
   </tone-set>
   <tone-set country="Zambia" uncode="zm">
     <dial-tone>

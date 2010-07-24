@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: vector_float.h,v 1.15 2009/01/31 08:48:11 steveu Exp $
  */
 
 #if !defined(_SPANDSP_VECTOR_FLOAT_H_)

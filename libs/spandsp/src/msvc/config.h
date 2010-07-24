@@ -9,8 +9,6 @@
  *
  *
  * This file is released in the public domain.
- *
- * $Id: config.h,v 1.4 2009/02/25 15:30:21 steveu Exp $
  */
 
 #if !defined(_MSVC_CONFIG_H_)

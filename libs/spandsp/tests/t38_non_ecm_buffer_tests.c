@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t38_non_ecm_buffer_tests.c,v 1.5.4.1 2009/12/19 06:43:28 steveu Exp $
  */
 
 /*! \file */

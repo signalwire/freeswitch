@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v18.c,v 1.12 2009/11/04 15:52:06 steveu Exp $
  */
  
 /*! \file */
@@ -114,19 +112,19 @@ static const struct dtmf_to_ascii_s dtmf_to_ascii[] =
     {"##9", 'Z'},
     {"##0", ' '},
 #if defined(WIN32)
-    {"#*1", 'X'}, // (Note 1) 111 1011
-    {"#*2", 'X'}, // (Note 1) 111 1100
-    {"#*3", 'X'}, // (Note 1) 111 1101
-    {"#*4", 'X'}, // (Note 1) 101 1011
-    {"#*5", 'X'}, // (Note 1) 101 1100
-    {"#*6", 'X'}, // (Note 1) 101 1101
+    {"#*1", 'X'},   // (Note 1) 111 1011
+    {"#*2", 'X'},   // (Note 1) 111 1100
+    {"#*3", 'X'},   // (Note 1) 111 1101
+    {"#*4", 'X'},   // (Note 1) 101 1011
+    {"#*5", 'X'},   // (Note 1) 101 1100
+    {"#*6", 'X'},   // (Note 1) 101 1101
 #else
-    {"#*1", 'æ'}, // (Note 1) 111 1011
-    {"#*2", 'ø'}, // (Note 1) 111 1100
-    {"#*3", 'å'}, // (Note 1) 111 1101
-    {"#*4", 'Æ'}, // (Note 1) 101 1011
-    {"#*5", 'Ø'}, // (Note 1) 101 1100
-    {"#*6", 'Å'}, // (Note 1) 101 1101
+    {"#*1", 0xE6},  // (Note 1) 111 1011
+    {"#*2", 0xF8},  // (Note 1) 111 1100
+    {"#*3", 0xE5},  // (Note 1) 111 1101
+    {"#*4", 0xC6},  // (Note 1) 101 1011
+    {"#*5", 0xD8},  // (Note 1) 101 1100
+    {"#*6", 0xC5},  // (Note 1) 101 1101
 #endif
     {"#0", '?'},
     {"#1", 'c'},
@@ -221,7 +219,7 @@ static const char *ascii_to_dtmf[128] =
     "",         /* $ */
     "**5",      /* % */
     "**1",      /* & >> + */
-    "",         /* ’ */
+    "",         /* 0x92 */
     "**6",      /* ( */
     "**7",      /* ) */
     "#9",       /* _ >> . */
@@ -273,12 +271,12 @@ static const char *ascii_to_dtmf[128] =
     "###8",     /* X */
     "##*9",     /* Y */
     "##9",      /* Z */
-    "#*4",      /* Æ (National code) */
-    "#*5",      /* Ø (National code) */
-    "#*6",      /* Å (National code) */
+    "#*4",      /* 0xC6 (National code) */
+    "#*5",      /* 0xD8 (National code) */
+    "#*6",      /* 0xC5 (National code) */
     "",         /* ^ */
     "0",        /* _ >> SPACE */
-    "",         /* ’ */
+    "",         /* 0x92 */
     "*1",       /* a */
     "1",        /* b */
     "#1",       /* c */
@@ -305,9 +303,9 @@ static const char *ascii_to_dtmf[128] =
     "#8",       /* x */
     "*9",       /* y */
     "9",        /* z */
-    "#*1",      /* æ (National code) */
-    "#*2",      /* ø (National code) */
-    "#*3",      /* å (National code) */
+    "#*1",      /* 0xE6 (National code) */
+    "#*2",      /* 0xF8 (National code) */
+    "#*3",      /* 0xE5 (National code) */
     "0",        /* ~ >> SPACE */
     "*0"        /* DEL >> BACK SPACE */
 };
@@ -582,13 +580,7 @@ static int v18_tdd_get_async_byte(void *user_data)
     
     s = (v18_state_t *) user_data;
     if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
-    {
-        int space;
-        int cont;
-        space = queue_free_space(&s->queue.queue);
-        cont = queue_contents(&s->queue.queue);
         return ch;
-    }
     if (s->tx_signal_on)
     {
         /* The FSK should now be switched off. */

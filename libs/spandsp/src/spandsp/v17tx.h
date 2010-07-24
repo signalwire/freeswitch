@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v17tx.h,v 1.43.4.1 2009/12/24 16:52:30 steveu Exp $
  */
 
 /*! \file */

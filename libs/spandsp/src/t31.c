@@ -24,8 +24,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t31.c,v 1.155.4.1 2009/12/19 10:44:10 steveu Exp $
  */
 
 /*! \file */
@@ -55,6 +53,7 @@
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
+#include "spandsp/bitstream.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
@@ -65,15 +64,19 @@
 #include "spandsp/crc.h"
 #include "spandsp/hdlc.h"
 #include "spandsp/silence_gen.h"
+#include "spandsp/super_tone_rx.h"
 #include "spandsp/fsk.h"
+#include "spandsp/modem_connect_tones.h"
+#include "spandsp/v8.h"
 #include "spandsp/v29tx.h"
 #include "spandsp/v29rx.h"
 #include "spandsp/v27ter_tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
-#include "spandsp/super_tone_rx.h"
-#include "spandsp/modem_connect_tones.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/v34.h"
+#endif
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #include "spandsp/t30.h"
@@ -86,16 +89,21 @@
 #include "spandsp/t30_fcf.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/bitstream.h"
 #include "spandsp/private/t38_core.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/fsk.h"
+#include "spandsp/private/modem_connect_tones.h"
+#include "spandsp/private/v8.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/private/v34.h"
+#endif
 #include "spandsp/private/v17tx.h"
 #include "spandsp/private/v17rx.h"
 #include "spandsp/private/v27ter_tx.h"
 #include "spandsp/private/v27ter_rx.h"
 #include "spandsp/private/v29tx.h"
 #include "spandsp/private/v29rx.h"
-#include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/hdlc.h"
 #include "spandsp/private/fax_modems.h"
 #include "spandsp/private/at_interpreter.h"
@@ -455,12 +463,23 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                with 0xFF it would appear some octets must have been missed before this one. */
             if (len <= 0  ||  buf[0] != 0xFF)
                 fe->rx_data_missing = TRUE;
+            /*endif*/
         }
-        if (len > 0  &&  fe->hdlc_rx.len + len <= T31_T38_MAX_HDLC_LEN)
+        /*endif*/
+        if (len > 0)
         {
-            bit_reverse(fe->hdlc_rx.buf + fe->hdlc_rx.len, buf, len);
-            fe->hdlc_rx.len += len;
+            if (fe->hdlc_rx.len + len <= T31_T38_MAX_HDLC_LEN)
+            {
+                bit_reverse(fe->hdlc_rx.buf + fe->hdlc_rx.len, buf, len);
+                fe->hdlc_rx.len += len;
+            }
+            else
+            {
+                fe->rx_data_missing = TRUE;
+            }
+            /*endif*/
         }
+        /*endif*/
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_HDLC_FCS_OK:
@@ -470,6 +489,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             /* The sender has incorrectly included data in this message. It is unclear what we should do
                with it, to maximise tolerance of buggy implementations. */
         }
+        /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_OK messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
@@ -479,6 +499,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
         }
+        /*endif*/
         fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
@@ -490,6 +511,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             /* The sender has incorrectly included data in this message. We can safely ignore it, as the
                bad FCS means we will throw away the whole message, anyway. */
         }
+        /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_BAD messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
@@ -498,6 +520,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
         }
+        /*endif*/
         fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
@@ -1300,6 +1323,15 @@ static void tone_detected(void *user_data, int tone, int level, int delay)
 
     s = (t31_state_t *) user_data;
     span_log(&s->logging, SPAN_LOG_FLOW, "%s detected (%ddBm0)\n", modem_connect_tone_to_str(tone), level);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void v8_handler(void *user_data, v8_parms_t *result)
+{
+    t31_state_t *s;
+
+    s = (t31_state_t *) user_data;
+    span_log(&s->logging, SPAN_LOG_FLOW, "V.8 report received\n");
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2332,7 +2364,7 @@ static int v29_v21_rx_fillin(void *user_data, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 {
     int i;
     int32_t power;
@@ -2378,7 +2410,7 @@ SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t31_rx_fillin(t31_state_t *s, int len)
+SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
 {
     /* To mitigate the effect of lost packets on a packet network we should
        try to sustain the status quo. If there is no receive modem running, keep
@@ -2436,7 +2468,7 @@ static int set_next_tx_type(t31_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
+SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
 {
     int len;
 
@@ -2570,8 +2602,9 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
                                      t38_tx_packet_handler_t *tx_t38_packet_handler,
                                      void *tx_t38_packet_user_data)
 {
+    v8_parms_t v8_parms;
     int alloced;
-    
+
     if (at_tx_handler == NULL  ||  modem_control_handler == NULL)
         return NULL;
 
@@ -2596,6 +2629,28 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
                     non_ecm_get_bit,
                     tone_detected,
                     (void *) s);
+#if 0
+    v8_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_parms.call_function = V8_CALL_T30_RX;
+    v8_parms.modulations = V8_MOD_V21
+#if 0
+                         | V8_MOD_V34HALF
+#endif
+                         | V8_MOD_V17
+                         | V8_MOD_V29
+                         | V8_MOD_V27TER;
+    v8_parms.protocol = V8_PROTOCOL_NONE;
+    v8_parms.pcm_modem_availability = 0;
+    v8_parms.pstn_access = 0;
+    v8_parms.nsf = -1;
+    v8_parms.t66 = -1;
+    v8_init(&s->audio.v8,
+            FALSE,
+            &v8_parms,
+            v8_handler,
+            s);
+
+#endif
     power_meter_init(&(s->audio.rx_power), 4);
     s->audio.last_sample = 0;
     s->audio.silence_threshold_power = power_meter_level_dbm0(-36);

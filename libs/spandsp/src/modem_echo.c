@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: modem_echo.c,v 1.26 2009/09/22 13:11:04 steveu Exp $
  */
 
 /*! \file */
@@ -55,7 +53,16 @@
 
 #include "spandsp/private/modem_echo.h"
 
-SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_create(int len)
+SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec)
+{
+    fir16_free(&ec->fir_state);
+    free(ec->fir_taps32);
+    free(ec->fir_taps16);
+    free(ec);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
 {
     modem_echo_can_state_t *ec;
 
@@ -85,15 +92,6 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_create(int len)
         return  NULL;
     }
     return  ec;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec)
-{
-    fir16_free(&ec->fir_state);
-    free(ec->fir_taps32);
-    free(ec->fir_taps16);
-    free(ec);
 }
 /*- End of function --------------------------------------------------------*/
 

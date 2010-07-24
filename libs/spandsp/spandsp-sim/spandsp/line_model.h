@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: line_model.h,v 1.7.4.1 2009/12/19 10:16:44 steveu Exp $
  */
 
 /*! \file */
@@ -147,8 +145,12 @@ SPAN_DECLARE(void) both_ways_line_model_set_mains_pickup(both_ways_line_model_st
     
 SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model1,
                                                                        float noise1,
+                                                                       float echo_level_cpe1,
+                                                                       float echo_level_co1,
                                                                        int model2,
                                                                        float noise2,
+                                                                       float echo_level_cpe2,
+                                                                       float echo_level_co2,
                                                                        int codec,
                                                                        int rbs_pattern);
 

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: spandsp-sim.h,v 1.5 2008/04/26 13:39:16 steveu Exp $
  */
 
 /*! \file */

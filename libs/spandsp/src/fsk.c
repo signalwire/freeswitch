@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fsk.c,v 1.60 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \file */
@@ -566,7 +564,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fsk_rx_fillin(fsk_rx_state_t *s, int len)
+SPAN_DECLARE_NONSTD(int) fsk_rx_fillin(fsk_rx_state_t *s, int len)
 {
     /* The valid choice here is probably to do nothing. We don't change state
       (i.e carrier on<->carrier off), and we'll just output less bits than we

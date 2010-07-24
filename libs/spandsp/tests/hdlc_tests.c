@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: hdlc_tests.c,v 1.48 2008/11/30 05:43:37 steveu Exp $
  */
 
 /*! \file */
@@ -817,6 +815,7 @@ static void decode_bitstream(const char *in_file_name)
 {
     char buf[1024];
     int bit;
+    int num;
     hdlc_rx_state_t rx;
     FILE *in;
     
@@ -829,8 +828,10 @@ static void decode_bitstream(const char *in_file_name)
     hdlc_rx_init(&rx, FALSE, TRUE, 2, decode_handler, NULL);
     while (fgets(buf, 1024, in))
     {
-        if (sscanf(buf, "Rx bit %*d - %d", &bit) == 1)
+        if (sscanf(buf, "Rx bit %d - %d", &num, &bit) == 2)
         {
+            //printf("Rx bit %d - %d\n", num, bit);
+            //printf("Rx bit %d\n", bit);
             hdlc_rx_put_bit(&rx, bit);
         }
     }

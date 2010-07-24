@@ -47,8 +47,6 @@
  * Sun Microsystems, Inc.
  * 2550 Garcia Avenue
  * Mountain View, California  94043
- *
- * $Id: g726.c,v 1.28.4.1 2009/12/28 12:20:46 steveu Exp $
  */
 
 /*! \file */

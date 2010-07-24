@@ -29,10 +29,11 @@
 /* Target length for the equalizer is about 63 taps, to deal with the worst stuff
    in V.56bis. */
 /*! The length of the equalizer buffer */
-#define V17_EQUALIZER_LEN           33
-
+//#define V17_EQUALIZER_LEN           33
+#define V17_EQUALIZER_LEN           17
 /*! Samples before the target position in the equalizer buffer */
-#define V17_EQUALIZER_PRE_LEN       16
+//#define V17_EQUALIZER_PRE_LEN       16
+#define V17_EQUALIZER_PRE_LEN       8
 
 /*! The number of taps in the pulse shaping/bandpass filter */
 #define V17_RX_FILTER_STEPS         27

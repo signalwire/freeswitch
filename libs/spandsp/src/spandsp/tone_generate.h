@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: tone_generate.h,v 1.40 2010/05/22 13:20:18 steveu Exp $
  */
 
 /*! \file */
@@ -87,6 +85,9 @@ SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descript
                                                                int d3,
                                                                int d4,
                                                                int repeat);
+
+/* For backwards compatibility */
+#define make_tone_gen_descriptor    tone_gen_descriptor_init
 
 SPAN_DECLARE(void) tone_gen_descriptor_free(tone_gen_descriptor_t *s);
 

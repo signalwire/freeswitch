@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v27ter_rx.c,v 1.131 2009/07/08 15:11:09 steveu Exp $
  */
 
 /*! \file */
@@ -98,9 +96,6 @@
 #define V27TER_TRAINING_SEG_5_LEN       1074
 /*! The length of training segment 6, in symbols */
 #define V27TER_TRAINING_SEG_6_LEN       8
-
-/*! The length of the equalizer buffer */
-#define V27TER_EQUALIZER_LEN    (V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN)
 
 enum
 {
@@ -220,12 +215,12 @@ static void equalizer_reset(v27ter_rx_state_t *s)
     /* Start with an equalizer based on everything being perfect. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
     cvec_zeroi16(s->eq_coeff, V27TER_EQUALIZER_LEN);
-    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN] = complex_seti16(1.414f*FP_FACTOR, 0);
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = complex_seti16(1.414f*FP_FACTOR, 0);
     cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN);
 #else
     cvec_zerof(s->eq_coeff, V27TER_EQUALIZER_LEN);
-    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN] = complex_setf(1.414f, 0.0f);
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = complex_setf(1.414f, 0.0f);
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #endif
@@ -485,13 +480,13 @@ static __inline__ void symbol_sync(v27ter_rx_state_t *s)
     /* This routine adapts the position of the half baud samples entering the equalizer. */
 
     /* Perform a Gardner test for baud alignment */
-    p = s->eq_buf[(s->eq_step - 3) & V27TER_EQUALIZER_LEN].re
-      - s->eq_buf[(s->eq_step - 1) & V27TER_EQUALIZER_LEN].re;
-    p *= s->eq_buf[(s->eq_step - 2) & V27TER_EQUALIZER_LEN].re;
+    p = s->eq_buf[(s->eq_step - 3) & (V27TER_EQUALIZER_LEN - 1)].re
+      - s->eq_buf[(s->eq_step - 1) & (V27TER_EQUALIZER_LEN - 1)].re;
+    p *= s->eq_buf[(s->eq_step - 2) & (V27TER_EQUALIZER_LEN - 1)].re;
 
-    q = s->eq_buf[(s->eq_step - 3) & V27TER_EQUALIZER_LEN].im
-      - s->eq_buf[(s->eq_step - 1) & V27TER_EQUALIZER_LEN].im;
-    q *= s->eq_buf[(s->eq_step - 2) & V27TER_EQUALIZER_LEN].im;
+    q = s->eq_buf[(s->eq_step - 3) & (V27TER_EQUALIZER_LEN - 1)].im
+      - s->eq_buf[(s->eq_step - 1) & (V27TER_EQUALIZER_LEN - 1)].im;
+    q *= s->eq_buf[(s->eq_step - 2) & (V27TER_EQUALIZER_LEN - 1)].im;
 
     s->gardner_integrate += (p + q > 0.0f)  ?  s->gardner_step  :  -s->gardner_step;
 
@@ -706,7 +701,8 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 #if defined(SPANDSP_USE_FIXED_POINTx)
         z1.re = z.re/(float) FP_FACTOR;
         z1.im = z.im/(float) FP_FACTOR;
-        zz = complex_subf(&z, target);
+        zz.re = target->re;
+        zz.im = target->im;
         zz = complex_subf(&z1, &zz);
         s->training_error += powerf(&zz);
 #else
@@ -981,7 +977,7 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len)
+SPAN_DECLARE_NONSTD(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len)
 {
     int i;
 

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: complex_vector_float.c,v 1.16 2009/07/12 09:23:09 steveu Exp $
  */
 
 /*! \file */

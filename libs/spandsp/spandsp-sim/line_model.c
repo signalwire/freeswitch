@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: line_model.c,v 1.14 2009/09/23 16:02:59 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -505,12 +503,15 @@ SPAN_DECLARE(int) one_way_line_model_release(one_way_line_model_state_t *s)
 
 SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model1,
                                                                        float noise1,
+                                                                       float echo_level_cpe1,
+                                                                       float echo_level_co1,
                                                                        int model2,
                                                                        float noise2,
+                                                                       float echo_level_cpe2,
+                                                                       float echo_level_co2,
                                                                        int codec,
                                                                        int rbs_pattern)
 {
-    float echo_level;
     both_ways_line_model_state_t *s;
 
     if ((s = (both_ways_line_model_state_t *) malloc(sizeof(*s))) == NULL)
@@ -549,11 +550,10 @@ SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model
     s->line2.mains_interference = 0;
 
     /* Echos */
-    echo_level = -15; /* in dB */
-    s->line1.near_co_hybrid_echo = pow(10, echo_level/20.0f);
-    s->line2.near_co_hybrid_echo = pow(10, echo_level/20.0f);
-    s->line1.near_cpe_hybrid_echo = pow(10, echo_level/20.0f);
-    s->line2.near_cpe_hybrid_echo = pow(10, echo_level/20.0f);
+    s->line1.near_co_hybrid_echo = pow(10, echo_level_co1/20.0f);
+    s->line2.near_co_hybrid_echo = pow(10, echo_level_co2/20.0f);
+    s->line1.near_cpe_hybrid_echo = pow(10, echo_level_cpe1/20.0f);
+    s->line2.near_cpe_hybrid_echo = pow(10, echo_level_cpe2/20.0f);
     
     return s;
 }
