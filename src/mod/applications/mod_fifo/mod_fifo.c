@@ -750,6 +750,8 @@ static switch_bool_t fifo_execute_sql_callback(switch_mutex_t *mutex, char *sql,
 		goto end;
 	}
 
+	if (globals.debug > 1) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "sql: %s\n", sql);
+
 	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
 
 	if (errmsg) {
@@ -1749,6 +1751,7 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 		for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
 			if ((node = (fifo_node_t *) val)) {
+				if (node->outbound_priority == 0) node->outbound_priority = 5;
 				if (node->has_outbound && node->ready && !node->busy && node->outbound_priority == cur_priority) {
 					ppl_waiting = node_consumer_wait_count(node);
 					consumer_total = node->consumer_count;
@@ -2146,11 +2149,6 @@ SWITCH_STANDARD_APP(fifo_function)
 	const char *arg_inout = NULL;
 	const char *serviced_uuid = NULL;
 
-	if (switch_core_event_hook_remove_receive_message(session, messagehook) == SWITCH_STATUS_SUCCESS) {
-		dec_use_count(session, SWITCH_FALSE);
-		switch_core_event_hook_remove_state_change(session, hanguphook);
-	}
-
 	if (!globals.running) {
 		return;
 	}
@@ -2487,6 +2485,11 @@ SWITCH_STANDARD_APP(fifo_function)
 		const char *outbound_id = switch_channel_get_variable(channel, "fifo_outbound_uuid");
 		//const char *track_use_count = switch_channel_get_variable(channel, "fifo_track_use_count");
 		//int do_track = switch_true(track_use_count);
+
+		if (switch_core_event_hook_remove_receive_message(session, messagehook) == SWITCH_STATUS_SUCCESS) {
+			dec_use_count(session, SWITCH_FALSE);
+			switch_core_event_hook_remove_state_change(session, hanguphook);
+		}
 
 		if (!zstr(strat_str)) {
 			if (!strcasecmp(strat_str, "more_ppl")) {
@@ -3056,6 +3059,12 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_mutex_unlock(node->mutex);
 			}
 		}
+
+		if (outbound_id && switch_channel_up(channel)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s is still alive, tracking call.\n", switch_channel_get_name(channel));
+			fifo_track_call_function(session, outbound_id);
+		}
+
 	}
 
   done:
@@ -3543,9 +3552,26 @@ void node_dump(switch_stream_handle_t *stream)
 	for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		if ((node = (fifo_node_t *) val)) {
-			stream->write_function(stream, "node: %s outbound_name=%s outbound_per_cycle=%d outbound_priority=%d outbound_strategy=%s\n", 
-								   node->name, node->outbound_name, node->outbound_per_cycle, 
-								   node->outbound_priority, strat_parse(node->outbound_strategy));
+			stream->write_function(stream, "node: %s\n"
+								   " outbound_name: %s\n"
+								   " outbound_per_cycle: %d"
+								   " outbound_priority: %d"
+								   " outbound_strategy: %s\n"
+								   " has_outbound: %d\n"
+								   " outbound_priority: %d\n"
+								   " busy: %d\n"
+								   " ready: %d\n"
+								   " waiting: %d\n"
+								   , 
+								   node->name, node->outbound_name, node->outbound_per_cycle,
+								   node->outbound_priority, strat_parse(node->outbound_strategy),
+								   node->has_outbound,
+								   node->outbound_priority,
+								   node->busy,
+								   node->ready,
+								   node_consumer_wait_count(node)
+								   
+								   );
 		}
 	}
 
@@ -3911,9 +3937,6 @@ static switch_status_t load_config(int reload, int del_all)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s is a reserved name, use another name please.\n", MANUAL_QUEUE_NAME);
 				continue;
 			}
-			
-			outbound_strategy = switch_xml_attr(fifo, "outbound_strategy");
-			
 
 			if ((val = switch_xml_attr(fifo, "importance"))) {
 				if ((imp = atoi(val)) < 0) {
@@ -3921,20 +3944,6 @@ static switch_status_t load_config(int reload, int del_all)
 				}
 			}
 
-			if ((val = switch_xml_attr(fifo, "outbound_per_cycle"))) {
-				if ((outbound_per_cycle = atoi(val)) < 0) {
-					outbound_per_cycle = 0;
-				}
-			}
-
-			if ((val = switch_xml_attr(fifo, "outbound_priority"))) {
-				outbound_priority = atoi(val);
-
-				if (outbound_priority < 1 || outbound_priority > 10) {
-					outbound_priority = 5;
-				}
-			}
-			
 			switch_mutex_lock(globals.mutex);
 			if (!(node = switch_core_hash_find(globals.fifo_hash, name))) {
 				node = create_node(name, imp, globals.sql_mutex);
@@ -3949,13 +3958,34 @@ static switch_status_t load_config(int reload, int del_all)
 			switch_assert(node);
 
 			switch_mutex_lock(node->mutex);
+			
+			outbound_strategy = switch_xml_attr(fifo, "outbound_strategy");
+			
 
+			if ((val = switch_xml_attr(fifo, "outbound_per_cycle"))) {
+				if ((outbound_per_cycle = atoi(val)) < 0) {
+					outbound_per_cycle = 1;
+				}
+				node->has_outbound = 1;
+			}
+
+			if ((val = switch_xml_attr(fifo, "outbound_priority"))) {
+				outbound_priority = atoi(val);
+
+				if (outbound_priority < 1 || outbound_priority > 10) {
+					outbound_priority = 5;
+				}
+				node->has_outbound = 1;
+			}
+			
+			
 			node->outbound_per_cycle = outbound_per_cycle;
 			node->outbound_priority = outbound_priority;
 			
 
 			if (outbound_strategy) {
 				node->outbound_strategy = parse_strat(outbound_strategy);
+				node->has_outbound = 1;
 			}
 
 			for (member = switch_xml_child(fifo, "member"); member; member = member->next) {
