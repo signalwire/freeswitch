@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FreeSWITCH.Managed</RootNamespace>
     <AssemblyName>FreeSWITCH.Managed</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>
     </StartupObject>
@@ -18,6 +18,7 @@
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -62,7 +63,7 @@
     <Compile Include="PluginInterfaces.cs" />
     <Compile Include="PluginManager.cs" />
     <Compile Include="ScriptPluginManager.cs" />
-    <Compile Include="swig.cs" />
+    <Compile Include="swig.2010.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="XmlSearchBinding.cs" />
   </ItemGroup>

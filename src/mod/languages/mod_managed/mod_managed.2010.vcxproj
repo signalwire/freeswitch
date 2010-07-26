@@ -54,7 +54,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_CLR|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <CLRSupport>true</CLRSupport>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_CLR|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <CLRSupport>true</CLRSupport>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -173,7 +173,6 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>shlwapi.lib;mscoree.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)$(Platform)\Debug/mod/$(ProjectName).dll</OutputFile>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <AssemblyDebug>true</AssemblyDebug>
@@ -211,7 +210,6 @@
       <DisableSpecificWarnings>4505;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <OutputFile>$(SolutionDir)$(Platform)\release/mod/$(ProjectName).dll</OutputFile>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -308,7 +306,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="freeswitch_managed.cpp" />
-    <ClCompile Include="freeswitch_wrap.cxx" />
+    <ClCompile Include="freeswitch_wrap.2010.cxx" />
     <ClCompile Include="mod_managed.cpp" />
   </ItemGroup>
   <ItemGroup>
