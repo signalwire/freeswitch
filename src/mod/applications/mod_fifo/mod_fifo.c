@@ -3847,14 +3847,19 @@ static switch_status_t load_config(int reload, int del_all)
 		goto done;
 	}
 
-	switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or stop_time < 0", 
-								  "drop table fifo_outbound", outbound_sql);
-	switch_cache_db_test_reactive(dbh, "delete from fifo_bridge", "drop table fifo_bridge", bridge_sql);
-	switch_cache_db_test_reactive(dbh, "delete from fifo_callers", "drop table fifo_callers", callers_sql);
+	if (!reload) {
+		switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or stop_time < 0", 
+									  "drop table fifo_outbound", outbound_sql);
+		switch_cache_db_test_reactive(dbh, "delete from fifo_bridge", "drop table fifo_bridge", bridge_sql);
+		switch_cache_db_test_reactive(dbh, "delete from fifo_callers", "drop table fifo_callers", callers_sql);
+	}
+
 	switch_cache_db_release_db_handle(&dbh);
 
-	fifo_execute_sql("update fifo_outbound set start_time=0,stop_time=0,ring_count=0,use_count=0,"
-					 "outbound_call_count=0,outbound_fail_count=0 where static=0", globals.sql_mutex);
+	if (!reload) {
+		fifo_execute_sql("update fifo_outbound set start_time=0,stop_time=0,ring_count=0,use_count=0,"
+						 "outbound_call_count=0,outbound_fail_count=0 where static=0", globals.sql_mutex);
+	}
 
 	if (reload) {
 		switch_hash_index_t *hi;
