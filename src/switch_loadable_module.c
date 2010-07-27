@@ -1627,8 +1627,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 {
 	switch_api_interface_t *api;
 	switch_status_t status;
-	char *myarg = NULL, *argp = NULL;
-	
+
 	switch_assert(stream != NULL);
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
@@ -1637,25 +1636,18 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		switch_event_create(&stream->param_event, SWITCH_EVENT_API);
 	}
 
-	if (arg) {
-		myarg = strdup(arg);
-		argp = myarg;
-		while(*argp == ' ') argp++;
-		while(end_of(argp) == ' ') end_of(argp) = '\0';
-	}
-
 	if (stream->param_event) {
 		if (cmd) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
 		}
-		if (argp) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", argp);
+		if (arg) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg);
 		}
 	}
 
 
 	if (cmd && (api = switch_loadable_module_get_api_interface(cmd)) != 0) {
-		if ((status = api->function(argp, session, stream)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = api->function(arg, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
 		UNPROTECT_INTERFACE(api);
@@ -1668,8 +1660,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		switch_event_fire(&stream->param_event);
 	}
 
-	switch_safe_free(myarg);
-	
+
 	return status;
 }
 
