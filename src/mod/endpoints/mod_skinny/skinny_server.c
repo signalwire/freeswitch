@@ -597,6 +597,7 @@ switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
+	send_start_tone(listener, SKINNY_TONE_ALERT, 0, line_instance, tech_pvt->call_id);
 	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_RING_OUT);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
 	    SKINNY_KEY_SET_RING_OUT, 0xffff);

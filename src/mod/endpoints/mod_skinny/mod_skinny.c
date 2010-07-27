@@ -637,6 +637,7 @@ int channel_on_routing_callback(void *pArg, int argc, char **argv, char **column
 			send_dialed_number(listener, helper->tech_pvt->caller_profile->destination_number, line_instance, helper->tech_pvt->call_id);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_PROCEED);
 			skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
+			skinny_session_ring_out(helper->tech_pvt->session, listener, line_instance);
 	    } else {
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
