@@ -177,10 +177,12 @@ error:
 		switch_core_session_destroy(&nsession);
 	}
 
+	listener->profile->ib_failed_calls++;
 	return SWITCH_STATUS_FALSE;
 
 done:
 	*session = nsession;
+	listener->profile->ib_calls++;
 	return SWITCH_STATUS_SUCCESS;
 }
 
