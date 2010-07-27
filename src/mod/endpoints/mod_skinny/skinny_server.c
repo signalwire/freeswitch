@@ -1265,11 +1265,17 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 
 	if(session) {
 		switch_channel_t *channel = NULL;
+		private_t *tech_pvt = NULL;
 
 		channel = switch_core_session_get_channel(session);
+		tech_pvt = switch_core_session_get_private(session);
 
-		if (skinny_line_get_state(listener, line_instance, call_id) != SKINNY_IN_USE_REMOTELY) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		if (tech_pvt->transfer_from_call_id) { /* blind transfer */
+			status = skinny_session_transfer(session, listener, line_instance);
+		} else {
+			if (skinny_line_get_state(listener, line_instance, call_id) != SKINNY_IN_USE_REMOTELY) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
 		}
 	}
 
