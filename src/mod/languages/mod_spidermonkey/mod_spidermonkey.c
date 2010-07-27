@@ -3060,9 +3060,6 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
-			jsval rval;
-
-			check_hangup_hook(jss, &rval);
 
 			JS_SetPrivate(cx, obj, NULL);
 			if (jss->speech && *jss->speech->sh.name) {
