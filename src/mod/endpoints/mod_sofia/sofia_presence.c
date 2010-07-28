@@ -441,7 +441,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
 								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 								 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
-								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
+								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.content_type,sip_presence.content "
 								 "from sip_subscriptions left join sip_presence on "
 								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
@@ -453,7 +453,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
 								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 								 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
-								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
+								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.content_type,sip_presence.content "
 								 "from sip_subscriptions left join sip_presence on "
 								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
@@ -538,7 +538,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
 				sql = switch_mprintf("select sip_registrations.sip_user, '%q', sip_registrations.status, "
 									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction, "
-									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host, sip_presence.status,sip_presence.rpid "
+									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host, sip_presence.status,sip_presence.rpid,sip_presence.content_type,sip_presence.content "
 									 "from sip_registrations left join sip_dialogs on "
 									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
 									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
@@ -641,7 +641,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
 								  "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 								  "sip_subscriptions.accept,sip_subscriptions.profile_name"
-								  ",'%q','%q','%q',sip_presence.status,sip_presence.rpid "
+								  ",'%q','%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.content_type,sip_presence.content "
 								  "from sip_subscriptions "
 								  "left join sip_presence on "
 								  "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
@@ -1011,23 +1011,52 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							 " <atom id=\"%s\">\n"
 							 "  <address uri=\"%s;user=ip\" priority=\"0.800000\">\n"
 							 "   <status status=\"%s\" />\n"
-							 "   <msnsubstatus substatus=\"%s\" />\n" "  </address>\n" " </atom>\n" "</presence>\n", status, id, id, url, open, prpid);
+							 "   <msnsubstatus substatus=\"%s\" />\n" 
+							 "  </address>\n" 
+							 " </atom>\n" 
+							 "</presence>\n", status, id, id, url, open, prpid);
 	} else {
 		*ct = "application/pidf+xml";
-		ret = switch_mprintf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
-							 "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
-							 "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
-							 "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
-							 "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
-							 " <tuple id='t6a5ed77e'>\n"
-							 "  <status>\r\n"
-							 "   <basic>%s</basic>\n"
-							 "  </status>\n"
-							 " </tuple>\n"
-							 " <dm:person id='p06360c4a'>\n"
-							 "  <rpid:activities>\r\n"
-							 "   <rpid:%s/>\n"
-							 "  </rpid:activities>\n" "  <dm:note>%s</dm:note>\n" " </dm:person>\n" "</presence>", id, open, prpid, status);
+
+		if (!strncasecmp(status, "Registered(", 11)) {
+			prpid = NULL;
+			status = "Available";
+		}
+
+		if (prpid) {
+			ret = switch_mprintf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
+								 "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
+								 "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
+								 "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
+								 "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
+								 " <tuple id='t6a5ed77e'>\n"
+								 "  <status>\r\n"
+								 "   <basic>%s</basic>\n"
+								 "  </status>\n"
+								 " </tuple>\n"
+								 " <dm:person id='p06360c4a'>\n"
+								 "  <rpid:activities>\r\n"
+								 "   <rpid:%s/>\n"
+								 "  </rpid:activities>\n" 
+								 "  <dm:note>%s</dm:note>\n" 
+								 " </dm:person>\n" 
+								 "</presence>", id, open, prpid, status);
+		} else {
+			ret = switch_mprintf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
+								 "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
+								 "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
+								 "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
+								 "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
+								 " <tuple id='t6a5ed77e'>\n"
+								 "  <status>\r\n"
+								 "   <basic>%s</basic>\n"
+								 "  </status>\n"
+								 " </tuple>\n"
+								 " <dm:person id='p06360c4a'>\n"
+								 "  <dm:note>%s</dm:note>\n" 
+								 " </dm:person>\n" 
+								 "</presence>", id, open, status);
+		}
 	}
 
 
@@ -1052,6 +1081,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *status = argv[14];
 	char *rpid = argv[15];
 	char *sub_to_host = argv[16];
+	char *content = NULL;
 
 	nua_handle_t *nh;
 	char *to = NULL;
@@ -1068,6 +1098,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	if (argc > 18 && !zstr(argv[17]) && !zstr(argv[18])) {
 		status = argv[17];
 		rpid = argv[18];
+		ct = argv[19];
+		content = argv[20];
+		
 	}
 
 	in = helper->event && helper->event->event_id == SWITCH_EVENT_PRESENCE_IN;
@@ -1313,8 +1346,14 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				open = "closed";
 			}
 
-			prpid = translate_rpid(rpid);
-			pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status_line, &ct);
+			printf("WTF %s\n%s\n", ct, content);
+
+			if (content) {
+				pl = strdup(content);
+			} else {
+				prpid = translate_rpid(rpid);
+				pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status_line, &ct);
+			}
 		}
 
 	} else {
@@ -1323,8 +1362,15 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		} else {
 			open = "closed";
 		}
-		prpid = translate_rpid(rpid);
-		pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
+
+		printf("WTF2 %s\n%s\n", ct, content);
+
+		if (content) {
+			pl = strdup(content);
+		} else {
+			prpid = translate_rpid(rpid);
+			pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
+		}
 	}
 
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
@@ -2128,7 +2174,17 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 				switch_safe_free(sql);
 			}
+		} else {
+			if ((sql = switch_mprintf("select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
+									  "full_via,expires,user_agent,accept,profile_name,network_ip"
+									  " from sip_subscriptions where expires > -1 and event='%s' and sip_user='%q' "
+									  "and (sip_host='%q' or presence_hosts like '%%%q%%')", to_host, event, to_user, to_host, to_host))) {
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, profile);
+
+				switch_safe_free(sql);
+			}			
 		}
+
 	  end:
 
 		if (event) {
@@ -2249,6 +2305,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		char etag[9] = "";
 		char expstr[30] = "";
 		long exp = 0, exp_delta = 3600;
+		char *pd_dup = NULL;
 
 		/* the following could instead be refactored back to the calling event handler in sofia.c XXX MTK */
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
@@ -2269,8 +2326,16 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			switch_event_t *event;
 			char *sql;
 			char *full_agent = NULL;
+			char *ct = "no/idea";
 
-			if ((xml = switch_xml_parse_str(payload->pl_data, strlen(payload->pl_data)))) {
+			if (sip->sip_content_type) {
+				ct = sip_header_as_string(profile->home, (void *) sip->sip_content_type);
+			}
+
+
+			pd_dup = strdup(payload->pl_data);
+
+			if ((xml = switch_xml_parse_str(pd_dup, strlen(pd_dup)))) {
 				char *status_txt = "", *note_txt = "";
 
 				if (sip->sip_user_agent) {
@@ -2314,9 +2379,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				}
 
 				if ((sql =
-					 switch_mprintf("insert into sip_presence (sip_user, sip_host, status, rpid, expires, user_agent, profile_name, hostname) "
-									"values ('%q','%q','%q','%q',%ld,'%q','%q','%q')",
-									from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, mod_sofia_globals.hostname))) {
+					 switch_mprintf("insert into sip_presence (sip_user, sip_host, status, rpid, expires, user_agent,"
+									" profile_name, hostname, content_type, content) "
+									"values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%q')",
+									from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, mod_sofia_globals.hostname, ct, payload->pl_data))) {
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
 
@@ -2340,9 +2406,15 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				if (full_agent) {
 					su_free(profile->home, full_agent);
 				}
+
+				if (ct) {
+					su_free(profile->home, ct);
+				}
 				switch_xml_free(xml);
 			}
 		}
+
+		switch_safe_free(pd_dup);
 
 		switch_snprintf(expstr, sizeof(expstr), "%d", exp_delta);
 		switch_stun_random_string(etag, 8, NULL);

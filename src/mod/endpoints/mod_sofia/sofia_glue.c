@@ -4731,7 +4731,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
 		"   network_ip      VARCHAR(255),\n"
-		"   network_port    VARCHAR(6)\n"
+		"   network_port    VARCHAR(6),\n"
+		"   content_type    VARCHAR(255),\n"
+		"   content         text"
 		");\n";
 
 	char dialog_sql[] =
@@ -4921,7 +4923,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or content_type=''", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL, NULL);
@@ -4997,7 +4999,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or content_type=''", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_presence", pres_sql);
 		free(test_sql);
 
