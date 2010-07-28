@@ -1124,7 +1124,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host);
 		}
 		switch_mutex_lock(profile->ireg_mutex);
-		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
@@ -1138,7 +1138,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname);
 							 
 		if (sql) {
-			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
 		switch_mutex_unlock(profile->ireg_mutex);
@@ -1204,7 +1204,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	} else {
 
-		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
@@ -1287,6 +1287,17 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
 				}
 			}
+
+
+			if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, reg_host);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "closed");
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
+				switch_event_fire(&s_event);
+			}					
+
 		} else {
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
