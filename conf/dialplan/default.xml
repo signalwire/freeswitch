@@ -269,7 +269,7 @@
     </extension>
 
     <extension name="Local_Extension_Skinny">
-      <condition field="destination_number" expression="^(20[01][0-9])$">
+      <condition field="destination_number" expression="^(11[01][0-9])$">
         <action application="bridge" data="skinny/internal/${destination_number}"/>
       </condition>
     </extension>
