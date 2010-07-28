@@ -1586,38 +1586,55 @@ switch_endpoint_interface_t *skinny_get_endpoint_interface()
 	return skinny_endpoint_interface;
 }
 
-static void skinny_profile_set(skinny_profile_t *profile, char *var, char *val)
+switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, const char *val)
 {
 	if (!var)
-		return;
+		return SWITCH_STATUS_FALSE;
+
+	if (profile->sock && (!strcasecmp(var, "ip") || !strcasecmp(var, "port") || !strcasecmp(var, "odbc-dsn"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			"Skinny profile settings 'ip', 'port' and 'odbc-dsn' can't be changed while running\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!strcasecmp(var, "domain")) {
 		profile->domain = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "ip")) {
 		profile->ip = switch_core_strdup(profile->pool, val);
-	} else if (!strcasecmp(var, "dialplan")) {
-		profile->dialplan = switch_core_strdup(profile->pool, val);
-	} else if (!strcasecmp(var, "context")) {
-		profile->context = switch_core_strdup(profile->pool, val);
+	} else if (!strcasecmp(var, "port")) {
+		profile->port = atoi(val);
 	} else if (!strcasecmp(var, "patterns-dialplan")) {
 		profile->patterns_dialplan = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "patterns-context")) {
 		profile->patterns_context = switch_core_strdup(profile->pool, val);
+	} else if (!strcasecmp(var, "dialplan")) {
+		profile->dialplan = switch_core_strdup(profile->pool, val);
+	} else if (!strcasecmp(var, "context")) {
+		profile->context = switch_core_strdup(profile->pool, val);
+	} else if (!strcasecmp(var, "keep-alive")) {
+		profile->keep_alive = atoi(val);
 	} else if (!strcasecmp(var, "date-format")) {
 		strncpy(profile->date_format, val, 6);
-	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-		if (switch_odbc_available()) {
-			profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-				*profile->odbc_user++ = '\0';
-				if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-					*profile->odbc_pass++ = '\0';
+	} else if (!strcasecmp(var, "odbc-dsn")) {
+		if (!zstr(val)) {
+			if (switch_odbc_available()) {
+				profile->odbc_dsn = switch_core_strdup(profile->pool, val);
+				if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
+					*profile->odbc_user++ = '\0';
+					if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+						*profile->odbc_pass++ = '\0';
+					}
 				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 		}
+	} else if (!strcasecmp(var, "debug")) {
+		profile->debug = atoi(val);
+	} else {
+		return SWITCH_STATUS_FALSE;
 	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t load_skinny_config(void)
@@ -1663,28 +1680,9 @@ static switch_status_t load_skinny_config(void)
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
 
-					if (!strcmp(var, "domain")) {
-						skinny_profile_set(profile, "domain", val);
-					} else if (!strcmp(var, "ip")) {
-						skinny_profile_set(profile, "ip", val);
-					} else if (!strcmp(var, "port")) {
-						profile->port = atoi(val);
-					} else if (!strcmp(var, "dialplan")) {
-						skinny_profile_set(profile, "dialplan", val);
-					} else if (!strcmp(var, "context")) {
-						skinny_profile_set(profile, "context", val);
-					} else if (!strcmp(var, "patterns-dialplan")) {
-						skinny_profile_set(profile, "patterns-dialplan", val);
-					} else if (!strcmp(var, "patterns-context")) {
-						skinny_profile_set(profile, "patterns-context", val);
-					} else if (!strcmp(var, "keep-alive")) {
-						profile->keep_alive = atoi(val);
-					} else if (!strcmp(var, "date-format")) {
-						skinny_profile_set(profile, "date-format", val);
-					} else if (!strcmp(var, "odbc-dsn")) {
-						skinny_profile_set(profile, "odbc-dsn", val);
-					} else if (!strcmp(var, "debug")) {
-						profile->debug = atoi(val);
+					if (skinny_profile_set(profile, var, val) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							"Unable to set skinny setting '%s'. Does it exists?\n", var);
 					}
 				} /* param */
 		

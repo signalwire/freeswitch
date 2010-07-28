@@ -1926,9 +1926,11 @@ switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_
 
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-		"Received %s (type=%x,length=%d) from %s:%d.\n", skinny_message_type2str(request->type), request->type, request->length,
-		listener->device_name, listener->device_instance);
+	if (listener->profile->debug >= 10 || request->type != KEEP_ALIVE_MESSAGE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			"Received %s (type=%x,length=%d) from %s:%d.\n", skinny_message_type2str(request->type), request->type, request->length,
+			listener->device_name, listener->device_instance);
+	}
 	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"Device should send a register message first.\n");

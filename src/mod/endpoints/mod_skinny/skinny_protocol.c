@@ -915,10 +915,12 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 	ptr = (char *) reply;
 
 	if (listener_is_ready(listener)) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
-			"Sending %s (type=%x,length=%d) to %s:%d.\n",
-			skinny_message_type2str(reply->type), reply->type, reply->length,
-			listener->device_name, listener->device_instance);
+		if (listener->profile->debug >= 10 || reply->type != KEEP_ALIVE_ACK_MESSAGE) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
+				"Sending %s (type=%x,length=%d) to %s:%d.\n",
+				skinny_message_type2str(reply->type), reply->type, reply->length,
+				listener->device_name, listener->device_instance);
+		}
 		return switch_socket_send(listener->sock, ptr, &len);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
