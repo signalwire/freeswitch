@@ -1510,7 +1510,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	const char *profile_name = sh->param;
 	profile_t *profile = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
-	char name[200] = { 0 };
+	char *name = NULL;
 	switch_hash_index_t *hi = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
@@ -1518,18 +1518,26 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 					  sh->speed, sh->samples, sh->voice, sh->engine, sh->param);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "voice = %s, rate = %d\n", voice_name, rate);
 
-	/* It would be nice if FreeSWITCH let us know which session owns this handle, but it doesn't.  So, lets
-	   make our own unique name */
-	switch_snprintf(name, sizeof(name) - 1, "TTS-%d", speech_channel_number);
-	name[sizeof(name) - 1] = '\0';
-
+	/* Name the channel */
+	if (profile_name && strchr(profile_name, ':')) {
+		/* Profile has session name appended to it.  Pick it out */
+		profile_name = switch_core_strdup(sh->memory_pool, profile_name);
+		name = strchr(profile_name, ':');
+		*name = '\0';
+		name++;
+		name = switch_core_sprintf(sh->memory_pool, "%s TTS-%d", name, speech_channel_number);
+	} else {
+		name = switch_core_sprintf(sh->memory_pool, "TTS-%d", speech_channel_number);
+	}
+	
+	/* Allocate the channel */
 	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, (uint16_t) rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 	sh->private_info = schannel;
 
-	/* try to open an MRCP channel */
+	/* Open the channel */
 	if (zstr(profile_name)) {
 		profile_name = globals.unimrcp_default_synth_profile;
 	}
@@ -2697,8 +2705,8 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
-	char name[200] = { 0 };
-	const char *profile_name = NULL;
+	char *name = "";
+	const char *profile_name = !zstr(dest) ? dest : ah->param;
 	profile_t *profile = NULL;
 	recognizer_data_t *r = NULL;
 	switch_hash_index_t *hi = NULL;
@@ -2707,37 +2715,39 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 					  ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec = %s, rate = %d, dest = %s\n", codec, rate, dest);
 
-	/* It would be nice if FreeSWITCH let us know which session owns this handle, but it doesn't.  So, lets
-	   make our own unique name */
-	switch_snprintf(name, sizeof(name) - 1, "ASR-%d", speech_channel_number);
-	name[sizeof(name) - 1] = '\0';
-
+	/* Name the channel */
+	if (profile_name && strchr(profile_name, ':')) {
+		/* Profile has session name appended to it.  Pick it out */
+		profile_name = switch_core_strdup(ah->memory_pool, profile_name);
+		name = strchr(profile_name, ':');
+		*name = '\0';
+		name++;
+		name = switch_core_sprintf(ah->memory_pool, "%s ASR-%d", name, speech_channel_number);
+	} else {
+		name = switch_core_sprintf(ah->memory_pool, "ASR-%d", name, speech_channel_number);
+	}
+	
+	/* Allocate the channel */
 	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, (uint16_t) rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 	ah->private_info = schannel;
-
 	r = (recognizer_data_t *) switch_core_alloc(ah->memory_pool, sizeof(recognizer_data_t));
 	schannel->data = r;
 	memset(r, 0, sizeof(recognizer_data_t));
 	switch_core_hash_init(&r->grammars, ah->memory_pool);
 
-	/* try to open an MRCP channel */
-	if (!(profile_name = dest)) {
-		if (!(profile_name = ah->param)) {
-			profile_name = globals.unimrcp_default_recog_profile;
-		}
+	/* Open the channel */
+	if (zstr(profile_name)) {
+		profile_name = globals.unimrcp_default_recog_profile;
 	}
-
 	profile = (profile_t *) switch_core_hash_find(globals.profiles, profile_name);
-
 	if (!profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
 	if ((status = speech_channel_open(schannel, profile)) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
