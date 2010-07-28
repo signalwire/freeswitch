@@ -6593,10 +6593,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 						int do_conf = 0;
 						const char *c_app = NULL;
 						const char *c_data = NULL;
-
+						
 						uuid = switch_core_session_strdup(b_session, uuid);
 
-						if ((c_session = switch_core_session_locate(uuid))) {
+						if (call_info && (c_session = switch_core_session_locate(uuid))) {
 							switch_channel_t *c_channel = switch_core_session_get_channel(c_session);
 							private_object_t *c_tech_pvt = NULL;
 
