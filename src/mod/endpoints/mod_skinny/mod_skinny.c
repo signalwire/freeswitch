@@ -1291,7 +1291,8 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	stream->write_function(stream, "UserId        \t%s\n", user_id);
 	stream->write_function(stream, "Instance      \t%s\n", instance);
 	stream->write_function(stream, "IP            \t%s\n", ip);
-	stream->write_function(stream, "DeviceType    \t%s\n", type);
+	stream->write_function(stream, "DeviceTypeId  \t%s\n", type);
+	stream->write_function(stream, "DeviceType    \t%s\n", skinny_device_type2str(atoi(type)));
 	stream->write_function(stream, "MaxStreams    \t%s\n", max_streams);
 	stream->write_function(stream, "Port          \t%s\n", port);
 	stream->write_function(stream, "Codecs        \t%s\n", codec_string);
