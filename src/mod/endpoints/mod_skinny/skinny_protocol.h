@@ -247,6 +247,7 @@ struct PACKED start_media_transmission_message {
     uint32_t precedence;
     uint32_t silence_suppression;
     uint16_t max_frames_per_packet;
+    uint16_t unknown1;
     uint32_t g723_bitrate;
     /* ... */
 };
