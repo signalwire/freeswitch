@@ -41,10 +41,15 @@ INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost
 if SNGSS7
 INCS += -I/usr/include/sng_ss7/
 endif 
+
 MY_CFLAGS = $(INCS) $(FTDM_CFLAGS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
+
+if DEBUGDTMF
+MY_CFLAGS += -DFTDM_DEBUG_DTMF
+endif
 
 
 #
@@ -169,6 +174,10 @@ endif
 
 if SNGSS7
 mod_LTLIBRARIES += ftmod_sangoma_ss7.la
+endif
+
+if SNGISDN
+mod_LTLIBRARIES += ftmod_sangoma_isdn.la
 endif
 
 if OPENR2

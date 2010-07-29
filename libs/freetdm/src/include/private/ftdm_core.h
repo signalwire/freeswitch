@@ -340,6 +340,21 @@ typedef enum {
 	FTDM_TYPE_CHANNEL
 } ftdm_data_type_t;
 
+#ifdef FTDM_DEBUG_DTMF
+/* number of bytes for the circular buffer (5 seconds worth of audio) */
+#define DTMF_DEBUG_SIZE 8 * 5000
+/* number of 20ms cycles before timeout and close the debug dtmf file (5 seconds) */
+#define DTMF_DEBUG_TIMEOUT 250
+typedef struct {
+	FILE *file;
+	char buffer[DTMF_DEBUG_SIZE];
+	int windex;
+	int wrapped;
+	int closetimeout;
+	ftdm_mutex_t *mutex;
+} ftdm_dtmf_debug_t;
+#endif
+
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
 struct ftdm_channel {
@@ -409,6 +424,9 @@ struct ftdm_channel {
 	float txgain;
 	int availability_rate;
 	void *user_private;
+#ifdef FTDM_DEBUG_DTMF
+	ftdm_dtmf_debug_t dtmfdbg;
+#endif
 };
 
 struct ftdm_span {
