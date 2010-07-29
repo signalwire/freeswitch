@@ -1289,7 +1289,8 @@ typedef uint32_t switch_file_flag_t;
 
 typedef enum {
 	SWITCH_IO_FLAG_NONE = 0,
-	SWITCH_IO_FLAG_NOBLOCK = (1 << 0)
+	SWITCH_IO_FLAG_NOBLOCK = (1 << 0),
+	SWITCH_IO_FLAG_SINGLE_READ = (1 << 1)
 } switch_io_flag_enum_t;
 typedef uint32_t switch_io_flag_t;
 

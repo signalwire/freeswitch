@@ -550,10 +550,7 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 	private_info->reference = timer->tick = TIMER_MATRIX[timer->interval].tick;
 
 	/* apply timestamp */
-	if (timer_step(timer) == SWITCH_STATUS_SUCCESS) {
-		/* push the reference into the future to prevent collision */
-		private_info->reference++;
-	}
+	timer_step(timer);
 
 	return SWITCH_STATUS_SUCCESS;
 }

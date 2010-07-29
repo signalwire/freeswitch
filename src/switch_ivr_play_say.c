@@ -915,6 +915,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int done = 0;
 	int timeout_samples = 0;
 	const char *var;
+	int more_data = 0;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1190,6 +1191,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				status = SWITCH_STATUS_GENERR;
 				continue;
 			}
+			switch_core_timer_sync(&timer); // Sync timer
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", len, interval);
 		}
 		write_frame.rate = fh->samplerate;
@@ -1384,6 +1386,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				olen = llen;
 			}
 
+			if (!more_data) {
+				if (timer_name) {
+					if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else {			/* time off the channel (if you must) */
+					switch_frame_t *read_frame;
+					switch_status_t tstatus;
+					
+					while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+						switch_yield(10000);
+					}
+
+					tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_SINGLE_READ, 0);
+
+					if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
+						break;
+					}
+
+					if (args && (args->read_frame_callback)) {
+						int ok = 1;
+						switch_set_flag(fh, SWITCH_FILE_CALLBACK);
+						if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+							ok = 0;
+						}
+						switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
+						if (!ok) {
+							break;
+						}
+					}
+				}
+			}
+
+			more_data = 0;
+
 			write_frame.samples = (uint32_t) olen;
 
 			if (asis) {
@@ -1424,6 +1461,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			if (status == SWITCH_STATUS_MORE_DATA) {
 				status = SWITCH_STATUS_SUCCESS;
+				more_data = 1;
 				continue;
 			} else if (status != SWITCH_STATUS_SUCCESS) {
 				done = 1;
@@ -1432,36 +1470,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			if (done) {
 				break;
-			}
-
-			if (timer_name) {
-				if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			} else {			/* time off the channel (if you must) */
-				switch_frame_t *read_frame;
-				switch_status_t tstatus;
-				while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
-					switch_yield(10000);
-				}
-
-				tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-				if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
-					break;
-				}
-
-				if (args && (args->read_frame_callback)) {
-					int ok = 1;
-					switch_set_flag(fh, SWITCH_FILE_CALLBACK);
-					if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
-						ok = 0;
-					}
-					switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
-					if (!ok) {
-						break;
-					}
-				}
 			}
 		}
 
@@ -2177,6 +2185,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", sh->samples * 2,
 							  interval);
 		}
+		switch_core_timer_sync(timer); // Sync timer
+
 		/* start a thread to absorb incoming audio */
 		switch_core_service_session(session);
 
