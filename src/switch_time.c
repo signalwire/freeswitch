@@ -48,10 +48,11 @@
 #define MAX_ELEMENTS 3600
 #define IDLE_SPEED 100
 
-/* For now enable WIN32_MONOTONIC on Windows 2003 Server and Windows XP systems for improved timer support */
-/* GetSystemTimeAsFileTime does not update on timeBeginPeriod on these OS */
-/* we leave the normal timer support as the default for now */
-#if (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) || defined(WIN32_MONOTONIC)
+/* In Windows, enable the montonic timer for better timer accuracy on Windows 2003 Server, XP and older */
+/* GetSystemTimeAsFileTime does not update on timeBeginPeriod on these OS. */
+/* Flag SCF_USE_WIN32_MONOTONIC must be enabled to activate it (start parameter -monotonic-clock) */
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 static int MONO = 1;
 #else
 static int MONO = 0;
@@ -344,7 +345,7 @@ static switch_time_t time_now(int64_t offset)
 {
 	switch_time_t now;
 
-#if (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) || defined(WIN32_MONOTONIC)
+#if (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) || defined(WIN32)
 	if (MONO) {
 #ifndef WIN32
 		struct timespec ts;
@@ -375,7 +376,7 @@ static switch_time_t time_now(int64_t offset)
 #endif
 		now = switch_time_now();
 
-#if (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) || defined(WIN32_MONOTONIC)
+#if (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) || defined(WIN32)
 	}
 #endif
 
@@ -1072,6 +1073,10 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 		switch_time_calibrate_clock();
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clock calibration disabled.\n");
+	}
+
+	if (switch_test_flag((&runtime), SCF_USE_WIN32_MONOTONIC)) {
+		MONO = 1;
 	}
 
 	/* indicate that the module should continue to be loaded */
