@@ -1916,12 +1916,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		goto done;
 	}
 
-	if (ftdmchan->state >= FTDM_CHANNEL_STATE_UP) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Ignoring answer because the call state is (%d/%s)\n", ftdmchan->state, ftdm_channel_state2str(ftdmchan->state));
-		status = FTDM_FAIL;
-		goto done;
-	}
-
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 	}
