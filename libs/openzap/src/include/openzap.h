@@ -254,6 +254,9 @@
 
 #define zap_clear_sflag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->sflags &= ~(flag); zap_mutex_unlock(obj->mutex);
 
+#define zap_log_chan(zchan, level, format, ...) zap_log(level, "[s%dc%d][%d:%d] " format, zchan->span_id, zchan->chan_id, zchan->physical_span_id, zchan->physical_chan_id, __VA_ARGS__)
+
+#define zap_log_chan_msg(zchan, level, msg) zap_log(level, "[s%dc%d][%d:%d] " msg, zchan->span_id, zchan->chan_id, zchan->physical_span_id, zchan->physical_chan_id)
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
 		if (s != ZAP_CHANNEL_STATE_HANGUP) zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
@@ -494,6 +497,21 @@ typedef enum {
 	ZAP_TYPE_CHANNEL
 } zap_data_type_t;
 
+#ifdef ZAP_DEBUG_DTMF
+/* number of bytes for the circular buffer (5 seconds worth of audio) */
+#define DTMF_DEBUG_SIZE 8 * 5000
+/* number of 20ms cycles before timeout and close the debug dtmf file (5 seconds) */
+#define DTMF_DEBUG_TIMEOUT 250
+typedef struct {
+	FILE *file;
+	char buffer[DTMF_DEBUG_SIZE];
+	int windex;
+	int wrapped;
+	int closetimeout;
+	zap_mutex_t *mutex;
+} zap_dtmf_debug_t;
+#endif
+
 /* 2^8 table size, one for each byte value */
 #define ZAP_GAINS_TABLE_SIZE 256
 struct zap_channel {
@@ -561,6 +579,9 @@ struct zap_channel {
 	unsigned char txgain_table[ZAP_GAINS_TABLE_SIZE];
 	float rxgain;
 	float txgain;
+#ifdef ZAP_DEBUG_DTMF
+	zap_dtmf_debug_t dtmfdbg;
+#endif
 };
 
 

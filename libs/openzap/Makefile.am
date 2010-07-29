@@ -45,6 +45,9 @@ COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
 
+if DEBUGDTMF
+MY_CFLAGS += -DZAP_DEBUG_DTMF
+endif
 
 #
 # GNU pkgconfig file
