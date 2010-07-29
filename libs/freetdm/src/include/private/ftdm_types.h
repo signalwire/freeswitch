@@ -250,6 +250,7 @@ typedef enum {
 	FTDM_CHANNEL_USE_TX_GAIN = (1 << 26),
 	FTDM_CHANNEL_IN_ALARM = (1 << 27),
 	FTDM_CHANNEL_SIG_UP = (1 << 28),
+	FTDM_CHANNEL_USER_HANGUP = (1 << 29),
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 

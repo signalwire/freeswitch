@@ -1899,15 +1899,27 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_unhold(const char *file, const char
 
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
+	ftdm_status_t status = FTDM_SUCCESS;
+
 	ftdm_channel_lock(ftdmchan);
+
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call is already terminating\n");
+		goto done;
+	}
 
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-		ftdm_channel_unlock(ftdmchan);
-		return FTDM_SUCCESS;
+		goto done;
+	}
+
+	if (ftdmchan->state >= FTDM_CHANNEL_STATE_UP) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Ignoring answer because the call state is (%d/%s)\n", ftdmchan->state, ftdm_channel_state2str(ftdmchan->state));
+		status = FTDM_FAIL;
+		goto done;
 	}
 
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
@@ -1920,14 +1932,33 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 
 	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 1);
 
+done:
+
 	ftdm_channel_unlock(ftdmchan);
-	return FTDM_SUCCESS;
+	return status;
 }
 
 /* lock must be acquired by the caller! */
 static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const char *func, int line)
 {
 	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
+		if (chan->state == FTDM_CHANNEL_STATE_HANGUP) {
+			/* make user's life easier, and just ignore double hangup requests */
+			return FTDM_SUCCESS;
+		}
+		if (chan->state == FTDM_CHANNEL_STATE_TERMINATING && ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
+			/* the signaling stack is already terminating the call but has not yet notified the user about it 
+			 * with SIGEVENT_STOP, we must flag this channel as hangup and wait for the SIGEVENT_STOP before
+			 * proceeding, at that point we will move the channel to hangup, but the SIGEVENT_STOP will not
+			 * be sent to the user since they already made clear they want to hangup!
+			 * */
+			ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
+			ftdm_wait_for_flag_cleared(chan, FTDM_CHANNEL_STATE_CHANGE, 5000);
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_log_chan(chan, FTDM_LOG_CRIT, "Failed to hangup, state change for %d/%s is still pending!\n", chan->state, ftdm_channel_state2str(chan->state));
+				return FTDM_FAIL;
+			}
+		}
 		ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
 		/* the signaling stack did not touch the state, 
@@ -2163,6 +2194,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP);
 	ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
@@ -4214,6 +4246,13 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
 		break;
 
+	case FTDM_SIGEVENT_STOP:
+		if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_USER_HANGUP)) {
+			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user already requested hangup\n");
+			goto done;
+		}
+		break;
+
 	default:
 		break;	
 
@@ -4224,6 +4263,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		status = span->signal_cb(sigmsg);
 	}
 
+done:
 	if (sigmsg->channel) {
 		ftdm_mutex_unlock(sigmsg->channel->mutex);
 	}
