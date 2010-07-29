@@ -247,6 +247,19 @@ SWITCH_STANDARD_API(time_test_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(msleep_function)
+{
+	if (cmd) {
+		long ms = atol(cmd);
+		switch_yield(ms * 1000);
+	}
+
+	stream->write_function(stream, "+OK");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define TIMER_TEST_SYNTAX "<10|20|40|60|120> [<1..200>] [<timer_name>]"
 
 SWITCH_STANDARD_API(timer_test_function)
@@ -4526,6 +4539,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "log", "Log", log_function, LOG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
+	SWITCH_ADD_API(commands_api_interface, "msleep", "sleep N milliseconds", msleep_function, "<milliseconds>");
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
