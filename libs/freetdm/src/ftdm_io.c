@@ -1334,21 +1334,28 @@ static __inline__ int chan_is_avail(ftdm_channel_t *check)
 		ftdm_test_flag(check, FTDM_CHANNEL_INUSE) ||
 		ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) ||
 		ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) ||
-		check->state != FTDM_CHANNEL_STATE_DOWN ||
-		!FTDM_IS_VOICE_CHANNEL(check)) {
+		check->state != FTDM_CHANNEL_STATE_DOWN) {
 		return 0;
 	}
 	return 1;
 }
 
-static __inline__ int request_channel(ftdm_channel_t *check, ftdm_channel_t **ftdmchan, 
+static __inline__ int chan_voice_is_avail(ftdm_channel_t *check)
+{
+	if (!FTDM_IS_VOICE_CHANNEL(check)) {
+		return 0;
+	}
+	return chan_is_avail(check);
+}
+
+static __inline__ int request_voice_channel(ftdm_channel_t *check, ftdm_channel_t **ftdmchan, 
 		ftdm_caller_data_t *caller_data, ftdm_direction_t direction)
 {
 	ftdm_status_t status;
-	if (chan_is_avail(check)) {
+	if (chan_voice_is_avail(check)) {
 		/* unlocked testing passed, try again with the channel locked */
 		ftdm_mutex_lock(check->mutex);
-		if (chan_is_avail(check)) {
+		if (chan_voice_is_avail(check)) {
 			if (check->span && check->span->channel_request) {
 				/* I am only unlocking here cuz this function is called
 				 * sometimes with the group or span lock held and were
@@ -1468,7 +1475,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 			break;
 		}
 
-		if (request_channel(check, ftdmchan, caller_data, direction)) {
+		if (request_voice_channel(check, ftdmchan, caller_data, direction)) {
 			status = FTDM_SUCCESS;
 			break;
 		}
@@ -1579,7 +1586,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 			break;
 		}
 
-		if (request_channel(check, ftdmchan, caller_data, direction)) {
+		if (request_voice_channel(check, ftdmchan, caller_data, direction)) {
 			status = FTDM_SUCCESS;
 			break;
 		}

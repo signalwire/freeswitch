@@ -172,6 +172,10 @@ if LIBPRI
 mod_LTLIBRARIES += ftmod_libpri.la
 endif
 
+if PRITAP
+mod_LTLIBRARIES += ftmod_pritap.la
+endif
+
 if SNGSS7
 mod_LTLIBRARIES += ftmod_sangoma_ss7.la
 endif
@@ -250,6 +254,13 @@ ftmod_libpri_la_SOURCES = $(SRC)/ftmod/ftmod_libpri/ftmod_libpri.c $(SRC)/ftmod/
 ftmod_libpri_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ftmod_libpri_la_LDFLAGS = -module  -avoid-version -lpri
 ftmod_libpri_la_LIBADD  = $(MYLIB)
+endif
+
+if PRITAP
+ftmod_pritap_la_SOURCES = $(SRC)/ftmod/ftmod_pritap/ftmod_pritap.c 
+ftmod_pritap_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+ftmod_pritap_la_LDFLAGS = -module  -avoid-version -lpri
+ftmod_pritap_la_LIBADD  = $(MYLIB)
 endif
 
 if SNGSS7

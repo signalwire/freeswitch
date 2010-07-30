@@ -2938,6 +2938,59 @@ static switch_status_t load_config(void)
 		}
 	}
 
+	if ((spans = switch_xml_child(cfg, "pritap_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+
+			char *name = (char *) switch_xml_attr(myspan, "name");
+
+			ftdm_status_t zstatus = FTDM_FAIL;
+			unsigned paramindex = 0;
+			ftdm_conf_parameter_t spanparameters[10];
+			const char *context = "default";
+			const char *dialplan = "XML";
+			ftdm_span_t *span = NULL;
+			int span_id = 0;
+
+			if (!name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
+				continue;
+			}
+			
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				} else {
+					spanparameters[paramindex].var = var;
+					spanparameters[paramindex].val = val;
+					paramindex++;
+				}
+			}
+	
+			zstatus = ftdm_span_find_by_name(name, &span);
+			if (zstatus != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span %s\n", name);
+				continue;
+			}
+
+			span_id = ftdm_span_get_id(span);
+			if (ftdm_configure_span_signaling(span, "pritap", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span %s\n", name);
+				continue;
+			}
+
+			SPAN_CONFIG[span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
+			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "isdn", sizeof(SPAN_CONFIG[span_id].type));
+
+			ftdm_span_start(span);
+		}
+	}
 
 
 	if ((spans = switch_xml_child(cfg, "libpri_spans"))) {
