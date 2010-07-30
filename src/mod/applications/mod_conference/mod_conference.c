@@ -5337,6 +5337,13 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_event_t *params = NULL;
 	int locked = 0;
 
+
+
+	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
+        return;
+	}
+
 	/* Save the original read codec. */
 	if (!(read_codec = switch_core_session_get_read_codec(session))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel has no media!\n");
