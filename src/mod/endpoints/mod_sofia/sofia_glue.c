@@ -4732,8 +4732,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   hostname        VARCHAR(255),\n"
 		"   network_ip      VARCHAR(255),\n"
 		"   network_port    VARCHAR(6),\n"
-		"   content_type    VARCHAR(255),\n"
-		"   content         text"
+		"   open_closed     VARCHAR(255)\n"
 		");\n";
 
 	char dialog_sql[] =
@@ -4756,7 +4755,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   presence_data   VARCHAR(255),\n"
 		"   call_info       VARCHAR(255),\n"
 		"   call_info_state VARCHAR(255),\n"
-		"   expires         INTEGER default 0\n"
+		"   expires         INTEGER default 0,\n"
+		"   status          VARCHAR(255),\n"
+		"   rpid            VARCHAR(255)\n"
 		");\n";
 
 	char sub_sql[] =
@@ -4915,7 +4916,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999 or rpid=''", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL, NULL);
@@ -4923,7 +4924,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or content_type=''", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or open_closed=''", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL, NULL);
@@ -4995,11 +4996,11 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999 or rpid=''", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or content_type=''", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or open_closed=''", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_presence", pres_sql);
 		free(test_sql);
 

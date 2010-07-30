@@ -567,7 +567,7 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 	switch_safe_free(sql);
 
 	sql = switch_mprintf("delete from sip_registrations where call_id='%q' or (sip_user='%q' and sip_host='%q')", call_id, user, host);
-	sofia_glue_execute_sql(profile, &sql, SWITCH_FALSE);
+	sofia_glue_execute_sql_now(profile, &sql, SWITCH_FALSE);
 
 	switch_safe_free(sql);
 	switch_safe_free(dup);
@@ -1127,6 +1127,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
+		
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
@@ -1140,6 +1141,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (sql) {
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
+
 
 		switch_mutex_unlock(profile->ireg_mutex);
 
@@ -1245,7 +1247,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
 			}
 
-			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 			if (multi_reg_contact) {
 				sql =
@@ -1254,16 +1256,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 			}
 
-			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 			switch_safe_free(icontact);
 		} else {
 			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, reg_host))) {
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			}
 
 			if ((sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host))) {
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			}
 		}
 	}
