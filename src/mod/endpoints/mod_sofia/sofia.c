@@ -2797,7 +2797,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->trans_timeout = 500;
 
-				profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833 | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+				profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833;// | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
 
 				profile->pool = pool;
 				profile->user_agent = SOFIA_USER_AGENT;
