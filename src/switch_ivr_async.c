@@ -2182,6 +2182,7 @@ typedef struct {
 	dtmf_meta_app_t map[10];
 	time_t last_digit;
 	switch_bool_t meta_on;
+	char meta;
 	int up;
 } dtmf_meta_settings_t;
 
@@ -2265,7 +2266,7 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 
 	md->sr[direction].last_digit = now;
 
-	if (dtmf->digit == '*') {
+	if (dtmf->digit == md->sr[direction].meta) {
 		if (md->sr[direction].meta_on) {
 			md->sr[direction].meta_on = SWITCH_FALSE;
 			return SWITCH_STATUS_SUCCESS;
@@ -2409,6 +2410,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
+	const char *meta_var = switch_channel_get_variable(channel, "bind_meta_key");
+	char meta = '*';
+	char str[2] = "";
+
+	if (meta_var) {
+		char t_meta = *meta_var;
+		if (is_dtmf(t_meta)) {
+			meta = t_meta;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid META KEY %c\n", t_meta);
+		}
+	}
+
+	str[0] = meta;
+
+	if (atoi(str) == key) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u, same as META CHAR\n", key);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Using META KEY %c\n", meta);
+
 
 	if (key > 9) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u\n", key);
@@ -2424,6 +2447,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 
 	if (!zstr(app)) {
 		if ((bind_flags & SBF_DIAL_ALEG)) {
+			md->sr[SWITCH_DTMF_RECV].meta = meta;
 			md->sr[SWITCH_DTMF_RECV].up = 1;
 			md->sr[SWITCH_DTMF_RECV].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_RECV].map[key].flags |= SMF_HOLD_BLEG;
@@ -2432,6 +2456,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound A-Leg: %d %s\n", key, app);
 		}
 		if ((bind_flags & SBF_DIAL_BLEG)) {
+			md->sr[SWITCH_DTMF_SEND].meta = meta;
 			md->sr[SWITCH_DTMF_SEND].up = 1;
 			md->sr[SWITCH_DTMF_SEND].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_SEND].map[key].flags |= SMF_HOLD_BLEG;
