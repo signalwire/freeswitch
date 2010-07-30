@@ -485,6 +485,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
 		private_info->start = private_info->reference = TIMER_MATRIX[timer->interval].tick;
+		private_info->start -= 2; /* switch_core_timer_init sets samplecount to samples, this makes first next() step once */
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
 

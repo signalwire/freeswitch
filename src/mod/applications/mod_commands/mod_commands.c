@@ -312,6 +312,13 @@ SWITCH_STANDARD_API(timer_test_function)
 		goto end;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: samplecount after init: %d\n", timer.samplecount);
+
+	/* Step timer once before testing results below, to get first timestamp as accurate as possible */
+	switch_core_timer_next(&timer);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: samplecount after first step: %d\n", timer.samplecount);
+
 	start = switch_time_ref();
 	for (x = 1; x <= max; x++) {
 		then = switch_time_ref();
