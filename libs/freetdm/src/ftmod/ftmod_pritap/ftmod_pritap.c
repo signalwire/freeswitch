@@ -754,8 +754,8 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 	ftdm_status_t status;
 	fio_codec_t codec_func;
 	ftdm_channel_t *peerchan = ftdmchan->call_data;
-	int16_t peerbuf[size];
 	int16_t chanbuf[size];
+	int16_t peerbuf[size];
 	int16_t mixedbuf[size];
 	int i = 0;
 	ftdm_size_t sizeread = size;
@@ -771,7 +771,7 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 	}
 
 	memcpy(chanbuf, data, size);
-	status = peerchan->fio->read(ftdmchan->call_data, peerbuf, &sizeread);
+	status = peerchan->fio->read(peerchan, peerbuf, &sizeread);
 	if (status != FTDM_SUCCESS) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to read from peer channel!\n");
 		return FTDM_FAIL;
@@ -783,9 +783,10 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 
 	codec_func = peerchan->native_codec == FTDM_CODEC_ULAW ? fio_ulaw2slin : peerchan->native_codec == FTDM_CODEC_ALAW ? fio_alaw2slin : NULL;
 	if (codec_func) {
-		codec_func(peerbuf, sizeof(peerbuf), &sizeread);
 		sizeread = size;
 		codec_func(chanbuf, sizeof(chanbuf), &sizeread);
+		sizeread = size;
+		codec_func(peerbuf, sizeof(peerbuf), &sizeread);
 	}
 
 	for (i = 0; i < size; i++) {
@@ -794,11 +795,10 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 
 	codec_func = peerchan->native_codec == FTDM_CODEC_ULAW ? fio_slin2ulaw : peerchan->native_codec == FTDM_CODEC_ALAW ? fio_slin2alaw : NULL;
 	if (codec_func) {
-		codec_func(data, size, &size);
-	} else {
-		memcpy(data, mixedbuf, sizeof(mixedbuf));
+		size = sizeof(mixedbuf);
+		codec_func(mixedbuf, size, &size);
 	}
-
+	memcpy(data, mixedbuf, size);
 	return FTDM_SUCCESS;
 }
 
