@@ -2425,7 +2425,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 
 	str[0] = meta;
 
-	if (atoi(str) == key) {
+	if (atoi(str) == (int)key) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u, same as META CHAR\n", key);
 		return SWITCH_STATUS_FALSE;
 	}
