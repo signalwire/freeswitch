@@ -2975,6 +2975,11 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
+
+	if (status == FTDM_SUCCESS && ftdmchan->span->sig_read) {
+		ftdmchan->span->sig_read(ftdmchan, data, *datalen);
+	}
+
 #ifdef FTDM_DEBUG_DTMF
 	if (status == FTDM_SUCCESS) {
 		int dlen = (int) *datalen;
@@ -3131,17 +3136,21 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "ftdmchan is null\n");
 	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "No I/O module attached to ftdmchan\n");
+
+	ftdm_channel_lock(ftdmchan);
 	
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "cannot read from channel that is not open\n");
-		return FTDM_FAIL;
+		status = FTDM_FAIL;
+		goto done;
 	}
 
 	if (!ftdmchan->fio->read) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "read method not implemented\n");
-		return FTDM_FAIL;
+		status = FTDM_FAIL;
+		goto done;
 	}
 
 	status = ftdm_raw_read(ftdmchan, data, datalen);
@@ -3210,7 +3219,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 				} else {
 					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid effective codec %d\n", ftdmchan->effective_codec);
-					return FTDM_FAIL;
+					status = FTDM_FAIL;
+					goto done;
 				}
 			}
 			sln = (int16_t *) sln_buf;
@@ -3332,6 +3342,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
 	}
 
+done:
+
+	ftdm_channel_unlock(ftdmchan);
 
 	return status;
 }

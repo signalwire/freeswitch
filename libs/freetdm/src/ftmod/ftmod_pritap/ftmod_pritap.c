@@ -749,6 +749,59 @@ static ftdm_status_t ftdm_pritap_stop(ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
+static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size)
+{
+	ftdm_status_t status;
+	fio_codec_t codec_func;
+	ftdm_channel_t *peerchan = ftdmchan->call_data;
+	int16_t peerbuf[size];
+	int16_t chanbuf[size];
+	int16_t mixedbuf[size];
+	int i = 0;
+	ftdm_size_t sizeread = size;
+
+	if (!FTDM_IS_VOICE_CHANNEL(ftdmchan) || !ftdmchan->call_data) {
+		return FTDM_SUCCESS;
+	}
+
+	if (ftdmchan->native_codec != peerchan->native_codec) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Invalid peer channel with format %d, ours = %d\n", 
+				peerchan->native_codec, ftdmchan->native_codec);
+		return FTDM_FAIL;
+	}
+
+	memcpy(chanbuf, data, size);
+	status = peerchan->fio->read(ftdmchan->call_data, peerbuf, &sizeread);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to read from peer channel!\n");
+		return FTDM_FAIL;
+	}
+	if (sizeread != size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "read from peer channel only %d bytes!\n", sizeread);
+		return FTDM_FAIL;
+	}
+
+	codec_func = peerchan->native_codec == FTDM_CODEC_ULAW ? fio_ulaw2slin : peerchan->native_codec == FTDM_CODEC_ALAW ? fio_alaw2slin : NULL;
+	if (codec_func) {
+		codec_func(peerbuf, sizeof(peerbuf), &sizeread);
+		sizeread = size;
+		codec_func(chanbuf, sizeof(chanbuf), &sizeread);
+	}
+
+	for (i = 0; i < size; i++) {
+		mixedbuf[i] = ftdm_saturated_add(chanbuf[i], peerbuf[i]);
+	}
+
+	codec_func = peerchan->native_codec == FTDM_CODEC_ULAW ? fio_slin2ulaw : peerchan->native_codec == FTDM_CODEC_ALAW ? fio_slin2alaw : NULL;
+	if (codec_func) {
+		codec_func(data, size, &size);
+	} else {
+		memcpy(data, mixedbuf, sizeof(mixedbuf));
+	}
+
+	return FTDM_SUCCESS;
+}
+
 static ftdm_status_t ftdm_pritap_start(ftdm_span_t *span)
 {
 	ftdm_status_t ret;
@@ -832,6 +885,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 
 	span->start = ftdm_pritap_start;
 	span->stop = ftdm_pritap_stop;
+	span->sig_read = ftdm_pritap_sig_read;
 	span->signal_cb = sig_cb;
 	
 	span->signal_data = pritap;
