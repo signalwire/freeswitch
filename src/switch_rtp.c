@@ -2107,14 +2107,21 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 											 &rb);
 			
 			if ((rstatus != SWITCH_STATUS_SUCCESS && rstatus != SWITCH_STATUS_BREAK) || rb < 0) {
-				*bytes = rb;
-				return rstatus;
+				if (rtp_session->recv_msg_idx) {
+					/* Handle the data we have queued up */
+					break;
+				} else {
+					*bytes = rb;
+					return rstatus;
+				}
 			}
 			
 			if (!rb) break;
 			
 			rtp_session->recv_msg_array[rtp_session->recv_msg_idx].bytes = rb;
 			rtp_session->recv_msg_idx++;
+
+			switch_cond_next(); /* Relax just a bit */
 		}
 
 		if (!*bytes && rtp_session->recv_msg_idx) goto top;
