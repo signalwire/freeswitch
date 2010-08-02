@@ -679,7 +679,7 @@ static __inline__ int16_t ftdm_saturated_add(int16_t sample1, int16_t sample2)
 		addres = 32767;
 	else if (addres < -32767)
 		addres = -32767;
-	return addres;
+	return (int16_t)addres;
 }
 
 #ifdef __cplusplus
