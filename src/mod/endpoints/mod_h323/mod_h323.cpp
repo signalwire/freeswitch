@@ -1932,7 +1932,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------------->H323Capability::e_Data\n");
 			isAudio = true;
 			m_codec_ms = 20;
-			switch_channel_set_app_flag(m_fsChannel, CF_APP_T38);
+			switch_channel_set_app_flag_key("T38", m_fsChannel, CF_APP_T38);
 			break;
 		}
 		default:break;
