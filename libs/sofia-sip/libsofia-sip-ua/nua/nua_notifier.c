@@ -704,7 +704,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
       if (sr->sr_usage == du) {
 	/* If subscribe has not been responded, don't terminate usage by NOTIFY */
 	sr->sr_terminating = 1;
-	nua_client_set_terminating(cr, 0);
+	// nua_client_set_terminating(cr, 0);
 	break;
       }
     }
