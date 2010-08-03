@@ -63,7 +63,9 @@ struct session_elem {
 	switch_queue_t *event_queue;
 	switch_channel_state_t channel_state;
 	switch_memory_pool_t *pool;
-	struct session_elem *next;
+	uint8_t event_list[SWITCH_EVENT_ALL + 1];
+	switch_hash_t *event_hash;
+	//struct session_elem *next;
 };
 
 typedef struct session_elem session_elem_t;
@@ -106,7 +108,8 @@ struct listener {
 	switch_hash_t *spawn_pid_hash;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *session_mutex;
-	session_elem_t *session_list;
+	//session_elem_t *session_list;
+	switch_hash_t *sessions;
 	int lost_events;
 	int lost_logs;
 	time_t last_flush;
@@ -246,6 +249,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec);
 session_elem_t *attach_call_to_registered_process(listener_t *listener, char *reg_name, switch_core_session_t *session);
 session_elem_t *attach_call_to_pid(listener_t *listener, erlang_pid * pid, switch_core_session_t *session);
 session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *module, char *function, switch_core_session_t *session);
+session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid);
 void put_reply_unlock(fetch_reply_t *p, char *uuid_str);
 
 /* For Emacs:

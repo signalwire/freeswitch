@@ -142,28 +142,25 @@ static void send_event_to_attached_sessions(listener_t *listener, switch_event_t
 {
 	char *uuid = switch_event_get_header(event, "unique-id");
 	switch_event_t *clone = NULL;
-	session_elem_t *s;
+	session_elem_t *s = NULL;
 
-	if (!uuid)
+	if (!uuid) {
 		return;
-	switch_mutex_lock(listener->session_mutex);
-	for (s = listener->session_list; s; s = s->next) {
-		/* check the event uuid against the uuid of each session */
-		if (!strcmp(uuid, s->uuid_str)) {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Sending event %s to attached session for %s\n",
-							  switch_event_name(event->event_id), s->uuid_str);
-			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				/* add the event to the queue for this session */
-				if (switch_queue_trypush(s->event_queue, clone) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Lost event!\n");
-					switch_event_destroy(&clone);
-				}
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Memory Error!\n");
+	}
+
+	if ((s = (session_elem_t*)switch_core_hash_find(listener->sessions, uuid))) {
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Sending event %s to attached session %s\n",
+				switch_event_name(event->event_id), s->uuid_str);
+		if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+			/* add the event to the queue for this session */
+			if (switch_queue_trypush(s->event_queue, clone) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Lost event!\n");
+				switch_event_destroy(&clone);
 			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Memory Error!\n");
 		}
 	}
-	switch_mutex_unlock(listener->session_mutex);
 }
 
 static void event_handler(switch_event_t *event)
@@ -304,33 +301,13 @@ static listener_t *find_listener(char *nodename)
 
 static void add_session_elem_to_listener(listener_t *listener, session_elem_t *session_element)
 {
-	switch_mutex_lock(listener->session_mutex);
-	session_element->next = listener->session_list;
-	listener->session_list = session_element;
-	switch_mutex_unlock(listener->session_mutex);
+	switch_core_hash_insert_locked(listener->sessions, session_element->uuid_str, (void*) session_element, listener->session_mutex);
 }
 
 
 static void remove_session_elem_from_listener(listener_t *listener, session_elem_t *session_element)
 {
-	session_elem_t *s, *last = NULL;
-
-	if (!session_element)
-		return;
-
-	for (s = listener->session_list; s; s = s->next) {
-		if (s == session_element) {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_DEBUG, "Removing session element for %s\n",
-							  session_element->uuid_str);
-			if (last) {
-				last->next = s->next;
-			} else {
-				listener->session_list = s->next;
-			}
-			break;
-		}
-		last = s;
-	}
+	switch_core_hash_delete(listener->sessions, session_element->uuid_str);
 }
 
 static void destroy_session_elem(session_elem_t *session_element)
@@ -355,19 +332,25 @@ static void remove_session_elem_from_listener_locked(listener_t *listener, sessi
 }
 
 
-session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid * pid)
+session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 {
-	session_elem_t *s = NULL;
+	switch_hash_index_t *iter = NULL;
+	const void *key = NULL;
+	void *val = NULL;
+	session_elem_t *session = NULL;
 
 	switch_mutex_lock(listener->session_mutex);
-	for (s = listener->session_list; s; s = s->next) {
-		if (s->process.type == ERLANG_PID && !ei_compare_pids(pid, &s->process.pid)) {
-			break;
+	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
+		switch_hash_this(iter, &key, NULL, &val);
+		session = (session_elem_t*)val;
+		if (session->process.type == ERLANG_PID && !ei_compare_pids(pid, &session->process.pid)) {
+			switch_mutex_unlock(listener->session_mutex);
+			return session;
 		}
 	}
 	switch_mutex_unlock(listener->session_mutex);
 
-	return s;
+	return NULL;
 }
 
 
@@ -567,21 +550,26 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 
 static switch_status_t check_attached_sessions(listener_t *listener)
 {
-	session_elem_t *last, *sp, *removed;
+	session_elem_t *sp;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	void *pop;
+	const void *key;
+	void * value;
+	switch_hash_index_t *iter;
+	switch_event_t *event = NULL;
+	switch_event_header_t *header = NULL;
+	switch_event_create_subclass(&event, SWITCH_EVENT_CLONE, NULL);
+	switch_assert(event);
 	/* check up on all the attached sessions -
 	   if they have not yet sent an initial call event to the associated erlang process then do so
 	   if they have pending events in their queues then send them
 	   if the session has finished then clean it up
 	 */
 	switch_mutex_lock(listener->session_mutex);
-	sp = listener->session_list;
-	last = NULL;
-	while (sp) {
-		removed = NULL;
+	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
+		switch_hash_this(iter, &key, NULL, &value);
+		sp = (session_elem_t*)value;
 		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
-			sp = sp->next;
 			continue;
 		}
 
@@ -589,11 +577,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			status = notify_new_session(listener, sp);
 			if (status != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Notifying new session failed\n");
-				removed = sp;
-				sp = removed->next;
-
-				remove_session_elem_from_listener(listener, removed);
-				destroy_session_elem(removed);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 				continue;
 			}
 			switch_set_flag(sp, LFLAG_OUTBOUND_INIT);
@@ -625,7 +609,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			}
 			/* this session can be removed */
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Destroy event for attached session for %s in state %s\n",
-							  sp->uuid_str, switch_channel_state_name(sp->channel_state));
+					sp->uuid_str, switch_channel_state_name(sp->channel_state));
 
 			ei_x_new_with_version(&ebuf);
 			ei_x_encode_atom(&ebuf, "call_hangup");
@@ -633,11 +617,8 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			ei_sendto(listener->ec, listener->sockfd, &sp->process, &ebuf);
 			switch_mutex_unlock(listener->sock_mutex);
 			ei_x_free(&ebuf);
-			removed = sp;
-			sp = removed->next;
 
-			remove_session_elem_from_listener(listener, removed);
-			destroy_session_elem(removed);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 			continue;
 		} else if (switch_queue_trypop(sp->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 
@@ -663,8 +644,15 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 
 			switch_event_destroy(&pevent);
 		}
-		sp = sp->next;
 	}
+	/* do the deferred remove */
+	for (header = event->headers; header; header = header->next) {
+		if ((sp = (session_elem_t*)switch_core_hash_find(listener->sessions, header->value))) {
+			remove_session_elem_from_listener(listener, sp);
+			destroy_session_elem(sp);
+		}
+	}
+
 	switch_mutex_unlock(listener->session_mutex);
 	if (prefs.done) {
 		return SWITCH_STATUS_FALSE;	/* we're shutting down */
@@ -953,7 +941,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 {
 	listener_t *listener = (listener_t *) obj;
 	session_elem_t *s;
-	switch_core_session_t *session;
+	const void *key;
+	void *value;
+	switch_hash_index_t *iter;
 
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
@@ -992,15 +982,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	remove_binding(listener, NULL);
 
 	/* clean up all the attached sessions */
-	switch_mutex_lock(listener->session_mutex);
+	switch_mutex_lock(listener->session_mutex); // TODO is iterating thread safe?
 	/* TODO destroy memory pools since they're not children of the listener's pool */
-	for (s = listener->session_list; s; s = s->next) {
-		if ((session = switch_core_session_locate(s->uuid_str))) {
-			switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
-			switch_core_session_rwunlock(session);
-		}
-		/* this allows the application threads to exit */
-		switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
+	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
+		switch_hash_this(iter, &key, NULL, &value);
+		s = (session_elem_t*)value;
+		destroy_session_elem(s);
 	}
 	switch_mutex_unlock(listener->session_mutex);
 
@@ -1135,6 +1122,7 @@ static listener_t *new_listener(struct ei_cnode_s *ec, int clientfd)
 	switch_mutex_init(&listener->sock_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->session_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_core_hash_init(&listener->event_hash, listener->pool);
+	switch_core_hash_init(&listener->sessions, listener->pool);
 
 	return listener;
 }
@@ -1189,6 +1177,7 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 	switch_memory_pool_t *session_elem_pool;
 	session_elem_t *session_element;	/* = malloc(sizeof(*session_element)); */
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int x;
 
 	if (switch_core_new_memory_pool(&session_elem_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
@@ -1205,6 +1194,13 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 
 	switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, session_element->pool);
 	switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, session_element->pool);
+	switch_core_hash_init(&session_element->event_hash, session_element->pool);
+
+	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
+		session_element->event_list[x] = 0;
+	}
+
+	session_element->event_list[SWITCH_EVENT_ALL] = 1; /* defaults to everything */
 
 	switch_channel_set_private(channel, "_erlang_session_", session_element);
 	switch_channel_set_private(channel, "_erlang_listener_", listener);
@@ -1336,16 +1332,12 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 int count_listener_sessions(listener_t *listener)
 {
-	session_elem_t *last, *sp;
 	int count = 0;
+	switch_hash_index_t *iter;
 
 	switch_mutex_lock(listener->session_mutex);
-	sp = listener->session_list;
-	last = NULL;
-	while (sp) {
+	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
 		count++;
-		last = sp;
-		sp = sp->next;
 	}
 
 	switch_mutex_unlock(listener->session_mutex);
@@ -1547,16 +1539,22 @@ SWITCH_STANDARD_API(erlang_cmd)
 		for (l = listen_list.listeners; l; l = l->next) {
 			if (!strcasecmp(l->peer_nodename, argv[1])) {
 				session_elem_t *sp;
+				switch_hash_index_t *iter;
+				int empty = 1;
+				const void *key;
+				void *value;
 
 				found = 1;
 				switch_mutex_lock(l->session_mutex);
-				if ((sp = l->session_list)) {
-					while (sp) {
-						stream->write_function(stream, "Outbound session for %s in state %s\n", sp->uuid_str,
-											   switch_channel_state_name(sp->channel_state));
-						sp = sp->next;
-					}
-				} else {
+				for (iter = switch_hash_first(NULL, l->sessions); iter; iter = switch_hash_next(iter)) {
+					empty = 0;
+					switch_hash_this(iter, &key, NULL, &value);
+					sp = (session_elem_t*)value;
+					stream->write_function(stream, "Outbound session for %s in state %s\n", sp->uuid_str,
+							switch_channel_state_name(sp->channel_state));
+				}
+
+				if (empty) {
 					stream->write_function(stream, "No active sessions for %s\n", argv[1]);
 				}
 				switch_mutex_unlock(l->session_mutex);
