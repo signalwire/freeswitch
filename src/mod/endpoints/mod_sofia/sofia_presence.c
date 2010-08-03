@@ -1026,7 +1026,7 @@ static char *translate_rpid(char *in)
 	}
 
 	if (!strcasecmp(in, "unknown")) {
-		r = "online";
+		r = NULL;
 		goto end;
 	}
 
@@ -1237,8 +1237,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	if (!rpid) {
 		rpid = "unknown";
 	}
-
-	prpid = translate_rpid(rpid);
 
 	if (!strcasecmp(proto, SOFIA_CHAT_PROTO)) {
 		clean_id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
