@@ -338,16 +338,14 @@ PString GetH245CodecName(const H323Capability* cap)
 }
 
 FSProcess::FSProcess()
-	: PProcess("FreeSWITCH", "mod_h323", 1, 0, AlphaCode, 1)
-	, m_h323endpoint(NULL)
-{
+	: PLibraryProcess("Test", "mod_h323", 1, 0, AlphaCode, 1)
+	, m_h323endpoint(NULL){
 	PTrace::SetLevel(4);
 	PTrace::SetOptions(PTrace::TraceLevel);
 	PTrace::SetStream(new FSTrace);
 }
 
-FSProcess::~FSProcess()
-{
+FSProcess::~FSProcess(){
 	delete m_h323endpoint;
 }
 

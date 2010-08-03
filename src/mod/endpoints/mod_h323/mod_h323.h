@@ -208,8 +208,8 @@ switch_status_t name(type1 name1)
 switch_status_t name(type1 name1, type2 name2, type3 name3)
 
 class FSH323EndPoint;
-class FSProcess:public PProcess {
-	PCLASSINFO(FSProcess, PProcess);
+class FSProcess:public PLibraryProcess { 
+	PCLASSINFO(FSProcess, PLibraryProcess);
 
   public:
 	FSProcess();
