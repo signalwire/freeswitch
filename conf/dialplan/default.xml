@@ -145,6 +145,7 @@
 	<action application="hash" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial/${caller_id_number}/${destination_number}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial/global/${uuid}"/>
+	<action application="set" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
       </condition>
     </extension>
 

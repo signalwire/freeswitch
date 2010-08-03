@@ -27,6 +27,7 @@
     <extension name="outside_call" continue="true">
       <condition>
 	<action application="set" data="outside_call=true"/>
+	<action application="set" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
       </condition>
     </extension>
 

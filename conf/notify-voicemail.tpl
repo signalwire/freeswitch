@@ -1,4 +1,5 @@
 From: "${voicemail_caller_id_name}" <${voicemail_caller_id_number}@${voicemail_domain}>
+Date: ${RFC2822_DATE}
 To: <${voicemail_notify_email}>
 Subject: Voicemail from "${voicemail_caller_id_name}" <${voicemail_caller_id_number}> ${voicemail_message_len}
 X-Priority: ${voicemail_priority}
