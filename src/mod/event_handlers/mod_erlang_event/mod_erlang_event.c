@@ -149,16 +149,30 @@ static void send_event_to_attached_sessions(listener_t *listener, switch_event_t
 	}
 
 	if ((s = (session_elem_t*)switch_core_hash_find(listener->sessions, uuid))) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Sending event %s to attached session %s\n",
-				switch_event_name(event->event_id), s->uuid_str);
-		if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-			/* add the event to the queue for this session */
-			if (switch_queue_trypush(s->event_queue, clone) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Lost event!\n");
-				switch_event_destroy(&clone);
+		int send = 0;
+		if (s->event_list[SWITCH_EVENT_ALL]) {
+			send = 1;
+		} else if ((s->event_list[event->event_id])) {
+			if (event->event_id != SWITCH_EVENT_CUSTOM || !event->subclass_name || (switch_core_hash_find(s->event_hash, event->subclass_name))) {
+				send = 1;
+			}
+		}
+
+		if (send) {
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Sending event %s to attached session %s\n",
+					switch_event_name(event->event_id), s->uuid_str);
+			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+				/* add the event to the queue for this session */
+				if (switch_queue_trypush(s->event_queue, clone) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Lost event!\n");
+					switch_event_destroy(&clone);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_ERROR, "Memory Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Ignoring event %s for attached session %s\n",
+					switch_event_name(event->event_id), s->uuid_str);
 		}
 	}
 }

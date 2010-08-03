@@ -308,6 +308,57 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t handle_msg_session_event(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
+{
+	char atom[MAXATOMLEN];
+
+	if (arity == 1) {
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "badarg");
+	} else {
+		session_elem_t *session;
+		if ((session = find_session_elem_by_pid(listener, &msg->from))) {
+
+			int custom = 0;
+			switch_event_types_t type;
+			int i = 0;
+
+			for (i = 1; i < arity; i++) {
+				if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
+
+					if (custom) {
+						switch_core_hash_insert(session->event_hash, atom, MARKER);
+					} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
+						if (type == SWITCH_EVENT_ALL) {
+							uint32_t x = 0;
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ALL events enabled for %s\n", session->uuid_str);
+							for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+								session->event_list[x] = 1;
+							}
+						}
+						if (type <= SWITCH_EVENT_ALL) {
+							session->event_list[type] = 1;
+						}
+						if (type == SWITCH_EVENT_CUSTOM) {
+							custom++;
+						}
+
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "enable event %s for session %s\n", atom, session->uuid_str);
+				}
+			}
+			ei_x_encode_atom(rbuf, "ok");
+		} else {
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "notlistening");
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char atom[MAXATOMLEN];
@@ -351,6 +402,58 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_status_t handle_msg_session_nixevent(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
+{
+	char atom[MAXATOMLEN];
+
+	if (arity == 1) {
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "badarg");
+	} else {
+		session_elem_t *session;
+		if ((session = find_session_elem_by_pid(listener, &msg->from))) {
+			int custom = 0;
+			int i = 0;
+			switch_event_types_t type;
+
+			for (i = 1; i < arity; i++) {
+				if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
+
+					if (custom) {
+						switch_core_hash_delete(session->event_hash, atom);
+					} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
+						uint32_t x = 0;
+
+						if (type == SWITCH_EVENT_CUSTOM) {
+							custom++;
+						} else if (type == SWITCH_EVENT_ALL) {
+							for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
+								session->event_list[x] = 0;
+							}
+						} else {
+							if (session->event_list[SWITCH_EVENT_ALL]) {
+								session->event_list[SWITCH_EVENT_ALL] = 0;
+								for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+									session->event_list[x] = 1;
+								}
+							}
+							session->event_list[type] = 0;
+						}
+					}
+				}
+			}
+			ei_x_encode_atom(rbuf, "ok");
+		} else { /* no session for this pid */
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "notlistening");
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
@@ -649,8 +752,12 @@ static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg * msg, 
 			ret = handle_msg_set_log_level(listener, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "event", MAXATOMLEN)) {
 			ret = handle_msg_event(listener, arity, buf, rbuf);
+		} else if (!strncmp(tupletag, "session_event", MAXATOMLEN)) {
+			ret = handle_msg_session_event(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "nixevent", MAXATOMLEN)) {
 			ret = handle_msg_nixevent(listener, arity, buf, rbuf);
+		} else if (!strncmp(tupletag, "session_nixevent", MAXATOMLEN)) {
+			ret = handle_msg_session_nixevent(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "api", MAXATOMLEN)) {
 			ret = handle_msg_api(listener, msg, arity, buf, rbuf);
 		} else if (!strncmp(tupletag, "bgapi", MAXATOMLEN)) {
@@ -720,6 +827,26 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 			/* wipe the hash */
 			switch_core_hash_destroy(&listener->event_hash);
 			switch_core_hash_init(&listener->event_hash, listener->pool);
+			ei_x_encode_atom(rbuf, "ok");
+		} else {
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "notlistening");
+		}
+	} else if (!strncmp(atom, "session_noevents", MAXATOMLEN)) {
+		session_elem_t *session;
+		if ((session = find_session_elem_by_pid(listener, &msg->from))) {
+			void *pop;
+			uint8_t x = 0;
+
+			/*purge the event queue */
+			while (switch_queue_trypop(session->event_queue, &pop) == SWITCH_STATUS_SUCCESS);
+			for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
+				session->event_list[x] = 0;
+			}
+			/* wipe the hash */
+			switch_core_hash_destroy(&session->event_hash);
+			switch_core_hash_init(&session->event_hash, session->pool);
 			ei_x_encode_atom(rbuf, "ok");
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
