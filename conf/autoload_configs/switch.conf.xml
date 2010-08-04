@@ -79,6 +79,8 @@
     <!--<param name="rtp-end-port" value="32768"/>-->
     <param name="rtp-enable-zrtp" value="true"/>
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
+    <!-- The system will create all the db schemas automaticly, set this to false to avoid this behaviour-->
+    <!--<param name="auto-create-schemas" value="true"/>-->
   </settings>
 
 </configuration>
