@@ -836,14 +836,14 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 	} else if (!strncmp(atom, "session_noevents", MAXATOMLEN)) {
 		session_elem_t *session;
 		if ((session = find_session_elem_by_pid(listener, &msg->from))) {
-			void *pop;
-			uint8_t x = 0;
+			//void *pop;
+			//uint8_t x = 0;
 
 			/*purge the event queue */
-			while (switch_queue_trypop(session->event_queue, &pop) == SWITCH_STATUS_SUCCESS);
+			/*while (switch_queue_trypop(session->event_queue, &pop) == SWITCH_STATUS_SUCCESS);
 			for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 				session->event_list[x] = 0;
-			}
+			}*/
 			/* wipe the hash */
 			switch_core_hash_destroy(&session->event_hash);
 			switch_core_hash_init(&session->event_hash, session->pool);
