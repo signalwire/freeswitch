@@ -107,7 +107,7 @@ struct listener {
 	switch_hash_t *event_hash;
 	switch_hash_t *spawn_pid_hash;
 	switch_thread_rwlock_t *rwlock;
-	switch_mutex_t *session_mutex;
+	switch_thread_rwlock_t *session_rwlock;
 	//session_elem_t *session_list;
 	switch_hash_t *sessions;
 	int lost_events;
