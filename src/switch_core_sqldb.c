@@ -784,6 +784,10 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	char *errmsg;
 	switch_bool_t r = SWITCH_TRUE;
 
+	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
+		return SWITCH_TRUE;
+	}
+
 	if (dbh->io_mutex) {
 		switch_mutex_lock(dbh->io_mutex);
 	}

@@ -1227,6 +1227,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
+	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
@@ -1261,9 +1262,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.sounds_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 
+
 	switch_mutex_init(&runtime.uuid_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 
 	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
+
 	switch_mutex_init(&runtime.session_hash_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.global_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.global_var_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
@@ -1272,7 +1275,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
 	switch_core_hash_init(&runtime.mime_types, runtime.memory_pool);
 	load_mime_types();
-	runtime.flags = flags;
+	runtime.flags |= flags;
 	runtime.sps_total = 30;
 
 	*err = NULL;
@@ -1314,8 +1317,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	runtime.tipping_point = 5000;
 	runtime.timer_affinity = -1;
+	
 	switch_load_core_config("switch.conf");
-
 
 	switch_core_state_machine_init(runtime.memory_pool);
 
@@ -1435,6 +1438,12 @@ static void switch_load_core_config(const char *file)
 					if (tmp > -1 && tmp < 11) {
 						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
 					}
+				} else if (!strcasecmp(var, "auto-create-schemas")) {
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
+					} else {
+						switch_clear_flag((&runtime), SCF_AUTO_SCHEMAS);
+					}
 				} else if (!strcasecmp(var, "enable-early-hangup") && switch_true(val)) {
 					switch_set_flag((&runtime), SCF_EARLY_HANGUP);
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
@@ -1553,7 +1562,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
-
+	
 	if (runtime.runlevel > 1) {
 		/* one per customer */
 		return SWITCH_STATUS_SUCCESS;
@@ -1582,7 +1591,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	signal(SIGUSR1, handle_SIGHUP);
 #endif
 	signal(SIGHUP, handle_SIGHUP);
-
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");

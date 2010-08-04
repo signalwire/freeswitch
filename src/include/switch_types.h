@@ -252,7 +252,8 @@ typedef enum {
 	SCF_USE_HEAVY_TIMING = (1 << 9),
 	SCF_USE_CLOCK_RT = (1 << 10),
 	SCF_VERBOSE_EVENTS = (1 << 11),
-	SCF_USE_WIN32_MONOTONIC = (1 << 12)
+	SCF_USE_WIN32_MONOTONIC = (1 << 12),
+	SCF_AUTO_SCHEMAS = (1 << 13)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
