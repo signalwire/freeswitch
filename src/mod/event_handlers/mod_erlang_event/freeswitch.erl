@@ -14,8 +14,8 @@
 
 -module(freeswitch).
 
--export([send/2, api/3, api/2, bgapi/3, bgapi/4, event/2,
-		nixevent/2, noevents/1, close/1,
+-export([send/2, api/3, api/2, bgapi/3, bgapi/4, event/2, session_event/2,
+		nixevent/2, session_nixevent/2, noevents/1, session_noevents/1, close/1,
 		get_event_header/2, get_event_body/1,
 		get_event_name/1, getpid/1, sendmsg/3,
 		sendevent/3, sendevent_custom/3, handlecall/2, handlecall/3, start_fetch_handler/5,
@@ -173,16 +173,39 @@ event(Node, Events) when is_list(Events) ->
 event(Node, Event) when is_atom(Event) ->
 	event(Node, [Event]).
 
+session_event(Node, Events) when is_list(Events) ->
+	{session_event, Node} ! list_to_tuple([session_event | Events]),
+	receive
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
+	after ?TIMEOUT ->
+			timeout
+	end;
+session_event(Node, Event) when is_atom(Event) ->
+	session_event(Node, [Event]).
+
 %% @doc Stop receiving any events in the list `Events' from `Node'.
 nixevent(Node, Events) when is_list(Events) ->
 	{nixevent, Node} ! list_to_tuple(lists:append([nixevent], Events)),
 	receive
-		X -> X
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
 	end;
 nixevent(Node, Event) when is_atom(Event) ->
 	nixevent(Node, [Event]).
+
+session_nixevent(Node, Events) when is_list(Events) ->
+	{session_nixevent, Node} ! list_to_tuple([session_nixevent | Events]),
+	receive
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
+	after ?TIMEOUT ->
+		timeout
+	end;
+session_nixevent(Node, Event) when is_atom(Event) ->
+	session_nixevent(Node, [Event]).
 
 %% @doc Stop receiving any events from `Node'.
 noevents(Node) ->
@@ -192,6 +215,15 @@ noevents(Node) ->
 		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
+	end.
+
+session_noevents(Node) ->
+	{session_noevents, Node} ! session_noevents,
+	receive
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
+	after ?TIMEOUT ->
+			timeout
 	end.
 
 %% @doc Close the connection to `Node'.
