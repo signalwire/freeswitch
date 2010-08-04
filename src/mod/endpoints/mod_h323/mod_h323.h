@@ -582,7 +582,8 @@ H323Channel * FSH323_T38Capability::CreateChannel(
  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"FSH323_T38Capability::CreateChannel %p  sessionID= %u direction=%s [%p]\n"
     , &connection
     , sessionID
-    , GetDirections[direction]);
+    , GetDirections[direction]
+    , this);
 
   return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params);
 }
