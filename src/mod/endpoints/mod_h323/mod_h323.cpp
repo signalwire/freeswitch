@@ -27,6 +27,7 @@
  *	Version 0.0.55
 */
 
+//#define DEBUG_RTP_PACKETS
 #include "mod_h323.h"
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, mod_h323_globals.codec_string);
@@ -161,7 +162,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_h323_load)
 
 	if (h323_process->Initialise(*module_interface)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "H323 mod initialized and running\n");
+#ifdef WIN32
+		return SWITCH_STATUS_NOUNLOAD; /* Unload doesn't work right now, at least not in Windows */
+#else
 		return SWITCH_STATUS_SUCCESS;
+#endif
 	}
 
 	delete h323_process;
@@ -340,9 +345,6 @@ PString GetH245CodecName(const H323Capability* cap)
 FSProcess::FSProcess()
 	: PLibraryProcess("Test", "mod_h323", 1, 0, AlphaCode, 1)
 	, m_h323endpoint(NULL){
-	PTrace::SetLevel(4);
-	PTrace::SetOptions(PTrace::TraceLevel);
-	PTrace::SetStream(new FSTrace);
 }
 
 FSProcess::~FSProcess(){
@@ -365,6 +367,7 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 	/* Update tracing level for h323 */
 	PTrace::SetLevel(mod_h323_globals.trace_level);
 	PTrace::SetOptions(PTrace::TraceLevel);
+	PTrace::SetStream(new FSTrace);
 
 	m_freeswitch = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(iface, SWITCH_ENDPOINT_INTERFACE);
 	m_freeswitch->interface_name = modulename;
@@ -816,7 +819,7 @@ bool FSH323Connection::decodeCapability(const H323Capability& capability, const 
 	}
     
 	if (format) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"capability '%s' format '%s' %d",(const char*)fname,format,pload);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"capability '%s' format '%s' %d\n",(const char*)fname,format,pload);
 		if (capabName)
 			*capabName = fname;
 		if (dataFormat)
@@ -1593,7 +1596,9 @@ switch_status_t FSH323Connection::on_soft_execute()
 
 switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
+#ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame [%p]\n",this);
+#endif
 
 	/*switch_channel_t *channel = NULL;
 	h323_private_t *tech_pvt = NULL;
@@ -1674,7 +1679,9 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 
 	if (!switch_channel_ready(m_fsChannel)) {
 		switch_clear_flag_locked(tech_pvt, TFLAG_READING);		
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n");
+#endif
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1683,16 +1690,24 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 		if (!switch_core_codec_ready(&tech_pvt->read_codec )) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 			switch_mutex_unlock(tech_pvt->h323_io_mutex);
+#ifdef DEBUG_RTP_PACKETS
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n\n");
+#endif
 			return SWITCH_STATUS_FALSE;
 		}
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame ---> switch_rtp_zerocopy_read_frame start\n");
+#endif
 		switch_status_t status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame ---> switch_rtp_zerocopy_read_frame stop\n");
+#endif
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 			switch_mutex_unlock(tech_pvt->h323_io_mutex);
+#ifdef DEBUG_RTP_PACKETS
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n\n");
+#endif
 			return status;			
 		}
 
@@ -1713,7 +1728,9 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 		}
 	} else {
 		switch_mutex_unlock(tech_pvt->h323_io_mutex);
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"--------->TFLAG_IO OFF\n");
+#endif
 		switch_yield(10000);
 	}
 
@@ -1721,14 +1738,18 @@ switch_status_t FSH323Connection::read_audio_frame(switch_frame_t **frame, switc
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 	
 	*frame = &tech_pvt->read_frame;
+#ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::read_audio_frame END\n\n");
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
+#ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame [%p]\n",this);
+#endif
 	
 	/*switch_channel_t *channel = NULL;
 	h323_private_t *tech_pvt = NULL;
@@ -1760,7 +1781,9 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 	switch_assert(tech_pvt != NULL);
 	
 	if (!switch_channel_ready(m_fsChannel)) {
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
+#endif
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -1768,18 +1791,24 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 		if (switch_channel_ready(m_fsChannel)) {
 			switch_yield(10000);
 		} else {
+#ifdef DEBUG_RTP_PACKETS
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
+#endif
 			return SWITCH_STATUS_GENERR;
 		}
 	}
 	
 	if (!switch_core_codec_ready(&tech_pvt->read_codec) || !tech_pvt->read_codec.implementation) {
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
+#endif
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if ((frame->flags & SFF_CNG)) {
+#ifdef DEBUG_RTP_PACKETS
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
+#endif
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1790,7 +1819,9 @@ switch_status_t FSH323Connection::write_audio_frame(switch_frame_t *frame, switc
 	}
 	
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
+#ifdef DEBUG_RTP_PACKETS
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::write_audio_frame END\n\n");
+#endif
 
 	return status;
 }
@@ -2313,13 +2344,14 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 		if (trylock == 1) {
 			const PString currentToken(me->GetCallToken());
 			FSH323Connection *connection = (FSH323Connection *)me->GetEndPoint()->FindConnectionWithLock(currentToken); 
-			connection->Unlock();
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> UnLock()\n");
+			if (connection) {
+				connection->Unlock();
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> connection->UnLock()\n");
+			}
 			me->Unlock();
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> UnLock()\n");
 		} else if (trylock == -1) {
-			me->Unlock();
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> UnLock()\n");
+			/* Failed to lock - just go on */
 		}
 		me->SetQ931Cause(cause);
 		me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));

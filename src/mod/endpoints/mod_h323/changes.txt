@@ -1,3 +1,5 @@
+move PTrace level set to FSH323EndPoint::Initialise
+partially apply patch from from Peter Olsson, Remove UnLock() when TryLock() failed and DEBUG_RTP_PACKETS directive.
 apply changes from mod_h323-patch.diff by Peter Olsson.
 some t.38 and lockinng improvements.
 replace ptrace with switch_log_printf.
