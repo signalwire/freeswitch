@@ -2077,10 +2077,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
-	if (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+	if ((rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
+		*bytes < rtp_header_len ||
+		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
@@ -2233,6 +2235,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int fdr = 0;
 	int rtcp_fdr = 0;
 	int hot_socket = 0;
+	int read_loops = 0;
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
@@ -2285,6 +2288,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	recvfrom:
 		bytes = 0;
+		read_loops++;
 
 		if (!switch_rtp_ready(rtp_session)) {
 			break;
@@ -2403,7 +2407,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-		if (rtp_session->max_missed_packets) {
+		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+			rtp_session->missed_count = 0;
+			ret = 0;
+			goto end;
+		}
+
+		if (rtp_session->max_missed_packets && read_loops == 1) {
 			if (bytes) {
 				rtp_session->missed_count = 0;
 			} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
@@ -2540,13 +2550,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes) {
 			rtp_session->missed_count = 0;
 
+			if (bytes < rtp_header_len) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring invalid RTP packet size of %ld bytes.\n", (long)bytes);
+				bytes = 0;
+				goto do_continue;
+			}
+			
 			if (rtp_session->recv_msg.header.pt && (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
 				return_cng_frame();
 			}
-		}
-
-		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
-			return_cng_frame();
 		}
 
 
@@ -2667,7 +2679,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		   we put up with as much as we can so we don't have to deal with being punished for
 		   doing it right. Nice guys finish last!
 		*/
-		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
+		if (bytes > rtp_header_len && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 			switch_size_t len = bytes - rtp_header_len;
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
@@ -2806,17 +2818,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					switch_cond_next();
 					continue;
 				}
-
+				
 				return_cng_frame();
 			}
 		}
-
+		
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
+			if (!(io_flags & SWITCH_IO_FLAG_SINGLE_READ) && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
 				goto do_continue;
 			}
-			ret = 0;
-			goto end;
+			return_cng_frame();
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
@@ -2959,7 +2970,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 		*datalen = 0;
 		return SWITCH_STATUS_BREAK;
 	} else {
-		bytes -= rtp_header_len;
+		if (bytes > rtp_header_len) {
+			bytes -= rtp_header_len;
+		}
 	}
 
 	*datalen = bytes;
@@ -3069,7 +3082,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	if (bytes < 0) {
 		frame->datalen = 0;
 		return bytes == -2 ? SWITCH_STATUS_TIMEOUT : SWITCH_STATUS_GENERR;
-	} else if (bytes == 0) {
+	} else if (bytes < rtp_header_len) {
 		frame->datalen = 0;
 		return SWITCH_STATUS_BREAK;
 	} else {
@@ -3098,7 +3111,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 		*datalen = 0;
 		return SWITCH_STATUS_GENERR;
 	} else {
-		bytes -= rtp_header_len;
+		if (bytes > rtp_header_len) {
+			bytes -= rtp_header_len;
+		}
 	}
 
 	*datalen = bytes;
@@ -3126,7 +3141,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			send_msg->header.pt = rtp_session->te;
 		}
 		data = send_msg->body;
-		datalen -= rtp_header_len;
+		if (datalen > rtp_header_len) {
+			datalen -= rtp_header_len;
+		}
 	} else {
 		uint8_t m = 0;
 
@@ -3139,10 +3156,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (timestamp) {
 			rtp_session->ts = (uint32_t) timestamp;
+			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
+			if (rtp_session->ts <= rtp_session->last_write_ts) {
+				m++;
+			}
 		} else if (rtp_session->timer.timer_interface) {
 			rtp_session->ts = rtp_session->timer.samplecount;
 
-			if (rtp_session->ts <= rtp_session->last_write_ts) {
+			if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
 				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 			}
 		} else {
