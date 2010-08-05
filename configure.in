@@ -38,13 +38,19 @@ AC_ARG_WITH([modinstdir],
 AC_SUBST(modulesdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the modules to])
 
+if test "$localstatedir" = "\${prefix}/var" ; then
+    rundir="$prefix/run"
+    logfiledir="${prefix}/log"
+else
+    rundir="$localstatedir/run/freeswitch"
+    logfiledir="$localstatedir/log/freeswitch"
+fi
 # Where to put pidfile
 AC_ARG_WITH([rundir],
-	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/run)])], [runtimedir="$withval"], [runtimedir="${prefix}/run"])
+	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/run)])], [runtimedir="$withval"], [runtimedir="$rundir"])
 AC_SUBST(runtimedir)
 AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${runtimedir}",[where to put pidfile to])
 
-logfiledir="${prefix}/log"
 AC_SUBST(logfiledir)
 AC_DEFINE_UNQUOTED([SWITCH_LOG_DIR],"${logfiledir}",[where to put log files])
 
