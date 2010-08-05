@@ -1297,19 +1297,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 		ei_x_print_reg_msg(&rbuf, module, 1);
 #endif
 		ei_x_free(&rbuf);
-
-		ei_x_new_with_version(&rbuf);
-		ei_x_encode_tuple_header(&rbuf, 3);
-		ei_x_encode_atom(&rbuf, "new_pid");
-		ei_x_encode_ref(&rbuf, &ref);
-		ei_x_encode_pid(&rbuf, ei_self(listener->ec));
-		/* should lock with mutex? */
-		ei_reg_send(listener->ec, listener->sockfd, module, rbuf.buff, rbuf.index);
-#ifdef EI_DEBUG
-		ei_x_print_reg_msg(&rbuf, module, 1);
-#endif
-
-		ei_x_free(&rbuf);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rpc call: %s:%s(Ref)\n", module, function);
 		/* should lock with mutex? */
@@ -1323,7 +1310,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	/* loop until either we timeout or we get a value that's not the waiting marker */
 	while (!(p = switch_core_hash_find(listener->spawn_pid_hash, hash)) || p == &globals.WAITING) {
 		if (i > 500) {			/* 5 second timeout */
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s\n", hash);
 			remove_session_elem_from_listener_locked(listener, session_element);
 			switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.TIMEOUT);	/* TODO lock this? */
 			destroy_session_elem(session_element);
@@ -1336,7 +1323,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	switch_core_hash_delete(listener->spawn_pid_hash, hash);
 
 	pid = (erlang_pid *) p;
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "got pid!\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "got pid! %s\n", hash);
 
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
