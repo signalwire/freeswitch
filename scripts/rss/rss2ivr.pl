@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 ##########################################################################
 #  rss2ivr.pl -- A Script to turn an RSS feed into audio files.
 #
