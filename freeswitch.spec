@@ -459,7 +459,7 @@ fi
 		%{?configure_options}
 
 #Create the version header file here
-cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
+cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{ersion}/g" > src/include/switch_version.h
 touch .noversion
 
 %{__make}
@@ -555,8 +555,6 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar
 %dir %attr(0750, freeswitch, daemon) %{prefix}/htdocs
 %dir %attr(0750, freeswitch, daemon) %{prefix}/log
-%dir %attr(0750, freeswitch, daemon) %{prefix}/log/xml_cdr
-%dir %attr(0750, freeswitch, daemon) %{prefix}/run
 %dir %attr(0750, freeswitch, daemon) %{prefix}/scripts
 #
 #################################### Config Directory Structure ################################################################
@@ -700,7 +698,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
 %ifos linux
 #/etc/ld.so.conf.d/*
-/etc/init.d/freeswitch
+/etc/rc.d/init.d/freeswitch
 /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
 /usr/sbin/rcfreeswitch
