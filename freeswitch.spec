@@ -425,7 +425,7 @@ test ! -f  modules.conf || rm -f modules.conf
 touch modules.conf
 for i in $MODULES; do echo $i >> modules.conf; done
 export VERBOSE=yes
-export DESTDIR=$RPM_BUILD_ROOT/
+export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
@@ -472,29 +472,29 @@ touch .noversion
 ###############################################################################################################################
 %install
 
-%{__make} DESTDIR=$RPM_BUILD_ROOT install
+%{__make} DESTDIR=%{buildroot} install
 
 # Create a log dir
-%{__mkdir} -p $RPM_BUILD_ROOT%{prefix}/log
+%{__mkdir} -p %{buildroot}%{prefix}/log
 
 %ifos linux
 # Install init files
 # On SuSE:
 %if 0%{?suse_version} > 100
-%{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/rc.d/init.d/freeswitch
+%{__install} -D -m 744 build/freeswitch.init.suse %{buildroot}/etc/rc.d/init.d/freeswitch
 %else
 # On RedHat like
-%{__install} -D -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/rc.d/init.d/freeswitch
+%{__install} -D -m 0755 build/freeswitch.init.redhat %{buildroot}/etc/rc.d/init.d/freeswitch
 %endif
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/rc.d/init.d/freeswitch
 %if 0%{?suse_version} > 100
-%{__mkdir} -p $RPM_BUILD_ROOT/usr/sbin
-%{__ln_s} -f /etc/rc.d/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+%{__mkdir} -p %{buildroot}/usr/sbin
+%{__ln_s} -f /etc/rc.d/init.d/freeswitch %{buildroot}/usr/sbin/rcfreeswitch
 %endif
 # Add the sysconfiguration file
-%{__install} -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
+%{__install} -D -m 744 build/freeswitch.sysconfig %{buildroot}/etc/sysconfig/freeswitch
 # Add monit file
-%{__install} -D -m 644 build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
+%{__install} -D -m 644 build/freeswitch.monitrc %{buildroot}/etc/monit.d/freeswitch.monitrc
 %endif
 
 
@@ -533,7 +533,7 @@ if [ $1 -eq 0 ]; then
 fi
 
 %clean
-%{__rm} -rf $RPM_BUILD_ROOT
+%{__rm} -rf %{buildroot}
 
 %files
 ###############################################################################################################################
