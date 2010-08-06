@@ -55,6 +55,28 @@ struct erlang_process {
 	erlang_pid pid;
 };
 
+enum reply_state { reply_not_ready, reply_waiting, reply_found, reply_timeout };
+
+struct fetch_reply_struct
+{
+	switch_thread_cond_t *ready_or_found;
+	int usecount;
+	enum reply_state state;
+	ei_x_buff *reply;
+	char winner[MAXNODELEN + 1];
+};
+typedef struct fetch_reply_struct fetch_reply_t;
+
+struct spawn_reply_struct
+{
+	switch_thread_cond_t *ready_or_found;
+	switch_mutex_t *mutex;
+	enum reply_state state;
+	erlang_pid *pid;
+	char *hash;
+};
+typedef struct spawn_reply_struct spawn_reply_t;
+
 struct session_elem {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	switch_mutex_t *flag_mutex;
@@ -65,6 +87,7 @@ struct session_elem {
 	switch_memory_pool_t *pool;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
+	spawn_reply_t *spawn_reply;
 	//struct session_elem *next;
 };
 
@@ -105,7 +128,6 @@ struct listener {
 	switch_log_level_t level;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
-	switch_hash_t *spawn_pid_hash;
 	switch_thread_rwlock_t *rwlock;
 	switch_thread_rwlock_t *session_rwlock;
 	//session_elem_t *session_list;
@@ -152,16 +174,6 @@ struct globals_struct {
 	char WAITING;				/* marker for a request waiting for a response */
 };
 typedef struct globals_struct globals_t;
-
-struct fetch_reply_struct
-{
-	switch_thread_cond_t *ready_or_found;
-	int usecount;
-	enum { reply_not_ready, reply_waiting, reply_found, reply_timeout } state;
-	ei_x_buff *reply;
-	char winner[MAXNODELEN + 1];
-};
-typedef struct fetch_reply_struct fetch_reply_t;
 
 struct listen_list_struct {
 #ifdef WIN32

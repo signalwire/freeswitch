@@ -878,9 +878,12 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 {
 	erlang_ref ref;
 	erlang_pid *pid;
-	void *p;
 	char hash[100];
 	int arity;
+	const void *key;
+	void *val;
+	session_elem_t *se;
+	switch_hash_index_t *iter;
 
 	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
 
@@ -906,32 +909,35 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hashed ref to %s\n", hash);
 
-	if ((p = switch_core_hash_find(listener->spawn_pid_hash, hash))) {
-		if (p == &globals.TIMEOUT) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", hash);
-			switch_core_hash_delete(listener->spawn_pid_hash, hash);
-			ei_x_encode_tuple_header(rbuf, 2);
-			ei_x_encode_atom(rbuf, "error");
-			ei_x_encode_atom(rbuf, "timeout");
-		} else if (p == &globals.WAITING) {
-			/* update the key to point at a pid */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", hash);
-			switch_core_hash_delete(listener->spawn_pid_hash, hash);
-			switch_core_hash_insert(listener->spawn_pid_hash, hash, pid);
-			return SWITCH_STATUS_FALSE;	/*no reply */
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", hash);
-			ei_x_encode_tuple_header(rbuf, 2);
-			ei_x_encode_atom(rbuf, "error");
-			ei_x_encode_atom(rbuf, "duplicate_response");
+	switch_thread_rwlock_rdlock(listener->session_rwlock);
+	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
+		switch_hash_this(iter, &key, NULL, &val);
+		se = (session_elem_t*)val;
+		if (se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found matching session for %s : %s\n", hash, se->uuid_str);
+			switch_mutex_lock(se->spawn_reply->mutex);
+			if (se->spawn_reply->state == reply_not_ready) {
+				switch_thread_cond_wait(se->spawn_reply->ready_or_found, se->spawn_reply->mutex);
+			}
+
+			if (se->spawn_reply->state == reply_waiting) {
+				se->spawn_reply->pid = pid;
+				switch_thread_cond_broadcast(se->spawn_reply->ready_or_found);
+				ei_x_encode_atom(rbuf, "ok");
+				switch_thread_rwlock_unlock(listener->session_rwlock);
+				switch_mutex_unlock(se->spawn_reply->mutex);
+				return SWITCH_STATUS_SUCCESS;
+			}
+			switch_mutex_unlock(se->spawn_reply->mutex);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_pid came in too late for %s\n", hash);
+			break;
 		}
-	} else {
-		/* nothin in the hash */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Empty slot for %s\n", hash);
-		ei_x_encode_tuple_header(rbuf, 2);
-		ei_x_encode_atom(rbuf, "error");
-		ei_x_encode_atom(rbuf, "invalid_ref");
 	}
+	switch_thread_rwlock_unlock(listener->session_rwlock);
+
+	ei_x_encode_tuple_header(rbuf, 2);
+	ei_x_encode_atom(rbuf, "error");
+	ei_x_encode_atom(rbuf, "notfound");
 
 	switch_safe_free(pid);		/* don't need it */
 

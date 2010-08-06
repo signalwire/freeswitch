@@ -1217,6 +1217,7 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 	switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, session_element->pool);
 	switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, session_element->pool);
 	switch_core_hash_init(&session_element->event_hash, session_element->pool);
+	session_element->spawn_reply = NULL;
 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 		session_element->event_list[x] = 0;
@@ -1266,9 +1267,8 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	/* create a session list element */
 	session_elem_t *session_element = session_elem_create(listener, session);
 	char hash[100];
-	int i = 0;
-	void *p = NULL;
-	erlang_pid *pid;
+	//void *p = NULL;
+	spawn_reply_t *p;
 	erlang_ref ref;
 
 	switch_set_flag(session_element, LFLAG_WAITING_FOR_PID);
@@ -1279,12 +1279,24 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	ei_init_ref(listener->ec, &ref);
 	ei_hash_ref(&ref, hash);
 	/* insert the waiting marker */
-	switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.WAITING);
+
+	p = switch_core_alloc(session_element->pool, sizeof(*p));
+	switch_thread_cond_create(&p->ready_or_found, session_element->pool);
+	switch_mutex_init(&p->mutex, SWITCH_MUTEX_DEFAULT, session_element->pool);
+	p->state = reply_not_ready;
+	p->hash = hash;
+	p->pid = NULL;
+
+	session_element->spawn_reply = p;
+
+	switch_mutex_lock(p->mutex);
 
 	if (!strcmp(function, "!")) {
 		/* send a message to request a pid */
 		ei_x_buff rbuf;
 		ei_x_new_with_version(&rbuf);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "get_pid\n");
 
 		ei_x_encode_tuple_header(&rbuf, 4);
 		ei_x_encode_atom(&rbuf, "get_pid");
@@ -1307,33 +1319,31 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 		 */
 	}
 
-	/* loop until either we timeout or we get a value that's not the waiting marker */
-	while (!(p = switch_core_hash_find(listener->spawn_pid_hash, hash)) || p == &globals.WAITING) {
-		if (i > 500) {			/* 5 second timeout */
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s\n", hash);
-			remove_session_elem_from_listener_locked(listener, session_element);
-			switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.TIMEOUT);	/* TODO lock this? */
-			destroy_session_elem(session_element);
-			return NULL;
-		}
-		i++;
-		switch_yield(10000);	/* 10ms */
+	p->state = reply_waiting;
+	switch_thread_cond_broadcast(p->ready_or_found);
+	switch_thread_cond_timedwait(p->ready_or_found,
+			p->mutex, 5000000);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "wtf\n");
+	if (!p->pid) {
+		p->state = reply_timeout;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s\n", hash);
+		remove_session_elem_from_listener_locked(listener, session_element);
+		destroy_session_elem(session_element);
+		return NULL;
 	}
 
-	switch_core_hash_delete(listener->spawn_pid_hash, hash);
-
-	pid = (erlang_pid *) p;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "got pid! %s\n", hash);
 
 	session_element->process.type = ERLANG_PID;
-	memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
+	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
 
 	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 	switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
 
-	ei_link(listener, ei_self(listener->ec), pid);
-	switch_safe_free(pid);		/* malloced in handle_ref_tuple */
+	ei_link(listener, ei_self(listener->ec), &session_element->process.pid);
+
+	switch_safe_free(p->pid);
 
 	return session_element;
 }
@@ -1425,7 +1435,6 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		}
 
 		if (module && function) {
-			switch_core_hash_init(&listener->spawn_pid_hash, listener->pool);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
 			session_element = attach_call_to_spawned_process(listener, module, function, session);
 		} else {
