@@ -481,15 +481,15 @@ touch .noversion
 # Install init files
 # On SuSE:
 %if 0%{?suse_version} > 100
-%{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/rc.d/init.d/freeswitch
 %else
 # On RedHat like
-%{__install} -D -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/rc.d/init.d/freeswitch
 %endif
-# On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
+# On SuSE make /usr/sbin/rcfreeswitch a link to /etc/rc.d/init.d/freeswitch
 %if 0%{?suse_version} > 100
 %{__mkdir} -p $RPM_BUILD_ROOT/usr/sbin
-%{__ln_s} -f /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+%{__ln_s} -f /etc/rc.d/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 %endif
 # Add the sysconfiguration file
 %{__install} -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
