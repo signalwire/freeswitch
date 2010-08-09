@@ -673,7 +673,6 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALTONE) {
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
-					ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 					collecting = 1;
 				}
 				dtmf_offset = strlen(dtmf);
