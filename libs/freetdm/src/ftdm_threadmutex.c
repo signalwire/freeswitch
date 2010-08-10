@@ -434,7 +434,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 		}
 		/* fall-through to FTDM_SUCCESS at the end of the function */
 	}
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
 	int res = 0;
 	char pipebuf[255];
 	struct pollfd ints[size*2];
