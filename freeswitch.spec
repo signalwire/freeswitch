@@ -459,7 +459,7 @@ fi
 		%{?configure_options}
 
 #Create the version header file here
-cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{ersion}/g" > src/include/switch_version.h
+cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
 touch .noversion
 
 %{__make}
