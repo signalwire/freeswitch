@@ -1221,7 +1221,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.pres = (uint8_t)atoi(sipvar);
 		}
 	}
-	
+
+	if (session) {
+		/* take out some other values from the session if they're present */
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		const char *freetdmvar;
+		freetdmvar = switch_channel_get_variable(channel, "freetdm_bearer_capability");
+		if (freetdmvar) {
+			caller_data.bearer_capability = (uint8_t)atoi(freetdmvar);
+		}
+		freetdmvar = switch_channel_get_variable(channel, "freetdm_bearer_layer1");
+		if (freetdmvar) {
+			caller_data.bearer_layer1 = (uint8_t)atoi(freetdmvar);
+		}
+	}
+
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
 		caller_data.screen = 1;
 	}
@@ -1467,6 +1481,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(sigmsg->channel));
 	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", spanid);	
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
+	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);	
+	switch_channel_set_variable_printf(channel, "freetdm_bearer_layer1", "%d", channel_caller_data->bearer_layer1);
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);	
