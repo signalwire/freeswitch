@@ -100,8 +100,8 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"a=T38FaxRateManagement:%s\n"
 					"a=T38FaxMaxBuffer:%d\n"
 					"a=T38FaxMaxDatagram:%d\n"
-					"a=T38FaxUdpEC:%s\n"
-					"a=T38VendorInfo:%s\n",
+					"a=T38FaxUdpEC:%s\n",
+					//"a=T38VendorInfo:%s\n",
 					port,
 					t38_options->T38FaxVersion,
 					t38_options->T38MaxBitRate,
@@ -110,7 +110,9 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					t38_options->T38FaxTranscodingJBIG ? "a=T38FaxTranscodingJBIG\n" : "",
 					t38_options->T38FaxRateManagement,
 					t38_options->T38FaxMaxBuffer,
-					t38_options->T38FaxMaxDatagram, t38_options->T38FaxUdpEC, t38_options->T38VendorInfo ? t38_options->T38VendorInfo : "0 0 0");
+					t38_options->T38FaxMaxDatagram, t38_options->T38FaxUdpEC
+					//t38_options->T38VendorInfo ? t38_options->T38VendorInfo : "0 0 0"
+					);
 
 
 
