@@ -44,7 +44,7 @@
 
 static struct {
 	char *cred;
-	char *urls[MAX_URLS + 1];
+	char *urls[MAX_URLS];
 	int url_count;
 	int url_index;
 	switch_thread_rwlock_t *log_path_lock;
