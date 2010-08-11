@@ -327,7 +327,7 @@ void *msg_buf_move(msg_t *dst, msg_t const *src)
  * @param[in]  msg     message object
  * @param[out] vec     I/O vector
  * @param[in]  veclen  available length of @a vec
- * @param[in]  n       number of possibly available bytes 
+ * @param[in]  n       number of possibly available bytes
  * @param[in]  exact   true if data ends at message boundary
  *
  * @return

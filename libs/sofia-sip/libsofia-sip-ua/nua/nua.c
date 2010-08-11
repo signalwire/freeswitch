@@ -89,7 +89,7 @@ su_log_t nua_log[] = { SU_LOG_INIT("nua", "NUA_DEBUG", SU_DEBUG) };
  * @param root            Pointer to a root object
  * @param callback        Pointer to event callback function
  * @param magic           Pointer to callback context
- * @param tag, value, ... List of tagged parameters
+ * @param tag, value, ... List of tagged parameters
  *
  * @retval !=NULL a pointer to a @nua stack object
  * @retval NULL upon an error
