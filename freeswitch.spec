@@ -35,6 +35,8 @@
 %define prefix    %{_prefix}
 %define sysconfdir	/opt/freeswitch/conf
 %define _sysconfdir	%{sysconfdir}
+%define logfiledir	/var/log/freeswitch
+%define runtimedir	/var/run/freeswitch
 
 Name:         	freeswitch
 Summary:      	FreeSWITCH open source telephony platform
@@ -476,6 +478,8 @@ touch .noversion
 
 # Create a log dir
 %{__mkdir} -p %{buildroot}%{prefix}/log
+%{__mkdir} -p %{buildroot}%{logfiledir}
+%{__mkdir} -p %{buildroot}%{runtimedir}
 
 %ifos linux
 # Install init files
@@ -554,7 +558,8 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/db
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar
 %dir %attr(0750, freeswitch, daemon) %{prefix}/htdocs
-%dir %attr(0750, freeswitch, daemon) %{prefix}/log
+%dir %attr(0750, freeswitch, daemon) %{logfiledir}
+%dir %attr(0750, freeswitch, daemon) %{runtimedir}
 %dir %attr(0750, freeswitch, daemon) %{prefix}/scripts
 #
 #################################### Config Directory Structure ################################################################
