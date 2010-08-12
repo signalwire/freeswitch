@@ -646,9 +646,10 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 		goto fail;
 	}
 
-	memcpy(&handle->sockaddr, result->ai_addr, result->ai_addrlen);	
+	memcpy(&handle->sockaddr, result->ai_addr, sizeof(handle->sockaddr));	
 	handle->sockaddr.sin_family = AF_INET;
 	handle->sockaddr.sin_port = htons(port);
+	freeaddrinfo(result);
 
 	if (timeout) {
 #ifdef WIN32
@@ -711,7 +712,6 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 		rval = 0;
 	}
 	
-	freeaddrinfo(result);
 	result = NULL;
 	
 	if (rval) {
