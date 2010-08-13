@@ -34,6 +34,7 @@ applications/mod_valet_parking
 #applications/mod_stress
 #applications/mod_snapshot
 #applications/mod_snipe_hunt
+#applications/mod_callcenter
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
