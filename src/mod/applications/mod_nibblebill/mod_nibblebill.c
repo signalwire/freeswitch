@@ -483,8 +483,6 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		/* Setup new billing data (based on call answer time, in case this module started late with active calls) */
 		nibble_data->lastts = profile->times->answered;	/* Set the initial answer time to match when the call was really answered */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Beginning new billing on %s\n", uuid);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Last successful billing time was %s\n", date);
 	}
 
 	switch_time_exp_lt(&tm, nibble_data->lastts);
