@@ -1,3 +1,3 @@
 BASE=../../../..
-LOCAL_LDFLAGS += -lsng-tc
+LOCAL_LDFLAGS += -lsngtc_node
 include $(BASE)/build/modmake.rules
