@@ -264,6 +264,7 @@ struct private_object {
 	char skype_password[256];
 	char destination[256];
 	struct timeval answer_time;
+	struct timeval ring_time;
 
 	struct timeval transfer_time;
 	char transfer_callid_number[50];
@@ -288,6 +289,10 @@ struct private_object {
 	int silent_mode;
 	int write_silence_when_idle;
 	int setsockopt;
+	char answer_id[256];
+	char answer_value[256];
+	char ring_id[256];
+	char ring_value[256];
 
 };
 
@@ -328,7 +333,8 @@ int skypopen_close_socket(unsigned int fd);
 private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling);
 int remote_party_is_ringing(private_t * tech_pvt);
 int remote_party_is_early_media(private_t * tech_pvt);
-int skypopen_answer(private_t * tech_pvt, char *id, char *value);
+//int skypopen_answer(private_t * tech_pvt, char *id, char *value);
+int skypopen_answer(private_t * tech_pvt);
 int skypopen_transfer(private_t * tech_pvt, char *id, char *value);
 #ifndef WIN32
 int skypopen_socket_create_and_bind(private_t * tech_pvt, int *which_port);
@@ -337,3 +343,6 @@ int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_
 #endif //WIN32
 int incoming_chatmessage(private_t * tech_pvt, int which);
 int next_port(void);
+int skypopen_partner_handle_ring(private_t * tech_pvt);
+int skypopen_answered(private_t * tech_pvt);
+int inbound_channel_answered(private_t * tech_pvt);
