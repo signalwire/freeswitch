@@ -2261,11 +2261,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 		return FTDM_FAIL;
 	}
 
-	if (!ftdm_test_flag(check, FTDM_CHANNEL_INUSE)) {
-		ftdm_log(FTDM_LOG_WARNING, "Called ftdm_channel_close but never ftdm_channel_open in chan %d:%d??\n", check->span_id, check->chan_id);
-		return FTDM_FAIL;
-	}
-
 	if (ftdm_test_flag(check, FTDM_CHANNEL_CONFIGURED)) {
 		ftdm_mutex_lock(check->mutex);
 		if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
@@ -2275,6 +2270,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 				ftdm_channel_reset(check);
 				*ftdmchan = NULL;
 			}
+		} else {
+			ftdm_log_chan_msg(check, FTDM_LOG_WARNING, "Called ftdm_channel_close but never ftdm_channel_open??\n");
 		}
 		check->ring_count = 0;
 		ftdm_mutex_unlock(check->mutex);

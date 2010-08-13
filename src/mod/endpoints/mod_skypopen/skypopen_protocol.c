@@ -214,7 +214,7 @@ int skypopen_signaling_read(private_t * tech_pvt)
 					ERRORA("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPOPEN_P_LOG, message);
 					tech_pvt->interface_state = SKYPOPEN_STATE_ERROR_DOUBLE_CALL;
 				} else if (!strncasecmp(message, "ERROR 592 ALTER CALL", 19)) {
-					ERRORA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
+					NOTICA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 559 CALL", 13)) {
 					if (tech_pvt->interface_state == SKYPOPEN_STATE_PREANSWER) {
 						DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to ANSWER A CALL), let's go down: |||%s|||\n", SKYPOPEN_P_LOG,
@@ -478,8 +478,12 @@ int skypopen_signaling_read(private_t * tech_pvt)
 				if (!strcasecmp(prop, "PARTNER_HANDLE")) {
 					if (tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {
 						/* we are NOT inside an active call */
-						DEBUGA_SKYPE("Call %s TRY ANSWER\n", SKYPOPEN_P_LOG, id);
-						skypopen_answer(tech_pvt, id, value);
+						DEBUGA_SKYPE("Call %s go to skypopen_partner_handle_ring\n", SKYPOPEN_P_LOG, id);
+						skypopen_strncpy(tech_pvt->ring_id, id, sizeof(tech_pvt->ring_id));
+						skypopen_strncpy(tech_pvt->ring_value, value, sizeof(tech_pvt->ring_value));
+						skypopen_strncpy(tech_pvt->answer_id, id, sizeof(tech_pvt->answer_id));
+						skypopen_strncpy(tech_pvt->answer_value, value, sizeof(tech_pvt->answer_value));
+						skypopen_partner_handle_ring(tech_pvt);
 					} else {
 						/* we are inside an active call */
 						if (!strcasecmp(tech_pvt->skype_call_id, id)) {
@@ -553,7 +557,10 @@ int skypopen_signaling_read(private_t * tech_pvt)
 							&& (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {
 							/* we are NOT inside an active call */
 
-							DEBUGA_SKYPE("NO ACTIVE calls in this moment, skype_call %s is RINGING, to ask PARTNER_HANDLE\n", SKYPOPEN_P_LOG, id);
+							DEBUGA_SKYPE("NO ACTIVE calls in this moment, skype_call %s is RINGING, to ask PARTNER_DISPNAME and PARTNER_HANDLE\n", SKYPOPEN_P_LOG, id);
+							sprintf(msg_to_skype, "GET CALL %s PARTNER_DISPNAME", id);
+							skypopen_signaling_write(tech_pvt, msg_to_skype);
+							skypopen_sleep(100);
 							sprintf(msg_to_skype, "GET CALL %s PARTNER_HANDLE", id);
 							skypopen_signaling_write(tech_pvt, msg_to_skype);
 							skypopen_sleep(10000);
@@ -684,14 +691,7 @@ int skypopen_signaling_read(private_t * tech_pvt)
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
 								}
 								tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
-								if (!strlen(tech_pvt->session_uuid_str)) {
-									DEBUGA_SKYPE("New Inbound Channel!\n\n\n\n", SKYPOPEN_P_LOG);
-									new_inbound_channel(tech_pvt);
-								} else {
-									tech_pvt->interface_state = SKYPOPEN_STATE_UP;
-									DEBUGA_SKYPE("Outbound Channel Answered! session_uuid_str=%s\n", SKYPOPEN_P_LOG, tech_pvt->session_uuid_str);
-									outbound_channel_answered(tech_pvt);
-								}
+								skypopen_answered(tech_pvt);
 							} else {
 								DEBUGA_SKYPE("I'm on %s, skype_call %s is NOT MY call, ignoring\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
 							}
@@ -1752,3 +1752,61 @@ while(XPending(disp)){
 
 }
 #endif // WIN32
+
+int inbound_channel_answered(private_t * tech_pvt)
+{
+	int res = 0;
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+
+	session = switch_core_session_locate(tech_pvt->session_uuid_str);
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+
+		if (channel) {
+			switch_set_flag(tech_pvt, TFLAG_IO);
+		} else {
+			ERRORA("no channel\n", SKYPOPEN_P_LOG);
+		}
+		switch_core_session_rwunlock(session);
+	} else {
+		ERRORA("no session\n", SKYPOPEN_P_LOG);
+
+	}
+	return res;
+}
+
+
+int skypopen_answered(private_t * tech_pvt)
+{
+
+	int res = 0;
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+
+	 //WARNINGA("ANSWERED tech_pvt->skype_call_id=%s, tech_pvt->skype_callflow=%d, tech_pvt->interface_state=%d, tech_pvt->skype_user=%s, tech_pvt->callid_number=%s, tech_pvt->ring_value=%s, tech_pvt->ring_id=%s, tech_pvt->answer_value=%s, tech_pvt->answer_id=%s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, tech_pvt->skype_callflow, tech_pvt->interface_state, tech_pvt->skype_user, tech_pvt->callid_number, tech_pvt->ring_value, tech_pvt->ring_id, tech_pvt->answer_value, tech_pvt->answer_id);
+
+	session = switch_core_session_locate(tech_pvt->session_uuid_str);
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+
+		if (channel) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				tech_pvt->interface_state = SKYPOPEN_STATE_UP;
+				DEBUGA_SKYPE("Outbound Channel Answered! session_uuid_str=%s\n", SKYPOPEN_P_LOG, tech_pvt->session_uuid_str);
+				outbound_channel_answered(tech_pvt);
+			} else {
+				DEBUGA_SKYPE("answered Inbound Channel!\n\n\n\n", SKYPOPEN_P_LOG);
+				inbound_channel_answered(tech_pvt);
+			}
+
+		} else {
+			ERRORA("no channel\n", SKYPOPEN_P_LOG);
+		}
+		switch_core_session_rwunlock(session);
+	} else {
+		ERRORA("no session\n", SKYPOPEN_P_LOG);
+
+	}
+	return res;
+}
