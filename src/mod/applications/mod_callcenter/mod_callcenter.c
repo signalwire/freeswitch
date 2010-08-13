@@ -404,6 +404,37 @@ static void queue_rwunlock(cc_queue_t *queue)
 	}
 }
 
+static void destroy_queue(const char *queue_name, switch_bool_t block)
+{
+	cc_queue_t *queue = NULL;
+	switch_mutex_lock(globals.mutex);
+	if ((queue = switch_core_hash_find(globals.queue_hash, queue_name))) {
+		switch_core_hash_delete(globals.queue_hash, queue_name);
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	if (!queue) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s] Invalid queue\n", queue_name);
+		return;
+	}
+
+	if (block) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] Waiting for write lock\n", queue->name);
+		switch_thread_rwlock_wrlock(queue->rwlock);
+	} else {
+		if (switch_thread_rwlock_trywrlock(queue->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* Lock failed, set the destroy flag so it'll be destroyed whenever its not in use anymore */
+			switch_set_flag(queue, PFLAG_DESTROY);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] queue is in use, memory will be freed whenever its no longer in use\n",
+					queue->name);
+			return;
+		}
+	}
+
+	free_queue(queue);
+}
+
+
 switch_cache_db_handle_t *cc_get_db_handle(cc_queue_t *queue)
 {
 	switch_cache_db_connection_options_t options = { {0} };
@@ -437,7 +468,7 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	   SWITCH _CONFIG_SET_ITEM(item, "key", type, flags, 
 	   pointer, default, options, help_syntax, help_description)
 	 */
-	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "strategy", SWITCH_CONFIG_STRING, 0, &queue->strategy, NULL, &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "strategy", SWITCH_CONFIG_STRING, 0, &queue->strategy, "longest-idle-agent", &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "moh-sound", SWITCH_CONFIG_STRING, 0, &queue->moh, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
@@ -1529,11 +1560,23 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cc_queue_t *queue = NULL;
 	char *sql = NULL;
 	char *sql_order_by = NULL;
+	char *queue_name = NULL;
+	char *queue_strategy = NULL;
+	char *queue_record_template = NULL;
 	agent_callback_t cbt;
 
 	if (!argv[0] || !(queue = get_queue(argv[0]))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, skip this member\n", argv[0]);
 		goto end;
+	} else {
+		queue_name = strdup(queue->name);
+		queue_strategy = strdup(queue->strategy);
+
+		if (queue->record_template) {
+			queue_record_template = strdup(queue->record_template);
+		}
+
+		queue_rwunlock(queue);
 	}
 
 	memset(&cbt, 0, sizeof(cbt));
@@ -1543,22 +1586,22 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.caller_name = argv[3];
 	cbt.joined_epoch = argv[4];
 	cbt.queue = argv[0];
-	cbt.strategy = queue->strategy;
-	cbt.record_template = queue->record_template;
-
-	if (!strcasecmp(queue->strategy, "longest-idle-agent") || !strcasecmp(queue->strategy, "roundrobin") /* TODO TMP backward compatibility for taxi dispatch setup */) {
+	cbt.strategy = queue_strategy;
+	cbt.record_template = queue_record_template;
+	
+	if (!strcasecmp(queue->strategy, "longest-idle-agent") || !strcasecmp(queue_strategy, "roundrobin") /* TODO TMP backward compatibility for taxi dispatch setup */) {
 		sql_order_by = switch_mprintf("level, agents.last_offered_call, position");
-	} else if (!strcasecmp(queue->strategy, "agent-with-least-talk-time")) {
+	} else if (!strcasecmp(queue_strategy, "agent-with-least-talk-time")) {
 		sql_order_by = switch_mprintf("level, agents.talk_time, position");
-	} else if (!strcasecmp(queue->strategy, "agent-with-fewest-calls")) {
+	} else if (!strcasecmp(queue_strategy, "agent-with-fewest-calls")) {
 		sql_order_by = switch_mprintf("level, agents.calls_answered, position");
-	} else if (!strcasecmp(queue->strategy, "ring-all")) {
+	} else if (!strcasecmp(queue_strategy, "ring-all")) {
 		/* If we set at Trying, who will put it back at Waiting ?? So we just dont change it state for the moment */ 
 		/*sql = switch_mprintf("UPDATE members SET state = '%q' WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'", cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.uuid);
 		  cc_execute_sql(NULL, sql, NULL);
 		  switch_safe_free(sql);*/
 		sql_order_by = switch_mprintf("level, position");
-	} else if(!strcasecmp(queue->strategy, "sequentially-by-agent-order")) {
+	} else if(!strcasecmp(queue_strategy, "sequentially-by-agent-order")) {
 		sql_order_by = switch_mprintf("level, position");
 	} else {
 		/* If the strategy doesn't exist, just fallback to the following */
@@ -1571,7 +1614,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 			" AND agents.state = '%q' AND last_bridge_end < (%ld - wrap_up_time)"
 			" ORDER BY %q",
-			queue->name,
+			queue_name,
 			cc_tier_state2str(CC_TIER_STATE_READY), cc_tier_state2str(CC_TIER_STATE_NO_ANSWER),
 			cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
 			cc_agent_state2str(CC_AGENT_STATE_WAITING), (long) switch_epoch_time_now(NULL),
@@ -1582,9 +1625,11 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	switch_safe_free(sql);
 	switch_safe_free(sql_order_by);
 
-	queue_rwunlock(queue);
-
 end:
+	switch_safe_free(queue_name);
+	switch_safe_free(queue_strategy);
+	switch_safe_free(queue_record_template);
+
 	return 0;
 }
 
@@ -1729,7 +1774,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
 	int cc_base_score_int = 0;
-	switch_channel_timetable_t *times = switch_channel_get_timetable(member_channel);
+	switch_channel_timetable_t *times = NULL;
 	const char *cc_base_score = switch_channel_get_variable(member_channel, "cc_base_score");
 	const char *cc_moh_override = switch_channel_get_variable(member_channel, "cc_moh_override");
 	const char *cur_moh = NULL;
@@ -1754,7 +1799,11 @@ SWITCH_STANDARD_APP(callcenter_function)
 		goto end;
 	}
 
+	/* Make sure we answer the channel before getting the switch_channel_time_table_t answer time */
+	switch_channel_answer(member_channel);
+
 	/* Grab the start epoch of a channel */
+	times = switch_channel_get_timetable(member_channel);
 	switch_snprintf(start_epoch, sizeof(start_epoch), "%" SWITCH_TIME_T_FMT, times->answered);
 
 	/* Add manually imported score */
@@ -1766,7 +1815,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 	if (!switch_strlen_zero(start_epoch) && !strcasecmp("system", queue->time_base_score)) {
 		cc_base_score_int += (switch_epoch_time_now(NULL) - atoi(start_epoch));
 	}
-	switch_channel_answer(member_channel);
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(member_channel, event);
@@ -1815,10 +1863,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 	/* Playback MOH */
 	/* TODO Add DTMF callback support */
 	/* TODO add MOH infitite loop */	
-	cur_moh = queue->moh;
 	if (cc_moh_override) {
-		cur_moh = cc_moh_override;
+		cur_moh = switch_core_session_strdup(session, cc_moh_override);
+	} else {
+		cur_moh = switch_core_session_strdup(session, queue->moh);
 	}
+	queue_rwunlock(queue);
 
 	if (cur_moh) {
 		switch_ivr_play_file(session, NULL, cur_moh, &args);
@@ -1835,7 +1885,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	if (!switch_channel_up(member_channel)) { /* If channel is still up, it mean that the member didn't hangup, so we should leave the agent alone */
 		switch_core_session_hupall_matching_var("cc_member_uuid", uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q'", uuid);
-		cc_execute_sql(queue, sql, NULL);
+		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -1859,15 +1909,13 @@ SWITCH_STANDARD_APP(callcenter_function)
 	} else {
 		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), (long) switch_epoch_time_now(NULL), uuid);
-		cc_execute_sql(queue, sql, NULL);
+		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		/* Send Event with queue count */
 		cc_queue_count(queue_name);
 
 	}
-
-	queue_rwunlock(queue);
 
 end:
 
@@ -2166,7 +2214,42 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			}
 		}
 	} else if (section && !strcasecmp(section, "queue")) {
-		if (action && !strcasecmp(action, "list")) {
+		if (action && !strcasecmp(action, "load")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *queue_name = argv[0 + initial_argc];
+				cc_queue_t *queue = NULL;
+				if ((queue = get_queue(queue_name))) {
+					queue_rwunlock(queue);
+				}
+				stream->write_function(stream, "%s", "+OK\n");
+			}
+		} else if (action && !strcasecmp(action, "unload")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *queue_name = argv[0 + initial_argc];
+				destroy_queue(queue_name, SWITCH_FALSE);
+				stream->write_function(stream, "%s", "+OK\n");
+
+			}
+		} else if (action && !strcasecmp(action, "reload")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *queue_name = argv[0 + initial_argc];
+				cc_queue_t *queue = NULL;
+				destroy_queue(queue_name, SWITCH_FALSE);
+				if ((queue = get_queue(queue_name))) {
+					queue_rwunlock(queue);
+				}
+				stream->write_function(stream, "%s", "+OK\n");
+			}
+		} else if (action && !strcasecmp(action, "list")) {
 			if (argc-initial_argc < 1) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
 				goto done;
