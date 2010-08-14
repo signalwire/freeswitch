@@ -3,14 +3,15 @@
   </settings>
 
   <queues>
-<!--
+
     <queue name="support@default">
       <param name="strategy" value="longest-idle-agent"/>
       <param name="moh-sound" value="$${hold_music}"/>
-      <param name="record-template" value="$${base_dir}/recordings/${strftime(%Y-%m-%d-%H-%M-%S)}.${destination_number}.${caller_id_number}.${uuid}.wav"/>
+      <!--<param name="record-template" value="$${base_dir}/recordings/${strftime(%Y-%m-%d-%H-%M-%S)}.${destination_number}.${caller_id_number}.${uuid}.wav"/>-->
       <param name="time-base-score" value="system"/>
+      <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
     </queue>
--->
+
   </queues>
 
 <!-- WARNING : Configuring XML Agents will updated into the DB upon restart -->
