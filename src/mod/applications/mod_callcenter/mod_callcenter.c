@@ -1596,10 +1596,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	} else if (!strcasecmp(queue_strategy, "agent-with-fewest-calls")) {
 		sql_order_by = switch_mprintf("level, agents.calls_answered, position");
 	} else if (!strcasecmp(queue_strategy, "ring-all")) {
-		/* If we set at Trying, who will put it back at Waiting ?? So we just dont change it state for the moment */ 
-		/*sql = switch_mprintf("UPDATE members SET state = '%q' WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'", cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.uuid);
-		  cc_execute_sql(NULL, sql, NULL);
-		  switch_safe_free(sql);*/
+		sql = switch_mprintf("UPDATE members SET state = '%q' WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'",
+				cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.uuid);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
 		sql_order_by = switch_mprintf("level, position");
 	} else if(!strcasecmp(queue_strategy, "sequentially-by-agent-order")) {
 		sql_order_by = switch_mprintf("level, position");
@@ -1658,9 +1658,9 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 	while (globals.running == 1) {
 		char *sql = NULL;
 		sql = switch_mprintf("SELECT queue,uuid,caller_number,caller_name,joined_epoch,(%ld-joined_epoch)+base_score+skill_score AS score FROM members"
-				" WHERE state = '%q' ORDER BY score DESC",
+				" WHERE state = '%q' OR (serving_agent != 'ring-all' AND state = '%q') ORDER BY score DESC",
 				(long) switch_epoch_time_now(NULL),
-				cc_member_state2str(CC_MEMBER_STATE_WAITING));
+				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_TRYING));
 
 		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, members_callback, NULL /* Call back variables */);
 		switch_safe_free(sql);
@@ -1967,6 +1967,9 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "callcenter_config tier set level [queue_name] [agent_name] [level] | " \
 "callcenter_config tier set position [queue_name] [agent_name] [position] | " \
 "callcenter_config tier del [queue_name] [agent_name] | " \
+"callcenter_config queue load [queue_name] | " \
+"callcenter_config queue unload [queue_name] | " \
+"callcenter_config queue reload [queue_name] | " \
 "callcenter_config tier list [queue_name] | " \
 "callcenter_config queue list [queue_name] | " \
 "callcenter_config queue count [queue_name]"
@@ -2340,6 +2343,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config tier set position");
 	switch_console_set_complete("add callcenter_config tier list");
 
+	switch_console_set_complete("add callcenter_config queue load");
+	switch_console_set_complete("add callcenter_config queue unload");
+	switch_console_set_complete("add callcenter_config queue reload");
 	switch_console_set_complete("add callcenter_config queue list");
 	switch_console_set_complete("add callcenter_config queue count");
 
