@@ -4003,7 +4003,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 					switch_xml_t xml;
 					switch_channel_event_set_data(channel, event);
 					if (!strcasecmp(format, "xml")) {
-						if ((xml = switch_event_xmlize(event, "%s", ""))) {
+						if ((xml = switch_event_xmlize(event, SWITCH_VA_NONE))) {
 							buf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {

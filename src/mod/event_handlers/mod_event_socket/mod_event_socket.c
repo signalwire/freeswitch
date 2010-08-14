@@ -966,7 +966,7 @@ SWITCH_STANDARD_API(event_sink_function)
 				switch_xml_t xml;
 				etype = "xml";
 
-				if ((xml = switch_event_xmlize(pevent, "%s", ""))) {
+				if ((xml = switch_event_xmlize(pevent, SWITCH_VA_NONE))) {
 					listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 					switch_xml_free(xml);
 				} else {
@@ -1257,7 +1257,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						switch_xml_t xml;
 						etype = "xml";
 
-						if ((xml = switch_event_xmlize(pevent, "%s", ""))) {
+						if ((xml = switch_event_xmlize(pevent, SWITCH_VA_NONE))) {
 							listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {
