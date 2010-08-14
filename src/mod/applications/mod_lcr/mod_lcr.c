@@ -1783,7 +1783,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				
 				write_data(stream, as_xml, "dialstring", current->dialstring, 2, maximum_lengths.dialstring);
 				if (as_xml) {
-					event_xml = switch_event_xmlize(current->fields, "");
+					event_xml = switch_event_xmlize(current->fields, SWITCH_VA_NONE);
 					event_str = switch_xml_toxml(event_xml, SWITCH_FALSE);
 					stream->write_function(stream, event_str);
 					switch_xml_free(event_xml);
