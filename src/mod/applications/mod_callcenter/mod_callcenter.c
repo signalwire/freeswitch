@@ -34,6 +34,7 @@
 #define CALLCENTER_EVENT "callcenter::info"
 
 #define CC_AGENT_TYPE_CALLBACK "Callback"
+#define CC_SQLITE_DB_NAME "callcenter"
 
 /* TODO
    drop caller if no agent login
@@ -356,6 +357,9 @@ typedef enum {
 static struct {
 	switch_hash_t *queue_hash;
 	int debug;
+	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
 	int32_t threads;
 	int32_t running;
 	switch_mutex_t *mutex;
@@ -366,10 +370,6 @@ static struct {
 
 struct cc_queue {
 	char *name;
-
-	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 
 	char *strategy;
 	char *moh;
@@ -435,21 +435,21 @@ static void destroy_queue(const char *queue_name, switch_bool_t block)
 }
 
 
-switch_cache_db_handle_t *cc_get_db_handle(cc_queue_t *queue)
+switch_cache_db_handle_t *cc_get_db_handle(void)
 {
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
 
-	if (queue && !zstr(queue->odbc_dsn)) {
-		options.odbc_options.dsn = queue->odbc_dsn;
-		options.odbc_options.user = queue->odbc_user;
-		options.odbc_options.pass = queue->odbc_pass;
+	if (!zstr(globals.odbc_dsn)) {
+		options.odbc_options.dsn = globals.odbc_dsn;
+		options.odbc_options.user = globals.odbc_user;
+		options.odbc_options.pass = globals.odbc_pass;
 
 		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
 			dbh = NULL;
 		return dbh;
 	} else {
-		options.core_db_options.db_path = "callcenter";
+		options.core_db_options.db_path = CC_SQLITE_DB_NAME;
 		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
 			dbh = NULL;
 		return dbh;
@@ -472,7 +472,6 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "moh-sound", SWITCH_CONFIG_STRING, 0, &queue->moh, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
-	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "odbc-dsn", SWITCH_CONFIG_STRING, 0, &queue->odbc_dsn, NULL, &queue->config_str_pool, NULL, NULL);
 
 	switch_assert(i < CC_QUEUE_CONFIGITEM_COUNT);
 
@@ -487,7 +486,7 @@ char *cc_execute_sql2str(cc_queue_t *queue, switch_mutex_t *mutex, char *sql, ch
 
 	switch_cache_db_handle_t *dbh = NULL;
 
-	if (!(dbh = cc_get_db_handle(queue))) {
+	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return NULL;
 	}
@@ -522,7 +521,7 @@ static switch_status_t cc_execute_sql(cc_queue_t *queue, char *sql, switch_mutex
 		switch_mutex_lock(globals.mutex);
 	}
 
-	if (!(dbh = cc_get_db_handle(queue))) {
+	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		goto end;
 	}
@@ -554,7 +553,7 @@ static switch_bool_t cc_execute_sql_callback(cc_queue_t *queue, switch_mutex_t *
 		switch_mutex_lock(globals.mutex);
 	}
 
-	if (!(dbh = cc_get_db_handle(queue))) {
+	if (!(dbh = cc_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		goto end;
 	}
@@ -625,16 +624,7 @@ static cc_queue_t *load_queue(const char *queue_name)
 		switch_thread_rwlock_create(&queue->rwlock, pool);
 		queue->name = switch_core_strdup(pool, queue_name);
 
-		if (!zstr(queue->odbc_dsn)) {
-			if ((queue->odbc_user = strchr(queue->odbc_dsn, ':'))) {
-				*(queue->odbc_user++) = '\0';
-				if ((queue->odbc_pass = strchr(queue->odbc_user, ':'))) {
-					*(queue->odbc_pass++) = '\0';
-				}
-			}
-		}
-
-		if (!(dbh = cc_get_db_handle(queue))) {
+		if (!(dbh = cc_get_db_handle())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
 			goto end;
 		}
@@ -1159,6 +1149,17 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcasecmp(var, "odbc-dsn")) {
+				globals.odbc_dsn = strdup(switch_xml_attr(param, "odbc-dsn"));
+
+				if (!zstr(globals.odbc_dsn)) {
+					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
+						*(globals.odbc_user++) = '\0';
+						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
+							*(globals.odbc_pass++) = '\0';
+						}
+					}
+				}
 			}
 		}
 	}
@@ -2394,6 +2395,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 		switch_core_destroy_memory_pool(&queue->pool);
 		queue = NULL;
 	}
+
+	switch_safe_free(globals.odbc_dsn);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;

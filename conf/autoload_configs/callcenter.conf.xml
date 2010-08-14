@@ -1,5 +1,6 @@
 <configuration name="callcenter.conf" description="CallCenter">
   <settings>
+    <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
   </settings>
 
   <queues>
@@ -9,14 +10,13 @@
       <param name="moh-sound" value="$${hold_music}"/>
       <!--<param name="record-template" value="$${base_dir}/recordings/${strftime(%Y-%m-%d-%H-%M-%S)}.${destination_number}.${caller_id_number}.${uuid}.wav"/>-->
       <param name="time-base-score" value="system"/>
-      <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
     </queue>
 
   </queues>
 
 <!-- WARNING : Configuring XML Agents will updated into the DB upon restart -->
 <!-- WARNING : Configuring XML Tiers will reset the provided level and position if provided.-->
-<!-- WARNING : Agents and Tiers XML config shouldn't be used in a multi FS shared DB setup -->
+<!-- WARNING : Agents and Tiers XML config shouldn't be used in a multi FS shared DB setup(Not currently supported anyway) -->
   <agents>
     <!--<agent name="1000@default" type="callback" contact="[call_timeout=10]user/1000@default" status="Available" max-no-answer="3" wrap-up-time="10" />-->
   </agents>
