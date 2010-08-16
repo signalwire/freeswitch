@@ -766,10 +766,14 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 					remote->name, remote->host, remote->port);
 				
 				remote->state = REMOTE_UP;
+			} else {
+				esl_disconnect(&remote->handle);
+				memset(&remote->handle, 0, sizeof(remote->handle));
 			}
 		} else {
 			if (esl_send_recv_timed(&remote->handle, "api hash_dump limit", 5000) != ESL_SUCCESS) {
 				esl_disconnect(&remote->handle);
+				memset(&remote->handle, 0, sizeof(remote->handle));
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnected from remote FreeSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
 				memset(&remote->handle, 0, sizeof(remote->handle));
