@@ -108,6 +108,7 @@ SWITCH_BEGIN_EXTERN_C
 	struct switch_caller_extension *caller_extension;
 	switch_memory_pool_t *pool;
 	struct switch_caller_profile *next;
+	switch_call_direction_t direction;
 };
 
 /*! \brief An Abstract Representation of a dialplan Application */

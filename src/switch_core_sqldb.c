@@ -1135,9 +1135,17 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CALL_UPDATE:
 		{
-			const char *name = switch_event_get_header(event, "callee-name");
-			const char *number = switch_event_get_header(event, "callee-number");
+			const char *name = NULL, *number = NULL, *direction;
+			int recv = 0;
 
+			direction = switch_event_get_header(event, "direction");
+
+			if (direction && strcasecmp(direction, "send")) {
+				recv = 1;
+				name = switch_event_get_header(event, "callee-name");
+				number = switch_event_get_header(event, "callee-number");
+			}
+			
 			if (!name) {
 				name = switch_event_get_header(event, "caller-callee-id-name");
 			}
@@ -1155,6 +1163,15 @@ static void core_event_handler(switch_event_t *event)
 										   switch_str_nil(number),
 										   switch_event_get_header_nil(event, "direction"),
 										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+
+				name = switch_event_get_header(event, "callee-name");
+				number = switch_event_get_header(event, "callee-number");
+
+				if (name && number && recv) {
+					new_sql() = switch_mprintf("update calls set callee_cid_name='%q',callee_cid_num='%q' where caller_uuid='%q'",
+											   name, number, switch_event_get_header_nil(event, "unique-id"));
+
+				}
 			}
 		}
 		break;
@@ -1224,28 +1241,43 @@ static void core_event_handler(switch_event_t *event)
 
 		}
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
-		new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' and hostname='%q'",
-								   switch_event_get_header_nil(event, "channel-call-uuid"),
-								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
-		new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,function,caller_cid_name,"
-								   "caller_cid_num,caller_dest_num,caller_chan_name,caller_uuid,callee_cid_name,"
-								   "callee_cid_num,callee_dest_num,callee_chan_name,callee_uuid,hostname) "
-								   "values ('%s', '%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s','%q')",
-								   switch_event_get_header_nil(event, "channel-call-uuid"),
-								   switch_event_get_header_nil(event, "event-date-local"),
-								   (long) switch_epoch_time_now(NULL),
-								   switch_event_get_header_nil(event, "event-calling-function"),
-								   switch_event_get_header_nil(event, "caller-caller-id-name"),
-								   switch_event_get_header_nil(event, "caller-caller-id-number"),
-								   switch_event_get_header_nil(event, "caller-destination-number"),
-								   switch_event_get_header_nil(event, "caller-channel-name"),
-								   switch_event_get_header_nil(event, "caller-unique-id"),
-								   switch_event_get_header_nil(event, "Other-Leg-caller-id-name"),
-								   switch_event_get_header_nil(event, "Other-Leg-caller-id-number"),
-								   switch_event_get_header_nil(event, "Other-Leg-destination-number"),
-								   switch_event_get_header_nil(event, "Other-Leg-channel-name"),
-								   switch_event_get_header_nil(event, "Other-Leg-unique-id"), switch_core_get_variable("hostname")
-								   );
+		{
+			const char *callee_cid_name, *callee_cid_num, *direction;
+
+			direction = switch_event_get_header(event, "other-leg-direction");
+
+			if (direction && !strcasecmp(direction, "outbound")) {
+				callee_cid_name = switch_event_get_header_nil(event, "Other-Leg-callee-id-name");
+				callee_cid_num = switch_event_get_header_nil(event, "Other-Leg-callee-id-number");
+			} else {
+				callee_cid_name = switch_event_get_header_nil(event, "Other-Leg-caller-id-name");
+				callee_cid_num = switch_event_get_header_nil(event, "Other-Leg-caller-id-number");
+			}
+
+
+			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' and hostname='%q'",
+									   switch_event_get_header_nil(event, "channel-call-uuid"),
+									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,function,caller_cid_name,"
+									   "caller_cid_num,caller_dest_num,caller_chan_name,caller_uuid,callee_cid_name,"
+									   "callee_cid_num,callee_dest_num,callee_chan_name,callee_uuid,hostname) "
+									   "values ('%s', '%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s','%q')",
+									   switch_event_get_header_nil(event, "channel-call-uuid"),
+									   switch_event_get_header_nil(event, "event-date-local"),
+									   (long) switch_epoch_time_now(NULL),
+									   switch_event_get_header_nil(event, "event-calling-function"),
+									   switch_event_get_header_nil(event, "caller-caller-id-name"),
+									   switch_event_get_header_nil(event, "caller-caller-id-number"),
+									   switch_event_get_header_nil(event, "caller-destination-number"),
+									   switch_event_get_header_nil(event, "caller-channel-name"),
+									   switch_event_get_header_nil(event, "caller-unique-id"),
+									   callee_cid_name,
+									   callee_cid_num,
+									   switch_event_get_header_nil(event, "Other-Leg-destination-number"),
+									   switch_event_get_header_nil(event, "Other-Leg-channel-name"),
+									   switch_event_get_header_nil(event, "Other-Leg-unique-id"), switch_core_get_variable("hostname")
+									   );
+		}
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
 		new_sql() = switch_mprintf("delete from calls where caller_uuid='%s' and hostname='%q'",

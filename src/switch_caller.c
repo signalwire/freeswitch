@@ -126,6 +126,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile->destination_number_numplan = tocopy->destination_number_numplan;
 	profile->flags = tocopy->flags;
 	profile->pool = pool;
+	profile->direction = tocopy->direction;
 
 	return profile;
 }
@@ -255,6 +256,10 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 {
 	char header_name[1024];
 
+	switch_snprintf(header_name, sizeof(header_name), "%s-Direction", prefix);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ? 
+								   "inbound" : "outbound");
+	
 	if (!zstr(caller_profile->username)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->username);

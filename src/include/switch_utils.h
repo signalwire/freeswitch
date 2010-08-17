@@ -708,7 +708,7 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 #endif
 #endif
 
-#define DUMP_EVENT(_e) 	{char *event_str;switch_event_serialize(_e, &event_str, SWITCH_FALSE);printf("DUMP\n%s\n", event_str);free(event_str);}
+#define DUMP_EVENT(_e) 	{char *event_str;switch_event_serialize(_e, &event_str, SWITCH_FALSE);switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DUMP\n%s\n", event_str);free(event_str);}
 
 #ifndef _MSC_VER
 #define switch_inet_ntop inet_ntop
