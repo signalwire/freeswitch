@@ -40,7 +40,7 @@ test_stack (int cs)
 		printf ("ikstack strcat bug:\nExpected: %s\n  Result: %s\n", buf, old);
 		exit (1);
 	}
-	iks_stack_delete (s);
+	iks_stack_delete (&s);
 }
 
 int main (int argc, char *argv[])

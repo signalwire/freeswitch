@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
 	test_cmp ("patrician@morpork.gov/gabber", "cohen@guild.org/gsm", IKS_ID_FULL, IKS_ID_FULL);
 	test_cmp ("peter@family.com", "peter@family.com/clam", IKS_ID_PARTIAL, 0);
 
-	iks_stack_delete (my_stack);
+	iks_stack_delete (&my_stack);
 
 	return 0;
 }
