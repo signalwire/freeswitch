@@ -4039,7 +4039,16 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
 						if (sip->sip_payload && sip->sip_payload->pl_data) {
 							switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
-							sofia_glue_copy_t38_options(t38_options, other_session);  
+
+							if (t38_options) {
+								sofia_glue_copy_t38_options(t38_options, other_session);
+							} else {
+								sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not parse T.38 options from sdp.\n");
+								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "T.38 NEGOTIATION ERROR");
+								switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+								goto end;
+							}
 						}
 					}
 

@@ -3387,6 +3387,8 @@ void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_t38_options_t *local_t38_options = switch_channel_get_private(channel, "t38_options");
 
+	switch_assert(t38_options);
+	
 	if (!local_t38_options) {
 		local_t38_options = switch_core_session_alloc(session, sizeof(switch_t38_options_t));
 	}
