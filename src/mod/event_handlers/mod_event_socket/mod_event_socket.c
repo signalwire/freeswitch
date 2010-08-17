@@ -31,7 +31,8 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-
+#define MAX_QUEUE_LEN 5000
+#define MAX_MISSED 200
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -142,6 +143,7 @@ static const char *format2str(event_format_t format)
 }
 
 static void remove_listener(listener_t *listener);
+static void kill_listener(listener_t *l);
 static void kill_all_listeners(void);
 
 static uint32_t next_id(void)
@@ -181,7 +183,9 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 				}
 			} else {
 				switch_log_node_free(&dnode);
-				l->lost_logs++;
+				if (++l->lost_logs > MAX_MISSED) {
+					kill_listener(l);
+				}
 			}
 		}
 	}
@@ -374,7 +378,9 @@ static void event_handler(switch_event_t *event)
 						}
 					}
 				} else {
-					l->lost_events++;
+					if (++l->lost_events > MAX_MISSED) {
+						kill_listener(l);
+					}
 					switch_event_destroy(&clone);
 				}
 			} else {
@@ -454,8 +460,8 @@ SWITCH_STANDARD_APP(socket_function)
 	}
 
 	switch_thread_rwlock_create(&listener->rwlock, switch_core_session_get_pool(session));
-	switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
-	switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
+	switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, switch_core_session_get_pool(session));
+	switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, switch_core_session_get_pool(session));
 
 	listener->sock = new_sock;
 	listener->pool = switch_core_session_get_pool(session);
@@ -573,6 +579,15 @@ static void remove_listener(listener_t *listener)
 	switch_mutex_unlock(globals.listener_mutex);
 }
 
+static void kill_listener(listener_t *l)
+{
+	switch_clear_flag(l, LFLAG_RUNNING);
+	if (l->sock) {
+		switch_socket_shutdown(l->sock, SWITCH_SHUTDOWN_READWRITE);
+		switch_socket_close(l->sock);
+	}
+
+}
 
 static void kill_all_listeners(void)
 {
@@ -580,11 +595,7 @@ static void kill_all_listeners(void)
 
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
-		switch_clear_flag(l, LFLAG_RUNNING);
-		if (l->sock) {
-			switch_socket_shutdown(l->sock, SWITCH_SHUTDOWN_READWRITE);
-			switch_socket_close(l->sock);
-		}
+		kill_listener(l);
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 }
@@ -787,8 +798,8 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
 		switch_set_flag(listener, LFLAG_ALLOW_LOG);
-		switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, listener->pool);
-		switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, listener->pool);
+		switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener->pool);
+		switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener->pool);
 
 		if (loglevel) {
 			switch_log_level_t ltype = switch_log_str2level(loglevel);
@@ -955,7 +966,7 @@ SWITCH_STANDARD_API(event_sink_function)
 				switch_xml_t xml;
 				etype = "xml";
 
-				if ((xml = switch_event_xmlize(pevent, "%s", ""))) {
+				if ((xml = switch_event_xmlize(pevent, SWITCH_VA_NONE))) {
 					listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 					switch_xml_free(xml);
 				} else {
@@ -1246,7 +1257,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						switch_xml_t xml;
 						etype = "xml";
 
-						if ((xml = switch_event_xmlize(pevent, "%s", ""))) {
+						if ((xml = switch_event_xmlize(pevent, SWITCH_VA_NONE))) {
 							listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {
@@ -2716,8 +2727,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		}
 
 		switch_thread_rwlock_create(&listener->rwlock, listener_pool);
-		switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, listener_pool);
-		switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, listener_pool);
+		switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener_pool);
+		switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener_pool);
 
 		listener->sock = inbound_socket;
 		listener->pool = listener_pool;

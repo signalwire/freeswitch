@@ -24,8 +24,6 @@
  *
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
- *
- * $Id: gsm0610_rpe.c,v 1.25.4.2 2009/12/28 11:54:58 steveu Exp $
  */
 
 /*! \file */
@@ -172,7 +170,7 @@ static void weighting_filter(int16_t x[40],
         : "eax", "edx", "esi", "memory"
     );
 #else
-    int32_t L_result;
+    int32_t result;
     int k;
 
     /* The coefficients of the weighting filter are stored in a table
@@ -194,12 +192,12 @@ static void weighting_filter(int16_t x[40],
     /* Compute the signal x[0..39] */
     for (k = 0;  k < 40;  k++)
     {
-        L_result = 8192 >> 1;
+        result = 8192 >> 1;
 
         /* for (i = 0; i <= 10; i++)
          * {
-         *      L_temp   = saturated_mul_16_32(wt[k + i], gsm_H[i]);
-         *      L_result = saturated_add32(L_result, L_temp);
+         *      temp   = saturated_mul16_32(wt[k + i], gsm_H[i]);
+         *      result = saturated_add32(result, temp);
          * }
          */
 
@@ -210,22 +208,22 @@ static void weighting_filter(int16_t x[40],
            but I don't see an elegant way to optimize this. 
            Do you?
         */
-        L_result += STEP( 0,  -134);
-        L_result += STEP( 1,  -374);
-              /* += STEP( 2,  0   ); */
-        L_result += STEP( 3,  2054);
-        L_result += STEP( 4,  5741);
-        L_result += STEP( 5,  8192);
-        L_result += STEP( 6,  5741);
-        L_result += STEP( 7,  2054);
-              /* += STEP( 8,  0   ); */
-        L_result += STEP( 9,  -374);
-        L_result += STEP(10,  -134);
+        result += STEP( 0,  -134);
+        result += STEP( 1,  -374);
+            /* += STEP( 2,  0   ); */
+        result += STEP( 3,  2054);
+        result += STEP( 4,  5741);
+        result += STEP( 5,  8192);
+        result += STEP( 6,  5741);
+        result += STEP( 7,  2054);
+            /* += STEP( 8,  0   ); */
+        result += STEP( 9,  -374);
+        result += STEP(10,  -134);
 
         /* 2 adds vs. >> 16 => 14, minus one shift to compensate for
            those we lost when replacing L_MULT by '*'. */
-        L_result >>= 13;
-        x[k] = saturate(L_result);
+        result >>= 13;
+        x[k] = saturate(result);
     }
     /*endfor*/
 #endif

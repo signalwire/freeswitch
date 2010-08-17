@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: noise_tests.c,v 1.18 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page noise_tests_page Noise generator tests

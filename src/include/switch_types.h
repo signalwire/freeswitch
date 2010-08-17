@@ -139,6 +139,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SOFT_HOLDING_UUID_VARIABLE "soft_holding_uuid"
 #define SWITCH_API_BRIDGE_END_VARIABLE "api_after_bridge"
 #define SWITCH_API_HANGUP_HOOK_VARIABLE "api_hangup_hook"
+#define SWITCH_API_REPORTING_HOOK_VARIABLE "api_reporting_hook"
 #define SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE "session_in_hangup_hook"
 #define SWITCH_PROCESS_CDR_VARIABLE "process_cdr"
 #define SWITCH_FORCE_PROCESS_CDR_VARIABLE "force_process_cdr"
@@ -250,7 +251,9 @@ typedef enum {
 	SCF_CALIBRATE_CLOCK = (1 << 8),
 	SCF_USE_HEAVY_TIMING = (1 << 9),
 	SCF_USE_CLOCK_RT = (1 << 10),
-	SCF_VERBOSE_EVENTS = (1 << 11)
+	SCF_VERBOSE_EVENTS = (1 << 11),
+	SCF_USE_WIN32_MONOTONIC = (1 << 12),
+	SCF_AUTO_SCHEMAS = (1 << 13)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1287,7 +1290,8 @@ typedef uint32_t switch_file_flag_t;
 
 typedef enum {
 	SWITCH_IO_FLAG_NONE = 0,
-	SWITCH_IO_FLAG_NOBLOCK = (1 << 0)
+	SWITCH_IO_FLAG_NOBLOCK = (1 << 0),
+	SWITCH_IO_FLAG_SINGLE_READ = (1 << 1)
 } switch_io_flag_enum_t;
 typedef uint32_t switch_io_flag_t;
 

@@ -110,10 +110,18 @@ namespace FreeSWITCH {
                     cdp = CodeDomProvider.CreateProvider("f#");
                     break;
                 case ".csx":
+#if (CLR_VERSION40)
+                    cdp = new Microsoft.CSharp.CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
+#else
                     cdp = new Microsoft.CSharp.CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v3.5" } });
+#endif
                     break;
                 case ".vbx":
+#if (CLR_VERSION40)
+                    cdp = new Microsoft.VisualBasic.VBCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } });
+#else
                     cdp = new Microsoft.VisualBasic.VBCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v3.5" } });
+#endif
                     break;
                 case ".jsx":
                     // Have to figure out better JS support

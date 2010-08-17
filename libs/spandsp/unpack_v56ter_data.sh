@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-# $Id: unpack_v56ter_data.sh,v 1.5 2008/05/03 07:55:04 steveu Exp $
-#
 
 ITUDATA="../../../T-REC-V.56ter-199608-I!!ZPF-E.zip"
 

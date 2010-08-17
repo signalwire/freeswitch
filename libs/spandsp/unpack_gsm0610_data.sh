@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-# $Id: unpack_gsm0610_data.sh,v 1.7 2008/05/03 10:59:44 steveu Exp $
-#
 
 # The ETSI distribution file extracts to 5 ZIP files, called DISK1.ZIP to DISK5.ZIP
 # These were originally the contents of 5 floppy disks. Disks 1 to 3 contain data
@@ -167,11 +164,47 @@ then
     # to make the .EXE files actually executable.
     chmod 755 *.EXE
     ./FR_HOM_A.EXE >/dev/null
+    RETVAL=$?
+    if [ $RETVAL != 0 ]
+    then
+        echo Cannot run ./FR_HOM_A.EXE
+        exit $RETVAL
+    fi
     ./FR_SYN_A.EXE >/dev/null
+    RETVAL=$?
+    if [ $RETVAL != 0 ]
+    then
+        echo Cannot run ./FR_HOM_A.EXE
+        exit $RETVAL
+    fi
     ./FR_A.EXE >/dev/null
+    RETVAL=$?
+    if [ $RETVAL != 0 ]
+    then
+        echo Cannot run ./FR_HOM_A.EXE
+        exit $RETVAL
+    fi
     ./FR_HOM_U.EXE >/dev/null
+    RETVAL=$?
+    if [ $RETVAL != 0 ]
+    then
+        echo Cannot run ./FR_HOM_A.EXE
+        exit $RETVAL
+    fi
     ./FR_SYN_U.EXE >/dev/null
+    RETVAL=$?
+    if [ $RETVAL != 0 ]
+    then
+        echo Cannot run ./FR_HOM_A.EXE
+        exit $RETVAL
+    fi
     ./FR_U.EXE >/dev/null
+    RETVAL=$?
+    if [ $RETVAL != 0 ]
+    then
+        echo Cannot run ./FR_HOM_A.EXE
+        exit $RETVAL
+    fi
 
     rm -rf READ_FRA.TXT
 fi

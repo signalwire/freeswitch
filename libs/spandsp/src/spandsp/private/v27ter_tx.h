@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v27ter_tx.h,v 1.3 2009/07/09 13:52:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V27TER_TX_H_)

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: power_meter.c,v 1.31 2009/05/30 17:29:23 steveu Exp $
  */
 
 /*! \file */

@@ -153,6 +153,10 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 #endif
 
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			break;
+		}
 	}
 
 #ifdef SWITCH_VIDEO_IN_THREADS
@@ -2178,6 +2182,7 @@ typedef struct {
 	dtmf_meta_app_t map[10];
 	time_t last_digit;
 	switch_bool_t meta_on;
+	char meta;
 	int up;
 } dtmf_meta_settings_t;
 
@@ -2261,7 +2266,7 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 
 	md->sr[direction].last_digit = now;
 
-	if (dtmf->digit == '*') {
+	if (dtmf->digit == md->sr[direction].meta) {
 		if (md->sr[direction].meta_on) {
 			md->sr[direction].meta_on = SWITCH_FALSE;
 			return SWITCH_STATUS_SUCCESS;
@@ -2405,6 +2410,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
+	const char *meta_var = switch_channel_get_variable(channel, "bind_meta_key");
+	char meta = '*';
+	char str[2] = "";
+
+	if (meta_var) {
+		char t_meta = *meta_var;
+		if (is_dtmf(t_meta)) {
+			meta = t_meta;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid META KEY %c\n", t_meta);
+		}
+	}
+
+	if (meta != '*' && meta != '#') {
+		str[0] = meta;
+
+		if (atoi(str) == (int)key) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u, same as META CHAR\n", key);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
 
 	if (key > 9) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u\n", key);
@@ -2420,27 +2447,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 
 	if (!zstr(app)) {
 		if ((bind_flags & SBF_DIAL_ALEG)) {
+			md->sr[SWITCH_DTMF_RECV].meta = meta;
 			md->sr[SWITCH_DTMF_RECV].up = 1;
 			md->sr[SWITCH_DTMF_RECV].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_RECV].map[key].flags |= SMF_HOLD_BLEG;
 			md->sr[SWITCH_DTMF_RECV].map[key].bind_flags = bind_flags;
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound A-Leg: %d %s\n", key, app);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound A-Leg: %c%d %s\n", meta, key, app);
 		}
 		if ((bind_flags & SBF_DIAL_BLEG)) {
+			md->sr[SWITCH_DTMF_SEND].meta = meta;
 			md->sr[SWITCH_DTMF_SEND].up = 1;
 			md->sr[SWITCH_DTMF_SEND].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_SEND].map[key].flags |= SMF_HOLD_BLEG;
 			md->sr[SWITCH_DTMF_SEND].map[key].bind_flags = bind_flags;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound B-Leg: %d %s\n", key, app);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound B-Leg: %c%d %s\n", meta, key, app);
 		}
 
 	} else {
 		if ((bind_flags & SBF_DIAL_ALEG)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound A-Leg: %d\n", key);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound A-Leg: %c%d\n", meta, key);
 			md->sr[SWITCH_DTMF_SEND].map[key].app = NULL;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound: B-Leg %d\n", key);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound: B-Leg %c%d\n", meta, key);
 			md->sr[SWITCH_DTMF_SEND].map[key].app = NULL;
 		}
 	}

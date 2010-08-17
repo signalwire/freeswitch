@@ -24,8 +24,6 @@
  *
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
- *
- * $Id: gsm0610_local.h,v 1.15 2009/03/13 15:57:29 steveu Exp $
  */
 
 #if !defined(_GSM0610_LOCAL_H_)

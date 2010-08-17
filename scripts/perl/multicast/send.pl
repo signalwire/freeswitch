@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 use IO::Socket::INET;
 
 my ($ip, $port, $file) = @ARGV;

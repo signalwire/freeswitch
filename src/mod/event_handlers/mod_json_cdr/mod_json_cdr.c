@@ -36,6 +36,7 @@
 #include <json.h>
 
 #define MAX_URLS 20
+#define MAX_ERR_DIRS 20
 
 #define ENCODING_NONE 0
 #define ENCODING_DEFAULT 1
@@ -43,14 +44,15 @@
 
 static struct {
 	char *cred;
-	char *urls[MAX_URLS + 1];
+	char *urls[MAX_URLS];
 	int url_count;
 	int url_index;
 	switch_thread_rwlock_t *log_path_lock;
 	char *base_log_dir;
-	char *base_err_log_dir;
+	char *base_err_log_dir[MAX_ERR_DIRS];
 	char *log_dir;
-	char *err_log_dir;
+	char *err_log_dir[MAX_ERR_DIRS];
+	int err_dir_count;
 	uint32_t delay;
 	uint32_t retries;
 	uint32_t shutdown;
@@ -92,6 +94,7 @@ static switch_status_t set_json_cdr_log_dirs()
 	char date[80] = "";
 	switch_size_t retsize;
 	switch_status_t status = SWITCH_STATUS_SUCCESS, dir_status;
+	int err_dir_index;
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
@@ -136,9 +139,9 @@ static switch_status_t set_json_cdr_log_dirs()
 		}
 	}
 
-	if (!zstr(globals.base_err_log_dir)) {
+	for (err_dir_index = 0; err_dir_index < globals.err_dir_count; err_dir_index++) {
 		if (globals.rotate) {
-			if ((path = switch_mprintf("%s%s%s", globals.base_err_log_dir, SWITCH_PATH_SEPARATOR, date))) {
+			if ((path = switch_mprintf("%s%s%s", globals.base_err_log_dir[err_dir_index], SWITCH_PATH_SEPARATOR, date))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rotating err log file path to %s\n", path);
 
 				dir_status = SWITCH_STATUS_SUCCESS;
@@ -148,8 +151,8 @@ static switch_status_t set_json_cdr_log_dirs()
 
 				if (dir_status == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_wrlock(globals.log_path_lock);
-					switch_safe_free(globals.err_log_dir);
-					globals.err_log_dir = path;
+					switch_safe_free(globals.err_log_dir[err_dir_index]);
+					globals.err_log_dir[err_dir_index] = path;
 					switch_thread_rwlock_unlock(globals.log_path_lock);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new mod_json_cdr err_log_dir path\n");
@@ -161,11 +164,11 @@ static switch_status_t set_json_cdr_log_dirs()
 				status = SWITCH_STATUS_FALSE;
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting err log file path to %s\n", globals.base_err_log_dir);
-			if ((path = switch_safe_strdup(globals.base_err_log_dir))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting err log file path to %s\n", globals.base_err_log_dir[err_dir_index]);
+			if ((path = switch_safe_strdup(globals.base_err_log_dir[err_dir_index]))) {
 				switch_thread_rwlock_wrlock(globals.log_path_lock);
-				switch_safe_free(globals.err_log_dir);
-				globals.err_log_dir = path;
+				switch_safe_free(globals.err_log_dir[err_dir_index]);
+				globals.err_log_dir[err_dir_index] = path;
 				switch_thread_rwlock_unlock(globals.log_path_lock);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set err_log_dir path\n");
@@ -603,7 +606,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	char *curl_json_text = NULL;
 	const char *logdir = NULL;
 	char *json_text_escaped = NULL;
-	int fd = -1;
+	int fd = -1, err_dir_index;
 	uint32_t cur_try;
 	long httpRes;
 	CURL *curl_handle = NULL;
@@ -799,31 +802,36 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		/* if we are here the web post failed for some reason */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-		switch_thread_rwlock_rdlock(globals.log_path_lock);
-		path = switch_mprintf("%s%s%s%s.cdr.json", globals.err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
-		switch_thread_rwlock_unlock(globals.log_path_lock);
-		if (path) {
+		for (err_dir_index = 0; err_dir_index < globals.err_dir_count; err_dir_index++) {
+			switch_thread_rwlock_rdlock(globals.log_path_lock);
+			path = switch_mprintf("%s%s%s%s.cdr.json", globals.err_log_dir[err_dir_index], SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
+			switch_thread_rwlock_unlock(globals.log_path_lock);
+			if (path) {
 #ifdef _MSC_VER
-			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
-			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
 #endif
-				int wrote;
-				wrote = write(fd, json_text, (unsigned) strlen(json_text));
-				close(fd);
-				fd = -1;
-			} else {
-				char ebuf[512] = { 0 };
+					int wrote;
+					wrote = write(fd, json_text, (unsigned) strlen(json_text));
+					close(fd);
+					fd = -1;
+					break;
+				} else {
+					char ebuf[512] = { 0 };
 #ifdef WIN32
-				strerror_s(ebuf, sizeof(ebuf), errno);
+					strerror_s(ebuf, sizeof(ebuf), errno);
 #else
-				strerror_r(errno, ebuf, sizeof(ebuf));
+					strerror_r(errno, ebuf, sizeof(ebuf));
 #endif
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
-			}
-		}
-	}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s! [%s]\n", path, ebuf);
 
+				}
+
+				switch_safe_free(path);
+			}
+		}	
+	}
   success:
 	status = SWITCH_STATUS_SUCCESS;
 
@@ -843,8 +851,6 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	
 	json_object_put(json_cdr);
 	switch_safe_free(json_text_escaped);
-
-	switch_safe_free(path);
 
 	return status;
 }
@@ -950,14 +956,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
-				if (zstr(val)) {
-					globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sjson_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+				if (globals.err_dir_count >= MAX_ERR_DIRS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "maximum error directories configured!\n");
 				} else {
-					if (switch_is_file_path(val)) {
-						globals.base_err_log_dir = switch_core_strdup(globals.pool, val);
+
+					if (zstr(val)) {
+						globals.base_err_log_dir[globals.err_dir_count++] = switch_core_sprintf(globals.pool, "%s%sjson_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 					} else {
-						globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+						if (switch_is_file_path(val)) {
+							globals.base_err_log_dir[globals.err_dir_count++] = switch_core_strdup(globals.pool, val);
+						} else {
+							globals.base_err_log_dir[globals.err_dir_count++] = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+						}
 					}
+					
 				}
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 				globals.enable_cacert_check = 1;
@@ -994,11 +1006,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 
 		}
 
-		if (zstr(globals.base_err_log_dir)) {
+		if (!globals.err_dir_count) {
 			if (!zstr(globals.base_log_dir)) {
-				globals.base_err_log_dir = switch_core_strdup(globals.pool, globals.base_log_dir);
+				globals.base_err_log_dir[globals.err_dir_count++] = switch_core_strdup(globals.pool, globals.base_log_dir);
 			} else {
-				globals.base_err_log_dir = switch_core_sprintf(globals.pool, "%s%sjson_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+				globals.base_err_log_dir[globals.err_dir_count++] = switch_core_sprintf(globals.pool, "%s%sjson_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 			}
 		}
 	}
@@ -1023,11 +1035,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 {
+	int err_dir_index = 0;
 
 	globals.shutdown = 1;
 
 	switch_safe_free(globals.log_dir);
-	switch_safe_free(globals.err_log_dir);
+	
+	for (;err_dir_index < globals.err_dir_count; err_dir_index++) {
+		switch_safe_free(globals.err_log_dir[err_dir_index]);
+	}
 
 	switch_event_unbind(&globals.node);
 	switch_core_remove_state_handler(&state_handlers);

@@ -12,9 +12,9 @@ JSLA=$(JS_BUILDDIR)/libjs.la
 
 AM_CFLAGS  += -I. -I$(JS_DIR)/src -I$(JS_DIR)/nsprpub/dist/include/nspr
 AM_CFLAGS  += -DXP_UNIX  -DJS_THREADSAFE -DJS_HAS_FILE_OBJECT=1 -DJS_HAS_XML_SUPPORT=1
-AM_LIBADD   = $(switch_builddir)/libfreeswitch.la $(JSLA)
+AM_LIBADD   = $(switch_builddir)/libfreeswitch.la $(JSLA) -lnspr4 $(JS_BUILDDIR)/nsprpub/pr/src/libnspr4.*
 AM_LDFLAGS += -avoid-version -module -no-undefined -shared 
-AM_LDFLAGS += -L$(JS_BUILDDIR)/nsprpub/dist/lib -lnspr4 $(JS_BUILDDIR)/nsprpub/pr/src/libnspr4.*
+AM_LDFLAGS += -L$(JS_BUILDDIR)/nsprpub/dist/lib
 BUILT_SOURCES = $(JSLA) $(LIBCURL_DEPS)
 
 mod_LTLIBRARIES              = mod_spidermonkey.la 

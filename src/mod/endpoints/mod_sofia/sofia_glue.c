@@ -36,6 +36,8 @@
 #include "mod_sofia.h"
 #include <switch_stun.h>
 
+switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile);
+
 
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
@@ -98,8 +100,8 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"a=T38FaxRateManagement:%s\n"
 					"a=T38FaxMaxBuffer:%d\n"
 					"a=T38FaxMaxDatagram:%d\n"
-					"a=T38FaxUdpEC:%s\n"
-					"a=T38VendorInfo:%s\n",
+					"a=T38FaxUdpEC:%s\n",
+					//"a=T38VendorInfo:%s\n",
 					port,
 					t38_options->T38FaxVersion,
 					t38_options->T38MaxBitRate,
@@ -108,7 +110,9 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					t38_options->T38FaxTranscodingJBIG ? "a=T38FaxTranscodingJBIG\n" : "",
 					t38_options->T38FaxRateManagement,
 					t38_options->T38FaxMaxBuffer,
-					t38_options->T38FaxMaxDatagram, t38_options->T38FaxUdpEC, t38_options->T38VendorInfo ? t38_options->T38VendorInfo : "0 0 0");
+					t38_options->T38FaxMaxDatagram, t38_options->T38FaxUdpEC
+					//t38_options->T38VendorInfo ? t38_options->T38VendorInfo : "0 0 0"
+					);
 
 
 
@@ -3446,7 +3450,7 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 	switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
 	switch_channel_set_private(tech_pvt->channel, "t38_options", t38_options);
-	switch_channel_set_app_flag(tech_pvt->channel, CF_APP_T38);
+	switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 
 	return t38_options;
 }
@@ -4683,8 +4687,6 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 int sofia_glue_init_sql(sofia_profile_t *profile)
 {
 	char *test_sql = NULL;
-	switch_core_db_t *db = NULL;
-	switch_odbc_handle_t *odbc_dbh = NULL;
 
 	char reg_sql[] =
 		"CREATE TABLE sip_registrations (\n"
@@ -4731,7 +4733,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
 		"   network_ip      VARCHAR(255),\n"
-		"   network_port    VARCHAR(6)\n"
+		"   network_port    VARCHAR(6),\n"
+		"   open_closed     VARCHAR(255)\n"
 		");\n";
 
 	char dialog_sql[] =
@@ -4754,7 +4757,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   presence_data   VARCHAR(255),\n"
 		"   call_info       VARCHAR(255),\n"
 		"   call_info_state VARCHAR(255),\n"
-		"   expires         INTEGER default 0\n"
+		"   expires         INTEGER default 0,\n"
+		"   status          VARCHAR(255),\n"
+		"   rpid            VARCHAR(255)\n"
 		");\n";
 
 	char sub_sql[] =
@@ -4810,294 +4815,138 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   expires           INTEGER\n"
 		");\n";
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		int x;
-		char *indexes[] = {
-			"create index sr_call_id on sip_registrations (call_id)",
-			"create index sr_sip_user on sip_registrations (sip_user)",
-			"create index sr_sip_host on sip_registrations (sip_host)",
-			"create index sr_profile_name on sip_registrations (profile_name)",
-			"create index sr_presence_hosts on sip_registrations (presence_hosts)",
-			"create index sr_contact on sip_registrations (contact)",
-			"create index sr_expires on sip_registrations (expires)",
-			"create index sr_hostname on sip_registrations (hostname)",
-			"create index sr_status on sip_registrations (status)",
-			"create index sr_network_ip on sip_registrations (network_ip)",
-			"create index sr_network_port on sip_registrations (network_port)",
-			"create index sr_sip_username on sip_registrations (sip_username)",
-			"create index sr_sip_realm on sip_registrations (sip_realm)",
-			"create index sr_orig_server_host on sip_registrations (orig_server_host)",
-			"create index sr_orig_hostname on sip_registrations (orig_hostname)",
-			"create index ss_call_id on sip_subscriptions (call_id)",
-			"create index ss_hostname on sip_subscriptions (hostname)",
-			"create index ss_network_ip on sip_subscriptions (network_ip)",
-			"create index ss_sip_user on sip_subscriptions (sip_user)",
-			"create index ss_sip_host on sip_subscriptions (sip_host)",
-			"create index ss_presence_hosts on sip_subscriptions (presence_hosts)",
-			"create index ss_event on sip_subscriptions (event)",
-			"create index ss_proto on sip_subscriptions (proto)",
-			"create index ss_sub_to_user on sip_subscriptions (sub_to_user)",
-			"create index ss_sub_to_host on sip_subscriptions (sub_to_host)",
-			"create index sd_uuid on sip_dialogs (uuid)",
-			"create index sd_hostname on sip_dialogs (hostname)",
-			"create index sd_presence_data on sip_dialogs (presence_data)",
-			"create index sd_call_info on sip_dialogs (call_info)",
-			"create index sd_call_info_state on sip_dialogs (call_info_state)",
-			"create index sd_expires on sip_dialogs (expires)",
-			"create index sp_hostname on sip_presence (hostname)",
-			"create index sa_nonce on sip_authentication (nonce)",
-			"create index sa_hostname on sip_authentication (hostname)",
-			"create index ssa_hostname on sip_shared_appearance_subscriptions (hostname)",
-			"create index ssa_network_ip on sip_shared_appearance_subscriptions (network_ip)",
-			"create index ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)",
-			"create index ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)",
-			"create index ssa_aor on sip_shared_appearance_subscriptions (aor)",
-			"create index ssd_profile_name on sip_shared_appearance_dialogs (profile_name)",
-			"create index ssd_hostname on sip_shared_appearance_dialogs (hostname)",
-			"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
-			"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
-			"create index ssd_expires on sip_shared_appearance_dialogs (expires)",
-			"create index sr_1 on sip_recovery (runtime_uuid)",
-			"create index sr_2 on sip_recovery (profile_name)",
-			"create index sr_3 on sip_recovery (hostname)",
-			"create index sr_4 on sip_recovery (uuid)",
-			NULL
-		};
+	
+	int x;
+	char *indexes[] = {
+		"create index sr_call_id on sip_registrations (call_id)",
+		"create index sr_sip_user on sip_registrations (sip_user)",
+		"create index sr_sip_host on sip_registrations (sip_host)",
+		"create index sr_profile_name on sip_registrations (profile_name)",
+		"create index sr_presence_hosts on sip_registrations (presence_hosts)",
+		"create index sr_contact on sip_registrations (contact)",
+		"create index sr_expires on sip_registrations (expires)",
+		"create index sr_hostname on sip_registrations (hostname)",
+		"create index sr_status on sip_registrations (status)",
+		"create index sr_network_ip on sip_registrations (network_ip)",
+		"create index sr_network_port on sip_registrations (network_port)",
+		"create index sr_sip_username on sip_registrations (sip_username)",
+		"create index sr_sip_realm on sip_registrations (sip_realm)",
+		"create index sr_orig_server_host on sip_registrations (orig_server_host)",
+		"create index sr_orig_hostname on sip_registrations (orig_hostname)",
+		"create index ss_call_id on sip_subscriptions (call_id)",
+		"create index ss_hostname on sip_subscriptions (hostname)",
+		"create index ss_network_ip on sip_subscriptions (network_ip)",
+		"create index ss_sip_user on sip_subscriptions (sip_user)",
+		"create index ss_sip_host on sip_subscriptions (sip_host)",
+		"create index ss_presence_hosts on sip_subscriptions (presence_hosts)",
+		"create index ss_event on sip_subscriptions (event)",
+		"create index ss_proto on sip_subscriptions (proto)",
+		"create index ss_sub_to_user on sip_subscriptions (sub_to_user)",
+		"create index ss_sub_to_host on sip_subscriptions (sub_to_host)",
+		"create index sd_uuid on sip_dialogs (uuid)",
+		"create index sd_hostname on sip_dialogs (hostname)",
+		"create index sd_presence_data on sip_dialogs (presence_data)",
+		"create index sd_call_info on sip_dialogs (call_info)",
+		"create index sd_call_info_state on sip_dialogs (call_info_state)",
+		"create index sd_expires on sip_dialogs (expires)",
+		"create index sp_hostname on sip_presence (hostname)",
+		"create index sa_nonce on sip_authentication (nonce)",
+		"create index sa_hostname on sip_authentication (hostname)",
+		"create index ssa_hostname on sip_shared_appearance_subscriptions (hostname)",
+		"create index ssa_network_ip on sip_shared_appearance_subscriptions (network_ip)",
+		"create index ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)",
+		"create index ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)",
+		"create index ssa_aor on sip_shared_appearance_subscriptions (aor)",
+		"create index ssd_profile_name on sip_shared_appearance_dialogs (profile_name)",
+		"create index ssd_hostname on sip_shared_appearance_dialogs (hostname)",
+		"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
+		"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
+		"create index ssd_expires on sip_shared_appearance_dialogs (expires)",
+		"create index sr_1 on sip_recovery (runtime_uuid)",
+		"create index sr_2 on sip_recovery (profile_name)",
+		"create index sr_3 on sip_recovery (hostname)",
+		"create index sr_4 on sip_recovery (uuid)",
+		NULL
+	};
+		
+	switch_cache_db_handle_t *dbh = sofia_glue_get_db_handle(profile);
+		
+	if (!dbh) {
+		return 0;
+	}
+		
+
+	test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
+							  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
+							  "and network_ip like '%%' and network_port like '%%' and sip_username "
+							  "like '%%' and mwi_user  like '%%' and mwi_host like '%%' "
+							  "and orig_server_host like '%%' and orig_hostname like '%%'", mod_sofia_globals.hostname);
 
 
-		if (!(odbc_dbh = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-			return 0;
+	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
+
+
+	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
+		char *test2 = switch_mprintf("%s;%s", test_sql, test_sql);
+			
+		if (switch_cache_db_execute_sql(dbh, test2, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "GREAT SCOTT!!! Cannot execute batched statements!\n"
+							  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
+			sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
+
 		}
-
-		if (switch_odbc_handle_connect(odbc_dbh) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Connecting ODBC DSN: %s\n", profile->odbc_dsn);
-			switch_odbc_handle_destroy(&odbc_dbh);
-			return 0;
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-
-		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
-								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
-								  "and network_ip like '%%' and network_port like '%%' and sip_username "
-								  "like '%%' and mwi_user  like '%%' and mwi_host like '%%' "
-								  "and orig_server_host like '%%' and orig_hostname like '%%'", mod_sofia_globals.hostname);
-
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_registrations", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, reg_sql, NULL, NULL);
-		}
-
-
-		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-			char *test2 = switch_mprintf("%s;%s", test_sql, test_sql);
-
-			if (switch_odbc_handle_exec(odbc_dbh, test2, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "GREAT SCOTT!!! Cannot execute batched statements!\n"
-								  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
-				sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
-
-			}
-			free(test2);
-		}
-
-		free(test_sql);
-
-
-		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip like '%%' and network_port like '%%'",
-								  mod_sofia_globals.hostname);
-
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_subscriptions", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, sub_sql, NULL, NULL);
-		}
-
-		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999", mod_sofia_globals.hostname);
-
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_dialogs", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, dialog_sql, NULL, NULL);
-		}
-
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
-
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_presence", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, pres_sql, NULL, NULL);
-		}
-
-		free(test_sql);
-		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
-
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_authentication", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, auth_sql, NULL, NULL);
-		}
-		free(test_sql);
-
-		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q' and network_ip like '%%'",
-								  mod_sofia_globals.hostname);
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_subscriptions", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, shared_appearance_sql, NULL, NULL);
-		}
-		free(test_sql);
-
-
-		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str='' or hostname='%q' and network_ip like '%%'",
-								  mod_sofia_globals.hostname);
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_shared_appearance_dialogs", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, shared_appearance_dialogs_sql, NULL, NULL);
-		}
-		free(test_sql);
-
-
-
-		test_sql = switch_mprintf("select count(profile_name) from sip_recovery where hostname='%q'", mod_sofia_globals.hostname);
-
-		if (switch_odbc_handle_exec(odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-			switch_odbc_handle_exec(odbc_dbh, "DROP TABLE sip_recovery", NULL, NULL);
-			switch_odbc_handle_exec(odbc_dbh, recovery_sql, NULL, NULL);
-		}
-
-		free(test_sql);
-
-
-
-		for (x = 0; indexes[x]; x++) {
-			switch_odbc_handle_exec(odbc_dbh, indexes[x], NULL, NULL);
-		}
-
-
-	} else if (profile->odbc_dsn) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			return 0;
-		}
-
-		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
-								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
-								  "and network_ip like '%%' and network_port like '%%' and sip_username "
-								  "like '%%' and mwi_user like '%%' and mwi_host like '%%' "
-								  "and orig_server_host like '%%' and orig_hostname like '%%'", mod_sofia_globals.hostname);
-
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_registrations", reg_sql);
-		free(test_sql);
-
-		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip like '%%' or network_port like '%%'",
-								  mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
-		free(test_sql);
-
-		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999", mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
-		free(test_sql);
-
-		test_sql = switch_mprintf("delete from sip_presence where hostname='%q' ", mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_presence", pres_sql);
-		free(test_sql);
-
-		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_authentication", auth_sql);
-		free(test_sql);
-
-
-		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str = '' or hostname='%q' and network_ip like '%%'",
-								  mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
-		free(test_sql);
-
-		test_sql =
-			switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str = '' or hostname='%q' and network_ip like '%%'",
-						   mod_sofia_globals.hostname);
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_shared_appearance_dialogs", shared_appearance_dialogs_sql);
-		free(test_sql);
-
-
-		test_sql = switch_mprintf("select count(profile_name) from sip_recovery where hostname='%q'", mod_sofia_globals.hostname);
-
-		switch_core_db_test_reactive(db, test_sql, "DROP TABLE sip_recovery", recovery_sql);
-		free(test_sql);
-
-
-		switch_core_db_exec(db, "create index if not exists ssa_hostname on sip_shared_appearance_subscriptions (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssa_aor on sip_shared_appearance_subscriptions (aor)", NULL, NULL, NULL);
-
-
-		switch_core_db_exec(db, "create index if not exists ssd_profile_name on sip_shared_appearance_dialogs (profile_name)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssd_hostname on sip_shared_appearance_dialogs (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssd_network_ip on sip_shared_appearance_dialogs (network_ip)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssd_contact_str on sip_shared_appearance_dialogs (contact_str)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssd_call_id on sip_shared_appearance_dialogs (call_id)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ssd_expires on sip_shared_appearance_dialogs (expires)", NULL, NULL, NULL);
-
-
-
-		switch_core_db_exec(db, "create index if not exists sr_call_id on sip_registrations (call_id)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_sip_user on sip_registrations (sip_user)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_sip_host on sip_registrations (sip_host)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_profile_name on sip_registrations (profile_name)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_presence_hosts on sip_registrations (presence_hosts)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_contact on sip_registrations (contact)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_expires on sip_registrations (expires)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_hostname on sip_registrations (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_status on sip_registrations (status)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_network_ip on sip_registrations (network_ip)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_network_port on sip_registrations (network_port)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_sip_username on sip_registrations (sip_username)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_sip_realm on sip_registrations (sip_realm)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_orig_server_host on sip_registrations (orig_server_host)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_orig_hostname on sip_registrations (orig_hostname)", NULL, NULL, NULL);
-
-
-		switch_core_db_exec(db, "create index if not exists ss_call_id on sip_subscriptions (call_id)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_hostname on sip_subscriptions (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_network_ip on sip_subscriptions (network_ip)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_sip_user on sip_subscriptions (sip_user)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_sip_host on sip_subscriptions (sip_host)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_presence_hosts on sip_subscriptions (presence_hosts)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_event on sip_subscriptions (event)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_proto on sip_subscriptions (proto)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_sub_to_user on sip_subscriptions (sub_to_user)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists ss_sub_to_host on sip_subscriptions (sub_to_host)", NULL, NULL, NULL);
-
-		switch_core_db_exec(db, "create index if not exists sd_uuid on sip_dialogs (uuid)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_hostname on sip_dialogs (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_contact on sip_dialogs (contact)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_presence_id on sip_dialogs (presence_id)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_presence_data on sip_dialogs (presence_data)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_call_info on sip_dialogs (call_info)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_call_info_state on sip_dialogs (call_info_state)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sd_expires on sip_dialogs (expires)", NULL, NULL, NULL);
-
-		switch_core_db_exec(db, "create index if not exists sp_hostname on sip_presence (hostname)", NULL, NULL, NULL);
-
-		switch_core_db_exec(db, "create index if not exists sa_nonce on sip_authentication (nonce)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sa_hostname on sip_authentication (hostname)", NULL, NULL, NULL);
-
-		switch_core_db_exec(db, "create index if not exists sr_1 on sip_recovery (runtime_uuid)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_2 on sip_recovery (profile_name)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_3 on sip_recovery (hostname)", NULL, NULL, NULL);
-		switch_core_db_exec(db, "create index if not exists sr_4 on sip_recovery (uuid)", NULL, NULL, NULL);
-
+		free(test2);
 	}
 
-	if (odbc_dbh) {
-		switch_odbc_handle_destroy(&odbc_dbh);
-		return 1;
+	free(test_sql);
+
+
+	test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip like '%%' and network_port like '%%'",
+							  mod_sofia_globals.hostname);
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
+
+	free(test_sql);
+	test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999 or rpid=''", mod_sofia_globals.hostname);
+
+
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
+		
+	free(test_sql);
+	test_sql = switch_mprintf("delete from sip_presence where hostname='%q' or open_closed=''", mod_sofia_globals.hostname);
+
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_presence", pres_sql);
+
+	free(test_sql);
+	test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
+
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_authentication", auth_sql);
+
+	free(test_sql);
+	test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q' and network_ip like '%%'",
+							  mod_sofia_globals.hostname);
+
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
+
+	free(test_sql);
+	test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str='' or hostname='%q' and network_ip like '%%'",
+							  mod_sofia_globals.hostname);
+
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_shared_appearance_dialogs", shared_appearance_dialogs_sql);
+		
+	free(test_sql);
+	test_sql = switch_mprintf("select count(profile_name) from sip_recovery where hostname='%q'", mod_sofia_globals.hostname);
+
+
+	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_recovery", recovery_sql);
+	free(test_sql);
+
+	for (x = 0; indexes[x]; x++) {
+		switch_cache_db_execute_sql(dbh, indexes[x], NULL);
 	}
 
-	if (db) {
-		switch_core_db_close(db);
-		return 1;
-	}
+	switch_cache_db_release_db_handle(&dbh);
 
-	return 0;
+	return 1;
 
 }
 

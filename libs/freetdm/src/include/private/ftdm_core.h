@@ -340,6 +340,21 @@ typedef enum {
 	FTDM_TYPE_CHANNEL
 } ftdm_data_type_t;
 
+#ifdef FTDM_DEBUG_DTMF
+/* number of bytes for the circular buffer (5 seconds worth of audio) */
+#define DTMF_DEBUG_SIZE 8 * 5000
+/* number of 20ms cycles before timeout and close the debug dtmf file (5 seconds) */
+#define DTMF_DEBUG_TIMEOUT 250
+typedef struct {
+	FILE *file;
+	char buffer[DTMF_DEBUG_SIZE];
+	int windex;
+	int wrapped;
+	int closetimeout;
+	ftdm_mutex_t *mutex;
+} ftdm_dtmf_debug_t;
+#endif
+
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
 struct ftdm_channel {
@@ -409,6 +424,9 @@ struct ftdm_channel {
 	float txgain;
 	int availability_rate;
 	void *user_private;
+#ifdef FTDM_DEBUG_DTMF
+	ftdm_dtmf_debug_t dtmfdbg;
+#endif
 };
 
 struct ftdm_span {
@@ -439,6 +457,7 @@ struct ftdm_span {
 	fio_channel_request_t channel_request;
 	ftdm_span_start_t start;
 	ftdm_span_stop_t stop;
+	ftdm_channel_sig_read_t sig_read;
 	void *mod_data;
 	char *type;
 	char *dtmf_hangup;
@@ -649,6 +668,18 @@ static __inline__ void ftdm_clear_flag_all(ftdm_span_t *span, uint32_t flag)
 		ftdm_clear_flag_locked((span->channels[j]), flag);
 	}
 	ftdm_mutex_unlock(span->mutex);
+}
+
+static __inline__ int16_t ftdm_saturated_add(int16_t sample1, int16_t sample2)
+{
+	int addres;
+
+	addres = sample1 + sample2;
+	if (addres > 32767)
+		addres = 32767;
+	else if (addres < -32767)
+		addres = -32767;
+	return (int16_t)addres;
 }
 
 #ifdef __cplusplus

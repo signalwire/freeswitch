@@ -145,6 +145,7 @@
 	<action application="hash" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial/${caller_id_number}/${destination_number}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial/global/${uuid}"/>
+	<action application="set" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
       </condition>
     </extension>
 
@@ -269,7 +270,7 @@
     </extension>
 
     <extension name="Local_Extension_Skinny">
-      <condition field="destination_number" expression="^(20[01][0-9])$">
+      <condition field="destination_number" expression="^(11[01][0-9])$">
         <action application="bridge" data="skinny/internal/${destination_number}"/>
       </condition>
     </extension>

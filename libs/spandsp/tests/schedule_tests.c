@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: schedule_tests.c,v 1.20 2008/11/30 05:43:37 steveu Exp $
  */
 
 /*! \page schedule_tests_page Event scheduler tests

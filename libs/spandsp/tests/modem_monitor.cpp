@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: modem_monitor.cpp,v 1.17 2008/09/04 14:40:05 steveu Exp $
  */
 
 #ifdef HAVE_CONFIG_H

@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: adsi.c,v 1.77 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \file */

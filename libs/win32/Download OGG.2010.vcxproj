@@ -65,11 +65,11 @@
   <ItemGroup>
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading Lame.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading OGG.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\libogg-1.1.3" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://downloads.xiph.org/releases/ogg/libogg-1.1.3.tar.gz "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\libogg-1.1.3;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading Lame.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading OGG.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\libogg-1.1.3" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://downloads.xiph.org/releases/ogg/libogg-1.1.3.tar.gz "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\libogg-1.1.3;%(Outputs)</Outputs>

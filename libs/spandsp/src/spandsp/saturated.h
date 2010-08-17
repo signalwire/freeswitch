@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: saturated.h,v 1.4 2009/02/05 12:21:36 steveu Exp $
  */
 
 /*! \file */
@@ -44,7 +42,22 @@ extern "C"
 {
 #endif
 
+/* This is the same as saturate16(), but is here for historic reasons */
 static __inline__ int16_t saturate(int32_t amp)
+{
+    int16_t amp16;
+
+    /* Hopefully this is optimised for the common case - not clipping */
+    amp16 = (int16_t) amp;
+    if (amp == amp16)
+        return amp16;
+    if (amp > INT16_MAX)
+        return INT16_MAX;
+    return INT16_MIN;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int16_t saturate16(int32_t amp)
 {
     int16_t amp16;
 
@@ -66,6 +79,34 @@ static __inline__ int16_t saturate15(int32_t amp)
     if (amp < -16384)
         return -16384;
     return (int16_t) amp;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ uint16_t saturateu16(int32_t amp)
+{
+    uint16_t amp16;
+
+    /* Hopefully this is optimised for the common case - not clipping */
+    amp16 = (uint16_t) amp;
+    if (amp == amp16)
+        return amp16;
+    if (amp > UINT16_MAX)
+        return UINT16_MAX;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ uint8_t saturateu8(int32_t amp)
+{
+    uint8_t amp8;
+
+    /* Hopefully this is optimised for the common case - not clipping */
+    amp8 = (uint8_t) amp;
+    if (amp == amp8)
+        return amp8;
+    if (amp > UINT8_MAX)
+        return UINT8_MAX;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -135,7 +176,7 @@ static __inline__ double ffsaturate(double famp)
 
 static __inline__ int16_t saturated_add16(int16_t a, int16_t b)
 {
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(
         " addw %2,%0;\n"
         " jno 0f;\n"
@@ -147,6 +188,15 @@ static __inline__ int16_t saturated_add16(int16_t a, int16_t b)
         : "cc"
     );
     return a;
+#elif defined(__GNUC__)  &&  defined(__arm5__)
+    int16_t result;
+
+    __asm__ __volatile__(
+        " sadd16 %0,%1,%2;\n"
+        : "=r" (result)
+        : "0" (a), "ir" (b)
+    );
+    return result;
 #else
     return saturate((int32_t) a + (int32_t) b);
 #endif
@@ -155,7 +205,7 @@ static __inline__ int16_t saturated_add16(int16_t a, int16_t b)
 
 static __inline__ int32_t saturated_add32(int32_t a, int32_t b)
 {
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(
         " addl %2,%0;\n"
         " jno 0f;\n"
@@ -167,30 +217,92 @@ static __inline__ int32_t saturated_add32(int32_t a, int32_t b)
         : "cc"
     );
     return a;
-#else
-    uint32_t A;
+#elif defined(__GNUC__)  &&  defined(__arm5__)
+    int32_t result;
 
-    if (a < 0)
+    __asm__ __volatile__(
+        " qadd %0,%1,%2;\n"
+        : "=r" (result)
+        : "0" (a), "ir" (b)
+    );
+    return result;
+#else
+    int32_t sum;
+
+    sum = a + b;
+    if ((a ^ b) >= 0)
     {
-        if (b >= 0)
-            return  a + b;
-        /*endif*/
-        A = (uint32_t) -(a + 1) + (uint32_t) -(b + 1);
-        return (A >= INT32_MAX)  ?  INT32_MIN  :  -(int32_t) A - 2;
+        if ((sum ^ a) < 0)
+            sum = (a < 0)  ?  INT32_MIN  :  INT32_MAX;
     }
-    /*endif*/
-    if (b <= 0)
-        return  a + b;
-    /*endif*/
-    A = (uint32_t) a + (uint32_t) b;
-    return (A > INT32_MAX)  ?  INT32_MAX  :  A;
+    return sum;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static __inline__ int16_t saturated_sub16(int16_t a, int16_t b)
 {
+#if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
+    __asm__ __volatile__(
+        " subw %2,%0;\n"
+        " jno 0f;\n"
+        " movw $0x8000,%0;\n"
+        " sbbw $0,%0;\n"
+        "0:"
+        : "=r" (a)
+        : "0" (a), "ir" (b)
+        : "cc"
+    );
+    return a;
+#elif defined(__GNUC__)  &&  defined(__arm5__)
+    int16_t result;
+
+    __asm__ __volatile__(
+        " ssub16 %0,%1,%2;\n"
+        : "=r" (result)
+        : "0" (a), "ir" (b)
+    );
+    return result;
+#else
     return saturate((int32_t) a - (int32_t) b);
+#endif
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int32_t saturated_sub32(int32_t a, int32_t b)
+{
+#if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
+    __asm__ __volatile__(
+        " subl %2,%0;\n"
+        " jno 0f;\n"
+        " movl $0x80000000,%0;\n"
+        " sbbl $0,%0;\n"
+        "0:"
+        : "=r" (a)
+        : "0" (a), "ir" (b)
+        : "cc"
+    );
+    return a;
+#elif defined(__GNUC__)  &&  defined(__arm5__)
+    int32_t result;
+
+    __asm__ __volatile__(
+        " qsub %0,%1,%2;\n"
+        : "=r" (result)
+        : "0" (a), "ir" (b)
+    );
+    return result;
+#else
+    int32_t diff;
+
+    diff = a - b;
+    if ((a ^ b) < 0)
+    {
+        if ((diff ^ a) & INT32_MIN)
+            diff = (a < 0L)  ?  INT32_MIN  :  INT32_MAX;
+    }
+    return diff;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -203,7 +315,7 @@ static __inline__ int16_t saturated_mul16(int16_t a, int16_t b)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t saturated_mul_16_32(int16_t a, int16_t b)
+static __inline__ int32_t saturated_mul16_32(int16_t a, int16_t b)
 {
     return ((int32_t) a*(int32_t) b) << 1;
 }

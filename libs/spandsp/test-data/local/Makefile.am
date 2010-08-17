@@ -15,8 +15,6 @@
 ## You should have received a copy of the GNU Lesser General Public
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: Makefile.am,v 1.1 2008/05/03 07:30:19 steveu Exp $
 
 SUBDIRS =
 
@@ -24,6 +22,7 @@ DIST_SUBDIRS =
 
 EXTRA_DIST = dam9_lpc55.wav \
              dam9.wav \
+             lenna-colour.tif \
              short_nb_voice.wav \
              short_wb_voice.wav
 

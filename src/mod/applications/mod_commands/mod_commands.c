@@ -247,6 +247,19 @@ SWITCH_STANDARD_API(time_test_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(msleep_function)
+{
+	if (cmd) {
+		long ms = atol(cmd);
+		switch_yield(ms * 1000);
+	}
+
+	stream->write_function(stream, "+OK");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define TIMER_TEST_SYNTAX "<10|20|40|60|120> [<1..200>] [<timer_name>]"
 
 SWITCH_STANDARD_API(timer_test_function)
@@ -298,6 +311,13 @@ SWITCH_STANDARD_API(timer_test_function)
 		stream->write_function(stream, "Timer Error!\n");
 		goto end;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: samplecount after init: %d\n", timer.samplecount);
+
+	/* Step timer once before testing results below, to get first timestamp as accurate as possible */
+	switch_core_timer_next(&timer);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: samplecount after first step: %d\n", timer.samplecount);
 
 	start = switch_time_ref();
 	for (x = 1; x <= max; x++) {
@@ -3983,7 +4003,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 					switch_xml_t xml;
 					switch_channel_event_set_data(channel, event);
 					if (!strcasecmp(format, "xml")) {
-						if ((xml = switch_event_xmlize(event, "%s", ""))) {
+						if ((xml = switch_event_xmlize(event, SWITCH_VA_NONE))) {
 							buf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {
@@ -4227,7 +4247,7 @@ SWITCH_STANDARD_API(sql_escape)
 }
 
 /* LIMIT Stuff */
-#define LIMIT_USAGE_USAGE "<backend> <realm> <id> [rate]"
+#define LIMIT_USAGE_SYNTAX "<backend> <realm> <id> [rate]"
 SWITCH_STANDARD_API(limit_usage_function)
 {
 	int argc = 0;
@@ -4255,7 +4275,7 @@ SWITCH_STANDARD_API(limit_usage_function)
 	}
 	
 	if (argc < 3) {
-		stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
+		stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_SYNTAX);
 		goto end;
 	}
 
@@ -4279,20 +4299,23 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define LIMIT_HASH_USAGE_USAGE "<realm> <id> [rate] (Using deprecated limit api, check limit_usage with backend param)"
+#define LIMIT_HASH_USAGE_SYNTAX "<realm> <id> [rate] (Using deprecated limit api, check limit_usage with backend param)"
 SWITCH_STANDARD_API(limit_hash_usage_function)
 {
 	char *mydata = NULL;
+	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	if (!zstr(cmd)) {
-		mydata = switch_core_session_sprintf(session, "hash %s", cmd);
-		return limit_usage_function(mydata, session, stream);
+		mydata = switch_mprintf("hash %s", cmd);
+		ret = limit_usage_function(mydata, session, stream);
+		switch_safe_free(mydata);
+		return ret;
 	} else {
-		stream->write_function(stream, "USAGE: limit_hash_usage %s\n", LIMIT_HASH_USAGE_USAGE);
+		stream->write_function(stream, "USAGE: limit_hash_usage %s\n", LIMIT_HASH_USAGE_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
 
-#define LIMIT_STATUS_USAGE "<backend>"
+#define LIMIT_STATUS_SYNTAX "<backend>"
 SWITCH_STANDARD_API(limit_status_function)
 {
 	int argc = 0;
@@ -4307,7 +4330,7 @@ SWITCH_STANDARD_API(limit_status_function)
 	}
 
 	if (argc < 1) {
-		stream->write_function(stream, "USAGE: limit_status %s\n", LIMIT_STATUS_USAGE);
+		stream->write_function(stream, "USAGE: limit_status %s\n", LIMIT_STATUS_SYNTAX);
 		goto end;
 	}
 	
@@ -4322,7 +4345,7 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define LIMIT_RESET_USAGE "<backend>"
+#define LIMIT_RESET_SYNTAX "<backend>"
 SWITCH_STANDARD_API(limit_reset_function)
 {
 	int argc = 0;
@@ -4337,13 +4360,88 @@ SWITCH_STANDARD_API(limit_reset_function)
 	}
 
 	if (argc < 1) {
-		stream->write_function(stream, "USAGE: limit_reset %s\n", LIMIT_RESET_USAGE);
+		stream->write_function(stream, "USAGE: limit_reset %s\n", LIMIT_RESET_SYNTAX);
 		goto end;
 	}
 	
 	ret = switch_limit_reset(argv[0]);
 
 	stream->write_function(stream, "%s", (ret == SWITCH_STATUS_SUCCESS) ? "+OK" : "-ERR");
+
+end:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define LIMIT_RELEASE_SYNTAX "<uuid> <backend> [realm] [resource]"
+SWITCH_STANDARD_API(uuid_limit_release_function)
+{
+	int argc = 0;
+	char *argv[5] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *resource = NULL;
+	switch_core_session_t *sess = NULL;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 2) {
+		stream->write_function(stream, "USAGE: uuid_limit_release %s\n", LIMIT_RELEASE_SYNTAX);
+		goto end;
+	}
+
+	if (argc > 2) {
+		realm = argv[2];
+	}
+
+	if (argc > 3) {
+		resource = argv[3];
+	}
+
+	sess = switch_core_session_locate(argv[0]);
+	if (!sess) {
+		stream->write_function(stream, "-ERR did not find a session with uuid %s\n", argv[0]);
+		goto end;
+	}
+
+	switch_limit_release(argv[1], sess, realm, resource);
+
+	switch_core_session_rwunlock(sess);
+	
+	stream->write_function(stream, "+OK");
+
+end:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define LIMIT_INTERVAL_RESET_SYNTAX "<backend> <realm> <resource>"
+SWITCH_STANDARD_API(limit_interval_reset_function)
+{
+	int argc = 0;
+	char *argv[5] = { 0 };
+	char *mydata = NULL;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 3) {
+		stream->write_function(stream, "USAGE: limit_interval_reset %s\n", LIMIT_INTERVAL_RESET_SYNTAX);
+		goto end;
+	}
+
+	switch_limit_interval_reset(argv[0], argv[1], argv[2]);
+
+	stream->write_function(stream, "+OK");
 
 end:
 	switch_safe_free(mydata);
@@ -4443,10 +4541,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "limit_hash_usage", "Deprecated: gets the usage count of a limited resource", limit_hash_usage_function, "<realm> <id>");
 	SWITCH_ADD_API(commands_api_interface, "limit_status", "Gets the status of a limit backend", limit_status_function, "<backend>");
 	SWITCH_ADD_API(commands_api_interface, "limit_reset", "Reset the counters of a limit backend", limit_reset_function, "<backend>");
+	SWITCH_ADD_API(commands_api_interface, "limit_interval_reset", "Reset the interval counter for a limited resource", limit_interval_reset_function, LIMIT_INTERVAL_RESET_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "log", "Log", log_function, LOG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
+	SWITCH_ADD_API(commands_api_interface, "msleep", "sleep N milliseconds", msleep_function, "<milliseconds>");
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
@@ -4491,6 +4591,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
@@ -4597,6 +4698,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_getvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
 	switch_console_set_complete("add uuid_kill ::console::list_uuid");
+	switch_console_set_complete("add uuid_limit_release ::console::list_uuid");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid console");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid alert");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid crit");

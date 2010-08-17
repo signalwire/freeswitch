@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: generate_etsi_300_242_pages.c,v 1.5 2009/03/23 14:34:13 steveu Exp $
  */
 
 /*! \file */
@@ -274,7 +272,7 @@ static int create_stairstep_page(TIFF *tiff_file)
 
 static int create_diago1_page(TIFF *tiff_file)
 {
-    uint8_t image_buffer[1728/8];
+    uint8_t image_buffer[1728/8 + 1];
     int row;
 
     /* ETSI ETS 300 242 B.5.1 One dimensional coding test chart - the DIAGO1 page. */
@@ -301,7 +299,7 @@ static int create_diago1_page(TIFF *tiff_file)
 
 static int create_diago2_page(TIFF *tiff_file)
 {
-    uint8_t image_buffer[1728/8];
+    uint8_t image_buffer[1728/8 + 1];
     int row;
 
     /* ETSI ETS 300 242 B.5.1 One dimensional coding test chart - the DIAGO2 page. */
@@ -396,7 +394,7 @@ static int create_impress_page(TIFF *tiff_file)
 
 static int create_duration1_page(TIFF *tiff_file)
 {
-    uint8_t image_buffer[1728/8];
+    uint8_t image_buffer[1728/8 + 1];
     int row;
     int i;
 
@@ -468,7 +466,7 @@ static int create_duration2_page(TIFF *tiff_file)
 
 static int create_error_page(TIFF *tiff_file)
 {
-    uint8_t image_buffer[1728/8];
+    uint8_t image_buffer[1728/8 + 1];
     int row;
     int start_pixel;
     int i;

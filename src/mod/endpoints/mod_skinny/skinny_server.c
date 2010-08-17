@@ -177,10 +177,12 @@ error:
 		switch_core_session_destroy(&nsession);
 	}
 
+	listener->profile->ib_failed_calls++;
 	return SWITCH_STATUS_FALSE;
 
 done:
 	*session = nsession;
+	listener->profile->ib_calls++;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -595,6 +597,7 @@ switch_status_t skinny_session_ring_out(switch_core_session_t *session, listener
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
+	send_start_tone(listener, SKINNY_TONE_ALERT, 0, line_instance, tech_pvt->call_id);
 	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_RING_OUT);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id,
 	    SKINNY_KEY_SET_RING_OUT, 0xffff);
@@ -898,8 +901,8 @@ switch_status_t skinny_hold_active_calls(listener_t *listener)
 				"ON skinny_active_lines.device_name = skinny_lines.device_name "
 				"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
 				"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-			"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d AND call_state=%d",
-			listener->device_name, listener->device_instance, SKINNY_CONNECTED))) {
+			"WHERE skinny_lines.device_name='%s' AND skinny_lines.device_instance=%d AND (call_state=%d OR call_state=%d)",
+			listener->device_name, listener->device_instance, SKINNY_PROCEED, SKINNY_CONNECTED))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_hold_active_calls_callback, &helper);
 		switch_safe_free(sql);
 	}
@@ -1263,10 +1266,18 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 
 	if(session) {
 		switch_channel_t *channel = NULL;
+		private_t *tech_pvt = NULL;
 
 		channel = switch_core_session_get_channel(session);
+		tech_pvt = switch_core_session_get_private(session);
 
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		if (tech_pvt->transfer_from_call_id) { /* blind transfer */
+			status = skinny_session_transfer(session, listener, line_instance);
+		} else {
+			if (skinny_line_get_state(listener, line_instance, call_id) != SKINNY_IN_USE_REMOTELY) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
+		}
 	}
 
 	if(session) {
@@ -1654,7 +1665,9 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 			);
 
 		switch_set_flag_locked(tech_pvt, TFLAG_IO);
-		switch_channel_mark_answered(channel);
+		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			switch_channel_mark_answered(channel);
+		}
 		if (switch_channel_test_flag(channel, CF_HOLD)) {
 			switch_ivr_unhold(session);
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
@@ -1913,9 +1926,11 @@ switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_
 
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-		"Received %s (type=%x,length=%d) from %s:%d.\n", skinny_message_type2str(request->type), request->type, request->length,
-		listener->device_name, listener->device_instance);
+	if (listener->profile->debug >= 10 || request->type != KEEP_ALIVE_MESSAGE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			"Received %s (type=%x,length=%d) from %s:%d.\n", skinny_message_type2str(request->type), request->type, request->length,
+			listener->device_name, listener->device_instance);
+	}
 	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			"Device should send a register message first.\n");

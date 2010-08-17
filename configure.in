@@ -38,13 +38,19 @@ AC_ARG_WITH([modinstdir],
 AC_SUBST(modulesdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the modules to])
 
+if test "$localstatedir" = "\${prefix}/var" ; then
+    rundir="$prefix/run"
+    logfiledir="${prefix}/log"
+else
+    rundir="$localstatedir/run/freeswitch"
+    logfiledir="$localstatedir/log/freeswitch"
+fi
 # Where to put pidfile
 AC_ARG_WITH([rundir],
-	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/run)])], [runtimedir="$withval"], [runtimedir="${prefix}/run"])
+	[AS_HELP_STRING([--with-rundir=DIR], [Put pidfile into this location (default: $prefix/run)])], [runtimedir="$withval"], [runtimedir="$rundir"])
 AC_SUBST(runtimedir)
 AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${runtimedir}",[where to put pidfile to])
 
-logfiledir="${prefix}/log"
 AC_SUBST(logfiledir)
 AC_DEFINE_UNQUOTED([SWITCH_LOG_DIR],"${logfiledir}",[where to put log files])
 
@@ -725,16 +731,16 @@ AC_ARG_WITH(libcurl,
  AC_HELP_STRING([--with-libcurl=DIR],[look for the curl library in DIR]),
  [_libcurl_with=$withval],[_libcurl_with=ifelse([$1],,[yes],[$1])])
 
+AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_use_system_curl], [
+  LIBCURL_CHECK_CONFIG([yes], [7.13.0], [ac_cv_use_system_curl='yes'], [ac_cv_use_system_curl='no']) 
+])
+
 if test "$_libcurl_with" = "no" ; then
   ac_cv_use_system_curl=no;
 fi
 if test "$_libcurl_with" = "yes" ; then
   ac_cv_use_system_curl=yes;
 fi
-
-AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_use_system_curl], [
-  LIBCURL_CHECK_CONFIG([yes], [7.13.0], [ac_cv_use_system_curl='yes'], [ac_cv_use_system_curl='no']) 
-])
 
 if test "$ac_cv_use_system_curl" != "yes" ; then
  LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la'

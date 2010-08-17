@@ -1608,7 +1608,7 @@ static jsval check_hangup_hook(struct js_session *jss, jsval * rp)
 	jsval ret = JS_TRUE;
 	char *resp;
 
-	if (!jss->check_state && jss->on_hangup && (jss->hook_state == CS_HANGUP || jss->hook_state == CS_ROUTING)) {
+	if (jss && !jss->check_state && jss->on_hangup && (jss->hook_state == CS_HANGUP || jss->hook_state == CS_ROUTING)) {
 		jss->check_state++;
 		argv[argc++] = OBJECT_TO_JSVAL(jss->obj);
 		if (jss->hook_state == CS_HANGUP) {
@@ -1633,11 +1633,11 @@ static jsval check_hangup_hook(struct js_session *jss, jsval * rp)
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
 	struct js_session *jss = NULL;
 
-	if ((jss = switch_channel_get_private(channel, "jss"))) {
-		switch_channel_state_t state = switch_channel_get_state(channel);
-		if (jss->hook_state != state) {
+	if (state == CS_HANGUP || state == CS_ROUTING) {
+		if ((jss = switch_channel_get_private(channel, "jss"))) {
 			jss->hook_state = state;
 			jss->check_state = 0;
 		}
@@ -2375,21 +2375,30 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
-	CHANNEL_SANITY_CHECK();
+	//CHANNEL_SANITY_CHECK();
 
-	if (argc > 1) {
-		if (JSVAL_IS_INT(argv[0])) {
-			int32 i = 0;
-			JS_ValueToInt32(cx, argv[0], &i);
-			cause = i;
-		} else {
-			cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-			cause = switch_channel_str2cause(cause_name);
+	if (switch_channel_up(channel)) {
+		jsval ret = JS_TRUE;
+
+		if (argc > 1) {
+			if (JSVAL_IS_INT(argv[0])) {
+				int32 i = 0;
+				JS_ValueToInt32(cx, argv[0], &i);
+				cause = i;
+			} else {
+				cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+				cause = switch_channel_str2cause(cause_name);
+			}
 		}
+
+		switch_channel_hangup(channel, cause);
+		switch_core_session_kill_channel(jss->session, SWITCH_SIG_KILL);
+
+		jss->hook_state = CS_HANGUP;
+		check_hangup_hook(jss, &ret);
+
 	}
 
-	switch_channel_hangup(channel, cause);
-	switch_core_session_kill_channel(jss->session, SWITCH_SIG_KILL);
 	return JS_TRUE;
 }
 
@@ -3051,6 +3060,7 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
+
 			JS_SetPrivate(cx, obj, NULL);
 			if (jss->speech && *jss->speech->sh.name) {
 				destroy_speech_engine(jss);
@@ -3623,7 +3633,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	const char *script;
 	int argc = 0, x = 0, y = 0;
 	unsigned int flags = 0;
-	struct js_session *jss;
+	struct js_session *jss = NULL;
 	JSContext *cx = NULL;
 	jsval rval;
 

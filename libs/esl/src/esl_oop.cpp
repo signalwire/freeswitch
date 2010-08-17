@@ -351,6 +351,10 @@ const char *ESLevent::serialize(const char *format)
 
 	esl_safe_free(serialized_string);
 	
+	if (format == NULL) {
+		format = "text";
+	}
+	
 	if (!event) {
 		return "";
 	}

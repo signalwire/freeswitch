@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax_utils.c,v 1.3.4.1 2009/12/19 09:47:57 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -91,16 +89,17 @@ void log_transfer_statistics(t30_state_t *s, const char *tag)
     t30_stats_t t;
 
     t30_get_transfer_statistics(s, &t);
-    printf("%s: bit rate %d\n", tag, t.bit_rate);
-    printf("%s: ECM %s\n", tag, (t.error_correcting_mode)  ?  "on"  :  "off");
     printf("%s: tx pages %d, rx pages %d\n", tag, t.pages_tx, t.pages_rx);
     printf("%s: pages in the file %d\n", tag, t.pages_in_file);
+    printf("%s: compression type %s (%d)\n", tag, t4_encoding_to_str(t.encoding), t.encoding);
+    printf("%s: compressed image size %d bytes\n", tag, t.image_size);
     printf("%s: image size %d pels x %d pels\n", tag, t.width, t.length);
     printf("%s: image resolution %d pels/m x %d pels/m\n", tag, t.x_resolution, t.y_resolution);
+    printf("%s: bit rate %d\n", tag, t.bit_rate);
+    printf("%s: ECM %s\n", tag, (t.error_correcting_mode)  ?  "on"  :  "off");
     printf("%s: bad rows %d, longest bad row run %d\n", tag, t.bad_rows, t.longest_bad_row_run);
     printf("%s: bad ECM frames %d\n", tag, t.error_correcting_mode_retries);
-    printf("%s: compression type %d\n", tag, t.encoding);
-    printf("%s: image size %d bytes\n", tag, t.image_size);
+    //printf("%s: RTP events %d. RTN events %d\n", tag, t.rtp_events, t.rtn_events);
 #if defined(WITH_SPANDSP_INTERNALS)
     printf("%s: bits per row - min %d, max %d\n", tag, s->t4.min_row_bits, s->t4.max_row_bits);
 #endif

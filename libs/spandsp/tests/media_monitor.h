@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: media_monitor.h,v 1.6 2008/04/26 13:39:17 steveu Exp $
  */
 
 /*! \page media_monitor_page IP streaming media performance monitoring

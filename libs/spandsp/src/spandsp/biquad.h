@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: biquad.h,v 1.14 2008/04/17 14:26:59 steveu Exp $
  */
 
 /*! \page biquad_page Bi-quadratic filter sections

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t30_dis_dtc_dcs_bits.h,v 1.1.4.1 2009/12/19 09:47:57 steveu Exp $
  */
 
 /*! \file */

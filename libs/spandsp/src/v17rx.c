@@ -289,6 +289,7 @@ static void tune_equalizer(v17_rx_state_t *s, const complexf_t *z, const complex
     cvec_circular_lmsf(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step, &err);
 }
 #endif
+/*- End of function --------------------------------------------------------*/
 
 static int descramble(v17_rx_state_t *s, int in_bit)
 {
@@ -1370,8 +1371,8 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
 #endif
     }
     s->last_sample = 0;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Phase rates %f %f\n", dds_frequencyf(s->carrier_phase_rate), dds_frequencyf(s->carrier_phase_rate_save));
     span_log(&s->logging, SPAN_LOG_FLOW, "Gains %f %f\n", s->agc_scaling_save, s->agc_scaling);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Phase rates %f %f\n", dds_frequencyf(s->carrier_phase_rate), dds_frequencyf(s->carrier_phase_rate_save));
 
     /* Initialise the working data for symbol timing synchronisation */
 #if defined(SPANDSP_USE_FIXED_POINTx)

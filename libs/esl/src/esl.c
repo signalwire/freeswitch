@@ -34,6 +34,7 @@
 #include <esl.h>
 #ifndef WIN32
 #define closesocket(x) close(x)
+#include <fcntl.h>
 #else
 #include <Ws2tcpip.h>
 #endif
@@ -606,13 +607,15 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 }
 
-ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password)
+ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, uint32_t timeout)
 {
 	char sendbuf[256];
 	int rval = 0;
 	const char *hval;
 	struct addrinfo hints = { 0 }, *result;
-#ifdef WIN32
+#ifndef WIN32
+	int fd_flags;
+#else
 	WORD wVersionRequested = MAKEWORD(2, 0);
 	WSADATA wsaData;
 	int err = WSAStartup(wVersionRequested, &wsaData);
@@ -643,13 +646,72 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 		goto fail;
 	}
 
-	memcpy(&handle->sockaddr, result->ai_addr, result->ai_addrlen);	
+	memcpy(&handle->sockaddr, result->ai_addr, sizeof(handle->sockaddr));	
 	handle->sockaddr.sin_family = AF_INET;
 	handle->sockaddr.sin_port = htons(port);
+	freeaddrinfo(result);
+
+	if (timeout) {
+#ifdef WIN32
+		u_long arg = 1;
+		if (ioctlsocket(handle->sock, FIONBIO, &arg) == SOCKET_ERROR) {
+			snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+			goto fail;
+		}
+#else
+		fd_flags = fcntl(handle->sock, F_GETFL, 0);
+		if (fcntl(handle->sock, F_SETFL, fd_flags | O_NONBLOCK)) {
+			snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+			goto fail;
+		}
+#endif
+	}
 
 	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, sizeof(handle->sockaddr));
 	
-	freeaddrinfo(result);
+	if (timeout) {
+		fd_set wfds;
+		struct timeval tv;
+		int r;
+
+		tv.tv_sec = timeout / 1000;
+		tv.tv_usec = (timeout % 1000) * 1000;
+		FD_ZERO(&wfds);
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(handle->sock, &wfds);
+#pragma warning( pop ) 
+#else
+        FD_SET(handle->sock, &wfds);
+#endif
+
+        r = select(handle->sock + 1, NULL, &wfds, NULL, &tv);
+		
+		if (r <= 0) {
+			snprintf(handle->err, sizeof(handle->err), "Connection timed out");
+			goto fail;
+		}
+
+		if (!FD_ISSET(handle->sock, &wfds)) {
+			snprintf(handle->err, sizeof(handle->err), "Connection timed out");
+			goto fail;
+		}
+
+#ifdef WIN32
+		{
+			u_long arg = 0;
+			if (ioctlsocket(handle->sock, FIONBIO, &arg) == SOCKET_ERROR) {
+				snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+				goto fail;
+			}
+		}
+#else
+		fcntl(handle->sock, F_SETFL, fd_flags);
+#endif	
+		rval = 0;
+	}
+	
 	result = NULL;
 	
 	if (rval) {
@@ -661,7 +723,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 
 	handle->connected = 1;
 
-	if (esl_recv(handle)) {
+	if (esl_recv_timed(handle, timeout)) {
 		snprintf(handle->err, sizeof(handle->err), "Connection Error");
 		goto fail;
 	}
@@ -682,7 +744,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 	esl_send(handle, sendbuf);
 
 	
-	if (esl_recv(handle)) {
+	if (esl_recv_timed(handle, timeout)) {
 		snprintf(handle->err, sizeof(handle->err), "Authentication Error");
 		goto fail;
 	}
@@ -748,6 +810,10 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	struct timeval tv = { 0 };
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
+	
+	if (!ms) {
+		return esl_recv_event(handle, check_q, save_event);
+	}
 
 	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
@@ -763,7 +829,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	}
 
 	tv.tv_usec = ms * 1000;
-
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&efds);
@@ -1090,7 +1155,7 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 }
 
 
-ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
+ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *cmd, uint32_t ms)
 {
 	const char *hval;
 	esl_status_t status;
@@ -1120,7 +1185,7 @@ ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 
  recv:	
 
-	status = esl_recv_event(handle, 0, &handle->last_sr_event);
+	status = esl_recv_event_timed(handle, ms, 0, &handle->last_sr_event);
 
 	if (handle->last_sr_event) {
 		char *ct = esl_event_get_header(handle->last_sr_event,"content-type");

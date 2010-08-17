@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: testcpuid.c,v 1.13 2009/01/05 13:48:31 steveu Exp $
  */
 
 /*! \file */

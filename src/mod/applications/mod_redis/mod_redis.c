@@ -300,7 +300,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_redis_load)
 	/* If FreeSWITCH was restarted and we still have active calls, decrement them so our global count stays valid */
 	limit_reset_redis();
 	
-	SWITCH_ADD_LIMIT(limit_interface, "redis", limit_incr_redis, limit_release_redis, limit_usage_redis, limit_reset_redis, limit_status_redis);
+	SWITCH_ADD_LIMIT(limit_interface, "redis", limit_incr_redis, limit_release_redis, limit_usage_redis, limit_reset_redis, limit_status_redis, NULL);
 	
 	return SWITCH_STATUS_SUCCESS;
 }

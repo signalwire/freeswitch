@@ -427,6 +427,10 @@ static FIO_CHANNEL_REQUEST_FUNCTION(sangoma_boost_channel_request)
 	event.called.ton = caller_data->dnis.type;
 	event.called.npi = caller_data->dnis.plan;
 
+	/* we're making a contract now that FreeTDM values for capability, layer 1 and such will be the same as for boost */
+	event.bearer.capability = caller_data->bearer_capability;
+	event.bearer.uil1p = caller_data->bearer_layer1;
+
 	if (caller_data->raw_data_len) {
 		ftdm_set_string(event.custom_data, caller_data->raw_data);
 		event.custom_data_size = (uint16_t)caller_data->raw_data_len;
@@ -1054,6 +1058,9 @@ tryagain:
 
 	ftdmchan->caller_data.screen = event->calling.screening_ind;
 	ftdmchan->caller_data.pres = event->calling.presentation_ind;
+
+	ftdmchan->caller_data.bearer_capability = event->bearer.capability;
+	ftdmchan->caller_data.bearer_layer1 = event->bearer.uil1p;
 
 	/* more info about custom data: http://www.ss7box.com/smg_manual.html#ISUP-IN-RDNIS-NEW */
 	if (event->custom_data_size) {

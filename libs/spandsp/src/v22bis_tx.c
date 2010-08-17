@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v22bis_tx.c,v 1.64 2009/11/04 15:52:06 steveu Exp $
  */
 
 /*! \file */
@@ -52,6 +50,8 @@
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
+#include "spandsp/vector_int.h"
+#include "spandsp/complex_vector_int.h"
 #include "spandsp/async.h"
 #include "spandsp/dds.h"
 #include "spandsp/power_meter.h"
@@ -478,7 +478,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
         /* Now create and modulate the carrier */
         z = dds_complexf(&(s->tx.carrier_phase), s->tx.carrier_phase_rate);
         famp = (x.re*z.re - x.im*z.im)*s->tx.gain;
-        if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[i + s->tx.rrc_filter_step].im != 0.0f))
+        if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[s->tx.rrc_filter_step].im != 0.0f))
         {
             /* Add the guard tone */
             famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_level, 0);
@@ -625,7 +625,7 @@ SPAN_DECLARE(int) v22bis_remote_loopback(v22bis_state_t *s, int enable)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v22bis_current_bit_rate(v22bis_state_t *s)
+SPAN_DECLARE(int) v22bis_get_current_bit_rate(v22bis_state_t *s)
 {
     return s->negotiated_bit_rate;
 }

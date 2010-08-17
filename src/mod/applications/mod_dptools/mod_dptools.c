@@ -2818,6 +2818,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			myflags |= SOF_NOBLOCK;
 		}
 
+
 		switch_snprintf(stupid, sizeof(stupid), "user/%s", user);
 		if (switch_stristr(stupid, d_dest)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n",
@@ -2828,6 +2829,11 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 										cancel_cause) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
+
+			if (var_event) {
+				switch_event_del_header(var_event, "origination_uuid");
+			}
+
 
 			new_channel = switch_core_session_get_channel(*new_session);
 

@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t38_core.c,v 1.54 2009/10/09 14:53:57 steveu Exp $
  */
 
 /*! \file */
@@ -176,7 +174,7 @@ SPAN_DECLARE(const char *) t38_data_type_to_str(int data_type)
     case T38_DATA_V34_CC_1200:
         return "v34-CC-1200";
     case T38_DATA_V34_PRI_CH:
-        return "v34-pri-vh";
+        return "v34-pri-ch";
     case T38_DATA_V33_12000:
         return "v33-12000";
     case T38_DATA_V33_14400:
@@ -782,13 +780,17 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator)
     uint8_t buf[100];
     int len;
     int delay;
+    int transmissions;
 
     delay = 0;
     /* Only send an indicator if it represents a change of state. */
+    /* If the 0x100 bit is set in indicator it will bypass this test, and force transmission */
     if (s->current_tx_indicator != indicator)
     {
         /* Zero is a valid count, to suppress the transmission of indicators when the
            transport means they are not needed - e.g. TPKT/TCP. */
+        transmissions = (indicator & 0x100)  ?  1  :  s->category_control[T38_PACKET_CATEGORY_INDICATOR];
+        indicator &= 0xFF;
         if (s->category_control[T38_PACKET_CATEGORY_INDICATOR])
         {
             if ((len = t38_encode_indicator(s, buf, indicator)) < 0)
@@ -797,7 +799,7 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator)
                 return len;
             }
             span_log(&s->logging, SPAN_LOG_FLOW, "Tx %5d: indicator %s\n", s->tx_seq_no, t38_indicator_to_str(indicator));
-            s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[T38_PACKET_CATEGORY_INDICATOR]);
+            s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, transmissions);
             s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
             delay = modem_startup_time[indicator].training;
             if (s->allow_for_tep)
@@ -812,6 +814,12 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator)
 SPAN_DECLARE(int) t38_core_send_flags_delay(t38_core_state_t *s, int indicator)
 {
     return modem_startup_time[indicator].flags;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t38_core_send_training_delay(t38_core_state_t *s, int indicator)
+{
+    return modem_startup_time[indicator].training;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -935,6 +943,26 @@ SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) t38_core_restart(t38_core_state_t *s)
+{
+    /* Set the initial current receive states to something invalid, so the
+       first data received is seen as a change of state. */
+    s->current_rx_indicator = -1;
+    s->current_rx_data_type = -1;
+    s->current_rx_field_type = -1;
+
+    /* Set the initial current indicator state to something invalid, so the
+       first attempt to send an indicator will work. */
+    s->current_tx_indicator = -1;
+
+    /* We have no initial expectation of the received packet sequence number.
+       They most often start at 0 or 1 for a UDPTL transport, but random
+       starting numbers are possible. */
+    s->rx_expected_seq_no = -1;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
                                                t38_rx_indicator_handler_t *rx_indicator_handler,
                                                t38_rx_data_handler_t *rx_data_handler,
@@ -971,16 +999,6 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
     s->category_control[T38_PACKET_CATEGORY_IMAGE_DATA] = 1;
     s->category_control[T38_PACKET_CATEGORY_IMAGE_DATA_END] = 1;
 
-    /* Set the initial current receive states to something invalid, so the
-       first data received is seen as a change of state. */
-    s->current_rx_indicator = -1;
-    s->current_rx_data_type = -1;
-    s->current_rx_field_type = -1;
-
-    /* Set the initial current indicator state to something invalid, so the
-       first attempt to send an indicator will work. */
-    s->current_tx_indicator = -1;
-
     s->rx_indicator_handler = rx_indicator_handler;
     s->rx_data_handler = rx_data_handler;
     s->rx_missing_handler = rx_missing_handler;
@@ -988,10 +1006,7 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
     s->tx_packet_handler = tx_packet_handler;
     s->tx_packet_user_data = tx_packet_user_data;
 
-    /* We have no initial expectation of the received packet sequence number.
-       They most often start at 0 or 1 for a UDPTL transport, but random
-       starting numbers are possible. */
-    s->rx_expected_seq_no = -1;
+    t38_core_restart(s);
     return s;
 }
 /*- End of function --------------------------------------------------------*/

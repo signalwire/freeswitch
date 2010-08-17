@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: crc.h,v 1.5 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -66,7 +64,7 @@ SPAN_DECLARE(int) crc_itu32_append(uint8_t *buf, int len);
 */
 SPAN_DECLARE(int) crc_itu32_check(const uint8_t *buf, int len);
 
-/*! \brief Calculate the ITU/CCITT CRC-16 value in buffer.
+/*! \brief Calculate the ITU/CCITT CRC-16 value in buffer by whole bytes.
     \param buf The buffer containing the data.
     \param len The length of the frame.
     \param crc The initial CRC value. This is usually 0xFFFF, or 0 for a new block (it depends on
@@ -74,6 +72,15 @@ SPAN_DECLARE(int) crc_itu32_check(const uint8_t *buf, int len);
     \return The CRC value.
 */
 SPAN_DECLARE(uint16_t) crc_itu16_calc(const uint8_t *buf, int len, uint16_t crc);
+
+/*! \brief Calculate the ITU/CCITT CRC-16 value of some bits from a byte.
+    \param buf The buffer containing the byte of data.
+    \param len The number of bits, starting from the LSB.
+    \param crc The initial CRC value. This is usually 0xFFFF, or 0 for a new block (it depends on
+           the application). It is previous returned CRC value for the continuation of a block.
+    \return The CRC value.
+*/
+SPAN_DECLARE(uint16_t) crc_itu16_bits(uint8_t buf, int len, uint16_t crc);
 
 /*! \brief Append an ITU/CCITT CRC-16 value to a frame.
     \param buf The buffer containing the frame. This must be at least 2 bytes longer than

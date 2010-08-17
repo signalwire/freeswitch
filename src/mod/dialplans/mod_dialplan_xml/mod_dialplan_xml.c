@@ -328,8 +328,8 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 		caller_profile->context = "default";
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing %s->%s in context %s\n",
-					  caller_profile->caller_id_name, caller_profile->destination_number, caller_profile->context);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing %s <%s>->%s in context %s\n",
+					  caller_profile->caller_id_name, caller_profile->caller_id_number, caller_profile->destination_number, caller_profile->context);
 
 	/* get our handle to the "dialplan" section of the config */
 

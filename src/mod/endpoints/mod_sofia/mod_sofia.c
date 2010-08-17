@@ -1369,7 +1369,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 				}
-
+				
 				if (ok) {
 					rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
 				} else {
@@ -1679,14 +1679,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						to_host = switch_channel_get_variable(rchannel, "sip_to_host");
 						from_user = switch_channel_get_variable(channel, "sip_from_user");
 						from_host = switch_channel_get_variable(channel, "sip_from_host");
+						to_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
+						from_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					} else {
 						to_host = switch_channel_get_variable(channel, "sip_to_host");
 						from_user = switch_channel_get_variable(rchannel, "sip_from_user");
 						from_host = switch_channel_get_variable(rchannel, "sip_from_host");
+						from_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
+						to_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					}
 
-					to_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
-					from_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					switch_core_session_rwunlock(rsession);
 				}
 			}

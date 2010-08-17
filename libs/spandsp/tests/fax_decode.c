@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax_decode.c,v 1.58 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \page fax_decode_page FAX decoder
@@ -109,6 +107,32 @@ int octets_per_ecm_frame = 256;
 int error_correcting_mode = FALSE;
 int current_fallback = 0;
 
+static void decode_20digit_msg(const uint8_t *pkt, int len)
+{
+    int p;
+    int k;
+    char msg[T30_MAX_IDENT_LEN + 1];
+
+    if (len > T30_MAX_IDENT_LEN + 3)
+    {
+        fprintf(stderr, "XXX %d %d\n", len, T30_MAX_IDENT_LEN + 1);
+        msg[0] = '\0';
+        return;
+    }
+    pkt += 2;
+    p = len - 2;
+    /* Strip trailing spaces */
+    while (p > 1  &&  pkt[p - 1] == ' ')
+        p--;
+    /* The string is actually backwards in the message */
+    k = 0;
+    while (p > 1)
+        msg[k++] = pkt[--p];
+    msg[k] = '\0';
+    fprintf(stderr, "%s is: \"%s\"\n", t30_frametype(pkt[0]), msg);
+}
+/*- End of function --------------------------------------------------------*/
+
 static void print_frame(const char *io, const uint8_t *fr, int frlen)
 {
     int i;
@@ -124,6 +148,8 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     type = fr[2] & 0xFE;
     if (type == T30_DIS  ||  type == T30_DTC  ||  type == T30_DCS)
         t30_decode_dis_dtc_dcs(&t30_dummy, fr, frlen);
+    if (type == T30_CSI  ||  type == T30_TSI  ||  type == T30_PWD  ||  type == T30_SEP  ||  type == T30_SUB  ||  type == T30_SID)
+        decode_20digit_msg(fr, frlen);
     if (type == T30_NSF  ||  type == T30_NSS  ||  type == T30_NSC)
     {
         if (t35_decode(&fr[3], frlen - 3, &country, &vendor, &model))
@@ -282,8 +308,6 @@ static void t4_end(void)
 {
     t4_stats_t stats;
     int i;
-    int j;
-    int k;
 
     if (!t4_up)
         return;
@@ -291,17 +315,14 @@ static void t4_end(void)
     {
         for (i = 0;  i < 256;  i++)
         {
-            for (j = 0;  j < ecm_len[i];  j++)
-            {
-                for (k = 0;  k < 8;  k++)
-                    t4_rx_put_bit(&t4_state, (ecm_data[i][j] >> k) & 1);
-            }
-            fprintf(stderr, "%d", (ecm_len[i] < 0)  ?  0  :  1);
+            if (ecm_len[i] > 0)
+                t4_rx_put_chunk(&t4_state, ecm_data[i], ecm_len[i]);
+            fprintf(stderr, "%d", (ecm_len[i] <= 0)  ?  0  :  1);
         }
         fprintf(stderr, "\n");
     }
     t4_rx_end_page(&t4_state);
-    t4_get_transfer_statistics(&t4_state, &stats);
+    t4_rx_get_transfer_statistics(&t4_state, &stats);
     fprintf(stderr, "Pages = %d\n", stats.pages_transferred);
     fprintf(stderr, "Image size = %dx%d\n", stats.width, stats.length);
     fprintf(stderr, "Image resolution = %dx%d\n", stats.x_resolution, stats.y_resolution);
@@ -465,12 +486,12 @@ int main(int argc, char *argv[])
     }
     if (info.samplerate != SAMPLE_RATE)
     {
-        printf("    Unexpected sample rate in audio file '%s'\n", filename);
+        fprintf(stderr, "    Unexpected sample rate in audio file '%s'\n", filename);
         exit(2);
     }
     if (info.channels != 1)
     {
-        printf("    Unexpected number of channels in audio file '%s'\n", filename);
+        fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", filename);
         exit(2);
     }
 

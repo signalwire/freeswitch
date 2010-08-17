@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t38_terminal_to_gateway_tests.c,v 1.65.4.1 2009/12/19 09:47:57 steveu Exp $
  */
 
 /*! \file */
@@ -212,8 +210,8 @@ int main(int argc, char *argv[])
     const char *input_file_name;
     int i;
     int seq_no;
-    int model_no;
-    int speed_pattern_no;
+    int g1050_model_no;
+    int g1050_speed_pattern_no;
     double tx_when;
     double rx_when;
     int use_gui;
@@ -228,8 +226,8 @@ int main(int argc, char *argv[])
     use_ecm = FALSE;
     input_file_name = INPUT_FILE_NAME;
     simulate_incrementing_repeats = FALSE;
-    model_no = 0;
-    speed_pattern_no = 1;
+    g1050_model_no = 0;
+    g1050_speed_pattern_no = 1;
     use_gui = FALSE;
     use_tep = FALSE;
     feedback_audio = FALSE;
@@ -266,10 +264,10 @@ int main(int argc, char *argv[])
             supported_modems = atoi(optarg);
             break;
         case 'M':
-            model_no = optarg[0] - 'A' + 1;
+            g1050_model_no = optarg[0] - 'A' + 1;
             break;
         case 's':
-            speed_pattern_no = atoi(optarg);
+            g1050_speed_pattern_no = atoi(optarg);
             break;
         case 't':
             use_tep = TRUE;
@@ -299,12 +297,12 @@ int main(int argc, char *argv[])
     }
 
     srand48(0x1234567);
-    if ((path_a_to_b = g1050_init(model_no, speed_pattern_no, 100, 33)) == NULL)
+    if ((path_a_to_b = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
     {
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);
     }
-    if ((path_b_to_a = g1050_init(model_no, speed_pattern_no, 100, 33)) == NULL)
+    if ((path_b_to_a = g1050_init(g1050_model_no, g1050_speed_pattern_no, 100, 33)) == NULL)
     {
         fprintf(stderr, "Failed to start IP network path model\n");
         exit(2);

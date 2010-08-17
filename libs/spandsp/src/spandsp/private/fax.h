@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
  */
 
 /*! \file */
@@ -38,9 +36,11 @@ struct fax_state_s
 {
     /*! \brief The T.30 back-end */
     t30_state_t t30;
-    
+
     /*! \brief The analogue modem front-end */
     fax_modems_state_t modems;
+    /*! \brief V.8 */
+    //v8_state_t v8;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

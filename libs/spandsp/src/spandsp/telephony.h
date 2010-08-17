@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: telephony.h,v 1.18.4.2 2009/12/21 18:38:06 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TELEPHONY_H_)

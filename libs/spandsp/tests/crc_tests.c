@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: crc_tests.c,v 1.6 2008/05/13 13:17:25 steveu Exp $
  */
 
 /*! \file */
@@ -73,9 +71,12 @@ static int cook_up_msg(uint8_t *buf)
 int main(int argc, char *argv[])
 {
     int i;
+    int j;
     int len;
+    uint16_t crc16a;
+    uint16_t crc16b;
 
-    printf("HDLC module tests\n");
+    printf("CRC module tests\n");
 
     /* TODO: This doesn't check every function in the module */
     
@@ -86,6 +87,24 @@ int main(int argc, char *argv[])
         ref_len = cook_up_msg(buf);
         len = crc_itu16_append(buf, ref_len);
         if (!crc_itu16_check(buf, len))
+        {
+            printf("CRC-16 failure\n");
+            exit(2);
+        }
+    }
+    printf("Test passed.\n\n");
+    
+    printf("Testing the CRC-16 byte by byte and bit by bit routines\n");
+    for (i = 0;  i < 100;  i++)
+    {
+        ref_len = cook_up_msg(buf);
+        crc16a = 0xFFFF;
+        crc16a = crc_itu16_calc(buf, ref_len, crc16a);
+
+        crc16b = 0xFFFF;
+        for (j = 0;  j < ref_len;  j++)
+            crc16b = crc_itu16_bits(buf[j], 8, crc16b);
+        if (crc16a != crc16b)
         {
             printf("CRC-16 failure\n");
             exit(2);

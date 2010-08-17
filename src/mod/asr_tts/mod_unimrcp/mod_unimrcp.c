@@ -118,8 +118,8 @@ typedef struct mod_unimrcp_globals mod_unimrcp_globals_t;
 static mod_unimrcp_globals_t globals;
 
 /**
- * Profile-specific configuration.  This allows us to handle differing MRCP server behavior 
- * on a per-profile basis 
+ * Profile-specific configuration.  This allows us to handle differing MRCP server behavior
+ * on a per-profile basis
  */
 struct profile {
 	/** name of the profile */
@@ -224,7 +224,7 @@ static unimrcp_param_id_t *unimrcp_param_id_create(int id, switch_memory_pool_t 
 #undef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
 
 /**
- * Audio queue internals 
+ * Audio queue internals
  */
 struct audio_queue {
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
@@ -386,7 +386,7 @@ static switch_status_t synth_channel_set_params(speech_channel_t *schannel, mrcp
 static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int id, char *val, mrcp_message_t *msg, mrcp_synth_header_t *synth_hdr);
 
 /*********************************************************************************************************************************************
- * GRAMMAR : recognizer grammar management 
+ * GRAMMAR : recognizer grammar management
  */
 
 /**
@@ -564,7 +564,7 @@ static const char *skip_initial_whitespace(const char *text)
  *
  * @param audio_queue the created queue
  * @param name the name of this queue (for logging)
- * @param pool memory pool to allocate queue from 
+ * @param pool memory pool to allocate queue from
  * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if unable to allocate queue
  */
 static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const char *name, switch_memory_pool_t *pool)
@@ -682,7 +682,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
 /**
  * Read from the audio queue
  *
- * @param queue the queue to read from 
+ * @param queue the queue to read from
  * @param data the read data
  * @param data_len the amount of data requested / actual amount of data read (returned)
  * @param block 1 if blocking is allowed
@@ -834,7 +834,7 @@ static switch_status_t speech_channel_create(speech_channel_t ** schannel, const
  * @return SWITCH_STATUS_SUCCESS
  */
 static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
-{	
+{
 	if (schannel) {
 		/* Terminate the MRCP session if not already done */
 		if (schannel->mutex) {
@@ -1281,7 +1281,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 
 /**
  * Stop SPEAK/RECOGNIZE request on speech channel
- * 
+ *
  * @param schannel the channel
  * @return SWITCH_STATUS_SUCCESS if successful
  */
@@ -1471,9 +1471,9 @@ static switch_status_t speech_channel_set_state(speech_channel_t *schannel, spee
 }
 
 /**
- * Use this function to set the current channel state without locking the 
+ * Use this function to set the current channel state without locking the
  * speech channel.  Do this if you already have the speech channel locked.
- * 
+ *
  * @param schannel the channel
  * @param state the new channel state
  * @return SWITCH_STATUS_SUCCESS
@@ -1510,7 +1510,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	const char *profile_name = sh->param;
 	profile_t *profile = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
-	char name[200] = { 0 };
+	char *name = NULL;
 	switch_hash_index_t *hi = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
@@ -1518,18 +1518,26 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 					  sh->speed, sh->samples, sh->voice, sh->engine, sh->param);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "voice = %s, rate = %d\n", voice_name, rate);
 
-	/* It would be nice if FreeSWITCH let us know which session owns this handle, but it doesn't.  So, lets
-	   make our own unique name */
-	switch_snprintf(name, sizeof(name) - 1, "TTS-%d", speech_channel_number);
-	name[sizeof(name) - 1] = '\0';
+	/* Name the channel */
+	if (profile_name && strchr(profile_name, ':')) {
+		/* Profile has session name appended to it.  Pick it out */
+		profile_name = switch_core_strdup(sh->memory_pool, profile_name);
+		name = strchr(profile_name, ':');
+		*name = '\0';
+		name++;
+		name = switch_core_sprintf(sh->memory_pool, "%s TTS-%d", name, speech_channel_number);
+	} else {
+		name = switch_core_sprintf(sh->memory_pool, "TTS-%d", speech_channel_number);
+	}
 
+	/* Allocate the channel */
 	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, (uint16_t) rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 	sh->private_info = schannel;
 
-	/* try to open an MRCP channel */
+	/* Open the channel */
 	if (zstr(profile_name)) {
 		profile_name = globals.unimrcp_default_synth_profile;
 	}
@@ -1707,7 +1715,7 @@ static apt_bool_t synth_message_handler(const mrcp_app_message_t *app_message)
 }
 
 /**
- * Handle the UniMRCP responses sent to session terminate requests 
+ * Handle the UniMRCP responses sent to session terminate requests
  *
  * @param application the MRCP application
  * @param session the MRCP session
@@ -1740,7 +1748,7 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
 }
 
 /**
- * Handle the UniMRCP responses sent to channel add requests 
+ * Handle the UniMRCP responses sent to channel add requests
  *
  * @param application the MRCP application
  * @param session the MRCP session
@@ -2402,7 +2410,7 @@ static switch_status_t recog_channel_get_results(speech_channel_t *schannel, cha
 	switch_mutex_lock(schannel->mutex);
 	if (!zstr(r->result)) {
 		*result = strdup(r->result);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, *result);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, *result ? *result : "");
 		r->result = NULL;
 		r->start_of_input = 0;
 	} else if (r->start_of_input) {
@@ -2670,7 +2678,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 
 /**
  * Flag that the recognizer channel timers are started
- * @param schannel the recognizer channel to flag 
+ * @param schannel the recognizer channel to flag
  */
 static switch_status_t recog_channel_set_timers_started(speech_channel_t *schannel)
 {
@@ -2697,8 +2705,8 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
-	char name[200] = { 0 };
-	const char *profile_name = NULL;
+	char *name = "";
+	const char *profile_name = !zstr(dest) ? dest : ah->param;
 	profile_t *profile = NULL;
 	recognizer_data_t *r = NULL;
 	switch_hash_index_t *hi = NULL;
@@ -2707,37 +2715,39 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 					  ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec = %s, rate = %d, dest = %s\n", codec, rate, dest);
 
-	/* It would be nice if FreeSWITCH let us know which session owns this handle, but it doesn't.  So, lets
-	   make our own unique name */
-	switch_snprintf(name, sizeof(name) - 1, "ASR-%d", speech_channel_number);
-	name[sizeof(name) - 1] = '\0';
+	/* Name the channel */
+	if (profile_name && strchr(profile_name, ':')) {
+		/* Profile has session name appended to it.  Pick it out */
+		profile_name = switch_core_strdup(ah->memory_pool, profile_name);
+		name = strchr(profile_name, ':');
+		*name = '\0';
+		name++;
+		name = switch_core_sprintf(ah->memory_pool, "%s ASR-%d", name, speech_channel_number);
+	} else {
+		name = switch_core_sprintf(ah->memory_pool, "ASR-%d", name, speech_channel_number);
+	}
 
+	/* Allocate the channel */
 	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, (uint16_t) rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 	ah->private_info = schannel;
-
 	r = (recognizer_data_t *) switch_core_alloc(ah->memory_pool, sizeof(recognizer_data_t));
 	schannel->data = r;
 	memset(r, 0, sizeof(recognizer_data_t));
 	switch_core_hash_init(&r->grammars, ah->memory_pool);
 
-	/* try to open an MRCP channel */
-	if (!(profile_name = dest)) {
-		if (!(profile_name = ah->param)) {
-			profile_name = globals.unimrcp_default_recog_profile;
-		}
+	/* Open the channel */
+	if (zstr(profile_name)) {
+		profile_name = globals.unimrcp_default_recog_profile;
 	}
-
 	profile = (profile_t *) switch_core_hash_find(globals.profiles, profile_name);
-
 	if (!profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
 	if ((status = speech_channel_open(schannel, profile)) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
@@ -2929,7 +2939,7 @@ static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_
  * Process asr_feed request from FreeSWITCH
  *
  * @param ah the FreeSWITCH speech recognition handle
- * @return SWITCH_STATUS_SUCCESS if successful 
+ * @return SWITCH_STATUS_SUCCESS if successful
  */
 static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
@@ -3317,7 +3327,7 @@ static switch_status_t recog_shutdown()
 
 /**
  * Process the XML configuration for this module
- * Uses the instructions[] defined in this module to process the configuration. 
+ * Uses the instructions[] defined in this module to process the configuration.
  *
  * @return SWITCH_STATUS_SUCCESS if the configuration is OK
  */
@@ -3379,7 +3389,7 @@ static char *ip_addr_get(const char *value, apr_pool_t *pool)
 
 /**
  * set mod_unimrcp-specific profile configuration
- * 
+ *
  * @param profile the MRCP profile to configure
  * @param param the param name
  * @param val the param value
@@ -3406,7 +3416,7 @@ static int process_profile_config(profile_t *profile, const char *param, const c
 }
 
 /**
- * set RTP config struct with param, val pair 
+ * set RTP config struct with param, val pair
  * @param client the MRCP client
  * @param rtp_config the config struct to set
  * @param param the param name
@@ -3459,7 +3469,7 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
  * @param param the param name
  * @param val the param value
  * @param pool memory pool to use
- * @return true if this param belongs to RTSP config 
+ * @return true if this param belongs to RTSP config
  */
 static int process_mrcpv1_config(rtsp_client_config_t *config, const char *param, const char *val, apr_pool_t *pool)
 {
@@ -3615,7 +3625,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			mrcp_profile_t *mprofile = NULL;
 			mpf_rtp_config_t *rtp_config = NULL;
 			profile_t *mod_profile = NULL;
-			switch_xml_t default_params = NULL; 
+			switch_xml_t default_params = NULL;
 
 			/* get profile attributes */
 			const char *name = apr_pstrdup(pool, switch_xml_attr(profile, "name"));
@@ -3756,7 +3766,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 }
 
 /**
- * Macro expands to: switch_status_t mod_unimrcp_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) 
+ * Macro expands to: switch_status_t mod_unimrcp_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 {
@@ -3812,7 +3822,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 
 /**
  * Called when the system shuts down
- * Macro expands to: switch_status_t mod_unimrcp_shutdown() 
+ * Macro expands to: switch_status_t mod_unimrcp_shutdown()
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_unimrcp_shutdown)
 {
@@ -3941,7 +3951,7 @@ static int get_next_speech_channel_number(void)
 
 /**
  * Create a parameter id
- * 
+ *
  * @param id the UniMRCP ID
  * @return the pair
  */

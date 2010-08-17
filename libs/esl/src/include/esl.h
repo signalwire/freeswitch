@@ -387,8 +387,11 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
     \param port Port to be connected
     \param password FreeSWITCH server username (optional)
     \param password FreeSWITCH server password
+	\param timeout Connection timeout, in miliseconds
 */
-ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password);
+ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, uint32_t timeout);
+#define esl_connect(_handle, _host, _port, _user, _password) esl_connect_timeout(_handle, _host, _port, _user, _password, 0)
+
 /*!
     \brief Disconnect a handle
     \param handle Handle to be disconnected
@@ -420,7 +423,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
     \param handle Handle to be used
     \param cmd Raw command to send 
 */
-ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd);
+ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *cmd, uint32_t ms);
+#define esl_send_recv(_handle, _cmd) esl_send_recv_timed(_handle, _cmd, 0)
 /*!
     \brief Applies a filter to received events
     \param handle Handle to apply the filter to

@@ -24,8 +24,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: at_interpreter.c,v 1.42.4.1 2009/12/23 14:18:32 steveu Exp $
  */
 
 /*! \file */
@@ -245,13 +243,21 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         }
         else
         {
-            /* FAX modem connection */
-            at_set_at_rx_mode(s, AT_MODE_DELIVERY);
-            if (s->silent_dial)
-                at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE);
+            if (s->command_dial)
+            {
+                at_put_response_code(s, AT_RESPONSE_CODE_OK);
+                at_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
+            }
             else
-                at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE);
-            s->dte_is_waiting = TRUE;
+            {
+                /* FAX modem connection */
+                at_set_at_rx_mode(s, AT_MODE_DELIVERY);
+                if (s->silent_dial)
+                    at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE);
+                else
+                    at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE);
+                s->dte_is_waiting = TRUE;
+            }
         }
         break;
     case AT_CALL_EVENT_BUSY:
@@ -369,7 +375,7 @@ static int parse_num(const char **s, int max_value)
     
     /* The spec. says no digits is valid, and should be treated as zero. */
     i = 0;
-    while (isdigit(**s))
+    while (isdigit((int) **s))
     {
         i = i*10 + ((**s) - '0');
         (*s)++;
@@ -387,7 +393,7 @@ static int parse_hex_num(const char **s, int max_value)
     /* The spec. says a hex value is always 2 digits, and the alpha digits are
        upper case. */
     i = 0;
-    if (isdigit(**s))
+    if (isdigit((int) **s))
         i = **s - '0';
     else if (**s >= 'A'  &&  **s <= 'F')
         i = **s - 'A';
@@ -395,7 +401,7 @@ static int parse_hex_num(const char **s, int max_value)
         return -1;
     (*s)++;
 
-    if (isdigit(**s))
+    if (isdigit((int) **s))
         i = (i << 4)  | (**s - '0');
     else if (**s >= 'A'  &&  **s <= 'F')
         i = (i << 4)  | (**s - 'A');
@@ -847,6 +853,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
     at_reset_call_info(s);
     s->do_hangup = FALSE;
     s->silent_dial = FALSE;
+    s->command_dial = FALSE;
     t += 1;
     ok = FALSE;
     /* There are a numbers of options in a dial command string.
@@ -855,7 +862,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
     u = num;
     for (  ;  (ch = *t);  t++)
     {
-        if (isdigit(ch))
+        if (isdigit((int) ch))
         {
             /* V.250 6.3.1.1 Basic digit set */
             *u++ = ch;
@@ -926,7 +933,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case ';':
                 /* V.250 6.3.1 - Dial string terminator - make voice call and remain in command mode */
-                /* TODO: */
+                s->command_dial = TRUE;
                 break;
             case '>':
                 /* GSM07.07 6.2 - Direct dialling from phone book supplementary service subscription
@@ -5319,7 +5326,7 @@ static int command_search(const char *u, int len, int *matched)
     {
         /* The character in u we are processing... */
         /* V.250 5.4.1 says upper and lower case are equivalent in commands */
-        index = (unsigned char) toupper(u[i]);
+        index = toupper((int) u[i]);
         /* Is there a child node for this character? */
         /* Note: First and last could have been packed into one uint16_t,
            but space is not that critical, so the other packing is good

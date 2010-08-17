@@ -25,8 +25,6 @@
  *
  * Based on a bit from here, a bit from there, eye of toad,
  * ear of bat, etc - plus, of course, my own 2 cents.
- *
- * $Id: ima_adpcm.h,v 1.1 2008/11/30 10:17:31 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_IMA_ADPCM_H_)

@@ -250,6 +250,7 @@ typedef enum {
 	FTDM_CHANNEL_USE_TX_GAIN = (1 << 26),
 	FTDM_CHANNEL_IN_ALARM = (1 << 27),
 	FTDM_CHANNEL_SIG_UP = (1 << 28),
+	FTDM_CHANNEL_USER_HANGUP = (1 << 29),
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 
@@ -359,6 +360,7 @@ typedef struct ftdm_bitstream ftdm_bitstream_t;
 typedef struct ftdm_fsk_modulator ftdm_fsk_modulator_t;
 typedef ftdm_status_t (*ftdm_span_start_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_span_stop_t)(ftdm_span_t *span);
+typedef ftdm_status_t (*ftdm_channel_sig_read_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
 
 #ifdef __cplusplus
 }

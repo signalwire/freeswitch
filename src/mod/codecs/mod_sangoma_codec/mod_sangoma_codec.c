@@ -35,15 +35,7 @@
 #include "switch.h"
 #include "g711.h"
 
-#include <sng_tc/sng_tc.h>
-
-#ifdef __linux__
-/* for ethernet device query */
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#endif
+#include <sng_tc/sngtc_node.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sangoma_codec_shutdown);
@@ -56,13 +48,11 @@ SWITCH_MODULE_DEFINITION(mod_sangoma_codec, mod_sangoma_codec_load, mod_sangoma_
 #define SANGOMA_DEFAULT_SAMPLING_RATE 80
 #define SANGOMA_TRANSCODE_CONFIG "sangoma_codec.conf" 
 
-#define SANGOMA_DEFAULT_UDP_PORT 15000
-#define SANGOMA_MIN_UDP_PORT 0
-#define SANGOMA_MAX_UDP_PORT 65535
-
 /* \brief vocallos configuration */
 static sngtc_init_cfg_t g_init_cfg;
-static char g_vocallo_names[SNGTC_MAX_HOST_VOCALLO_NIC][255];
+
+/* configured RTP IP */
+static int g_rtpip = 0;
 
 /* \brief protect vocallo session creation and destroy */
 static switch_mutex_t *g_sessions_lock = NULL;
@@ -136,6 +126,9 @@ struct codec_data {
   	long lastrxseqno;
 	unsigned long rxlost;
 
+	/* discarded silence packets */
+	unsigned long rxdiscarded;
+
 	/* avg Rx time */
 	switch_time_t avgrxus;
 	switch_time_t last_rx_time;
@@ -180,19 +173,13 @@ static vocallo_codec_t *get_codec_from_iana(int iana)
 	return NULL;
 }
 
-static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_reg_leg, sngtc_codec_reply_leg_t* codec_reply_leg, void **rtp_fd)
+static int sangoma_create_rtp_port(void *usr_priv, uint32_t host_ip, uint32_t *p_rtp_port, void **rtp_fd)
 {
-	switch_rtp_t *rtp_session = NULL;
-	switch_port_t rtp_port;
-	char codec_ip[255];
-	char local_ip[255];
-	switch_rtp_flag_t flags = 0;
-	int iana = 0;
-	const char *err = NULL;
-	struct sangoma_transcoding_session *sess = usr_priv;
 	struct in_addr local_ip_addr = { 0 };
+	char local_ip[255];
+	switch_port_t rtp_port;
 
-	local_ip_addr.s_addr = htonl(codec_reply_leg->host_ip);
+	local_ip_addr.s_addr = htonl(host_ip);
 	
 	switch_inet_ntop(AF_INET, &local_ip_addr, local_ip, sizeof(local_ip));
 
@@ -201,16 +188,37 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate RTP port for IP %s\n", local_ip);
 		return -1;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated port %d for IP %s\n", rtp_port, local_ip);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New allocated port %d for IP %s/%d.%d.%d.%d\n", rtp_port, local_ip,
+			SNGTC_NIPV4(host_ip));
+	*p_rtp_port = rtp_port;
+	*rtp_fd = (void *)(long)rtp_port;
+	return 0;
+}
 
-	codec_reg_leg->host_udp_port = rtp_port;
+static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_req_leg, sngtc_codec_reply_leg_t* codec_reply_leg, void **rtp_fd)
+{
+	switch_rtp_t *rtp_session = NULL;
+	char codec_ip[255];
+	switch_rtp_flag_t flags = 0;
+	int iana = 0;
+	const char *err = NULL;
+	struct in_addr local_ip_addr = { 0 };
+	char local_ip[255];
+	switch_port_t rtp_port;
+	struct sangoma_transcoding_session *sess = usr_priv;
+	
+	rtp_port = (switch_port_t)(long)*rtp_fd;
 
+	codec_req_leg->host_udp_port = rtp_port;
+
+	local_ip_addr.s_addr = htonl(codec_req_leg->host_ip);
+	switch_inet_ntop(AF_INET, &local_ip_addr, local_ip, sizeof(local_ip));
 	sngtc_codec_ipv4_hex_to_str(codec_reply_leg->codec_ip, codec_ip);
 
-	iana = codec_id_to_iana(codec_reg_leg->codec_id);
+	iana = codec_id_to_iana(codec_req_leg->codec_id);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Creating RTP session for host (%s/%d)  vocallo(%s/%d) Iana=%d ms=%d idx=%lu\n",
 					  local_ip, rtp_port, codec_ip, codec_reply_leg->codec_udp_port, iana, 
-					  codec_reg_leg->ms*1000, sess->sessid);
+					  codec_req_leg->ms*1000, sess->sessid);
 
 	/* create the RTP socket, dont use the session pool since the session may go away while the RTP socket should linger around 
 	 * until sangoma_transcode decides to kill it (possibly because the same RTP session is used for a different call) */
@@ -218,7 +226,7 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 			codec_ip, codec_reply_leg->codec_udp_port, 
 			iana,
 			sess->impl->samples_per_packet,
-			codec_reg_leg->ms*1000, /* microseconds per packet */
+			codec_req_leg->ms * 1000, /* microseconds per packet */
 			flags, NULL, &err, g_pool);
 
 	if (!rtp_session) {
@@ -270,20 +278,24 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 
 	if (encoding) {
 		sess->encoder.request.usr_priv = sess;
+		sess->encoder.request.a.host_ip = g_rtpip;
 		sess->encoder.request.a.codec_id = SNGTC_CODEC_PCMU;
-		sess->encoder.request.a.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
+		sess->encoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
 
+		sess->encoder.request.b.host_ip = g_rtpip;
 		sess->encoder.request.b.codec_id = vcodec->codec_id;
-		sess->encoder.request.b.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
+		sess->encoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
 	}
 
 	if (decoding) {
 		sess->decoder.request.usr_priv = sess;
+		sess->decoder.request.a.host_ip = g_rtpip;
 		sess->decoder.request.a.codec_id = vcodec->codec_id;
-		sess->decoder.request.a.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
+		sess->decoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
 
+		sess->decoder.request.b.host_ip = g_rtpip;
 		sess->decoder.request.b.codec_id = SNGTC_CODEC_PCMU;
-		sess->decoder.request.b.ms = 0; /*codec->implementation->microseconds_per_packet/1000;*/
+		sess->decoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
 
 	}
 
@@ -391,26 +403,31 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	sess->encoder.tx++;
 
 	/* do the reading */
-	memset(&encoded_frame, 0, sizeof(encoded_frame));
-	sres = switch_rtp_zerocopy_read_frame(sess->encoder.rxrtp, &encoded_frame, SWITCH_IO_FLAG_NOBLOCK);
-	if (sres == SWITCH_STATUS_GENERR) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read on Sangoma encoder RTP session: %d\n", sres);
-		return SWITCH_STATUS_FALSE;
-	}
+	for ( ; ; ) {
+		sres = switch_rtp_zerocopy_read_frame(sess->encoder.rxrtp, &encoded_frame, SWITCH_IO_FLAG_NOBLOCK);
+		if (sres == SWITCH_STATUS_GENERR) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read on Sangoma encoder RTP session: %d\n", sres);
+			return SWITCH_STATUS_FALSE;
+		}
 
-	if (0 == encoded_frame.datalen) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on Sangoma encoder RTP session.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
+		if (0 == encoded_frame.datalen) {
+			break;
+		}
 
-	if (encoded_frame.payload != codec->implementation->ianacode
-	    && encoded_frame.payload != IANACODE_CN) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting %d\n", 
-				encoded_frame.payload, codec->implementation->ianacode);
-		return SWITCH_STATUS_FALSE;
+		if (encoded_frame.payload != codec->implementation->ianacode
+		    && encoded_frame.payload != IANACODE_CN) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting %d\n",
+					encoded_frame.payload, codec->implementation->ianacode);
+			break;
+		}
+
+		if (*encoded_data_len) {
+			sess->encoder.rxdiscarded++;
+		}
+
+		memcpy(encoded_data, encoded_frame.data, encoded_frame.datalen);
+		*encoded_data_len = encoded_frame.datalen;
 	}
-	memcpy(encoded_data, encoded_frame.data, encoded_frame.datalen);
-	*encoded_data_len = encoded_frame.datalen;
 
 	/* update encoding stats */
 	sess->encoder.rx++;
@@ -504,30 +521,34 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	sess->decoder.tx++;
 
 	/* do the reading */
-	memset(&ulaw_frame, 0, sizeof(ulaw_frame));
-	sres = switch_rtp_zerocopy_read_frame(sess->decoder.rxrtp, &ulaw_frame, SWITCH_IO_FLAG_NOBLOCK);
-	if (sres == SWITCH_STATUS_GENERR) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read on Sangoma decoder RTP session: %d\n", sres);
-		return SWITCH_STATUS_FALSE;
-	}
+	for ( ; ; ) {
+		sres = switch_rtp_zerocopy_read_frame(sess->decoder.rxrtp, &ulaw_frame, SWITCH_IO_FLAG_NOBLOCK);
+		if (sres == SWITCH_STATUS_GENERR) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read on Sangoma decoder RTP session: %d\n", sres);
+			return SWITCH_STATUS_FALSE;
+		}
 
-	if (0 == ulaw_frame.datalen) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on Sangoma decoder RTP session.\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
+		if (0 == ulaw_frame.datalen) {
+			break;
+		}
 
-	if (ulaw_frame.payload != IANA_ULAW
-	    && ulaw_frame.payload != IANACODE_CN) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma decoder RTP session, expecting %d\n", 
-				ulaw_frame.payload, IANA_ULAW);
-		return SWITCH_STATUS_FALSE;
-	}
+		if (ulaw_frame.payload != IANA_ULAW
+		    && ulaw_frame.payload != IANACODE_CN) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma decoder RTP session, expecting %d\n",
+					ulaw_frame.payload, IANA_ULAW);
+			break;
+		}
 
-	/* transcode to linear */
-	for (i = 0; i < ulaw_frame.datalen; i++) {
-		dbuf_linear[i] = ulaw_to_linear(((char *)ulaw_frame.data)[i]);
+		if (*decoded_data_len) {
+			sess->decoder.rxdiscarded++;
+		}
+
+		/* transcode to linear */
+		for (i = 0; i < ulaw_frame.datalen; i++) {
+			dbuf_linear[i] = ulaw_to_linear(((char *)ulaw_frame.data)[i]);
+		}
+		*decoded_data_len = i * 2;
 	}
-	*decoded_data_len = i * 2;
 
 	/* update decoding stats */
 	sess->decoder.rx++;
@@ -561,11 +582,11 @@ static switch_status_t switch_sangoma_destroy(switch_codec_t *codec)
 	
 	switch_mutex_lock(g_sessions_lock);
 
-	if (sess->encoder.reply.codec_rtp_session) {
-		sngtc_destroy_transcoding_session(sess->encoder.reply.codec_rtp_session);
+	if (sess->encoder.txrtp) {
+		sngtc_free_transcoding_session(&sess->encoder.reply);
 	}
-	if (sess->decoder.reply.codec_rtp_session) {
-		sngtc_destroy_transcoding_session(sess->decoder.reply.codec_rtp_session);
+	if (sess->decoder.txrtp) {
+		sngtc_free_transcoding_session(&sess->decoder.reply);
 	}
 	
 	switch_core_hash_delete(g_sessions_hash, sess->hashkey);
@@ -619,24 +640,9 @@ SWITCH_STANDARD_API(sangoma_function)
 	if (!strcasecmp(argv[0], "settings")) {
 		char addrbuff[50];
 		int addr;
-		int i;
-		for (i = 0; i < g_init_cfg.host_nic_vocallo_sz; i++) {
-			stream->write_function(stream, "Vocallo %s:\n", g_vocallo_names[i]);
-
-			addr = htonl(g_init_cfg.host_nic_vocallo_cfg[i].host_ip);
-			stream->write_function(stream, "\tIP Address: %s\n", 
-					switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
-
-			addr = htonl(g_init_cfg.host_nic_vocallo_cfg[i].host_ip_netmask);
-			stream->write_function(stream, "\tNetmask: %s\n", 
-					switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
-
-			addr = htonl(g_init_cfg.host_nic_vocallo_cfg[i].vocallo_ip);
-			stream->write_function(stream, "\tVocallo Base IP: %s\n", 
-					switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
-
-			stream->write_function(stream, "\tVocallo Base UDP: %d\n\n", g_init_cfg.host_nic_vocallo_cfg[i].vocallo_base_udp_port);
-		}
+		addr = htonl(g_rtpip);
+		stream->write_function(stream, "\tRTP IP Address: %s\n",
+				switch_inet_ntop(AF_INET, &addr, addrbuff, sizeof(addrbuff)));
 	} else if (!strcasecmp(argv[0], "sessions")) {
 		/* iterate over sessions hash */
 		switch_hash_index_t *hi;
@@ -714,6 +720,7 @@ SWITCH_STANDARD_API(sangoma_function)
 		if (sess->encoder.rxrtp) {
 			stats = switch_rtp_get_stats(sess->encoder.rxrtp, NULL);
 			stream->write_function(stream, "-- Encoder Inbound Stats --\n");
+			stream->write_function(stream, "Rx Discarded: %lu\n", sess->encoder.rxdiscarded);
 			sangoma_print_stats(stream, &stats->inbound);
 			
 
@@ -725,6 +732,7 @@ SWITCH_STANDARD_API(sangoma_function)
 		if (sess->decoder.rxrtp) {
 			stats = switch_rtp_get_stats(sess->decoder.rxrtp, NULL);
 			stream->write_function(stream, "-- Decoder Inbound Stats --\n");
+			stream->write_function(stream, "Rx Discarded: %lu\n", sess->decoder.rxdiscarded);
 			sangoma_print_stats(stream, &stats->inbound);
 
 			stats = switch_rtp_get_stats(sess->decoder.txrtp, NULL);
@@ -780,69 +788,13 @@ static int sangoma_logger(int level, char *fmt, ...)
 	return 0;
 }
 
-static int load_nic_network_information(const char *nic, sngtc_host_nic_vocallo_cfg_t *cfg)
-{
-#ifdef __linux__
-	struct ifreq ifr;
-	int sock;
-	char *mac;
-	int j = 0, k = 0, ret = 0;
-	
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (-1 == sock) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-			"Failed to create socket to query network configuration for NIC %s: %s\n", nic, strerror(errno));
-		return -1;
-	}
-
-	strncpy(ifr.ifr_name, nic, sizeof(ifr.ifr_name)-1);
-	ifr.ifr_name[sizeof(ifr.ifr_name)-1] = '\0';
-
-	if (-1 == ioctl(sock, SIOCGIFADDR, &ifr)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to query IP address for NIC %s: %s\n", nic, strerror(errno));
-		ret = -1;
-		goto done;
-	}
-	cfg->host_ip = ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
-
-	if (-1 == ioctl(sock, SIOCGIFNETMASK, &ifr)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG,  SWITCH_LOG_ERROR, "Failed to query network address for NIC %s: %s\n", nic, strerror(errno));
-		ret = -1;
-		goto done;
-	}
-	cfg->host_ip_netmask = ntohl(((struct sockaddr_in *)&ifr.ifr_netmask)->sin_addr.s_addr);
-
-	if (-1 == ioctl(sock, SIOCGIFHWADDR, &ifr)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to query HW address for NIC %s: %s\n", nic, strerror(errno));
-		ret = -1;
-		goto done;
-	}
-
-	mac = cfg->host_mac.mac_str;
-	for (j = 0, k = 0; j < 6; j++) {
-		k += snprintf(mac + k, sizeof(cfg->host_mac.mac_str) - k, j ? "-%02X" : "%02X",
-				(int)(unsigned int)(unsigned char)ifr.ifr_hwaddr.sa_data[j]);
-	}
-	mac[sizeof(cfg->host_mac.mac_str)-1] = '\0';
-
-done:
-	close(sock);
-	return ret;
-#else
-	return 0;
-#endif
-}
-
 static int sangoma_parse_config(void)
 {
-	switch_xml_t cfg, settings, param, vocallos, xml, vocallo;
-	struct in_addr vocallo_base_ip;
-	char ipbuff[50];
-	char netbuff[50];
-	int host_ipaddr = 0;
-	int host_netmaskaddr = 0;
-	int vidx = 0;
-	int baseudp = 0;
+	switch_xml_t cfg, settings, param, xml;
+	struct in_addr rtpaddr;
+	char localip[255];
+	int mask = 0;
+	int rc = 0;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reading sangoma codec configuration\n");
 	if (!(xml = switch_xml_open_cfg(SANGOMA_TRANSCODE_CONFIG, &cfg, NULL))) {
@@ -853,7 +805,6 @@ static int sangoma_parse_config(void)
 	memset(&g_init_cfg, 0, sizeof(g_init_cfg));
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
-		/* nothing here yet */
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 				char *var = (char *)switch_xml_attr_soft(param, "name");
 				char *val = (char *)switch_xml_attr_soft(param, "value");
@@ -865,90 +816,35 @@ static int sangoma_parse_config(void)
 				} else if (!strcasecmp(var, "noregister")) {
 					strncpy(g_codec_noregister_list, val, sizeof(g_codec_noregister_list)-1);
 					g_codec_noregister_list[sizeof(g_codec_noregister_list)-1] = 0;
+				} else if (!strcasecmp(var, "rtpip")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found Sangoma RTP IP %s\n", val);
+					if (switch_inet_pton(AF_INET, val, &rtpaddr) <= 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Sangoma RTP IP %s\n", val);
+						break;
+					}
+					g_rtpip = ntohl(rtpaddr.s_addr);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma codec setting %s\n", var);
 				}
 		}
 	}
 
-	if ((vocallos = switch_xml_child(cfg, "vocallos"))) {
-		for (vocallo = switch_xml_child(vocallos, "vocallo"); vocallo; vocallo = vocallo->next) {
-			const char *name = switch_xml_attr(vocallo, "name");
-			if (!name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Sangoma vocallo found with no name= attribute, ignoring!\n");
-				continue;
-			}
-
-			if (load_nic_network_information(name, &g_init_cfg.host_nic_vocallo_cfg[vidx])) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-						"Ignoring vocallo %s, failed to retrieve its network configuration\n", name);
-				continue;
-			}
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring vocallo %s\n", name);
-
-			g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_base_udp_port = SANGOMA_DEFAULT_UDP_PORT;
-			g_init_cfg.host_nic_vocallo_cfg[vidx].silence_suppression = 0;
-			for (param = switch_xml_child(vocallo, "param"); param; param = param->next) {
-				char *var = (char *)switch_xml_attr_soft(param, "name");
-				char *val = (char *)switch_xml_attr_soft(param, "value");
-
-				/* starting UDP port to be used by the vocallo modules */
-				if (!strcasecmp(var, "baseudp")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found Sangoma codec base udp port %s\n", val);
-					baseudp = atoi(val);
-					if (baseudp < SANGOMA_MIN_UDP_PORT || baseudp > SANGOMA_MAX_UDP_PORT) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-								"Invalid Sangoma codec base udp port %s, using default %d\n", 
-								val, SANGOMA_DEFAULT_UDP_PORT);
-						break;
-					}
-					g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_base_udp_port = baseudp;
-				}
-				else if (!strcasecmp(var, "vocalloaddr")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found Sangoma codec vocallo addr %s\n", val);
-					if (switch_inet_pton(AF_INET, val, &vocallo_base_ip) <= 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Sangoma codec vocallo addr %s\n", val);
-						break;
-					}
-					g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_ip = ntohl(vocallo_base_ip.s_addr);
-				} else if (!strcasecmp(var, "silence")) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found Sangoma codec silence setting %s\n", val);
-					g_init_cfg.host_nic_vocallo_cfg[vidx].silence_suppression = switch_true(val) ? 1 : 0;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignored unknown Sangoma vocallo setting %s\n", var);
-				}
-			}
-
-			if (!g_init_cfg.host_nic_vocallo_cfg[vidx].vocallo_ip) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring vocallo %s, no valid address was configured\n", name);
-				continue;
-			}
-			host_ipaddr = htonl(g_init_cfg.host_nic_vocallo_cfg[vidx].host_ip);
-			host_netmaskaddr = htonl(g_init_cfg.host_nic_vocallo_cfg[vidx].host_ip_netmask);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
-					"Configured Sangoma transcoding interface %s, IP address %s, netmask %s\n", 
-					name, 
-					switch_inet_ntop(AF_INET, &host_ipaddr, ipbuff, sizeof(ipbuff)),
-					switch_inet_ntop(AF_INET, &host_netmaskaddr, netbuff, sizeof(netbuff)));
-			strncpy(g_vocallo_names[vidx], name, sizeof(g_vocallo_names[vidx])-1);
-			g_vocallo_names[vidx][sizeof(g_vocallo_names[vidx])-1] = 0;
-			vidx++;
+	if (!g_rtpip) {
+		if (SWITCH_STATUS_SUCCESS != switch_find_local_ip(localip, sizeof(localip), &mask, AF_INET)) {
+			rc = -1;
+			goto done;
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No <vocallos> section found in configuration file %s\n", SANGOMA_TRANSCODE_CONFIG);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "No RTP IP specified, using %s\n", localip);
+		switch_inet_pton(AF_INET, localip, &rtpaddr);
+		g_rtpip = ntohl(rtpaddr.s_addr);
 	}
 
+done:
 	switch_xml_free(xml);
 
-	if (!vidx) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-		"No vocallos were configured, make sure there is at least one <vocallo> in %s.\n", SANGOMA_TRANSCODE_CONFIG);
-	}
+	g_init_cfg.host_nic_vocallo_sz = 0;
 
-	g_init_cfg.host_nic_vocallo_sz = vidx;
-
-	return 0;
+	return rc;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sangoma_codec_shutdown)
@@ -974,14 +870,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 
 	g_init_cfg.log = sangoma_logger;
 	g_init_cfg.create_rtp = sangoma_create_rtp;
+	g_init_cfg.create_rtp_port = sangoma_create_rtp_port;
 	g_init_cfg.destroy_rtp = sangoma_destroy_rtp;
-
-#ifdef __linux__
-	if (geteuid() != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This module needs to be run as root to create raw sockets\n");
-		return SWITCH_STATUS_FALSE;
-	}
-#endif
 
 	if (sngtc_detect_init_modules(&g_init_cfg, &detected)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to detect vocallo modules\n");

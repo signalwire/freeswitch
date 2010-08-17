@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: at_interpreter_tests.c,v 1.24 2009/10/09 14:53:57 steveu Exp $
  */
 
 /*! \file */

@@ -1472,11 +1472,12 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		if (console_readConsole(stdinHandle, keys, (int) sizeof(keys), &read, &key)) {
 			if (console_bufferInput(keys, read, cmd, key)) {
 				if (!strcmp(cmd, "Empty")) {
-					cmd[0] = '\n';
-					cmd[1] = 0;
+					cmd[0] = 0;
 				}
 				activity = 1;
-				running = switch_console_process(cmd);
+				if (cmd[0]) {
+					running = switch_console_process(cmd);
+				}
 				memset(cmd, 0, sizeof(cmd));
 			}
 		}

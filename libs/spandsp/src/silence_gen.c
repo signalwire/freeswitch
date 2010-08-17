@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: silence_gen.c,v 1.23 2009/09/04 14:38:46 steveu Exp $
  */
 
 /*! \file */

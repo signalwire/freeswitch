@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bit_operations_tests.c,v 1.14 2008/05/13 13:17:25 steveu Exp $
  */
 
 /*! \page bit_operations_tests_page Bit operations tests

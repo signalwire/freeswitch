@@ -41,10 +41,15 @@ INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost
 if SNGSS7
 INCS += -I/usr/include/sng_ss7/
 endif 
+
 MY_CFLAGS = $(INCS) $(FTDM_CFLAGS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
+
+if DEBUGDTMF
+MY_CFLAGS += -DFTDM_DEBUG_DTMF
+endif
 
 
 #
@@ -167,8 +172,16 @@ if LIBPRI
 mod_LTLIBRARIES += ftmod_libpri.la
 endif
 
+if PRITAP
+mod_LTLIBRARIES += ftmod_pritap.la
+endif
+
 if SNGSS7
 mod_LTLIBRARIES += ftmod_sangoma_ss7.la
+endif
+
+if SNGISDN
+mod_LTLIBRARIES += ftmod_sangoma_isdn.la
 endif
 
 if OPENR2
@@ -241,6 +254,13 @@ ftmod_libpri_la_SOURCES = $(SRC)/ftmod/ftmod_libpri/ftmod_libpri.c $(SRC)/ftmod/
 ftmod_libpri_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ftmod_libpri_la_LDFLAGS = -module  -avoid-version -lpri
 ftmod_libpri_la_LIBADD  = $(MYLIB)
+endif
+
+if PRITAP
+ftmod_pritap_la_SOURCES = $(SRC)/ftmod/ftmod_pritap/ftmod_pritap.c 
+ftmod_pritap_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+ftmod_pritap_la_LDFLAGS = -module  -avoid-version -lpri
+ftmod_pritap_la_LIBADD  = $(MYLIB)
 endif
 
 if SNGSS7

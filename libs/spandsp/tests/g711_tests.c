@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: g711_tests.c,v 1.17 2009/05/30 15:23:13 steveu Exp $
  */
 
 /*! \page g711_tests_page A-law and u-law conversion tests

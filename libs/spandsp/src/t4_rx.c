@@ -2,7 +2,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * t4_rx.c - ITU T.4 FAX receive processing
+ * t4_rx.c - ITU T.4 FAX image receive processing
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t4_rx.c,v 1.12.2.8 2009/12/21 17:18:39 steveu Exp $
  */
 
 /*
@@ -86,9 +84,21 @@
 #include "spandsp/async.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
+#if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/t81_t82_arith_coding.h"
+#include "spandsp/t85.h"
+#endif
+#include "spandsp/t4_t6_decode.h"
+#include "spandsp/t4_t6_encode.h"
 #include "spandsp/version.h"
 
 #include "spandsp/private/logging.h"
+#if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/private/t81_t82_arith_coding.h"
+#include "spandsp/private/t85.h"
+#endif
+#include "spandsp/private/t4_t6_decode.h"
+#include "spandsp/private/t4_t6_encode.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 
@@ -101,6 +111,8 @@
 #define EOLS_TO_END_T4_RX_PAGE      5
 /*! The number of EOLs to check at the end of a T.6 page */
 #define EOLS_TO_END_T6_RX_PAGE      2
+
+#include "t4_t6_decode_states.h"
 
 #if defined(T4_STATE_DEBUGGING)
 static void STATE_TRACE(const char *format, ...)
@@ -115,19 +127,6 @@ static void STATE_TRACE(const char *format, ...)
 #else
 #define STATE_TRACE(...) /**/
 #endif
-
-/*! T.4 run length table entry */
-typedef struct
-{
-    /*! Length of T.4 code, in bits */
-    uint16_t length;
-    /*! T.4 code */
-    uint16_t code;
-    /*! Run length, in bits */
-    int16_t run_length;
-} t4_run_table_entry_t;
-
-#include "t4_t6_decode_states.h"
 
 #if defined(HAVE_LIBTIFF)
 static int set_tiff_directory_info(t4_state_t *s)
@@ -1195,7 +1194,7 @@ SPAN_DECLARE(void) t4_rx_set_model(t4_state_t *s, const char *model)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t4_get_transfer_statistics(t4_state_t *s, t4_stats_t *t)
+SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_state_t *s, t4_stats_t *t)
 {
     t->pages_transferred = s->current_page - s->tiff.start_page;
     t->pages_in_file = s->tiff.pages_in_file;
@@ -1214,12 +1213,26 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
 {
     switch (encoding)
     {
+    case T4_COMPRESSION_NONE:
+        return "None";
     case T4_COMPRESSION_ITU_T4_1D:
         return "T.4 1-D";
     case T4_COMPRESSION_ITU_T4_2D:
         return "T.4 2-D";
     case T4_COMPRESSION_ITU_T6:
         return "T.6";
+    case T4_COMPRESSION_ITU_T85:
+        return "T.85";
+    case T4_COMPRESSION_ITU_T85_L0:
+        return "T.85(L0)";
+    case T4_COMPRESSION_ITU_T43:
+        return "T.43";
+    case T4_COMPRESSION_ITU_T45:
+        return "T.45";
+    case T4_COMPRESSION_ITU_T81:
+        return "T.81";
+    case T4_COMPRESSION_ITU_SYCC_T81:
+        return "sYCC T.81";
     }
     return "???";
 }

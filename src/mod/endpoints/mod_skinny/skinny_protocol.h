@@ -45,7 +45,7 @@
 
 /* RegisterMessage */
 #define REGISTER_MESSAGE 0x0001
-struct register_message {
+struct PACKED register_message {
     char device_name[16];
     uint32_t user_id;
     uint32_t instance;
@@ -56,13 +56,13 @@ struct register_message {
 
 /* PortMessage */
 #define PORT_MESSAGE 0x0002
-struct port_message {
+struct PACKED port_message {
     uint16_t port;
 };
 
 /* KeypadButtonMessage */
 #define KEYPAD_BUTTON_MESSAGE 0x0003
-struct keypad_button_message {
+struct PACKED keypad_button_message {
     uint32_t button;
     uint32_t line_instance;
     uint32_t call_id;
@@ -70,7 +70,7 @@ struct keypad_button_message {
 
 /* StimulusMessage */
 #define STIMULUS_MESSAGE 0x0005
-struct stimulus_message {
+struct PACKED stimulus_message {
     uint32_t instance_type; /* See enum skinny_button_definition */
     uint32_t instance;
     uint32_t call_id;
@@ -78,27 +78,27 @@ struct stimulus_message {
 
 /* OffHookMessage */
 #define OFF_HOOK_MESSAGE 0x0006
-struct off_hook_message {
+struct PACKED off_hook_message {
     uint32_t line_instance;
     uint32_t call_id;
 };
 
 /* OnHookMessage */
 #define ON_HOOK_MESSAGE 0x0007
-struct on_hook_message {
+struct PACKED on_hook_message {
     uint32_t line_instance;
     uint32_t call_id;
 };
 
 /* SpeedDialStatReqMessage */
 #define SPEED_DIAL_STAT_REQ_MESSAGE 0x000A
-struct speed_dial_stat_req_message {
+struct PACKED speed_dial_stat_req_message {
     uint32_t number;
 };
 
 /* LineStatReqMessage */
 #define LINE_STAT_REQ_MESSAGE 0x000B
-struct line_stat_req_message {
+struct PACKED line_stat_req_message {
     uint32_t number;
 };
 
@@ -116,20 +116,20 @@ struct line_stat_req_message {
 
 /* CapabilitiesResMessage */
 #define CAPABILITIES_RES_MESSAGE 0x0010
-struct station_capabilities {
+struct PACKED station_capabilities {
     uint32_t codec;
     uint16_t frames;
     char reserved[10];
 };
 
-struct capabilities_res_message {
+struct PACKED capabilities_res_message {
     uint32_t count;
     struct station_capabilities caps[SWITCH_MAX_CODECS];
 };
 
 /* AlarmMessage */
 #define ALARM_MESSAGE 0x0020
-struct alarm_message {
+struct PACKED alarm_message {
     uint32_t alarm_severity;
     char display_message[80];
     uint32_t alarm_param1;
@@ -138,7 +138,7 @@ struct alarm_message {
 
 /* OpenReceiveChannelAck */
 #define OPEN_RECEIVE_CHANNEL_ACK_MESSAGE 0x0022
-struct open_receive_channel_ack_message {
+struct PACKED open_receive_channel_ack_message {
     uint32_t status;
     struct in_addr ip;
     uint32_t port;
@@ -150,7 +150,7 @@ struct open_receive_channel_ack_message {
 
 /* SoftKeyEventMessage */
 #define SOFT_KEY_EVENT_MESSAGE 0x0026
-struct soft_key_event_message {
+struct PACKED soft_key_event_message {
     uint32_t event;
     uint32_t line_instance;
     uint32_t call_id;
@@ -164,31 +164,31 @@ struct soft_key_event_message {
 
 /* HeadsetStatusMessage */
 #define HEADSET_STATUS_MESSAGE 0x002B
-struct headset_status_message {
+struct PACKED headset_status_message {
     uint32_t mode;
 };
 
 /* RegisterAvailableLinesMessage */
 #define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
-struct register_available_lines_message {
+struct PACKED register_available_lines_message {
     uint32_t count;
 };
 
 /* ServiceUrlStatReqMessage */
 #define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
-struct service_url_stat_req_message {
+struct PACKED service_url_stat_req_message {
     uint32_t service_url_index;
 };
 
 /* FeatureStatReqMessage */
 #define FEATURE_STAT_REQ_MESSAGE 0x0034
-struct feature_stat_req_message {
+struct PACKED feature_stat_req_message {
     uint32_t feature_index;
 };
 
 /* RegisterAckMessage */
 #define REGISTER_ACK_MESSAGE 0x0081
-struct register_ack_message {
+struct PACKED register_ack_message {
     uint32_t keep_alive;
     char date_format[6];
     char reserved[2];
@@ -198,7 +198,7 @@ struct register_ack_message {
 
 /* StartToneMessage */
 #define START_TONE_MESSAGE 0x0082
-struct start_tone_message {
+struct PACKED start_tone_message {
     uint32_t tone; /* see enum skinny_tone */
     uint32_t reserved;
     uint32_t line_instance;
@@ -207,14 +207,14 @@ struct start_tone_message {
 
 /* StopToneMessage */
 #define STOP_TONE_MESSAGE 0x0083
-struct stop_tone_message {
+struct PACKED stop_tone_message {
     uint32_t line_instance;
     uint32_t call_id;
 };
 
 /* SetRingerMessage */
 #define SET_RINGER_MESSAGE 0x0085
-struct set_ringer_message {
+struct PACKED set_ringer_message {
     uint32_t ring_type; /* See enum skinny_ring_type */
     uint32_t ring_mode; /* See enum skinny_ring_mode */
     uint32_t line_instance;
@@ -223,7 +223,7 @@ struct set_ringer_message {
 
 /* SetLampMessage */
 #define SET_LAMP_MESSAGE 0x0086
-struct set_lamp_message {
+struct PACKED set_lamp_message {
     uint32_t stimulus; /* See enum skinny_button_definition */
     uint32_t stimulus_instance;
     uint32_t mode; /* See enum skinny_lamp_mode */
@@ -231,13 +231,13 @@ struct set_lamp_message {
 
 /* SetSpeakerModeMessage */
 #define SET_SPEAKER_MODE_MESSAGE 0x0088
-struct set_speaker_mode_message {
+struct PACKED set_speaker_mode_message {
     uint32_t mode; /* See enum skinny_speaker_mode */
 };
 
 /* StartMediaTransmissionMessage */
 #define START_MEDIA_TRANSMISSION_MESSAGE 0x008A
-struct start_media_transmission_message {
+struct PACKED start_media_transmission_message {
     uint32_t conference_id;
     uint32_t pass_thru_party_id;
     uint32_t remote_ip;
@@ -247,13 +247,14 @@ struct start_media_transmission_message {
     uint32_t precedence;
     uint32_t silence_suppression;
     uint16_t max_frames_per_packet;
+    uint16_t unknown1;
     uint32_t g723_bitrate;
     /* ... */
 };
 
 /* StopMediaTransmissionMessage */
 #define STOP_MEDIA_TRANSMISSION_MESSAGE 0x008B
-struct stop_media_transmission_message {
+struct PACKED stop_media_transmission_message {
     uint32_t conference_id;
     uint32_t pass_thru_party_id;
     uint32_t conference_id2;
@@ -262,7 +263,7 @@ struct stop_media_transmission_message {
 
 /* CallInfoMessage */
 #define CALL_INFO_MESSAGE 0x008F
-struct call_info_message {
+struct PACKED call_info_message {
     char calling_party_name[40];
     char calling_party[24];
     char called_party_name[40];
@@ -287,7 +288,7 @@ struct call_info_message {
 
 /* SpeedDialStatMessage */
 #define SPEED_DIAL_STAT_RES_MESSAGE 0x0091
-struct speed_dial_stat_res_message {
+struct PACKED speed_dial_stat_res_message {
     uint32_t number;
     char line[24];
     char label[40];
@@ -295,7 +296,7 @@ struct speed_dial_stat_res_message {
 
 /* LineStatMessage */
 #define LINE_STAT_RES_MESSAGE 0x0092
-struct line_stat_res_message {
+struct PACKED line_stat_res_message {
     uint32_t number;
     char name[24];
     char shortname[40];
@@ -304,7 +305,7 @@ struct line_stat_res_message {
 
 /* ConfigStatMessage */
 #define CONFIG_STAT_RES_MESSAGE 0x0093
-struct config_stat_res_message {
+struct PACKED config_stat_res_message {
     char device_name[16];
     uint32_t user_id;
     uint32_t instance;
@@ -316,7 +317,7 @@ struct config_stat_res_message {
 
 /* DefineTimeDate */
 #define DEFINE_TIME_DATE_MESSAGE 0x0094
-struct define_time_date_message {
+struct PACKED define_time_date_message {
     uint32_t year;
     uint32_t month;
     uint32_t day_of_week; /* monday = 1 */
@@ -330,13 +331,13 @@ struct define_time_date_message {
 
 /* ButtonTemplateMessage */
 #define BUTTON_TEMPLATE_RES_MESSAGE 0x0097
-struct button_definition {
+struct PACKED button_definition {
     uint8_t instance_number;
     uint8_t button_definition; /* See enum skinny_button_definition */
 };
 
 #define SKINNY_MAX_BUTTON_COUNT 42
-struct button_template_message {
+struct PACKED button_template_message {
     uint32_t button_offset;
     uint32_t button_count;
     uint32_t total_button_count;
@@ -345,7 +346,7 @@ struct button_template_message {
 
 /* VersionMessage */
 #define VERSION_MESSAGE 0x0098
-struct version_message {
+struct PACKED version_message {
     char version[16];
 };
 
@@ -354,13 +355,13 @@ struct version_message {
 
 /* RegisterRejectMessage */
 #define REGISTER_REJECT_MESSAGE 0x009D
-struct register_reject_message {
+struct PACKED register_reject_message {
     char error[33];
 };
 
 /* ResetMessage */
 #define RESET_MESSAGE 0x009F
-struct reset_message {
+struct PACKED reset_message {
     uint32_t reset_type; /* See enum skinny_device_reset_types */
 };
 
@@ -369,7 +370,7 @@ struct reset_message {
 
 /* OpenReceiveChannelMessage */
 #define OPEN_RECEIVE_CHANNEL_MESSAGE 0x0105
-struct open_receive_channel_message {
+struct PACKED open_receive_channel_message {
     uint32_t conference_id;
     uint32_t pass_thru_party_id;
     uint32_t packets;
@@ -382,7 +383,7 @@ struct open_receive_channel_message {
 
 /* CloseReceiveChannelMessage */
 #define CLOSE_RECEIVE_CHANNEL_MESSAGE 0x0106
-struct close_receive_channel_message {
+struct PACKED close_receive_channel_message {
     uint32_t conference_id;
     uint32_t pass_thru_party_id;
     uint32_t conference_id2;
@@ -391,12 +392,12 @@ struct close_receive_channel_message {
 /* SoftKeyTemplateResMessage */
 #define SOFT_KEY_TEMPLATE_RES_MESSAGE 0x0108
 
-struct soft_key_template_definition {
+struct PACKED soft_key_template_definition {
     char soft_key_label[16];
     uint32_t soft_key_event;
 };
 
-struct soft_key_template_res_message {
+struct PACKED soft_key_template_res_message {
     uint32_t soft_key_offset;
     uint32_t soft_key_count;
     uint32_t total_soft_key_count;
@@ -405,12 +406,12 @@ struct soft_key_template_res_message {
 
 /* SoftKeySetResMessage */
 #define SOFT_KEY_SET_RES_MESSAGE 0x0109
-struct soft_key_set_definition {
+struct PACKED soft_key_set_definition {
     uint8_t soft_key_template_index[16]; /* See enum skinny_soft_key_event */
     uint16_t soft_key_info_index[16];
 };
 
-struct soft_key_set_res_message {
+struct PACKED soft_key_set_res_message {
     uint32_t soft_key_set_offset;
     uint32_t soft_key_set_count;
     uint32_t total_soft_key_set_count;
@@ -420,7 +421,7 @@ struct soft_key_set_res_message {
 
 /* SelectSoftKeysMessage */
 #define SELECT_SOFT_KEYS_MESSAGE 0x0110
-struct select_soft_keys_message {
+struct PACKED select_soft_keys_message {
     uint32_t line_instance;
     uint32_t call_id;
     uint32_t soft_key_set; /* See enum skinny_key_set */
@@ -429,7 +430,7 @@ struct select_soft_keys_message {
 
 /* CallStateMessage */
 #define CALL_STATE_MESSAGE 0x0111
-struct call_state_message {
+struct PACKED call_state_message {
     uint32_t call_state; /* See enum skinny_call_state */
     uint32_t line_instance;
     uint32_t call_id;
@@ -437,7 +438,7 @@ struct call_state_message {
 
 /* DisplayPromptStatusMessage */
 #define DISPLAY_PROMPT_STATUS_MESSAGE 0x0112
-struct display_prompt_status_message {
+struct PACKED display_prompt_status_message {
     uint32_t timeout;
     char display[32];
     uint32_t line_instance;
@@ -446,33 +447,33 @@ struct display_prompt_status_message {
 
 /* ClearPromptStatusMessage */
 #define CLEAR_PROMPT_STATUS_MESSAGE  0x0113
-struct clear_prompt_status_message {
+struct PACKED clear_prompt_status_message {
     uint32_t line_instance;
     uint32_t call_id;
 };
 
 /* ActivateCallPlaneMessage */
 #define ACTIVATE_CALL_PLANE_MESSAGE 0x0116
-struct activate_call_plane_message {
+struct PACKED activate_call_plane_message {
     uint32_t line_instance;
 };
 
 /* UnregisterAckMessage */
 #define UNREGISTER_ACK_MESSAGE 0x0118
-struct unregister_ack_message {
+struct PACKED unregister_ack_message {
     uint32_t unregister_status;
 };
 
 /* BackSpaceReqMessage */
 #define BACK_SPACE_REQ_MESSAGE 0x0119
-struct back_space_req_message {
+struct PACKED back_space_req_message {
     uint32_t line_instance;
     uint32_t call_id;
 };
 
 /* DialedNumberMessage */
 #define DIALED_NUMBER_MESSAGE 0x011D
-struct dialed_number_message {
+struct PACKED dialed_number_message {
     char called_party[24];
     uint32_t line_instance;
     uint32_t call_id;
@@ -480,7 +481,7 @@ struct dialed_number_message {
 
 /* FeatureStatMessage */
 #define FEATURE_STAT_RES_MESSAGE 0x011F
-struct feature_stat_res_message {
+struct PACKED feature_stat_res_message {
     uint32_t index;
     uint32_t id;
     char text_label[40];
@@ -489,7 +490,7 @@ struct feature_stat_res_message {
 
 /* DisplayPriNotifyMessage */
 #define DISPLAY_PRI_NOTIFY_MESSAGE 0x0120
-struct display_pri_notify_message {
+struct PACKED display_pri_notify_message {
     uint32_t message_timeout;
     uint32_t priority;
     char notify[32];
@@ -497,7 +498,7 @@ struct display_pri_notify_message {
 
 /* ServiceUrlStatMessage */
 #define SERVICE_URL_STAT_RES_MESSAGE 0x012F
-struct service_url_stat_res_message {
+struct PACKED service_url_stat_res_message {
     uint32_t index;
     char url[256];
     char display_name[40];
@@ -570,7 +571,7 @@ union skinny_data {
  * body is type+data
  * length is length of body
  */
-struct skinny_message {
+struct PACKED skinny_message {
     uint32_t length;
     uint32_t version;
     uint32_t type;

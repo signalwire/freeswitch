@@ -385,10 +385,12 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 		new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
 
 
-		if (db)
+		if (db) {
 			new_dbh->native_handle.core_db_dbh = db;
-		else
+		} else {
 			new_dbh->native_handle.odbc_dbh = odbc_dbh;
+		}
+
 		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
 		switch_set_string(new_dbh->creator, db_callsite_str);
 		switch_mutex_lock(new_dbh->mutex);
@@ -398,8 +400,9 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 
  end:
 
-	if (new_dbh)
+	if (new_dbh) {
 		new_dbh->last_used = switch_epoch_time_now(NULL);
+	}
 
 	switch_mutex_unlock(sql_manager.dbh_mutex);
 
@@ -425,11 +428,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
 		{
-			switch_odbc_statement_handle_t stmt = NULL;
-			if ((status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, &stmt, NULL)) != SWITCH_STATUS_SUCCESS) {
-				errmsg = switch_odbc_handle_get_error(dbh->native_handle.odbc_dbh, stmt);
-			}
-			switch_odbc_statement_handle_free(&stmt);
+			status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, NULL, &errmsg);
 		}
 		break;
 	case SCDB_TYPE_CORE_DB:
@@ -784,6 +783,10 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 {
 	char *errmsg;
 	switch_bool_t r = SWITCH_TRUE;
+
+	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
+		return SWITCH_TRUE;
+	}
 
 	if (dbh->io_mutex) {
 		switch_mutex_lock(dbh->io_mutex);
@@ -1609,6 +1612,7 @@ void switch_core_sqldb_stop(void)
 		switch_thread_join(&st, sql_manager.thread);
 	}
 
+	switch_cache_db_flush_handles();
 	sql_close(0);
 
 	switch_core_hash_destroy(&sql_manager.dbh_hash);

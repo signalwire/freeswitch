@@ -15,16 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-# $Id: configure.ac,v 1.73 2009/10/03 04:37:25 steveu Exp $
 
 # @start 1
 
 AC_INIT
-
-CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
-CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
-LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
 m4_include(config/ax_compiler_vendor.m4)
 m4_include(config/ax_check_real_file.m4)
@@ -209,7 +203,9 @@ AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_HEADERS([sys/ioctl.h])
 AC_CHECK_HEADERS([sys/fcntl.h])
 AC_CHECK_HEADERS([sndfile.h])
+AC_CHECK_HEADERS([fenv.h])
 AC_CHECK_HEADERS([fftw3.h], , [AC_CHECK_HEADERS([fftw.h])])
+AC_CHECK_HEADERS([pcap.h])
 AC_CHECK_HEADERS([pthread.h])
 if test "${build}" == "${host}"
 then
@@ -270,6 +266,11 @@ then
     esac
 fi
 
+#AC_DEFINE([SPANDSP_SUPPORT_T85], [1], [Support T.85 JBIG compression])
+SPANDSP_SUPPORT_T85="#undef SPANDSP_SUPPORT_T85"
+#AC_DEFINE([SPANDSP_SUPPORT_V34], [1], [Support the V.34 FAX modem])
+SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
+
 AC_CHECK_LIB([m], [cos])
 # Some platforms still seem to lack the basic single precision trig and power related function.
 AC_SEARCH_LIBS([sinf], [m], AC_DEFINE([HAVE_SINF], [1], [Define to 1 if you have the sinf() function.]))
@@ -293,6 +294,7 @@ if test -n "$enable_tests" ; then
     AC_LANG([C])
     AC_CHECK_LIB([sndfile], [sf_open], SIMLIBS="$SIMLIBS -lsndfile", AC_MSG_ERROR("Can't make tests without libsndfile (does your system require a libsndfile-devel package?)"))
     AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], SIMLIBS="$SIMLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], SIMLIBS="$SIMLIBS -lfftw", AC_MSG_ERROR("Can't make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)"))])
+    AC_CHECK_LIB([pcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lpcap", AC_MSG_ERROR("Can't make tests without libpcap (does your system require a libpcap-devel package?)"))
     AC_CHECK_LIB([pthread], [pthread_attr_init], TESTLIBS="$TESTLIBS -lpthread")
     AC_CHECK_LIB([dl], [dlopen], TESTLIBS="$TESTLIBS -ldl")
     AC_CHECK_LIB([Xft], [XftFontOpen], TESTLIBS="$TESTLIBS -lXft",, $TESTLIBS)
@@ -366,6 +368,37 @@ sun)
     COMP_VENDOR_LDFLAGS=
     REMOVE_FROM_VAR(CFLAGS, -Xc)
     ;;
+intel)
+    COMP_VENDOR_CFLAGS="-std=c99 -D_POSIX_C_SOURCE=2 -D_GNU_SOURCE=1 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    if test "$enable_sse5" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse4a" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse4a $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse4_2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse42 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse4_1" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse41 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_ssse3" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mssse3 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse3" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse3 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse2 $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_sse" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-msse $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_mmx" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mmmx $COMP_VENDOR_CFLAGS"
+    fi
+    COMP_VENDOR_LDFLAGS=
+    ;;
 *)
     COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
     COMP_VENDOR_LDFLAGS=
@@ -438,15 +471,13 @@ fi
 
 if test "$enable_builtin_tiff" = "yes" ; then
   abs_tiffdir="`cd $srcdir/../tiff-3.8.2/ && pwd`"
-  spandsp_builddir="`pwd`"
-  abs_tiffbuilddir="`cd $spandsp_builddir/../tiff-3.8.2/ && pwd`"
   save_CFLAGS=$CFLAGS
   CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
   AC_CHECK_HEADERS([tiffio.h])
   CFLAGS="$save_CFLAGS"
   COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
   COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
-  LIBS="$LIBS $abs_tiffbuilddir/libtiff/libtiff.la"
+  LIBS="$LIBS $abs_tiffdir/libtiff/libtiff.la"
   AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
   AC_CHECK_HEADERS([tiffio.h])
@@ -464,6 +495,8 @@ AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
 AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
+AC_SUBST(SPANDSP_SUPPORT_T85)
+AC_SUBST(SPANDSP_SUPPORT_V34)
 AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)

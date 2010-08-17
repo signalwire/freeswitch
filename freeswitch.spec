@@ -35,6 +35,8 @@
 %define prefix    %{_prefix}
 %define sysconfdir	/opt/freeswitch/conf
 %define _sysconfdir	%{sysconfdir}
+%define logfiledir	/var/log/freeswitch
+%define runtimedir	/var/run/freeswitch
 
 Name:         	freeswitch
 Summary:      	FreeSWITCH open source telephony platform
@@ -320,7 +322,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #													Application Modules
 #
 ###############################################################################################################################
-APPLICATION_MODULES_AE="applications/mod_avmd  applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf applications/mod_expr"
+APPLICATION_MODULES_AE="applications/mod_avmd  applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_callcenter"
 
 APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit applications/mod_memcache"
 
@@ -425,7 +427,7 @@ test ! -f  modules.conf || rm -f modules.conf
 touch modules.conf
 for i in $MODULES; do echo $i >> modules.conf; done
 export VERBOSE=yes
-export DESTDIR=$RPM_BUILD_ROOT/
+export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
@@ -472,29 +474,31 @@ touch .noversion
 ###############################################################################################################################
 %install
 
-%{__make} DESTDIR=$RPM_BUILD_ROOT install
+%{__make} DESTDIR=%{buildroot} install
 
 # Create a log dir
-%{__mkdir} -p $RPM_BUILD_ROOT%{prefix}/log
+%{__mkdir} -p %{buildroot}%{prefix}/log
+%{__mkdir} -p %{buildroot}%{logfiledir}
+%{__mkdir} -p %{buildroot}%{runtimedir}
 
 %ifos linux
 # Install init files
 # On SuSE:
 %if 0%{?suse_version} > 100
-%{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 744 build/freeswitch.init.suse %{buildroot}/etc/rc.d/init.d/freeswitch
 %else
 # On RedHat like
-%{__install} -D -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 0755 build/freeswitch.init.redhat %{buildroot}/etc/rc.d/init.d/freeswitch
 %endif
-# On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
+# On SuSE make /usr/sbin/rcfreeswitch a link to /etc/rc.d/init.d/freeswitch
 %if 0%{?suse_version} > 100
-%{__mkdir} -p $RPM_BUILD_ROOT/usr/sbin
-%{__ln_s} -f /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+%{__mkdir} -p %{buildroot}/usr/sbin
+%{__ln_s} -f /etc/rc.d/init.d/freeswitch %{buildroot}/usr/sbin/rcfreeswitch
 %endif
 # Add the sysconfiguration file
-%{__install} -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
+%{__install} -D -m 744 build/freeswitch.sysconfig %{buildroot}/etc/sysconfig/freeswitch
 # Add monit file
-%{__install} -D -m 644 build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
+%{__install} -D -m 644 build/freeswitch.monitrc %{buildroot}/etc/monit.d/freeswitch.monitrc
 %endif
 
 
@@ -533,7 +537,7 @@ if [ $1 -eq 0 ]; then
 fi
 
 %clean
-%{__rm} -rf $RPM_BUILD_ROOT
+%{__rm} -rf %{buildroot}
 
 %files
 ###############################################################################################################################
@@ -554,9 +558,8 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/db
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar
 %dir %attr(0750, freeswitch, daemon) %{prefix}/htdocs
-%dir %attr(0750, freeswitch, daemon) %{prefix}/log
-%dir %attr(0750, freeswitch, daemon) %{prefix}/log/xml_cdr
-%dir %attr(0750, freeswitch, daemon) %{prefix}/run
+%dir %attr(0750, freeswitch, daemon) %{logfiledir}
+%dir %attr(0750, freeswitch, daemon) %{runtimedir}
 %dir %attr(0750, freeswitch, daemon) %{prefix}/scripts
 #
 #################################### Config Directory Structure ################################################################
@@ -597,6 +600,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mime.types
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/callcenter.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cidlookup.conf.xml
@@ -700,7 +704,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
 %ifos linux
 #/etc/ld.so.conf.d/*
-/etc/init.d/freeswitch
+/etc/rc.d/init.d/freeswitch
 /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
 /usr/sbin/rcfreeswitch
@@ -743,6 +747,7 @@ fi
 %{prefix}/mod/mod_event_multicast.so* 
 %{prefix}/mod/mod_event_socket.so* 
 %{prefix}/mod/mod_expr.so*
+%{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_fifo.so*
 %{prefix}/mod/mod_file_string.so*
 %{prefix}/mod/mod_flite.so*
@@ -810,11 +815,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/zt.conf
 %{prefix}/lib/libopenzap.so*
 %{prefix}/mod/mod_openzap.so*
-%{prefix}/mod/ozmod_analog.so*
-%{prefix}/mod/ozmod_analog_em.so*
-%{prefix}/mod/ozmod_isdn.so*
-%{prefix}/mod/ozmod_skel.so*
-%{prefix}/mod/ozmod_zt.so*
+%{prefix}/mod/ozmod_*.so*
 
 ###############################################################################################################################
 #

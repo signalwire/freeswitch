@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t4_rx.h,v 1.3.2.3 2009/12/21 17:18:40 steveu Exp $
  */
 
 /*! \file */
@@ -54,16 +52,18 @@ typedef enum
     T4_COMPRESSION_ITU_T4_2D = 2,
     /*! T.6 2D compression */
     T4_COMPRESSION_ITU_T6 = 3,
-    /*! T.85 monochrome JBIG coding */
+    /*! T.85 monochrome JBIG coding with L0 fixed. */
     T4_COMPRESSION_ITU_T85 = 4,
+    /*! T.85 monochrome JBIG coding with L0 variable. */
+    T4_COMPRESSION_ITU_T85_L0 = 5,
     /*! T.43 colour JBIG coding */
-    T4_COMPRESSION_ITU_T43 = 5,
+    T4_COMPRESSION_ITU_T43 = 6,
     /*! T.45 run length colour compression */
-    T4_COMPRESSION_ITU_T45 = 6,
+    T4_COMPRESSION_ITU_T45 = 7,
     /*! T.81 + T.30 Annex E colour JPEG coding */
-    T4_COMPRESSION_ITU_T81 = 7,
+    T4_COMPRESSION_ITU_T81 = 8,
     /*! T.81 + T.30 Annex K colour sYCC-JPEG coding */
-    T4_COMPRESSION_ITU_SYCC_T81 = 8
+    T4_COMPRESSION_ITU_SYCC_T81 = 9
 } t4_image_compression_t;
 
 /*! Supported X resolutions, in pixels per metre. */
@@ -328,7 +328,7 @@ SPAN_DECLARE(void) t4_rx_set_model(t4_state_t *s, const char *model);
     \brief Get the current transfer statistics.
     \param s The T.4 context.
     \param t A pointer to a statistics structure. */
-SPAN_DECLARE(void) t4_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
+SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
 
 /*! Get the short text name of an encoding format. 
     \brief Get the short text name of an encoding format.

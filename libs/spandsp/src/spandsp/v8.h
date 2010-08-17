@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: v8.h,v 1.31.4.1 2009/12/28 12:20:47 steveu Exp $
  */
  
 /*! \file */
@@ -64,19 +62,17 @@ enum v8_modulation_e
     V8_MOD_V17          = (1 << 0),     /* V.17 half-duplex */
     V8_MOD_V21          = (1 << 1),     /* V.21 duplex */
     V8_MOD_V22          = (1 << 2),     /* V.22/V22.bis duplex */
-    V8_MOD_V23HALF      = (1 << 3),     /* V.23 half-duplex */
+    V8_MOD_V23HDX       = (1 << 3),     /* V.23 half-duplex */
     V8_MOD_V23          = (1 << 4),     /* V.23 duplex */
     V8_MOD_V26BIS       = (1 << 5),     /* V.23 duplex */
     V8_MOD_V26TER       = (1 << 6),     /* V.23 duplex */
     V8_MOD_V27TER       = (1 << 7),     /* V.23 duplex */
     V8_MOD_V29          = (1 << 8),     /* V.29 half-duplex */
     V8_MOD_V32          = (1 << 9),     /* V.32/V32.bis duplex */
-    V8_MOD_V34HALF      = (1 << 10),    /* V.34 half-duplex */
+    V8_MOD_V34HDX       = (1 << 10),    /* V.34 half-duplex */
     V8_MOD_V34          = (1 << 11),    /* V.34 duplex */
     V8_MOD_V90          = (1 << 12),    /* V.90 duplex */
-    V8_MOD_V92          = (1 << 13),    /* V.92 duplex */
-
-    V8_MOD_FAILED       = (1 << 15)     /* Indicates failure to negotiate */
+    V8_MOD_V92          = (1 << 13)     /* V.92 duplex */
 };
 
 enum v8_protocol_e
@@ -100,10 +96,27 @@ enum v8_pcm_modem_availability_e
     V8_PSTN_PCM_MODEM_V91 = 0x04
 };
 
+enum v8_status_e
+{
+    /*! V.8 negotiation is in progress. */
+    V8_STATUS_IN_PROGRESS = 0,
+    /*! V.8 has been offered by the other (calling) party. */
+    V8_STATUS_V8_OFFERED = 1,
+    /*! V.8 has been successfully negotiated. Note that this only means the V.8
+        message exchange has successfully completed. The actual exchanged parameters
+        must be checked, to see if the call can proceed properly. */
+    V8_STATUS_V8_CALL = 2,
+    /*! A non-V.8 is being received. */
+    V8_STATUS_NON_V8_CALL = 3,
+    /*! V.8 negotiation failed. */
+    V8_STATUS_FAILED = 4
+};
+
 typedef struct v8_state_s v8_state_t;
 
 struct v8_parms_s
 {
+    int status;
     int modem_connect_tone;
     int call_function;
     unsigned int modulations;

@@ -77,6 +77,14 @@ SWITCH_DECLARE(switch_status_t) switch_limit_release(const char *backend, switch
 SWITCH_DECLARE(int) switch_limit_usage(const char *backend, const char *realm, const char *resource, uint32_t *rcount);
 
 /*!
+  \brief reset interval usage counter for a given resource
+  \param backend
+  \param realm
+  \param resource
+*/
+SWITCH_DECLARE(switch_status_t) switch_limit_interval_reset(const char *backend, const char *realm, const char *resource);
+
+/*!
   \brief reset all usage counters
   \param backend to use
 */
@@ -106,6 +114,7 @@ SWITCH_DECLARE(char *) switch_limit_status(const char *backend);
 #define SWITCH_LIMIT_RELEASE(name) static switch_status_t name (switch_core_session_t *session, const char *realm, const char *resource)
 #define SWITCH_LIMIT_USAGE(name) static int name (const char *realm, const char *resource, uint32_t *rcount)
 #define SWITCH_LIMIT_RESET(name) static switch_status_t name (void)
+#define SWITCH_LIMIT_INTERVAL_RESET(name) static switch_status_t name (const char *realm, const char *resource)
 #define SWITCH_LIMIT_STATUS(name) static char * name (void)
 
 #define LIMIT_IGNORE_TRANSFER_VARIABLE "limit_ignore_transfer"

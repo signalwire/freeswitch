@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax.h,v 1.39 2009/03/13 12:59:26 steveu Exp $
  */
 
 /*! \file */
@@ -52,7 +50,7 @@ extern "C"
     \return The number of samples unprocessed. This should only be non-zero if
             the software has reached the end of the FAX call.
 */
-SPAN_DECLARE(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
+SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
 
 /*! Apply fake T.30 receive processing when a block of audio samples is missing (e.g due
     to packet loss).
@@ -62,7 +60,7 @@ SPAN_DECLARE(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
     \return The number of samples unprocessed. This should only be non-zero if
             the software has reached the end of the FAX call.
 */
-SPAN_DECLARE(int) fax_rx_fillin(fax_state_t *s, int len);
+SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len);
 
 /*! Apply T.30 transmit processing to generate a block of audio samples.
     \brief Apply T.30 transmit processing to generate a block of audio samples.
@@ -72,7 +70,7 @@ SPAN_DECLARE(int) fax_rx_fillin(fax_state_t *s, int len);
     \return The number of samples actually generated. This will be zero when
             there is nothing to send.
 */
-SPAN_DECLARE(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len);
+SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len);
 
 /*! Select whether silent audio will be sent when FAX transmit is idle.
     \brief Select whether silent audio will be sent when FAX transmit is idle.
@@ -103,6 +101,14 @@ SPAN_DECLARE(t30_state_t *) fax_get_t30_state(fax_state_t *s);
     \return A pointer to the logging context, or NULL.
 */
 SPAN_DECLARE(logging_state_t *) fax_get_logging_state(fax_state_t *s);
+
+/*! Restart a FAX context.
+    \brief Restart a FAX context.
+    \param s The FAX context.
+    \param calling_party TRUE if the context is for a calling party. FALSE if the
+           context is for an answering party.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party);
 
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.

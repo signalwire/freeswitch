@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t4_tx.h,v 1.2.2.3 2009/12/21 17:18:40 steveu Exp $
  */
 
 /*! \file */
@@ -123,7 +121,7 @@ SPAN_DECLARE(void) t4_tx_set_tx_encoding(t4_state_t *s, int encoding);
            time specified by a remote receiving machine.
     \param s The T.4 context.
     \param bits The minimum number of bits per row. */
-SPAN_DECLARE(void) t4_tx_set_min_row_bits(t4_state_t *s, int bits);
+SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_state_t *s, int bits);
 
 /*! \brief Set the identity of the local machine, for inclusion in page headers.
     \param s The T.4 context.
@@ -138,6 +136,13 @@ SPAN_DECLARE(void) t4_tx_set_local_ident(t4_state_t *s, const char *ident);
     \param s The T.4 context.
     \param info A string, of up to 50 bytes, which will form the info field. */
 SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info);
+
+/*! Set the time zone for the time stamp in page header lines. If this function is not used
+    the current time zone of the program's environment is used.
+    \brief Set the header timezone.
+    \param s The T.4 context.
+    \param info A POSIX timezone description string. */
+SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, const char *tzstring);
 
 /*! \brief Set the row read handler for a T.4 transmit context.
     \param s The T.4 transmit context.
@@ -170,6 +175,12 @@ SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_state_t *s);
     \param s The T.4 context.
     \return The page number, or -1 if there is an error. */
 SPAN_DECLARE(int) t4_tx_get_current_page_in_file(t4_state_t *s);
+
+/*! Get the current image transfer statistics. 
+    \brief Get the current transfer statistics.
+    \param s The T.4 context.
+    \param t A pointer to a statistics structure. */
+SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
 
 #if defined(__cplusplus)
 }

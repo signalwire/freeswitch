@@ -991,10 +991,9 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 		alarms &= ~WAN_TE_BIT_ALARM_RAI;
 	}
 
-	/* if we still have alarms that we did not map, set the general alarm */
 	if (alarms) {
+		/* FIXME: investigate what else does the driver report */
 		ftdm_log(FTDM_LOG_DEBUG, "Unmapped wanpipe alarms: %d\n", alarms);
-		ftdmchan->alarm_flags |= FTDM_ALARM_GENERAL;
 	}
 
 	return FTDM_SUCCESS;

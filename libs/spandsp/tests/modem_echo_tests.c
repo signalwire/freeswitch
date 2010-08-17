@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: modem_echo_tests.c,v 1.32 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \page modem_echo_can_tests_page Line echo cancellation for modems tests
@@ -288,7 +286,7 @@ int main(int argc, char *argv[])
         line_model_no = atoi(argv[1]);
     }
     time(&now);
-    ctx = modem_echo_can_create(256);
+    ctx = modem_echo_can_init(256);
     awgn_init_dbm0(&far_noise_source, 7162534, -50.0f);
 
     signal_load(&local_css, "sound_c1_8k.wav");

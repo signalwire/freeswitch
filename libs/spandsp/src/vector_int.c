@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: vector_int.c,v 1.26.4.1 2009/12/28 11:54:59 steveu Exp $
  */
 
 /*! \file */

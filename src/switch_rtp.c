@@ -2235,6 +2235,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int fdr = 0;
 	int rtcp_fdr = 0;
 	int hot_socket = 0;
+	int read_loops = 0;
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
@@ -2287,6 +2288,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	recvfrom:
 		bytes = 0;
+		read_loops++;
 
 		if (!switch_rtp_ready(rtp_session)) {
 			break;
@@ -2405,7 +2407,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-		if (rtp_session->max_missed_packets) {
+		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+			rtp_session->missed_count = 0;
+			ret = 0;
+			goto end;
+		}
+
+		if (rtp_session->max_missed_packets && read_loops == 1) {
 			if (bytes) {
 				rtp_session->missed_count = 0;
 			} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
@@ -2534,7 +2542,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
 				*flags |= SFF_UDPTL_PACKET;
 			}
-			
+
 			ret = (int) bytes;
 			goto end;
 		}
@@ -2551,10 +2559,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (rtp_session->recv_msg.header.pt && (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
 				return_cng_frame();
 			}
-		}
-
-		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
-			return_cng_frame();
 		}
 
 
@@ -2814,17 +2818,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					switch_cond_next();
 					continue;
 				}
-
+				
 				return_cng_frame();
 			}
 		}
-
+		
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
+			if (!(io_flags & SWITCH_IO_FLAG_SINGLE_READ) && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
 				goto do_continue;
 			}
-			ret = 0;
-			goto end;
+			return_cng_frame();
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
@@ -3153,10 +3156,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (timestamp) {
 			rtp_session->ts = (uint32_t) timestamp;
+			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
+			if (rtp_session->ts <= rtp_session->last_write_ts) {
+				m++;
+			}
 		} else if (rtp_session->timer.timer_interface) {
 			rtp_session->ts = rtp_session->timer.samplecount;
 
-			if (rtp_session->ts <= rtp_session->last_write_ts) {
+			if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
 				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 			}
 		} else {

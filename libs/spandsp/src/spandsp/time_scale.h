@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: time_scale.h,v 1.20 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TIME_SCALE_H_)

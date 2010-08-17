@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE fax-tests SYSTEM "./fax-tests.dtd">
 <fax-tests>
-<!-- $Id: tsb85.xml,v 1.22 2009/05/24 07:18:36 steveu Exp $ -->
 <config>
     <path type="IMAGE" value="../test-data/etsi/fax"/>
 </config>
@@ -1270,7 +1269,7 @@
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 00 08"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 80 08"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>
@@ -1292,7 +1291,7 @@
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 00 08"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 80 00 08"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>

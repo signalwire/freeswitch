@@ -316,6 +316,9 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 			zap_sleep(500);
 		}
 
+#ifdef ZAP_DEBUG_DTMF
+		zap_mutex_destroy(&zchan->dtmfdbg.mutex);
+#endif
 		zap_mutex_lock(zchan->pre_buffer_mutex);
 		zap_buffer_destroy(&zchan->pre_buffer);
 		zap_mutex_unlock(zchan->pre_buffer_mutex);
@@ -450,7 +453,7 @@ OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **s
 		memset(new_span, 0, sizeof(*new_span));
 		status = zap_mutex_create(&new_span->mutex);
 		assert(status == ZAP_SUCCESS);
-		
+
 		zap_set_flag(new_span, ZAP_SPAN_CONFIGURED);
 		new_span->span_id = ++globals.span_index;
 		new_span->zio = zio;
@@ -658,6 +661,9 @@ OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t soc
 
 		zap_mutex_create(&new_chan->mutex);
 		zap_mutex_create(&new_chan->pre_buffer_mutex);
+#ifdef ZAP_DEBUG_DTMF
+		zap_mutex_create(&new_chan->dtmfdbg.mutex);
+#endif
 
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		zap_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
@@ -1356,6 +1362,23 @@ OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan)
 	return ZAP_FAIL;
 }
 
+#ifdef ZAP_DEBUG_DTMF
+static void close_dtmf_debug(zap_channel_t *zchan)
+{
+	zap_mutex_lock(zchan->dtmfdbg.mutex);
+
+	if (zchan->dtmfdbg.file) {
+		zap_log_chan_msg(zchan, ZAP_LOG_DEBUG, "closing debug dtmf file\n");
+		fclose(zchan->dtmfdbg.file);
+		zchan->dtmfdbg.file = NULL;
+	}
+	zchan->dtmfdbg.windex = 0;
+	zchan->dtmfdbg.wrapped = 0;
+
+	zap_mutex_unlock(zchan->dtmfdbg.mutex);
+}
+#endif
+
 OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 {
 	assert(zchan != NULL);
@@ -1380,6 +1403,9 @@ OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 	zap_buffer_destroy(&zchan->pre_buffer);
 	zchan->pre_buffer_size = 0;
 	zap_mutex_unlock(zchan->pre_buffer_mutex);
+#ifdef ZAP_DEBUG_DTMF
+	close_dtmf_debug(zchan);
+#endif
 
 	zap_channel_flush_dtmf(zchan);
 
@@ -2001,6 +2027,54 @@ OZ_DECLARE(zap_status_t) zap_channel_queue_dtmf(zap_channel_t *zchan, const char
 	
 	assert(zchan != NULL);
 
+	zap_log_chan(zchan, ZAP_LOG_DEBUG, "Queuing DTMF %s\n", dtmf);
+
+#ifdef ZAP_DEBUG_DTMF
+	zap_mutex_lock(zchan->dtmfdbg.mutex);
+	if (!zchan->dtmfdbg.file) {
+		struct tm currtime;
+		time_t currsec;
+		char dfile[512];
+
+		currsec = time(NULL);
+		localtime_r(&currsec, &currtime);
+
+		snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+				zchan->span_id, zchan->chan_id, 
+				currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+				currtime.tm_hour, currtime.tm_min, currtime.tm_sec, zchan->native_codec == ZAP_CODEC_ULAW ? "ulaw" : zchan->native_codec == ZAP_CODEC_ALAW ? "alaw" : "sln");
+		zchan->dtmfdbg.file = fopen(dfile, "w");
+		if (!zchan->dtmfdbg.file) {
+			zap_log_chan(zchan, ZAP_LOG_ERROR, "failed to open debug dtmf file %s\n", dfile);
+		} else {
+			/* write the saved audio buffer */
+			int rc = 0;
+			int towrite = sizeof(zchan->dtmfdbg.buffer) - zchan->dtmfdbg.windex;
+		
+			zap_log_chan(zchan, ZAP_LOG_DEBUG, "created debug DTMF file %s\n", dfile);
+			zchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
+			if (zchan->dtmfdbg.wrapped) {
+				rc = fwrite(&zchan->dtmfdbg.buffer[zchan->dtmfdbg.windex], 1, towrite, zchan->dtmfdbg.file);
+				if (rc != towrite) {
+					zap_log_chan(zchan, ZAP_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
+				}
+			}
+			if (zchan->dtmfdbg.windex) {
+				towrite = zchan->dtmfdbg.windex;
+				rc = fwrite(&zchan->dtmfdbg.buffer[0], 1, towrite, zchan->dtmfdbg.file);
+				if (rc != towrite) {
+					zap_log_chan(zchan, ZAP_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
+				}
+			}
+			zchan->dtmfdbg.windex = 0;
+			zchan->dtmfdbg.wrapped = 0;
+		}
+	} else {
+			zchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
+	}
+	zap_mutex_unlock(zchan->dtmfdbg.mutex);
+#endif
+
 	if (zchan->pre_buffer) {
 		zap_buffer_zero(zchan->pre_buffer);
 	}
@@ -2176,6 +2250,49 @@ OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_
 			return ZAP_FAIL;
 		}
 	}
+
+#ifdef ZAP_DEBUG_DTMF
+	if (status == ZAP_SUCCESS) {
+		int dlen = (int) *datalen;
+		int rc = 0;
+		zap_mutex_lock(zchan->dtmfdbg.mutex);
+		if (!zchan->dtmfdbg.file) {
+			/* no file yet, write to our circular buffer */
+			int windex = zchan->dtmfdbg.windex;
+			int avail = sizeof(zchan->dtmfdbg.buffer) - windex;
+			char *dataptr = data;
+
+			if (dlen > avail) {
+				int diff = dlen - avail;
+				/* write only what we can and the rest at the beginning of the buffer */
+				memcpy(&zchan->dtmfdbg.buffer[windex], dataptr, avail);
+				memcpy(&zchan->dtmfdbg.buffer[0], &dataptr[avail], diff);
+				windex = diff;
+				/*zap_log_chan(zchan, ZAP_LOG_DEBUG, "wrapping around dtmf read buffer up to index %d\n\n", windex);*/
+				zchan->dtmfdbg.wrapped = 1;
+			} else {
+				memcpy(&zchan->dtmfdbg.buffer[windex], dataptr, dlen);
+				windex += dlen;
+			}
+			if (windex == sizeof(zchan->dtmfdbg.buffer)) {
+				/*zap_log_chan_msg(zchan, ZAP_LOG_DEBUG, "wrapping around dtmf read buffer\n");*/
+				windex = 0;
+				zchan->dtmfdbg.wrapped = 1;
+			}
+			zchan->dtmfdbg.windex = windex;
+		} else {
+			rc = fwrite(data, 1, dlen, zchan->dtmfdbg.file);
+			if (rc != dlen) {
+				zap_log(ZAP_LOG_WARNING, "DTMF debugger wrote only %d out of %d bytes: %s\n", rc, datalen, strerror(errno));
+			}
+			zchan->dtmfdbg.closetimeout--;
+			if (!zchan->dtmfdbg.closetimeout) {
+				close_dtmf_debug(zchan);
+			}
+		}
+		zap_mutex_unlock(zchan->dtmfdbg.mutex);
+	}
+#endif
 
 	if (status == ZAP_SUCCESS) {
 		if (zap_test_flag(zchan, ZAP_CHANNEL_USE_RX_GAIN) 

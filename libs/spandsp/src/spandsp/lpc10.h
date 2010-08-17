@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: lpc10.h,v 1.22 2009/04/11 18:11:19 steveu Exp $
  */
 
 #if !defined(_SPANDSP_LPC10_H_)

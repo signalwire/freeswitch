@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: make_modem_filter.c,v 1.17.4.1 2009/12/28 12:20:46 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -328,7 +326,8 @@ int main(int argc, char **argv)
     double baud_rate;
     double rx_excess_bandwidth;
     double tx_excess_bandwidth;
-    const char *tag;
+    const char *rx_tag;
+    const char *tx_tag;
     const char *modem;
 
     fixed_point = FALSE;
@@ -367,58 +366,50 @@ int main(int argc, char **argv)
         tx_excess_bandwidth = 0.25;
         carrier = 1800.0;
         baud_rate = 2400.0;
-        tag = "";
+        rx_tag = "";
+        tx_tag = "";
     }
     else if (strcmp(modem, "V.22bis") == 0)
     {
         /* This is only intended to apply to transmit. */
         rx_coeff_sets = 12;
-        rx_coeffs_per_filter = 37;
+        rx_coeffs_per_filter = 27;
         rx_excess_bandwidth = 0.75;
         tx_coeff_sets = 40;
         tx_coeffs_per_filter = 9;
         tx_excess_bandwidth = 0.75;
         carrier = 1200.0;
         baud_rate = 600.0;
-        tag = "";
+        rx_tag = "";
+        tx_tag = "";
     }
     else if (strcmp(modem, "V.22bis1200") == 0)
     {
         /* This is only intended to apply to receive. */
         rx_coeff_sets = 12;
-        rx_coeffs_per_filter = 37;
+        rx_coeffs_per_filter = 27;
         rx_excess_bandwidth = 0.75;
         tx_coeff_sets = 40;
         tx_coeffs_per_filter = 9;
         tx_excess_bandwidth = 0.75;
         carrier = 1200.0;
         baud_rate = 600.0;
-        tag = "_1200";
+        rx_tag = "_1200";
+        tx_tag = "_1200";
     }
     else if (strcmp(modem, "V.22bis2400") == 0)
     {
         /* This is only intended to apply to receive. */
         rx_coeff_sets = 12;
-        rx_coeffs_per_filter = 37;
+        rx_coeffs_per_filter = 27;
         rx_excess_bandwidth = 0.75;
         tx_coeff_sets = 40;
         tx_coeffs_per_filter = 9;
         tx_excess_bandwidth = 0.75;
         carrier = 2400.0;
         baud_rate = 600.0;
-        tag = "_2400";
-    }
-    else if (strcmp(modem, "V.27ter4800") == 0)
-    {
-        rx_coeff_sets = 8;
-        rx_coeffs_per_filter = 27;
-        rx_excess_bandwidth = 0.5;
-        tx_coeff_sets = 5;
-        tx_coeffs_per_filter = 9;
-        tx_excess_bandwidth = 0.5;
-        carrier = 1800.0;
-        baud_rate = 1600.0;
-        tag = "_4800";
+        rx_tag = "_2400";
+        tx_tag = "_2400";
     }
     else if (strcmp(modem, "V.27ter2400") == 0)
     {
@@ -430,7 +421,21 @@ int main(int argc, char **argv)
         tx_excess_bandwidth = 0.5;
         carrier = 1800.0;
         baud_rate = 1200.0;
-        tag = "_2400";
+        rx_tag = "_2400";
+        tx_tag = "_2400";
+    }
+    else if (strcmp(modem, "V.27ter4800") == 0)
+    {
+        rx_coeff_sets = 8;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.5;
+        tx_coeff_sets = 5;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.5;
+        carrier = 1800.0;
+        baud_rate = 1600.0;
+        rx_tag = "_4800";
+        tx_tag = "_4800";
     }
     else if (strcmp(modem, "V.29") == 0)
     {
@@ -442,7 +447,8 @@ int main(int argc, char **argv)
         tx_excess_bandwidth = 0.25;
         carrier = 1700.0;
         baud_rate = 2400.0;
-        tag = "";
+        rx_tag = "";
+        tx_tag = "";
     }
     else
     {
@@ -457,7 +463,7 @@ int main(int argc, char **argv)
                        baud_rate,
                        tx_excess_bandwidth,
                        fixed_point,
-                       tag);
+                       tx_tag);
     }
     else
     {
@@ -467,7 +473,7 @@ int main(int argc, char **argv)
                        baud_rate,
                        rx_excess_bandwidth,
                        fixed_point,
-                       tag);
+                       rx_tag);
     }
     return 0;
 }

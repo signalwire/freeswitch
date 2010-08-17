@@ -25,8 +25,6 @@
  * This code is based on the U.S. Department of Defense reference
  * implementation of the LPC-10 2400 bps Voice Coder. They do not
  * exert copyright claims on their code, and it may be freely used.
- *
- * $Id: lpc10_decode.c,v 1.27.4.1 2009/12/24 17:00:19 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -251,6 +249,7 @@ static int pitsyn(lpc10_decode_state_t *s,
     float slope;
     float uvpit;
     float xxy;
+    float msix;
 
     rci_dim1 = LPC10_ORDER;
     rci_offset = rci_dim1 + 1;
@@ -446,7 +445,10 @@ static int pitsyn(lpc10_decode_state_t *s,
                         xxy = expf(xxy);
                         rci[j + *nout*rci_dim1 + 1] = (xxy - 1.0f)/(xxy + 1.0f);
                     }
-                    rmsi[*nout - 1] = expf(logf(s->rmso) + prop*(logf(*rms) - logf(s->rmso)));
+                    msix = logf(*rms) - logf(s->rmso);
+                    msix = prop*msix;
+                    msix = logf(s->rmso) + msix;
+                    rmsi[*nout - 1] = expf(msix);
                 }
             }
             if (vflag != 1)

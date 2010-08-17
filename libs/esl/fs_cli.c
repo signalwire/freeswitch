@@ -566,6 +566,8 @@ static int usage(char *name){
 	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -l, --loglevel=command          Log Level\n");
 	printf("  -q, --quiet                     Disable logging\n");
+	printf("  -r, --retry                     Retry connection on failure\n");
+	printf("  -R, --reconnect                 Reconnect if disconnected\n");
 	printf("  -d, --debug=level               Debug Level (0 - 7)\n\n");
 	return 1;
 }
@@ -581,7 +583,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
 		if (status == ESL_FAIL) {
 			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
-			running = thread_running = 0;
+			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
 			if (handle->last_event) {
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
@@ -613,7 +615,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 						}
 						known++;
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
-						running = thread_running = 0;
+						running = -1; thread_running = 0;
 						known++;
 					} else if (!strcasecmp(type, "text/event-plain")) {
 						char *foo;
@@ -718,7 +720,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
 			printf("Socket interrupted, bye!\n");
-			return 1;
+			return -1;
 		}
 		if (handle->last_sr_event) {
 			if (handle->last_sr_event->body) {
@@ -987,6 +989,8 @@ int main(int argc, char *argv[])
 		{"execute", 1, 0, 'x'},
 		{"loglevel", 1, 0, 'l'},
 		{"quiet", 0, 0, 'q'},
+		{"retry", 0, 0, 'r'},
+		{"reconnect", 0, 0, 'R'},
 		{0, 0, 0, 0}
 	};
 
@@ -1004,7 +1008,7 @@ int main(int argc, char *argv[])
 	char argv_command[256] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
-	int loops = 2;
+	int loops = 2, reconnect = 0;
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1026,7 +1030,7 @@ int main(int argc, char *argv[])
 	
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qrh?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qrRh?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt)
 		{
@@ -1072,6 +1076,9 @@ int main(int argc, char *argv[])
 				break;
 		    case 'r':
 				loops += 120;
+				break;
+		    case 'R':
+				reconnect = 1;
 				break;
 			case 'h':
 			case '?':
@@ -1189,6 +1196,8 @@ int main(int argc, char *argv[])
 	} else {
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
 	}
+
+ connect:
 
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
@@ -1314,8 +1323,9 @@ int main(int argc, char *argv[])
 	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
 	printf("%s\n", handle.last_sr_reply);
 
-	while (running) {
-
+	while (running > 0) {
+		int r;
+		
 #ifdef HAVE_EDITLINE
 		line = el_gets(el, &count);
 #else
@@ -1341,8 +1351,8 @@ int main(int argc, char *argv[])
 				history(myhistory, &ev, H_ENTER, line);
 #endif
 				
-				if (process_command(&handle, cmd)) {
-					running = 0;
+				if ((r = process_command(&handle, cmd))) {
+					running = r;
 				}
 
 #ifdef HAVE_EDITLINE
@@ -1356,6 +1366,13 @@ int main(int argc, char *argv[])
 		usleep(1000);
 
 	}
+
+	if (running < 0 && reconnect) {
+		running = 1;
+		loops = 120;
+		goto connect;
+	}
+
 
 #ifdef HAVE_EDITLINE
  done:

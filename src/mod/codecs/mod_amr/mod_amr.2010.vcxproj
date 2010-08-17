@@ -234,8 +234,6 @@
       </PrecompiledHeader>
     </ClCompile>
     <Link>
-      <OutputFile>
-      </OutputFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>

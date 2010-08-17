@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: t38_core.h,v 1.39 2009/07/14 13:54:22 steveu Exp $
  */
 
 /*! \file */
@@ -253,9 +251,15 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator);
 
 /*! \brief Find the delay to allow for HDLC flags after sending an indicator
     \param s The T.38 context.
-    \param indicator The indicator to send.
+    \param indicator The indicator to check.
     \return The delay to allow for initial HDLC flags after this indicator is sent. */
 SPAN_DECLARE(int) t38_core_send_flags_delay(t38_core_state_t *s, int indicator);
+
+/*! \brief Find the delay to allow for modem training after sending an indicator
+    \param s The T.38 context.
+    \param indicator The indicator to check.
+    \return The delay to allow for modem training after this indicator is sent. */
+SPAN_DECLARE(int) t38_core_send_training_delay(t38_core_state_t *s, int indicator);
 
 /*! \brief Send a data packet
     \param s The T.38 context.
@@ -364,6 +368,12 @@ SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep);
     \return A pointer to the logging context, or NULL.
 */
 SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s);
+
+/*! Restart a T.38 core context.
+    \brief Restart a T.38 core context.
+    \param s The T.38 context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) t38_core_restart(t38_core_state_t *s);
 
 /*! Initialise a T.38 core context.
     \brief Initialise a T.38 core context.

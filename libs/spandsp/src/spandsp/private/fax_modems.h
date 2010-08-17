@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax_modems.h,v 1.4 2009/09/04 14:38:47 steveu Exp $
  */
 
 /*! \file */

@@ -127,12 +127,12 @@ struct switch_channel {
 	uint32_t caps[CC_FLAG_MAX];
 	uint8_t state_flags[CF_FLAG_MAX];
 	uint32_t private_flags;
-	uint32_t app_flags;
 	switch_caller_profile_t *caller_profile;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_event_t *variables;
 	switch_hash_t *private_hash;
+	switch_hash_t *app_flag_hash;
 	switch_call_cause_t hangup_cause;
 	int vi;
 	int event_count;
@@ -536,6 +536,9 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 		switch_safe_free(pop);
 	}
 	switch_core_hash_destroy(&channel->private_hash);
+	if (channel->app_flag_hash) {
+		switch_core_hash_destroy(&channel->app_flag_hash);
+	}
 	switch_mutex_lock(channel->profile_mutex);
 	switch_event_destroy(&channel->variables);
 	switch_mutex_unlock(channel->profile_mutex);
@@ -1285,30 +1288,55 @@ SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, 
 	return (channel->private_flags & flags);
 }
 
-SWITCH_DECLARE(void) switch_channel_set_app_flag(switch_channel_t *channel, uint32_t flags)
+SWITCH_DECLARE(void) switch_channel_set_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
+	uint32_t *flagp = NULL;
+	
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->flag_mutex);
-	channel->app_flags |= flags;
+	
+	if (channel->app_flag_hash) {
+		flagp = switch_core_hash_find(channel->app_flag_hash, key);
+	} else {
+		switch_core_hash_init(&channel->app_flag_hash, switch_core_session_get_pool(channel->session));
+		flagp = switch_core_session_alloc(channel->session, sizeof(uint32_t));
+		switch_core_hash_insert(channel->app_flag_hash, key, flagp);
+	}
+
+	if (flagp) *flagp |= flags;
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
-SWITCH_DECLARE(void) switch_channel_clear_app_flag(switch_channel_t *channel, uint32_t flags)
+SWITCH_DECLARE(void) switch_channel_clear_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
+	uint32_t *flagp = NULL;
+	
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->flag_mutex);
-	if (!flags) {
-		channel->app_flags = 0;
-	} else {
-		channel->app_flags &= ~flags;
+	if (channel->app_flag_hash && (flagp = switch_core_hash_find(channel->app_flag_hash, key))) {
+		if (!flags) {
+			*flagp = 0;
+		} else {
+			*flagp &= ~flags;
+		}
 	}
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
-SWITCH_DECLARE(int) switch_channel_test_app_flag(switch_channel_t *channel, uint32_t flags)
+SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
+	int r = 0;
+	uint32_t *flagp = NULL;
 	switch_assert(channel != NULL);
-	return (channel->app_flags & flags);
+
+	switch_mutex_lock(channel->flag_mutex);
+	if (channel->app_flag_hash && (flagp = switch_core_hash_find(channel->app_flag_hash, key))) {
+		r = (*flagp & flags);
+	}
+	switch_mutex_unlock(channel->flag_mutex);
+	
+
+	return r;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flag)
@@ -3033,8 +3061,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_caller_profile_t *caller_profile, *ocp;
 	switch_app_log_t *app_log, *ap;
 	char *last_app = NULL, *last_arg = NULL;
-	char start[80] = "", resurrect[80] = "", answer[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "", profile_start[80] =
-		"";
+	char start[80] = "", resurrect[80] = "", answer[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "",
+		profile_start[80] =	"";
 	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0, progressmsec = 0, progress_mediamsec = 0;
 	int32_t answersec = 0, answermsec = 0;
 	switch_time_t answerusec = 0;
@@ -3114,7 +3142,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 		if (caller_profile->times->resurrected) {
 			switch_time_exp_lt(&tm, caller_profile->times->resurrected);
-			switch_strftime_nocheck(answer, &retsize, sizeof(resurrect), fmt, &tm);
+			switch_strftime_nocheck(resurrect, &retsize, sizeof(resurrect), fmt, &tm);
 			switch_channel_set_variable(channel, "resurrect_stamp", resurrect);
 		}
 
@@ -3136,13 +3164,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 		tt_created = (time_t) (caller_profile->times->created / 1000000);
 		mtt_created = (time_t) (caller_profile->times->created / 1000);
-		tt_prof_created = (time_t) (caller_profile->times->profile_created / 1000000);
-		mtt_prof_created = (time_t) (caller_profile->times->profile_created / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
 		switch_channel_set_variable(channel, "start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 		switch_channel_set_variable(channel, "start_uepoch", tmp);
 
+		tt_prof_created = (time_t) (caller_profile->times->profile_created / 1000000);
+		mtt_prof_created = (time_t) (caller_profile->times->profile_created / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_prof_created);
 		switch_channel_set_variable(channel, "profile_start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
@@ -3176,7 +3204,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 		switch_channel_set_variable(channel, "progress_media_uepoch", tmp);
 
-
 		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
 		mtt_hungup = (time_t) (caller_profile->times->hungup / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
@@ -3184,9 +3211,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 		switch_channel_set_variable(channel, "end_uepoch", tmp);
 
-		uduration = caller_profile->times->hungup - caller_profile->times->created;
 		duration = (int32_t) (tt_hungup - tt_created);
 		mduration = (int32_t) (mtt_hungup - mtt_created);
+		uduration = caller_profile->times->hungup - caller_profile->times->created;
 
 		if (caller_profile->times->answered) {
 			billsec = (int32_t) (tt_hungup - tt_answered);
@@ -3214,7 +3241,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			progress_mediausec = caller_profile->times->progress_media - caller_profile->times->created;
 		}
 
-
 	}
 
 	switch_channel_set_variable(channel, "last_app", last_app);
@@ -3227,13 +3253,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progresssec);
+	switch_snprintf(tmp, sizeof(tmp), "%d", progresssec);
 	switch_channel_set_variable(channel, "progresssec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, answersec);
+	switch_snprintf(tmp, sizeof(tmp), "%d", answersec);
 	switch_channel_set_variable(channel, "answersec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progress_mediasec);
+	switch_snprintf(tmp, sizeof(tmp), "%d", progress_mediasec);
 	switch_channel_set_variable(channel, "progress_mediasec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);
@@ -3251,7 +3277,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", answermsec);
 	switch_channel_set_variable(channel, "answermsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progressmsec);
+	switch_snprintf(tmp, sizeof(tmp), "%d", progress_mediamsec);
 	switch_channel_set_variable(channel, "progress_mediamsec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillmsec);

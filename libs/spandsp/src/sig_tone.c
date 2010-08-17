@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: sig_tone.c,v 1.40 2010/05/12 15:32:41 steveu Exp $
  */
 
 /*! \file */
@@ -634,8 +632,8 @@ SPAN_DECLARE(void) sig_tone_rx_set_mode(sig_tone_rx_state_t *s, int mode, int du
 
 SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, tone_report_func_t sig_update, void *user_data)
 {
-#if !defined(SPANDSP_USE_FIXED_POINT)
     int i;
+#if !defined(SPANDSP_USE_FIXED_POINT)
     int j;
 #endif
     

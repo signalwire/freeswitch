@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fsk.h,v 1.5 2009/04/01 13:22:40 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_FSK_H_)

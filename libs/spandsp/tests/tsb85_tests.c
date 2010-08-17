@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: tsb85_tests.c,v 1.32 2009/05/30 15:23:14 steveu Exp $
  */
 
 /*! \file */
@@ -449,16 +447,16 @@ static int string_to_msg(uint8_t msg[], uint8_t mask[], const char buf[])
     while (*t)
     {
         /* Skip white space */
-        while (isspace(*t))
+        while (isspace((int) *t))
             t++;
         /* If we find ... we allow arbitrary addition info beyond this point in the message */
         if (t[0] == '.'  &&  t[1] == '.'  &&  t[2] == '.')
         {
             return -i;
         }
-        else if (isxdigit(*t))
+        else if (isxdigit((int) *t))
         {
-            for (  ;  isxdigit(*t);  t++)
+            for (  ;  isxdigit((int) *t);  t++)
             {
                 x = *t;
                 if (x >= 'a')
@@ -474,7 +472,7 @@ static int string_to_msg(uint8_t msg[], uint8_t mask[], const char buf[])
             {
                 /* There is a mask following the byte */
                 mask[i] = 0;
-                for (t++;  isxdigit(*t);  t++)
+                for (t++;  isxdigit((int) *t);  t++)
                 {
                     x = *t;
                     if (x >= 'a')
@@ -486,7 +484,7 @@ static int string_to_msg(uint8_t msg[], uint8_t mask[], const char buf[])
                     mask[i] = (mask[i] << 4) | x;
                 }
             }
-            if (*t  &&  !isspace(*t))
+            if (*t  &&  !isspace((int) *t))
             {
                 /* Bad string */
                 return 0;
@@ -557,12 +555,12 @@ static void corrupt_image(faxtester_state_t *s, uint8_t image[], int len, const 
     t = bad_rows;
     while (*t)
     {
-        while (isspace(*t))
+        while (isspace((int) *t))
             t++;
         if (sscanf(t, "%d", &list[x]) < 1)
             break;
         x++;
-        while (isdigit(*t))
+        while (isdigit((int) *t))
             t++;
         if (*t == ',')
             t++;
@@ -630,7 +628,7 @@ static int next_step(faxtester_state_t *s)
     int compression_type;
     int timer;
     int len;
-    t4_state_t t4_state;
+    t4_state_t t4_tx_state;
     t30_state_t *t30;
 
     if (s->cur == NULL)
@@ -966,14 +964,14 @@ printf("Push '%s'\n", next_tx_file);
             /* A non-ECM page */
             min_row_bits = (min_bits)  ?  atoi((const char *) min_bits)  :  0;
             sprintf(path, "%s/%s", image_path, (const char *) value);
-            if (t4_tx_init(&t4_state, path, -1, -1) == NULL)
+            if (t4_tx_init(&t4_tx_state, path, -1, -1) == NULL)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
                 printf("Test failed\n");
                 exit(2);
             }
-            t4_tx_set_min_row_bits(&t4_state, min_row_bits);
-            t4_tx_set_header_info(&t4_state, NULL);
+            t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
+            t4_tx_set_header_info(&t4_tx_state, NULL);
             compression_type = T4_COMPRESSION_ITU_T4_1D;
             if (compression)
             {
@@ -982,20 +980,20 @@ printf("Push '%s'\n", next_tx_file);
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
                     compression_type = T4_COMPRESSION_ITU_T6;
             }
-            t4_tx_set_tx_encoding(&t4_state, compression_type);
-            if (t4_tx_start_page(&t4_state))
+            t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
+            if (t4_tx_start_page(&t4_tx_state))
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
                 printf("Test failed\n");
                 exit(2);
             }
-            len = t4_tx_get_chunk(&t4_state, image, sizeof(image));
+            len = t4_tx_get_chunk(&t4_tx_state, image, sizeof(image));
             if (bad_rows)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
                 corrupt_image(s, image, len, (const char *) bad_rows);
             }
-            t4_tx_release(&t4_state);
+            t4_tx_release(&t4_tx_state);
             span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM image is %d bytes\n", len);
             faxtester_set_non_ecm_image_buffer(s, image, len);
         }
@@ -1006,14 +1004,14 @@ printf("Push '%s'\n", next_tx_file);
             ecm_frame_size = (frame_size)  ?  atoi((const char *) frame_size)  :  64;
             i = (crc_error)  ?  atoi((const char *) crc_error)  :  -1;
             sprintf(path, "%s/%s", image_path, (const char *) value);
-            if (t4_tx_init(&t4_state, path, -1, -1) == NULL)
+            if (t4_tx_init(&t4_tx_state, path, -1, -1) == NULL)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to init T.4 send\n");
                 printf("Test failed\n");
                 exit(2);
             }
-            t4_tx_set_min_row_bits(&t4_state, min_row_bits);
-            t4_tx_set_header_info(&t4_state, NULL);
+            t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
+            t4_tx_set_header_info(&t4_tx_state, NULL);
             compression_type = T4_COMPRESSION_ITU_T4_1D;
             if (compression)
             {
@@ -1022,22 +1020,22 @@ printf("Push '%s'\n", next_tx_file);
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
                     compression_type = T4_COMPRESSION_ITU_T6;
             }
-            t4_tx_set_tx_encoding(&t4_state, compression_type);
-            if (t4_tx_start_page(&t4_state))
+            t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
+            if (t4_tx_start_page(&t4_tx_state))
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to start T.4 send\n");
                 printf("Test failed\n");
                 exit(2);
             }
             /*endif*/
-            len = t4_tx_get_chunk(&t4_state, image, sizeof(image));
+            len = t4_tx_get_chunk(&t4_tx_state, image, sizeof(image));
             if (bad_rows)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
                 corrupt_image(s, image, len, (const char *) bad_rows);
             }
             /*endif*/
-            t4_tx_release(&t4_state);
+            t4_tx_release(&t4_tx_state);
             span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes\n", len);
             faxtester_set_ecm_image_buffer(s, image, len, ecm_block, ecm_frame_size, i);
         }
@@ -1287,20 +1285,40 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
 
 int main(int argc, char *argv[])
 {
+    const char *xml_file_name;
     const char *test_name;
+    int opt;
 
-    //string_test();
+#if 0
+    string_test();
+#endif
 
+    xml_file_name = "../spandsp/tsb85.xml";
     test_name = "MRGN01";
-    if (argc > 1)
-        test_name = argv[1];
+    while ((opt = getopt(argc, argv, "x:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'x':
+            xml_file_name = optarg;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+    }
+    argc -= optind;
+    argv += optind;
+    if (argc > 0)
+        test_name = argv[0];
 
     strcpy(image_path, ".");
     faxtester_init(&state, TRUE);
     memset(&expected_rx_info, 0, sizeof(expected_rx_info));
     span_log_set_level(&state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&state.logging, "B");
-    get_test_set(&state, "../spandsp/tsb85.xml", test_name);
+    get_test_set(&state, xml_file_name, test_name);
     printf("Done\n");
     return 0;
 }

@@ -165,10 +165,17 @@ AC_ARG_WITH([libpri],
  [AS_HELP_STRING([--with-libpri], [Install ozmod_libpri])], [enable_libpri="yes"], [enable_libpri="no"])
 AC_SUBST(enable_libpri)
 
+# debug dtmf?
+AC_ARG_WITH([debugdtmf],
+ [AS_HELP_STRING([--with-debugdtmf], [Debug DTMF])], [enable_debugdtmf="yes"], [enable_debugdtmf="no"])
+AC_SUBST(enable_debugdtmf)
+
 AC_CHECK_LIB([sangoma], [sangoma_span_chan_toif], [have_libsangoma="yes"])
 AM_CONDITIONAL([LIBSANGOMA],[test "${have_libsangoma}" = "yes"])
 
 AM_CONDITIONAL([LIBPRI],[test "${enable_libpri}" = "yes"])
+
+AM_CONDITIONAL([DEBUGDTMF],[test "${enable_debugdtmf}" = "yes"])
 
 AC_CHECK_LIB([openr2], [openr2_context_set_io_type], [have_openr2="yes"])
 AM_CONDITIONAL([OPENR2],[test "${have_openr2}" = "yes"])

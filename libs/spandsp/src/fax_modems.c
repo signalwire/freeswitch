@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: fax_modems.c,v 1.8 2009/11/02 13:25:20 steveu Exp $
  */
 
 /*! \file */
@@ -88,7 +86,7 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD               5
 
-SPAN_DECLARE(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -108,7 +106,7 @@ SPAN_DECLARE(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], in
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fax_modems_v17_v21_rx_fillin(void *user_data, int len)
+SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx_fillin(void *user_data, int len)
 {
     fax_modems_state_t *s;
 
@@ -119,7 +117,7 @@ SPAN_DECLARE(int) fax_modems_v17_v21_rx_fillin(void *user_data, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -139,7 +137,7 @@ SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[],
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fax_modems_v27ter_v21_rx_fillin(void *user_data, int len)
+SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx_fillin(void *user_data, int len)
 {
     fax_modems_state_t *s;
 
@@ -150,7 +148,7 @@ SPAN_DECLARE(int) fax_modems_v27ter_v21_rx_fillin(void *user_data, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -170,7 +168,7 @@ SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], in
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
+SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
 {
     fax_modems_state_t *s;
 
@@ -261,6 +259,12 @@ SPAN_DECLARE(void) fax_modems_start_rx_modem(fax_modems_state_t *s, int which)
 SPAN_DECLARE(void) fax_modems_set_tep_mode(fax_modems_state_t *s, int use_tep)
 {
     s->use_tep = use_tep;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fax_modems_restart(fax_modems_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

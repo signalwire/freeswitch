@@ -874,7 +874,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			}
 		}
 
-		if (conference->announce_count == 1) {
+		if (conference->count == 1) {
 			conference->floor_holder = conference->members;
 		}
 
@@ -1905,6 +1905,7 @@ static void conference_loop_fn_hangup(conference_member_t *member, caller_contro
 /* marshall frames from the call leg to the conference thread for muxing to other call legs */
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *obj)
 {
+    switch_event_t *event;
 	conference_member_t *member = obj;
 	switch_channel_t *channel;
 	switch_status_t status;
@@ -1946,7 +1947,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				hangunder_hits--;
 			}
 			if (switch_test_flag(member, MFLAG_TALKING)) {
-				switch_event_t *event;
 				if (++hangover_hits >= hangover) {
 					hangover_hits = hangunder_hits = 0;
 					switch_clear_flag_locked(member, MFLAG_TALKING);
@@ -1982,7 +1982,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		/* if the member can speak, compute the audio energy level and */
 		/* generate events when the level crosses the threshold        */
-		if ((switch_test_flag(member, MFLAG_CAN_SPEAK) || switch_test_flag(member, MFLAG_MUTE_DETECT)) && energy_level) {
+		if ((switch_test_flag(member, MFLAG_CAN_SPEAK) || switch_test_flag(member, MFLAG_MUTE_DETECT))) {
 			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
 			int divisor = 0;
@@ -2081,31 +2081,32 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					hangover_hits--;
 				}
 
-				if (diff >= diff_level || ++hangunder_hits >= hangunder) {
+				if (diff >= diff_level || ++hangunder_hits >= hangunder) { 
+
+                    switch_mutex_lock(member->conference->member_mutex);
+                    if ((!member->conference->floor_holder ||
+                        !switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
+                        ((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) &&
+                        (!switch_test_flag(member->conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
+
+                        if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
+                            switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                            conference_add_event_member_data(member, event);
+                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d",
+                                                    member->conference->floor_holder ? member->conference->floor_holder->id : 0);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->conference->floor_holder ? member->id : 0);
+                            switch_event_fire(&event);
+                        }
+                        member->conference->floor_holder = member;
+                    }
+                    switch_mutex_unlock(member->conference->member_mutex);
+
 					hangover_hits = hangunder_hits = 0;
 					member->last_talking = switch_epoch_time_now(NULL);
 
 					if (!switch_test_flag(member, MFLAG_TALKING)) {
-						switch_event_t *event;
 						switch_set_flag_locked(member, MFLAG_TALKING);
-						switch_mutex_lock(member->conference->member_mutex);
-						if ((!member->conference->floor_holder ||
-							 !switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
-							 ((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) &&
-							(!switch_test_flag(member->conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
-
-							if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
-								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-								conference_add_event_member_data(member, event);
-								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d",
-														member->conference->floor_holder ? member->conference->floor_holder->id : 0);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->conference->floor_holder ? member->id : 0);
-								switch_event_fire(&event);
-							}
-							member->conference->floor_holder = member;
-						}
-						switch_mutex_unlock(member->conference->member_mutex);
 
 						if (test_eflag(member->conference, EFLAG_START_TALKING) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -2126,9 +2127,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "mute-detect");
 								switch_event_fire(&event);
 							}
-
 						}
-
 					}
 				}
 			} else {
@@ -5336,6 +5335,13 @@ SWITCH_STANDARD_APP(conference_function)
 	conf_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
 	int locked = 0;
+
+
+
+	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
+        return;
+	}
 
 	/* Save the original read codec. */
 	if (!(read_codec = switch_core_session_get_read_codec(session))) {

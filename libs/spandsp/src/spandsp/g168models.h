@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: g168models.h,v 1.9 2008/08/29 09:28:13 steveu Exp $
  */
 
 /*! \file */

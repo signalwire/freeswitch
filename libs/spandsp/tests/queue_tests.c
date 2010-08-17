@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: queue_tests.c,v 1.13 2009/04/11 17:43:04 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -570,7 +568,7 @@ static void functional_message_tests(void)
         if (monitored_queue_write_msg(buf, MSG_LEN) != MSG_LEN)
             break;
     }
-    printf("Full at chunk %d (expected %u)\n", i, BUF_LEN/(MSG_LEN + sizeof(uint16_t)) + 1);
+    printf("Full at chunk %d (expected %lu)\n", i, (unsigned long int) BUF_LEN/(MSG_LEN + sizeof(uint16_t)) + 1);
     if (i != BUF_LEN/(MSG_LEN + sizeof(uint16_t)) + 1)
         tests_failed();
     if ((len = monitored_queue_write_msg(buf, 5)) == 5)
@@ -628,7 +626,7 @@ static void functional_message_tests(void)
     }
     printf("Free space = %d (%d)\n", queue_free_space(queue), BUF_LEN - (total_in - total_out));
     display_queue_pointers();
-    printf("Full at chunk %d (expected %u)\n", i, BUF_LEN/(MSG_LEN + sizeof(uint16_t)));
+    printf("Full at chunk %d (expected %lu)\n", i, (unsigned long int) BUF_LEN/(MSG_LEN + sizeof(uint16_t)));
     if (i != BUF_LEN/(MSG_LEN + sizeof(uint16_t)))
         tests_failed();
     display_queue_pointers();

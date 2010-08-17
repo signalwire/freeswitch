@@ -15,8 +15,6 @@
 ## You should have received a copy of the GNU General Public License
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: Makefile.am,v 1.5 2009/02/25 17:52:52 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -99,21 +97,26 @@ EXTRA_DIST = ${ITU_TEST_PAGES_PBM}
 
 MAINTAINERCLEANFILES = Makefile.in
 
-nobase_data_DATA =  itutests.tif \
-                    ${ITU_TEST_PAGES} \
+nobase_data_DATA =  100pages.tif \
                     dithered.tif \
-                    100pages.tif \
+                    itutests.tif \
+                    ${ITU_TEST_PAGES} \
                     ${MIXED_SIZE_PAGES} \
-                    mixed_size_pages.tif
+                    mixed_size_pages.tif \
+                    striped.tif
 
 noinst_PROGRAMS =   generate_dithered_tif \
-                    generate_sized_pages
+                    generate_sized_pages \
+                    generate_striped_pages
 
 generate_dithered_tif_SOURCES = generate_dithered_tif.c
 generate_dithered_tif_LDADD = -ltiff
 
 generate_sized_pages_SOURCES = generate_sized_pages.c
 generate_sized_pages_LDADD = -ltiff
+
+generate_striped_pages_SOURCES = generate_striped_pages.c
+generate_striped_pages_LDADD = -ltiff
 
 clean:
 	rm -f *.tif *.g3
@@ -138,7 +141,7 @@ itutests.tif: ${ITU_TEST_PAGES_G3}
 
 .pbm.g3:
 	${PBM2G3} $*.pbm >$*.g3
-    
+
 dithered.tif: generate_dithered_tif$(EXEEXT)
 	./generate_dithered_tif$(EXEEXT)
 
@@ -147,3 +150,6 @@ ${MIXED_SIZE_PAGES}: generate_sized_pages$(EXEEXT)
 
 mixed_size_pages.tif: ${MIXED_SIZE_PAGES}
 	$(TIFFCP) ${MIXED_SIZE_PAGES} $@
+
+striped.tif: generate_striped_pages$(EXEEXT)
+	./generate_striped_pages$(EXEEXT)

@@ -360,6 +360,24 @@ SWITCH_LIMIT_RESET(limit_reset_hash)
 	return SWITCH_STATUS_GENERR;
 }
 
+SWITCH_LIMIT_INTERVAL_RESET(limit_interval_reset_hash)
+{
+	char *hash_key = NULL;
+	limit_hash_item_t *item = NULL;
+
+	switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
+
+	hash_key = switch_mprintf("%s_%s", realm, resource);
+	if ((item = switch_core_hash_find(globals.limit_hash, hash_key))) {
+		item->rate_usage = 0;
+		item->last_check = switch_epoch_time_now(NULL);
+	}
+
+ 	switch_safe_free(hash_key);
+	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_LIMIT_STATUS(limit_status_hash)
 {
 	/*
@@ -743,15 +761,19 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 	limit_remote_t *remote = (limit_remote_t*)obj;
 	while (remote->state > REMOTE_OFF) {
 		if (remote->state != REMOTE_UP) {
-			if  (esl_connect(&remote->handle, remote->host, remote->port, remote->username, remote->password) == ESL_SUCCESS) {
+			if  (esl_connect_timeout(&remote->handle, remote->host, remote->port, remote->username, remote->password, 5000) == ESL_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
 				
 				remote->state = REMOTE_UP;
+			} else {
+				esl_disconnect(&remote->handle);
+				memset(&remote->handle, 0, sizeof(remote->handle));
 			}
 		} else {
-			if (esl_send_recv(&remote->handle, "api hash_dump limit") != ESL_SUCCESS) {
+			if (esl_send_recv_timed(&remote->handle, "api hash_dump limit", 5000) != ESL_SUCCESS) {
 				esl_disconnect(&remote->handle);
+				memset(&remote->handle, 0, sizeof(remote->handle));
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnected from remote FreeSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
 				memset(&remote->handle, 0, sizeof(remote->handle));
@@ -892,7 +914,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* register limit interfaces */
-	SWITCH_ADD_LIMIT(limit_interface, "hash", limit_incr_hash, limit_release_hash, limit_usage_hash, limit_reset_hash, limit_status_hash);
+	SWITCH_ADD_LIMIT(limit_interface, "hash", limit_incr_hash, limit_release_hash, limit_usage_hash, limit_reset_hash, limit_status_hash, limit_interval_reset_hash);
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL, limit_hash_cleanup_callback, "limit_hash_cleanup", "mod_hash", 0, NULL,
 						  SSHF_NONE);

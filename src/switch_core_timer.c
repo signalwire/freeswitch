@@ -48,7 +48,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, co
 
 	timer->interval = interval;
 	timer->samples = samples;
-	timer->samplecount = 0;
+	timer->samplecount = samples;
 	timer->timer_interface = timer_interface;
 
 	if (pool) {

@@ -1231,7 +1231,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		return xml;
 	}
 
-	if (fmt) {
+	if (!zstr(fmt)) {
 		va_start(ap, fmt);
 #ifdef HAVE_VASPRINTF
 		ret = vasprintf(&data, fmt, ap);

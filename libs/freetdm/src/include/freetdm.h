@@ -254,6 +254,11 @@ typedef struct ftdm_caller_data {
 	int hangup_cause; /*!< Hangup cause */
 	char raw_data[1024]; /*!< Protocol specific raw caller data */
 	uint32_t raw_data_len; /* !< Raw data length */
+	/* these 2 are undocumented right now, only used by boost: */
+	/* bearer capability */
+	uint8_t bearer_capability;
+	/* user information layer 1 protocol */
+	uint8_t bearer_layer1;
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */

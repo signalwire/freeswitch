@@ -17,12 +17,12 @@
       value is the directory number (or user)
       caller-name is shown to the calling party during call
       -->
-      <button position="1" type="Line" label="Line 1" value="2001" caller-name="Calling as 2001"/>
-      <button position="3" type="Line" label="Shared Line 10" value="2010" caller-name="Calling as 2010"/>
+      <button position="1" type="Line" label="Line 1" value="1101" caller-name="Calling as 1101"/>
+      <button position="3" type="Line" label="Shared Line 10" value="1110" caller-name="Calling as 1110"/>
       <!--
       value is the directory number to call
       -->
-      <button position="5" type="SpeedDial" label="Test" value="2011"/>
+      <button position="5" type="SpeedDial" label="Call 1001" value="1001"/>
       <!--
       value is the URL
       -->
