@@ -1080,62 +1080,59 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							 " </atom>\n" 
 							 "</presence>\n", status, id, id, url, open, prpid);
 	} else {
+		char *xml_rpid = NULL;
+		
 		*ct = "application/pidf+xml";
+
+		if (!strcasecmp(open, "closed")) {
+			status = "Unregistered";
+			prpid = NULL;
+		}
 
 		if (!strncasecmp(status, "Registered", 10)) {
 			prpid = NULL;
 			status = "Available";
 		}
-
+		
 
 		if (!strcasecmp(status, "Unregistered")) {
 			prpid = NULL;
 			open = "closed";
 		}
 
-		if (zstr(status)) {
-			status = "Available";
-		}
-		
 		if (zstr(rpid)) {
 			prpid = NULL;
 		}
 
 
-		if (prpid) {
-			ret = switch_mprintf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
-								 "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
-								 "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
-								 "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
-								 "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
-								 " <tuple id='t6a5ed77e'>\n"
-								 "  <status>\r\n"
-								 "   <basic>%s</basic>\n"
-								 "  </status>\n"
-								 " </tuple>\n"
-								 " <dm:person id='p06360c4a'>\n"
-								 "  <rpid:activities>\r\n"
-								 "   <rpid:%s/>\n"
-								 "  </rpid:activities>\n" 
-								 "  <dm:note>%s</dm:note>\n" 
-								 " </dm:person>\n" 
-								 "</presence>", id, open, prpid, status);
-		} else {
-			ret = switch_mprintf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
-								 "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
-								 "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
-								 "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
-								 "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
-								 " <tuple id='t6a5ed77e'>\n"
-								 "  <status>\r\n"
-								 "   <basic>%s</basic>\n"
-								 "  </status>\n"
-								 " </tuple>\n"
-								 " <dm:person id='p06360c4a'>\n"
-								 "  <dm:note>%s</dm:note>\n" 
-								 " </dm:person>\n" 
-								 "</presence>", id, open, status);
+		if (zstr(status) && !zstr(prpid)) {
+			status = "Available";
 		}
+		
+		if (prpid) {
+			xml_rpid = switch_mprintf("  <rpid:activities>\r\n"
+									  "   <rpid:%s/>\n"
+									  "  </rpid:activities>\n", prpid);
+		}
+
+		ret = switch_mprintf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
+							 "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
+							 "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
+							 "xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid' \n"
+							 "xmlns:c='urn:ietf:params:xml:ns:pidf:cipid' entity='%s'>\n"
+							 " <tuple id='t6a5ed77e'>\n"
+							 "  <status>\r\n"
+							 "   <basic>%s</basic>\n"
+							 "  </status>\n"
+							 " </tuple>\n"
+							 " <dm:person id='p06360c4a'>\n"
+							 "%s"
+							 "  <dm:note>%s</dm:note>\n"
+							 " </dm:person>\n" 
+							 "</presence>", id, open, switch_str_nil(xml_rpid), status);
+		
+
+		switch_safe_free(xml_rpid);
 	}
 
 
@@ -1186,9 +1183,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	//printf("arg %d[%s] = [%s]\n", i, columnNames[i], argv[i]);
 	//}
 	
-	if (argc > 18 && !zstr(argv[17]) && !zstr(argv[18])) {
-		status = argv[17];
-		rpid = argv[18];
+	if (argc > 18) {
+		if (!zstr(argv[17])) {
+			status = argv[17];
+		}
+		if (!zstr(argv[18])) {
+			rpid = argv[18];
+		}
 		open_closed = argv[19];
 	}
 
@@ -2478,6 +2479,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 									" profile_name, hostname, open_closed) "
 									"values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
 									from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, mod_sofia_globals.hostname, open_closed))) {
+
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
 
