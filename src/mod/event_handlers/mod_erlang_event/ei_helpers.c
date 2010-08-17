@@ -33,6 +33,11 @@
  */
 #include <switch.h>
 #include <ei.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
+
 #include "mod_erlang_event.h"
 
 /* Stolen from code added to ei in R12B-5.
@@ -340,25 +345,39 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(prefs.port);
 
+	if (strchr(prefs.nodename, '@')) {
+		/* we got a qualified node name, don't guess the host/domain */
+		snprintf(thisnodename, MAXNODELEN + 1, "%s", prefs.nodename);
+	} else {
 #ifdef WIN32
-	if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+		if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
 #else
-	if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+			if ((nodehost = gethostbyaddr((const char *) &server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
 #endif
-		memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
+				memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
 
-	if (zstr_buf(thishostname)) {
-		gethostname(thishostname, EI_MAXHOSTNAMELEN);
-	}
-
-	if (prefs.shortname) {
-		char *off;
-		if ((off = strchr(thishostname, '.'))) {
-			*off = '\0';
+		if (zstr_buf(thishostname)) {
+			gethostname(thishostname, EI_MAXHOSTNAMELEN);
 		}
+
+		if (prefs.shortname) {
+			char *off;
+			if ((off = strchr(thishostname, '.'))) {
+				*off = '\0';
+			}
+		} else {
+			if (!(_res.options & RES_INIT)) {
+				// init the resolver
+				res_init();
+			}
+			if (!zstr_buf(_res.dnsrch[0])) {
+				strncat(thishostname, ".", 1);
+				strncat(thishostname, _res.dnsrch[0], EI_MAXHOSTNAMELEN - strlen(thishostname));
+			}
+		}
+		snprintf(thisnodename, MAXNODELEN + 1, "%s@%s", prefs.nodename, thishostname);
 	}
 
-	snprintf(thisnodename, MAXNODELEN + 1, "%s@%s", prefs.nodename, thishostname);
 
 	/* init the ei stuff */
 	if (ei_connect_xinit(ec, thishostname, prefs.nodename, thisnodename, (Erl_IpAddr) (&server_addr.sin_addr.s_addr), prefs.cookie, 0) < 0) {
