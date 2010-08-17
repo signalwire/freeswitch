@@ -46,7 +46,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;.;&quot;..\..\openssl-1.0.0a\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -124,7 +124,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;.;&quot;..\..\openssl-1.0.0a\include&quot;"
 				PreprocessorDefinitions="_WIN64;WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -199,7 +199,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;.;&quot;..\..\openssl-1.0.0a\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -277,7 +277,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;.;&quot;..\..\openssl-1.0.0a\include&quot;"
 				PreprocessorDefinitions="_WIN64;WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -1055,11 +1055,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tls.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_connect.c"
 					>
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tcp.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tls.c"
 					>
 				</File>
 				<File
