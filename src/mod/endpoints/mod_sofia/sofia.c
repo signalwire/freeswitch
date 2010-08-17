@@ -3772,6 +3772,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		char network_ip[80];
 		int network_port = 0;
 		switch_caller_profile_t *caller_profile = NULL;
+		int has_t38 = 0;
 
 		sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
 
@@ -4015,9 +4016,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
+		if (tech_pvt && tech_pvt->remote_sdp_str && switch_stristr("m=image", tech_pvt->remote_sdp_str)) {
+			has_t38 = 1;
+		}
+		
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || 
 			switch_channel_test_flag(channel, CF_PROXY_MEDIA) || 
-			sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+			(sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38)) {
 
 			if (sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
 				sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
@@ -4036,14 +4041,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 					
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
 						if (sip->sip_payload && sip->sip_payload->pl_data) {
 							switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
 
 							if (t38_options) {
 								sofia_glue_copy_t38_options(t38_options, other_session);
 							} else {
-								sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not parse T.38 options from sdp.\n");
 								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "T.38 NEGOTIATION ERROR");
 								switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
@@ -4059,14 +4063,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					msg->numeric_arg = status;
 					msg->string_arg = switch_core_session_strdup(other_session, phrase);
 
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
 						msg->pointer_arg = switch_core_session_strdup(other_session, "t38");
 					} else if (r_sdp) {
 						msg->pointer_arg = switch_core_session_strdup(other_session, r_sdp);
 						msg->pointer_arg_size = strlen(r_sdp);
 					}
 					
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
 						switch_core_session_receive_message(other_session, msg);
 						if (switch_rtp_ready(tech_pvt->rtp_session) && switch_rtp_ready(other_tech_pvt->rtp_session)) {
 							switch_rtp_udptl_mode(tech_pvt->rtp_session);
