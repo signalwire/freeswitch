@@ -686,7 +686,6 @@
     <!-- install zrtp_agent.lua into scripts (ZRTP == 9787) -->
     <extension name="zrtp_enrollement">
       <condition field="destination_number" expression="^9787$">
-	<action application="answer"/>
 	<action application="lua" data="zrtp_agent.lua"/>
       </condition>
     </extension>
