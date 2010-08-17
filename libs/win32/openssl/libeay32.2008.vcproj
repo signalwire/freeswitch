@@ -32,7 +32,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;"
+				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -107,91 +107,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="1"
-			ManagedExtensions="0"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="MASM"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/Gs0"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="&quot;..\..\openssl-1.0.0a\include&quot;;&quot;..\..\openssl-1.0.0a\crypto&quot;;&quot;..\..\openssl-1.0.0a\crypto\aes&quot;;&quot;..\..\openssl-1.0.0a\crypto\asn1&quot;;&quot;..\..\openssl-1.0.0a\crypto\bf&quot;;&quot;..\..\openssl-1.0.0a\crypto\bio&quot;;&quot;..\..\openssl-1.0.0a\crypto\bn&quot;;&quot;..\..\openssl-1.0.0a\crypto\buffer&quot;;&quot;..\..\openssl-1.0.0a\crypto\camellia&quot;;&quot;..\..\openssl-1.0.0a\crypto\cast&quot;;&quot;..\..\openssl-1.0.0a\crypto\cms&quot;;&quot;..\..\openssl-1.0.0a\crypto\comp&quot;;&quot;..\..\openssl-1.0.0a\crypto\conf&quot;;&quot;..\..\openssl-1.0.0a\crypto\des&quot;;&quot;..\..\openssl-1.0.0a\crypto\dh&quot;;&quot;..\..\openssl-1.0.0a\crypto\dsa&quot;;&quot;..\..\openssl-1.0.0a\crypto\dso&quot;;&quot;..\..\openssl-1.0.0a\crypto\ec&quot;;&quot;..\..\openssl-1.0.0a\crypto\ecdh&quot;;&quot;..\..\openssl-1.0.0a\crypto\ecdsa&quot;;&quot;..\..\openssl-1.0.0a\crypto\engine&quot;;&quot;..\..\openssl-1.0.0a\crypto\err&quot;;&quot;..\..\openssl-1.0.0a\crypto\evp&quot;;&quot;..\..\openssl-1.0.0a\ms&quot;;&quot;..\..\openssl-1.0.0a&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				WarnAsError="true"
-				DebugInformationFormat="3"
-				DisableSpecificWarnings="4996"
-				EnablePREfast="false"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
-				LinkIncremental="2"
-				ModuleDefinitionFile="$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def"
-				GenerateDebugInformation="true"
-				AssemblyDebug="1"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
@@ -201,7 +116,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\bio.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /D /Y /S"
+				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -276,6 +191,91 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			ManagedExtensions="0"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Gs0"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="&quot;..\..\openssl-1.0.0a\include&quot;;&quot;..\..\openssl-1.0.0a\crypto&quot;;&quot;..\..\openssl-1.0.0a\crypto\aes&quot;;&quot;..\..\openssl-1.0.0a\crypto\asn1&quot;;&quot;..\..\openssl-1.0.0a\crypto\bf&quot;;&quot;..\..\openssl-1.0.0a\crypto\bio&quot;;&quot;..\..\openssl-1.0.0a\crypto\bn&quot;;&quot;..\..\openssl-1.0.0a\crypto\buffer&quot;;&quot;..\..\openssl-1.0.0a\crypto\camellia&quot;;&quot;..\..\openssl-1.0.0a\crypto\cast&quot;;&quot;..\..\openssl-1.0.0a\crypto\cms&quot;;&quot;..\..\openssl-1.0.0a\crypto\comp&quot;;&quot;..\..\openssl-1.0.0a\crypto\conf&quot;;&quot;..\..\openssl-1.0.0a\crypto\des&quot;;&quot;..\..\openssl-1.0.0a\crypto\dh&quot;;&quot;..\..\openssl-1.0.0a\crypto\dsa&quot;;&quot;..\..\openssl-1.0.0a\crypto\dso&quot;;&quot;..\..\openssl-1.0.0a\crypto\ec&quot;;&quot;..\..\openssl-1.0.0a\crypto\ecdh&quot;;&quot;..\..\openssl-1.0.0a\crypto\ecdsa&quot;;&quot;..\..\openssl-1.0.0a\crypto\engine&quot;;&quot;..\..\openssl-1.0.0a\crypto\err&quot;;&quot;..\..\openssl-1.0.0a\crypto\evp&quot;;&quot;..\..\openssl-1.0.0a\ms&quot;;&quot;..\..\openssl-1.0.0a&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				WarnAsError="true"
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4996"
+				EnablePREfast="false"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib"
+				LinkIncremental="2"
+				ModuleDefinitionFile="$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def"
+				GenerateDebugInformation="true"
+				AssemblyDebug="1"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|x64"
 			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
@@ -286,7 +286,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;"
+				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
