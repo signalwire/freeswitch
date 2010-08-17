@@ -219,10 +219,10 @@
 #undef HAVE_NET_IF_TYPES_H
 
 /* Define to 1 if you have OpenSSL */
-#undef HAVE_OPENSSL
+#define HAVE_OPENSSL 1
 
 /* Define to 1 if you have the <openssl/tls1.h> header file. */
-#undef HAVE_OPENSSL_TLS1_H
+#define HAVE_OPENSSL_TLS1_H 1
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
@@ -362,7 +362,7 @@
 #undef HAVE_TCSETATTR
 
 /* Define to 1 if you have TLS */
-#undef HAVE_TLS
+#define HAVE_TLS 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

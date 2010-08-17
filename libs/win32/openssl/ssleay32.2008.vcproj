@@ -69,7 +69,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libeay32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(ProjectDir)$(ConfigurationName)&quot;"
 				ModuleDefinitionFile="ssleay32.def"
@@ -150,7 +149,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libeay32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(ProjectDir)$(ConfigurationName)"
 				ModuleDefinitionFile="ssleay32.def"
