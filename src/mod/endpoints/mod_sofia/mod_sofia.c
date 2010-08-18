@@ -3544,12 +3544,22 @@ SWITCH_STANDARD_API(sofia_function)
 			sofia_glue_recover(SWITCH_TRUE);
 			stream->write_function(stream, "Flushing recovery database.\n");
 		} else {
-			int x = sofia_glue_recover(SWITCH_FALSE);
+			int32_t old = 0, x = 0;
+
+			switch_core_session_ctl(SCSC_SPS, &old);
+
+			x = 10000000;
+			switch_core_session_ctl(SCSC_SPS, &x);
+			
+			x = sofia_glue_recover(SWITCH_FALSE);
+
 			if (x) {
 				stream->write_function(stream, "Recovered %d call(s)\n", x);
 			} else {
 				stream->write_function(stream, "No calls to recover.\n");
 			}
+
+			switch_core_session_ctl(SCSC_SPS, &old);
 		}
 
 		goto done;
