@@ -614,7 +614,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	const char *hval;
 	struct addrinfo hints = { 0 }, *result;
 #ifndef WIN32
-	int fd_flags;
+	int fd_flags = 0;
 #else
 	WORD wVersionRequested = MAKEWORD(2, 0);
 	WSADATA wsaData;
