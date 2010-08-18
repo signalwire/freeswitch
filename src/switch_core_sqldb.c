@@ -785,6 +785,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	switch_bool_t r = SWITCH_TRUE;
 
 	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
+		switch_cache_db_execute_sql(dbh, test_sql, NULL);
 		return SWITCH_TRUE;
 	}
 
