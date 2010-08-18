@@ -2211,6 +2211,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
 						}
+					} else if (!strcasecmp(var, "in-dialog-chat")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
+						}
 					} else if (!strcasecmp(var, "disable-hold")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
@@ -2864,6 +2870,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
+						}
+					} else if (!strcasecmp(var, "in-dialog-chat")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
 						}
 					} else if (!strcasecmp(var, "t38-passthru")) {
 						if (switch_true(val)) {
@@ -6748,7 +6760,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	sofia_private->is_call++;
 	tech_pvt->sofia_private = sofia_private;
 
-	if ((profile->pres_type)) {
+	if (profile->pres_type && sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}
 	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));

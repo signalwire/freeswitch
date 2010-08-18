@@ -1968,7 +1968,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
 	}
 
-	if (tech_pvt->e_dest) {
+	if (tech_pvt->e_dest && sofia_test_pflag(tech_pvt->profile, PFLAG_IN_DIALOG_CHAT)) {
 		char *user = NULL, *host = NULL;
 		char hash_key[256] = "";
 

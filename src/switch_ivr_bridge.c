@@ -379,7 +379,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}
 
-			if (event->event_id != SWITCH_EVENT_COMMAND || switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
+			if ((event->event_id != SWITCH_EVENT_COMMAND && event->event_id != SWITCH_EVENT_MESSAGE)
+				|| switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
 				switch_event_destroy(&event);
 			}
 

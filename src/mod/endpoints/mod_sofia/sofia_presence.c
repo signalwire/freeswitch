@@ -73,7 +73,6 @@ struct presence_helper {
 switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
 										 const char *body, const char *type, const char *hint)
 {
-	char buf[256];
 	char *prof = NULL, *user = NULL, *host = NULL;
 	sofia_profile_t *profile = NULL;
 	char *ffrom = NULL;
@@ -84,6 +83,8 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	const char *ct = "text/html";
 	sofia_destination_t *dst = NULL;
 	char *to_uri = NULL;
+	switch_console_callback_match_t *list = NULL;
+	switch_console_callback_match_node_t *m;
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -133,17 +134,19 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 			host = prof;
 		}
 	}
-	
-	if (!to_uri && !sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find user. [%s][%s]\n", user, host);
+
+	if (to_uri) {
+		switch_console_push_match(&list, to_uri);
+	}  else if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
 		goto end;
 	}
-
+	
 	if (!strcasecmp(proto, SOFIA_CHAT_PROTO)) {
 		from = hint;
 	} else {
 		char *fp, *p = NULL;
-
+		
 		fp = strdup(from);
 
 		if (!fp) {
@@ -168,23 +171,28 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		switch_safe_free(fp);
 	}
 
-	if (!(dst = sofia_glue_get_destination(to_uri ? to_uri : buf))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-		goto end;
-	}
+	for (m = list->head; m; m = m->next) {
 
-	/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
+		if (!(dst = sofia_glue_get_destination(m->val))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+			break;
+		}
+	
+		/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
 
-	status = SWITCH_STATUS_SUCCESS;
-	/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
-	msg_nh = nua_handle(profile->nua, NULL, TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-						SIPTAG_FROM_STR(from), TAG_IF(contact, NUTAG_URL(contact)), SIPTAG_TO_STR(dst->to), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
-	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
-
+		status = SWITCH_STATUS_SUCCESS;
+		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
+		msg_nh = nua_handle(profile->nua, NULL, TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+							SIPTAG_FROM_STR(from), TAG_IF(contact, NUTAG_URL(contact)), SIPTAG_TO_STR(dst->to), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+		nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
+		nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
+		sofia_glue_free_destination(dst);
+	}		
+	
+	switch_console_free_matches(&list);
 
   end:
-	sofia_glue_free_destination(dst);
+	
 	switch_safe_free(contact);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
@@ -2597,8 +2605,11 @@ void sofia_presence_handle_sip_i_message(int status,
 
 			from_addr = switch_mprintf("%s@%s", from_user, from_host);
 
-			sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
-			if ((tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
+			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
+				sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
+			}
+
+			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
 				channel = switch_core_session_get_channel(tech_pvt->session);
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
