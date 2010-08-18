@@ -1160,6 +1160,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 											status = switch_socket_recv(listener->sock, p, &mlen);
 
 											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
+												free(body);												
 												return SWITCH_STATUS_FALSE;
 											}
 
@@ -1462,6 +1463,7 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 			if (!strcasecmp(sneaky_commands[x], check_cmd)) {
 				if (check_cmd == api_cmd) {
 					if (arg) {
+						switch_safe_free(dup_arg);
 						dup_arg = strdup(arg);
 						check_cmd = dup_arg;
 						if ((next = strchr(check_cmd, ' '))) {
