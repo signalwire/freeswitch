@@ -2021,9 +2021,10 @@ SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *ch
 	switch_assert(channel->caller_profile != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	caller_profile->direction = channel->direction;
+
 	channel->caller_profile->hunt_caller_profile = NULL;
 	if (channel->caller_profile && caller_profile) {
+		caller_profile->direction = channel->direction;
 		channel->caller_profile->hunt_caller_profile = caller_profile;
 	}
 	switch_mutex_unlock(channel->profile_mutex);
