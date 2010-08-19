@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{f5d987d2-ff66-4c4f-9d5d-38f05fedf46a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bitstream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\a2lsp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\allpole.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\allzero.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\autocor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\cmtables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\levdur.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\lsp2a.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\stblchck.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\stblzlsp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\common\utility.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bitpack16.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16coarse_pitch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16excdec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16excquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16fine_pitch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16gaindec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16gainquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16levelest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16lspdec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16lspquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16plc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16ptdec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16postfilter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16ptquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv16\bv16tables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bitpack32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32encoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32coarse_pitch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32excdec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32excquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32fine_pitch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32gaindec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32gainquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32levelest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32lspdec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32lspquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32plc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32ptdec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32ptquan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="floating\bv32\bv32tables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="msvc\gettimeofday.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="broadvoice\broadvoice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="broadvoice\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="broadvoice\private\broadvoice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="broadvoice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

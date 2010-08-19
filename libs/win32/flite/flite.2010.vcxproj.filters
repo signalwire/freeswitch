@@ -1,0 +1,558 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="sltvoice">
+      <UniqueIdentifier>{2e2fca2e-fc24-48cd-bfa0-42ceb5aa5331}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="awbvoice">
+      <UniqueIdentifier>{58f041f5-13f9-4986-aa26-ab41db21c3b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rmsvoice">
+      <UniqueIdentifier>{f4db3d58-e9d3-415a-ae41-cc3dd1012fc2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\flite-1.3.99\src\audio\au_command.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\audio\au_none.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\audio\au_streaming.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\audio\au_wince.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\audio\audio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\audio\auserver.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmulex\cmu_lex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmulex\cmu_lex_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmulex\cmu_lex_entries.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmulex\cmu_lts_model.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmulex\cmu_lts_rules.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmulex\cmu_postlex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_clunits.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_lex_entry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_lpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_mcep.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_diphone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_lpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_res.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_residx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_args.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\stats\cst_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\cg\cst_cg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\wavesynth\cst_clunits.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\wavesynth\cst_diphone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_endian.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_error.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_features.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\hrg\cst_ffeature.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\synth\cst_ffeatures.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_file_stdio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\hrg\cst_item.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\lexicon\cst_lexicon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\cst_lpcres.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\lexicon\cst_lts.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\lexicon\cst_lts_rewrites.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\cg\cst_mlpg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\cg\cst_mlsa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_mmap_win32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\synth\cst_phoneset.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\wavesynth\cst_reflpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\regex\cst_regex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\hrg\cst_rel_io.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\hrg\cst_relation.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\wavesynth\cst_sigpr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_socket.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\stats\cst_ss.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\wavesynth\cst_sts.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\synth\cst_synth.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_tokenstream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\cst_track.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\cst_track_io.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\wavesynth\cst_units.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\synth\cst_utt_utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\hrg\cst_utterance.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_val.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_val_const.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\utils\cst_val_user.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\cg\cst_vc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\stats\cst_viterbi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\synth\cst_voice.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\cst_wave.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\cst_wave_io.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\cst_wave_utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\synth\flite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\speech\rateconv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\regex\regexp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\src\regex\regsub.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_aswd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_dur_stats.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_durz_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_expand.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_f0_model.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_f0lr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_ffeatures.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_gpos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_int_accent_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_int_tone_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_nums_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_phoneset.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_phrasing_cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\us_text.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\usenglish\usenglish.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_mcep_trees.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_params.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_phonestate.c">
+      <Filter>sltvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_mcep_trees.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_params.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_phonestate.c">
+      <Filter>awbvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_mcep_trees.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_params.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_phonestate.c">
+      <Filter>rmsvoice</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmulex\cmu_lts_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmulex\cmulex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_alloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_args.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_audio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_cg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_clunits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_diphone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_error.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_features.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_hrg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_item.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_lexicon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_lts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_lts_rewrites.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\src\cg\cst_mlpg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\src\cg\cst_mlsa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_phoneset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_regex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_relation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_sigpr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_ss.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_string.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_sts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_synth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_tokenstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_track.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_units.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_utt_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_utterance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_val.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_val_const.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_val_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\src\cg\cst_vc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_viterbi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_voice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\cst_wave.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\include\flite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\src\audio\native_audio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_durz_cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_f0.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_ffeatures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_int_accent_cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_int_tone_cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_nums_cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_phrasing_cart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\us_text.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\usenglish\usenglish.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_time_awb\voxdefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_kal\voxdefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.h">
+      <Filter>sltvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.h">
+      <Filter>sltvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_mcep_trees.h">
+      <Filter>sltvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_slt\voxdefs.h">
+      <Filter>sltvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.h">
+      <Filter>awbvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.h">
+      <Filter>awbvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_mcep_trees.h">
+      <Filter>awbvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_awb\voxdefs.h">
+      <Filter>awbvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.h">
+      <Filter>rmsvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.h">
+      <Filter>rmsvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_mcep_trees.h">
+      <Filter>rmsvoice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flite-1.3.99\lang\cmu_us_rms\voxdefs.h">
+      <Filter>rmsvoice</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
