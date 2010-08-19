@@ -1287,7 +1287,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
 		char *clean_to_user = NULL;
 		char *clean_from_user = NULL;
-		const char *p_to_user = switch_str_nil(switch_event_get_header(helper->event, "to-user"));
+		int force_status = 0;
 #if 0
 		char *buf;
 		switch_event_serialize(helper->event, &buf, SWITCH_FALSE);
@@ -1312,9 +1312,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			goto end;
 		}
 
-		if (!strcasecmp(event_status, "Registered")) {
-			answer_state = "resubscribe";
-		}
 
 		if (is_dialog) {
 			stream.write_function(&stream,
@@ -1325,18 +1322,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 								  !strcasecmp(answer_state, "resubscribe") ? "partial" : "full", clean_id);
 		}
 
-		if (strcasecmp(answer_state, "resubscribe")) {
-
-			if (!strcasecmp(state, "cs_hangup")) {
-				astate = "terminated";
-			} else if (zstr(astate)) {
-				astate = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
-				if (zstr(astate)) {
-					if (is_dialog) {
-						astate = dft_state;
-					} else {
-						astate = "terminated";
-					}
+		if (strcasecmp(event_status, "Registered")) {
+			if (!zstr(answer_state)) {
+				astate = answer_state;
+			}
+			
+			if (zstr(astate)) {
+				if (is_dialog) {
+					astate = dft_state;
+				} else {
+					astate = "terminated";
 				}
 			}
 
@@ -1346,6 +1341,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 			if (!strcasecmp(astate, "answered")) {
 				astate = "confirmed";
+			}
+
+			if (!strcasecmp(astate, "hangup")) {
+				astate = "terminated";
 			}
 
 			if (is_dialog) {
@@ -1361,7 +1360,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				stream.write_function(&stream, "<state>%s</state>\n", astate);
 			} else {
 				if (!strcasecmp(astate, "ringing")) {
-					astate = "confirmed";
+					astate = "early";
 				}
 			}
 
@@ -1425,39 +1424,54 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			switch_set_string(status_line, status);
 
 			if (in) {
+				const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
+				const char *op, *what = "Ring";
+				
+				if (direction && !strcasecmp(direction, "outbound")) {
+					op = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number");
+				} else {
+					if (!(op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number"))) {
+						op = switch_event_get_header(helper->event, "Caller-Destination-Number");
+					}
+				}
+
+				if (direction) {
+					what = !strcasecmp(direction, "outbound") ? "Call" : "Ring";
+				}
+
 				if (!strcmp(astate, "early")) {
-					switch_snprintf(status_line, sizeof(status_line), "Ring %s", switch_str_nil(from_id));
+					if (zstr(op)) {
+						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, status);
+					} else {
+						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
+					}
+
 					rpid = "on-the-phone";
+					force_status = 1;
+
 				} else if (!strcmp(astate, "confirmed")) {
-					char *dest = switch_event_get_header(helper->event, "Caller-Destination-Number");
-					if (zstr(from_id) && !zstr(dest)) {
-						from_id = dest;
-					}
-
-					if (zstr(from_id)) {
-						from_id = p_to_user;
-					}
-
-					if (zstr(from_id)) {
+					if (zstr(op)) {
 						switch_snprintf(status_line, sizeof(status_line), "On The Phone %s", status);
 					} else {
-						switch_snprintf(status_line, sizeof(status_line), "Talk %s", switch_str_nil(from_id));
+						switch_snprintf(status_line, sizeof(status_line), "Talk %s", op);
 					}
+
 					rpid = "on-the-phone";
+					force_status = 1;
 				}
 
 				open = "open";
 			} else {
 				open = "closed";
 			}
-			
+
 			if (open_closed) {
 				open = open_closed;
 			}
 			
 			prpid = translate_rpid(rpid);
 
-			if (!zstr(dialog_status)) {
+			if (!zstr(dialog_status) && !force_status) {
 				status = dialog_status;
 				switch_set_string(status_line, status);
 			}
@@ -1468,7 +1482,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			
 			
 			pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status_line, &ct);
-
 		}
 
 	} else {
