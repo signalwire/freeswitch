@@ -372,7 +372,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 							  sip->sip_event->o_type);
 		}
 		goto error;
-	}
+	} 
 
 	/* find the corresponding gateway subscription (if any) */
 	if (!(gw_sub_ptr = sofia_find_gateway_subscription(sofia_private->gateway, sip->sip_event->o_type))) {
@@ -412,6 +412,47 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	if (sip && sip->sip_event && sip->sip_event->o_type && !strcasecmp(sip->sip_event->o_type, "message-summary")) {
 		/* unsolicited mwi, just say ok */
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+
+		if (sofia_test_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY)) {
+			const char *mwi_status = NULL;
+			char network_ip[80];
+			uint32_t x = 0;
+			int acl_ok = 1;
+			char *last_acl = NULL;
+
+			if (sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host
+				&& sip->sip_payload && sip->sip_payload->pl_data ) {
+
+				sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), NULL); 
+				for (x = 0; x < profile->acl_count; x++) {
+					last_acl = profile->acl[x];
+					if (!(acl_ok = switch_check_network_list_ip(network_ip, last_acl))) {
+						break;
+					}
+				}
+
+				if ( acl_ok )
+				{
+					mwi_status = switch_stristr("Messages-Waiting: ", sip->sip_payload->pl_data);
+
+					if ( mwi_status ) {
+						mwi_status += strlen( "Messages-Waiting: " );
+						mwi_status = switch_strip_whitespace( mwi_status );
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Forwarding unsolicited MWI ( %s : %s@%s )\n", mwi_status, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
+						if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", mwi_status );
+							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
+							switch_event_fire(&s_event);
+						}
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dropping unsolicited MWI ( %s@%s ) because of ACL\n", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
+				};
+
+			}
+		}
+
 	} else {
 		nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
 	}
@@ -2251,6 +2292,18 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
+						}
+					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+						}
+					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
 						}
 					} else if (!strcasecmp(var, "t38-passthru")) {
 						if (switch_true(val)) {

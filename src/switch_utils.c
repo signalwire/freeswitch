@@ -716,6 +716,32 @@ SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch
 	return p;
 }
 
+SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
+{
+	const char *sp = str;
+	char *p, *s = NULL;
+
+	if (!sp)
+		return NULL;
+
+	while ((*sp == 13 ) || (*sp == 10 ) || (*sp == 9 ) || (*sp == 20) || (*sp == 11) ) {
+		sp++;
+	}
+
+	s = strdup(sp);
+
+	if (!s)
+		return NULL;
+
+	p = s + (strlen(s) - 1);
+
+    while ((*p == 13 ) || (*p == 10 ) || (*p == 9 ) || (*p == 20) || (*p == 11) ) {
+		*p-- = '\0';
+	}
+
+	return s;
+}
+
 SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 {
 	const char *sp = str;

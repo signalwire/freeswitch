@@ -43,6 +43,8 @@
 	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
     <param name="log-auth-failures" value="true"/>
+    <param name="forward-unsolicited-mwi-notify" value="false"/>
+
     <param name="context" value="public"/>
     <param name="rfc2833-pt" value="101"/>
     <!-- port to bind to for sip traffic -->
