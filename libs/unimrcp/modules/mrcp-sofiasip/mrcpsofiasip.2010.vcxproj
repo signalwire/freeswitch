@@ -127,12 +127,6 @@
     <ClCompile Include="src\mrcp_sofiasip_client_agent.c" />
     <ClCompile Include="src\mrcp_sofiasip_server_agent.c" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\win32\sofia\libsofia_sip_ua_static.2010.vcxproj">
-      <Project>{70a49bc2-7500-41d0-b75d-edcc5be987a0}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
