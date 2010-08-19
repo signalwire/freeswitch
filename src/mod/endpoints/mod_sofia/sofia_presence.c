@@ -1348,17 +1348,23 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				astate = "confirmed";
 			}
 
-			if (!strcasecmp(astate, "ringing")) {
-				if (!strcasecmp(direction, "recipient")) {
-					astate = "early";
-				} else {
+			if (is_dialog) {
+				if (!strcasecmp(astate, "ringing")) {
+					if (!strcasecmp(direction, "recipient")) {
+						astate = "early";
+					} else {
+						astate = "confirmed";
+					}
+				}
+
+				stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
+				stream.write_function(&stream, "<state>%s</state>\n", astate);
+			} else {
+				if (!strcasecmp(astate, "ringing")) {
 					astate = "confirmed";
 				}
 			}
-			if (is_dialog) {
-				stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
-				stream.write_function(&stream, "<state>%s</state>\n", astate);
-			}
+
 			if (!strcasecmp(astate, "early") || !strcasecmp(astate, "confirmed")) {
 
 				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user);
