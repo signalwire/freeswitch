@@ -131,8 +131,8 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	}
 	
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "useinbandfec=%s; usedtx=%s; maxaveragebitrate=%d",
-										  useinbandfec ? "true" : "false",
-										  usedtx ? "true" : "false",
+										  useinbandfec ? "1" : "0",
+										  usedtx ? "1" : "0",
 										  maxaveragebitrate ? maxaveragebitrate : codec->implementation->bits_per_second);
 
 	if (encoding) {
@@ -149,7 +149,7 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 		context->encoder_object.sampleRate = codec->implementation->actual_samples_per_second;
 		context->encoder_object.packetSize = codec->implementation->samples_per_packet;
 		context->encoder_object.useInBandFEC = useinbandfec;
-		context->encoder_object.complexity = 2;
+		context->encoder_object.complexity = 0;
 		context->encoder_object.bitRate = maxaveragebitrate ? maxaveragebitrate : codec->implementation->bits_per_second;
 		context->encoder_object.useDTX = usedtx;
 		context->encoder_object.packetLossPercentage = plpct;;
@@ -303,7 +303,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load)
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 117,						/* the IANA code number */
 										 "SILK",					/* the IANA code name */
-										 "useinbandfec=true; usedtx=false",	/* default fmtp to send (can be overridden by the init function) */
+										 "useinbandfec=1; usedtx=0",	/* default fmtp to send (can be overridden by the init function) */
 										 8000,						/* samples transferred per second */
 										 8000,						/* actual samples transferred per second */
 										 20000,						/* bits transferred per second */
@@ -322,7 +322,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load)
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 118,						/* the IANA code number */
 										 "SILK",					/* the IANA code name */
-										 "useinbandfec=false; usedtx=false",	/* default fmtp to send (can be overridden by the init function) */
+										 "useinbandfec=1; usedtx=0",	/* default fmtp to send (can be overridden by the init function) */
 										 12000,						/* samples transferred per second */
 										 12000,						/* actual samples transferred per second */
 										 25000,						/* bits transferred per second */
@@ -341,7 +341,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load)
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 119,						/* the IANA code number */
 										 "SILK",					/* the IANA code name */
-										 "useinbandfec=false; usedtx=false",	/* default fmtp to send (can be overridden by the init function) */
+										 "useinbandfec=1; usedtx=0",	/* default fmtp to send (can be overridden by the init function) */
 										 16000,						/* samples transferred per second */
 										 16000,						/* actual samples transferred per second */
 										 30000,						/* bits transferred per second */
@@ -360,7 +360,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load)
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 120,						/* the IANA code number */
 										 "SILK",					/* the IANA code name */
-										 "useinbandfec=false; usedtx=false",	/* default fmtp to send (can be overridden by the init function) */
+										 "useinbandfec=1; usedtx=0",	/* default fmtp to send (can be overridden by the init function) */
 										 24000,						/* samples transferred per second */
 										 24000,						/* actual samples transferred per second */
 										 40000,						/* bits transferred per second */
