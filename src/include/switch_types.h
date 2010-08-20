@@ -160,6 +160,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_L_SDP_VARIABLE "switch_l_sdp"
 #define SWITCH_B_SDP_VARIABLE "switch_m_sdp"
 #define SWITCH_BRIDGE_VARIABLE "bridge_to"
+#define SWITCH_LAST_BRIDGE_VARIABLE "last_bridge_to"
 #define SWITCH_SIGNAL_BRIDGE_VARIABLE "signal_bridge_to"
 #define SWITCH_SIGNAL_BOND_VARIABLE "signal_bond"
 #define SWITCH_ORIGINATOR_VARIABLE "originator"

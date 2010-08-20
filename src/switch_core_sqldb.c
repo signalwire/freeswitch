@@ -1052,8 +1052,19 @@ static void core_event_handler(switch_event_t *event)
 		}
 		break;
 	case SWITCH_EVENT_CHANNEL_DESTROY:
-		new_sql() = switch_mprintf("delete from channels where uuid='%q' and hostname='%q'",
-								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+		{
+			const char *uuid = switch_event_get_header(event, "unique-id");
+			const char *sig = switch_event_get_header(event, "signal_bridge");
+			
+			if (uuid) {
+				new_sql() = switch_mprintf("delete from channels where uuid='%q' and hostname='%q'",
+										   uuid, switch_core_get_variable("hostname"));
+				if (switch_true(sig)) {
+					new_sql() = switch_mprintf("delete from calls where caller_uuid='%q' and hostname='%q'",
+											   uuid, switch_core_get_variable("hostname"));
+				}
+			}
+		}
 		break;
 	case SWITCH_EVENT_CHANNEL_UUID:
 		{

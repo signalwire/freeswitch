@@ -877,6 +877,7 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 	}
 
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE));
+	switch_channel_set_variable(channel, SWITCH_LAST_BRIDGE_VARIABLE, switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE));
 
 	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
@@ -993,6 +994,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_add_state_handler(caller_channel, &signal_bridge_state_handlers);
 	switch_channel_add_state_handler(peer_channel, &signal_bridge_state_handlers);
 
+	switch_channel_set_variable(caller_channel, "signal_bridge", "true");
+	switch_channel_set_variable(peer_channel, "signal_bridge", "true");
+
 	/* fire events that will change the data table from "show channels" */
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
@@ -1093,6 +1097,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		if (switch_core_session_read_lock(peer_session) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
+			switch_channel_set_variable(caller_channel, SWITCH_LAST_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
+			switch_channel_set_variable(peer_channel, SWITCH_LAST_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
 
 			if (!switch_channel_media_ready(caller_channel) ||
 				(!switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
