@@ -929,7 +929,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 				return SWITCH_STATUS_SUCCESS;
 			}
 			switch_mutex_unlock(se->spawn_reply->mutex);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_pid came in too late for %s\n", hash);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_pid came in too late for %s; %s\n", hash, se->uuid_str);
 			break;
 		}
 	}

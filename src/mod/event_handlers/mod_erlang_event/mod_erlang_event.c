@@ -1300,7 +1300,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 		ei_x_encode_tuple_header(&rbuf, 4);
 		ei_x_encode_atom(&rbuf, "get_pid");
-		_ei_x_encode_string(&rbuf, switch_core_session_get_uuid(session));
+		_ei_x_encode_string(&rbuf, session_element->uuid_str);
 		ei_x_encode_ref(&rbuf, &ref);
 		ei_x_encode_pid(&rbuf, ei_self(listener->ec));
 		/* should lock with mutex? */
@@ -1326,13 +1326,13 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "wtf\n");
 	if (!p->pid) {
 		p->state = reply_timeout;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s\n", hash);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s %s\n", hash, session_element->uuid_str);
 		remove_session_elem_from_listener_locked(listener, session_element);
 		destroy_session_elem(session_element);
 		return NULL;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "got pid! %s\n", hash);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "got pid! %s %s\n", hash, session_element->uuid_str);
 
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
