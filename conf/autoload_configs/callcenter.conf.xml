@@ -18,7 +18,7 @@
 <!-- WARNING : Configuring XML Tiers will reset the provided level and position if provided.-->
 <!-- WARNING : Agents and Tiers XML config shouldn't be used in a multi FS shared DB setup(Not currently supported anyway) -->
   <agents>
-    <!--<agent name="1000@default" type="callback" contact="[call_timeout=10]user/1000@default" status="Available" max-no-answer="3" wrap-up-time="10" />-->
+    <!--<agent name="1000@default" type="callback" contact="[call_timeout=10]user/1000@default" status="Available" max-no-answer="3" wrap-up-time="10" reject-delay-time="10" busy-delay-time="60" />-->
   </agents>
   <tiers>
     <!-- if no level or position is provided, they will default to 1.  You should do this to keep db value on restart -->
