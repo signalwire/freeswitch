@@ -4185,7 +4185,7 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	switch_safe_free(sql);	
 }
 
-#define FIFO_MEMBER_API_SYNTAX "[add <fifo_name> <originate_string> [<simo_count>] [<timeout>] [<lag>] [<taking_calls>] | del <fifo_name> <originate_string>]"
+#define FIFO_MEMBER_API_SYNTAX "[add <fifo_name> <originate_string> [<simo_count>] [<timeout>] [<lag>] [<expires>] [<taking_calls>] | del <fifo_name> <originate_string>]"
 SWITCH_STANDARD_API(fifo_member_api_function)
 {
 	char *fifo_name;
