@@ -1060,8 +1060,8 @@ static void core_event_handler(switch_event_t *event)
 				new_sql() = switch_mprintf("delete from channels where uuid='%q' and hostname='%q'",
 										   uuid, switch_core_get_variable("hostname"));
 				if (switch_true(sig)) {
-					new_sql() = switch_mprintf("delete from calls where caller_uuid='%q' and hostname='%q'",
-											   uuid, switch_core_get_variable("hostname"));
+					new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' || callee_uuid='%q') and hostname='%q'",
+											   uuid, uuid, switch_core_get_variable("hostname"));
 				}
 			}
 		}
