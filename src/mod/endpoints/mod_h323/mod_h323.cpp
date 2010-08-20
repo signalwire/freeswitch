@@ -870,6 +870,9 @@ H323Connection::AnswerCallResponse FSH323Connection::OnAnswerCall(const PString 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Called-Party-Number = %s\n",(const char*)called);
 		}
 	}
+	
+	PIPSocket::Address remote_network_addr;
+	GetSignallingChannel()->GetRemoteAddress().GetIpAddress(remote_network_addr);
        
 	switch_caller_profile_t *caller_profile = switch_caller_profile_new(switch_core_session_get_pool(m_fsSession),
                                                                         NULL,
@@ -880,7 +883,7 @@ H323Connection::AnswerCallResponse FSH323Connection::OnAnswerCall(const PString 
                                                                         /** caller_id_name */
                                                                         GetRemotePartyNumber(),
                                                                         /** caller_id_number */
-                                                                        NULL,
+                                                                	remote_network_addr.AsString(),
                                                                         /** network addr */
                                                                         NULL,
                                                                         /** ANI */
