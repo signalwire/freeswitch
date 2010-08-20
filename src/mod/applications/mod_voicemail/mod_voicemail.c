@@ -3593,10 +3593,13 @@ static int play_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
-static void do_play(vm_profile_t *profile, char *user, char *domain, char *file, switch_stream_handle_t *stream)
+static void do_play(vm_profile_t *profile, char *user_in, char *domain, char *file, switch_stream_handle_t *stream)
 {
 	char *sql;
 	struct holder holder;
+	char *user;
+
+	user = resolve_id(user_in, domain, "web-vm");
 
 	sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where username='%s' and domain='%s' and file_path like '%%%s'",
 						 (long) switch_epoch_time_now(NULL), user, domain, file);
@@ -3616,12 +3619,15 @@ static void do_play(vm_profile_t *profile, char *user, char *domain, char *file,
 }
 
 
-static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, switch_stream_handle_t *stream)
+static void do_del(vm_profile_t *profile, char *user_in, char *domain, char *file, switch_stream_handle_t *stream)
 {
 	char *myfolder = "inbox";
 	char *sql;
 	struct holder holder;
 	char *ref = NULL;
+	char *user;
+
+	user = resolve_id(user_in, domain, "web-vm");
 
 	if (stream->param_event) {
 		ref = switch_event_get_header(stream->param_event, "http-referer");
