@@ -26,6 +26,7 @@
  *
  * Brian West <brian@freeswitch.org>
  * Christopher M. Rienzo <chris@rienzo.net>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * mod_unimrcp.c -- UniMRCP module (MRCP client)
  *
@@ -2451,6 +2452,8 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 			if (id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) \"%s\": \"%s\"\n", schannel->name, param_name, param_val);
 				recog_channel_set_header(schannel, id->id, param_val, msg, recog_hdr);
+			} else if (!strcasecmp(param_name, "start-recognize")) {
+				// This parameter is used internally only, not in MRCP headers
 			} else {
 				/* this is probably a vendor-specific MRCP param */
 				apt_str_t apt_param_name = { 0 };
@@ -2782,6 +2785,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
 	const char *grammar_data = NULL;
 	char *grammar_file_data = NULL;
+	char *start_recognize;
 	switch_file_t *grammar_file = NULL;
 	switch_size_t grammar_file_size = 0, to_read = 0;
 	grammar_type_t type = GRAMMAR_TYPE_UNKNOWN;
@@ -2886,7 +2890,9 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		goto done;
 	}
 
-	status = recog_channel_start(schannel, name);
+	start_recognize = (char *) switch_core_hash_find(schannel->params, "start-recognize");
+	if (zstr(start_recognize) || strcasecmp(start_recognize, "false"))
+		status = recog_channel_start(schannel, name);
 
   done:
 
