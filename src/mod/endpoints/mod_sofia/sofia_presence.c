@@ -1064,11 +1064,17 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 	if (switch_stristr("polycom", user_agent)) {
 		*ct = "application/xpidf+xml";
 
-		/* of course!, lets make a big deal over dashes. Now the stupidity is complete. */
+		/* If unknown/none prpid is provided, just show the user as online. */
 		if (!prpid) {
-			prpid = "unknown";
+			prpid = "online";
 		}
 
+		/* FS currently send prpid closed on register, this force it to online */
+		if (!strncasecmp(status, "Registered", 10) && !strcasecmp(prpid, "closed")) {
+			prpid = "online";
+		}
+
+		/* of course!, lets make a big deal over dashes. Now the stupidity is complete. */
 		if (!strcmp(prpid, "on-the-phone")) {
 			prpid = "onthephone";
 		}
