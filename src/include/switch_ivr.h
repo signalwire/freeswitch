@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * switch_ivr.h -- IVR Library
  *
@@ -199,6 +200,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_cor
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *name);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_param_detect_speech(switch_core_session_t *session, const char *name, const char *val);
+
+/*!
+  \brief Start input timers on a background speech detection handle
+  \param session The session to start the timers on
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(switch_core_session_t *session);
 
 /*!
   \brief Record a session to disk
