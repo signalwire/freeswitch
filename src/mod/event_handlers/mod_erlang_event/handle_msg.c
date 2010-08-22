@@ -646,7 +646,7 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg * msg, e
 			binding->process.pid = msg->from;
 			binding->listener = listener;
 
-			switch_mutex_lock(globals.listener_mutex);
+			switch_thread_rwlock_wrlock(globals.listener_rwlock);
 
 			for (ptr = bindings.head; ptr && ptr->next; ptr = ptr->next);
 
@@ -657,7 +657,7 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg * msg, e
 			}
 
 			switch_xml_set_binding_sections(bindings.search_binding, switch_xml_get_binding_sections(bindings.search_binding) | section);
-			switch_mutex_unlock(globals.listener_mutex);
+			switch_thread_rwlock_unlock(globals.listener_rwlock);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sections %d\n", switch_xml_get_binding_sections(bindings.search_binding));
 
