@@ -1323,7 +1323,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	switch_thread_cond_broadcast(p->ready_or_found);
 	switch_thread_cond_timedwait(p->ready_or_found,
 			p->mutex, 5000000);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "wtf\n");
 	if (!p->pid) {
 		p->state = reply_timeout;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s %s\n", hash, session_element->uuid_str);
@@ -1336,6 +1335,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
+	session_element->spawn_reply = NULL;
 
 	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
