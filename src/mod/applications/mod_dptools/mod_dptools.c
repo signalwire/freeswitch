@@ -28,6 +28,7 @@
  * Michael Murdock <mike at mmurdock dot org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -95,7 +96,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	return extension;
 }
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume OR start_input_timers"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
@@ -116,6 +117,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_stop_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "param")) {
 			switch_ivr_set_param_detect_speech(session, argv[1], argv[2]);
+		} else if (!strcasecmp(argv[0], "start_input_timers")) {
+			switch_ivr_detect_speech_start_input_timers(session);
 		} else if (argc >= 3) {
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
