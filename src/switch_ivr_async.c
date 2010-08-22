@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Bret McDanel <bret AT 0xdecafbad dot com>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * switch_ivr_async.c -- IVR Library (async operations)
  *
@@ -2738,6 +2739,57 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
 	if (sth) {
 		if ((status = switch_core_asr_unload_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error unloading Grammar\n");
+			switch_core_asr_close(sth->ah, &flags);
+		}
+		return status;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_enable_grammar(switch_core_session_t *session, const char *name)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_status_t status;
+
+	if (sth) {
+		if ((status = switch_core_asr_enable_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error enabling Grammar\n");
+			switch_core_asr_close(sth->ah, &flags);
+		}
+		return status;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_grammar(switch_core_session_t *session, const char *name)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_status_t status;
+
+	if (sth) {
+		if ((status = switch_core_asr_disable_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error disabling Grammar\n");
+			switch_core_asr_close(sth->ah, &flags);
+		}
+		return status;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_all_grammars(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_status_t status;
+
+	if (sth) {
+		if ((status = switch_core_asr_disable_all_grammars(sth->ah)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error disabling all Grammars\n");
 			switch_core_asr_close(sth->ah, &flags);
 		}
 		return status;
