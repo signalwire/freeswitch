@@ -71,6 +71,46 @@ SOFIAPUBFUN int su_seterrno(int);
 #endif
 
 #if defined(_WIN32)
+/* VS 2010 defines these for POSIX but we cant have that */
+#if (_MSC_VER > 1500)
+#undef EWOULDBLOCK
+#undef EINPROGRESS
+#undef EALREADY
+#undef ENOTSOCK
+#undef EDESTADDRREQ
+#undef EMSGSIZE
+#undef EPROTOTYPE
+#undef ENOPROTOOPT
+#undef EPROTONOSUPPORT
+#undef ESOCKTNOSUPPORT
+#undef EOPNOTSUPP
+#undef EPFNOSUPPORT
+#undef EAFNOSUPPORT
+#undef EADDRINUSE
+#undef EADDRNOTAVAIL
+#undef ENETDOWN
+#undef ENETUNREACH
+#undef ENETRESET
+#undef ECONNABORTED
+#undef ECONNRESET
+#undef ENOBUFS
+#undef EISCONN
+#undef ENOTCONN
+#undef ESHUTDOWN
+#undef ETOOMANYREFS
+#undef ETIMEDOUT
+#undef ECONNREFUSED
+#undef ELOOP
+#undef EHOSTDOWN
+#undef EHOSTUNREACH
+#undef EPROCLIM
+#undef EUSERS
+#undef EDQUOT
+#undef ESTALE
+#undef EREMOTE
+#undef EBADMSG
+#undef EPROTO
+#endif
 
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK  (10035) /* WSAEWOULDBLOCK */
