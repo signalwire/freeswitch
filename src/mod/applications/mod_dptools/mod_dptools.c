@@ -28,6 +28,7 @@
  * Michael Murdock <mike at mmurdock dot org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -95,7 +96,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	return extension;
 }
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume OR grammaron/grammaroff <gram_name> OR grammarsalloff"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
@@ -108,6 +109,12 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
 		} else if (!strcasecmp(argv[0], "nogrammar")) {
 			switch_ivr_detect_speech_unload_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "grammaron")) {
+			switch_ivr_detect_speech_enable_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "grammaroff")) {
+			switch_ivr_detect_speech_disable_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "grammarsalloff")) {
+			switch_ivr_detect_speech_disable_all_grammars(session);
 		} else if (!strcasecmp(argv[0], "pause")) {
 			switch_ivr_pause_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "resume")) {
