@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  *
  * switch_core.h -- Core Library
@@ -1746,6 +1747,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
   \return SWITCH_STATUS_SUCCESS
 */
 SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *name);
+
+/*!
+  \brief Enable a grammar from an asr handle
+  \param ah the handle to enable the grammar from
+  \param name the name of the grammar to enable
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_enable_grammar(switch_asr_handle_t *ah, const char *name);
+
+/*!
+  \brief Disable a grammar from an asr handle
+  \param ah the handle to disable the grammar from
+  \param name the name of the grammar to disable
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_grammar(switch_asr_handle_t *ah, const char *name);
+
+/*!
+  \brief Disable all grammars from an asr handle
+  \param ah the handle to disable the grammars from
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_all_grammars(switch_asr_handle_t *ah);
 
 /*!
   \brief Pause detection on an asr handle
