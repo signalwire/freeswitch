@@ -96,7 +96,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	return extension;
 }
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume OR grammaron/grammaroff <gram_name> OR grammarsalloff"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR grammaron/grammaroff <gram_name> OR grammarsalloff OR pause OR resume OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
