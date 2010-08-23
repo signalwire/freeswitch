@@ -1069,11 +1069,6 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 			prpid = "online";
 		}
 
-		/* FS currently send prpid closed on register, this force it to online */
-		if (!strncasecmp(status, "Registered", 10) && !strcasecmp(prpid, "closed")) {
-			prpid = "online";
-		}
-
 		/* of course!, lets make a big deal over dashes. Now the stupidity is complete. */
 		if (!strcmp(prpid, "on-the-phone")) {
 			prpid = "onthephone";
@@ -1430,9 +1425,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				if (direction && !strcasecmp(direction, "outbound")) {
 					op = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number");
 				} else {
-					if (!(op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number"))) {
-						op = switch_event_get_header(helper->event, "Caller-Destination-Number");
-					}
+					op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number");
+				}
+
+				if (!op) {
+					op = switch_event_get_header(helper->event, "Caller-Destination-Number");
 				}
 
 				if (direction) {
@@ -1451,7 +1448,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 				} else if (!strcmp(astate, "confirmed")) {
 					if (zstr(op)) {
-						switch_snprintf(status_line, sizeof(status_line), "On The Phone %s", status);
+						switch_snprintf(status_line, sizeof(status_line), "On The Phone");
 					} else {
 						switch_snprintf(status_line, sizeof(status_line), "Talk %s", op);
 					}

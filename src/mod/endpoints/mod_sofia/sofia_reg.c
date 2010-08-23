@@ -1146,6 +1146,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (multi_reg) {
+			if (reg_count == 1) {
+				sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q' and contact='%q'", 
+									 to_user, reg_host, contact_str);
+				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+			}
+				
+
 			if (multi_reg_contact) {
 				sql =
 					switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
@@ -1153,6 +1160,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 			}
 		} else {
+			sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'");
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host);
 		}
 		switch_mutex_lock(profile->ireg_mutex);
@@ -1327,7 +1336,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
 				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, reg_host);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "closed");
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "online");
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
 				switch_event_fire(&s_event);
 			}					
