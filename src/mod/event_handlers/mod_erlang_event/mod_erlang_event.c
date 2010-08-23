@@ -1258,7 +1258,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 	p = switch_core_alloc(session_element->pool, sizeof(*p));
 	switch_thread_cond_create(&p->ready_or_found, session_element->pool);
-	switch_mutex_init(&p->mutex, SWITCH_MUTEX_DEFAULT, session_element->pool);
+	switch_mutex_init(&p->mutex, SWITCH_MUTEX_UNNESTED, session_element->pool);
 	p->state = reply_not_ready;
 	p->hash = hash;
 	p->pid = NULL;
@@ -1266,6 +1266,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	session_element->spawn_reply = p;
 
 	switch_mutex_lock(p->mutex);
+	p->state = reply_waiting;
 
 	if (!strcmp(function, "!")) {
 		/* send a message to request a pid */
@@ -1295,8 +1296,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 		 */
 	}
 
-	p->state = reply_waiting;
-	switch_thread_cond_broadcast(p->ready_or_found);
 	switch_thread_cond_timedwait(p->ready_or_found,
 			p->mutex, 5000000);
 	if (!p->pid) {
