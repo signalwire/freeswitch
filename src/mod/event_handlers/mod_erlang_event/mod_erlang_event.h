@@ -134,8 +134,6 @@ struct listener {
 	switch_hash_t *sessions;
 	int lost_events;
 	int lost_logs;
-	time_t last_flush;
-	uint32_t timeout;
 	uint32_t id;
 	char remote_ip[50];
 	/*switch_port_t remote_port; */
@@ -166,6 +164,7 @@ struct globals_struct {
 	switch_event_node_t *node;
 	switch_mutex_t *ref_mutex;
 	switch_mutex_t *fetch_reply_mutex;
+	switch_mutex_t *listener_count_mutex;
 	switch_hash_t *fetch_reply_hash;
 	unsigned int reference0;
 	unsigned int reference1;

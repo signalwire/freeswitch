@@ -86,23 +86,6 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 }
 
 
-static void expire_listener(listener_t ** listener)
-{
-	void *pop;
-
-	switch_thread_rwlock_unlock((*listener)->rwlock);
-	switch_core_hash_destroy(&(*listener)->event_hash);
-	switch_core_destroy_memory_pool(&(*listener)->pool);
-
-	while (switch_queue_trypop((*listener)->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_event_t *pevent = (switch_event_t *) pop;
-		switch_event_destroy(&pevent);
-	}
-
-	*listener = NULL;
-}
-
-
 static void remove_binding(listener_t *listener, erlang_pid * pid)
 {
 	struct erlang_binding *ptr, *lst = NULL;
@@ -208,13 +191,6 @@ static void event_handler(switch_event_t *event)
 		send_event_to_attached_sessions(l, event);
 
 		if (!switch_test_flag(l, LFLAG_EVENTS)) {
-			continue;
-		}
-
-		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && switch_epoch_time_now(NULL) - l->last_flush > l->timeout) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
-			remove_listener(l);
-			expire_listener(&l);
 			continue;
 		}
 
