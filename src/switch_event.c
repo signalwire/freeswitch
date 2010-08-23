@@ -314,7 +314,13 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 		event = (switch_event_t *) pop;
 
 		while (event) {
-			for (index = 0; index < SOFT_MAX_DISPATCH; index++) {
+			int max;
+
+			switch_mutex_lock(EVENT_QUEUE_MUTEX);
+			max = SOFT_MAX_DISPATCH;
+			switch_mutex_unlock(EVENT_QUEUE_MUTEX);
+
+			for (index = 0; index < max; index++) {
 				if (switch_queue_trypush(EVENT_DISPATCH_QUEUE[index], event) == SWITCH_STATUS_SUCCESS) {
 					event = NULL;
 					break;
@@ -322,12 +328,19 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 			}
 
 			if (event) {
+				switch_mutex_lock(EVENT_QUEUE_MUTEX);
 				if (SOFT_MAX_DISPATCH + 1 < MAX_DISPATCH) {
-					switch_mutex_lock(EVENT_QUEUE_MUTEX);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Adding a new event thread #%d\n", SOFT_MAX_DISPATCH + 1);
 					launch_dispatch_threads(SOFT_MAX_DISPATCH + 1, DISPATCH_QUEUE_LEN, RUNTIME_POOL);
-					switch_mutex_unlock(EVENT_QUEUE_MUTEX);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event threads maxed out at %d.\n", SOFT_MAX_DISPATCH);
+					switch_yield(1000000);
 				}
+				switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 			}
+			
+
+			switch_yield(100000);
 		}
 	}
 
@@ -571,7 +584,7 @@ static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t 
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_threadattr_priority_increase(thd_attr);
 		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE[index], pool);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Create event dispatch thread %d\n", index);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Create event dispatch thread %d\n", index);
 	}
 
 	SOFT_MAX_DISPATCH = index;
