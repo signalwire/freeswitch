@@ -1283,7 +1283,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		switch_stream_handle_t stream = { 0 };
 		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "presence-call-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
-		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
@@ -1313,11 +1312,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			direction = "initiator";
 			dft_state = "confirmed";
 		}
-
-		if (!strcasecmp(state, "cs_reporting")) {
-			goto end;
-		}
-
 
 		if (is_dialog) {
 			stream.write_function(&stream,
@@ -1442,7 +1436,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				}
 
 				if (direction) {
-					what = !strcasecmp(direction, "outbound") ? "Call" : "Ring";
+					what = strcasecmp(direction, "outbound") ? "Call" : "Ring";
 				}
 
 				if (!strcmp(astate, "early")) {
@@ -2501,20 +2495,22 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				exp_delta = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
 				exp = (long) switch_epoch_time_now(NULL) + exp_delta;
 
+				
 				if ((sql =
 					 switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' "
 									" and profile_name='%q' and hostname='%q'", from_user, from_host, profile->name, mod_sofia_globals.hostname))) {
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
-
+					
 				if ((sql =
 					 switch_mprintf("insert into sip_presence (sip_user, sip_host, status, rpid, expires, user_agent,"
 									" profile_name, hostname, open_closed) "
 									"values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
 									from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, mod_sofia_globals.hostname, open_closed))) {
-
+						
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
+				
 
 				event_type = sip_header_as_string(profile->home, (void *) sip->sip_event);
 				

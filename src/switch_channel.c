@@ -1500,7 +1500,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	switch_channel_clear_flag(channel, CF_TAGGED);
 
-	if (channel->state >= CS_ROUTING && channel->state <= CS_HANGUP) {
+	if (channel->state == CS_ROUTING || channel->state == CS_HANGUP) {
 		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
 	}
 
@@ -2388,7 +2388,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 			switch_core_session_execute_application(channel->session, app, arg);
 		}
 
-
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2450,6 +2449,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
 			switch_core_session_rwunlock(other_session);
 		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
