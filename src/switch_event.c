@@ -340,7 +340,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 			}
 			
 
-			switch_yield(100000);
+			switch_cond_next();
 		}
 	}
 
@@ -585,6 +585,7 @@ static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t 
 		switch_threadattr_priority_increase(thd_attr);
 		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE[index], pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Create event dispatch thread %d\n", index);
+		switch_yield(100000);
 	}
 
 	SOFT_MAX_DISPATCH = index;
