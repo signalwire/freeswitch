@@ -627,7 +627,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
+					*((char *) args->buf) = dtmf.digit;
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
@@ -1927,7 +1927,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 					if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
-						switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
+						*((char *) args->buf) = dtmf.digit;
 						status = SWITCH_STATUS_BREAK;
 					}
 				}
