@@ -2729,6 +2729,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_param_detect_speech(switch_core_s
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+
+	if (sth) {
+		switch_core_asr_start_input_timers(sth->ah);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *name)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);

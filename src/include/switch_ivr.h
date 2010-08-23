@@ -225,6 +225,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_all_grammars(sw
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_param_detect_speech(switch_core_session_t *session, const char *name, const char *val);
 
 /*!
+  \brief Start input timers on a background speech detection handle
+  \param session The session to start the timers on
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(switch_core_session_t *session);
+
+/*!
   \brief Record a session to disk
   \param session the session to record
   \param file the path to the file

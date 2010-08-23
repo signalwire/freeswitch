@@ -96,7 +96,7 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	return extension;
 }
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR grammaron/grammaroff <gram_name> OR grammarsalloff OR pause OR resume OR stop OR param <name> <value>"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR grammaron/grammaroff <gram_name> OR grammarsalloff OR pause OR resume OR start_input_timers OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
@@ -123,6 +123,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_stop_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "param")) {
 			switch_ivr_set_param_detect_speech(session, argv[1], argv[2]);
+		} else if (!strcasecmp(argv[0], "start_input_timers")) {
+			switch_ivr_detect_speech_start_input_timers(session);
 		} else if (argc >= 3) {
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
