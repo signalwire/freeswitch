@@ -2126,24 +2126,28 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
-	ftdm_status_t status;
+	ftdm_status_t status = FTDM_FAIL;
 
 	ftdm_assert(ftdmchan != NULL, "null channel");
-	ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_OUTBOUND);	
+
+	ftdm_channel_lock(ftdmchan);
+
 	if (ftdmchan->span->outgoing_call) {
-		if ((status = ftdmchan->span->outgoing_call(ftdmchan)) == FTDM_SUCCESS) {
-			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
-		}
-		return status;
+		status = ftdmchan->span->outgoing_call(ftdmchan);
 	} else {
+		status = FTDM_NOTIMPL;
 		ftdm_log(FTDM_LOG_ERROR, "outgoing_call method not implemented in this span!\n");
 	}
+
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(file);
 	UNREFERENCED_PARAMETER(func);
 	UNREFERENCED_PARAMETER(line);
 #endif
-	return FTDM_FAIL;
+
+	ftdm_channel_unlock(ftdmchan);
+
+	return status;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t sigstatus)
