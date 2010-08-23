@@ -750,9 +750,26 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 		ftdm_channel_t *new_chan = span->channels[++span->chan_count];
 
 		if (!new_chan) {
+#ifdef FTDM_DEBUG_CHAN_MEMORY
+			void *chanmem = NULL;
+			int pages = 1;
+			int pagesize = sysconf(_SC_PAGE_SIZE);
+			if (sizeof(*new_chan) > pagesize) {
+				pages = sizeof(*new_chan)/pagesize;
+				pages++;
+			}
+			ftdm_log(FTDM_LOG_DEBUG, "Allocating %d pages of %d bytes for channel of size %d\n", pages, pagesize, sizeof(*new_chan));
+			if (posix_memalign(&chanmem, pagesize, pagesize*pages)) {
+				return FTDM_FAIL;
+			}
+			ftdm_log(FTDM_LOG_DEBUG, "Channel pages allocated start at mem %p\n", chanmem);
+			memset(chanmem, 0, sizeof(*new_chan));
+			new_chan = chanmem;
+#else
 			if (!(new_chan = ftdm_calloc(1, sizeof(*new_chan)))) {
 				return FTDM_FAIL;
 			}
+#endif
 			span->channels[span->chan_count] = new_chan;
 		}
 
