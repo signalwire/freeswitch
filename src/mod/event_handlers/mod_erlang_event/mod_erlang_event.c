@@ -968,10 +968,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	void *value;
 	switch_hash_index_t *iter;
 
-	/* TODO - should we have a different mutex for this? */
-	switch_thread_rwlock_wrlock(globals.listener_rwlock);
+	switch_mutex_lock(globals.listener_count_mutex);
 	prefs.threads++;
-	switch_thread_rwlock_unlock(globals.listener_rwlock);
+	switch_mutex_unlock(globals.listener_count_mutex);
 
 	switch_assert(listener != NULL);
 
@@ -1019,9 +1018,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_core_destroy_memory_pool(&pool);
 	}
 
-	switch_thread_rwlock_wrlock(globals.listener_rwlock);
+	switch_mutex_lock(globals.listener_count_mutex);
 	prefs.threads--;
-	switch_thread_rwlock_unlock(globals.listener_rwlock);
+	switch_mutex_unlock(globals.listener_count_mutex);
 
 	return NULL;
 }
@@ -1607,6 +1606,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 
 	switch_thread_rwlock_create(&globals.listener_rwlock, pool);
 	switch_mutex_init(&globals.fetch_reply_mutex, SWITCH_MUTEX_DEFAULT, pool);
+	switch_mutex_init(&globals.listener_count_mutex, SWITCH_MUTEX_UNNESTED, pool);
 	switch_core_hash_init(&globals.fetch_reply_hash, pool);
 
 	/* intialize the unique reference stuff */
