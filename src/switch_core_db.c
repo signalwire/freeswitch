@@ -196,7 +196,8 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 {
 	char *errmsg;
 
-	if (switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
+	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
+		switch_core_db_exec(db, test_sql, NULL, NULL, NULL);
 		return;
 	}
 
