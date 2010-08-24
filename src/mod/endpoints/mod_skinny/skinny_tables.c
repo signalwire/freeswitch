@@ -141,6 +141,7 @@ struct skinny_table SKINNY_BUTTONS[] = {
     {"LastNumberRedial", SKINNY_BUTTON_LAST_NUMBER_REDIAL},
     {"SpeedDial", SKINNY_BUTTON_SPEED_DIAL},
     {"Hold", SKINNY_BUTTON_HOLD},
+    {"Transfer", SKINNY_BUTTON_TRANSFER},
     {"Line", SKINNY_BUTTON_LINE},
     {"Voicemail", SKINNY_BUTTON_VOICEMAIL},
     {"Privacy", SKINNY_BUTTON_PRIVACY},

@@ -1202,6 +1202,13 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 				status = skinny_session_hold_line(session, listener, line_instance);
 			}
 			break;
+		case SKINNY_BUTTON_TRANSFER:
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+
+			if(session) {
+			    status = skinny_session_transfer(session, listener, line_instance);
+			}			
+			break;
 		case SKINNY_BUTTON_VOICEMAIL:
 		    skinny_create_incoming_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
