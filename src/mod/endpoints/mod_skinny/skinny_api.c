@@ -93,7 +93,7 @@ static switch_status_t skinny_api_list_devices(const char *line, const char *cur
 	    status = SWITCH_STATUS_MEMERR;
 	    return status;
     }
-    if (!(argc = switch_separate_string(myline, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || argc != 5) {
+    if (!(argc = switch_separate_string(myline, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || argc < 4) {
 	    return status;
     }
 
