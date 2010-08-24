@@ -162,7 +162,7 @@ static const char *parse_string(cJSON *item,const char *str)
 				case 'r': *ptr2++='\r';	break;
 				case 't': *ptr2++='\t';	break;
 				case 'u':	 // transcode utf16 to utf8. DOES NOT SUPPORT SURROGATE PAIRS CORRECTLY.
-					sscanf(ptr+1,"%4x",&uc);	// get the unicode char.
+					if (sscanf(ptr+1,"%4x",&uc) < 1) break;	// get the unicode char.
 					len=3;if (uc<0x80) len=1;else if (uc<0x800) len=2;ptr2+=len;
 					
 					switch (len) {
