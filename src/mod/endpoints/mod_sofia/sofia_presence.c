@@ -522,7 +522,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		alt_event_type = "presence";
 	}
 
-	if ((user = strdup(from))) {
+	if (from && (user = strdup(from))) {
 		if ((host = strchr(user, '@'))) {
 			char *p;
 			*host++ = '\0';
@@ -1065,7 +1065,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 		*ct = "application/xpidf+xml";
 
 		/* If unknown/none prpid is provided, just show the user as online. */
-		if (!prpid) {
+		if (!prpid || !strcasecmp(prpid, "unknown")) {
 			prpid = "online";
 		}
 
@@ -1099,10 +1099,13 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 		}
 
 		if (!strncasecmp(status, "Registered", 10)) {
-			prpid = NULL;
 			status = "Available";
 		}
 		
+		if (!strcasecmp(status, "Available")) {
+			prpid = NULL;
+		}
+
 
 		if (!strcasecmp(status, "Unregistered")) {
 			prpid = NULL;
@@ -1116,6 +1119,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 
 		if (zstr(status) && !zstr(prpid)) {
 			status = "Available";
+			prpid = NULL;
 		}
 		
 		if (prpid) {
