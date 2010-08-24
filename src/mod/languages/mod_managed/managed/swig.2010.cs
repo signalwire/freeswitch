@@ -2638,6 +2638,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_strip_whitespace(string str) {
+    string ret = freeswitchPINVOKE.switch_strip_whitespace(str);
+    return ret;
+  }
+
   public static string switch_strip_commas(string arg0, string arg1, SWIGTYPE_p_switch_size_t len) {
     string ret = freeswitchPINVOKE.switch_strip_commas(arg0, arg1, SWIGTYPE_p_switch_size_t.getCPtr(len));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -4990,6 +4995,7 @@ public class freeswitch {
   public static readonly string SWITCH_L_SDP_VARIABLE = freeswitchPINVOKE.SWITCH_L_SDP_VARIABLE_get();
   public static readonly string SWITCH_B_SDP_VARIABLE = freeswitchPINVOKE.SWITCH_B_SDP_VARIABLE_get();
   public static readonly string SWITCH_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_BRIDGE_VARIABLE_get();
+  public static readonly string SWITCH_LAST_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_LAST_BRIDGE_VARIABLE_get();
   public static readonly string SWITCH_SIGNAL_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_SIGNAL_BRIDGE_VARIABLE_get();
   public static readonly string SWITCH_SIGNAL_BOND_VARIABLE = freeswitchPINVOKE.SWITCH_SIGNAL_BOND_VARIABLE_get();
   public static readonly string SWITCH_ORIGINATOR_VARIABLE = freeswitchPINVOKE.SWITCH_ORIGINATOR_VARIABLE_get();
@@ -5585,6 +5591,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_BRIDGE_VARIABLE_get")]
   public static extern string SWITCH_BRIDGE_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_LAST_BRIDGE_VARIABLE_get")]
+  public static extern string SWITCH_LAST_BRIDGE_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SIGNAL_BRIDGE_VARIABLE_get")]
   public static extern string SWITCH_SIGNAL_BRIDGE_VARIABLE_get();
@@ -7905,6 +7914,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_spaces")]
   public static extern string switch_strip_spaces(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_whitespace")]
+  public static extern string switch_strip_whitespace(string jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_commas")]
   public static extern string switch_strip_commas(string jarg1, string jarg2, HandleRef jarg3);
 
@@ -8177,6 +8189,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_next_get")]
   public static extern IntPtr switch_caller_profile_next_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_direction_set")]
+  public static extern void switch_caller_profile_direction_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_direction_get")]
+  public static extern int switch_caller_profile_direction_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_caller_profile")]
   public static extern IntPtr new_switch_caller_profile();
@@ -20143,6 +20161,16 @@ public class switch_caller_profile : IDisposable {
     } 
   }
 
+  public switch_call_direction_t direction {
+    set {
+      freeswitchPINVOKE.switch_caller_profile_direction_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_call_direction_t ret = (switch_call_direction_t)freeswitchPINVOKE.switch_caller_profile_direction_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public switch_caller_profile() : this(freeswitchPINVOKE.new_switch_caller_profile(), true) {
   }
 
@@ -21819,7 +21847,9 @@ namespace FreeSWITCH.Native {
   SCF_CALIBRATE_CLOCK = (1 << 8),
   SCF_USE_HEAVY_TIMING = (1 << 9),
   SCF_USE_CLOCK_RT = (1 << 10),
-  SCF_VERBOSE_EVENTS = (1 << 11)
+  SCF_VERBOSE_EVENTS = (1 << 11),
+  SCF_USE_WIN32_MONOTONIC = (1 << 12),
+  SCF_AUTO_SCHEMAS = (1 << 13)
 }
 
 }
@@ -25654,7 +25684,8 @@ namespace FreeSWITCH.Native {
 
 [System.Flags] public enum switch_io_flag_enum_t {
   SWITCH_IO_FLAG_NONE = 0,
-  SWITCH_IO_FLAG_NOBLOCK = (1 << 0)
+  SWITCH_IO_FLAG_NOBLOCK = (1 << 0),
+  SWITCH_IO_FLAG_SINGLE_READ = (1 << 1)
 }
 
 }
