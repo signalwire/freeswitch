@@ -320,7 +320,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 			max = SOFT_MAX_DISPATCH;
 			switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
-			for (index = 0; index < max; index++) {
+			for (index = 0; (int)index < max; index++) {
 				if (switch_queue_trypush(EVENT_DISPATCH_QUEUE[index], event) == SWITCH_STATUS_SUCCESS) {
 					event = NULL;
 					break;
