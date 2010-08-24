@@ -215,7 +215,8 @@ switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, 
 /*****************************************************************************/
 /* SQL FUNCTIONS */
 /*****************************************************************************/
-void skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mutex_t *mutex);
+switch_cache_db_handle_t *skinny_get_db_handle(skinny_profile_t *profile);
+switch_status_t skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mutex_t *mutex);
 switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 										      switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata);
 
