@@ -759,6 +759,8 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 	if(listener) {
 		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
 			send_stop_tone(listener, line_instance, call_id);
+			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF); 
+			send_clear_prompt_status(listener, line_instance, call_id); 
 		}
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
 		switch (helper->cause) {
