@@ -134,11 +134,11 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
-	} else if (!strcmp(ext, "ul")) {
+	} else if (!strcmp(ext, "ul") || !strcmp(ext, "ulaw")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
-	} else if (!strcmp(ext, "al")) {
+	} else if (!strcmp(ext, "al") || !strcmp(ext, "alaw")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ALAW;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
@@ -334,7 +334,7 @@ static switch_status_t setup_formats(void)
 	char buffer[128];
 	int format, major_count, subtype_count, m, s;
 	int len, x, skip;
-	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "al", "adpcm", NULL };
+	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "ulaw", "al", "alaw", "adpcm", NULL };
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer[0] = 0;
 
