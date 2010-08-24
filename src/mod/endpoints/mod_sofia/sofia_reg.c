@@ -1160,7 +1160,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 			}
 		} else {
-			sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'");
+			sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, reg_host);
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host);
 		}
