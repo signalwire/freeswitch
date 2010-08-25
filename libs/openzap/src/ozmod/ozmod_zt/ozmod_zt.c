@@ -641,12 +641,12 @@ static ZIO_OPEN_FUNCTION(zt_open)
 			}
 
 			if (ioctl(zchan->sockfd, codes.ECHOCANCEL, &len)) {
-                zap_log(ZAP_LOG_WARNING, "Echo cancel not available for %d:%d\n", zchan->span_id, zchan->chan_id);
-			} else if (zt_globals.etlevel >= 0) {
-                len = zt_globals.etlevel;
-               	if (ioctl(zchan->sockfd, codes.ECHOTRAIN, &len)) {
-					zap_log(ZAP_LOG_WARNING, "Echo training not available for %d:%d\n", zchan->span_id, zchan->chan_id);
-                }
+                		zap_log(ZAP_LOG_WARNING, "Echo cancel not available for %d:%d\n", zchan->span_id, zchan->chan_id);
+			} else if (zt_globals.etlevel > 0) {
+				len = zt_globals.etlevel;
+				if (ioctl(zchan->sockfd, codes.ECHOTRAIN, &len)) {
+							zap_log(ZAP_LOG_WARNING, "Echo training not available for %d:%d\n", zchan->span_id, zchan->chan_id);
+				}
 			}
 		}
 		
