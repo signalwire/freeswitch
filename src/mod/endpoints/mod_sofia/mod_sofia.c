@@ -2658,6 +2658,47 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stream)
+{
+	char xmlbuf[2096];
+	const int buflen = 2096;
+
+	stream->write_function(stream, "  <gateway>\n");
+	stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(gp->name));
+	stream->write_function(stream, "    <profile>%s</profile>\n", gp->profile->name);
+	stream->write_function(stream, "    <scheme>%s</scheme>\n", switch_str_nil(gp->register_scheme));
+	stream->write_function(stream, "    <realm>%s</realm>\n", switch_str_nil(gp->register_realm));
+	stream->write_function(stream, "    <username>%s</username>\n", switch_str_nil(gp->register_username));
+	stream->write_function(stream, "    <password>%s</password>\n", zstr(gp->register_password) ? "no" : "yes");
+	stream->write_function(stream, "    <from>%s</from>\n", switch_amp_encode(switch_str_nil(gp->register_from), xmlbuf, buflen));
+	stream->write_function(stream, "    <contact>%s</contact>\n", switch_amp_encode(switch_str_nil(gp->register_contact), xmlbuf, buflen));
+	stream->write_function(stream, "    <exten>%s</exten>\n", switch_amp_encode(switch_str_nil(gp->extension), xmlbuf, buflen));
+	stream->write_function(stream, "    <to>%s</to>\n", switch_str_nil(gp->register_to));
+	stream->write_function(stream, "    <proxy>%s</proxy>\n", switch_str_nil(gp->register_proxy));
+	stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(gp->register_context));
+	stream->write_function(stream, "    <expires>%s</expires>\n", switch_str_nil(gp->expires_str));
+	stream->write_function(stream, "    <freq>%d</freq>\n", gp->freq);
+	stream->write_function(stream, "    <ping>%d</ping>\n", gp->ping);
+	stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
+	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
+	stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+	stream->write_function(stream, "    <calls-in>%d</calls-in>\n", gp->ib_calls);
+	stream->write_function(stream, "    <calls-out>%d</calls-out>\n", gp->ob_calls);
+	stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", gp->ib_failed_calls);
+	stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", gp->ob_failed_calls);
+
+	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+		time_t now = switch_epoch_time_now(NULL);
+		if (gp->retry > now) {
+			stream->write_function(stream, "    <retry>%ds</retry>\n", gp->retry - now);
+		} else {
+			stream->write_function(stream, "    <retry>NEVER</retry>\n");
+		}
+	}
+
+	stream->write_function(stream, "  </gateway>\n");
+}
+
 static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	sofia_profile_t *profile = NULL;
@@ -2665,8 +2706,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	switch_hash_index_t *hi;
 	void *val;
 	const void *vvar;
-	const int buflen = 2096;
-	char xmlbuf[2096];
 	int c = 0;
 	int ac = 0;
 	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -2688,24 +2727,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 						for (gp = profile->gateways; gp; gp = gp->next) {
 							switch_assert(gp->state < REG_STATE_LAST);
 
-							stream->write_function(stream, "\t<gateway>\n");
-							stream->write_function(stream, "\t\t<profile>%s</profile>\n", profile->name);
-							stream->write_function(stream, "\t\t<to>%s</to>\n", gp->register_to);
-							stream->write_function(stream, "\t\t<state>%s</state>\n", sofia_state_names[gp->state]);
-							stream->write_function(stream, "\t\t<calls-in>%ld</calls-in>\n", gp->ib_calls);
-							stream->write_function(stream, "\t\t<calls-out>%ld</calls-out>\n", gp->ob_calls);
-							stream->write_function(stream, "\t\t<failed-calls-in>%ld</failed-calls-in>\n", gp->ib_failed_calls);
-							stream->write_function(stream, "\t\t<failed-calls-out>%ld</failed-calls-out>\n", gp->ob_failed_calls);
-
-							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
-								time_t now = switch_epoch_time_now(NULL);
-								if (gp->retry > now) {
-									stream->write_function(stream, "\t\t<retry>%ds</retry>\n", gp->retry - now);
-								} else {
-									stream->write_function(stream, "\t\t<retry>NEVER</retry>\n");
-								}
-							}
-							stream->write_function(stream, "\t</gateway>\n");
+							xml_gateway_status(gp, stream);
 						}
 					}
 				}
@@ -2713,36 +2735,12 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 			stream->write_function(stream, "</gateways>\n");
 
-			return SWITCH_STATUS_SUCCESS;
-		}
-		if (!strcasecmp(argv[0], "gateway")) {
+		} else if (argc == 1 && !strcasecmp(argv[0], "profile")) {
+		} else if (!strcasecmp(argv[0], "gateway")) {
 			if ((gp = sofia_reg_find_gateway(argv[1]))) {
 				switch_assert(gp->state < REG_STATE_LAST);
 				stream->write_function(stream, "%s\n", header);
-				stream->write_function(stream, "  <gateway>\n");
-				stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(gp->name));
-				stream->write_function(stream, "    <profile>%s</profile>\n", gp->profile->name);
-				stream->write_function(stream, "    <scheme>%s</scheme>\n", switch_str_nil(gp->register_scheme));
-				stream->write_function(stream, "    <realm>%s</realm>\n", switch_str_nil(gp->register_realm));
-				stream->write_function(stream, "    <username>%s</username>\n", switch_str_nil(gp->register_username));
-				stream->write_function(stream, "    <password>%s</password>\n", zstr(gp->register_password) ? "no" : "yes");
-				stream->write_function(stream, "    <from>%s</from>\n", switch_amp_encode(switch_str_nil(gp->register_from), xmlbuf, buflen));
-				stream->write_function(stream, "    <contact>%s</contact>\n", switch_amp_encode(switch_str_nil(gp->register_contact), xmlbuf, buflen));
-				stream->write_function(stream, "    <exten>%s</exten>\n", switch_amp_encode(switch_str_nil(gp->extension), xmlbuf, buflen));
-				stream->write_function(stream, "    <to>%s</to>\n", switch_str_nil(gp->register_to));
-				stream->write_function(stream, "    <proxy>%s</proxy>\n", switch_str_nil(gp->register_proxy));
-				stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(gp->register_context));
-				stream->write_function(stream, "    <expires>%s</expires>\n", switch_str_nil(gp->expires_str));
-				stream->write_function(stream, "    <freq>%d</freq>\n", gp->freq);
-				stream->write_function(stream, "    <ping>%d</ping>\n", gp->ping);
-				stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
-				stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
-				stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
-				stream->write_function(stream, "    <calls-in>%d</calls-in>\n", gp->ib_calls);
-				stream->write_function(stream, "    <calls-out>%d</calls-out>\n", gp->ob_calls);
-				stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", gp->ib_failed_calls);
-				stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", gp->ob_failed_calls);
-				stream->write_function(stream, "  </gateway>\n");
+				xml_gateway_status(gp, stream);
 				sofia_reg_release_gateway(gp);
 			} else {
 				stream->write_function(stream, "Invalid Gateway!\n");
