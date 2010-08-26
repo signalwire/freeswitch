@@ -272,6 +272,7 @@ int main(int argc, char *argv[])
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
 	int nf = 0;					/* TRUE if we are running in nofork mode */
+	int bf = 0;
 	char *runas_user = NULL;
 	char *runas_group = NULL;
 #else
@@ -328,6 +329,7 @@ int main(int argc, char *argv[])
 		"\t-monotonic-clock       -- use monotonic clock as timer source\n"
 #else
 		"\t-nf                    -- no forking\n"
+		"\t-bf                    -- block until fully started, then fork\n"
 		"\t-u [user]              -- specify user to switch to\n" "\t-g [group]             -- specify group to switch to\n"
 #endif
 		"\t-help                  -- this message\n" "\t-version               -- print the version and exit\n"
@@ -461,6 +463,11 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
+		if (local_argv[x] && !strcmp(local_argv[x], "-bf")) {
+			bf++;
+			known_opt++;
+		}
+
 		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
 			fprintf(stdout, "FreeSWITCH version: %s\n", SWITCH_VERSION_FULL);
 			return 0;
@@ -523,8 +530,14 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-nc")) {
-			nc++;
-			known_opt++;
+			if (!nf) {
+				nc++;
+				known_opt++;
+			} else {
+				/* The flags -nc and -nf are mutually exclusive. Ignoring -nc. */
+				nc = 0;
+				known_opt++;
+			}
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-c")) {
@@ -685,7 +698,7 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 		FreeConsole();
 #else
-		if (!nf) {
+		if (!nf && !bf) {
 			daemonize();
 		}
 #endif
@@ -798,6 +811,10 @@ int main(int argc, char *argv[])
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initialize [%s]\n", err);
 		return 255;
+	}
+
+	if(bf) {
+		daemonize();
 	}
 
 	switch_core_runtime_loop(nc);
