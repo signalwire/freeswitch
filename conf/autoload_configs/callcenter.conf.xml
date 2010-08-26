@@ -25,7 +25,7 @@
     <!--<agent name="1000@default" type="callback" contact="[call_timeout=10]user/1000@default" status="Available" max-no-answer="3" wrap-up-time="10" reject-delay-time="10" busy-delay-time="60" />-->
   </agents>
   <tiers>
-    <!-- if no level or position is provided, they will default to 1.  You should do this to keep db value on restart -->
+    <!-- if no level or position is provided, they will default to 0.  You should do this to keep db value on restart -->
     <!-- <tier agent="1000@default" queue="support@default" level="0" position="1"/> -->
   </tiers>
 

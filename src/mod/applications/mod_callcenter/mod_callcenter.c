@@ -1243,7 +1243,7 @@ static switch_status_t load_config(void)
 						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
 					} else {
 						/* default to level 1 and position 1 within the level */
-						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), 1, 1);
+						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 1);
 					}
 				} else {
 					if (level) {
