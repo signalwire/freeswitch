@@ -3544,7 +3544,7 @@ SWITCH_STANDARD_API(sofia_function)
 			sofia_glue_recover(SWITCH_TRUE);
 			stream->write_function(stream, "Flushing recovery database.\n");
 		} else {
-			x = sofia_glue_recover(SWITCH_FALSE);
+			int x = sofia_glue_recover(SWITCH_FALSE);
 
 			if (x) {
 				stream->write_function(stream, "Recovered %d call(s)\n", x);
