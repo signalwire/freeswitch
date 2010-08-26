@@ -3544,13 +3544,6 @@ SWITCH_STANDARD_API(sofia_function)
 			sofia_glue_recover(SWITCH_TRUE);
 			stream->write_function(stream, "Flushing recovery database.\n");
 		} else {
-			int32_t old = 0, x = 0;
-
-			switch_core_session_ctl(SCSC_SPS, &old);
-
-			x = 10000000;
-			switch_core_session_ctl(SCSC_SPS, &x);
-			
 			x = sofia_glue_recover(SWITCH_FALSE);
 
 			if (x) {
@@ -3558,8 +3551,6 @@ SWITCH_STANDARD_API(sofia_function)
 			} else {
 				stream->write_function(stream, "No calls to recover.\n");
 			}
-
-			switch_core_session_ctl(SCSC_SPS, &old);
 		}
 
 		goto done;
@@ -3632,7 +3623,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		goto error;
 	}
 
-	if (!(nsession = switch_core_session_request(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool))) {
+	if (!(nsession = switch_core_session_request(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
 	}

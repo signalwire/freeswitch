@@ -2814,6 +2814,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			switch_event_destroy(&event);
 		}
 
+		if ((flags & SOF_NO_LIMITS)) {
+			myflags |= SOF_NO_LIMITS;
+		}
+
 		if ((flags & SOF_FORKED_DIAL)) {
 			myflags |= SOF_NOBLOCK;
 		}

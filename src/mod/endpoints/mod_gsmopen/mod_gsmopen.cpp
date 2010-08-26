@@ -2274,7 +2274,7 @@ int new_inbound_channel(private_t * tech_pvt)
 
 	switch_assert(tech_pvt != NULL);
 	tech_pvt->ib_calls++;
-	if ((session = switch_core_session_request(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
+	if ((session = switch_core_session_request(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL)) != 0) {
 		DEBUGA_GSMOPEN("2 SESSION_REQUEST %s\n", GSMOPEN_P_LOG, switch_core_session_get_uuid(session));
 		switch_core_session_add_stream(session, NULL);
 		channel = switch_core_session_get_channel(session);

@@ -2244,10 +2244,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
 
+	if (flags & SOF_NO_LIMITS) {
+		dftflags |= SOF_NO_LIMITS;
+	}
+
 	if (cid_num_override) {
 		dftflags |= SOF_NO_EFFECTIVE_CID_NUM;
 	}
-
+	
 	if (cid_name_override) {
 		dftflags |= SOF_NO_EFFECTIVE_CID_NAME;
 	}
@@ -2450,10 +2454,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (and_argc > 1 || or_argc > 1) {
 					myflags |= SOF_FORKED_DIAL;
-				} else if (var_event) {
+				} 
+
+				if (var_event) {
 					const char *vvar;
 					if ((vvar = switch_event_get_header(var_event, "forked_dial")) && switch_true(vvar)) {
 						myflags |= SOF_FORKED_DIAL;
+					}
+					if ((vvar = switch_event_get_header(var_event, "no_throttle_limits")) && switch_true(vvar)) {
+						myflags |= SOF_NO_LIMITS;
 					}
 				}
 

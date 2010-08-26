@@ -614,8 +614,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 */
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ switch_endpoint_interface_t *endpoint_interface,
 																		 _In_ switch_call_direction_t direction,
-																		 _Inout_opt_ switch_memory_pool_t **pool, _In_opt_z_ const char *use_uuid);
-#define switch_core_session_request(_ep, _d, _p) switch_core_session_request_uuid(_ep, _d, _p, NULL)
+																		 switch_originate_flag_t originate_flags,
+																		 _Inout_opt_ switch_memory_pool_t **pool, 
+																		 _In_opt_z_ const char *use_uuid);
+#define switch_core_session_request(_ep, _d, _f, _p) switch_core_session_request_uuid(_ep, _d, _f, _p, NULL)
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(_In_ switch_core_session_t *session, _In_z_ const char *use_uuid);
 

@@ -1039,7 +1039,7 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 		goto error;
 	}
 
-	if (!(nsession = switch_core_session_request(skinny_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool))) {
+	if (!(nsession = switch_core_session_request(skinny_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
 	}

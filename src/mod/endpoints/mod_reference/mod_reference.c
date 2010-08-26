@@ -418,7 +418,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
 													switch_call_cause_t *cancel_cause)
 {
-	if ((*new_session = switch_core_session_request(reference_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(reference_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;

@@ -1806,7 +1806,7 @@ int new_inbound_channel(private_t * p)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	if ((session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
+	if ((session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL)) != 0) {
 		switch_core_session_add_stream(session, NULL);
 		channel = switch_core_session_get_channel(session);
 		skypiax_tech_init(tech_pvt, session);

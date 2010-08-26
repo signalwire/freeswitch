@@ -1056,7 +1056,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 	private_t *tech_pvt = NULL;
-	if ((*new_session = switch_core_session_request(skypopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(skypopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;
 		char *rdest;
@@ -1964,7 +1964,7 @@ int new_inbound_channel(private_t * tech_pvt)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	if ((session = switch_core_session_request(skypopen_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
+	if ((session = switch_core_session_request(skypopen_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL)) != 0) {
 		DEBUGA_SKYPE("2 SESSION_REQUEST %s\n", SKYPOPEN_P_LOG, switch_core_session_get_uuid(session));
 		switch_core_session_add_stream(session, NULL);
 		channel = switch_core_session_get_channel(session);
