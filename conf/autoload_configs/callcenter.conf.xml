@@ -10,6 +10,10 @@
       <param name="moh-sound" value="$${hold_music}"/>
       <!--<param name="record-template" value="$${base_dir}/recordings/${strftime(%Y-%m-%d-%H-%M-%S)}.${destination_number}.${caller_id_number}.${uuid}.wav"/>-->
       <param name="time-base-score" value="system"/>
+      <param name="tier-rules-apply" value="false"/>
+      <param name="tier-rule-wait-second" value="300"/>
+      <param name="tier-rule-wait-multiply-level" value="true"/>
+      <param name="tier-rule-no-agent-no-wait" value="false"/>
     </queue>
 
   </queues>
@@ -22,7 +26,7 @@
   </agents>
   <tiers>
     <!-- if no level or position is provided, they will default to 1.  You should do this to keep db value on restart -->
-    <!-- <tier agent="1000@default" queue="support@default" level="1" position="1"/> -->
+    <!-- <tier agent="1000@default" queue="support@default" level="0" position="1"/> -->
   </tiers>
 
 </configuration> 

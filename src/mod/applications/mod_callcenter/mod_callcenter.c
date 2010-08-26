@@ -34,6 +34,7 @@
 #define CALLCENTER_EVENT "callcenter::info"
 
 #define CC_AGENT_TYPE_CALLBACK "Callback"
+#define CC_AGENT_TYPE_UUID_STANDBY "uuid-standby"
 #define CC_SQLITE_DB_NAME "callcenter"
 
 /* TODO
@@ -188,7 +189,7 @@ static char agents_sql[] =
 "   name      VARCHAR(255),\n"
 "   system    VARCHAR(255),\n"
 "   uuid      VARCHAR(255),\n"
-"   type      VARCHAR(255),\n" // Callback , Dial in...
+"   type      VARCHAR(255),\n" /* Callback , Dial in...*/
 "   contact   VARCHAR(255),\n"
 "   status    VARCHAR(255),\n"
 /*User Personal Status
@@ -235,6 +236,7 @@ static char tiers_sql[] =
 "   level    INTEGER NOT NULL DEFAULT 1,\n"
 "   position INTEGER NOT NULL DEFAULT 1\n" ");\n";
 
+static switch_xml_config_int_options_t config_int_0_10000 = { SWITCH_TRUE, 0, SWITCH_TRUE, 10000 };
 
 const char * cc_tier_state2str(cc_tier_state_t state)
 {
@@ -378,6 +380,11 @@ struct cc_queue {
 	char *moh;
 	char *record_template;
 	char *time_base_score;
+	switch_bool_t tier_rules_apply;
+	uint32_t tier_rule_wait_second;
+	switch_bool_t tier_rule_wait_multiply_level;
+	switch_bool_t tier_rule_no_agent_no_wait;
+
 	switch_mutex_t *mutex;
 
 	switch_thread_rwlock_t *rwlock;
@@ -475,6 +482,10 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "moh-sound", SWITCH_CONFIG_STRING, 0, &queue->moh, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rules-apply", SWITCH_CONFIG_BOOL, 0, &queue->tier_rules_apply, SWITCH_FALSE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-wait-second", SWITCH_CONFIG_INT, 0, &queue->tier_rule_wait_second, 0, &config_int_0_10000, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-wait-multiply-level", SWITCH_CONFIG_BOOL, 0, &queue->tier_rule_wait_multiply_level, SWITCH_FALSE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-no-agent-no-wait", SWITCH_CONFIG_BOOL, 0, &queue->tier_rule_no_agent_no_wait, SWITCH_TRUE, NULL, NULL, NULL);
 
 	switch_assert(i < CC_QUEUE_CONFIGITEM_COUNT);
 
@@ -689,6 +700,8 @@ struct call_helper {
 	const char *agent_name;
 	const char *agent_system;
 	const char *agent_status;
+	const char *agent_type;
+	const char *agent_uuid;
 	const char *originate_string;
 	const char *record_template;
 	int no_answer_count;
@@ -737,7 +750,7 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
 
-	if (!strcasecmp(type, CC_AGENT_TYPE_CALLBACK)) {
+	if (!strcasecmp(type, CC_AGENT_TYPE_CALLBACK) || !strcasecmp(type, CC_AGENT_TYPE_UUID_STANDBY)) {
 		char res[256] = "";
 		/* Check to see if agent already exist */
 		sql = switch_mprintf("SELECT count(*) FROM agents WHERE name = '%q'", agent);
@@ -905,7 +918,12 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			result = CC_STATUS_AGENT_INVALID_STATE;
 			goto done;
 		}
+	} else if (!strcasecmp(key, "uuid")) {
+		sql = switch_mprintf("UPDATE agents SET uuid = '%q', system = 'single_box' WHERE name = '%q'", value, agent);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
 
+		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "contact")) {
 		sql = switch_mprintf("UPDATE agents SET contact = '%q', system = 'single_box' WHERE name = '%q'", value, agent);
 		cc_execute_sql(NULL, sql, NULL);
@@ -931,7 +949,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 
 		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "type")) {
-		if (strcasecmp(value, CC_AGENT_TYPE_CALLBACK)) {
+		if (strcasecmp(value, CC_AGENT_TYPE_CALLBACK) && strcasecmp(value, CC_AGENT_TYPE_UUID_STANDBY)) {
 			result = CC_STATUS_AGENT_INVALID_TYPE;
 			goto done;
 		}
@@ -1272,17 +1290,38 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_safe_free(sql);
 		goto done;
 	}
-	switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
-	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_pre_answer_uuid", "%s", h->member_uuid);
-	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
+	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
+		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_pre_answer_uuid", "%s", h->member_uuid);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
-	t_agent_called = switch_epoch_time_now(NULL);
-	dialstr = switch_mprintf("%s", h->originate_string);
-	status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, h->member_caller_name, h->member_caller_number, NULL, ovars, SOF_NONE, NULL);
-	switch_safe_free(dialstr);
+		t_agent_called = switch_epoch_time_now(NULL);
+		dialstr = switch_mprintf("%s", h->originate_string);
+		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, h->member_caller_name, h->member_caller_number, NULL, ovars, SOF_NONE, NULL);
+		switch_safe_free(dialstr);
 
-	switch_event_destroy(&ovars);
+		switch_event_destroy(&ovars);
+	} else if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
+		agent_session = switch_core_session_locate(h->agent_uuid);
+		if (agent_session) {
+			switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
+			switch_event_t *event;
+			const char *cc_warning_tone = switch_channel_get_variable(agent_channel, "cc_warning_tone");
+			/* Playback this to the agent */
+			if (cc_warning_tone && switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", "playback");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cc_warning_tone);
+				switch_core_session_queue_private_event(agent_session, &event, SWITCH_TRUE);
+			}
+
+			status = SWITCH_STATUS_SUCCESS;
+		} else {
+			cc_agent_update("status", cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), h->agent_name);
+			cc_agent_update("uuid", "", h->agent_name);
+		}
+	}
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		/* Agent Answered */
@@ -1387,8 +1426,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_channel_set_variable_printf(member_channel, "cc_queue_terminated_epoch", "%ld", (long) switch_epoch_time_now(NULL));
 
 		/* Update Agents Items */
-		sql = switch_mprintf("UPDATE agents SET uuid = '', last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
-				, (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
+		/* Do not remove uuid of the agent if we are a standby agent */
+		sql = switch_mprintf("UPDATE agents SET %q last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
+				, (strcasecmp(h->agent_type, "uuid-standby")?"uuid = '',":""),  (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1511,7 +1551,13 @@ struct agent_callback {
 	const char *joined_epoch;
 	const char *strategy;
 	const char *record_template;
+	switch_bool_t tier_rules_apply;
+	uint32_t tier_rule_wait_second;
+	switch_bool_t tier_rule_wait_multiply_level;
+	switch_bool_t tier_rule_no_agent_no_wait;
+
 	int tier;
+	int tier_agent_available;
 };
 typedef struct agent_callback agent_callback_t;
 
@@ -1520,10 +1566,58 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	agent_callback_t *cbt = (agent_callback_t *) pArg;
 	char *sql = NULL;
 	char res[256];
+	char *agent_status = argv[2];
+	char *agent_tier_state = argv[8];
+	char *agent_last_bridge_end = argv[9];
+	char *agent_wrap_up_time = argv[10];
+	char *agent_state = argv[11];
+	char *agent_ready_time = argv[12];
+	char *agent_tier_level = argv[13];
+	char *agent_type = argv[14];
+	char *agent_uuid = argv[15];
 
-	/* More Advanced rules based on On Break still being available for near future call */
-	if (!strcasecmp(argv[2], cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK))) {
-		return 0; /* Skip this agent for the moment */
+	switch_bool_t contact_agent = SWITCH_TRUE;
+
+	/* Check if we switch to a different tier, if so, check if we should continue further for that member */
+
+	if (cbt->tier_rules_apply == SWITCH_TRUE && atoi(agent_tier_level) > cbt->tier) {
+		/* Continue if no agent was logged in in the previous tier and noagent = true */
+		if (cbt->tier_rule_no_agent_no_wait == SWITCH_TRUE && cbt->tier_agent_available == 0) {
+			cbt->tier = atoi(agent_tier_level);
+			/* Multiple the tier level by the tier wait time */
+		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_TRUE && (long) switch_epoch_time_now(NULL) - atol(cbt->joined_epoch) >= atoi(agent_tier_level) * cbt->tier_rule_wait_second) {
+			cbt->tier = atoi(agent_tier_level);
+			cbt->tier_agent_available = 0;
+			/* Just check if joined is bigger than next tier wait time */
+		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_FALSE && (long) switch_epoch_time_now(NULL) - atol(cbt->joined_epoch) >= cbt->tier_rule_wait_second) {
+			cbt->tier = atoi(agent_tier_level);
+			cbt->tier_agent_available = 0;
+		} else {
+			/* We are not allowed to continue to the next tier of agent */
+			return 1;
+		}
+	}
+	cbt->tier_agent_available++;
+
+	/* If Agent is not in a acceptable tier state, continue */
+	if (! (!strcasecmp(agent_tier_state, cc_tier_state2str(CC_TIER_STATE_NO_ANSWER)) || !strcasecmp(agent_tier_state, cc_tier_state2str(CC_TIER_STATE_READY)))) {
+		contact_agent = SWITCH_FALSE;
+	}
+	if (! (!strcasecmp(agent_state, cc_agent_state2str(CC_AGENT_STATE_WAITING)))) {
+		contact_agent = SWITCH_FALSE;
+	}
+	if (! (atol(agent_last_bridge_end) < ((long) switch_epoch_time_now(NULL) - atol(agent_wrap_up_time)))) {
+		contact_agent = SWITCH_FALSE;
+	}
+	if (! (atol(agent_ready_time) <= (long) switch_epoch_time_now(NULL))) {
+		contact_agent = SWITCH_FALSE;
+	}
+	if (! (strcasecmp(agent_status, cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK)))) {
+		contact_agent = SWITCH_FALSE;
+	}
+
+	if (contact_agent == SWITCH_FALSE) {
+		return 0; /* Continue to next Agent */
 	}
 
 	/* If agent isn't on this box */
@@ -1577,6 +1671,8 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->agent_name = switch_core_strdup(h->pool, argv[1]);
 				h->agent_system = switch_core_strdup(h->pool, "single_box");
 				h->agent_status = switch_core_strdup(h->pool, argv[2]);
+				h->agent_type = switch_core_strdup(h->pool, agent_type);
+				h->agent_uuid = switch_core_strdup(h->pool, agent_uuid);
 				h->member_joined_epoch = switch_core_strdup(h->pool, cbt->joined_epoch); 
 				h->member_caller_name = switch_core_strdup(h->pool, cbt->caller_name);
 				h->member_caller_number = switch_core_strdup(h->pool, cbt->caller_number);
@@ -1622,6 +1718,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	char *queue_name = NULL;
 	char *queue_strategy = NULL;
 	char *queue_record_template = NULL;
+	switch_bool_t tier_rules_apply;
+	uint32_t tier_rule_wait_second;
+	switch_bool_t tier_rule_wait_multiply_level;
+	switch_bool_t tier_rule_no_agent_no_wait;
 	agent_callback_t cbt;
 
 	if (!argv[0] || !(queue = get_queue(argv[0]))) {
@@ -1630,6 +1730,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	} else {
 		queue_name = strdup(queue->name);
 		queue_strategy = strdup(queue->strategy);
+		tier_rules_apply = queue->tier_rules_apply;
+		tier_rule_wait_second = queue->tier_rule_wait_second;
+		tier_rule_wait_multiply_level = queue->tier_rule_wait_multiply_level;
+		tier_rule_no_agent_no_wait = queue->tier_rule_no_agent_no_wait;
 
 		if (queue->record_template) {
 			queue_record_template = strdup(queue->record_template);
@@ -1639,7 +1743,14 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	}
 
 	memset(&cbt, 0, sizeof(cbt));
-	cbt.tier = 1;
+	cbt.tier = 0;
+	cbt.tier_agent_available = 0;
+
+	cbt.tier_rules_apply = tier_rules_apply;
+	cbt.tier_rule_wait_second = tier_rule_wait_second;
+	cbt.tier_rule_wait_multiply_level = tier_rule_wait_multiply_level;
+	cbt.tier_rule_no_agent_no_wait = tier_rule_no_agent_no_wait;
+
 	cbt.uuid = argv[1];
 	cbt.caller_number = argv[2];
 	cbt.caller_name = argv[3];
@@ -1667,18 +1778,12 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		sql_order_by = switch_mprintf("level, position");
 	}
 
-	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time  FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time,tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 			" WHERE tiers.queue = '%q'"
-			" AND (tiers.state = '%q' OR tiers.state = '%q')"
 			" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
-			" AND agents.state = '%q' AND last_bridge_end < (%ld - wrap_up_time)"
-			" AND agents.ready_time <= %ld"
 			" ORDER BY %q",
 			queue_name,
-			cc_tier_state2str(CC_TIER_STATE_READY), cc_tier_state2str(CC_TIER_STATE_NO_ANSWER),
 			cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
-			cc_agent_state2str(CC_AGENT_STATE_WAITING), (long) switch_epoch_time_now(NULL),
-			(long) switch_epoch_time_now(NULL),
 			sql_order_by);
 
 	cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, agents_callback, &cbt /* Call back variables */);
@@ -2393,6 +2498,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config agent del");
 	switch_console_set_complete("add callcenter_config agent set status");
 	switch_console_set_complete("add callcenter_config agent set state");
+	switch_console_set_complete("add callcenter_config agent set uuid");
 	switch_console_set_complete("add callcenter_config agent set contact");
 	switch_console_set_complete("add callcenter_config agent set ready_time");
 	switch_console_set_complete("add callcenter_config agent set reject_delay_time");
