@@ -1211,8 +1211,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static SWIGTYPE_p_switch_core_session switch_core_session_request_uuid(switch_endpoint_interface endpoint_interface, switch_call_direction_t direction, SWIGTYPE_p_p_apr_pool_t pool, string use_uuid) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_request_uuid(switch_endpoint_interface.getCPtr(endpoint_interface), (int)direction, SWIGTYPE_p_p_apr_pool_t.getCPtr(pool), use_uuid);
+  public static SWIGTYPE_p_switch_core_session switch_core_session_request_uuid(switch_endpoint_interface endpoint_interface, switch_call_direction_t direction, uint originate_flags, SWIGTYPE_p_p_apr_pool_t pool, string use_uuid) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_request_uuid(switch_endpoint_interface.getCPtr(endpoint_interface), (int)direction, originate_flags, SWIGTYPE_p_p_apr_pool_t.getCPtr(pool), use_uuid);
     SWIGTYPE_p_switch_core_session ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
     return ret;
   }
@@ -6889,7 +6889,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_core_session_request_xml(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_request_uuid")]
-  public static extern IntPtr switch_core_session_request_uuid(HandleRef jarg1, int jarg2, HandleRef jarg3, string jarg4);
+  public static extern IntPtr switch_core_session_request_uuid(HandleRef jarg1, int jarg2, uint jarg3, HandleRef jarg4, string jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_uuid")]
   public static extern int switch_core_session_set_uuid(HandleRef jarg1, string jarg2);
@@ -26653,7 +26653,8 @@ namespace FreeSWITCH.Native {
   SOF_NOBLOCK = (1 << 0),
   SOF_FORKED_DIAL = (1 << 1),
   SOF_NO_EFFECTIVE_CID_NUM = (1 << 2),
-  SOF_NO_EFFECTIVE_CID_NAME = (1 << 3)
+  SOF_NO_EFFECTIVE_CID_NAME = (1 << 3),
+  SOF_NO_LIMITS = (1 << 4)
 }
 
 }

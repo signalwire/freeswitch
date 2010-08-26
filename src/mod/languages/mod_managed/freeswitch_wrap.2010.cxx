@@ -6529,19 +6529,21 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_request_xml(void * jarg
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_request_uuid(void * jarg1, int jarg2, void * jarg3, char * jarg4) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_request_uuid(void * jarg1, int jarg2, unsigned long jarg3, void * jarg4, char * jarg5) {
   void * jresult ;
   switch_endpoint_interface_t *arg1 = (switch_endpoint_interface_t *) 0 ;
   switch_call_direction_t arg2 ;
-  switch_memory_pool_t **arg3 = (switch_memory_pool_t **) 0 ;
-  char *arg4 = (char *) 0 ;
+  switch_originate_flag_t arg3 ;
+  switch_memory_pool_t **arg4 = (switch_memory_pool_t **) 0 ;
+  char *arg5 = (char *) 0 ;
   switch_core_session_t *result = 0 ;
   
   arg1 = (switch_endpoint_interface_t *)jarg1; 
   arg2 = (switch_call_direction_t)jarg2; 
-  arg3 = (switch_memory_pool_t **)jarg3; 
-  arg4 = (char *)jarg4; 
-  result = (switch_core_session_t *)switch_core_session_request_uuid(arg1,arg2,arg3,(char const *)arg4);
+  arg3 = (switch_originate_flag_t)jarg3; 
+  arg4 = (switch_memory_pool_t **)jarg4; 
+  arg5 = (char *)jarg5; 
+  result = (switch_core_session_t *)switch_core_session_request_uuid(arg1,arg2,arg3,arg4,(char const *)arg5);
   jresult = (void *)result; 
   return jresult;
 }

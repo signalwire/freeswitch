@@ -271,13 +271,13 @@ int main(int argc, char *argv[])
 	switch_size_t pid_len, old_pid_len;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
-	int nf = 0;					/* TRUE if we are running in nofork mode */
 	int bf = 0;
 	char *runas_user = NULL;
 	char *runas_group = NULL;
 #else
 	int win32_service = 0;
 #endif
+	int nf = 0;					/* TRUE if we are running in nofork mode */
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
 	int i, x;
@@ -813,9 +813,11 @@ int main(int argc, char *argv[])
 		return 255;
 	}
 
+#ifndef WIN32
 	if(bf) {
 		daemonize();
 	}
+#endif
 
 	switch_core_runtime_loop(nc);
 
