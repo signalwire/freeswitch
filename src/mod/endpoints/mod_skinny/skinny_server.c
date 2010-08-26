@@ -97,7 +97,7 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	}
 
 	if (!(nsession = switch_core_session_request(skinny_get_endpoint_interface(),
-	        SWITCH_CALL_DIRECTION_INBOUND, NULL))) {
+	        SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
 	}
