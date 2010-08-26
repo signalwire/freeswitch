@@ -1298,7 +1298,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 	}
 	
-	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_caller_profile_t *caller_profile;
 		switch_channel_t *channel = switch_core_session_get_channel(*new_session);
@@ -1373,7 +1373,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	
 	*sp = NULL;
 	
-	if (!(session = switch_core_session_request(openzap_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL))) {
+	if (!(session = switch_core_session_request(openzap_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
 		return ZAP_FAIL;
 	}
