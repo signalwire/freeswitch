@@ -578,6 +578,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	char msg_to_skype[256];
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -602,7 +603,12 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		switch_clear_flag(tech_pvt, TFLAG_IO);
 		switch_clear_flag(tech_pvt, TFLAG_VOICE);
 		switch_set_flag(tech_pvt, TFLAG_HANGUP);
+		if(switch_test_flag(tech_pvt, TFLAG_PROGRESS)){
+			switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+		}
 		switch_mutex_unlock(tech_pvt->flag_mutex);
+		sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
+		skypopen_signaling_write(tech_pvt, msg_to_skype);
 		break;
 	case SWITCH_SIG_BREAK:
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_BREAK\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
@@ -693,15 +699,25 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	int try=0;
 
 
+	*frame = NULL;
+
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
+	tech_pvt->read_frame.flags = SFF_NONE;
+
 	if (!switch_channel_ready(channel) || !switch_test_flag(tech_pvt, TFLAG_IO)) {
 		ERRORA("channel not ready \n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+		//DEBUGA_SKYPE("CHANNEL READ FRAME in TFLAG_PROGRESS goto CNG\n", SKYPOPEN_P_LOG);
+		switch_sleep(20000);
+		goto cng;
 	}
 
 	if (!tech_pvt->read_buffer) {
@@ -714,8 +730,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 
-	tech_pvt->read_frame.flags = SFF_NONE;
-	*frame = NULL;
 
 	if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
 		switch_core_timer_next(&tech_pvt->timer_read);
@@ -837,12 +851,18 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	int no_space=0;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+		//DEBUGA_SKYPE("CHANNEL in TFLAG_PROGRESS\n", SKYPOPEN_P_LOG);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (!switch_channel_ready(channel)) {
 		ERRORA("channel not ready \n", SKYPOPEN_P_LOG);
@@ -869,11 +889,15 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		DEBUGA_SKYPE("NO SPACE WRITE: %d\n", SKYPOPEN_P_LOG, frame->datalen);
 		//switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
 		switch_buffer_zero(tech_pvt->write_buffer);
+		no_space=1;
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
-
-	tech_pvt->begin_to_write = 1;
+	if(no_space){
+		switch_sleep(20000);
+	}else{
+		tech_pvt->begin_to_write = 1;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -916,6 +940,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
+	char msg_to_skype[256];
 	//int i;
 
 	channel = switch_core_session_get_channel(session);
@@ -925,11 +950,30 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		{
+			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_PROGRESS\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			switch_set_flag(tech_pvt, TFLAG_PROGRESS);
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS:
+		{
+			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			if(switch_set_flag(tech_pvt, TFLAG_PROGRESS)){
+				sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+			}
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_ANSWER\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
 
+			//switch_set_flag(tech_pvt, TFLAG_IO);
 			channel_answer_channel(session);
+			switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
 
 			if(tech_pvt->read_buffer){
 				switch_mutex_lock(tech_pvt->mutex_audio_srv);
@@ -2319,7 +2363,7 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 	char *id = tech_pvt->ring_id;
 	char *value = tech_pvt->ring_value;
 	switch_core_session_t *session = NULL;
-	switch_channel_t *channel = NULL;
+	//switch_channel_t *channel = NULL;
 
 	switch_mutex_lock(globals.mutex);
 
@@ -2373,6 +2417,7 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 
 		new_inbound_channel(tech_pvt);
 
+#if 0
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 		if (session) {
 			channel = switch_core_session_get_channel(session);
@@ -2388,6 +2433,7 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 			ERRORA("no session\n", SKYPOPEN_P_LOG);
 
 		}
+#endif //0
 
 	} else if (!tech_pvt || !tech_pvt->skype_call_id) {
 		ERRORA("No Call ID?\n", SKYPOPEN_P_LOG);

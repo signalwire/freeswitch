@@ -74,7 +74,7 @@ typedef enum {
 	TFLAG_VOICE = (1 << 4),
 	TFLAG_HANGUP = (1 << 5),
 	TFLAG_LINEAR = (1 << 6),
-	TFLAG_CODEC = (1 << 7),
+	TFLAG_PROGRESS = (1 << 7),
 	TFLAG_BREAK = (1 << 8)
 } TFLAGS;
 
