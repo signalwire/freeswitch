@@ -2605,10 +2605,9 @@ int skypopen_transfer(private_t * tech_pvt)
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
 			/* let's look for a DOWN one */
-				NOTICA ("LOOKING  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN[%d]) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, SKYPOPEN_STATE_DOWN, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
 			if ((giovatech->interface_state == SKYPOPEN_STATE_DOWN || giovatech->interface_state == 0) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
-				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
 				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
 					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				} 
