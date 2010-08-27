@@ -965,9 +965,9 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_url_decode(to_buf);
 			to_user = to_buf;
 		}
-		if (argc > 10 && !zstr(argv[9]) && !zstr(argv[10])) {
-			status = argv[9];
-			rpid = argv[10];
+		if (argc > 10 && !zstr(argv[10]) && !zstr(argv[11])) {
+			status = argv[10];
+			rpid = argv[11];
 		}
 	}
 
