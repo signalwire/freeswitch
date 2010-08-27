@@ -3163,6 +3163,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-db-domain")) {
 						profile->reg_db_domain = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "force-subscription-domain")) {
+						profile->sub_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "bind-params")) {
 						profile->bind_params = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-domain")) {
