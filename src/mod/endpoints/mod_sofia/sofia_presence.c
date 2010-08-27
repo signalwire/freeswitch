@@ -519,7 +519,11 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	}
 
 	if (zstr(alt_event_type)) {
-		alt_event_type = "presence";
+		if (!strcasecmp(event_type, "presence")) {
+			alt_event_type = "dialog";
+		} else {
+			alt_event_type = "presence";
+		}
 	}
 
 	if (from && (user = strdup(from))) {
@@ -2321,6 +2325,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 				switch_event_fire(&sevent);
 			}
 		}
