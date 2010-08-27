@@ -175,6 +175,7 @@ static char members_sql[] =
 "   caller_name      VARCHAR(255),\n"
 "   system_epoch     INTEGER NOT NULL DEFAULT 0,\n"
 "   joined_epoch     INTEGER NOT NULL DEFAULT 0,\n"
+"   rejoined_epoch   INTEGER NOT NULL DEFAULT 0,\n"
 "   bridge_epoch     INTEGER NOT NULL DEFAULT 0,\n"
 "   abandoned_epoch  INTEGER NOT NULL DEFAULT 0,\n"
 "   base_score       INTEGER NOT NULL DEFAULT 0,\n"
@@ -650,7 +651,7 @@ static cc_queue_t *load_queue(const char *queue_name)
 			goto end;
 		}
 
-		switch_cache_db_test_reactive(dbh, "select count(abandoned_epoch) from members", "drop table members", members_sql);
+		switch_cache_db_test_reactive(dbh, "select count(rejoined_epoch) from members", "drop table members", members_sql);
 		switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", NULL, "alter table agents add ready_time integer not null default 0;"
 											"alter table agents add reject_delay_time integer not null default 0;"
 											"alter table agents add busy_delay_time  integer not null default 0;");
@@ -1224,12 +1225,14 @@ static switch_status_t load_config(void)
 		}
 	}
 
+	/* Loading queue into memory struct */
 	if ((x_queues = switch_xml_child(cfg, "queues"))) {
 		for (x_queue = switch_xml_child(x_queues, "queue"); x_queue; x_queue = x_queue->next) {
 			load_queue(switch_xml_attr_soft(x_queue, "name"));
 		}
 	}
 
+	/* Importing from XML config Agents */
 	if ((x_agents = switch_xml_child(cfg, "agents"))) {
 		for (x_agent = switch_xml_child(x_agents, "agent"); x_agent; x_agent = x_agent->next) {
 			const char *agent = switch_xml_attr(x_agent, "name");
@@ -1239,6 +1242,7 @@ static switch_status_t load_config(void)
 		}
 	}
 
+	/* Importing from XML config Agent Tiers */
 	if ((x_tiers = switch_xml_child(cfg, "tiers"))) {
 		for (x_tier = switch_xml_child(x_tiers, "tier"); x_tier; x_tier = x_tier->next) {
 			const char *agent = switch_xml_attr(x_tier, "agent");
@@ -1252,7 +1256,7 @@ static switch_status_t load_config(void)
 						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
 					} else {
 						/* default to level 1 and position 1 within the level */
-						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 1);
+						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 0);
 					}
 				} else {
 					if (level) {
@@ -1762,8 +1766,8 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			abandoned_epoch = atol(argv[4]);
 		}
 		/* Once we pass a certain point, we want to get rid of the abandoned call */
-		if (abandoned_epoch + discard_abandoned_after> (long) switch_epoch_time_now(NULL)) {
-			sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q'", argv[1]);
+		if (abandoned_epoch + discard_abandoned_after < (long) switch_epoch_time_now(NULL)) {
+			sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q' AND (abandoned_epoch = '%ld' OR joined_epoch = '%q')", argv[1], abandoned_epoch, argv[4]);
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
 		}
@@ -1998,14 +2002,15 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Grab the start epoch of a channel */
 	times = switch_channel_get_timetable(member_channel);
-	switch_snprintf(start_epoch, sizeof(start_epoch), "%" SWITCH_TIME_T_FMT, times->answered);
+	switch_snprintf(start_epoch, sizeof(start_epoch), "%" SWITCH_TIME_T_FMT, times->answered / 1000000);
 
 	/* Check of we have a queued abandoned member we can resume from */
 	if (queue->abandoned_resume_allowed == SWITCH_TRUE) {
 		char res[256];
 
 		/* Check to see if agent already exist */
-		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE caller_number = '%q' AND state = '%q'", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE queue = '%q' AND caller_number = '%q' AND state = '%q' ORDER BY abandoned_epoch DESC",
+				queue_name, switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 		switch_safe_free(sql);
 		abandoned_epoch = atol(res);
@@ -2018,7 +2023,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* If system, will add the total time the session is up to the base score */
 	if (!switch_strlen_zero(start_epoch) && !strcasecmp("system", queue->time_base_score)) {
-		cc_base_score_int += (switch_epoch_time_now(NULL) - atoi(start_epoch));
+		cc_base_score_int += ((long) switch_epoch_time_now(NULL) - atol(start_epoch));
 	}
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -2037,8 +2042,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 	if (abandoned_epoch == 0) {
 		/* Add the caller to the member queue */
 		sql = switch_mprintf("INSERT INTO members"
-				" (queue,system,uuid,system_epoch,joined_epoch,base_score,skill_score, caller_number, caller_name, serving_agent, serving_system, state)"
-				" VALUES('%q','single_box', '%q', '%q', '%ld','%d','%d','%q','%q','%q','','%q')", 
+				" (queue,system,uuid,system_epoch,joined_epoch,base_score,skill_score,caller_number,caller_name,serving_agent,serving_system,state)"
+				" VALUES('%q','single_box','%q','%q','%ld','%d','%d','%q','%q','%q','','%q')", 
 				queue_name,
 				uuid,
 				start_epoch,
@@ -2054,13 +2059,13 @@ SWITCH_STANDARD_APP(callcenter_function)
 	} else {
 		char res[256];
 		/* Update abandoned member */
-		sql = switch_mprintf("UPDATE members SET uuid = '%q', state = '%q', rejoined_epoch = '%q' WHERE caller_number = '%q' AND abandoned_epoch = '%q' AND state = '%q'"
-				, uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), (long) switch_epoch_time_now(NULL), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), abandoned_epoch, cc_member_state2str(CC_MEMBER_STATE_ABANDONED)); 
+		sql = switch_mprintf("UPDATE members SET uuid = '%q', state = '%q', rejoined_epoch = '%ld' WHERE caller_number = '%q' AND abandoned_epoch = '%ld' AND state = '%q' AND queue = '%q'",
+				uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), (long) switch_epoch_time_now(NULL), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), abandoned_epoch, cc_member_state2str(CC_MEMBER_STATE_ABANDONED), queue_name); 
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
 
 		/* Confirm we took that member in */
-		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND state = '%q'", uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING));
+		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND state = '%q' AND queue = '%q'", uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 		switch_safe_free(sql);
 
