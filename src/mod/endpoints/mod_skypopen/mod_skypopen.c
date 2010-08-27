@@ -586,7 +586,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	DEBUGA_SKYPE("%s CHANNEL KILL_CHANNEL\n", SKYPOPEN_P_LOG, tech_pvt->name);
+	//DEBUGA_SKYPE("%s CHANNEL KILL_CHANNEL\n", SKYPOPEN_P_LOG, tech_pvt->name);
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		switch_mutex_lock(tech_pvt->flag_mutex);
@@ -2536,16 +2536,54 @@ int skypopen_answer(private_t * tech_pvt)
 	switch_mutex_unlock(globals.mutex);
 	return 0;
 }
-int skypopen_transfer(private_t * tech_pvt, char *id, char *value)
+//int skypopen_transfer(private_t * tech_pvt, char *id, char *value)
+int skypopen_transfer(private_t * tech_pvt)
 {
 	char msg_to_skype[1024];
 	int i;
 	int found = 0;
 	private_t *giovatech;
 	struct timeval timenow;
+	char *id = tech_pvt->ring_id;
+	char *value = tech_pvt->ring_value;
 
 	switch_mutex_lock(globals.mutex);
 
+	gettimeofday(&timenow, NULL);
+	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
+		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
+
+			giovatech = &globals.SKYPOPEN_INTERFACES[i];
+			/* let's look for a RINGING one */
+			if ((giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+				found = 1;
+				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+				} 
+				
+				
+#if 0	
+				
+				
+				else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN) {
+					WARNINGA("Why an interface_state %d HERE?\n", SKYPOPEN_P_LOG, tech_pvt->interface_state);
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+				}
+
+				*tech_pvt->answer_id = '\0';
+				*tech_pvt->answer_value = '\0';
+				*tech_pvt->ring_id = '\0';
+				*tech_pvt->ring_value = '\0';
+#endif //0
+				break;
+			}
+		}
+	}
+
+
+	/*****************************************/
+#if 0
 	gettimeofday(&timenow, NULL);
 	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
@@ -2561,6 +2599,39 @@ int skypopen_transfer(private_t * tech_pvt, char *id, char *value)
 			}
 		}
 	}
+#endif //0
+	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
+		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
+
+			giovatech = &globals.SKYPOPEN_INTERFACES[i];
+			/* let's look for a DOWN one */
+				NOTICA ("LOOKING  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN[%d]) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, SKYPOPEN_STATE_DOWN, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+			if ((giovatech->interface_state == SKYPOPEN_STATE_DOWN || giovatech->interface_state == 0) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+				found = 1;
+				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+				} 
+				
+				
+#if 0	
+				
+				
+				else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN) {
+					WARNINGA("Why an interface_state %d HERE?\n", SKYPOPEN_P_LOG, tech_pvt->interface_state);
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+				}
+
+				*tech_pvt->answer_id = '\0';
+				*tech_pvt->answer_value = '\0';
+				*tech_pvt->ring_id = '\0';
+				*tech_pvt->ring_value = '\0';
+#endif //0
+				break;
+			}
+		}
+	}
+
 
 	if (found) {
 		switch_mutex_unlock(globals.mutex);

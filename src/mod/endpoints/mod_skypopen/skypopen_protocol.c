@@ -215,12 +215,12 @@ int skypopen_signaling_read(private_t * tech_pvt)
 					tech_pvt->interface_state = SKYPOPEN_STATE_ERROR_DOUBLE_CALL;
 				} else if (!strncasecmp(message, "ERROR 592 ALTER CALL", 19)) {
 					NOTICA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
-				} else if (!strncasecmp(message, "ERROR 559 CALL", 13)) {
+				} else if (!strncasecmp(message, "ERROR 559 CALL", 13) | !strncasecmp(message, "ERROR 556 CALL", 13)) {
 					if (tech_pvt->interface_state == SKYPOPEN_STATE_PREANSWER) {
 						DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to ANSWER A CALL), let's go down: |||%s|||\n", SKYPOPEN_P_LOG,
 									 message);
 						tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
-						ERRORA("skype_call now is DOWN\n", SKYPOPEN_P_LOG);
+						DEBUGA_SKYPE("skype_call now is DOWN\n", SKYPOPEN_P_LOG);
 						tech_pvt->skype_call_id[0] = '\0';
 						tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 						return CALLFLOW_INCOMING_HANGUP;
@@ -490,9 +490,13 @@ int skypopen_signaling_read(private_t * tech_pvt)
 							/* this is the call in which we are calling out */
 							DEBUGA_SKYPE("Call %s DO NOTHING\n", SKYPOPEN_P_LOG, id);
 						} else {
-							skypopen_sleep(400000);	//0.4 seconds
 							DEBUGA_SKYPE("Call %s TRY TRANSFER\n", SKYPOPEN_P_LOG, id);
-							skypopen_transfer(tech_pvt, id, value);
+							skypopen_strncpy(tech_pvt->ring_id, id, sizeof(tech_pvt->ring_id));
+							skypopen_strncpy(tech_pvt->ring_value, value, sizeof(tech_pvt->ring_value));
+							skypopen_strncpy(tech_pvt->answer_id, id, sizeof(tech_pvt->answer_id));
+							skypopen_strncpy(tech_pvt->answer_value, value, sizeof(tech_pvt->answer_value));
+							//skypopen_transfer(tech_pvt, id, value);
+							skypopen_transfer(tech_pvt);
 						}
 					}
 				}
