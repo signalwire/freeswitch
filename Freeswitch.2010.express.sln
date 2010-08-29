@@ -315,6 +315,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ssleay32", "libs\win32\open
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "libs\win32\openssl\openssl.2010.vcxproj", "{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_directory", "src\mod\applications\mod_directory\mod_directory.2010.vcxproj", "{B889A18E-70A7-44B5-B2C9-47798D4F43B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -1981,6 +1983,13 @@ Global
 		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|Win32.ActiveCfg = Release|Win32
 		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|Win32.Build.0 = Release|Win32
 		{25BD39B1-C8BF-4676-A738-9CABD9C6BC79}.Release|x64.ActiveCfg = Release|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.All|Win32.ActiveCfg = Release|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.All|Win32.Build.0 = Release|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.All|x64.ActiveCfg = Release|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.Debug|x64.ActiveCfg = Debug|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.Release|Win32.ActiveCfg = Release|Win32
+		{B889A18E-70A7-44B5-B2C9-47798D4F43B3}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
