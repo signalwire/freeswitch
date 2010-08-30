@@ -2467,6 +2467,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			from_host = (char *) from->a_url->url_host;
 		}
 		
+		
+		exp_delta = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
+		exp = (long) switch_epoch_time_now(NULL) + exp_delta;
+
 		if (payload) {
 			switch_xml_t xml, note, person, tuple, status, basic, act;
 			switch_event_t *event;
@@ -2498,9 +2502,6 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 						rpid = act->child->name;
 					}
 				}
-
-				exp_delta = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
-				exp = (long) switch_epoch_time_now(NULL) + exp_delta;
 
 				
 				if ((sql =
@@ -2542,6 +2543,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 
 				switch_xml_free(xml);
 			}
+		} else {
+			char *sql = switch_mprintf("update sip_presence set expires=%ld where sip_user='%q' and sip_host='%q' and profile_name='%q' and hostname='%q'",
+								 exp, from_user, from_host, profile->name, mod_sofia_globals.hostname);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
 		switch_safe_free(pd_dup);
