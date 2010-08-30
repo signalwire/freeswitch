@@ -3520,7 +3520,7 @@ static ftdm_status_t ftdm_set_channels_gains(ftdm_span_t *span, int currindex, f
 	unsigned chan_index = 0;
 
 	if (!span->chan_count) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set gains because span has no channels\n");
+		ftdm_log(FTDM_LOG_ERROR, "Failed to set gains because span %s has no channels\n", span->name);
 		return FTDM_FAIL;
 	}
 
