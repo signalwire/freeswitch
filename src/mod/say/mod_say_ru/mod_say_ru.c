@@ -500,7 +500,7 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 		say_file("time/at.wav");
 	}
 	if (say_time) {
-		switch_snprintf(buf, sizeof(buf), "%d:%d:%d", tm.tm_hour + 1, tm.tm_min, tm.tm_sec);
+		switch_snprintf(buf, sizeof(buf), "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
 		say_args->type = SST_TIME_MEASUREMENT;
 		ru_say_time(session, buf, say_args, args);
 	}
