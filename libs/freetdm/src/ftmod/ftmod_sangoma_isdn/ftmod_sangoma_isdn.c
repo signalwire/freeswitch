@@ -35,7 +35,11 @@
 
 
 #include "ftmod_sangoma_isdn.h"
+#if 1
+#undef FTDM_DEBUG_CHAN_MEMORY
+#else
 #define FTDM_DEBUG_CHAN_MEMORY
+#endif
 
 #ifdef FTDM_DEBUG_CHAN_MEMORY
 #include <sys/mman.h>
