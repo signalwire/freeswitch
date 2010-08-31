@@ -788,7 +788,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			default:
 				send_display_prompt_status(listener, 0, switch_channel_cause2str(helper->cause), line_instance, call_id);
 		}
-		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
+		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_RING_OUT) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
 			skinny_session_stop_media(helper->tech_pvt->session, listener, line_instance);
 		}
 
