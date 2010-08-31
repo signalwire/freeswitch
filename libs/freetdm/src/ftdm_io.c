@@ -51,6 +51,7 @@
 #include "ftdm_cpu_monitor.h"
 
 #define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
+#define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
 #define FTDM_READ_TRACE_INDEX 0
 #define FTDM_WRITE_TRACE_INDEX 1
 
@@ -460,6 +461,9 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	/* destroy final basic resources of the span data structure */
 	if (span->pendingchans) {
 		ftdm_queue_destroy(&span->pendingchans);
+	}
+	if (span->pendingsignals) {
+		ftdm_queue_destroy(&span->pendingsignals);
 	}
 	ftdm_mutex_unlock(span->mutex);
 	ftdm_mutex_destroy(&span->mutex);
@@ -4160,6 +4164,9 @@ static ftdm_status_t post_configure_span_channels(ftdm_span_t *span)
 	if (ftdm_test_flag(span, FTDM_SPAN_USE_CHAN_QUEUE)) {
 		status = ftdm_queue_create(&span->pendingchans, SPAN_PENDING_CHANS_QUEUE_SIZE);
 	}
+	if (status == FTDM_SUCCESS && ftdm_test_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE)) {
+		status = ftdm_queue_create(&span->pendingsignals, SPAN_PENDING_SIGNALS_QUEUE_SIZE);
+	}
 	return status;
 }
 
@@ -4425,10 +4432,39 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 	return status;
 }
 
+static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
+{
+	return span->signal_cb(sigmsg);
+}
+
+static ftdm_status_t ftdm_span_queue_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
+{
+	ftdm_sigmsg_t *new_sigmsg = NULL;
+
+	ftdm_assert_return((sigmsg->raw_data == NULL), FTDM_FAIL, "No raw data should be used with asynchronous notification\n");
+
+	new_sigmsg = ftdm_calloc(1, sizeof(*sigmsg));
+	if (!new_sigmsg) {
+		return FTDM_FAIL;
+	}
+	memcpy(new_sigmsg, sigmsg, sizeof(*sigmsg));
+
+	ftdm_queue_enqueue(span->pendingsignals, new_sigmsg);
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span)
+{
+	ftdm_sigmsg_t *sigmsg = NULL;
+	while ((sigmsg = ftdm_queue_dequeue(span->pendingsignals))) {
+		ftdm_span_trigger_signal(span, sigmsg);
+		ftdm_safe_free(sigmsg);
+	}
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
-	ftdm_status_t status = FTDM_FAIL;
-
 	if (sigmsg->channel) {
 		ftdm_mutex_lock(sigmsg->channel->mutex);
 	}
@@ -4463,10 +4499,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		break;	
 
 	}
-
-	/* call the user callback only if set */
-	if (span->signal_cb) {
-		status = span->signal_cb(sigmsg);
+	
+	/* if the signaling module uses a queue for signaling notifications, then enqueue it */
+	if (ftdm_test_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE)) {
+		ftdm_span_queue_signal(span, sigmsg);
+	} else {
+		ftdm_span_trigger_signal(span, sigmsg);
 	}
 
 done:
@@ -4474,7 +4512,7 @@ done:
 		ftdm_mutex_unlock(sigmsg->channel->mutex);
 	}
 
-	return status;
+	return FTDM_SUCCESS;
 }
 
 static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)

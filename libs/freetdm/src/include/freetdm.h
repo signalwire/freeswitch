@@ -331,23 +331,6 @@ typedef struct ftdm_channel_config {
 	float txgain;
 } ftdm_channel_config_t;
 
-/*! \brief Generic signaling message */
-struct ftdm_sigmsg {
-	ftdm_signal_event_t event_id; /*!< The type of message */
-	ftdm_channel_t *channel; /*!< Related channel */
-	uint32_t chan_id; /*!< easy access to chan id */
-	uint32_t span_id; /*!< easy access to span_id */
-	void *raw_data; /*!< Message specific data if any */
-	uint32_t raw_data_len; /*!< Data len in case is needed */
-};
-
-/*! \brief Crash policy 
- *  Useful for debugging only, default policy is never, if you wish to crash on asserts then use ftdm_global_set_crash_policy */
-typedef enum {
-	FTDM_CRASH_NEVER = 0,
-	FTDM_CRASH_ON_ASSERT
-} ftdm_crash_policy_t;
-
 /*!
   \brief Signaling status on a given span or specific channel on protocols that support it
  */
@@ -365,6 +348,24 @@ typedef enum {
 
 /*! \brief Move from string to ftdm_signaling_status_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t)
+
+/*! \brief Generic signaling message */
+struct ftdm_sigmsg {
+	ftdm_signal_event_t event_id; /*!< The type of message */
+	ftdm_channel_t *channel; /*!< Related channel */
+	uint32_t chan_id; /*!< easy access to chan id */
+	uint32_t span_id; /*!< easy access to span_id */
+	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */
+	void *raw_data; /*!< Message specific data if any */
+	uint32_t raw_data_len; /*!< Data len in case is needed */
+};
+
+/*! \brief Crash policy 
+ *  Useful for debugging only, default policy is never, if you wish to crash on asserts then use ftdm_global_set_crash_policy */
+typedef enum {
+	FTDM_CRASH_NEVER = 0,
+	FTDM_CRASH_ON_ASSERT
+} ftdm_crash_policy_t;
 
 /*! \brief I/O waiting flags */
 typedef enum {
