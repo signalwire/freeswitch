@@ -117,6 +117,7 @@
 #include "ftdm_buffer.h"
 #include "ftdm_threadmutex.h"
 #include "ftdm_sched.h"
+#include "ftdm_call_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
