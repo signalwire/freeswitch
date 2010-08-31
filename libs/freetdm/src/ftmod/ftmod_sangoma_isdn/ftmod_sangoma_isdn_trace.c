@@ -205,7 +205,7 @@ void sngisdn_trace_q931(char* str, uint8_t* data, uint32_t data_len)
 		i=i+1;
 		c=c+1;
 	}
-	str_len += sprintf(&str[str_len], " (%s side)\n", callRefFlag?"Destination":"Origination");
+	str_len += sprintf(&str[str_len], " (%s side)\n", callRefFlag?"Destination":"Originating");
 
 	/* Decode message type */
 	str_len+= sprintf(&str[str_len], "  Type:%s (0x%x)\n", get_code_2_str((int)(data[2+lenCallRef] & 0xFF), dcodQ931MsgTypeTable), (int)(data[2+lenCallRef] & 0xFF));
@@ -337,7 +337,7 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 				}
 				
 				if (numberMap) {
-					*str_len+= sprintf(&str[*str_len], " MAP\n");
+					*str_len+= sprintf(&str[*str_len], " MAP:%s ", get_code_2_str(infoChannelSelection, dcodQ931InfoChannelSelTable));
 				} else {
 					*str_len+= sprintf(&str[*str_len], "No:%d ", channelNo);
 				}
@@ -608,6 +608,9 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 			break;
 		case PROT_Q931_IE_SENDING_COMPLETE:
 			/* No need to decode sending complete IE, as no additional info is available except that sending is done */
+			/* This is a single octet IE */
+			*str_len+= sprintf(&str[*str_len], "\n");
+			return 0;
 			break;
 		case PROT_Q931_IE_CALLED_PARTY_SUBADDRESS:
 		case PROT_Q931_IE_REDIRECTION_NUMBER:

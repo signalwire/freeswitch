@@ -47,7 +47,8 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
 	switch(span->trunk_type) {
 		case FTDM_TRUNK_T1:
-			if (!strcasecmp(switch_name, "ni2")) {
+			if (!strcasecmp(switch_name, "ni2") ||
+				!strcasecmp(switch_name, "national")) {
 				signal_data->switchtype = SNGISDN_SWITCH_NI2;
 			} else if (!strcasecmp(switch_name, "5ess")) {
 				signal_data->switchtype = SNGISDN_SWITCH_5ESS;
@@ -127,6 +128,7 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 		dchan_data->channels[chan_id] = (sngisdn_chan_data_t*)ftdmchan->call_data;
 		dchan_data->num_chans++;
 	}
+
 	return FTDM_SUCCESS;
 }
 
@@ -144,7 +146,7 @@ ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span)
 
 		signal_data->signalling = SNGISDN_SIGNALING_CPE;
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "Unsupported signalling %s\n", signalling);
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported signalling/interface %s\n", signalling);
 		return FTDM_FAIL;
 	}
 	return FTDM_SUCCESS;
@@ -156,10 +158,29 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	const char *var, *val;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
 	/* Set defaults here */
-	signal_data->keep_link_up = 1;
 	signal_data->tei = 0;
-	
-	
+	signal_data->min_digits = 8;
+	signal_data->overlap_dial = SNGISDN_OPT_DEFAULT;
+	signal_data->setup_arb = SNGISDN_OPT_DEFAULT;
+
+	if (span->trunk_type == FTDM_TRUNK_BRI ||
+		span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+
+		ftdm_span_set_npi("unknown", &span->default_caller_data.dnis.plan);
+		ftdm_span_set_ton("unknown", &span->default_caller_data.dnis.type);
+		ftdm_span_set_npi("unknown", &span->default_caller_data.cid_num.plan);
+		ftdm_span_set_ton("unknown", &span->default_caller_data.cid_num.type);
+		ftdm_span_set_npi("unknown", &span->default_caller_data.rdnis.plan);
+		ftdm_span_set_ton("unknown", &span->default_caller_data.rdnis.type);
+	} else {
+		ftdm_span_set_npi("e164", &span->default_caller_data.dnis.plan);
+		ftdm_span_set_ton("national", &span->default_caller_data.dnis.type);
+		ftdm_span_set_npi("e164", &span->default_caller_data.cid_num.plan);
+		ftdm_span_set_ton("national", &span->default_caller_data.cid_num.type);
+		ftdm_span_set_npi("e164", &span->default_caller_data.rdnis.plan);
+		ftdm_span_set_ton("national", &span->default_caller_data.rdnis.type);
+	}
+
 	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
 		ftdm_log(FTDM_LOG_DEBUG, "Sangoma ISDN key=value, %s=%s\n", ftdm_parameters[paramindex].var, ftdm_parameters[paramindex].val);
 		var = ftdm_parameters[paramindex].var;
@@ -169,7 +190,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			if (parse_switchtype(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
-		} else if (!strcasecmp(var, "signalling")) {
+		} else if (!strcasecmp(var, "signalling") ||
+				   !strcasecmp(var, "interface")) {
 			if (parse_signalling(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
@@ -180,15 +202,44 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 				return FTDM_FAIL;
 			}
 			signal_data->tei = tei;
-		} else if (!strcasecmp(var, "keep_link_up")) {
+		} else if (!strcasecmp(var, "overlap")) {
 			if (!strcasecmp(val, "yes")) {
-				signal_data->keep_link_up = 1;
+				signal_data->overlap_dial = SNGISDN_OPT_TRUE;
 			} else if (!strcasecmp(val, "no")) {
-				signal_data->keep_link_up = 0;
+				signal_data->overlap_dial = SNGISDN_OPT_FALSE;
 			} else {
-				ftdm_log(FTDM_LOG_ERROR, "Invalid keep_link_up value, valid values are (yes/no)");
-				return FTDM_FAIL;
+				ftdm_log(FTDM_LOG_ERROR, "Invalid value for parameter:%s:%s\n", var, val);
 			}
+		} else if (!strcasecmp(var, "setup arbitration")) {
+			if (!strcasecmp(val, "yes")) {
+				signal_data->setup_arb = SNGISDN_OPT_TRUE;
+			} else if (!strcasecmp(val, "no")) {
+				signal_data->setup_arb = SNGISDN_OPT_FALSE;
+			} else {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid value for parameter:%s:%s\n", var, val);
+			}
+		} else if (!strcasecmp(var, "facility")) {
+			if (!strcasecmp(val, "yes")) {
+				signal_data->facility = SNGISDN_OPT_TRUE;
+			} else if (!strcasecmp(val, "no")) {
+				signal_data->facility = SNGISDN_OPT_FALSE;
+			} else {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid value for parameter:%s:%s\n", var, val);
+			}
+		} else if (!strcasecmp(var, "min_digits")) {
+			signal_data->min_digits = atoi(val);
+		} else if (!strcasecmp(var, "outbound-called-ton")) {
+			ftdm_span_set_ton(val, &span->default_caller_data.dnis.type);
+		} else if (!strcasecmp(var, "outbound-called-npi")) {
+			ftdm_span_set_npi(val, &span->default_caller_data.dnis.plan);
+		} else if (!strcasecmp(var, "outbound-calling-ton")) {
+			ftdm_span_set_ton(val, &span->default_caller_data.cid_num.type);
+		} else if (!strcasecmp(var, "outbound-calling-npi")) {
+			ftdm_span_set_npi(val, &span->default_caller_data.cid_num.plan);
+		} else if (!strcasecmp(var, "outbound-rdnis-ton")) {
+			ftdm_span_set_ton(val, &span->default_caller_data.rdnis.type);
+		} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
+			ftdm_span_set_npi(val, &span->default_caller_data.rdnis.plan);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}

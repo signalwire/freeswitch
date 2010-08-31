@@ -223,17 +223,17 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
 	switch(span->trunk_type) {
 		case FTDM_TRUNK_E1:
 			cfg.t.cfg.s.l1PSAP.chan	= 16;
-			cfg.t.cfg.s.l1PSAP.type = SNG_LINKTYPE_PRI;
+			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_PRI;
 			break;
 		case FTDM_TRUNK_T1:
 		case FTDM_TRUNK_J1:
 			cfg.t.cfg.s.l1PSAP.chan	= 24;
-			cfg.t.cfg.s.l1PSAP.type = SNG_LINKTYPE_PRI;
+			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_PRI;
 			break;
 		case FTDM_TRUNK_BRI:
 		case FTDM_TRUNK_BRI_PTMP:
 			cfg.t.cfg.s.l1PSAP.chan	= 3;
-			cfg.t.cfg.s.l1PSAP.type = SNG_LINKTYPE_BRI;
+			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_BRI;
 			break;
 		default:
 			ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported trunk type %d\n", span->name, span->trunk_type);
@@ -280,10 +280,10 @@ ftdm_status_t sng_isdn_stack_cfg_q921_gen(void)
 	cfg.t.cfg.s.bdGen.nmbASPLnks = MAX_L1_LINKS+1;
 
 #ifdef LAPD_3_4
-	cfg.t.cfg.s.bdGen.timeRes     = 10;      			 /* timer resolution */
+	cfg.t.cfg.s.bdGen.timeRes     = 100;      /* timer resolution = 1 sec */
 #endif
-    cfg.t.cfg.s.bdGen.poolTrUpper   = POOL_UP_TR;        /* upper pool threshold */
-    cfg.t.cfg.s.bdGen.poolTrLower   = POOL_LW_TR;        /* lower pool threshold */
+    cfg.t.cfg.s.bdGen.poolTrUpper   = 2;        /* upper pool threshold */
+    cfg.t.cfg.s.bdGen.poolTrLower   = 1;        /* lower pool threshold */
 
 	if (sng_isdn_q921_config(&pst, &cfg)) {
 		return FTDM_FAIL;
@@ -315,9 +315,9 @@ ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span)
 
 	cfg.t.cfg.s.bdMSAP.lnkNmb      = signal_data->link_id;
 	
-	cfg.t.cfg.s.bdMSAP.maxOutsFrms = 2;            /* MAC window */
-	cfg.t.cfg.s.bdMSAP.tQUpperTrs  = 16;           /* Tx Queue Upper Threshold */
-	cfg.t.cfg.s.bdMSAP.tQLowerTrs  = 8;            /* Tx Queue Lower Threshold */	
+	cfg.t.cfg.s.bdMSAP.maxOutsFrms = 24;            /* MAC window */
+	cfg.t.cfg.s.bdMSAP.tQUpperTrs  = 32;           /* Tx Queue Upper Threshold */
+	cfg.t.cfg.s.bdMSAP.tQLowerTrs  = 24;            /* Tx Queue Lower Threshold */
 	cfg.t.cfg.s.bdMSAP.selector    = 0;       /* Selector 0 */
 	/* TODO: check if bdMSAP parameters can be initialized by calling stack_pst_init */
 	cfg.t.cfg.s.bdMSAP.mem.region  = S_REG;       /* Memory region */
@@ -327,8 +327,8 @@ ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span)
 	cfg.t.cfg.s.bdMSAP.dstProcId   = SFndProcId(); /* destination proc id */
 	cfg.t.cfg.s.bdMSAP.dstEnt      = ENTL1;        /* entity */
 	cfg.t.cfg.s.bdMSAP.dstInst     = S_INST;      /* instance */	
-	cfg.t.cfg.s.bdMSAP.t201Tmr     = 5;            /* T201 */
-	cfg.t.cfg.s.bdMSAP.t202Tmr     = 200;          /* T202 */
+	cfg.t.cfg.s.bdMSAP.t201Tmr     = 1;            /* T201 - should be equal to t200Tmr */
+	cfg.t.cfg.s.bdMSAP.t202Tmr     = 2;          /* T202 */
 	cfg.t.cfg.s.bdMSAP.bndRetryCnt = 2;            /* bind retry counter */
 	cfg.t.cfg.s.bdMSAP.tIntTmr     = 200;          /* bind retry timer */
 	cfg.t.cfg.s.bdMSAP.n202        = 3;            /* N202 */
@@ -341,7 +341,21 @@ ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span)
 		cfg.t.cfg.s.bdMSAP.kpL1Up      = TRUE;        /* flag to keep l1 up or not */
 	}
 
-	cfg.t.cfg.s.bdMSAP.type        = sng_isdn_stack_switchtype(signal_data->switchtype);
+	switch(signal_data->switchtype) {
+		case SNGISDN_SWITCH_NI2:
+		case SNGISDN_SWITCH_5ESS:
+		case SNGISDN_SWITCH_4ESS:
+		case SNGISDN_SWITCH_DMS100:
+			cfg.t.cfg.s.bdMSAP.type = SW_NI2;
+			break;
+		case SNGISDN_SWITCH_INSNET:
+			cfg.t.cfg.s.bdMSAP.type = SW_CCITT;
+			break;
+		case SNGISDN_SWITCH_EUROISDN:
+		case SNGISDN_SWITCH_QSIG:
+			cfg.t.cfg.s.bdMSAP.type = SW_ETSI;
+			break;
+	}
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
 		cfg.t.cfg.s.bdMSAP.teiChkTmr   = 20;         /* Tei check timer */
@@ -357,6 +371,12 @@ ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span)
 		cfg.t.cfg.s.bdMSAP.setUpArb    = ACTIVE;       /* set up arbitration */
 	}
 
+	/* Overwrite setUpArb value if user forced it */
+	if (signal_data->setup_arb == SNGISDN_OPT_TRUE) {
+		cfg.t.cfg.s.bdMSAP.setUpArb    = ACTIVE;
+	} else if (signal_data->setup_arb == SNGISDN_OPT_FALSE) {
+ 		cfg.t.cfg.s.bdMSAP.setUpArb    = PASSIVE;
+	}
 
 	if (sng_isdn_q921_config(&pst, &cfg)) {
 		return FTDM_FAIL;
@@ -389,11 +409,18 @@ ftdm_status_t sng_isdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t managemen
 	cfg.t.cfg.s.bdDLSAP.lnkNmb		= signal_data->link_id;
 
 	cfg.t.cfg.s.bdDLSAP.n201		= 1028;          	/* n201 */
-	cfg.t.cfg.s.bdDLSAP.k			= 7;             	/* k */
+	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
+		span->trunk_type == FTDM_TRUNK_BRI) {
+
+		cfg.t.cfg.s.bdDLSAP.k			= 1;				/* Based on q.921 recommendations */
+	} else {
+		cfg.t.cfg.s.bdDLSAP.k			= 7;             	/* k */
+	}
+	
 	cfg.t.cfg.s.bdDLSAP.n200		= 3;             	/* n200 */
 	cfg.t.cfg.s.bdDLSAP.congTmr		= 300;           	/* congestion timer */
-	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 1;				/* t1 changed from 25 */
-	cfg.t.cfg.s.bdDLSAP.t203Tmr		= 3;				/* t3 changed from 50 */
+	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 1;				/* t1 changed from 25 */ 
+	cfg.t.cfg.s.bdDLSAP.t203Tmr		= 10;				/* t3 changed from 50 */
 	cfg.t.cfg.s.bdDLSAP.mod			= 128;           	/* modulo */
 	cfg.t.cfg.s.bdDLSAP.selector	= 0;				/* Selector 0 */
 	cfg.t.cfg.s.bdDLSAP.mem.region	= S_REG;			/* Memory region */
@@ -483,7 +510,7 @@ ftdm_status_t sng_isdn_stack_cfg_q931_gen(void)
 	/* upper pool threshold */
 	cfg.t.cfg.s.inGen.poolTrUpper = INGEN_POOL_UP_TR;
 	/* time resolution */
-	cfg.t.cfg.s.inGen.timeRes = 10;
+	cfg.t.cfg.s.inGen.timeRes = 100; /* timer resolution = 1 sec */
 
 	cfg.t.cfg.s.inGen.sm.dstEnt = ENTSM;
 
@@ -594,6 +621,12 @@ ftdm_status_t sng_isdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 
 	cfg.t.cfg.s.inDLSAP.tCbId = signal_data->cc_id;
 
+	if (signal_data->facility == SNGISDN_OPT_TRUE) {
+		cfg.t.cfg.s.inDLSAP.facilityHandling = IN_FACILITY_STANDRD;
+	} else {
+		cfg.t.cfg.s.inDLSAP.facilityHandling = 0;
+	}
+
 	/* TODO : NFAS configuration */
 	cfg.t.cfg.s.inDLSAP.nfasInt = FALSE; /* pass this later */
 
@@ -687,38 +720,46 @@ ftdm_status_t sng_isdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.cndSubsc = TRUE;         /* calling adddress delivery service subscription */
 
 	/* TODO: Fill in these timers with proper values - eventually pass them */
-	cfg.t.cfg.s.inDLSAP.tmr.t301.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t301.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t302.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t302.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t303.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t303.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t301.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t301.val = 180;
+	cfg.t.cfg.s.inDLSAP.tmr.t302.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t302.val = 15;
+	cfg.t.cfg.s.inDLSAP.tmr.t303.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t303.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t304.enb = TRUE;
-	cfg.t.cfg.s.inDLSAP.tmr.t304.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t304.val = 30;
 	cfg.t.cfg.s.inDLSAP.tmr.t305.enb = TRUE;
-	cfg.t.cfg.s.inDLSAP.tmr.t305.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t305.val = 30;
 	cfg.t.cfg.s.inDLSAP.tmr.t306.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t306.val = 35;
 	cfg.t.cfg.s.inDLSAP.tmr.t307.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t307.val = 35;
 	cfg.t.cfg.s.inDLSAP.tmr.t308.enb = TRUE;
-	cfg.t.cfg.s.inDLSAP.tmr.t308.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t310.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t310.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t312.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t312.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t308.val = 4;
+
+	if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
+		cfg.t.cfg.s.inDLSAP.tmr.t310.enb = TRUE;
+		cfg.t.cfg.s.inDLSAP.tmr.t310.val = 10;
+		cfg.t.cfg.s.inDLSAP.tmr.t312.enb = TRUE;
+		cfg.t.cfg.s.inDLSAP.tmr.t312.val = cfg.t.cfg.s.inDLSAP.tmr.t303.val+2;
+	} else {
+		cfg.t.cfg.s.inDLSAP.tmr.t310.enb = TRUE;
+		cfg.t.cfg.s.inDLSAP.tmr.t310.val = 120;
+		cfg.t.cfg.s.inDLSAP.tmr.t312.enb = FALSE;
+	}
+
 	cfg.t.cfg.s.inDLSAP.tmr.t313.enb = TRUE;
-	cfg.t.cfg.s.inDLSAP.tmr.t313.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t313.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t316.enb = TRUE;
-	cfg.t.cfg.s.inDLSAP.tmr.t316.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t316c.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t316.val = 120;
+	cfg.t.cfg.s.inDLSAP.tmr.t316c.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t316c.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t318.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t318.val = 35;
-	cfg.t.cfg.s.inDLSAP.tmr.t319.enb = FALSE;
-	cfg.t.cfg.s.inDLSAP.tmr.t319.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t318.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t318.val = 4;
+	cfg.t.cfg.s.inDLSAP.tmr.t319.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t319.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t322.enb = TRUE;
-	cfg.t.cfg.s.inDLSAP.tmr.t322.val = 35;
+	cfg.t.cfg.s.inDLSAP.tmr.t322.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.val = 35;
 	cfg.t.cfg.s.inDLSAP.tmr.tRst.enb = TRUE;
@@ -893,8 +934,9 @@ ftdm_status_t sng_isdn_stack_cfg_cc_gen(void)
 	stack_pst_init(&cfg.t.cfg.s.ccGenCfg.smPst);
 	cfg.t.cfg.s.ccGenCfg.smPst.dstEnt = ENTSM;
 
-	cfg.t.cfg.s.ccGenCfg.poolTrLower = 2;
-	cfg.t.cfg.s.ccGenCfg.poolTrUpper = 4;
+	cfg.t.cfg.s.ccGenCfg.poolTrUpper = 2;
+	cfg.t.cfg.s.ccGenCfg.poolTrLower = 1;
+
 	cfg.t.cfg.s.ccGenCfg.nmbSaps	 = MAX_VARIANTS+1; /* Set to number of variants + 1 */
 
 	if (sng_isdn_cc_config(&pst, &cfg)) {
@@ -1013,7 +1055,7 @@ uint8_t sng_isdn_stack_switchtype(sngisdn_switchtype_t switchtype)
 		case SNGISDN_SWITCH_QSIG:
 			return SW_QSIG;
 		case SNGISDN_SWITCH_INSNET:
-			return SW_QSIG;
+			return SW_INSNET;
 		case SNGISDN_SWITCH_INVALID:
 			ftdm_log(FTDM_LOG_ERROR, "%s:Invalid switchtype:%d\n", switchtype);
 			break;

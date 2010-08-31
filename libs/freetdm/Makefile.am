@@ -41,6 +41,9 @@ INCS +=   -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost
 if SNGSS7
 INCS += -I/usr/include/sng_ss7/
 endif 
+if SNGISDN
+INCS += -I/usr/include/sng_isdn/
+endif 
 
 MY_CFLAGS = $(INCS) $(FTDM_CFLAGS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
@@ -70,6 +73,7 @@ $(SRC)/hashtable_itr.c \
 $(SRC)/ftdm_io.c \
 $(SRC)/ftdm_queue.c \
 $(SRC)/ftdm_sched.c \
+$(SRC)/ftdm_call_utils.c \
 $(SRC)/ftdm_config.c \
 $(SRC)/ftdm_callerid.c \
 $(SRC)/fsk.c \
@@ -271,7 +275,11 @@ ftmod_sangoma_ss7_la_SOURCES =  $(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7
 				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cntrl.c \
 				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_xml.c \
 				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_timers.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cli.c
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cli.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cfg.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sta.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sts.c \
+				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_logger.c
 ftmod_sangoma_ss7_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
 ftmod_sangoma_ss7_la_LDFLAGS = -module  -avoid-version -lsng_ss7
 ftmod_sangoma_ss7_la_LIBADD  = $(MYLIB)
@@ -285,16 +293,15 @@ ftmod_sangoma_isdn_la_SOURCES = $(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_is
 				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_support.c \
 				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_cntrl.c \
 				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_cfg.c \
-				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_in.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_rcv.c \
+				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_hndl.c \
 				$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_out.c
 
 
-ftmod_sangoma_isdn_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+ftmod_sangoma_isdn_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
 ftmod_sangoma_isdn_la_LDFLAGS = -module -avoid-version -lsng_isdn
 ftmod_sangoma_isdn_la_LIBADD  = $(MYLIB)
 endif
-
-
 
 if OPENR2
 ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c 

@@ -33,13 +33,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #include "ftmod_sangoma_isdn.h"
+#define FTDM_DEBUG_CHAN_MEMORY
+
+#ifdef FTDM_DEBUG_CHAN_MEMORY
+#include <sys/mman.h>
+#endif
 
 static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj);
-static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span);
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span);
+
+ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
+static void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan);
+
+static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
+static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
 
 static ftdm_io_interface_t		    	g_sngisdn_io_interface;
 static sng_isdn_event_interface_t		g_sngisdn_event_interface;
@@ -47,6 +58,7 @@ static sng_isdn_event_interface_t		g_sngisdn_event_interface;
 ftdm_sngisdn_data_t				g_sngisdn_data;
 
 extern ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
+extern ftdm_status_t sngisdn_check_free_ids(void);
 
 ftdm_state_map_t sangoma_isdn_state_map = {
 	{
@@ -66,7 +78,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_CANCEL, FTDM_END},
-		{FTDM_CHANNEL_STATE_HANGUP, FTDM_END}
+		{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END}
 	},
 	{
 		ZSD_INBOUND,
@@ -80,7 +92,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
-		{FTDM_CHANNEL_STATE_COLLECT, FTDM_CHANNEL_STATE_IN_LOOP, FTDM_END}
+		{FTDM_CHANNEL_STATE_COLLECT, FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_GET_CALLERID, FTDM_CHANNEL_STATE_IN_LOOP, FTDM_END}
+	},
+	{
+		ZSD_INBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_GET_CALLERID, FTDM_END},
+		{FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_CANCEL, FTDM_CHANNEL_STATE_IN_LOOP, FTDM_END}
 	},
 	{
 		ZSD_INBOUND,
@@ -135,8 +153,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
 		{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
-	},
-	/**************************************************************************/
+	},	
 	{
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
@@ -167,7 +184,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
-		{FTDM_CHANNEL_STATE_DIALING, FTDM_END}
+		{FTDM_CHANNEL_STATE_DIALING, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END}
 	},
 	{
 		ZSD_OUTBOUND,
@@ -214,11 +231,22 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 	}
 };
 
+static __inline__ void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan)
+{
+	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_sangoma_isdn_process_state_change(ftdmchan);
+	}
+}
+
 static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 {
-	ftdm_interrupt_t	*ftdm_sangoma_isdn_int = NULL;
+	ftdm_interrupt_t	*ftdm_sangoma_isdn_int[2];
+	ftdm_status_t		ret_status;
 	ftdm_span_t		*span	= (ftdm_span_t *) obj;
 	ftdm_channel_t	*ftdmchan = NULL;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
+	sngisdn_event_data_t *sngisdn_event = NULL;
+	int32_t sleep = SNGISDN_EVENT_POLL_RATE;
 
 	ftdm_log(FTDM_LOG_INFO, "ftmod_sangoma_isdn monitor thread for span=%u started.\n", span->span_id);
 
@@ -226,44 +254,55 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 	ftdm_set_flag(span, FTDM_SPAN_IN_THREAD);
 
 	/* get an interrupt queue for this span */
-	if (ftdm_queue_get_interrupt(span->pendingchans, &ftdm_sangoma_isdn_int) != FTDM_SUCCESS) {
+	if (ftdm_queue_get_interrupt(span->pendingchans, &ftdm_sangoma_isdn_int[0]) != FTDM_SUCCESS) {
  		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a ftdm_interrupt for span = %s!\n", span->name);
 		goto ftdm_sangoma_isdn_run_exit;
 	}
 
-	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
-
-		/* find out why we returned from the interrupt queue */
-		switch ((ftdm_interrupt_wait(ftdm_sangoma_isdn_int, 100))) {
-		case FTDM_SUCCESS:  /* there was a state change on the span */
-			/* process all pending state changes */
-			while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
-				/* double check that this channel has a state change pending */
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-					ftdm_sangoma_isdn_process_state_change(ftdmchan);
-				} else {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "reported state change but state change flag not set\n");
-				}
-			}
-
-			break;
-
-		case FTDM_TIMEOUT:
-			/* twiddle */
-			break;
-
-		case FTDM_FAIL:
-			ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned error!\non span = %s\n", span->name);
-			break;
-
-		default:
-			ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned with unknown code on span = %s\n", span->name);
-			break;
-
-		}
-
+	if (ftdm_queue_get_interrupt(signal_data->event_queue, &ftdm_sangoma_isdn_int[1]) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a event interrupt for span = %s!\n", span->name);
+		goto ftdm_sangoma_isdn_run_exit;
 	}
 
+	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
+		/* find out why we returned from the interrupt queue */
+		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 2, sleep);
+		/* Check if there are any timers to process */
+		ftdm_sched_run(signal_data->sched);
+		switch (ret_status) {
+			case FTDM_SUCCESS:  /* there was a state change on the span */
+				/* process all pending state changes */			
+				while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
+					/* double check that this channel has a state change pending */
+					ftdm_channel_lock(ftdmchan);
+					ftdm_sangoma_isdn_advance_chan_states(ftdmchan);
+					ftdm_channel_unlock(ftdmchan);
+				}
+
+				/* Check if there are any timers to process */
+				while ((sngisdn_event = ftdm_queue_dequeue(signal_data->event_queue))) {
+					ftdm_sangoma_isdn_process_stack_event(span, sngisdn_event);
+					ftdm_safe_free(sngisdn_event);
+				}
+				break;
+			case FTDM_TIMEOUT:
+				/* twiddle */
+				break;
+			case FTDM_FAIL:
+				ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned error!\non span = %s\n", span->name);
+				break;
+
+			default:
+				ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned with unknown code on span = %s\n", span->name);
+				break;
+		}
+		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
+			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
+				sleep = SNGISDN_EVENT_POLL_RATE;
+			}
+		}
+	}
+	
 	/* clear the IN_THREAD flag so that we know the thread is done */
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 
@@ -281,11 +320,117 @@ ftdm_sangoma_isdn_run_exit:
 	return NULL;
 }
 
-/******************************************************************************/
+
+/**
+ * \brief Checks if span has state changes pending and processes
+ * \param span Span where event was fired
+ * \param sngisdn_event Event to handle
+ * \return The locked FTDM channel associated to the event if any, NULL otherwise
+ */
+
+ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event)
+{
+	ftdm_channel_t *ftdmchan = NULL;
+	switch (sngisdn_event->event_id) {
+		/* Events that do not have a channel associated to them */
+		case SNGISDN_EVENT_SRV_IND:
+		case SNGISDN_EVENT_SRV_CFM:
+		case SNGISDN_EVENT_RST_CFM:
+		case SNGISDN_EVENT_RST_IND:
+			return NULL;
+			break;
+		case SNGISDN_EVENT_CON_IND:
+		case SNGISDN_EVENT_CON_CFM:
+		case SNGISDN_EVENT_CNST_IND:
+		case SNGISDN_EVENT_DISC_IND:
+		case SNGISDN_EVENT_REL_IND:
+		case SNGISDN_EVENT_DAT_IND:
+		case SNGISDN_EVENT_SSHL_IND:
+		case SNGISDN_EVENT_SSHL_CFM:
+		case SNGISDN_EVENT_RMRT_IND:
+		case SNGISDN_EVENT_RMRT_CFM:
+		case SNGISDN_EVENT_FLC_IND:
+		case SNGISDN_EVENT_FAC_IND:
+		case SNGISDN_EVENT_STA_CFM:
+			ftdmchan = sngisdn_event->sngisdn_info->ftdmchan;
+			ftdm_assert_return(ftdmchan, NULL,"Event should have a channel associated\n");
+			break;
+	}
+ 	ftdm_channel_lock(ftdmchan);
+	ftdm_sangoma_isdn_advance_chan_states(ftdmchan);
+	return ftdmchan;
+}
+
+
+
+static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event)
+{
+	ftdm_channel_t *ftdmchan = NULL;
+	
+	ftdmchan = ftdm_sangoma_isdn_process_event_states(span, sngisdn_event);
+	switch(sngisdn_event->event_id) {
+		case SNGISDN_EVENT_CON_IND:
+			sngisdn_process_con_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_CON_CFM:
+			sngisdn_process_con_cfm(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_CNST_IND:
+			sngisdn_process_cnst_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_DISC_IND:
+			sngisdn_process_disc_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_REL_IND:
+			sngisdn_process_rel_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_DAT_IND:
+			sngisdn_process_dat_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_SSHL_IND:
+			sngisdn_process_sshl_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_SSHL_CFM:
+			sngisdn_process_sshl_cfm(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_RMRT_IND:
+			sngisdn_process_rmrt_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_RMRT_CFM:
+			sngisdn_process_rmrt_cfm(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_FLC_IND:
+			sngisdn_process_flc_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_FAC_IND:
+			sngisdn_process_fac_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_STA_CFM:
+			sngisdn_process_sta_cfm(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_SRV_IND:
+			sngisdn_process_srv_ind(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_SRV_CFM:
+			sngisdn_process_srv_cfm(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_RST_CFM:
+			sngisdn_process_rst_cfm(sngisdn_event);
+			break;
+		case SNGISDN_EVENT_RST_IND:
+			sngisdn_process_rst_ind(sngisdn_event);
+			break;
+	}
+	if(ftdmchan != NULL) {
+		ftdm_sangoma_isdn_advance_chan_states(ftdmchan);
+		ftdm_channel_unlock(ftdmchan);
+	}
+}
+
 static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 {
 	ftdm_sigmsg_t		sigev;
-	ftdm_signaling_status_t status;
+	ftdm_channel_state_t initial_state;
 	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
 
 	memset(&sigev, 0, sizeof(sigev));
@@ -295,29 +440,33 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	sigev.channel = ftdmchan;
 
 	/*first lock the channel*/
-	ftdm_mutex_lock(ftdmchan->mutex);
-
+	ftdm_channel_lock(ftdmchan);
 	/*clear the state change flag...since we might be setting a new state*/
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+#ifdef FTDM_DEBUG_CHAN_MEMORY
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ)==0, "Failed to mprotect");
+	}
+#endif
+	
+	/* Only needed for debugging */
+	initial_state = ftdmchan->state;
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "processing state change to %s\n", ftdm_channel_state2str(ftdmchan->state));
 
 	switch (ftdmchan->state) {
-
-	case FTDM_CHANNEL_STATE_COLLECT:	 /* SETUP received but wating on digits */
+	case FTDM_CHANNEL_STATE_COLLECT:	 /* SETUP received but waiting on digits */
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request - do nothing\n");
-				break;
-			}
-
-			/* TODO: Overlap receive not implemented yet - cannot do it the same way as PRI requires sending complete bit */
-
-			/* Go straight to ring state for now */
-
-			/*now go to the RING state*/
-            ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
+			/* TODO: Re-implement this. There is a way to re-evaluate new incoming digits from dialplan as they come */
+			sngisdn_snd_setup_ack(ftdmchan);
+			/* Just wait in this state until we get enough digits or T302 timeout */
+		}
+		break;
+	case FTDM_CHANNEL_STATE_GET_CALLERID:
+		{
+			sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
+			sngisdn_snd_proceed(ftdmchan);
+			/* Wait in this state until we get FACILITY msg */			
 		}
 		break;
 	case FTDM_CHANNEL_STATE_RING: /* incoming call request */
@@ -329,34 +478,24 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_DIALING: /* outgoing call request */
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
 			sngisdn_snd_setup(ftdmchan);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
-
 			/*check if the channel is inbound or outbound*/
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				/*OUTBOUND...so we were told by the line of this so noifiy the user*/
 				sigev.event_id = FTDM_SIGEVENT_PROGRESS;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
-			} else {
+			} else if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+				sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
 				sngisdn_snd_proceed(ftdmchan);
 			}
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
@@ -367,86 +506,72 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			}
 		}
 		break; 
-
 	case FTDM_CHANNEL_STATE_UP: /* call is answered */
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
-
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-				if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP &&
-					((sngisdn_span_data_t*)ftdmchan->span->signal_data)->signalling == SNGISDN_SIGNALING_NET) {
-					/* Assign the call to a specific equipment */
-					sngisdn_snd_con_complete(ftdmchan);
-				}
-			}
-
 			/* check if the channel is inbound or outbound */
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				/* OUTBOUND ... so we were told by the line that the other side answered */
 				sigev.event_id = FTDM_SIGEVENT_UP;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
+
+				if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP &&
+					((sngisdn_span_data_t*)ftdmchan->span->signal_data)->signalling == SNGISDN_SIGNALING_NET) {
+					/* Assign the call to a specific equipment */
+					sngisdn_snd_con_complete(ftdmchan);
+				}
 			} else {
 				/* INBOUND ... so FS told us it just answered ... tell the stack */
 				sngisdn_snd_connect(ftdmchan);
 			}
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_CANCEL:
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
-
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Hanging up call before informing user!\n");
 
 			/* Send a release complete */
-			sngisdn_snd_release(ftdmchan);
+			sngisdn_snd_release(ftdmchan, 0);
 			/*now go to the HANGUP complete state*/				
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_TERMINATING: /* call is hung up by the remote end */
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
-
 			/* this state is set when the line is hanging up */
 			sigev.event_id = FTDM_SIGEVENT_STOP;
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_HANGUP:	/* call is hung up locally */
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
-
-			if (ftdm_test_flag(sngisdn_info, FLAG_REMOTE_REL)) {
+			if (sngisdn_test_flag(sngisdn_info, FLAG_REMOTE_ABORT)) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Acknowledging remote abort\n");
+			} else if (sngisdn_test_flag(sngisdn_info, FLAG_REMOTE_REL)) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Acknowledging remote hangup\n");
-				sngisdn_snd_release(ftdmchan);
-			} else if (ftdm_test_flag(sngisdn_info, FLAG_REMOTE_ABORT)) {
-				/* Do not send any messages to remote switch as they aborted */
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Clearing local states from remote abort\n");
+				sngisdn_snd_release(ftdmchan, 0);
+			} else if (sngisdn_test_flag(sngisdn_info, FLAG_LOCAL_ABORT)) {
+				/* We aborted this call before sending anything to the stack, so nothing to do anymore */
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Clearing local states from local abort\n");
+			} else if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE)) {
+				/* We are hangup local call because there was a glare, we are waiting for a
+				RELEASE on this call, before we can process the saved call */
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Waiting for RELEASE on hungup glared call\n");
 			} else {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Hanging up call upon local request!\n");
 
 				 /* set the flag to indicate this hangup is started from the local side */
-				ftdm_set_flag(sngisdn_info, FLAG_LOCAL_REL);
+				sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_REL);
 
 				/* If we never sent ack to incoming call, we need to send release instead of disconnect */
-				if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RING) {
-					ftdm_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
-					sngisdn_snd_release(ftdmchan);
+				if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RING ||
+					ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALING) {
+
+					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+						sng_isdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
+					}
+
+					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+					sngisdn_snd_release(ftdmchan, 0);
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
 				}
@@ -454,361 +579,114 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			}
 
 			/* now go to the HANGUP complete state */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
-
-			if (ftdm_test_flag(sngisdn_info, FLAG_REMOTE_REL)) {			
-				if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_TX)) {
-					/* go to RESTART State until RSCa is received */
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-				}
-				/* Do nothing as we will receive a RELEASE COMPLETE from remote switch */
-			} else if (ftdm_test_flag(sngisdn_info, FLAG_REMOTE_ABORT) ||
-						ftdm_test_flag(sngisdn_info, FLAG_LOCAL_ABORT)) {
+			if (sngisdn_test_flag(sngisdn_info, FLAG_REMOTE_ABORT) ||
+				sngisdn_test_flag(sngisdn_info, FLAG_LOCAL_ABORT)) {
 				/* If the remote side aborted, we will not get anymore message for this call */
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 			} else {
-				/* twiddle, waiting on remote confirmation before moving to down */
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Completing locally requested hangup\n");
+				/* waiting on remote confirmation before moving to down */
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Waiting for release from stack\n");
 			}
 		}
 		break;
-
 	case FTDM_CHANNEL_STATE_DOWN: /* the call is finished and removed */
 		{
-			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "re-entering state from processing block/unblock request ... do nothing \n");
-				break;
-			}
+			uint8_t glare = 0;
 
-			/* check if there is a reset response that needs to be sent */
-			if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_RX)) {
-				/* send a RLC */
-				sngisdn_snd_release(ftdmchan);
+			glare = sngisdn_test_flag(sngisdn_info, FLAG_GLARE);
+			/* clear all of the call specific data store in the channel structure */
+			clear_call_data(sngisdn_info);
 
-				/* inform Ftdm that the "sig" is up now for this channel */
-				status = FTDM_SIG_STATE_UP;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-			}
-
-			/* check if we got the reset response */
-			if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_TX)) {
-				/* inform Ftdm that the "sig" is up now for this channel */
-				status = FTDM_SIG_STATE_UP;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-			}
-
-			/* check if the circuit has the glare flag up */
-			if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE)) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Glare flag is up....spoofing incoming call\n");
-				/* clear all the call specific data */
-				clear_call_data(sngisdn_info);
-
+			/* Close the channel even if we had a glare, we will re-open it when processing state COLLECT for the
+				"glared call" */
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
+				ftdm_channel_t *close_chan = ftdmchan;
 				/* close the channel */
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-					ftdm_channel_t *close_chan = ftdmchan;
-					/* close the channel */
-					ftdm_channel_close(&close_chan);
-				}
+				ftdm_channel_close(&close_chan);
+			}
+			if (glare) {
 
-				/* spoof an incoming call */
-				sngisdn_rcv_con_ind(sngisdn_info->glare.suId,
-									sngisdn_info->glare.suInstId,
-									sngisdn_info->glare.spInstId,
-									&sngisdn_info->glare.setup,
-									sngisdn_info->glare.dChan,
-									sngisdn_info->glare.ces);
-
-			} else {
-				/* clear all of the call specific data store in the channel structure */
-				clear_call_data(sngisdn_info);
-			
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-					ftdm_channel_t *close_chan = ftdmchan;
-					/* close the channel */
-					ftdm_channel_close(&close_chan);
-				}
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Glare detected, processing saved call\n");
+				/* We are calling sngisdn_rcv_con_ind with ftdmchan->mutex being locked,
+					so no other threads will be able to touch this channel. The next time we will
+					process this channel is in this function, and it should be in state COLLECT (set inside
+					sngisdn_rcv_con_ind)*/
+				sngisdn_rcv_con_ind(sngisdn_info->glare.suId, sngisdn_info->glare.suInstId, sngisdn_info->glare.spInstId, &sngisdn_info->glare.setup, sngisdn_info->glare.dChan, sngisdn_info->glare.ces);
 			}
 		}
 		break;
 	case FTDM_CHANNEL_STATE_RESTART:
 		{
-#if 0
-			/* TODO: Go through channel restart call states. They do not make sense when running ISDN */
-			
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-				/* bring the call down first...then process the rest of the reset */
-				switch (ftdmchan->last_state) {
-				/******************************************************************/
-				case(FTDM_CHANNEL_STATE_TERMINATING):
-				case(FTDM_CHANNEL_STATE_HANGUP):
-				case(FTDM_CHANNEL_STATE_HANGUP_COMPLETE):
-					/* go back to the last state after taking care of the rest of the restart state */
-					ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
-					break;
-				/******************************************************************/
-				default:
-					/* KONRAD: find out what the cause code should be */
-					ftdmchan->caller_data.hangup_cause = 41;
-
-					/* change the state to terminatting, it will throw us back here
-					* once the call is done
-					*/
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-					break;
-				/******************************************************************/
-				}
-			} else {
-
-				/* check if this an incoming RSC */
-				if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_RX)) {
-					/* go to a down state to clear the channel and send RSCa */
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-				} /* if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_RX)) */
-			} /* if (inuse) */
-
-			/* check if this is an outgoing RSC */
-			if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_TX)) {
-		
-				/* make sure we aren't coming from hanging up a call */
-				if (ftdmchan->last_state != FTDM_CHANNEL_STATE_HANGUP_COMPLETE) {
-					/* send a reset request */
-					sngisdn_snd_reset(ftdmchan);
-				}
-		
-				/* don't change to the DOWN state as we need to wait for the RSCa */
-			} /* if (sngisdn_test_flag(sngisdn_info, FLAG_RESET_TX)) */
-			
-			/* send a sig event to the core to disable the channel */
-			status = FTDM_SIG_STATE_DOWN;
-			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.raw_data = &status;
-			ftdm_span_send_signal(ftdmchan->span, &sigev);
-#endif
+			/* IMPLEMENT ME */
 		}
 
 		break;
 	case FTDM_CHANNEL_STATE_SUSPENDED:
 		{
-			if (sngisdn_test_flag(sngisdn_info, FLAG_INFID_PAUSED)) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "processing PAUSE\n");
-				/* bring the channel signaling status to down */
-				status = FTDM_SIG_STATE_DOWN;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-
-				/* check the last state and return to it to allow the call to finish */
-				ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
-			}
-			if (sngisdn_test_flag(sngisdn_info, FLAG_INFID_RESUME)) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "processing RESUME\n");
-				
-				/* we just resumed...throw the channel into reset */
-				sngisdn_set_flag(sngisdn_info, FLAG_RESET_TX);
-
-				/* clear the resume flag */
-				sngisdn_clear_flag(sngisdn_info, FLAG_INFID_RESUME);
-
-				/* go to restart state */
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-			}
-
-#if 0
-			/* CHECK the equivalent for ISDN */
-			if (sngisdn_test_flag(sngisdn_info, FLAG_CKT_MN_BLOCK_RX)) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "processing MN_BLOCK_RX\n");
-
-				/* bring the channel signaling status to down */
-				status = FTDM_SIG_STATE_DOWN;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-
-				/* send a BLA */
-				
-				ft_to_sngss7_bla(ftdmchan);
-
-				/* check the last state and return to it to allow the call to finish */
-				ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
-			}
-			if (sngisdn_test_flag(sngisdn_info, FLAG_CKT_MN_UNBLK_RX)) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "processing MN_UNBLK_RX\n");
-				/* bring the channel signaling status to up */
-				status = FTDM_SIG_STATE_UP;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-
-				/* clear the unblock flag */
-				sngisdn_clear_flag(sngisdn_info, FLAG_CKT_MN_UNBLK_RX);
-
-				/* send a uba */
-				ft_to_sngss7_uba(ftdmchan);
-
-				/* check the last state and return to it to allow the call to finish */
-				ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
-			}
-			/**********************************************************************/
-			if (sngisdn_test_flag(sngisdn_info, FLAG_CKT_MN_BLOCK_TX)) {
-				ftdm_log_chan_msg(ftdm_chan, FTDM_LOG_DEBUG, "processing MN_BLOCK_TX\n");
-				/* bring the channel signaling status to down */
-				status = FTDM_SIG_STATE_DOWN;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-
-				/* send a blo */
-				ft_to_sngss7_blo(ftdmchan);
-
-				/* check the last state and return to it to allow the call to finish */
-				ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
-			}
-			if (sngisdn_test_flag(sngisdn_info, FLAG_CKT_MN_UNBLK_TX)) {
-				ftdm_log_chan_msg(ftdm_chan, FTDM_LOG_DEBUG, "processing MN_UNBLOCK_TX\n");
-				/* bring the channel signaling status to up */
-				status = FTDM_SIG_STATE_UP;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.raw_data = &status;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
-
-				/* clear the unblock flag */
-				sngisdn_clear_flag(sngisdn_info, FLAG_CKT_MN_UNBLK_TX);
-
-				/* send a ubl */
-				ft_to_sngss7_ubl(ftdmchan);
-
-				/* check the last state and return to it to allow the call to finish */
-				ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
-			}
-#endif
+			/* IMPLEMENT ME */
 		}
 		break;
 	default:
 		{
-			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "unsngisdn_rcvd state %s\n", ftdm_channel_state2str(ftdmchan->state));
+			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "unsupported sngisdn_rcvd state %s\n", ftdm_channel_state2str(ftdmchan->state));
 		}
 		break;
-
 	}
-
-	ftdm_mutex_unlock(ftdmchan->mutex);
+	
+	if (ftdmchan->state == initial_state) {
+		ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "state change flag is still set, but we did not change state\n");
+	}
+#ifdef FTDM_DEBUG_CHAN_MEMORY
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ|PROT_WRITE)==0, "Failed to mprotect");
+	}
+#endif
+	ftdm_channel_unlock(ftdmchan);
 	return;
 }
 
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 {
-	sngisdn_chan_data_t  *sngisdn_info;
-	int c;
-
+	sngisdn_chan_data_t  *sngisdn_info = ftdmchan->call_data;
+	ftdm_status_t status = FTDM_FAIL;	
+	
 	/* lock the channel while we check whether it is availble */
-	ftdm_mutex_lock(ftdmchan->mutex);
+	ftdm_channel_lock(ftdmchan);
 
 	switch (ftdmchan->state) {
 
-	case FTDM_CHANNEL_STATE_DOWN:
-		{
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
+		case FTDM_CHANNEL_STATE_DOWN:
+			{
+				if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE)) {
+					/* A call came in after we called ftdm_channel_open_chan for this call, but before we got here */
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Glare detected - aborting outgoing call\n");
 
-			/* unlock the channel */
-			ftdm_mutex_unlock(ftdmchan->mutex);
+					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 
-			/* now we have to wait for either the stack to reject the call because of
-			 * glare or for the network to acknowledge the call */
-			c = 0;
-
-			while (c < 100) {
-
-				/* lock the channel while we check whether it is availble */
-				ftdm_mutex_lock(ftdmchan->mutex);
-
-				/* extract the sngisdn_chan_data structure */
-				sngisdn_info = (sngisdn_chan_data_t  *)ftdmchan->call_data;
-
-				if (ftdm_test_flag(sngisdn_info, FLAG_GLARE)) {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Glare detected\n");
-					goto outgoing_glare;
+					status = FTDM_BREAK;
+				} else {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
+					status = FTDM_SUCCESS;
 				}
-
-				switch (ftdmchan->state) {
-					case FTDM_CHANNEL_STATE_DIALING:
-						break;
-					case FTDM_CHANNEL_STATE_PROGRESS:
-					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
-					case FTDM_CHANNEL_STATE_UP:
-						{
-							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Outgoing call request successful\n");
-							goto outgoing_successful;
-						}
-						break;
-					case FTDM_CHANNEL_STATE_TERMINATING:
-					case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
-					case FTDM_CHANNEL_STATE_DOWN:
-						{
-							/* Remote switch aborted this call */
-							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Outgoing call request failed\n");
-							goto outgoing_successful;
-						}
-						break;
-					default:
-						{
-							ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Channel in invalid state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
-							goto outgoing_glare;
-						}
-						break;
-				}
-
-				/* unlock the channel */
-				ftdm_mutex_unlock(ftdmchan->mutex);
-
-				/* sleep for a bit to let the state change */
-				ftdm_sleep(10);
-
-				/* increment the timeout counter */
-				c++;
 			}
-
-			/* only way we can get here is if we are still in STATE_DIALING. We did not get a glare, so exit thread and wait for PROCEED/PROGRESS/ALERT/CONNECT or RELEASE from remote switch  */
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Timeout waiting for outgoing call to be accepted by network, returning success anyways\n");
-
-			/* consider the call good .... for now */
-			goto outgoing_successful;
-		}
-		break;
-
-	default:
+			break;
+		default:
 		{
 			/* the channel is already used...this can't be, end the request */
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Outgoing call requested channel in already in use\n");
-			goto outgoing_glare;
+			status = FTDM_BREAK;
 		}
 		break;		  
 	}
 
-	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "WE SHOULD NOT BE HERE!!!!\n");
-
-	ftdm_mutex_unlock(ftdmchan->mutex);
-	return FTDM_FAIL;
-
-outgoing_glare:
-	ftdm_mutex_unlock(ftdmchan->mutex);  
-	return FTDM_BREAK;
-
-outgoing_successful:
-	ftdm_mutex_unlock(ftdmchan->mutex);
-	return FTDM_SUCCESS;
+	ftdm_channel_unlock(ftdmchan);
+	return status;
 }
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_sig_status)
@@ -863,8 +741,8 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 		ftdm_sleep(10);
 	}
 
-	/* FIXME: deconfigure any circuits, links, attached to this span */
-	/* TODO: confirm with Moy whether we should start channels at 1 or 0 */
+	/* FIXME: deconfigure any links, attached to this span */
+	/* TODO: Use Moy's channel Iterator when its implemented */
 	for (i=1;i<=span->chan_count;i++) {
 		ftdm_safe_free(span->channels[i]->call_data);
 	}
@@ -906,9 +784,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->start = ftdm_sangoma_isdn_start;
 	span->stop = ftdm_sangoma_isdn_stop;
 	span->signal_type = FTDM_SIGTYPE_ISDN;
-#if 0
-	span->signal_data = NULL;
-#endif
 	span->outgoing_call = ftdm_sangoma_isdn_outgoing_call;
 	span->channel_request = NULL;
 	span->signal_cb	= sig_cb;
@@ -916,6 +791,19 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->set_channel_sig_status = ftdm_sangoma_isdn_set_sig_status;
 	span->state_map	= &sangoma_isdn_state_map;
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
+
+	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
+		span->trunk_type == FTDM_TRUNK_BRI) {
+
+		ftdm_set_flag(span, FTDM_SPAN_USE_AV_RATE);
+		sng_isdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
+	}
+
+	/* Initialize scheduling context */
+	ftdm_assert(ftdm_sched_create(&((sngisdn_span_data_t*)span->signal_data)->sched, "sngisdn_schedule") == FTDM_SUCCESS, "Failed to create a new schedule!!");
+
+	/* Initialize the event queue */
+	ftdm_assert(ftdm_queue_create(&((sngisdn_span_data_t*)span->signal_data)->event_queue, SNGISDN_EVENT_QUEUE_SIZE) == FTDM_SUCCESS, "Failed to create a new queue!!");
 
 	ftdm_log(FTDM_LOG_INFO, "Finished configuring ftmod_sangoma_isdn span = %s\n", span->name);
 	return FTDM_SUCCESS;
@@ -948,22 +836,22 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	g_sngisdn_event_interface.cc.sng_rst_ind 	= sngisdn_rcv_rst_ind;
 	g_sngisdn_event_interface.cc.sng_rst_cfm	= sngisdn_rcv_rst_cfm;
 
-	g_sngisdn_event_interface.lg.sng_log 			= sngisdn_rcv_sng_log;
+	g_sngisdn_event_interface.lg.sng_log 		= sngisdn_rcv_sng_log;
+	g_sngisdn_event_interface.lg.sng_assert 	= sngisdn_rcv_sng_assert;
+	
 	g_sngisdn_event_interface.sta.sng_phy_sta_ind 	= sngisdn_rcv_phy_ind;
 	g_sngisdn_event_interface.sta.sng_q921_sta_ind	= sngisdn_rcv_q921_ind;
 	g_sngisdn_event_interface.sta.sng_q921_trc_ind	= sngisdn_rcv_q921_trace;
 	g_sngisdn_event_interface.sta.sng_q931_sta_ind	= sngisdn_rcv_q931_ind;
 	g_sngisdn_event_interface.sta.sng_q931_trc_ind	= sngisdn_rcv_q931_trace;
-	g_sngisdn_event_interface.sta.sng_cc_sta_ind	= sngisdn_rcv_cc_ind;
+	g_sngisdn_event_interface.sta.sng_cc_sta_ind	= sngisdn_rcv_cc_ind;	
 
 	for(i=1;i<=MAX_VARIANTS;i++) {		
-		ftdm_mutex_create(&g_sngisdn_data.ccs[i].request_mutex);
+		ftdm_mutex_create(&g_sngisdn_data.ccs[i].mutex);
 	}
+
 	/* initalize sng_isdn library */
 	sng_isdn_init(&g_sngisdn_event_interface);
-
-	/* crash on assert fail */
-	ftdm_global_set_crash_policy(FTDM_CRASH_ON_ASSERT);
 	return FTDM_SUCCESS;
 }
 
@@ -975,7 +863,7 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_isdn_unload)
 	sng_isdn_free();
 	
 	for(i=1;i<=MAX_VARIANTS;i++) {		
-		ftdm_mutex_destroy(&g_sngisdn_data.ccs[i].request_mutex);
+		ftdm_mutex_destroy(&g_sngisdn_data.ccs[i].mutex);
 	}
 
 	ftdm_log(FTDM_LOG_INFO, "Finished ftmod_sangoma_isdn unload!\n");
@@ -1025,6 +913,23 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		} else {
 			stream->write_function(stream, "-ERR invalid trace option <q921|q931> <span name>\n");
 		}	
+	}
+	if (!strcasecmp(argv[0], "l1_stats")) {
+		ftdm_span_t *span;
+		if (argc < 2) {
+			ftdm_log(FTDM_LOG_ERROR, "Usage: ftdm sangoma_isdn l1_stats <span name>\n");
+			status = FTDM_FAIL;
+			goto done;
+		}
+		status = ftdm_span_find_by_name(argv[1], &span);
+		if (FTDM_SUCCESS != status) {
+			stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[2]);
+			goto done;
+		}
+		/* TODO: implement PHY stats */
+	}
+	if (!strcasecmp(argv[0], "check_ids")) {
+		sngisdn_check_free_ids();
 	}
 done:
 	ftdm_safe_free(mycmd);
