@@ -1182,14 +1182,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 		return FTDM_FAIL;
 	}
 
-	if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_SUSPENDED)) {
-		if (state != FTDM_CHANNEL_STATE_RESTART && state != FTDM_CHANNEL_STATE_DOWN) {
-			ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, "Ignored state change request from %s to %s, span %s is suspended\n",
-				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state), ftdmchan->span->name);
-			return FTDM_FAIL;
-		}
-	}
-
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
 				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
