@@ -46,7 +46,8 @@ ftdm_sngss7_data_t g_ftdm_sngss7_data;
 
 /* PROTOTYPES *****************************************************************/
 static void *ftdm_sangoma_ss7_run (ftdm_thread_t * me, void *obj);
-static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan);
+static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
+static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_event);
 
 static ftdm_status_t ftdm_sangoma_ss7_stop (ftdm_span_t * span);
 static ftdm_status_t ftdm_sangoma_ss7_start (ftdm_span_t * span);
@@ -268,11 +269,12 @@ ftdm_state_map_t sangoma_ss7_state_map = {
 /* MONITIOR THREADS ***********************************************************/
 static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 {
-	ftdm_interrupt_t	*ftdm_sangoma_ss7_int = NULL;
+	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[2];
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
 	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = NULL;
+	sngss7_event_data_t	*sngss7_event = NULL;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
 	int 				i;
 
 	ftdm_log (FTDM_LOG_INFO, "ftmod_sangoma_ss7 monitor thread for span=%u started.\n", ftdmspan->span_id);
@@ -280,30 +282,52 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	/* set IN_THREAD flag so that we know this thread is running */
 	ftdm_set_flag (ftdmspan, FTDM_SPAN_IN_THREAD);
 
-	/* get an interrupt queue for this span */
-	if (ftdm_queue_get_interrupt (ftdmspan->pendingchans, &ftdm_sangoma_ss7_int) != FTDM_SUCCESS) {
-		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d!\n", ftdmspan->span_id);
+	/* get an interrupt queue for this span for channel state changes */
+	if (ftdm_queue_get_interrupt (ftdmspan->pendingchans, &ftdm_sangoma_ss7_int[0]) != FTDM_SUCCESS) {
+		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for channel state changes!\n", ftdmspan->span_id);
+		goto ftdm_sangoma_ss7_run_exit;
+	}
+
+	/* get an interrupt queue for this span for Trillium events */
+	if (ftdm_queue_get_interrupt (sngss7_span->event_queue, &ftdm_sangoma_ss7_int[1]) != FTDM_SUCCESS) {
+		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for Trillium event queue!\n", ftdmspan->span_id);
 		goto ftdm_sangoma_ss7_run_exit;
 	}
 
 	while (ftdm_running () && !(ftdm_test_flag (ftdmspan, FTDM_SPAN_STOP_THREAD))) {
 
-		/* find out why we returned from the interrupt queue */	
-		switch ((ftdm_interrupt_wait (ftdm_sangoma_ss7_int, 100))) {
+		/* check the channel state queue for an event*/	
+		switch ((ftdm_interrupt_multiple_wait(ftdm_sangoma_ss7_int, 2, 100))) {
 		/**********************************************************************/
-		case FTDM_SUCCESS:	/* there was a state change on the span */
-							/* process all pending state changes */
+		case FTDM_SUCCESS:	/* process all pending state changes */
 
+			/* clean out all pending channel state changes */
 			while ((ftdmchan = ftdm_queue_dequeue (ftdmspan->pendingchans))) {
 				/* double check that this channel has a state change pending */
 				if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+					/*first lock the channel */
+					ftdm_mutex_lock(ftdmchan->mutex);
+
 					ftdm_sangoma_ss7_process_state_change (ftdmchan);
+
+					/* unlock the channel */
+					ftdm_mutex_unlock (ftdmchan->mutex);				
 				} else {
-					SS7_ERROR("ftdm_core reported state change, but state change flag not set on ft-span = %d, ft-chan = %d\n",
+					/* since we handle state changes again after handling the trillium queue
+					 * this can occur since we'll clear the flag for the event but can't pop
+					 * the channel out of pendingchans
+					 */
+/*					SS7_ERROR("ftdm_core reported state change, but state change flag not set on ft-span = %d, ft-chan = %d\n",
 								ftdmchan->physical_span_id,
-								ftdmchan->physical_chan_id);
+								ftdmchan->physical_chan_id);*/
 				}
 			}/* while ((ftdmchan = ftdm_queue_dequeue(ftdmspan->pendingchans)))  */
+
+			/* clean out all pending stack events */
+			while ((sngss7_event = ftdm_queue_dequeue(sngss7_span->event_queue))) {
+				ftdm_sangoma_ss7_process_stack_event(sngss7_event);
+				ftdm_safe_free(sngss7_event);
+			}/* while ((sngss7_event = ftdm_queue_dequeue(ftdmspan->signal_data->event_queue))) */
 
 			break;
 		/**********************************************************************/
@@ -413,6 +437,81 @@ ftdm_sangoma_ss7_run_exit:
 }
 
 /******************************************************************************/
+static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_event)
+{
+	sngss7_chan_data_t  *sngss7_info ;
+	ftdm_channel_t	  *ftdmchan;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(sngss7_event->circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", sngss7_event->circuit);
+		return;
+	}
+
+	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	ftdm_mutex_lock(ftdmchan->mutex);
+
+	/* figure out the type of event and send it to the right handler */
+	switch (sngss7_event->event_id) {
+	/**************************************************************************/
+	case (SNGSS7_CON_IND_EVENT):
+		handle_con_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siConEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_CON_CFM_EVENT):
+		handle_con_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siConEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_CON_STA_EVENT):
+		handle_con_sta(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siCnStEvnt, sngss7_event->evntType);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_REL_IND_EVENT):
+		handle_rel_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siRelEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_REL_CFM_EVENT):
+		handle_rel_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siRelEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_DAT_IND_EVENT):
+		handle_dat_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siInfoEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_FAC_IND_EVENT):
+		handle_fac_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_FAC_CFM_EVENT):
+		handle_fac_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_UMSG_IND_EVENT):
+		handle_umsg_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_STA_IND_EVENT):
+		handle_sta_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->globalFlg, sngss7_event->evntType,  &sngss7_event->event.siStaEvnt);
+		break;
+	/**************************************************************************/
+	default:
+		SS7_ERROR("Unknown Event Id!\n");
+		break;
+	/**************************************************************************/
+	} /* switch (sngss7_event->event_id) */
+
+	/* while there's a state change present on this channel process it */
+	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_sangoma_ss7_process_state_change(ftdmchan);
+	}
+
+	/* unlock the channel */
+	ftdm_mutex_unlock(ftdmchan->mutex);
+
+	return;
+}
+
+/******************************************************************************/
 static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 {
 	ftdm_sigmsg_t sigev;
@@ -425,9 +524,6 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	sigev.chan_id = ftdmchan->chan_id;
 	sigev.span_id = ftdmchan->span_id;
 	sigev.channel = ftdmchan;
-
-	/*first lock the channel */
-	ftdm_mutex_lock (ftdmchan->mutex);
 
 	SS7_DEBUG_CHAN(ftdmchan, "ftmod_sangoma_ss7 processing state %s\n", ftdm_channel_state2str (ftdmchan->state));
 
@@ -1052,9 +1148,6 @@ suspend_goto_restart:
 	/**************************************************************************/
 	}/*switch (ftdmchan->state) */
 
-	/*unlock */
-	ftdm_mutex_unlock (ftdmchan->mutex);
-
 	return;
 }
 
@@ -1254,7 +1347,7 @@ static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t * span)
 /* SIG_FUNCTIONS ***************************************************************/
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 {
-	sngss7_span_data_t *ss7_span_info;
+	sngss7_span_data_t	*ss7_span_info;
 
 	ftdm_log (FTDM_LOG_INFO, "Configuring ftmod_sangoma_ss7 span = %s(%d)...\n",
 								span->name,
@@ -1264,29 +1357,20 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	ss7_span_info = ftdm_calloc (1, sizeof (sngss7_span_data_t));
 
 	/* create a timer schedule */
-	if (ftdm_sched_create (&ss7_span_info->sched, "SngSS7_Schedule")) {
-		SS7_CRITICAL ("Unable to create timer schedule!\n");
+	if (ftdm_sched_create(&ss7_span_info->sched, "SngSS7_Schedule")) {
+		SS7_CRITICAL("Unable to create timer schedule!\n");
 		return FTDM_FAIL;
 	}
 
 	/* start the free run thread for the schedule */
-	if (ftdm_sched_free_run (ss7_span_info->sched)) {
-		SS7_CRITICAL ("Unable to schedule free run!\n");
+	if (ftdm_sched_free_run(ss7_span_info->sched)) {
+		SS7_CRITICAL("Unable to schedule free run!\n");
 		return FTDM_FAIL;
 	}
 
-	/* attach the span info to the span */
-	span->mod_data = ss7_span_info;
-
-	/* parse the configuration and apply to the global config structure */
-	if (ftmod_ss7_parse_xml(ftdm_parameters, span)) {
-		ftdm_log (FTDM_LOG_CRIT, "Failed to parse configuration!\n");
-		return FTDM_FAIL;
-	}
-
-	/* configure libsngss7 */
-	if (ft_to_sngss7_cfg_all()) {
-		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
+	/* create an event queue for this span */
+	if ((ftdm_queue_create(&(ss7_span_info)->event_queue, SNGSS7_EVENT_QUEUE_SIZE)) != FTDM_SUCCESS) {
+		SS7_CRITICAL("Unable to create event queue!\n");
 		return FTDM_FAIL;
 	}
 
@@ -1302,8 +1386,21 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	span->get_channel_sig_status	= ftdm_sangoma_ss7_get_sig_status;
 	span->set_channel_sig_status 	= ftdm_sangoma_ss7_set_sig_status;
 	span->state_map			 		= &sangoma_ss7_state_map;
+	span->mod_data					= ss7_span_info;
 
 	ftdm_set_flag (span, FTDM_SPAN_USE_CHAN_QUEUE);
+
+	/* parse the configuration and apply to the global config structure */
+	if (ftmod_ss7_parse_xml(ftdm_parameters, span)) {
+		ftdm_log (FTDM_LOG_CRIT, "Failed to parse configuration!\n");
+		return FTDM_FAIL;
+	}
+
+	/* configure libsngss7 */
+	if (ft_to_sngss7_cfg_all()) {
+		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
+		return FTDM_FAIL;
+	}
 
 	ftdm_log (FTDM_LOG_INFO, "Finished configuring ftmod_sangoma_ss7 span = %s(%d)...\n",
 								span->name,
@@ -1336,7 +1433,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 
 	/* message (IAM, ACM, ANM, etc) trace initizalation */
 	g_ftdm_sngss7_data.message_trace = 1;
-	g_ftdm_sngss7_data.message_trace_level = 7;
+	g_ftdm_sngss7_data.message_trace_level = 6;
 
 	/* setup the call backs needed by Sangoma_SS7 library */
 	sng_event.cc.sng_con_ind = sngss7_con_ind;
