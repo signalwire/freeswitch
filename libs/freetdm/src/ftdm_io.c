@@ -1478,7 +1478,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 	ftdm_group_channel_use_count(group, &count);
 
 	if (count >= group->chan_count) {
-		ftdm_log(FTDM_LOG_ERROR, "All circuits are busy (%d channels used out of %d available).\n", count, group->chan_count);
+		ftdm_log(FTDM_LOG_WARNING, "All circuits are busy (%d channels used out of %d available).\n", count, group->chan_count);
 		*ftdmchan = NULL;
 		return FTDM_FAIL;
 	}
@@ -1575,7 +1575,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 	ftdm_span_channel_use_count(span, &count);
 
 	if (count >= span->chan_count) {
-		ftdm_log(FTDM_LOG_ERROR, "All circuits are busy: active=%i max=%i.\n", count, span->chan_count);
+		ftdm_log(FTDM_LOG_WARNING, "All circuits are busy: active=%i max=%i.\n", count, span->chan_count);
 		return FTDM_FAIL;
 	}
 
