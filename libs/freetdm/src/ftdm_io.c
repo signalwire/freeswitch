@@ -2122,7 +2122,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 {
 	ftdm_status_t status = FTDM_FAIL;
 
-	ftdm_assert(ftdmchan != NULL, "null channel");
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
+	ftdm_assert_return(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), FTDM_FAIL, "Call place, but outbound flag not set\n");
 
 	ftdm_channel_lock(ftdmchan);
 
@@ -2268,13 +2269,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 	ftdm_channel_t *check;
 	ftdm_status_t status = FTDM_FAIL;
 
-	assert(ftdmchan != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel double pointer provided!\n");
+	ftdm_assert_return(*ftdmchan != NULL, FTDM_FAIL, "null channel pointer provided!\n");
+
 	check = *ftdmchan;
 	*ftdmchan = NULL;
-
-	if (!check) {
-		return FTDM_FAIL;
-	}
 
 	if (ftdm_test_flag(check, FTDM_CHANNEL_CONFIGURED)) {
 		ftdm_mutex_lock(check->mutex);
