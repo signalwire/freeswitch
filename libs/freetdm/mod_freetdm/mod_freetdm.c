@@ -2622,6 +2622,32 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0, to = 0, max = 0;
 			ftdm_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
+
+			if (name) {
+				zstatus = ftdm_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = ftdm_span_find(span_id, &span);
+				}
+
+				if (zstatus != FTDM_SUCCESS) {
+					zstatus = ftdm_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				continue;
+			}
+			
+			if (!span_id) {
+				span_id = ftdm_span_get_id(span);
+			}
+
+			/* some defaults first */
+			SPAN_CONFIG[span_id].limit_backend = "hash";
+			SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_TIMEOUT;
 			
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2636,6 +2662,28 @@ static switch_status_t load_config(void)
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
+				} else if (!strcasecmp(var, "call_limit_backend")) {
+					SPAN_CONFIG[span_id].limit_backend = val;
+					ftdm_log(FTDM_LOG_DEBUG, "Using limit backend %s for span %d\n", SPAN_CONFIG[span_id].limit_backend, span_id);
+				} else if (!strcasecmp(var, "call_limit_rate")) {
+					int calls;
+					int seconds;
+					if (sscanf(val, "%d/%d", &calls, &seconds) != 2) {
+						ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
+					} else {
+						if (calls < 1 || seconds < 1) {
+							ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
+						} else {
+							SPAN_CONFIG[span_id].limit_calls = calls;
+							SPAN_CONFIG[span_id].limit_seconds = seconds;
+						}
+					}
+				} else if (!strcasecmp(var, "call_limit_reset_event")) {
+					if (!strcasecmp(val, "answer")) {
+						SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_ANSWER;
+					} else {
+						ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter value, only accepted event is 'answer'\n", var);
+					}
 				} else if (!strcasecmp(var, "dial-regex")) {
 					dial_regex = val;
 				} else if (!strcasecmp(var, "enable-callerid")) {
