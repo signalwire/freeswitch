@@ -278,11 +278,11 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 					ftdm_channel_unlock(ftdmchan);
 				}
 
-				/* Check if there are any timers to process */
 				while ((sngisdn_event = ftdm_queue_dequeue(signal_data->event_queue))) {
 					ftdm_sangoma_isdn_process_stack_event(span, sngisdn_event);
 					ftdm_safe_free(sngisdn_event);
-				}
+				}     
+        ftdm_span_trigger_signals(span); 
 				break;
 			case FTDM_TIMEOUT:
 				/* twiddle */
@@ -793,6 +793,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->set_channel_sig_status = ftdm_sangoma_isdn_set_sig_status;
 	span->state_map	= &sangoma_isdn_state_map;
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
+	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
