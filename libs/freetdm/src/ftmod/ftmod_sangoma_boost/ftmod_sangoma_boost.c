@@ -2534,46 +2534,6 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(sangoma_boost_get_span_sig_status)
 	return sangoma_boost_data->sigmod->get_span_sig_status(span, status);
 }
 
-/* TODO: move these ones to a common private header so other ISDN mods can use them */
-static void ftdm_span_set_npi(const char *npi_string, uint8_t *target)
-{
-	if (!strcasecmp(npi_string, "isdn") || !strcasecmp(npi_string, "e164")) {
-		*target = FTDM_NPI_ISDN;
-	} else if (!strcasecmp(npi_string, "data")) {
-		*target = FTDM_NPI_DATA;
-	} else if (!strcasecmp(npi_string, "telex")) {
-		*target = FTDM_NPI_TELEX;
-	} else if (!strcasecmp(npi_string, "national")) {
-		*target = FTDM_NPI_NATIONAL;
-	} else if (!strcasecmp(npi_string, "private")) {
-		*target = FTDM_NPI_PRIVATE;
-	} else if (!strcasecmp(npi_string, "reserved")) {
-		*target = FTDM_NPI_RESERVED;
-	} else if (!strcasecmp(npi_string, "unknown")) {
-		*target = FTDM_NPI_UNKNOWN;
-	} else {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid NPI value (%s)\n", npi_string);
-		*target = FTDM_NPI_UNKNOWN;
-	}
-}
-
-static void ftdm_span_set_ton(const char *ton_string, uint8_t *target)
-{
-	if (!strcasecmp(ton_string, "national")) {
-		*target = FTDM_TON_NATIONAL;
-	} else if (!strcasecmp(ton_string, "international")) {
-		*target = FTDM_TON_INTERNATIONAL;
-	} else if (!strcasecmp(ton_string, "local")) {
-		*target = FTDM_TON_SUBSCRIBER_NUMBER;
-	} else if (!strcasecmp(ton_string, "unknown")) {
-		*target = FTDM_TON_UNKNOWN;
-	} else {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid TON value (%s)\n", ton_string);
-		*target = FTDM_TON_UNKNOWN;
-	}
-}
-
-
 /**
  * \brief Initialises an sangoma boost span from configuration variables
  * \param span Span to configure
