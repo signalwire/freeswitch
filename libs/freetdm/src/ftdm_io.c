@@ -260,6 +260,14 @@ static ftdm_status_t ftdm_set_caller_data(ftdm_span_t *span, ftdm_caller_data_t 
 		return FTDM_FAIL;
 	}
 
+	if (caller_data->dnis.plan == FTDM_NPI_INVALID) {
+		caller_data->dnis.plan = span->default_caller_data.dnis.plan;
+	}
+
+	if (caller_data->dnis.type == FTDM_TON_INVALID) {
+		caller_data->dnis.type = span->default_caller_data.dnis.type;
+	}
+
 	if (caller_data->cid_num.plan == FTDM_NPI_INVALID) {
 		caller_data->cid_num.plan = span->default_caller_data.cid_num.plan;
 	}
@@ -283,6 +291,12 @@ static ftdm_status_t ftdm_set_caller_data(ftdm_span_t *span, ftdm_caller_data_t 
 	if (caller_data->rdnis.type == FTDM_NPI_INVALID) {
 		caller_data->rdnis.type = span->default_caller_data.rdnis.type;
 	}
+
+	if (FTDM_FAIL == ftdm_is_number(caller_data->cid_num.digits)) {
+		ftdm_log(FTDM_LOG_DEBUG, "dropping caller id number %s since we only accept digits\n", caller_data->cid_num.digits);
+		caller_data->cid_num.digits[0] = '\0';
+	}
+
 	return FTDM_SUCCESS;
 }
 
