@@ -329,6 +329,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *interrupt, int m
 		return FTDM_SUCCESS;
 	}
 #else
+pollagain:
 	ints[0].fd = interrupt->readfd;
 	ints[0].events = POLLIN;
 	ints[0].revents = 0;
@@ -343,6 +344,9 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *interrupt, int m
 	res = poll(ints, num, ms);
 
 	if (res == -1) {
+		if (errno == EINTR) {
+			goto pollagain;
+		}
 		ftdm_log(FTDM_LOG_CRIT, "interrupt poll failed (%s)\n", strerror(errno));
 		return FTDM_FAIL;
 	}
