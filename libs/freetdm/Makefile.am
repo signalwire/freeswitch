@@ -268,18 +268,19 @@ ftmod_pritap_la_LIBADD  = $(MYLIB)
 endif
 
 if SNGSS7
-ftmod_sangoma_ss7_la_SOURCES =  $(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_support.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_main.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_in.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_out.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cntrl.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_xml.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_timers.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cli.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cfg.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sta.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sts.c \
-				$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_logger.c
+ftmod_sangoma_ss7_la_SOURCES =	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_support.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_main.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_handle.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_in.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_out.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cntrl.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_xml.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_timers.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cli.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cfg.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sta.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sts.c \
+								$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_logger.c
 ftmod_sangoma_ss7_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
 ftmod_sangoma_ss7_la_LDFLAGS = -module  -avoid-version -lsng_ss7
 ftmod_sangoma_ss7_la_LIBADD  = $(MYLIB)
