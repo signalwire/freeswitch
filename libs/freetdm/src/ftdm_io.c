@@ -4410,10 +4410,13 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	switch (sigmsg->event_id) {
 
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
-		if (*((ftdm_signaling_status_t*)(sigmsg->raw_data)) == FTDM_SIG_STATE_UP) {
-			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
-		} else {
-			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+		{
+			ftdm_signaling_status_t sigstatus = ftdm_test_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE) ? sigmsg->sigstatus : *((ftdm_signaling_status_t*)(sigmsg->raw_data));
+			if (sigstatus == FTDM_SIG_STATE_UP) {
+				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+			} else {
+				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+			}
 		}
 		break;
 
