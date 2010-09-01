@@ -42,7 +42,6 @@
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
-/* PROTOTYPES *****************************************************************/
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
 ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType);
 ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -140,42 +139,67 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		} else {
 
-			/* fill in cid/ani number */
-			if (siConEvnt->cgPtyNum.addrSig.pres) {
-				copy_tknStr_from_sngss7(siConEvnt->cgPtyNum.addrSig,
-										ftdmchan->caller_data.cid_num.digits, 
-										siConEvnt->cgPtyNum.oddEven);
+			/* fill in calling party information */
+			if (siConEvnt->cgPtyNum.eh.pres) {
+				if (siConEvnt->cgPtyNum.addrSig.pres) {
+					/* fill in cid_num */
+					copy_tknStr_from_sngss7(siConEvnt->cgPtyNum.addrSig,
+											ftdmchan->caller_data.cid_num.digits, 
+											siConEvnt->cgPtyNum.oddEven);
 
-				/* fill in cid Name */
-				ftdm_set_string(ftdmchan->caller_data.cid_name, ftdmchan->caller_data.cid_num.digits);
+					/* fill in cid Name */
+					ftdm_set_string(ftdmchan->caller_data.cid_name, ftdmchan->caller_data.cid_num.digits);
 
-				ftdm_set_string(ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.cid_num.digits);
+					/* fill in ANI */
+					ftdm_set_string(ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.cid_num.digits);
+				}
 
+				if (siConEvnt->cgPtyNum.scrnInd.pres) {
+					/* fill in the screening indication value */
+					ftdmchan->caller_data.screen = siConEvnt->cgPtyNum.scrnInd.val;
+				}
+
+				if (siConEvnt->cgPtyNum.presRest.pres) {
+					/* fill in the presentation value */
+					ftdmchan->caller_data.pres = siConEvnt->cgPtyNum.presRest.val;
+				}	
 			} else {
-				SS7_INFO("No Calling party (ANI) information in IAM!\n");
+				SS7_INFO_CHAN(ftdmchan,"No Calling party (ANI) information in IAM!%s\n", " ");
 			}
 
-			/* fill in dnis */
-			if (siConEvnt->cdPtyNum.addrSig.pres) {
-				copy_tknStr_from_sngss7(siConEvnt->cdPtyNum.addrSig, 
-										ftdmchan->caller_data.dnis.digits, 
-										siConEvnt->cdPtyNum.oddEven);
+			/* fill in called party infomation */
+			if (siConEvnt->cdPtyNum.eh.pres) {
+				if (siConEvnt->cdPtyNum.addrSig.pres) {
+					/* fill in the called number/dnis */
+					copy_tknStr_from_sngss7(siConEvnt->cdPtyNum.addrSig, 
+											ftdmchan->caller_data.dnis.digits, 
+											siConEvnt->cdPtyNum.oddEven);
+				}
+			} else {
+				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in IAM!%s\n", " ");
+			}
+
+			/* fill in rdnis information*/
+			if (siConEvnt->redirgNum.eh.pres) {
+				if (siConEvnt->redirgNum.addrSig.pres) {
+					/* fill in the rdnis digits */
+					copy_tknStr_from_sngss7(siConEvnt->redirgNum.addrSig, 
+											ftdmchan->caller_data.rdnis.digits, 
+											siConEvnt->cgPtyNum.oddEven);
+				}
 			}   else {
-				SS7_INFO("No Called party (DNIS) information in IAM!\n");
+				SS7_DEBUG_CHAN(ftdmchan,"No RDNIS party information in IAM!%s\n", " ");
 			}
 
-			/* fill in rdnis */
-			if (siConEvnt->redirgNum.addrSig.pres) {
-				copy_tknStr_from_sngss7(siConEvnt->redirgNum.addrSig, 
-										ftdmchan->caller_data.rdnis.digits, 
-										siConEvnt->cgPtyNum.oddEven);
-			}   else {
-				SS7_INFO("No RDNIS party information in IAM!\n");
+			/* fill in the TMR/bearer capability */
+			if (siConEvnt->txMedReq.eh.pres) {
+				if (siConEvnt->txMedReq.trMedReq.pres) {
+					/* fill in the bearer type */
+					ftdmchan->caller_data.bearer_capability = siConEvnt->txMedReq.trMedReq.val;
+				}
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan,"No TMR/Bearer Cap information in IAM!%s\n", " ");
 			}
-
-			/* fill in screening/presentation */
-			ftdmchan->caller_data.screen = siConEvnt->cgPtyNum.scrnInd.val;
-			ftdmchan->caller_data.pres = siConEvnt->cgPtyNum.presRest.val;
 
 			/* set the state of the channel to collecting...the rest is done by the chan monitor */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);

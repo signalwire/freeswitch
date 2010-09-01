@@ -64,70 +64,72 @@ void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan);
 void
 ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {
-  SS7_FUNC_TRACE_ENTER (__FUNCTION__);
-
-  sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;;
-  SiConEvnt iam;
-
-  sngss7_info->suInstId = get_unique_id ();
-  sngss7_info->spInstId = 0;
-  sngss7_info->spId = 1;
-
-  memset (&iam, 0x0, sizeof (iam));
-
-  /* copy down the nature of connection indicators */
-  iam.natConInd.eh.pres = PRSNT_NODEF;
-  iam.natConInd.satInd.pres = PRSNT_NODEF;
-  iam.natConInd.satInd.val = 0;
-  iam.natConInd.contChkInd.pres = PRSNT_NODEF;
-  iam.natConInd.contChkInd.val = 0x00;
-  iam.natConInd.echoCntrlDevInd.pres = PRSNT_NODEF;
-  iam.natConInd.echoCntrlDevInd.val = 0x01;
-
-  /* copy down the forward call indicators */
-  iam.fwdCallInd.eh.pres = PRSNT_NODEF;
-  iam.fwdCallInd.natIntCallInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.natIntCallInd.val = 0x00;
-  iam.fwdCallInd.end2EndMethInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.end2EndMethInd.val = 0x00;
-  iam.fwdCallInd.intInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.intInd.val = 0x01;
-  iam.fwdCallInd.end2EndInfoInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.end2EndInfoInd.val = 0x00;
-  iam.fwdCallInd.isdnUsrPrtInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.isdnUsrPrtInd.val = 0x01;
-  iam.fwdCallInd.isdnUsrPrtPrfInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.isdnUsrPrtPrfInd.val = 0x02;
-  iam.fwdCallInd.isdnAccInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.isdnAccInd.val = 0x01;
-  iam.fwdCallInd.sccpMethInd.pres = PRSNT_NODEF;
-  iam.fwdCallInd.sccpMethInd.val = 0x00;
-
-  /* copy down the calling number information */
-  iam.cgPtyCat.eh.pres = PRSNT_NODEF;
-  iam.cgPtyCat.cgPtyCat.pres = PRSNT_NODEF;
-  iam.cgPtyCat.cgPtyCat.val = 0x0a;
-
-  /* copy down the transmission medium requirements */
-  iam.txMedReq.eh.pres = PRSNT_NODEF;
-  iam.txMedReq.trMedReq.pres = PRSNT_NODEF;
-  iam.txMedReq.trMedReq.val = 0;	/* SPEECH = 0, 3.1Khz = 3, 64k unres = 2 */
-
-  /* copy down the called number information */
-  copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
-
-  /* copy down the calling number information */
-  copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
-
-  sng_cc_con_request (sngss7_info->spId,
-			  sngss7_info->suInstId,
-			  sngss7_info->spInstId,
-			  sngss7_info->circuit->id, &iam, 0);
-
-  SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx IAM\n");
-
-  SS7_FUNC_TRACE_EXIT (__FUNCTION__);
-  return;
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;;
+	SiConEvnt iam;
+	
+	sngss7_info->suInstId 	= get_unique_id ();
+	sngss7_info->spInstId 	= 0;
+	sngss7_info->spId 		= 1;
+	
+	memset (&iam, 0x0, sizeof (iam));
+	
+	/* copy down the nature of connection indicators */
+	iam.natConInd.eh.pres 				= PRSNT_NODEF;
+	iam.natConInd.satInd.pres 			= PRSNT_NODEF;
+	iam.natConInd.satInd.val 			= 0; /* no satellite circuit */
+	iam.natConInd.contChkInd.pres 		= PRSNT_NODEF;
+	iam.natConInd.contChkInd.val 		= CONTCHK_NOTREQ;
+	iam.natConInd.echoCntrlDevInd.pres	= PRSNT_NODEF;
+	iam.natConInd.echoCntrlDevInd.val 	= ECHOCDEV_INCL;
+	
+	/* copy down the forward call indicators */
+	iam.fwdCallInd.eh.pres 				= PRSNT_NODEF;
+	iam.fwdCallInd.natIntCallInd.pres 	= PRSNT_NODEF;
+	iam.fwdCallInd.natIntCallInd.val 	= 0x00;
+	iam.fwdCallInd.end2EndMethInd.pres 	= PRSNT_NODEF;
+	iam.fwdCallInd.end2EndMethInd.val 	= E2EMTH_NOMETH;
+	iam.fwdCallInd.intInd.pres 			= PRSNT_NODEF;
+	iam.fwdCallInd.intInd.val 			= INTIND_NOINTW;
+	iam.fwdCallInd.end2EndInfoInd.pres 	= PRSNT_NODEF;
+	iam.fwdCallInd.end2EndInfoInd.val 	= E2EINF_NOINFO;
+	iam.fwdCallInd.isdnUsrPrtInd.pres 	= PRSNT_NODEF;
+	iam.fwdCallInd.isdnUsrPrtInd.val 	= ISUP_USED;
+	iam.fwdCallInd.isdnUsrPrtPrfInd.pres = PRSNT_NODEF;
+	iam.fwdCallInd.isdnUsrPrtPrfInd.val = PREF_REQAW;
+	iam.fwdCallInd.isdnAccInd.pres 		= PRSNT_NODEF;
+	iam.fwdCallInd.isdnAccInd.val 		= ISDNACC_ISDN;
+	iam.fwdCallInd.sccpMethInd.pres 	= PRSNT_NODEF;
+	iam.fwdCallInd.sccpMethInd.val 		= SCCPMTH_NOIND;
+	
+	/* copy down the calling number information */
+	iam.cgPtyCat.eh.pres 				= PRSNT_NODEF;
+	iam.cgPtyCat.cgPtyCat.pres 			= PRSNT_NODEF;
+	iam.cgPtyCat.cgPtyCat.val 			= CAT_ORD;	/* ordinary suscriber */
+	
+	/* copy down the transmission medium requirements */
+	iam.txMedReq.eh.pres 				= PRSNT_NODEF;
+	iam.txMedReq.trMedReq.pres 			= PRSNT_NODEF;
+	iam.txMedReq.trMedReq.val 			= ftdmchan->caller_data.bearer_capability;
+	
+	/* copy down the called number information */
+	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
+	
+	/* copy down the calling number information */
+	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
+	
+	sng_cc_con_request (sngss7_info->spId,
+						sngss7_info->suInstId,
+						sngss7_info->spInstId,
+						sngss7_info->circuit->id, 
+						&iam, 
+						0);
+	
+	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx IAM\n");
+	
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
 }
 
 /******************************************************************************/
