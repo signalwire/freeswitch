@@ -99,7 +99,11 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		SS7_ASSERT;
 	};
 
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM\n");
+	if (sngss7_info->glare.spInstId > 0) {
+		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM (glare detected on circuit)\n");
+	} else {
+		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM\n");
+	}
 
 	/* check if the circuit has a remote block */
 	if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
@@ -208,11 +212,36 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		break;
 	/**************************************************************************/
+	case (FTDM_CHANNEL_STATE_DIALING):
+	case (FTDM_CHANNEL_STATE_TERMINATING):
+	case (FTDM_CHANNEL_STATE_HANGUP):
+	case (FTDM_CHANNEL_STATE_HANGUP_COMPLETE):
+
+		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel in %s state...glare!\n", ftdm_channel_state2str (ftdmchan->state));
+
+		/* save the info so that we can use it later on */
+		sngss7_info->glare.spInstId = spInstId;
+		sngss7_info->glare.circuit = circuit;
+		memcpy(&sngss7_info->glare.iam, siConEvnt, sizeof(*siConEvnt));
+
+		if (!(sngss7_test_flag(sngss7_info, FLAG_GLARE))) {
+			/* glare, throw the flag */
+			sngss7_set_flag(sngss7_info, FLAG_GLARE);
+		
+			/* setup the hangup cause */
+			ftdmchan->caller_data.hangup_cause = 34;	/* Circuit Congrestion */
+		
+			/* this is a remote hangup request */
+			sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+		
+			/* move the state of the channel to Terminating to end the call */
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+		}
+
+		break;
+	/**************************************************************************/
 	default:	/* should not have gotten an IAM while in this state */
-		SS7_ERROR("Got IAM in an invalid state (%s) on span=%d, chan=%d!\n", 
-					ftdm_channel_state2str(ftdmchan->state),
-					ftdmchan->physical_span_id,
-					ftdmchan->physical_chan_id);
+		SS7_ERROR_CHAN(ftdmchan, "Got IAM on channel in invalid state(%s)...reset!\n", ftdm_channel_state2str (ftdmchan->state));
 
 		/* move the state of the channel to RESTART to force a reset */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -1028,10 +1057,26 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		SS7_ASSERT;
 	};
 
-	/* glare, throw the flag, go to down state*/
-	sngss7_set_flag(sngss7_info, FLAG_GLARE);
+	if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
+		/* the glare flag is already up so it was caught ... do nothing */
+		SS7_DEBUG_CHAN(ftdmchan, "Glare flag is already up...nothing to do!%s\n", " ");
+	} else {
+		SS7_DEBUG_CHAN(ftdmchan, "Glare flag is not up yet...indicating glare from reattempt!%s\n", " ");
+		/* glare, throw the flag */
+		sngss7_set_flag(sngss7_info, FLAG_GLARE);
 
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+		/* clear any existing glare data from the channel */
+		memset(&sngss7_info->glare, 0x0, sizeof(sngss7_glare_data_t));
+
+		/* setup the hangup cause */
+		ftdmchan->caller_data.hangup_cause = 34;	/* Circuit Congrestion */
+
+		/* this is a remote hangup request */
+		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+
+		/* move the state of the channel to Terminating to end the call */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+	}
 
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);

@@ -321,8 +321,7 @@ typedef struct sngss7_timer_data {
 }sngss7_timer_data_t;
 
 typedef struct sngss7_glare_data {
-	uint32_t				suInstId; 
-	uint32_t				spInstId;
+	uint32_t				spInstId; 
 	uint32_t				circuit; 
 	SiConEvnt				iam;
 }sngss7_glare_data_t;
@@ -612,31 +611,40 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 #define SS7_MSG_TRACE(fchan, sngss7info ,msg) if (g_ftdm_sngss7_data.message_trace) { \
 								switch (g_ftdm_sngss7_data.message_trace_level) { \
 									case 0: \
-										ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 1: \
-										ftdm_log_chan(fchan, FTDM_LOG_ALERT, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_ALERT, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 2: \
-										ftdm_log_chan(fchan, FTDM_LOG_CRIT, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_CRIT, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 3: \
-										ftdm_log_chan(fchan, FTDM_LOG_ERROR, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_ERROR, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 4: \
-										ftdm_log_chan(fchan, FTDM_LOG_WARNING, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_WARNING, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 5: \
-										ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 6: \
-										ftdm_log_chan(fchan, FTDM_LOG_INFO, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_INFO, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									case 7: \
-										ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									default: \
-										ftdm_log_chan(fchan, FTDM_LOG_INFO, "[CIC:%d]%s",sngss7info->circuit->cic, msg); \
+										ftdm_log_chan(fchan, FTDM_LOG_INFO, "[CIC:%d][SPINSTID:%d][SUINSTID:%d]%s", \
+														sngss7info->circuit->cic,sngss7info->spInstId,sngss7info->suInstId, msg); \
 										break; \
 									} /* switch (g_ftdm_sngss7_data.message_trace_level) */ \
 							} /* if(g_ftdm_sngss7_data.message_trace) */

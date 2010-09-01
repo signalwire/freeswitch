@@ -303,24 +303,17 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 
 			/* clean out all pending channel state changes */
 			while ((ftdmchan = ftdm_queue_dequeue (ftdmspan->pendingchans))) {
-				/* double check that this channel has a state change pending */
-				if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-					/*first lock the channel */
-					ftdm_mutex_lock(ftdmchan->mutex);
+				
+				/*first lock the channel */
+				ftdm_mutex_lock(ftdmchan->mutex);
 
+				/* process state changes for this channel until they are all done */
+				while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
 					ftdm_sangoma_ss7_process_state_change (ftdmchan);
-
-					/* unlock the channel */
-					ftdm_mutex_unlock (ftdmchan->mutex);				
-				} else {
-					/* since we handle state changes again after handling the trillium queue
-					 * this can occur since we'll clear the flag for the event but can't pop
-					 * the channel out of pendingchans
-					 */
-/*					SS7_ERROR("ftdm_core reported state change, but state change flag not set on ft-span = %d, ft-chan = %d\n",
-								ftdmchan->physical_span_id,
-								ftdmchan->physical_chan_id);*/
 				}
+ 
+				/* unlock the channel */
+				ftdm_mutex_unlock (ftdmchan->mutex);				
 			}/* while ((ftdmchan = ftdm_queue_dequeue(ftdmspan->pendingchans)))  */
 
 			/* clean out all pending stack events */
@@ -450,6 +443,11 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 
 	/* now that we have the right channel...put a lock on it so no-one else can use it */
 	ftdm_mutex_lock(ftdmchan->mutex);
+
+	/* while there's a state change present on this channel process it */
+	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_sangoma_ss7_process_state_change(ftdmchan);
+	}
 
 	/* figure out the type of event and send it to the right handler */
 	switch (sngss7_event->event_id) {
@@ -748,7 +746,11 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				/* go to RESTART State until RSCa is received */
 				ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 			} else {
-				if (!(sngss7_test_flag (sngss7_info, FLAG_RESET_RX))) {
+				/* if the hangup is from a rx RSC, rx GRS, or glare don't sent RLC */
+				if (!(sngss7_test_flag(sngss7_info, FLAG_RESET_RX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_GLARE))) {
+
 					/* send out the release complete */
 					ft_to_sngss7_rlc (ftdmchan);
 				}
@@ -879,7 +881,26 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			ftdm_channel_t *close_chan = ftdmchan;
 			/* close the channel */
 			ftdm_channel_close (&close_chan);
-		}
+		} /* if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OPEN)) */
+
+		/* check if there is a glared call that needs to be processed */
+		if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
+			
+			/* clear the glare flag */
+			sngss7_clear_flag (sngss7_info, FLAG_GLARE);
+
+			/* check if we have an IAM stored...if we don't have one just exit */
+			if (sngss7_info->glare.circuit != 0) {
+				/* send the saved call back in to us */
+				handle_con_ind (0, 
+								sngss7_info->glare.spInstId, 
+								sngss7_info->glare.circuit, 
+								&sngss7_info->glare.iam);
+
+				/* clear the glare info */
+				memset(&sngss7_info->glare, 0x0, sizeof(sngss7_glare_data_t));
+			} /* if (sngss7_info->glare.circuit != 0) */
+		} /* if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) */
 
 		break;
 	/**************************************************************************/
@@ -1167,11 +1188,13 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 		SS7_ASSERT;
 	};
 
+	/* check if the channel sig state is UP */
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 		SS7_ERROR_CHAN(ftdmchan, "Requested channel sig state is down, cancelling call!%s\n", " ");
 		goto outgoing_fail;
 	}
 
+	/* check if there is a remote block */
 	if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
 		(sngss7_test_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX)) ||
 		(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
@@ -1181,15 +1204,19 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 		goto outgoing_break;
 	}
 
+	/* check if there is a local block */
 	if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
 		(sngss7_test_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX)) ||
 		(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+
+		/* KONRAD FIX ME : we should check if this is a TEST call and allow it */
 
 		/* the channel is blocked...can't send any calls here */
 		SS7_ERROR_CHAN(ftdmchan, "Requested channel is locally blocked, re-hunt channel!%s\n", " ");
 		goto outgoing_break;
 	}
 
+	/* check the state of the channel */
 	switch (ftdmchan->state){
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_DOWN:
@@ -1208,7 +1235,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 					ftdmchan->physical_span_id,
 					ftdmchan->physical_chan_id);
 
-		goto outgoing_fail;
+		goto outgoing_break;
 		break;
 	/**************************************************************************/
 	} /* switch (ftdmchan->state) (original call) */
