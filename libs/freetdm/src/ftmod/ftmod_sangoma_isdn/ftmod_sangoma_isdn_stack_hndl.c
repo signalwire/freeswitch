@@ -34,10 +34,10 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-extern ftdm_status_t cpy_calling_num_from_sngisdn(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-extern ftdm_status_t cpy_called_num_from_sngisdn(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-extern ftdm_status_t cpy_redir_num_from_sngisdn(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-extern ftdm_status_t cpy_calling_name_from_sngisdn(ftdm_caller_data_t *ftdm, Display *display);
+extern ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
+extern ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
+extern ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
+extern ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
 
 /* Remote side transmit a SETUP */
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
@@ -110,10 +110,14 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				break;
 			} 
 			/* Fill in call information */
-			cpy_calling_num_from_sngisdn(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
-			cpy_called_num_from_sngisdn(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
-			cpy_calling_name_from_sngisdn(&ftdmchan->caller_data, &conEvnt->display);
+			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
+			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
+			cpy_calling_name_from_stack(&ftdmchan->caller_data, &conEvnt->display);
 
+			if (conEvnt->bearCap[0].eh.pres) {
+				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
+				ftdmchan->caller_data.bearer_capability = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].infoTranCap.val);
+			}
 			
 			if (signal_data->switchtype == SNGISDN_SWITCH_NI2) {
 				if (conEvnt->shift11.eh.pres && conEvnt->ni2OctStr.eh.pres) {
@@ -370,7 +374,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						ftdm_size_t min_digits = ((sngisdn_span_data_t*)ftdmchan->span->signal_data)->min_digits;
 						ftdm_size_t num_digits;
 
-						cpy_called_num_from_sngisdn(&ftdmchan->caller_data, &cnStEvnt->cdPtyNmb);
+						cpy_called_num_from_stack(&ftdmchan->caller_data, &cnStEvnt->cdPtyNmb);
 						num_digits = strlen(ftdmchan->caller_data.dnis.digits);
 
 						if (cnStEvnt->sndCmplt.eh.pres || num_digits >= min_digits) {
@@ -686,7 +690,6 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 	switch (ftdmchan->state) {
 		case FTDM_CHANNEL_STATE_GET_CALLERID:
 			/* Update the caller ID Name */
-#if 1
 			if (facEvnt->facElmt.facStr.pres) {
 				uint8_t facility_str[255];
 				memcpy(facility_str, (uint8_t*)&facEvnt->facElmt.facStr.val, facEvnt->facElmt.facStr.len);
@@ -694,10 +697,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				if (sng_isdn_retrieve_facility_caller_name(facility_str, facEvnt->facElmt.facStr.len, retrieved_str) != FTDM_SUCCESS) {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
 				}
-				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "DYDBG Name is:%s\n", retrieved_str);
 			}
-#endif
-
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 			break;
 		default:

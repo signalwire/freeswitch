@@ -39,6 +39,8 @@
 
 FT_DECLARE(ftdm_status_t) ftdm_span_set_npi(const char *npi_string, uint8_t *target);
 FT_DECLARE(ftdm_status_t) ftdm_span_set_ton(const char *ton_string, uint8_t *target);
+FT_DECLARE(ftdm_status_t) ftdm_span_set_bearer_capability(const char *bc_string, ftdm_bearer_cap_t *target);
+FT_DECLARE(ftdm_status_t) ftdm_span_set_bearer_layer1(const char *bc_string, ftdm_user_layer1_prot_t *target);
 FT_DECLARE(ftdm_status_t) ftdm_is_number(char *number);
 
 #endif /* __FTDM_CALL_UTILS_H__ */

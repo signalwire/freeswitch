@@ -1230,10 +1230,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		freetdmvar = switch_channel_get_variable(channel, "freetdm_bearer_capability");
 		if (freetdmvar) {
 			caller_data.bearer_capability = (uint8_t)atoi(freetdmvar);
+		} else {
+			caller_data.bearer_capability = FTDM_INVALID_INT_PARM;
 		}
 		freetdmvar = switch_channel_get_variable(channel, "freetdm_bearer_layer1");
 		if (freetdmvar) {
 			caller_data.bearer_layer1 = (uint8_t)atoi(freetdmvar);
+		} else {
+			caller_data.bearer_layer1 = FTDM_INVALID_INT_PARM;
 		}
 	}
 
