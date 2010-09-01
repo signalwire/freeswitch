@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * switch_caller.c -- Caller Identification
+ * switch_resample.c -- Caller Identification
  *
  */
 
