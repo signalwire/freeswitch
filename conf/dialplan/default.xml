@@ -555,7 +555,6 @@
     <!-- Demonstration of how to override the ringback in various situations -->
     <extension name="wait">
       <condition field="destination_number" expression="^wait$">
-	<action application="set" data="ignore_early_media=true"/>
 	<action application="pre_answer"/>
 	<action application="sleep" data="20000"/>
 	<action application="answer"/>
@@ -597,7 +596,7 @@
     <extension name="ringback_183_uk_ring">
       <condition field="destination_number" expression="^9181$">
 	<action application="set" data="ringback=$${uk-ring}"/>
-	<action application="bridge" data="loopback/wait"/>
+	<action application="bridge" data="{ignore_early_media=true}loopback/wait"/>
       </condition>
     </extension>
 
@@ -605,7 +604,7 @@
     <extension name="ringback_183_music_ring">
       <condition field="destination_number" expression="^9182$">
 	<action application="set" data="ringback=$${hold_music}"/>
-	<action application="bridge" data="loopback/wait"/>
+	<action application="bridge" data="{ignore_early_media=true}loopback/wait"/>
       </condition>
     </extension>
 
@@ -614,7 +613,7 @@
       <condition field="destination_number" expression="^9183$">
 	<action application="set" data="transfer_ringback=$${uk-ring}"/>
 	<action application="answer"/>
-	<action application="bridge" data="loopback/wait"/>
+	<action application="bridge" data="{ignore_early_media=true}loopback/wait"/>
       </condition>
     </extension>
 
@@ -623,7 +622,7 @@
       <condition field="destination_number" expression="^9184$">
 	<action application="set" data="transfer_ringback=$${hold_music}"/>
 	<action application="answer"/>
-	<action application="bridge" data="loopback/wait"/>
+	<action application="bridge" data="{ignore_early_media=true}loopback/wait"/>
       </condition>
     </extension>
 
