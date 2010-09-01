@@ -239,6 +239,20 @@ typedef struct {
 	uint8_t plan;
 } ftdm_number_t;
 
+/*! \brief bearer capability */
+typedef enum {
+	FTDM_BEARER_CAP_SPEECH = 0x00,
+	FTDM_BEARER_CAP_64K_UNRESTRICTED = 0x02,
+	FTDM_BEARER_CAP_3_1KHZ_AUDIO = 0x03
+} ftdm_bearer_cap_t;
+
+/*! \brief user information layer 1 protocol */
+typedef enum {
+	FTDM_USER_LAYER1_PROT_V110 = 0x01,
+	FTDM_USER_LAYER1_PROT_ULAW = 0x02,
+	FTDM_USER_LAYER1_PROT_ALAW = 0x03,
+} ftdm_user_layer1_prot_t;
+
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
 	char cid_date[8]; /*!< Caller ID date */
@@ -256,9 +270,9 @@ typedef struct ftdm_caller_data {
 	uint32_t raw_data_len; /* !< Raw data length */
 	/* these 2 are undocumented right now, only used by boost: */
 	/* bearer capability */
-	uint8_t bearer_capability;
+	ftdm_bearer_cap_t bearer_capability;
 	/* user information layer 1 protocol */
-	uint8_t bearer_layer1;
+	ftdm_user_layer1_prot_t bearer_layer1;
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
