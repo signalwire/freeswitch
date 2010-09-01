@@ -555,6 +555,7 @@
     <!-- Demonstration of how to override the ringback in various situations -->
     <extension name="wait">
       <condition field="destination_number" expression="^wait$">
+	<action application="set" data="ignore_early_media=true"/>
 	<action application="pre_answer"/>
 	<action application="sleep" data="20000"/>
 	<action application="answer"/>
