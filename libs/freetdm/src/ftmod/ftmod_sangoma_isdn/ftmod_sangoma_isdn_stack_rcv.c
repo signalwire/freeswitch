@@ -187,6 +187,7 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -219,6 +220,7 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -250,7 +252,7 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -282,7 +284,7 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -315,7 +317,7 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -347,7 +349,7 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -380,7 +382,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -413,7 +415,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 			 !(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -446,7 +448,7 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -479,7 +481,7 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 

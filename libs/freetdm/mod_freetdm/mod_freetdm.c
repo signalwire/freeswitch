@@ -1230,14 +1230,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		freetdmvar = switch_channel_get_variable(channel, "freetdm_bearer_capability");
 		if (freetdmvar) {
 			caller_data.bearer_capability = (uint8_t)atoi(freetdmvar);
-		} else {
-			caller_data.bearer_capability = FTDM_INVALID_INT_PARM;
 		}
 		freetdmvar = switch_channel_get_variable(channel, "freetdm_bearer_layer1");
 		if (freetdmvar) {
 			caller_data.bearer_layer1 = (uint8_t)atoi(freetdmvar);
-		} else {
-			caller_data.bearer_layer1 = FTDM_INVALID_INT_PARM;
 		}
 	}
 
@@ -3407,9 +3403,9 @@ static switch_status_t load_config(void)
 		boost_span = boost_spans[i];
 		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", ftdm_span_get_id(boost_span));
 		if (ftdm_span_start(boost_span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n", 
-						ftdm_span_get_id(boost_span), ftdm_span_get_last_error(boost_span));
-				continue;
+			ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n",
+					ftdm_span_get_id(boost_span), ftdm_span_get_last_error(boost_span));
+			continue;
 		}
 	}
 
