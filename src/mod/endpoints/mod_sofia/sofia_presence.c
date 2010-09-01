@@ -1317,11 +1317,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		}
 
 		if (is_dialog) {
+			char *version = switch_event_get_header(helper->event, "event_count");
+			if (!version) {
+				version = "0";
+			}
+
 			stream.write_function(&stream,
 								  "<?xml version=\"1.0\"?>\n"
 								  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
 								  "version=\"%s\" state=\"%s\" entity=\"%s\">\n",
-								  switch_str_nil(switch_event_get_header(helper->event, "event_count")),
+								  version,
 								  !strcasecmp(answer_state, "resubscribe") ? "partial" : "full", clean_id);
 		}
 
