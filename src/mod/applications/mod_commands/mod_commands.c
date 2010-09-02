@@ -1714,22 +1714,17 @@ SWITCH_STANDARD_API(ctl_function)
 SWITCH_STANDARD_API(load_function)
 {
 	const char *err;
-	char *mod;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	mod = switch_strip_whitespace(cmd);
-
-	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, mod, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-ERR [%s]\n", err);
 	}
-
-	switch_safe_free(mod);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1740,7 +1735,6 @@ SWITCH_STANDARD_API(unload_function)
 	const char *err;
 	switch_bool_t force = SWITCH_FALSE;
 	const char *p = cmd;
-	char *mod;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
@@ -1771,15 +1765,11 @@ SWITCH_STANDARD_API(unload_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	mod = switch_strip_whitespace(cmd);
-
-	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, mod, force, &err) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, force, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-ERR [%s]\n", err);
 	}
-
-	switch_safe_free(mod);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1789,7 +1779,6 @@ SWITCH_STANDARD_API(reload_function)
 	const char *err;
 	switch_bool_t force = SWITCH_FALSE;
 	const char *p = cmd;
-	char *mod;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
@@ -1819,24 +1808,18 @@ SWITCH_STANDARD_API(reload_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	mod = switch_strip_whitespace(cmd);
-
-
-	printf("WTF XXX [%s] [%s] \n", cmd, mod);
-
-	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, mod, force, &err) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, force, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK module unloaded\n");
 	} else {
 		stream->write_function(stream, "-ERR unloading module [%s]\n", err);
 	}
 
-	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, mod, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK module loaded\n");
 	} else {
 		stream->write_function(stream, "-ERR loading module [%s]\n", err);
 	}
 
-	switch_safe_free(mod);
 	return SWITCH_STATUS_SUCCESS;
 }
 
