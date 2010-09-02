@@ -565,34 +565,32 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				probe_euser = (p + 1);
 			}
 
-			
-
-
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
 				sql = switch_mprintf("select status,rpid from sip_dialogs where sip_from_user='%q' and sip_from_host='%q'", probe_euser, probe_host);
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 				switch_safe_free(sql);
 
 
-				sql = switch_mprintf("select sip_registrations.sip_user, '%q', sip_registrations.status, "
+				sql = switch_mprintf("select sip_registrations.sip_user, sip_registrations.orig_server_host, sip_registrations.status, "
 									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction, "
 									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host, sip_presence.status,sip_presence.rpid,sip_presence.open_closed,"
 									 "'%q','%q' "
 
 									 "from sip_registrations left join sip_dialogs on "
 									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
-									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
+									 "and (sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
+									 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 
 									 
 									 "left join sip_presence on "
-									 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.sip_host=sip_presence.sip_host and "
+									 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
 									 "sip_registrations.profile_name=sip_presence.profile_name) "
 									 "where sip_registrations.sip_user='%q' and "
-									 "(sip_registrations.sip_host='%q' or sip_registrations.presence_hosts like '%%%q%%')",
-									 probe_host, dh.status, dh.rpid, probe_euser, probe_host, probe_host);
+									 "(sip_registrations.orig_server_host='%q' or sip_registrations.sip_host='%q' "
+									 "or sip_registrations.presence_hosts like '%%%q%%')",
+									 dh.status, dh.rpid, probe_euser, probe_host, probe_host, probe_host);
 				switch_assert(sql);
 				
-
 				if (mod_sofia_globals.debug_presence > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s START_PRESENCE_PROBE_SQL\n", profile->name);
 				}
@@ -622,6 +620,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				sofia_glue_release_profile(profile);
 				switch_safe_free(sql);
 			}
+						 
 
 			switch_safe_free(probe_user);
 		}
@@ -961,7 +960,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	switch_event_header_t *hp;
 
 	if (argc > 5) {
-		uuid = switch_str_nil(argv[5]);
+		uuid = argv[5];
 		state = switch_str_nil(argv[6]);
 		direction = switch_str_nil(argv[7]);
 		if (argc > 8) {
@@ -998,12 +997,13 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		}
 
 		if (zstr(state)) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", SOFIA_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "resubscribe");
+			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "resubscribe");
 		} else {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", uuid);
+			if (uuid) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", uuid);
+			}
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", state);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "astate", state);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", direction);
@@ -1317,15 +1317,21 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		}
 
 		if (is_dialog) {
+			char *version = switch_event_get_header(helper->event, "event_count");
+			if (!version) {
+				version = "0";
+			}
+
 			stream.write_function(&stream,
 								  "<?xml version=\"1.0\"?>\n"
 								  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
 								  "version=\"%s\" state=\"%s\" entity=\"%s\">\n",
-								  switch_str_nil(switch_event_get_header(helper->event, "event_count")),
-								  !strcasecmp(answer_state, "resubscribe") ? "partial" : "full", clean_id);
+								  version,
+								  zstr(uuid) ? "partial" : "full", clean_id);
 		}
 
-		if (strcasecmp(event_status, "Registered")) {
+		//if (strcasecmp(event_status, "Registered")) {
+		if (!zstr(uuid)) {
 			if (!zstr(answer_state)) {
 				astate = answer_state;
 			}
@@ -2232,8 +2238,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				if (switch_event_create(&pevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "login", profile->url);
-					switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
+					//switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
+					switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+					switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
+					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
 					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);

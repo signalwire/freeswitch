@@ -319,11 +319,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="managed\FreeSWITCH.Managed.csproj">
+    <ProjectReference Include="managed\FreeSWITCH.Managed.2010.csproj">
       <Project>{834e2b2f-5483-4b80-8fe3-fe48ff76e5c0}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

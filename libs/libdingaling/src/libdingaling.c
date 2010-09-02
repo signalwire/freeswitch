@@ -163,6 +163,7 @@ struct ldl_session {
 	apr_hash_t *variables;
 	apr_time_t created;
 	void *private_data;
+	ldl_user_flag_t flags;
 };
 
 static int on_disco_default(void *user_data, ikspak *pak);
@@ -346,6 +347,7 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	session->created = apr_time_now();
 	session->state = LDL_STATE_NEW;
 	session->variables = apr_hash_make(session->pool);
+	session->flags = flags;
 	*session_p = session;
 
 
@@ -387,7 +389,24 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 		
 		if (type) {
 			
-			if (!strcasecmp(type, "initiate") || !strcasecmp(type, "accept")) {
+			if (!strcasecmp(type, "redirect")) {
+				apr_hash_t *hash = session->handle->sessions;
+				char *p = to;
+				if ((p = strchr(to, ':'))) {
+					p++;
+				} else {
+					p = to;
+				}
+						
+
+				apr_hash_set(hash, session->them, APR_HASH_KEY_STRING, NULL);
+				apr_hash_set(hash, session->id, APR_HASH_KEY_STRING, NULL);
+				session->them = apr_pstrdup(session->pool, p);
+				apr_hash_set(handle->sessions, session->them, APR_HASH_KEY_STRING, session);
+				apr_hash_set(handle->sessions, session->id, APR_HASH_KEY_STRING, session);
+
+				dl_signal = LDL_SIGNAL_REDIRECT;
+			} else if (!strcasecmp(type, "initiate") || !strcasecmp(type, "accept")) {
 
 				dl_signal = LDL_SIGNAL_INITIATE;
 
@@ -499,6 +518,12 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 						if ((key = iks_find_attrib(tag, "port"))) {
 							session->candidates[index].port = (uint16_t)atoi(key);
 						}
+						
+						if (!session->candidates[index].type) {
+							session->candidates[index].type = apr_pstrdup(session->pool, "stun");
+						}
+
+
 						if (globals.debug) {
 							globals.logger(DL_LOG_DEBUG, 
 									"New Candidate %d\n"
@@ -947,6 +972,18 @@ static void cancel_retry(ldl_handle_t *handle, char *id)
 	apr_thread_mutex_unlock(handle->lock);
 }
 
+static iks* working_find(iks *tag, const char *name) 
+{
+	while(tag) {
+		if (!strcasecmp(iks_name(tag), name)) {
+			return tag;
+		}
+		tag = iks_next_tag(tag);
+	}
+	
+	return NULL;
+}
+
 static int on_commands(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
@@ -956,8 +993,22 @@ static int on_commands(void *user_data, ikspak *pak)
 	char *type = iks_find_attrib(pak->x, "type");
 	uint8_t is_result = strcasecmp(type, "result") ? 0 : 1;
 	uint8_t is_error = strcasecmp(type, "error") ? 0 : 1;
+	iks *xml, *xsession, *xerror = NULL, *xredir = NULL;
 
-	iks *xml;
+	xml = iks_child (pak->x);
+
+	if (is_error) {
+		if ((xerror = working_find(xml, "error"))) {
+			char *code = iks_find_attrib(xerror, "code");
+			if (code && !strcmp(code, "302") && 
+				((xredir = iks_find(xerror, "ses:redirect")) || (xredir = iks_find(xerror, "redirect")))) {
+				is_result = 0;
+				is_error = 0;
+				cancel_retry(handle, iqid);
+			}
+		}
+	}
+
 
 	if (is_result) {
 		iks *tag = iks_child (pak->x);
@@ -989,9 +1040,12 @@ static int on_commands(void *user_data, ikspak *pak)
 		}
 	}
 
+	
+
 	if ((is_result || is_error) && iqid && from) {
 
 		cancel_retry(handle, iqid);
+
 		if (is_result) {
 			if (handle->response_callback) {
 				handle->response_callback(handle, iqid); 
@@ -999,29 +1053,36 @@ static int on_commands(void *user_data, ikspak *pak)
 			return IKS_FILTER_EAT;
 		} else if (is_error) {
 			return IKS_FILTER_EAT;
+
 		}
 	}
 	
-	xml = iks_child (pak->x);
-	while (xml) {
-		char *name = iks_name_nons(xml);
-		if (!strcasecmp(name, "session")) {
-			char *id = iks_find_attrib(xml, "id");
-			//printf("SESSION type=%s name=%s id=%s\n", type, name, id);
-			if (parse_session_code(handle, id, from, to, xml, strcasecmp(type, "error") ? NULL : type) == LDL_STATUS_SUCCESS) {
-				iks *reply;
-				if ((reply = iks_make_iq(IKS_TYPE_RESULT, NULL))) {
-					iks_insert_attrib(reply, "to", from);
-					iks_insert_attrib(reply, "from", to);
-					iks_insert_attrib(reply, "id", iqid);
-					apr_queue_push(handle->queue, reply);
-					reply = NULL;
-				}
+	
+	if ((xsession = working_find(xml, "ses:session")) || (xsession = working_find(xml, "session"))) {
+		char *id;
+
+		id = iks_find_attrib(xsession, "id");
+
+		if (xredir) {
+			to = iks_cdata(iks_child(xredir));
+			type = "redirect";
+		}
+
+		if (strcasecmp(type, "error") && strcasecmp(type, "redirect")) {
+			type = NULL;
+		}
+
+		if (parse_session_code(handle, id, from, to, xsession, type) == LDL_STATUS_SUCCESS) {
+			iks *reply;
+			if ((reply = iks_make_iq(IKS_TYPE_RESULT, NULL))) {
+				iks_insert_attrib(reply, "to", from);
+				iks_insert_attrib(reply, "from", to);
+				iks_insert_attrib(reply, "id", iqid);
+				apr_queue_push(handle->queue, reply);
+				reply = NULL;
 			}
 		}
-		xml = iks_next_tag(xml);
 	}
-
 
 	return IKS_FILTER_EAT;
 }
@@ -1922,6 +1983,69 @@ unsigned int ldl_session_terminate(ldl_session_t *session)
 }
 
 
+
+unsigned int ldl_session_transport(ldl_session_t *session,
+									ldl_candidate_t *candidates,
+									unsigned int clen)
+
+{
+	iks *iq, *sess, *tag;
+	unsigned int x, id = 0;
+
+
+	for (x = 0; x < clen; x++) {
+		char buf[512];
+		iq = NULL;
+		sess = NULL;
+		id = 0;
+		
+		new_session_iq(session, &iq, &sess, &id, "transport-info");
+		//tag = iks_insert(sess, "transport");
+		//iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+		tag = sess;
+
+		if (0) add_elements(session, tag);
+		tag = iks_insert(tag, "transport");
+		iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+
+		tag = iks_insert(tag, "candidate");
+
+		if (candidates[x].name) {
+			iks_insert_attrib(tag, "name", candidates[x].name);
+		}
+		if (candidates[x].address) {
+			iks_insert_attrib(tag, "address", candidates[x].address);
+		}
+		if (candidates[x].port) {
+			snprintf(buf, sizeof(buf), "%u", candidates[x].port);
+			iks_insert_attrib(tag, "port", buf);
+		}
+		if (candidates[x].username) {
+			iks_insert_attrib(tag, "username", candidates[x].username);
+		}
+		if (candidates[x].password) {
+			iks_insert_attrib(tag, "password", candidates[x].password);
+		}
+		if (candidates[x].pref) {
+			snprintf(buf, sizeof(buf), "%0.1f", candidates[x].pref);
+			iks_insert_attrib(tag, "preference", buf);
+		}
+		if (candidates[x].protocol) {
+			iks_insert_attrib(tag, "protocol", candidates[x].protocol);
+		}
+		if (candidates[x].type) {
+			iks_insert_attrib(tag, "type", candidates[x].type);
+		}
+
+		iks_insert_attrib(tag, "network", "0");
+		iks_insert_attrib(tag, "generation", "0");
+		schedule_packet(session->handle, id, iq, LDL_RETRY);
+	}
+
+
+	return id;
+}
+
 unsigned int ldl_session_candidates(ldl_session_t *session,
 									ldl_candidate_t *candidates,
 									unsigned int clen)
@@ -1980,6 +2104,8 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 
 	return id;
 }
+
+
 
 char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, unsigned int len)
 {
@@ -2342,6 +2468,12 @@ void ldl_handle_run(ldl_handle_t *handle)
 int ldl_handle_running(ldl_handle_t *handle)
 {
 	return ldl_test_flag(handle, LDL_FLAG_RUNNING) ? 1 : 0;
+}
+
+
+int ldl_session_gateway(ldl_session_t *session)
+{
+	return ldl_test_flag(session, LDL_FLAG_GATEWAY) ? 1 : 0;
 }
 
 int ldl_handle_connected(ldl_handle_t *handle)

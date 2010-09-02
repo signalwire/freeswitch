@@ -1001,7 +1001,13 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 		cand[0].protocol = "udp";
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port,
 						  cand[0].username);
-		tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
+
+		if (ldl_session_gateway(tech_pvt->dlsession)) {
+			tech_pvt->cand_id = ldl_session_transport(tech_pvt->dlsession, cand, 1);
+		} else {
+			tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
+		}
+
 		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 		switch_set_flag_locked(tech_pvt, TFLAG_RTP_READY);
 	}
@@ -1111,6 +1117,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 			 tech_pvt->remote_ip && tech_pvt->remote_port && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_micro_time_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
+
 
 		if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			goto out;
@@ -1643,6 +1650,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		char workspace[1024] = "";
 		char *p, *u, ubuf[512] = "", *user = NULL, *f_cid_msg = NULL;
 		const char *cid_msg = NULL;
+		ldl_user_flag_t flags = LDL_FLAG_OUTBOUND;
+
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
 
@@ -1711,7 +1720,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-			if (!(full_id = ldl_handle_probe(mdl_profile->handle, callto, user, idbuf, sizeof(idbuf)))) {
+			if (switch_stristr("voice.google.com", callto)) {
+				full_id = callto;
+				flags |= LDL_FLAG_GATEWAY;
+			} else if (!(full_id = ldl_handle_probe(mdl_profile->handle, callto, user, idbuf, sizeof(idbuf)))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "Unknown Recipient!\n");
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_NO_USER_RESPONSE);
 				return SWITCH_CAUSE_NO_USER_RESPONSE;
@@ -1768,7 +1780,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_stun_random_string(sess_id, 10, "0123456789");
 		tech_pvt->us = switch_core_session_strdup(*new_session, user);
 		tech_pvt->them = switch_core_session_strdup(*new_session, full_id);
-		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user, LDL_FLAG_OUTBOUND);
+		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user, flags);
 
 		if (session) {
 			switch_channel_t *calling_channel = switch_core_session_get_channel(session);
@@ -1778,6 +1790,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (!cid_msg) {
 			f_cid_msg = switch_mprintf("Incoming Call From %s %s\n", outbound_profile->caller_id_name, outbound_profile->caller_id_number);
 			cid_msg = f_cid_msg;
+		}
+
+		if ((flags & LDL_FLAG_GATEWAY)) {
+			cid_msg = NULL;
 		}
 
 		if (cid_msg) {
@@ -3128,6 +3144,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_TRANSPORT_ACCEPT:
 		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+
+		if (ldl_session_gateway(dlsession)) {
+			do_candidates(tech_pvt, 1);
+		}
+
 		break;
 	case LDL_SIGNAL_INITIATE:
 		if (dl_signal) {
@@ -3243,7 +3264,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							choice = x;
 							ok = 1;
 						}
-
+						
 						if (ok) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n",
 											  candidates[x].address, candidates[x].port, profile->acl[y]);
@@ -3348,6 +3369,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			goto done;
 		}
 		break;
+	case LDL_SIGNAL_REDIRECT:
+		do_describe(tech_pvt, 1);
+		break;
+
 	case LDL_SIGNAL_ERROR:
 	case LDL_SIGNAL_TERMINATE:
 		if (channel) {

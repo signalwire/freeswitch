@@ -436,18 +436,24 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 					mwi_status = switch_stristr("Messages-Waiting: ", sip->sip_payload->pl_data);
 
 					if ( mwi_status ) {
+						char *mwi_stat;
 						mwi_status += strlen( "Messages-Waiting: " );
-						mwi_status = switch_strip_whitespace( mwi_status );
+						mwi_stat = switch_strip_whitespace( mwi_status );
 
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Forwarding unsolicited MWI ( %s : %s@%s )\n", mwi_status, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+										  "Forwarding unsolicited MWI ( %s : %s@%s )\n",
+										  mwi_stat, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
 						if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", mwi_status );
-							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", mwi_stat );
+							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM,
+													"MWI-Message-Account", "%s@%s", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
 							switch_event_fire(&s_event);
 						}
+						switch_safe_free(mwi_stat);
 					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dropping unsolicited MWI ( %s@%s ) because of ACL\n", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dropping unsolicited MWI ( %s@%s ) because of ACL\n",
+									  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host );
 				};
 
 			}

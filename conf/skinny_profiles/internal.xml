@@ -11,6 +11,7 @@
     <param name="date-format" value="D/M/Y"/>
     <param name="odbc-dsn" value=""/>
     <param name="debug" value="4"/>
+    <param name="auto-restart" value="true"/>
   </settings>
   <device-types>
     <device-type id="Cisco ATA 186">

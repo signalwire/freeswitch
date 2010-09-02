@@ -121,6 +121,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Date-Format       \t%s\n", profile->date_format);
 	stream->write_function(stream, "DBName            \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
 	stream->write_function(stream, "Debug             \t%d\n", profile->debug);
+	stream->write_function(stream, "Auto-Restart      \t%d\n", profile->auto_restart);
 	/* stats */
 	stream->write_function(stream, "CALLS-IN          \t%d\n", profile->ib_calls);
 	stream->write_function(stream, "FAILED-CALLS-IN   \t%d\n", profile->ib_failed_calls);
@@ -1187,7 +1188,8 @@ uint8_t listener_is_ready(listener_t *listener)
 		&& listener
 		&& listener->sock
 		&& switch_test_flag(listener, LFLAG_RUNNING)
-		&& listener->profile->listener_ready;
+		&& switch_test_flag(listener->profile, PFLAG_LISTENER_READY)
+		&& !switch_test_flag(listener->profile, PFLAG_RESPAWN);
 }
 
 static void add_listener(listener_t *listener)
@@ -1248,7 +1250,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	switch_mutex_unlock(globals.mutex);
 }
 
-static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch_bool_t flush_events)
+static void flush_listener(listener_t *listener)
 {
 
 	if(!zstr(listener->device_name)) {
@@ -1410,7 +1412,17 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		status = skinny_read_packet(listener, &request);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Socket Error!\n");
+			switch(status) {
+				case SWITCH_STATUS_BREAK:
+					break;
+				case SWITCH_STATUS_TIMEOUT:
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Communication Time Out with %s:%d.\n",
+						listener->remote_ip, listener->remote_port);
+					break;
+				default: 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Communication Error with %s:%d.\n",
+						listener->remote_ip, listener->remote_port);
+			}
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
 		}
@@ -1432,11 +1444,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	remove_listener(listener);
 
 	if (listener->profile->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Communication Complete with %s:%d.\n",
+			listener->remote_ip, listener->remote_port);
 	}
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
-	flush_listener(listener, SWITCH_TRUE, SWITCH_TRUE);
+	flush_listener(listener);
 
 	if (listener->sock) {
 		close_socket(&listener->sock, profile);
@@ -1445,19 +1458,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_thread_rwlock_unlock(listener->rwlock);
 
 	if (listener->profile->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Communication Closed with %s:%d.\n",
+			listener->remote_ip, listener->remote_port);
 	}
 
-	/* TODO
-	for(int line = 0 ; line < SKINNY_MAX_BUTTON_COUNT ; line++) {
-		if(listener->session[line]) {
-			switch_channel_clear_flag(switch_core_session_get_channel(listener->session[line]), CF_CONTROLLED);
-			//TODO switch_clear_flag_locked(listener, LFLAG_SESSION);
-			switch_core_session_rwunlock(listener->session[line]);
-			destroy_pool = 0;
-		}
-	}
-	*/
 	if(destroy_pool == 0) {
 		goto no_destroy_pool;
 	}
@@ -1502,6 +1506,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 		return NULL;
 	}
 
+new_socket:
 	while(globals.running) {
 		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, tmp_pool);
 		if (rv)
@@ -1526,7 +1531,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 		switch_yield(100000);
 	}
 
-	profile->listener_ready = 1;
+	switch_set_flag_locked(profile, PFLAG_LISTENER_READY);
 
 	while(globals.running) {
 
@@ -1539,6 +1544,10 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 			if (!globals.running) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;
+			} else if (switch_test_flag(profile, PFLAG_RESPAWN)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Creating a new socket\n");
+				switch_clear_flag_locked(profile, PFLAG_RESPAWN);
+				goto new_socket;
 			} else {
 				/* I wish we could use strerror_r here but its not defined everywhere =/ */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
@@ -1590,6 +1599,17 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 	return NULL;
 }
 
+
+void launch_skinny_profile_thread(skinny_profile_t *profile) {
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, profile->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, skinny_profile_run, profile, profile->pool);
+}
+
 /*****************************************************************************/
 /* MODULE FUNCTIONS */
 /*****************************************************************************/
@@ -1603,9 +1623,9 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	if (!var)
 		return SWITCH_STATUS_FALSE;
 
-	if (profile->sock && (!strcasecmp(var, "ip") || !strcasecmp(var, "port") || !strcasecmp(var, "odbc-dsn"))) {
+	if (profile->sock && !strcasecmp(var, "odbc-dsn")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-			"Skinny profile settings 'ip', 'port' and 'odbc-dsn' can't be changed while running\n");
+			"Skinny profile setting 'odbc-dsn' can't be changed while running\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1643,9 +1663,17 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		}
 	} else if (!strcasecmp(var, "debug")) {
 		profile->debug = atoi(val);
+	} else if (!strcasecmp(var, "auto-restart")) {
+		profile->auto_restart = switch_true(val);
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
+	if (profile->sock && (!strcasecmp(var, "ip") || !strcasecmp(var, "port"))) {
+		switch_set_flag_locked(profile, PFLAG_RESPAWN);
+		switch_clear_flag_locked(profile, PFLAG_LISTENER_READY);
+		close_socket(&profile->sock, profile);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1684,9 +1712,11 @@ static switch_status_t load_skinny_config(void)
 				profile = switch_core_alloc(profile_pool, sizeof(skinny_profile_t));
 				profile->pool = profile_pool;
 				profile->name = switch_core_strdup(profile->pool, profile_name);
-				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+				profile->auto_restart = SWITCH_TRUE;
 				switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 		
 				for (param = switch_xml_child(xsettings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1950,6 +1980,41 @@ static void skinny_message_waiting_event_handler(switch_event_t *event)
 }
 
 
+static void skinny_trap_event_handler(switch_event_t *event)
+{
+	const char *cond = switch_event_get_header(event, "condition");
+
+
+	if (cond && !strcmp(cond, "network-address-change") && globals.auto_restart) {
+		const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
+		const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
+		const char *old_ip6 = switch_event_get_header_nil(event, "network-address-previous-v6");
+		const char *new_ip6 = switch_event_get_header_nil(event, "network-address-change-v6");
+		switch_hash_index_t *hi;
+		const void *var;
+		void *val;
+		skinny_profile_t *profile;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s] [%s]->[%s]\n", old_ip4, new_ip4, old_ip6, new_ip6);
+
+		switch_mutex_lock(globals.mutex);
+		if (globals.profile_hash) {
+			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &var, NULL, &val);
+				if ((profile = (skinny_profile_t *) val) && profile->auto_restart) {
+					if (!strcmp(profile->ip, old_ip4)) {
+						skinny_profile_set(profile, "ip", new_ip4);
+					} else if (!strcmp(profile->ip, old_ip6)) {
+						skinny_profile_set(profile, "ip", new_ip6);
+					}
+				}
+			}
+		}
+		switch_mutex_unlock(globals.mutex);
+	}
+
+}
 /*****************************************************************************/
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 {
@@ -1964,6 +2029,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_core_hash_init(&globals.profile_hash, globals.pool);
 	globals.running = 1;
+	globals.auto_restart = SWITCH_TRUE;
 
 	load_skinny_config();
 
@@ -1978,6 +2044,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_WAITING, NULL, skinny_message_waiting_event_handler, NULL, &globals.message_waiting_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our message waiting handler!\n");
+		/* Not such severe to prevent loading */
+	}
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, NULL, skinny_trap_event_handler, NULL, &globals.trap_node) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our trap handler!\n");
 		/* Not such severe to prevent loading */
 	}
 
@@ -2017,16 +2087,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		void *val;
 		skinny_profile_t *profile;
-		switch_thread_t *thread;
-		switch_threadattr_t *thd_attr = NULL;
 
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
-
-		switch_threadattr_create(&thd_attr, profile->pool);
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, skinny_profile_run, profile, profile->pool);
+		
+		launch_skinny_profile_thread(profile);
 	}
 	switch_mutex_unlock(globals.mutex);
 
@@ -2048,6 +2113,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	switch_event_unbind(&globals.heartbeat_node);
 	switch_event_unbind(&globals.call_state_node);
 	switch_event_unbind(&globals.message_waiting_node);
+	switch_event_unbind(&globals.trap_node);
 	switch_event_free_subclass(SKINNY_EVENT_REGISTER);
 	switch_event_free_subclass(SKINNY_EVENT_UNREGISTER);
 	switch_event_free_subclass(SKINNY_EVENT_EXPIRE);

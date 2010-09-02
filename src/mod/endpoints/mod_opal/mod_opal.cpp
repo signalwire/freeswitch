@@ -513,7 +513,7 @@ OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userDat
 {
     FSManager & mgr = (FSManager &) GetManager();
     switch_core_session_t *fsSession = switch_core_session_request(mgr.GetSwitchInterface(), 
-                                       (switch_caller_profile_t *)userData ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, NULL);
+                                       (switch_caller_profile_t *)userData ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL);
     if (fsSession == NULL)
         return NULL;
 
