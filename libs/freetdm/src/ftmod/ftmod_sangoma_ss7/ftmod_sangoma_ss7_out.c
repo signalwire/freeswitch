@@ -60,9 +60,10 @@ void ft_to_sngss7_lpa (ftdm_channel_t * ftdmchan);
 
 void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan);
+/******************************************************************************/
+
 /* FUNCTIONS ******************************************************************/
-void
-ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
+void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
@@ -133,7 +134,6 @@ ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 }
 
 /******************************************************************************/
-
 void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);

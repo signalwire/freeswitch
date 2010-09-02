@@ -322,6 +322,9 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 				ftdm_safe_free(sngss7_event);
 			}/* while ((sngss7_event = ftdm_queue_dequeue(ftdmspan->signal_data->event_queue))) */
 
+			/* signal the core that sig events are queued for processing */
+			ftdm_span_trigger_signals(ftdmspan);
+
 			break;
 		/**********************************************************************/
 		case FTDM_TIMEOUT:
@@ -512,10 +515,9 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 /******************************************************************************/
 static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 {
-	ftdm_sigmsg_t sigev;
-	ftdm_signaling_status_t status;
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
-	int i = 0;
+	ftdm_sigmsg_t 		sigev;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	int 				i = 0;
 
 	memset (&sigev, 0, sizeof (sigev));
 
@@ -848,9 +850,8 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 					SS7_DEBUG_CHAN(ftdmchan,"All reset flags cleared %s\n", "");
 					/* all flags are down so we can bring up the sig status */
-					status = FTDM_SIG_STATE_UP;
 					sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-					sigev.raw_data = &status;
+					sigev.sigstatus = FTDM_SIG_STATE_UP;
 					ftdm_span_send_signal (ftdmchan->span, &sigev);
 				}
 			} else {
@@ -952,9 +953,8 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	
 		/* if the sig_status is up...bring it down */
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-			status = FTDM_SIG_STATE_DOWN;
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.raw_data = &status;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 		}
 
@@ -1016,9 +1016,8 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			SS7_DEBUG_CHAN(ftdmchan, "Processing PAUSE flag %s\n", "");
 			
 			/* bring the channel signaling status to down */
-			status = FTDM_SIG_STATE_DOWN;
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.raw_data = &status;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 
 			/* check the last state and return to it to allow the call to finish */
@@ -1113,9 +1112,8 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_UCIC_BLOCK flag %s\n", "");
 
 			/* bring the channel signaling status to down */
-			status = FTDM_SIG_STATE_DOWN;
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.raw_data = &status;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 
 			/* remove any reset flags */
@@ -1420,7 +1418,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	span->state_map			 		= &sangoma_ss7_state_map;
 	span->mod_data					= ss7_span_info;
 
+	/* set the flag to indicate that this span uses channel state change queues */
 	ftdm_set_flag (span, FTDM_SPAN_USE_CHAN_QUEUE);
+	/* set the flag to indicate that this span uses sig event queues */
+	ftdm_set_flag (span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 
 	/* parse the configuration and apply to the global config structure */
 	if (ftmod_ss7_parse_xml(ftdm_parameters, span)) {
