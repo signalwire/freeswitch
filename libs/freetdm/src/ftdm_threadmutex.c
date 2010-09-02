@@ -376,9 +376,19 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *interrupt)
 	}
 #else
 	int err;
-	if ((err = write(interrupt->writefd, "w", 1)) != 1) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt: %s\n", errno, strerror(errno));
-		return FTDM_FAIL;
+	struct pollfd testpoll;
+	testpoll.revents = 0;
+	testpoll.events = POLLIN;
+	testpoll.fd = interrupt->readfd;
+	err = poll(&testpoll, 1, 0);
+	if (err == 0 && !(testpoll.revents & POLLIN)) {
+		/* we just try to notify if there is nothing on the read fd already, 
+		 * otherwise users that never call interrupt wait eventually will 
+		 * eventually have the pipe buffer filled */
+		if ((err = write(interrupt->writefd, "w", 1)) != 1) {
+			ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt: %s\n", errno, strerror(errno));
+			return FTDM_FAIL;
+		}
 	}
 #endif
 	return FTDM_SUCCESS;
