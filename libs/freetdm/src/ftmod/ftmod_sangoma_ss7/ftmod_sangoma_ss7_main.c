@@ -345,12 +345,12 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
 
 		/* check if there is a GRS being processed on the span */
-		if (sngss7_span->grs.range > 0) {
+		if (sngss7_span->rx_grs.range > 0) {
 			ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);
 			/*SS7_DEBUG("Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);*/
 
 			/* check all the circuits in the range to see if they are done resetting */
-			for ( i = sngss7_span->grs.circuit; i < (sngss7_span->grs.circuit + sngss7_span->grs.range + 1); i++) {
+			for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
 				/* extract the channel in question */
 				if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -375,11 +375,11 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 			} /* for ( i = circuit; i < (circuit + range + 1); i++) */
 
 			SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n",
-						sngss7_span->grs.circuit,
-						sngss7_span->grs.range);
+						sngss7_span->rx_grs.circuit,
+						sngss7_span->rx_grs.range);
 
 			/* check all the circuits in the range to see if they are done resetting */
-			for ( i = sngss7_span->grs.circuit; i < (sngss7_span->grs.circuit + sngss7_span->grs.range + 1); i++) {
+			for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
 				/* extract the channel in question */
 				if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -396,7 +396,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 			} /* for ( i = circuit; i < (circuit + range + 1); i++) */
 
 GRS_UNLOCK_ALL:
-			for ( i = sngss7_span->grs.circuit; i < (sngss7_span->grs.circuit + sngss7_span->grs.range + 1); i++) {
+			for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 				/* extract the channel in question */
 				if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
 					SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
@@ -801,14 +801,14 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			 * we insure that this is the last circuit to have the state change queued
 			 */
 			sngss7_span_data_t *span = ftdmchan->span->mod_data;
-			if (span->grs.circuit == sngss7_info->circuit->id) {
+			if (span->rx_grs.circuit == sngss7_info->circuit->id) {
 				/* send out the GRA */
 				ft_to_sngss7_gra(ftdmchan);
 
 				/* clean out the spans GRS structure */
 				sngss7_span_data_t *span = ftdmchan->span->mod_data;
-				span->grs.circuit = 0;
-				span->grs.range = 0;
+				span->rx_grs.circuit = 0;
+				span->rx_grs.range = 0;
 			}
 
 			/* clear the grp reset flag */
@@ -822,6 +822,7 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_flag(sngss7_info, FLAG_RESET_TX_RSP)) {
 			/* clear the reset flag  */
 			sngss7_clear_flag(sngss7_info, FLAG_RESET_TX_RSP);
+			sngss7_clear_flag(sngss7_info, FLAG_RESET_SENT);
 			sngss7_clear_flag(sngss7_info, FLAG_RESET_TX);
 		}
 
@@ -1295,6 +1296,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 {
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_chan_data_t	*sngss7_info = NULL;
+	sngss7_span_data_t 	*sngss7_span = NULL;
 	int 				x;
 
 
@@ -1305,6 +1307,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 		/* extract the channel structure and sngss7 channel data */
 		ftdmchan = span->channels[x];
 		sngss7_info = ftdmchan->call_data;
+		sngss7_span = ftdmchan->span->mod_data;
 
 		/* lock the channel */
 		ftdm_mutex_lock(ftdmchan->mutex);
@@ -1316,6 +1319,8 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
 		if (x == 1) {
 			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+			sngss7_span->tx_grs.circuit = sngss7_info->circuit->id;
+			sngss7_span->tx_grs.range = span->chan_count -1;
 		}
 
 		/* throw the channel to suspend */

@@ -415,7 +415,7 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t *span = ftdmchan->span->mod_data;
+	sngss7_span_data_t *sngss7_span = ftdmchan->span->mod_data;
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 	SiStaEvnt	gra;
 	
@@ -426,11 +426,11 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 
 	/* fill in the range */	
 	gra.rangStat.range.pres = PRSNT_NODEF;
-	gra.rangStat.range.val = span->grs.range;
+	gra.rangStat.range.val = sngss7_span->rx_grs.range;
 
 	/* fill in the status */
 	gra.rangStat.status.pres = PRSNT_NODEF;
-	gra.rangStat.status.len = ((span->grs.range + 1) >> 3) + (((span->grs.range + 1) & 0x07) ? 1 : 0); 
+	gra.rangStat.status.len = ((sngss7_span->rx_grs.range + 1) >> 3) + (((sngss7_span->rx_grs.range + 1) & 0x07) ? 1 : 0); 
 	
 	/* the status field should be 1 if blocked for maintenace reasons 
 	* and 0 is not blocked....since we memset the struct nothing to do
@@ -440,12 +440,14 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 	sng_cc_sta_request (1,
 						0,
 						0,
-						span->grs.circuit,
+						sngss7_span->rx_grs.circuit,
 						0,
 						SIT_STA_GRSRSP,
 						&gra);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx GRA\n");
+	SS7_INFO_CHAN(ftdmchan, "Tx GRA (%d:%d)\n",
+							sngss7_info->circuit->cic,
+							(sngss7_info->circuit->cic + sngss7_span->rx_grs.range));
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -454,31 +456,32 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 /******************************************************************************/
 void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan)
 {
-SS7_FUNC_TRACE_ENTER (__FUNCTION__);
-
-sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
-ftdm_span_t *span = ftdmchan->span;
-
-SiStaEvnt grs;
-
-memset (&grs, 0x0, sizeof (grs));
-
-grs.rangStat.eh.pres = PRSNT_NODEF;
-grs.rangStat.range.pres = PRSNT_NODEF;
-grs.rangStat.range.val = span->chan_count-1;
-
-sng_cc_sta_request (1,
-					0,
-					0,
-					sngss7_info->circuit->id,
-					0,
-					SIT_STA_GRSREQ,
-					&grs);
-
-
-SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx GRS\n");
-
-SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	
+	SiStaEvnt grs;
+	
+	memset (&grs, 0x0, sizeof (grs));
+	
+	grs.rangStat.eh.pres	= PRSNT_NODEF;
+	grs.rangStat.range.pres	= PRSNT_NODEF;
+	grs.rangStat.range.val	= sngss7_span->tx_grs.range;
+	
+	sng_cc_sta_request (1,
+						0,
+						0,
+						sngss7_span->tx_grs.circuit,
+						0,
+						SIT_STA_GRSREQ,
+						&grs);
+	
+	SS7_INFO_CHAN(ftdmchan, "Tx GRS (%d:%d)\n",
+							sngss7_info->circuit->cic,
+							(sngss7_info->circuit->cic + sngss7_span->tx_grs.range));
+	
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 return;
 }
 

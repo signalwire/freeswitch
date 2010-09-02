@@ -99,7 +99,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		SS7_ASSERT;
 	};
 
-	if (sngss7_info->glare.spInstId > 0) {
+	if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM (glare detected on circuit)\n");
 	} else {
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM\n");
@@ -568,10 +568,6 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		break;
 	/**************************************************************************/
 	default:
-
-		/* fill in the channels SS7 Stack information */
-		sngss7_info->suInstId = get_unique_id();
-		sngss7_info->spInstId = spInstId;
 
 		/* throw the reset flag */
 		sngss7_set_flag(sngss7_info, FLAG_RESET_RX);
@@ -1685,9 +1681,9 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	ftdm_channel_t	  *ftdmchan = NULL;
-	sngss7_span_data_t	*span = NULL; 
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL; 
 	int					range;
 	int 				x;
 
@@ -1725,11 +1721,11 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		};
 
 		/* fill in the span structure for this circuit */
-		span = ftdmchan->span->mod_data;
-		span->grs.circuit = circuit; 
-		span->grs.range = range;
+		sngss7_span = ftdmchan->span->mod_data;
+		sngss7_span->rx_grs.circuit = circuit; 
+		sngss7_span->rx_grs.range = range;
 
-		SS7_DEBUG_CHAN(ftdmchan, "Rx GRS (%d:%d)\n", 
+		SS7_INFO_CHAN(ftdmchan, "Rx GRS (%d:%d)\n", 
 								g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, 
 								(g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic + range));
 
@@ -1800,7 +1796,7 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			SS7_ASSERT;
 		};
 		
-		SS7_DEBUG_CHAN(ftdmchan, "Rx GRA (%d:%d)\n", 
+		SS7_INFO_CHAN(ftdmchan, "Rx GRA (%d:%d)\n", 
 								g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, 
 								(g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic + range));
 

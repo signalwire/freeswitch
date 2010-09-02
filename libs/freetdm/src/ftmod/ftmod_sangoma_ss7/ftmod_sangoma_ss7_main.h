@@ -346,7 +346,8 @@ typedef struct sngss7_chan_data {
 
 typedef struct sngss7_span_data {
 	ftdm_sched_t			*sched;
-	sngss7_group_data_t		grs;
+	sngss7_group_data_t		rx_grs;
+	sngss7_group_data_t		tx_grs;
 	ftdm_queue_t 			*event_queue;
 }sngss7_span_data_t;
 
