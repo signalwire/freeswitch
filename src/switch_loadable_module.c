@@ -1072,7 +1072,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const
 {
 	switch_dir_t *dir = NULL;
 	switch_status_t status;
-	char buffer[PATH_MAX];
+	char buffer[256];
 	const char *fname;
 	const char *fname_ext;
 	char *fname_base;
