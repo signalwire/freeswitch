@@ -119,7 +119,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	}
 
 	if (!listener_is_ready(listener)) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_BREAK;
 	}
 
 	ptr = mbuf;
@@ -136,7 +136,10 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
-		if (!listener_is_ready(listener) || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
+		if (!listener_is_ready(listener)) {
+			return SWITCH_STATUS_BREAK;
+		}
+		if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break.\n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -167,20 +170,13 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
-#ifdef SKINNY_MEGA_DEBUG
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						"Got complete request: length=%d,reserved=%x,type=%x,data=%d\n",
-						request->length,request->reserved,request->type,request->data.as_char);
-#endif
 					*req = request;
 					return  SWITCH_STATUS_SUCCESS;
 				}
 			}
 		}
 		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Listener timed out.\n");
-			switch_clear_flag_locked(listener, LFLAG_RUNNING);
-			return SWITCH_STATUS_FALSE;
+			return SWITCH_STATUS_TIMEOUT;
 		}
 		if (do_sleep) {
 			switch_cond_next();
