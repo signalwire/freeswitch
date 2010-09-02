@@ -1068,6 +1068,62 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const char *dir_path, switch_modulename_callback_func_t callback, void *user_data)
+{
+	switch_dir_t *dir = NULL;
+	switch_status_t status;
+	char buffer[PATH_MAX];
+	const char *fname;
+	const char *fname_ext;
+	char *fname_base;
+
+#ifdef WIN32
+	const char *ext = ".dll";
+#else
+	const char *ext = ".so";
+#endif
+
+	if ((status = switch_dir_open(&dir, dir_path, loadable_modules.pool)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
+	while((fname = switch_dir_next_file(dir, buffer, sizeof(buffer)))) {
+		if ((fname_ext = strrchr(fname, '.'))) {
+			if (!strcmp(fname_ext, ext)) {
+				if (!(fname_base = switch_mprintf("%.*s", (int)(fname_ext-fname), fname))) {
+					status = SWITCH_STATUS_GENERR;
+					goto end;
+				}
+				callback(user_data, fname_base);
+				switch_safe_free(fname_base)
+			}
+		}
+	}
+
+
+  end:
+	switch_dir_close(dir);
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_loaded(switch_modulename_callback_func_t callback, void *user_data)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_loadable_module_t *module;
+
+	switch_mutex_lock(loadable_modules.mutex);
+	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		module = (switch_loadable_module_t *) val;
+
+		callback(user_data, module->module_interface->module_name);
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
