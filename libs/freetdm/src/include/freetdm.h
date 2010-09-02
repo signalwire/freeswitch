@@ -381,6 +381,9 @@ typedef struct ftdm_conf_parameter {
 	void *ptr;
 } ftdm_conf_parameter_t;
 
+/*! \brief Opaque general purpose iterator */
+typedef void ftdm_iterator_t;
+
 /*! \brief Channel commands that can be executed through ftdm_channel_command() */
 typedef enum {
 	FTDM_COMMAND_NOOP,
@@ -1014,14 +1017,25 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t datasize, ftdm_size_t *datalen);
 
-/*! \brief Add a custom variable to the channel */
+/*! \brief Add a custom variable to the channel
+ *  \note This variables may be used by signaling modules to override signaling parameters
+ *  \todo Document which signaling variables are available
+ * */
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const char *var_name, const char *value);
 
-/*! \brief Get a custom variable from the channel */
+/*! \brief Get a custom variable from the channel. 
+ *  \note The variable pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name);
 
-/*! \brief Clear custom channel variables from the channel */
-FT_DECLARE(ftdm_status_t) ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
+/*! \brief Get an iterator to iterate over the channel variables
+ *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan);
+
+/*! \brief Get variable name and value for the current iterator position */
+FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
+
+/*! \brief Advance iterator */
+FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
 
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);

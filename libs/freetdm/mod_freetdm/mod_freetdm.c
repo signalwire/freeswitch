@@ -40,7 +40,7 @@
 
 #define FREETDM_LIMIT_REALM "__freetdm"
 #define FREETDM_VAR_PREFIX "freetdm_"
-#define FREETDM_VAR_PREFIX_LEN 8
+#define FREETDM_VAR_PREFIX_LEN (sizeof(FREETDM_VAR_PREFIX)-1) 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown);
@@ -1302,11 +1302,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 	}
 
-	ftdm_channel_clear_vars(ftdmchan);
+	span_id = ftdm_channel_get_span_id(ftdmchan);
+	chan_id = ftdm_channel_get_id(ftdmchan);
+
 	for (h = var_event->headers; h; h = h->next) {
 		if (!strncasecmp(h->name, FREETDM_VAR_PREFIX, FREETDM_VAR_PREFIX_LEN)) {
 			char *v = h->name + FREETDM_VAR_PREFIX_LEN;
 			if (!zstr(v)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s=%s to channel %d:%d\n", v, h->value, span_id, chan_id);
 				ftdm_channel_add_var(ftdmchan, v, h->value);
 			}
 		}
@@ -1317,9 +1320,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_caller_profile_t *caller_profile;
 		switch_channel_t *channel = switch_core_session_get_channel(*new_session);
 		
-		span_id = ftdm_channel_get_span_id(ftdmchan);
-		chan_id = ftdm_channel_get_id(ftdmchan);
-
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			tech_init(tech_pvt, *new_session, ftdmchan);
@@ -1403,6 +1403,9 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
+	ftdm_iterator_t *iter = NULL;
+	const char *var_name = NULL;
+	const char *var_value = NULL;
 	uint32_t spanid, chanid;
 	char name[128];
 	ftdm_caller_data_t *channel_caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
@@ -1510,6 +1513,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	}
 	if (channel_caller_data->raw_data_len) {
 		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
+	}
+	/* Add any channel variable to the dial plan */
+	iter = ftdm_channel_get_var_iterator(sigmsg->channel);
+	for ( ; iter; iter = ftdm_iterator_next(iter)) {
+		ftdm_channel_get_current_var(iter, &var_name, &var_value);
+		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
+		switch_channel_set_variable_printf(channel, name, "%s", var_value);
 	}
 		
 	switch_channel_set_state(channel, CS_INIT);

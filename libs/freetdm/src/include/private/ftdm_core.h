@@ -579,7 +579,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, const char *dtmf);
 
-
 /*!
   \brief Assert condition
 */
