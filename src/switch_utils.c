@@ -724,7 +724,7 @@ SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 	if (!sp)
 		return NULL;
 
-	while ((*sp == 13 ) || (*sp == 10 ) || (*sp == 9 ) || (*sp == 20) || (*sp == 11) ) {
+	while ((*sp == 13 ) || (*sp == 10 ) || (*sp == 9 ) || (*sp == 32) || (*sp == 11) ) {
 		sp++;
 	}
 
@@ -735,7 +735,7 @@ SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 
 	p = s + (strlen(s) - 1);
 
-    while ((*p == 13 ) || (*p == 10 ) || (*p == 9 ) || (*p == 20) || (*p == 11) ) {
+    while ((*p == 13 ) || (*p == 10 ) || (*p == 9 ) || (*p == 32) || (*p == 11) ) {
 		*p-- = '\0';
 	}
 
