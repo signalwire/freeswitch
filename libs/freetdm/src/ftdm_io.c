@@ -409,8 +409,6 @@ static ftdm_status_t ftdm_channel_destroy(ftdm_channel_t *ftdmchan)
 		ftdm_buffer_destroy(&ftdmchan->fsk_buffer);
 		ftdmchan->pre_buffer_size = 0;
 
-		hashtable_destroy(ftdmchan->variable_hash);
-
 		ftdm_safe_free(ftdmchan->dtmf_hangup_buf);
 
 		if (ftdmchan->tone_session.buffer) {
@@ -824,7 +822,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 
 		ftdm_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		ftdm_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
-		new_chan->variable_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 
 		new_chan->dtmf_hangup_buf = ftdm_calloc (span->dtmf_hangup_len + 1, sizeof (char));
 
@@ -2225,9 +2222,10 @@ static void close_dtmf_debug(ftdm_channel_t *ftdmchan)
 }
 #endif
 
+static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 {
-	assert(ftdmchan != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel can't be done!\n");
 
 	ftdm_mutex_lock(ftdmchan->mutex);
 
@@ -2255,6 +2253,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 #ifdef FTDM_DEBUG_DTMF
 	close_dtmf_debug(ftdmchan);
 #endif
+	ftdm_channel_clear_vars(ftdmchan);
 
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
@@ -3380,8 +3379,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 	ftdm_size_t max = datasize;
 	unsigned int i = 0;
 
-	assert(ftdmchan != NULL);
-	assert(ftdmchan->fio != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel on write!\n");
+	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "null I/O on write!\n");
 
 	if (!ftdmchan->buffer_delay && 
 		((ftdmchan->dtmf_buffer && ftdm_buffer_inuse(ftdmchan->dtmf_buffer)) ||
@@ -3433,16 +3432,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan)
+static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan)
 {
-	if(ftdmchan->variable_hash) {
+	ftdm_channel_lock(ftdmchan);
+
+	if (ftdmchan->variable_hash) {
 		hashtable_destroy(ftdmchan->variable_hash);
 	}
-	ftdmchan->variable_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+	ftdmchan->variable_hash = NULL;
 
-	if(!ftdmchan->variable_hash)
-		return FTDM_FAIL;
-	
+	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
 }
 
@@ -3450,33 +3449,97 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const c
 {
 	char *t_name = 0, *t_val = 0;
 
-	if(!ftdmchan->variable_hash || !var_name || !value)
-	{
+	ftdm_status_t status = FTDM_FAIL;
+
+	if (!var_name || !value) {
 		return FTDM_FAIL;
+	}
+
+	ftdm_channel_lock(ftdmchan);
+
+	if (!ftdmchan->variable_hash) {
+		/* initialize on first use */
+		ftdmchan->variable_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+		if (!ftdmchan->variable_hash) {
+			goto done;
+		}
 	}
 
 	t_name = ftdm_strdup(var_name);
 	t_val = ftdm_strdup(value);
 
-	if(hashtable_insert(ftdmchan->variable_hash, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE)) {
-		return FTDM_SUCCESS;
-	}
-	return FTDM_FAIL;
+	hashtable_insert(ftdmchan->variable_hash, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE);
+
+	status = FTDM_SUCCESS;
+
+done:
+	ftdm_channel_unlock(ftdmchan);
+
+	return status;
 }
 
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name)
 {
-	if(!ftdmchan->variable_hash || !var_name)
-	{
+	const char *var = NULL;
+
+	ftdm_channel_lock(ftdmchan);
+
+	if (!ftdmchan->variable_hash || !var_name) {
+		goto done;
+	}
+	
+	var = (const char *)hashtable_search(ftdmchan->variable_hash, (void *)var_name);
+
+done:
+	ftdm_channel_unlock(ftdmchan);
+
+	return var;
+}
+
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_hash_iterator_t *iter = NULL;
+
+	ftdm_channel_lock(ftdmchan);
+
+	iter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
+
+	ftdm_channel_unlock(ftdmchan);
+
+	return iter;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val)
+{
+	const void *key = NULL;
+	void *val = NULL;
+
+	*var_name = NULL;
+	*var_val = NULL;
+
+	if (!iter) {
+		return FTDM_FAIL;
+	}
+
+	hashtable_this(iter, &key, NULL, &val);
+
+	*var_name = key;
+	*var_val = val;
+
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter)
+{
+	if (!iter) {
 		return NULL;
 	}
-	return (const char *) hashtable_search(ftdmchan->variable_hash, (void *)var_name);
+	return hashtable_next(iter);
 }
 
 static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
-
 
 FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 {

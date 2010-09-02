@@ -35,11 +35,6 @@
 
 
 #include "ftmod_sangoma_isdn.h"
-#if 1
-#undef FTDM_DEBUG_CHAN_MEMORY
-#else
-#define FTDM_DEBUG_CHAN_MEMORY
-#endif
 
 #ifdef FTDM_DEBUG_CHAN_MEMORY
 #include <sys/mman.h>
@@ -476,7 +471,10 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	case FTDM_CHANNEL_STATE_RING: /* incoming call request */
 		{
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending incoming call from %s to %s to FTDM core\n", ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.dnis.digits);
-
+			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
+			ftdm_channel_add_var(ftdmchan, "isdn_crap", "morecrap");
+			ftdm_channel_add_var(ftdmchan, "isdn_stuff", "s");
+			ftdm_channel_add_var(ftdmchan, "isdn_d", "asdsadasdasdsad");
 			/* we have enough information to inform FTDM of the call*/
 			sigev.event_id = FTDM_SIGEVENT_START;
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
