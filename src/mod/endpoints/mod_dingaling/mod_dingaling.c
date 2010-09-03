@@ -1259,6 +1259,10 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
 
+		if (tech_pvt->dlsession) {
+			ldl_session_destroy(&tech_pvt->dlsession);
+		}
+
 		switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
 
 		if (tech_pvt->profile->purge) {
@@ -1296,13 +1300,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	if ((tech_pvt->profile->user_flags & LDL_FLAG_COMPONENT) && is_special(tech_pvt->them)) {
 		ldl_handle_send_presence(tech_pvt->profile->handle, tech_pvt->them, tech_pvt->us, NULL, NULL, "Click To Call", tech_pvt->profile->avatar);
 	}
-	if (tech_pvt->dlsession) {
-		if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
-			ldl_session_terminate(tech_pvt->dlsession);
-			switch_set_flag_locked(tech_pvt, TFLAG_TERM);
-		}
-		ldl_session_destroy(&tech_pvt->dlsession);
+
+	if (!switch_test_flag(tech_pvt, TFLAG_TERM) && tech_pvt->dlsession) {
+		ldl_session_terminate(tech_pvt->dlsession);
+		switch_set_flag_locked(tech_pvt, TFLAG_TERM);
 	}
+	
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
@@ -1323,15 +1326,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-
-		if (tech_pvt->dlsession) {
-			if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
-				ldl_session_terminate(tech_pvt->dlsession);
-				switch_set_flag_locked(tech_pvt, TFLAG_TERM);
-			}
-			ldl_session_destroy(&tech_pvt->dlsession);
-
-		}
 
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			switch_rtp_kill_socket(tech_pvt->rtp_session);
