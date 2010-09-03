@@ -1391,9 +1391,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_assert(listener != NULL);
 
+#if MOD_SKINNY_NONBLOCK
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
-
+#else
+	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, FALSE);
+	switch_socket_timeout_set(listener->sock, 5000000);
+#endif
 	if (listener->profile->debug > 0) {
 		if (zstr(listener->remote_ip)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
@@ -1402,7 +1406,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 	}
 
-	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
 	keepalive_listener(listener, NULL);
 	add_listener(listener);
@@ -1413,8 +1416,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch(status) {
-				case SWITCH_STATUS_BREAK:
-					break;
 				case SWITCH_STATUS_TIMEOUT:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Communication Time Out with %s:%d.\n",
 						listener->remote_ip, listener->remote_port);

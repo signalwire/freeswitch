@@ -4174,6 +4174,19 @@ switch_status_t sofia_glue_profile_rdlock__(const char *file, const char *func, 
 	return status;
 }
 
+switch_bool_t sofia_glue_profile_exists(const char *key)
+{
+	switch_bool_t tf = SWITCH_FALSE;
+	
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	if (switch_core_hash_find(mod_sofia_globals.profile_hash, key)) {
+		tf = SWITCH_TRUE;
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	return tf;
+}
+
 sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, const char *key)
 {
 	sofia_profile_t *profile;
