@@ -1178,17 +1178,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 
-		if (profile->reg_db_domain) {
-			if (!sofia_glue_profile_exists(to_host)) {				
-				if (sofia_glue_add_profile(switch_core_strdup(profile->pool, to_host), profile) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Auto-Adding Alias [%s] for profile [%s]\n", to_host, profile->name);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Alias [%s] for profile [%s] (already exists)\n",
-									  to_host, profile->name);
-				}
-			}
-		}
-
 		
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
@@ -1429,6 +1418,17 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_regtype_t type = REG_REGISTER;
 	int network_port = 0;
 	char *is_nat = NULL;
+
+	if (sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_host) {
+		const char *to_host = sip->sip_to->a_url->url_host;
+		if (profile->reg_db_domain) {
+			if (!sofia_glue_profile_exists(to_host)) {				
+				if (sofia_glue_add_profile(switch_core_strdup(profile->pool, to_host), profile) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Auto-Adding Alias [%s] for profile [%s]\n", to_host, profile->name);
+				}
+			}
+		}
+	}
 
 	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
 
