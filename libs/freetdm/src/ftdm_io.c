@@ -2016,6 +2016,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file,
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_channel_lock(ftdmchan);
+	ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
 	call_hangup(ftdmchan, file, func, line);
 	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
