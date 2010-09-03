@@ -1179,20 +1179,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 
 		if (profile->reg_db_domain) {
-			sofia_profile_t *xprofile;
-
-			if ((xprofile = sofia_glue_find_profile(to_host))) {
-				sofia_glue_release_profile(xprofile);
-			} else {
-
+			if (!sofia_glue_profile_exists(to_host)) {				
 				if (sofia_glue_add_profile(switch_core_strdup(profile->pool, to_host), profile) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Auto-Adding Alias [%s] for profile [%s]\n", to_host, profile->name);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Alias [%s] for profile [%s] (already exists)\n",
 									  to_host, profile->name);
 				}
-				
-				
 			}
 		}
 
