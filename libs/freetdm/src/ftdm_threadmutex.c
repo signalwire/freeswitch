@@ -373,6 +373,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *interrupt)
 	if (!SetEvent(interrupt->event)) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt\n");
 		return FTDM_FAIL;
+
 	}
 #else
 	int err;
@@ -404,6 +405,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **ininterrupt)
 #else
 	close(interrupt->readfd);
 	close(interrupt->writefd);
+
 	interrupt->readfd = -1;
 	interrupt->writefd = -1;
 #endif
@@ -416,6 +418,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 {
 	int numdevices = 0;
 	unsigned i;
+
 #if defined(__WINDOWS__)
 	DWORD res = 0;
 	HANDLE ints[20];
@@ -428,6 +431,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 	for (i = 0; i < size; i++) {
 		ints[i] = interrupts[i]->event;
 		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
+
 			ints[size+numdevices] = interrupts[i]->device;
 			numdevices++;
 		}
@@ -454,7 +458,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 	struct pollfd ints[size*2];
 
 	memset(&ints, 0, sizeof(ints));
-
+pollagain:
 	for (i = 0; i < size; i++) {
 		ints[i].events = POLLIN;
 		ints[i].revents = 0;
@@ -463,6 +467,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 			ints[size+numdevices].events = POLLIN;
 			ints[size+numdevices].revents = 0;
 			ints[size+numdevices].fd = interrupts[i]->device;
+
 			numdevices++;
 		}
 	}
@@ -470,6 +475,9 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 	res = poll(ints, size + numdevices, ms);
 
 	if (res == -1) {
+		if (errno == EINTR) {
+			goto pollagain;
+		}
 		ftdm_log(FTDM_LOG_CRIT, "interrupt poll failed (%s)\n", strerror(errno));
 		return FTDM_FAIL;
 	}

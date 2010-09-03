@@ -4651,9 +4651,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");
+	switch_console_set_complete("add load ::console::list_available_modules");
 	switch_console_set_complete("add nat_map reinit");
 	switch_console_set_complete("add nat_map republish");
 	switch_console_set_complete("add nat_map status");
+	switch_console_set_complete("add reload ::console::list_loaded_modules");
 	switch_console_set_complete("add reloadacl reloadxml");
 	switch_console_set_complete("add show aliases");
 	switch_console_set_complete("add show api");
@@ -4678,6 +4680,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show timer");
 	switch_console_set_complete("add shutdown");
 	switch_console_set_complete("add sql_escape");
+	switch_console_set_complete("add unload ::console::list_loaded_modules");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read mute");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read level");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");

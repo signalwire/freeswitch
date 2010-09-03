@@ -272,6 +272,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
 			} else if (!strcasecmp("post", argv[i])) {
+				method = "post";
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);

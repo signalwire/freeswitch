@@ -52,10 +52,17 @@ struct skinny_globals {
     switch_event_node_t *heartbeat_node;
     switch_event_node_t *call_state_node;
     switch_event_node_t *message_waiting_node;
+    switch_event_node_t *trap_node;
+    int auto_restart;
 };
 typedef struct skinny_globals skinny_globals_t;
 
 extern skinny_globals_t globals;
+
+typedef enum {
+    PFLAG_LISTENER_READY = (1 << 0),
+    PFLAG_RESPAWN = (1 << 1),
+} profile_flag_t;
 
 struct skinny_profile {
     /* prefs */
@@ -70,6 +77,7 @@ struct skinny_profile {
     uint32_t keep_alive;
     char date_format[6];
     int debug;
+	int auto_restart;
     switch_hash_t *device_type_params_hash;
     /* db */
     char *dbname;
@@ -89,7 +97,8 @@ struct skinny_profile {
     switch_socket_t *sock;
     switch_mutex_t *sock_mutex;
     struct listener *listeners;
-    uint8_t listener_ready;
+    int flags;
+    switch_mutex_t *flag_mutex;
     /* call id */
     uint32_t next_call_id;
     /* others */
@@ -114,7 +123,7 @@ typedef enum {
 
 typedef enum {
     LFLAG_RUNNING = (1 << 0),
-} event_flag_t;
+} listener_flag_t;
 
 #define SKINNY_MAX_LINES 42
 struct listener {

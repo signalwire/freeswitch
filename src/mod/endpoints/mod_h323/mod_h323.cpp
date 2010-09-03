@@ -614,7 +614,7 @@ H323Connection  *FSH323EndPoint::CreateConnection(
 	}
 	
 	switch_core_session_t *fsSession = switch_core_session_request(GetSwitchInterface(), 
-				(switch_caller_profile_t *)userData ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, NULL);
+				(switch_caller_profile_t *)userData ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL);
 	if (fsSession == NULL)
 		return NULL;
 	

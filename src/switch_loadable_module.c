@@ -1068,6 +1068,62 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const char *dir_path, switch_modulename_callback_func_t callback, void *user_data)
+{
+	switch_dir_t *dir = NULL;
+	switch_status_t status;
+	char buffer[256];
+	const char *fname;
+	const char *fname_ext;
+	char *fname_base;
+
+#ifdef WIN32
+	const char *ext = ".dll";
+#else
+	const char *ext = ".so";
+#endif
+
+	if ((status = switch_dir_open(&dir, dir_path, loadable_modules.pool)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
+	while((fname = switch_dir_next_file(dir, buffer, sizeof(buffer)))) {
+		if ((fname_ext = strrchr(fname, '.'))) {
+			if (!strcmp(fname_ext, ext)) {
+				if (!(fname_base = switch_mprintf("%.*s", (int)(fname_ext-fname), fname))) {
+					status = SWITCH_STATUS_GENERR;
+					goto end;
+				}
+				callback(user_data, fname_base);
+				switch_safe_free(fname_base)
+			}
+		}
+	}
+
+
+  end:
+	switch_dir_close(dir);
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_loaded(switch_modulename_callback_func_t callback, void *user_data)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_loadable_module_t *module;
+
+	switch_mutex_lock(loadable_modules.mutex);
+	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		module = (switch_loadable_module_t *) val;
+
+		callback(user_data, module->module_interface->module_name);
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
@@ -1627,27 +1683,34 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 {
 	switch_api_interface_t *api;
 	switch_status_t status;
+	char *arg_no_spaces;
+	char *cmd_no_spaces;
 
 	switch_assert(stream != NULL);
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
+
+
+	cmd_no_spaces = switch_strip_whitespace(cmd);
+	arg_no_spaces = switch_strip_whitespace(arg);
+			
 
 	if (!stream->param_event) {
 		switch_event_create(&stream->param_event, SWITCH_EVENT_API);
 	}
 
 	if (stream->param_event) {
-		if (cmd) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
+		if (cmd_no_spaces) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_no_spaces);
 		}
-		if (arg) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg);
+		if (arg_no_spaces) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_no_spaces);
 		}
 	}
 
 
-	if (cmd && (api = switch_loadable_module_get_api_interface(cmd)) != 0) {
-		if ((status = api->function(arg, session, stream)) != SWITCH_STATUS_SUCCESS) {
+	if (cmd_no_spaces && (api = switch_loadable_module_get_api_interface(cmd_no_spaces)) != 0) {
+		if ((status = api->function(arg_no_spaces, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
 		UNPROTECT_INTERFACE(api);
@@ -1660,6 +1723,8 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		switch_event_fire(&stream->param_event);
 	}
 
+	switch_safe_free(cmd_no_spaces);
+	switch_safe_free(arg_no_spaces);
 
 	return status;
 }

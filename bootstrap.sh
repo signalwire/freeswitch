@@ -341,7 +341,7 @@ rm -rf autom4te*.cache
 
 echo "Entering directory ${LIBDIR}/apr-util"
 cd ${LIBDIR}/apr-util
-if [ "${BGJOB}" == "false" ] ; then
+if [ "${BGJOB}" = "false" ] ; then
 	./buildconf
 else
 	./buildconf &
@@ -350,14 +350,14 @@ fi
 
 for i in ${SUBDIRS}
 do
-  if [ "${BGJOB}" == "false" ] ; then
+  if [ "${BGJOB}" = "false" ] ; then
   	libbootstrap ${i}
   else
 	libbootstrap ${i} &
   fi
 done
 
-if [ "${BGJOB}" == "true" ] ; then
+if [ "${BGJOB}" = "true" ] ; then
 	wait
 fi
 cd ${BASEDIR}

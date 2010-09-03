@@ -553,6 +553,46 @@ struct match_helper {
 	switch_console_callback_match_t *my_matches;
 };
 
+static int modulename_callback(void *pArg, const char *module_name)
+{
+	struct match_helper *h = (struct match_helper *) pArg;
+
+	switch_console_push_match(&h->my_matches, module_name);
+	return 0;
+}
+
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_list_available_modules(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	struct match_helper h = { 0 };
+
+	if (switch_loadable_module_enumerate_available(SWITCH_GLOBAL_dirs.mod_dir, modulename_callback, &h) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (h.my_matches) {
+		*matches = h.my_matches;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_list_loaded_modules(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	struct match_helper h = { 0 };
+
+	if (switch_loadable_module_enumerate_loaded(modulename_callback, &h) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (h.my_matches) {
+		*matches = h.my_matches;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 static int uuid_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct match_helper *h = (struct match_helper *) pArg;
@@ -1542,6 +1582,8 @@ SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
 {
 	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_core_hash_init(&globals.func_hash, pool);
+	switch_console_add_complete_func("::console::list_available_modules", (switch_console_complete_callback_t) switch_console_list_available_modules);
+	switch_console_add_complete_func("::console::list_loaded_modules", (switch_console_complete_callback_t) switch_console_list_loaded_modules);
 	switch_console_add_complete_func("::console::list_uuid", (switch_console_complete_callback_t) switch_console_list_uuid);
 	return SWITCH_STATUS_SUCCESS;
 }

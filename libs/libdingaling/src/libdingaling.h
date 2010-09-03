@@ -131,7 +131,8 @@ typedef enum {
 	LDL_FLAG_SASL_PLAIN = (1 << 11),
 	LDL_FLAG_SASL_MD5 = (1 << 12),
 	LDL_FLAG_COMPONENT = (1 << 13),
-	LDL_FLAG_OUTBOUND = (1 << 14)
+	LDL_FLAG_OUTBOUND = (1 << 14),
+	LDL_FLAG_GATEWAY = (1 << 15)
 } ldl_user_flag_t;
 
 typedef enum {
@@ -152,7 +153,8 @@ typedef enum {
 	LDL_SIGNAL_LOGIN_FAILURE,
 	LDL_SIGNAL_CONNECTED,
 	LDL_SIGNAL_TRANSPORT_ACCEPT,
-	LDL_SIGNAL_REJECT
+	LDL_SIGNAL_REJECT,
+	LDL_SIGNAL_REDIRECT
 } ldl_signal_t;
 
 typedef enum {
@@ -494,6 +496,10 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 								  ldl_candidate_t *candidates,
 								  unsigned int clen);
 
+unsigned int ldl_session_transport(ldl_session_t *session,
+								  ldl_candidate_t *candidates,
+								  unsigned int clen);
+
 /*!
   \brief Initiate or Accept a new session and provide transport options
   \param session the session to initiate or accept
@@ -585,6 +591,8 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
   \param handle the Dingaling handle to run
 */
 void ldl_handle_run(ldl_handle_t *handle);
+
+int ldl_session_gateway(ldl_session_t *handle);
 
 /*!
   \brief Stop a libDingaLing handle

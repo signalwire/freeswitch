@@ -1,4 +1,3 @@
-set network_addr of caller profile to signaling ip address. (requested by Steven Ayre)
 move PTrace level set to FSH323EndPoint::Initialise
 partially apply patch from from Peter Olsson, Remove UnLock() when TryLock() failed and DEBUG_RTP_PACKETS directive.
 apply changes from mod_h323-patch.diff by Peter Olsson.
