@@ -152,6 +152,32 @@ struct skinny_table SKINNY_BUTTONS[] = {
 SKINNY_DECLARE_ID2STR(skinny_button2str, SKINNY_BUTTONS, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2button, SKINNY_BUTTONS, -1)
 
+struct skinny_table SKINNY_SOFT_KEY_EVENTS[] = {
+    {"SoftkeyRedial", SOFTKEY_REDIAL},
+    {"SoftkeyNewcall", SOFTKEY_NEWCALL},
+    {"SoftkeyHold", SOFTKEY_HOLD},
+    {"SoftkeyTransfer", SOFTKEY_TRANSFER},
+    {"SoftkeyCfwdall", SOFTKEY_CFWDALL},
+    {"SoftkeyCfwdbusy", SOFTKEY_CFWDBUSY},
+    {"SoftkeyCfwdnoanswer", SOFTKEY_CFWDNOANSWER},
+    {"SoftkeyBackspace", SOFTKEY_BACKSPACE},
+    {"SoftkeyEndcall", SOFTKEY_ENDCALL},
+    {"SoftkeyResume", SOFTKEY_RESUME},
+    {"SoftkeyAnswer", SOFTKEY_ANSWER },
+    {"SoftkeyInfo", SOFTKEY_INFO},
+    {"SoftkeyConfrm", SOFTKEY_CONFRM},
+    {"SoftkeyPark", SOFTKEY_PARK},
+    {"SoftkeyJoin", SOFTKEY_JOIN},
+    {"SoftkeyMeetmeconfrm", SOFTKEY_MEETMECONFRM},
+    {"SoftkeyCallpickup", SOFTKEY_CALLPICKUP},
+    {"SoftkeyGrpcallpickup", SOFTKEY_GRPCALLPICKUP},
+    {"SoftkeyDnd", SOFTKEY_DND},
+    {"SoftkeyIdivert", SOFTKEY_IDIVERT},
+    {NULL, 0}
+};
+SKINNY_DECLARE_ID2STR(skinny_soft_key_event2str, SKINNY_SOFT_KEY_EVENTS, "SoftkeyUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2soft_key_event, SKINNY_SOFT_KEY_EVENTS, -1)
+
 struct skinny_table SKINNY_LAMP_MODES[] = {
     {"Off", SKINNY_LAMP_OFF},
     {"On", SKINNY_LAMP_ON},

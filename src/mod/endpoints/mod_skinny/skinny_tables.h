@@ -194,6 +194,10 @@ enum skinny_soft_key_event {
     SOFTKEY_DND = 0x13,
     SOFTKEY_IDIVERT = 0x14,
 };
+extern struct skinny_table SKINNY_SOFT_KEY_EVENTS[21];
+const char *skinny_soft_key_event2str(uint32_t id);
+uint32_t skinny_str2soft_key_event(const char *str);
+#define SKINNY_PUSH_SOFT_KEY_EVENTS SKINNY_DECLARE_PUSH_MATCH(SOFT_KEY_EVENTS)
 
 enum skinny_key_set {
     SKINNY_KEY_SET_ON_HOOK = 0,
