@@ -78,7 +78,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 			
 			sngisdn_info->suInstId = get_unique_suInstId(suId);
-			sngisdn_info->spInstId = spInstId;
+			sngisdn_info->spInstId = spInstId;		
 
 			/* If this is a glared call that was previously saved, we moved
 			all the info to the current call, so clear the glared saved data */
@@ -87,10 +87,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				clear_call_glare_data(sngisdn_info);
 			}
 
-			ftdm_assert(g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] == NULL, "Con Ind on busy spInstId");
-
 			ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-			g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
 			g_sngisdn_data.ccs[suId].active_suInstIds[sngisdn_info->suInstId] = sngisdn_info;
 			ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 
@@ -118,7 +115,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
 				ftdmchan->caller_data.bearer_capability = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].infoTranCap.val);
 			}
-			
+
 			if (signal_data->switchtype == SNGISDN_SWITCH_NI2) {
 				if (conEvnt->shift11.eh.pres && conEvnt->ni2OctStr.eh.pres) {
 					if (conEvnt->ni2OctStr.str.len == 4 && conEvnt->ni2OctStr.str.val[0] == 0x37) {
@@ -160,7 +157,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			break;
 		case FTDM_CHANNEL_STATE_TERMINATING:
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Processing SETUP in TERMINATING state, saving SETUP info for later processing\n");
-			ftdm_assert(!sngisdn_test_flag(sngisdn_info, FLAG_GLARE), "Trying to save GLARE info, but we already had a glare");
+			ftdm_assert(!sngisdn_test_flag(sngisdn_info, FLAG_GLARE), "Trying to save GLARE info, but we already had a glare\n");
 			
 			sngisdn_set_flag(sngisdn_info, FLAG_GLARE);
 
@@ -172,11 +169,6 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			sngisdn_info->glare.dChan = dChan;
 			sngisdn_info->glare.ces = ces;
 			
-			/* We need to register the spInstId in case we get a release for that call while it is still stored in sngisdn_info->glare */
-			ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-			g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-			ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
-			
 			break;
 		case FTDM_CHANNEL_STATE_DIALING:	/* glare */
 			if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
@@ -187,11 +179,6 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				sngisdn_info->glare.suId = suId;
 				sngisdn_info->glare.suInstId = get_unique_suInstId(suId);
 				sngisdn_info->glare.spInstId = spInstId;
-
-				ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-				g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-				g_sngisdn_data.ccs[suId].active_suInstIds[sngisdn_info->suInstId] = sngisdn_info;
-				ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 
 				sngisdn_info->glare.dChan = dChan;
 				sngisdn_info->glare.ces = ces;
@@ -212,10 +199,6 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				sngisdn_info->glare.dChan = dChan;
 				sngisdn_info->glare.ces = ces;
 
-				/* We need to register the spInstId in case we get a release for that call while it is still stored in sngisdn_info->glare */
-				ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-				g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-				ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 			}
 			break;
@@ -245,13 +228,6 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing CONNECT/CONNECT ACK (suId:%u suInstId:%u spInstId:%u ces:%d)\n", suId, suInstId, spInstId, ces);
-	
-	if (!sngisdn_info->spInstId) {
-		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-		sngisdn_info->spInstId = spInstId;
-		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
-	}
 
 	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP &&
 		((sngisdn_span_data_t*)ftdmchan->span->signal_data)->signalling == SNGISDN_SIGNALING_NET) {
@@ -314,13 +290,6 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
-
-	if (!sngisdn_info->spInstId) {
-		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-		sngisdn_info->spInstId = spInstId;
-		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
-	}
 
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 
@@ -417,13 +386,6 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
 	DiscEvnt *discEvnt = &sngisdn_event->event.discEvnt;
-
-	if (!sngisdn_info->spInstId) {
-		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-		sngisdn_info->spInstId = spInstId;
-		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
-	}
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing DISCONNECT (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 
@@ -698,6 +660,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
 				}
 			}
+
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 			break;
 		default:
@@ -876,6 +839,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 			case 9:
 				switch (ftdmchan->state) {
 					case FTDM_CHANNEL_STATE_PROGRESS:
+					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 						/* Do nothing */
 						break;
 					default:

@@ -283,7 +283,7 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+ 	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending PROGRESS, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
