@@ -3300,6 +3300,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *p;
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
+	const char *user_replacement = NULL;
 	char *reply = "error/facility_not_subscribed";
 
 	if (!cmd) {
@@ -3310,6 +3311,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		exclude_contact = switch_channel_get_variable(channel, "sip_exclude_contact");
+		user_replacement = switch_channel_get_variable(channel, "sip_contact_user_replacement");
 	}
 
 
@@ -3386,6 +3388,93 @@ SWITCH_STANDARD_API(sofia_contact_function)
 
 			if (zstr(reply)) {
 				reply = "error/user_not_registered";
+			}
+
+			if (user_replacement) {
+				int urlcount = 0;
+				int copyerr = 0;
+				char *newreply = NULL;
+				char *urlstart = NULL;
+				char *newptr = NULL;
+				char *bufend = NULL;
+				char *str = reply;
+				switch_size_t copysize = 0;
+				switch_size_t replacesize = strlen(user_replacement);
+				switch_size_t allocsize = 0;
+				
+				/* first pass to count how many URLs we have */
+				while ((urlstart = strcasestr(str, "sip:")) || (urlstart = strcasestr(str, "sips:"))) {
+					urlcount++;
+					str = urlstart + 4;
+				}
+
+				if (!urlcount) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): no sip URLs found to replace the user\n");
+					copyerr++;
+					goto copydone;
+				}
+
+				/* this allocates a bit more than needed but better safe than sorry doing more funky math */
+				allocsize = strlen(reply) + (urlcount * replacesize);
+				newreply = switch_core_session_alloc(session, allocsize);
+				if (!newreply) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): no buffer space available for replacement\n");
+					copyerr++;
+					goto copydone;
+				}
+
+				/* get a working pointer to the new reply */
+				newptr = newreply;
+
+				/* pointer to the end of the allocated buffer for safety checks */
+				bufend = newreply + allocsize - 1;
+				*bufend = 0;
+
+				/* go thru all the urls and replace the user part */
+				str = reply;
+				while ((urlstart = strcasestr(str, "sip:")) || (urlstart = strcasestr(str, "sips:"))) {
+
+					/* found an URL, copy up to the start of the url */
+					copysize = ( urlstart - str ) + 4;
+
+					/* double check boundaries before copying anything at all (this should not happen) */
+					if ((newptr + copysize + replacesize) >= bufend) {
+						copyerr++;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): wow buffer was not big enough!\n");
+						break;
+					}
+
+					/* copy the original contact string except for the user */
+					memcpy(newptr, str, copysize);
+					newptr += copysize;
+
+					/* copy the user replacement */
+					memcpy(newptr, user_replacement, replacesize);
+					newptr += replacesize;
+
+					/* skip the original user part */
+					str = strchr(urlstart, '@');
+					if (!str) {
+						copyerr++;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): not host part found for contact\n");
+						break;
+					}
+					/* continue searching for the next sip: URL */
+				}
+
+copydone:
+				if (!copyerr) {
+					/* copy the remaining reply string */
+					copysize = strlen(str);
+					if ((newptr + copysize) >= bufend) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): wow buffer was not big enough, close, but not enough!\n");
+					} else {
+						strcpy(newptr, str);
+						reply = newreply;
+					}
+				} else {
+					reply = "error/replacement error";
+				}
 			}
 
 			stream->write_function(stream, "%s", reply);
