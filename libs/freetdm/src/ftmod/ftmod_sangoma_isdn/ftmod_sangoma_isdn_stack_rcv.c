@@ -87,10 +87,13 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 	sngisdn_event->event_id = SNGISDN_EVENT_CON_IND;
 	sngisdn_event->sngisdn_info = sngisdn_info;
 	sngisdn_event->suId = suId;
-	sngisdn_event->suInstId = suInstId;
 	sngisdn_event->spInstId = spInstId;
 	sngisdn_event->dChan = dChan;
 	sngisdn_event->ces = ces;
+
+	ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
+	g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;	
+	ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 
 	memcpy(&sngisdn_event->event.conEvnt, conEvnt, sizeof(*conEvnt));
 	
@@ -113,6 +116,14 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 		return;
 	}
 
+	if (!sngisdn_info->spInstId) {
+		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
+		sngisdn_info->spInstId = spInstId;
+		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
+		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
+	}
+
+	
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received CONNECT/CONNECT ACK (suId:%u suInstId:%u spInstId:%u ces:%d)\n", suId, suInstId, spInstId, ces);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
@@ -126,7 +137,6 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 	sngisdn_event->spInstId = spInstId;
 	sngisdn_event->dChan = dChan;
 	sngisdn_event->ces = ces;
-
 	memcpy(&sngisdn_event->event.cnStEvnt, cnStEvnt, sizeof(*cnStEvnt));
 	
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
@@ -146,6 +156,13 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
+	}
+
+	if (!sngisdn_info->spInstId) {
+		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
+		sngisdn_info->spInstId = spInstId;
+		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
+		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 	}
 
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received %s (suId:%u suInstId:%u spInstId:%u ces:%d)\n",
@@ -187,9 +204,17 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
+	if (!sngisdn_info->spInstId) {
+		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
+		sngisdn_info->spInstId = spInstId;
+		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
+		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
+	}
+	
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received DISCONNECT (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
@@ -219,6 +244,7 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -250,7 +276,7 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -282,7 +308,7 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -315,7 +341,7 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -347,7 +373,7 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -380,7 +406,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -413,7 +439,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 			 !(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -446,7 +472,7 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -479,7 +505,7 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-
+		ftdm_assert(0, "Inconsistent call states\n");
 		return;
 	}
 
@@ -641,7 +667,10 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 			}
 		}
 	}
-	ftdm_assert(ftdmspan != NULL, "Received q921 status on unconfigured span\n");
+	if (ftdmspan == NULL) {
+		ftdm_log(FTDM_LOG_WARNING, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.lnkNmb);
+		return;
+	}
 
 	switch (status->t.usta.alarm.category) {
 		case (LCM_CATEGORY_INTERFACE):

@@ -34,9 +34,9 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-extern ftdm_status_t cpy_calling_num_to_sngisdn(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-extern ftdm_status_t cpy_called_num_to_sngisdn(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-extern ftdm_status_t cpy_calling_name_to_sngisdn(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
+extern ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
+extern ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
+extern ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
 
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan);
@@ -62,11 +62,10 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[signal_data->cc_id].mutex);
 
 	memset(&conEvnt, 0, sizeof(conEvnt));
-	
+
 	conEvnt.bearCap[0].eh.pres = PRSNT_NODEF;
 	conEvnt.bearCap[0].infoTranCap.pres = PRSNT_NODEF;
-
-	conEvnt.bearCap[0].infoTranCap.val = IN_ITC_SPEECH;
+	conEvnt.bearCap[0].infoTranCap.val = sngisdn_get_infoTranCap_from_user(ftdmchan->caller_data.bearer_capability);
 
 	conEvnt.bearCap[0].codeStand0.pres = PRSNT_NODEF;
 	conEvnt.bearCap[0].codeStand0.val = IN_CSTD_CCITT;
@@ -96,14 +95,21 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 		conEvnt.chanId.infoChanSel.val = ftdmchan->physical_chan_id;
 	} else {
 		/* PRI only params */
-
-		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
-			conEvnt.bearCap[0].usrInfoLyr1Prot.pres = PRSNT_NODEF;
+		conEvnt.bearCap[0].usrInfoLyr1Prot.pres = PRSNT_NODEF;
+		conEvnt.bearCap[0].usrInfoLyr1Prot.val = sngisdn_get_usrInfoLyr1Prot_from_user(ftdmchan->caller_data.bearer_layer1);
+		
+		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN &&
+			conEvnt.bearCap[0].usrInfoLyr1Prot.val == IN_UIL1_G711ULAW) {
+			
+			/* We are bridging a call from T1 */
 			conEvnt.bearCap[0].usrInfoLyr1Prot.val = IN_UIL1_G711ALAW;
-		} else {
-			conEvnt.bearCap[0].usrInfoLyr1Prot.pres = PRSNT_NODEF;
+			
+		} else if (conEvnt.bearCap[0].usrInfoLyr1Prot.val == IN_UIL1_G711ALAW) {
+			
+			/* We are bridging a call from E1 */
 			conEvnt.bearCap[0].usrInfoLyr1Prot.val = IN_UIL1_G711ULAW;
 		}
+		
 		conEvnt.bearCap[0].lyr1Ident.pres = PRSNT_NODEF;
 		conEvnt.bearCap[0].lyr1Ident.val = IN_L1_IDENT;
 
@@ -138,9 +144,9 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 		sngisdn_info->ces = CES_MNGMNT;
 	}
 
-	cpy_called_num_to_sngisdn(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
-	cpy_calling_num_to_sngisdn(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
-	cpy_calling_name_to_sngisdn(&conEvnt, ftdmchan);
+	cpy_called_num_from_user(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
+	cpy_calling_num_from_user(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
+	cpy_calling_name_from_user(&conEvnt, ftdmchan);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -277,7 +283,7 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+ 	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending PROGRESS, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);

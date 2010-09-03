@@ -78,6 +78,37 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_ton(const char *ton_string, uint8_t *tar
 	return FTDM_SUCCESS;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_span_set_bearer_capability(const char *bc_string, ftdm_bearer_cap_t *target)
+{
+	if (!strcasecmp(bc_string, "speech")) {
+		*target = FTDM_BEARER_CAP_SPEECH;
+	} else if (!strcasecmp(bc_string, "unrestricted-digital")) {
+		*target = FTDM_BEARER_CAP_64K_UNRESTRICTED;
+	} else if (!strcasecmp(bc_string, "3.1Khz")) {
+		*target = FTDM_BEARER_CAP_3_1KHZ_AUDIO;
+	} else {
+		ftdm_log(FTDM_LOG_WARNING, "Unsupported Bearer Capability value (%s)\n", bc_string);
+		return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_span_set_bearer_layer1(const char *bc_string, ftdm_user_layer1_prot_t *target)
+{
+	if (!strcasecmp(bc_string, "v110")) {
+		*target = FTDM_USER_LAYER1_PROT_V110;
+	} else if (!strcasecmp(bc_string, "ulaw")) {
+		*target = FTDM_USER_LAYER1_PROT_ULAW;
+	} else if (!strcasecmp(bc_string, "alaw")) {
+		*target =FTDM_USER_LAYER1_PROT_ALAW ;
+	} else {
+		ftdm_log(FTDM_LOG_WARNING, "Unsupported Bearer Layer1 Prot value (%s)\n", bc_string);
+		return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
+
 FT_DECLARE(ftdm_status_t) ftdm_is_number(char *number)
 {
 	if (!number) {

@@ -320,6 +320,11 @@ void sngisdn_rcv_cc_ind(CcMngmt *status);
 void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_rcv_sng_assert(char *message);
 
+uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);
+uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot);
+ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_user(uint8_t bearer_capability);
+ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_user(uint8_t layer1_prot);
+
 static __inline__ uint32_t sngisdn_test_flag(sngisdn_chan_data_t *sngisdn_info, sngisdn_flag_t flag)
 {
 	return (uint32_t) sngisdn_info->flags & flag;

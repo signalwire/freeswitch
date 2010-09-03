@@ -281,8 +281,8 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 				while ((sngisdn_event = ftdm_queue_dequeue(signal_data->event_queue))) {
 					ftdm_sangoma_isdn_process_stack_event(span, sngisdn_event);
 					ftdm_safe_free(sngisdn_event);
-				}     
-        ftdm_span_trigger_signals(span); 
+				}
+				ftdm_span_trigger_signals(span);
 				break;
 			case FTDM_TIMEOUT:
 				/* twiddle */

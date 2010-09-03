@@ -293,6 +293,14 @@ static ftdm_status_t ftdm_set_caller_data(ftdm_span_t *span, ftdm_caller_data_t 
 		caller_data->rdnis.type = span->default_caller_data.rdnis.type;
 	}
 
+	if (caller_data->bearer_capability == FTDM_INVALID_INT_PARM) {
+		caller_data->bearer_capability = span->default_caller_data.bearer_capability;
+	}
+
+	if (caller_data->bearer_layer1 == FTDM_INVALID_INT_PARM) {
+		caller_data->bearer_layer1 = span->default_caller_data.bearer_layer1;
+	}
+
 	if (FTDM_FAIL == ftdm_is_number(caller_data->cid_num.digits)) {
 		ftdm_log(FTDM_LOG_DEBUG, "dropping caller id number %s since we only accept digits\n", caller_data->cid_num.digits);
 		caller_data->cid_num.digits[0] = '\0';

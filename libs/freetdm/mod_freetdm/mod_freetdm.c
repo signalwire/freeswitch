@@ -3413,9 +3413,9 @@ static switch_status_t load_config(void)
 		boost_span = boost_spans[i];
 		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", ftdm_span_get_id(boost_span));
 		if (ftdm_span_start(boost_span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n", 
-						ftdm_span_get_id(boost_span), ftdm_span_get_last_error(boost_span));
-				continue;
+			ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n",
+					ftdm_span_get_id(boost_span), ftdm_span_get_last_error(boost_span));
+			continue;
 		}
 	}
 

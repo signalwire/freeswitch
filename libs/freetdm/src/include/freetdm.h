@@ -60,6 +60,8 @@
 /*! \brief Max number of groups */
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
 
+#define FTDM_INVALID_INT_PARM 0xFF
+
 /*! \brief FreeTDM APIs possible return codes */
 typedef enum {
 	FTDM_SUCCESS, /*!< Success */
@@ -207,6 +209,7 @@ typedef struct ftdm_queue_handler {
 	ftdm_queue_get_interrupt_func_t get_interrupt;
 	ftdm_queue_destroy_func_t destroy;
 } ftdm_queue_handler_t;
+
 
 /*! \brief Type Of Number (TON) */
 typedef enum {

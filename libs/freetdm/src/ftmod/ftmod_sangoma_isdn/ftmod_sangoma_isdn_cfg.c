@@ -163,6 +163,11 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->overlap_dial = SNGISDN_OPT_DEFAULT;
 	signal_data->setup_arb = SNGISDN_OPT_DEFAULT;
 
+	span->default_caller_data.bearer_capability = IN_ITC_SPEECH;
+
+	/* Cannot set default bearer_layer1 yet, as we do not know the switchtype */
+	span->default_caller_data.bearer_layer1 = FTDM_INVALID_INT_PARM;
+
 	if (span->trunk_type == FTDM_TRUNK_BRI ||
 		span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
 
@@ -240,6 +245,10 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			ftdm_span_set_ton(val, &span->default_caller_data.rdnis.type);
 		} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
 			ftdm_span_set_npi(val, &span->default_caller_data.rdnis.plan);
+		} else if (!strcasecmp(var, "outbound-bearer_cap")) {
+			ftdm_span_set_bearer_capability(val, &span->default_caller_data.bearer_capability);
+		} else if (!strcasecmp(var, "outbound-bearer_layer1")) {
+			ftdm_span_set_bearer_layer1(val, &span->default_caller_data.bearer_layer1);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
@@ -252,6 +261,14 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	if (signal_data->signalling == SNGISDN_SIGNALING_INVALID) {
 		ftdm_log(FTDM_LOG_ERROR, "%s: signalling not specified", span->name);
 		return FTDM_FAIL;
+	}
+
+	if (span->default_caller_data.bearer_layer1 == FTDM_INVALID_INT_PARM) {
+		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
+			span->default_caller_data.bearer_layer1 = IN_UIL1_G711ULAW;
+		} else {
+			span->default_caller_data.bearer_layer1 = IN_UIL1_G711ALAW;
+		}
 	}
 	return FTDM_SUCCESS;
 }

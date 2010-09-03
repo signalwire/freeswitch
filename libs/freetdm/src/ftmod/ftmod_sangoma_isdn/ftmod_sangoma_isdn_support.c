@@ -34,15 +34,15 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-ftdm_status_t cpy_calling_num_from_sngisdn(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-ftdm_status_t cpy_called_num_from_sngisdn(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-ftdm_status_t cpy_redir_num_from_sngisdn(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-ftdm_status_t cpy_calling_name_from_sngisdn(ftdm_caller_data_t *ftdm, Display *display);
+ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
+ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
+ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
+ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
 
-ftdm_status_t cpy_calling_num_to_sngisdn(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_called_num_to_sngisdn(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_redir_num_to_sngisdn(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_calling_name_to_sngisdn(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
+ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
 
 ftdm_status_t sngisdn_check_free_ids(void);
 
@@ -146,7 +146,7 @@ ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t ava
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_num_from_sngisdn(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
+ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
 {
 	if (cgPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -173,7 +173,7 @@ ftdm_status_t cpy_calling_num_from_sngisdn(ftdm_caller_data_t *ftdm, CgPtyNmb *c
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_called_num_from_sngisdn(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
+ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
 {
 	if (cdPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -195,7 +195,7 @@ ftdm_status_t cpy_called_num_from_sngisdn(ftdm_caller_data_t *ftdm, CdPtyNmb *cd
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_redir_num_from_sngisdn(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
+ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
 {
 	if (redirNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -215,7 +215,7 @@ ftdm_status_t cpy_redir_num_from_sngisdn(ftdm_caller_data_t *ftdm, RedirNmb *red
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_name_from_sngisdn(ftdm_caller_data_t *ftdm, Display *display)
+ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display)
 {
 	if (display->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -228,7 +228,7 @@ ftdm_status_t cpy_calling_name_from_sngisdn(ftdm_caller_data_t *ftdm, Display *d
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_num_to_sngisdn(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->cid_num.digits);
 	if (!len) {
@@ -256,7 +256,7 @@ ftdm_status_t cpy_calling_num_to_sngisdn(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t 
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_called_num_to_sngisdn(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->dnis.digits);
 	if (!len) {
@@ -286,7 +286,7 @@ ftdm_status_t cpy_called_num_to_sngisdn(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *
     return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_redir_num_to_sngisdn(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->rdnis.digits);
 	if (!len) {
@@ -318,7 +318,7 @@ ftdm_status_t cpy_redir_num_to_sngisdn(RedirNmb *redirNmb, ftdm_caller_data_t *f
 }
 
 
-ftdm_status_t cpy_calling_name_to_sngisdn(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
+ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
 {
 	uint8_t len;
 	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
@@ -385,13 +385,7 @@ void sngisdn_delayed_release(void* p_sngisdn_info)
 								signal_data->cc_id, sngisdn_info->glare.spInstId, sngisdn_info->glare.suInstId);
 
 		sngisdn_snd_release(ftdmchan, 1);
-#if 1	/* TODO: Confirm this */
 		clear_call_glare_data(sngisdn_info);
-#else
-		g_sngisdn_data.ccs[signal_data->cc_id].active_spInstIds[sngisdn_info->glare.spInstId] = NULL;
-		g_sngisdn_data.ccs[signal_data->cc_id].active_suInstIds[sngisdn_info->glare.suInstId] = NULL;
-#endif
-
 	} else {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Call was already released (suId:%d suInstId:%u spInstId:%u)\n",
 								signal_data->cc_id, sngisdn_info->glare.spInstId, sngisdn_info->glare.suInstId);
@@ -473,6 +467,72 @@ void get_memory_info(void)
 	return;
 }
 
+uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability)
+{
+	switch(bearer_capability) {
+	case FTDM_BEARER_CAP_SPEECH:
+		return IN_ITC_SPEECH;
+
+	case FTDM_BEARER_CAP_64K_UNRESTRICTED:
+		return IN_ITC_UNRDIG;
+
+	case FTDM_BEARER_CAP_3_1KHZ_AUDIO:
+		return IN_ITC_A31KHZ;
+		
+		/* Do not put a default case here, so we can see compile warnings if we have unhandled cases */
+	}
+	return FTDM_BEARER_CAP_SPEECH;
+}
+
+uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot)
+{
+	switch(layer1_prot) {
+	case FTDM_USER_LAYER1_PROT_V110:
+		return IN_UIL1_CCITTV110;
+
+	case FTDM_USER_LAYER1_PROT_ULAW:
+		return IN_UIL1_G711ULAW;
+
+	case FTDM_USER_LAYER1_PROT_ALAW:
+		return IN_UIL1_G711ALAW;
+			
+	/* Do not put a default case here, so we can see compile warnings if we have unhandled cases */
+	}
+	return IN_UIL1_G711ULAW;
+}
+
+ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_user(uint8_t bearer_capability)
+{
+	switch(bearer_capability) {
+	case IN_ITC_SPEECH:
+		return FTDM_BEARER_CAP_SPEECH;
+		
+	case IN_ITC_UNRDIG:
+		return FTDM_BEARER_CAP_64K_UNRESTRICTED;
+		
+	case IN_ITC_A31KHZ:
+		return FTDM_BEARER_CAP_3_1KHZ_AUDIO;
+
+	default:
+		return FTDM_BEARER_CAP_SPEECH;
+	}
+	return FTDM_BEARER_CAP_SPEECH;
+}
+
+ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_user(uint8_t layer1_prot)
+{
+	switch(layer1_prot) {
+	case IN_UIL1_CCITTV110:
+		return FTDM_USER_LAYER1_PROT_V110;
+	case IN_UIL1_G711ULAW:
+		return FTDM_USER_LAYER1_PROT_ULAW;
+	case IN_UIL1_G711ALAW:
+		return IN_UIL1_G711ALAW;
+	default:
+		return FTDM_USER_LAYER1_PROT_ULAW;
+	}
+	return FTDM_USER_LAYER1_PROT_ULAW;
+}
 
 /* For Emacs:
  * Local Variables:
