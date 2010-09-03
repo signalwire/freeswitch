@@ -574,7 +574,7 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 
 	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
 
-		if (thedir->finfo.filetype != APR_REG) {
+		if (thedir->finfo.filetype != APR_REG && thedir->finfo.filetype != APR_LNK) {
 			continue;
 		}
 
