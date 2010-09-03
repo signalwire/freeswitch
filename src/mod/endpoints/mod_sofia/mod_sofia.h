@@ -1007,3 +1007,4 @@ switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *sess
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
 void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
+switch_bool_t sofia_glue_profile_exists(const char *key);
