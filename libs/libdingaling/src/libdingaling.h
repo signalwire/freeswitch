@@ -593,6 +593,7 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 void ldl_handle_run(ldl_handle_t *handle);
 
 int ldl_session_gateway(ldl_session_t *handle);
+void ldl_session_set_gateway(ldl_session_t *session);
 
 /*!
   \brief Stop a libDingaLing handle

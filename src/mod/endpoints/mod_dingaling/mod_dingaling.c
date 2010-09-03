@@ -1002,7 +1002,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port,
 						  cand[0].username);
 
-		if (ldl_session_gateway(tech_pvt->dlsession)) {
+		if (ldl_session_gateway(tech_pvt->dlsession) && switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 			tech_pvt->cand_id = ldl_session_transport(tech_pvt->dlsession, cand, 1);
 		} else {
 			tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
@@ -2980,6 +2980,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->flags |= profile->flags;
 				channel = switch_core_session_get_channel(session);
 				switch_core_session_set_private(session, tech_pvt);
+				tech_pvt->dlsession = dlsession;
+
 				tech_pvt->session = session;
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
@@ -3025,6 +3027,24 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					cid_num = tech_pvt->recip;
 				}
 
+
+				if (switch_stristr("voice.google.com", from)) {
+					char *id = switch_core_session_strdup(session, from);
+					char *p;
+					
+					if ((p = strchr(id, '@'))) {
+						*p++ = '\0';
+						cid_name = "Google Voice";
+						cid_num = id;
+					}
+					
+					ldl_session_set_gateway(dlsession);
+					
+					do_candidates(tech_pvt, 1);
+				}
+
+
+
 				/* context of "_auto_" means set it to the domain */
 				if (profile->context && !strcmp(profile->context, "_auto_")) {
 					context = profile->name;
@@ -3047,7 +3067,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 					switch_safe_free(tmp);
 				}
-
+				
 				if (!tech_pvt->caller_profile) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "Creating an identity for %s %s <%s> %s\n", ldl_session_get_id(dlsession), cid_name, cid_num, exten);
@@ -3079,7 +3099,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating a session for %s\n", ldl_session_get_id(dlsession));
 			ldl_session_set_private(dlsession, session);
-			tech_pvt->dlsession = dlsession;
+			
 			switch_channel_set_name(channel, "DingaLing/new");
 			switch_channel_set_state(channel, CS_INIT);
 			if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
@@ -3230,6 +3250,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					}
 				}
 			}
+
 		}
 
 		break;
@@ -3259,7 +3280,15 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			if (profile->acl_count) {
 				for (x = 0; x < len; x++) {
 					uint32_t y = 0;
+
+					if (strcasecmp(candidates[x].protocol, "udp")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d has an unsupported protocol!\n",
+										  candidates[x].address, candidates[x].port);
+						continue;
+					}
+
 					for (y = 0; y < profile->acl_count; y++) {
+						
 						if (switch_check_network_list_ip(candidates[x].address, profile->acl[y])) {
 							choice = x;
 							ok = 1;
@@ -3268,7 +3297,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						if (ok) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n",
 											  candidates[x].address, candidates[x].port, profile->acl[y]);
-							break;
+							goto end_candidates;
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d FAIL ACL %s\n",
 											  candidates[x].address, candidates[x].port, profile->acl[y]);
@@ -3310,6 +3339,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					}
 				}
 			}
+
+		end_candidates:
 
 			if (ok) {
 				ldl_payload_t payloads[5];

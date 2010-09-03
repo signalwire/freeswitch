@@ -2471,6 +2471,11 @@ int ldl_handle_running(ldl_handle_t *handle)
 }
 
 
+void ldl_session_set_gateway(ldl_session_t *session)
+{
+	ldl_set_flag(session, LDL_FLAG_GATEWAY);
+}
+
 int ldl_session_gateway(ldl_session_t *session)
 {
 	return ldl_test_flag(session, LDL_FLAG_GATEWAY) ? 1 : 0;
