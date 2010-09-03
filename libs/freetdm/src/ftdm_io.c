@@ -1942,7 +1942,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 	ftdm_channel_lock(ftdmchan);
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call is already terminating\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call is already TERMINATING\n");
 		goto done;
 	}
 
@@ -1954,12 +1954,25 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		goto done;
 	}
 
+
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 	}
 
+	/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
+		goto done;
+	}
+
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
+	}
+
+	/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to UP\n");
+		goto done;
 	}
 
 	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 1);
@@ -2076,8 +2089,13 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_channel_lock(ftdmchan);
-	switch (indication) {
 
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
+		goto done;
+	}
+
+	switch (indication) {
 	/* FIXME: ring and busy cannot be used with all signaling stacks 
 	 * (particularly isdn stacks I think, we should emulate or just move to hangup with busy cause) */
 	case FTDM_CHANNEL_INDICATE_RING:
@@ -2104,6 +2122,13 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 				ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 			}
+
+			/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
+				goto done;
+			}
+
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
 		}
 		break;
@@ -2114,6 +2139,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		break;
 	}
 
+done:
 	ftdm_channel_unlock(ftdmchan);
 
 	return FTDM_SUCCESS;
