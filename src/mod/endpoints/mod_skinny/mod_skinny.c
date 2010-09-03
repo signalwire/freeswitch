@@ -1233,7 +1233,6 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	switch_hash_index_t *hi;
 	void *val;
 	skinny_profile_t *profile;
-	listener_t *l;
 
 	/* walk listeners */
 	switch_mutex_lock(globals.mutex);
@@ -1241,11 +1240,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
-		switch_mutex_lock(profile->listener_mutex);
-		for (l = profile->listeners; l; l = l->next) {
-			callback(l, pvt);
-		}
-		switch_mutex_unlock(profile->listener_mutex);
+		profile_walk_listeners(profile, callback, pvt);
 	}
 	switch_mutex_unlock(globals.mutex);
 }
@@ -1509,6 +1504,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 
 new_socket:
 	while(globals.running) {
+		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
 		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, tmp_pool);
 		if (rv)
 			goto fail;
@@ -1546,8 +1542,10 @@ new_socket:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;
 			} else if (switch_test_flag(profile, PFLAG_RESPAWN)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Creating a new socket\n");
-				switch_clear_flag_locked(profile, PFLAG_RESPAWN);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Respawn in progress. Waiting for socket to close.\n");
+				while (profile->sock) {
+					switch_cond_next();
+				}
 				goto new_socket;
 			} else {
 				/* I wish we could use strerror_r here but its not defined everywhere =/ */
@@ -1619,6 +1617,18 @@ switch_endpoint_interface_t *skinny_get_endpoint_interface()
 	return skinny_endpoint_interface;
 }
 
+switch_status_t skinny_profile_respawn(skinny_profile_t *profile, int force)
+{
+	if (force || switch_test_flag(profile, PFLAG_SHOULD_RESPAWN)) {
+		switch_clear_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
+		switch_set_flag_locked(profile, PFLAG_RESPAWN);
+		switch_clear_flag_locked(profile, PFLAG_LISTENER_READY);
+		profile_walk_listeners(profile, kill_listener, NULL);
+		close_socket(&profile->sock, profile);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, const char *val)
 {
 	if (!var)
@@ -1633,9 +1643,15 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	if (!strcasecmp(var, "domain")) {
 		profile->domain = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "ip")) {
-		profile->ip = switch_core_strdup(profile->pool, val);
+		if (!profile->ip || strcmp(val, profile->ip)) {
+			profile->ip = switch_core_strdup(profile->pool, val);
+			switch_set_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
+		}
 	} else if (!strcasecmp(var, "port")) {
-		profile->port = atoi(val);
+		if (atoi(val) != profile->port) {
+			profile->port = atoi(val);
+			switch_set_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
+		}
 	} else if (!strcasecmp(var, "patterns-dialplan")) {
 		profile->patterns_dialplan = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "patterns-context")) {
@@ -1669,13 +1685,19 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
-	if (profile->sock && (!strcasecmp(var, "ip") || !strcasecmp(var, "port"))) {
-		switch_set_flag_locked(profile, PFLAG_RESPAWN);
-		switch_clear_flag_locked(profile, PFLAG_LISTENER_READY);
-		close_socket(&profile->sock, profile);
-	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+void profile_walk_listeners(skinny_profile_t *profile, skinny_listener_callback_func_t callback, void *pvt)
+{
+	listener_t *l;
+
+	switch_mutex_lock(profile->listener_mutex);
+	for (l = profile->listeners; l; l = l->next) {
+		callback(l, pvt);
+	}
+	switch_mutex_unlock(profile->listener_mutex);
 }
 
 static switch_status_t load_skinny_config(void)
@@ -1811,6 +1833,7 @@ static switch_status_t load_skinny_config(void)
 						}
 					}
 				}
+				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
 			    switch_mutex_lock(globals.mutex);
@@ -2009,6 +2032,7 @@ static void skinny_trap_event_handler(switch_event_t *event)
 					} else if (!strcmp(profile->ip, old_ip6)) {
 						skinny_profile_set(profile, "ip", new_ip6);
 					}
+					skinny_profile_respawn(profile, 0);
 				}
 			}
 		}

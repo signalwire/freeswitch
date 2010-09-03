@@ -366,7 +366,9 @@ static switch_status_t skinny_api_cmd_profile_set(const char *profile_name, cons
     skinny_profile_t *profile;
 
     if ((profile = skinny_find_profile(profile_name))) {
-	    if (skinny_profile_set(profile, name, value) != SWITCH_STATUS_SUCCESS) {
+	    if (skinny_profile_set(profile, name, value) == SWITCH_STATUS_SUCCESS) {
+			skinny_profile_respawn(profile, 0);
+	    } else {
 		    stream->write_function(stream, "Unable to set skinny setting '%s'. Does it exists?\n", name);
 	    }
     } else {
