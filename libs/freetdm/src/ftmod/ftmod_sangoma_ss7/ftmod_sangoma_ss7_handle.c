@@ -78,8 +78,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t  *sngss7_info ;
-	ftdm_channel_t	  *ftdmchan;
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	ftdm_channel_t	  	*ftdmchan = NULL;
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -121,14 +121,14 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* check whether the ftdm channel is in a state to accept a call */
 	switch (ftdmchan->state) {
 	/**************************************************************************/
-	case (FTDM_CHANNEL_STATE_DOWN):	 /* only state it is fully valid to get IAM */
+	case (FTDM_CHANNEL_STATE_DOWN):	 /* only state it is valid to get IAM (except if there is glare */
 
-		/* fill in the channels SS7 Stack information */
-		sngss7_info->suInstId = get_unique_id();
-		sngss7_info->spInstId = spInstId;
-
-		/* try to open the ftdm channel */
-		if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
+		/* check if there is any reason why we can't use this channel */
+		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
+			/* channel is already requested for use by the ftdm core */
+			goto handle_glare;
+		} else if(ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
+			/* channel is not inuse but we can't open it...fail the call */
 			SS7_ERROR("Failed to open span: %d, chan: %d\n",
 						ftdmchan->physical_span_id,
 						ftdmchan->physical_chan_id);
@@ -142,6 +142,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 
 		} else {
+
+			/* fill in the channels SS7 Stack information */
+			sngss7_info->suInstId = get_unique_id();
+			sngss7_info->spInstId = spInstId;
 
 			/* fill in calling party information */
 			if (siConEvnt->cgPtyNum.eh.pres) {
@@ -211,7 +215,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/* set the state of the channel to collecting...the rest is done by the chan monitor */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
 
-		} /* if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) */
+		} /* if (channel is usable */
 
 		break;
 	/**************************************************************************/
@@ -219,8 +223,11 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case (FTDM_CHANNEL_STATE_TERMINATING):
 	case (FTDM_CHANNEL_STATE_HANGUP):
 	case (FTDM_CHANNEL_STATE_HANGUP_COMPLETE):
-
-		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel in %s state...glare!\n", ftdm_channel_state2str (ftdmchan->state));
+handle_glare:
+		/* the core already has plans for this channel...glare */
+		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel that is already inuse (state=%s|inuse=%d)...glare!\n", 
+								ftdm_channel_state2str (ftdmchan->state),
+								ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE));
 
 		/* save the info so that we can use it later on */
 		sngss7_info->glare.spInstId = spInstId;
@@ -239,8 +246,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		
 			/* move the state of the channel to Terminating to end the call */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-		}
-
+		} /* if (!(sngss7_test_flag(sngss7_info, FLAG_GLARE))) */
 		break;
 	/**************************************************************************/
 	default:	/* should not have gotten an IAM while in this state */
