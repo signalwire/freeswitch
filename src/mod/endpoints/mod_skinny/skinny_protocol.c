@@ -118,10 +118,6 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (!listener_is_ready(listener)) {
-		return SWITCH_STATUS_BREAK;
-	}
-
 	ptr = mbuf;
 
 	while (listener_is_ready(listener)) {
@@ -137,10 +133,10 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
 		if (!listener_is_ready(listener)) {
-			return SWITCH_STATUS_BREAK;
+			break;
 		}
-		if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break.\n");
+		if ((status != 70007 /* APR_TIMEUP */) && !SWITCH_STATUS_IS_BREAK(status) && (status != SWITCH_STATUS_SUCCESS)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break with status=%d.\n", status);
 			return SWITCH_STATUS_FALSE;
 		}
 
