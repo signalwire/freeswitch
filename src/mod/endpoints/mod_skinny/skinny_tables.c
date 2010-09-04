@@ -176,7 +176,7 @@ struct skinny_table SKINNY_SOFT_KEY_EVENTS[] = {
     {NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_soft_key_event2str, SKINNY_SOFT_KEY_EVENTS, "SoftkeyUnknown")
-SKINNY_DECLARE_STR2ID(skinny_str2soft_key_event, SKINNY_SOFT_KEY_EVENTS, -1)
+SKINNY_DECLARE_STR2ID(skinny_str2soft_key_event, SKINNY_SOFT_KEY_EVENTS, 0)
 
 struct skinny_table SKINNY_LAMP_MODES[] = {
     {"Off", SKINNY_LAMP_OFF},

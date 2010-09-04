@@ -1694,48 +1694,14 @@ end:
 switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_message_t *request)
 {
 	skinny_message_t *message;
-	skinny_profile_t *profile;
 
-	switch_assert(listener->profile);
-	switch_assert(listener->device_name);
-
-	profile = listener->profile;
-
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.soft_key_set));
-	message->type = SOFT_KEY_SET_RES_MESSAGE;
-	message->length = 4 + sizeof(message->data.soft_key_set);
-
-	message->data.soft_key_set.soft_key_set_offset = 0;
-	message->data.soft_key_set.soft_key_set_count = 11;
-	message->data.soft_key_set.total_soft_key_set_count = 11;
-
-	/* TODO fill the set */
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[0] = SOFTKEY_NEWCALL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
-	
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[1] = SOFTKEY_REDIAL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK].soft_key_template_index[2] = SOFTKEY_ENDCALL;
-
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT].soft_key_template_index[0] = SOFTKEY_BACKSPACE;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT].soft_key_template_index[2] = SOFTKEY_ENDCALL;
-
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[0] = SOFTKEY_ENDCALL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[1] = SOFTKEY_HOLD;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[2] = SOFTKEY_NEWCALL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_CONNECTED].soft_key_template_index[3] = SOFTKEY_TRANSFER;
-	
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[0] = SOFTKEY_ANSWER;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[1] = SOFTKEY_ENDCALL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_RING_IN].soft_key_template_index[2] = SOFTKEY_NEWCALL;
-
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[0] = SOFTKEY_NEWCALL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[1] = SOFTKEY_RESUME;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_ON_HOLD].soft_key_template_index[2] = SOFTKEY_ENDCALL;
-	
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES].soft_key_template_index[1] = SOFTKEY_REDIAL;
-	message->data.soft_key_set.soft_key_set[SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES].soft_key_template_index[2] = SOFTKEY_ENDCALL;
-
-	skinny_send_reply(listener, message);
+	message = switch_core_hash_find(listener->profile->soft_key_set_sets_hash, "default");
+	if (message) {
+		skinny_send_reply(listener, message);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			"Profile %s doesn't have a default <soft-key-set-set>. Profile ignored.\n", listener->profile->name);
+	}
 
 	/* Init the states */
 	send_select_soft_keys(listener, 0, 0, SKINNY_KEY_SET_ON_HOOK, 0xffff);
