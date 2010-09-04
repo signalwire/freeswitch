@@ -275,6 +275,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_ringer_message(const c
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
 		    send_set_ringer(listener, skinny_str2ring_type(ring_type), skinny_str2ring_mode(ring_mode), 0, 0);
+			stream->write_function(stream, "+OK\n");
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -294,6 +295,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_lamp_message(const cha
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
 		    send_set_lamp(listener, skinny_str2button(stimulus), atoi(instance), skinny_str2lamp_mode(lamp_mode));
+			stream->write_function(stream, "+OK\n");
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -313,6 +315,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_speaker_mode_message(c
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
 		    send_set_speaker_mode(listener, skinny_str2speaker_mode(speaker_mode));
+			stream->write_function(stream, "+OK\n");
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -332,6 +335,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_call_state_message(con
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
 		    send_call_state(listener, skinny_str2call_state(call_state), atoi(line_instance), atoi(call_id));
+			stream->write_function(stream, "+OK\n");
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -351,6 +355,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_reset_message(const ch
 	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
 	    if(listener) {
 		    send_reset(listener, skinny_str2device_reset_type(reset_type));
+			stream->write_function(stream, "+OK\n");
 	    } else {
 		    stream->write_function(stream, "Listener not found!\n");
 	    }
@@ -368,6 +373,7 @@ static switch_status_t skinny_api_cmd_profile_set(const char *profile_name, cons
     if ((profile = skinny_find_profile(profile_name))) {
 	    if (skinny_profile_set(profile, name, value) == SWITCH_STATUS_SUCCESS) {
 			skinny_profile_respawn(profile, 0);
+			stream->write_function(stream, "+OK\n");
 	    } else {
 		    stream->write_function(stream, "Unable to set skinny setting '%s'. Does it exists?\n", name);
 	    }
