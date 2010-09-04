@@ -1426,7 +1426,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" (%s) from queue %s%s\n",
 				h->agent_name, h->member_caller_name, h->member_caller_number, h->queue, (h->record_template?" (Recorded)":""));
-		switch_ivr_uuid_bridge(switch_core_session_get_uuid(agent_session), h->member_uuid);
+		switch_ivr_uuid_bridge(h->member_uuid, switch_core_session_get_uuid(agent_session));
 
 		/* Wait until the member hangup or the agent hangup.  This will quit also if the agent transfer the call */
 		while(switch_channel_up(member_channel) && switch_channel_up(agent_channel) && globals.running) {
