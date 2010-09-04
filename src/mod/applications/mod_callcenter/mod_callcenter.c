@@ -1307,8 +1307,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	}
 	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_pre_answer_uuid", "%s", h->member_uuid);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent", "%s", h->agent_name);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent_type", "%s", h->agent_type);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
 		t_agent_called = switch_epoch_time_now(NULL);
@@ -1323,6 +1326,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
 			switch_event_t *event;
 			const char *cc_warning_tone = switch_channel_get_variable(agent_channel, "cc_warning_tone");
+
+			switch_channel_set_variable(agent_channel, "cc_queue", h->queue);
+			switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
+			switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
+			switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
+
 			/* Playback this to the agent */
 			if (cc_warning_tone && switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -1772,7 +1781,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			switch_safe_free(sql);
 		}
 		/* Skip this member */
-		return 0;
+		goto end;
 	} 
 	memset(&cbt, 0, sizeof(cbt));
 	cbt.tier = 0;
