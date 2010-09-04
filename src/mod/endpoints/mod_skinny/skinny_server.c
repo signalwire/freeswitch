@@ -999,6 +999,8 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 				const char *value = switch_xml_attr_soft(xparam, "value");
 				if (!strcasecmp(name, "skinny-firmware-version")) {
 					strncpy(listener->firmware_version, value, 16);
+				} else if (!strcasecmp(name, "skinny-default-soft-key-set-set")) {
+					listener->default_soft_key_set_set = switch_core_strdup(profile->pool, value);
 				}
 			}
 		}
@@ -1693,14 +1695,19 @@ end:
 
 switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_message_t *request)
 {
-	skinny_message_t *message;
+	skinny_message_t *message = NULL;
 
-	message = switch_core_hash_find(listener->profile->soft_key_set_sets_hash, "default");
+	if (listener->default_soft_key_set_set) {
+		message = switch_core_hash_find(listener->profile->soft_key_set_sets_hash, listener->default_soft_key_set_set);
+	}
+	if (!message) {
+		message = switch_core_hash_find(listener->profile->soft_key_set_sets_hash, "default");
+	}
 	if (message) {
 		skinny_send_reply(listener, message);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-			"Profile %s doesn't have a default <soft-key-set-set>. Profile ignored.\n", listener->profile->name);
+			"Profile %s doesn't have a default <soft-key-set-set>.\n", listener->profile->name);
 	}
 
 	/* Init the states */
