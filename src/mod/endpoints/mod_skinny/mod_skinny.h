@@ -135,7 +135,7 @@ struct listener {
     uint32_t device_type;
     
 	char firmware_version[16];
-	char *default_soft_key_set_set;
+	char *soft_key_set_set;
 
     switch_socket_t *sock;
     switch_memory_pool_t *pool;

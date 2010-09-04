@@ -3,7 +3,7 @@
    <params>
     <!-- for devices requesting firmware via SCCP, like ATA186
     <param name="skinny-firmware-version" value="ATA030101SCCP04"
-    <param name="skinny-default-soft-key-set-set" value="default"
+    <param name="skinny-soft-key-set-set" value="default"
     -->
     <param name="foo" value="bar"/>
    </params>
