@@ -68,6 +68,7 @@ typedef enum {
 	FLAG_GLARE              = (1 << 6),
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
+	FLAG_SEND_DISC  		= (1 << 9),
 } sngisdn_flag_t;
 
 
@@ -127,6 +128,13 @@ typedef enum {
 	SNGISDN_EVENT_RST_IND,
 } ftdm_sngisdn_event_id_t;
 
+/* Only timers that can be cancelled are listed here */
+#define SNGISDN_NUM_TIMERS 1
+/* Increase NUM_TIMERS as number of ftdm_sngisdn_timer_t increases */
+typedef enum {
+	SNGISDN_TIMER_FACILITY = 0,
+} ftdm_sngisdn_timer_t;
+
 typedef struct sngisdn_glare_data {
 	int16_t		suId;
     uint32_t	suInstId;
@@ -148,6 +156,7 @@ typedef struct sngisdn_chan_data {
 
 	uint8_t                 globalFlg;
 	sngisdn_glare_data_t	glare;
+	ftdm_timer_t 			*timers[SNGISDN_NUM_TIMERS];
 } sngisdn_chan_data_t;
 
 /* Span specific data */
@@ -165,6 +174,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			overlap_dial;
 	uint8_t			setup_arb;
 	uint8_t			facility;
+	int8_t			facility_timeout;
 	ftdm_sched_t	*sched;
 	ftdm_queue_t 	*event_queue;
 } sngisdn_span_data_t;
@@ -223,8 +233,8 @@ typedef struct sngisdn_cc {
 	ftdm_trunk_type_t	trunktype;
 	uint32_t			last_suInstId;	
 	ftdm_mutex_t		*mutex;
-	sngisdn_chan_data_t	*active_spInstIds[MAX_INSTID];
-	sngisdn_chan_data_t	*active_suInstIds[MAX_INSTID];
+	sngisdn_chan_data_t	*active_spInstIds[MAX_INSTID+1];
+	sngisdn_chan_data_t	*active_suInstIds[MAX_INSTID+1];
 }sngisdn_cc_t;
 
 /* Global sngisdn data */
@@ -349,6 +359,7 @@ void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t 
 void sngisdn_delayed_release(void* p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
+void sngisdn_facility_timeout(void* p_sngisdn_info);
 
 /* Stack management functions */
 ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span);

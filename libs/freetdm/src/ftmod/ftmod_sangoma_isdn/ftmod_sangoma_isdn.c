@@ -189,7 +189,8 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS,
+		 FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_OUTBOUND,
@@ -558,6 +559,9 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				/* We are hangup local call because there was a glare, we are waiting for a
 				RELEASE on this call, before we can process the saved call */
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Waiting for RELEASE on hungup glared call\n");
+			} else if (sngisdn_test_flag(sngisdn_info, FLAG_SEND_DISC)) {
+				/* Remote side sent a PROGRESS message, but cause indicates disconnect or T310 expired*/
+				sngisdn_snd_disconnect(ftdmchan);
 			} else {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Hanging up call upon local request!\n");
 
@@ -568,16 +572,15 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RING ||
 					ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALING) {
 
+					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+					sngisdn_snd_release(ftdmchan, 0);
+
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 						sng_isdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 					}
-
-					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
-					sngisdn_snd_release(ftdmchan, 0);
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
 				}
-				
 			}
 
 			/* now go to the HANGUP complete state */

@@ -249,6 +249,11 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			ftdm_span_set_bearer_capability(val, &span->default_caller_data.bearer_capability);
 		} else if (!strcasecmp(var, "outbound-bearer_layer1")) {
 			ftdm_span_set_bearer_layer1(val, &span->default_caller_data.bearer_layer1);
+		} else if (!strcasecmp(var, "facility-timeout")) {
+			signal_data->facility_timeout = atoi(val);
+			if (signal_data->facility_timeout < 0) {
+				signal_data->facility_timeout = 0;
+			}
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
