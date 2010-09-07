@@ -373,6 +373,14 @@ struct code2str dcodQ931ScreeningTable[] = {
 	{-1, "invalid" },
 };
 
+struct code2str dcodQ931InfoChannelSelTable[] = {
+	{0, "No Chan"},
+	{1, "B1"},
+	{2, "B2"},
+	{3, "Any Chan"},
+	{-1, "invalid" },
+};
+
 struct code2str dcodQ931ReasonTable[] = {
 	{0x0, "Unknown"},
 	{0x1, "Call forwarding busy"},

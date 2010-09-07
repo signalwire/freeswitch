@@ -117,6 +117,7 @@
 #include "ftdm_buffer.h"
 #include "ftdm_threadmutex.h"
 #include "ftdm_sched.h"
+#include "ftdm_call_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -465,6 +466,7 @@ struct ftdm_span {
 	ftdm_state_map_t *state_map;
 	ftdm_caller_data_t default_caller_data;
 	ftdm_queue_t *pendingchans;
+	ftdm_queue_t *pendingsignals;
 	struct ftdm_span *next;
 };
 
@@ -578,6 +580,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, const char *dtmf);
 
+/* dequeue pending signals and notify the user via the span signal callback */
+FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 
 /*!
   \brief Assert condition

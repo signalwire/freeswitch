@@ -46,7 +46,10 @@ ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t tra
 ftdm_status_t sng_isdn_cntrl_q931(ftdm_span_t *span, uint8_t action, uint8_t subaction);
 ftdm_status_t sng_isdn_cntrl_q921(ftdm_span_t *span, uint8_t action, uint8_t subaction);
 
+
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
+
+ftdm_status_t sng_isdn_stack_stop(ftdm_span_t *span);
 
 
 ftdm_status_t sng_isdn_stack_activate(ftdm_span_t *span)
@@ -74,6 +77,12 @@ ftdm_status_t sng_isdn_stack_activate(ftdm_span_t *span)
 	ftdm_log(FTDM_LOG_DEBUG, "%s:Stack q931 activated\n", span->name);
 
 	ftdm_log(FTDM_LOG_INFO, "%s:Stack activated\n",span->name);
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t	sng_isdn_stack_stop(ftdm_span_t *span)
+{
+
 	return FTDM_SUCCESS;
 }
 
@@ -300,6 +309,7 @@ void stack_resp_hdr_init(Header *hdr)
 
 	return;
 }
+
 
 
 /* For Emacs:

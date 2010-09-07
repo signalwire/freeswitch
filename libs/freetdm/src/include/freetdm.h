@@ -60,6 +60,8 @@
 /*! \brief Max number of groups */
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
 
+#define FTDM_INVALID_INT_PARM 0xFF
+
 /*! \brief FreeTDM APIs possible return codes */
 typedef enum {
 	FTDM_SUCCESS, /*!< Success */
@@ -208,6 +210,7 @@ typedef struct ftdm_queue_handler {
 	ftdm_queue_destroy_func_t destroy;
 } ftdm_queue_handler_t;
 
+
 /*! \brief Type Of Number (TON) */
 typedef enum {
 	FTDM_TON_UNKNOWN = 0,
@@ -239,6 +242,20 @@ typedef struct {
 	uint8_t plan;
 } ftdm_number_t;
 
+/*! \brief bearer capability */
+typedef enum {
+	FTDM_BEARER_CAP_SPEECH = 0x00,
+	FTDM_BEARER_CAP_64K_UNRESTRICTED = 0x02,
+	FTDM_BEARER_CAP_3_1KHZ_AUDIO = 0x03
+} ftdm_bearer_cap_t;
+
+/*! \brief user information layer 1 protocol */
+typedef enum {
+	FTDM_USER_LAYER1_PROT_V110 = 0x01,
+	FTDM_USER_LAYER1_PROT_ULAW = 0x02,
+	FTDM_USER_LAYER1_PROT_ALAW = 0x03,
+} ftdm_user_layer1_prot_t;
+
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
 	char cid_date[8]; /*!< Caller ID date */
@@ -256,9 +273,9 @@ typedef struct ftdm_caller_data {
 	uint32_t raw_data_len; /* !< Raw data length */
 	/* these 2 are undocumented right now, only used by boost: */
 	/* bearer capability */
-	uint8_t bearer_capability;
+	ftdm_bearer_cap_t bearer_capability;
 	/* user information layer 1 protocol */
-	uint8_t bearer_layer1;
+	ftdm_user_layer1_prot_t bearer_layer1;
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
@@ -317,23 +334,6 @@ typedef struct ftdm_channel_config {
 	float txgain;
 } ftdm_channel_config_t;
 
-/*! \brief Generic signaling message */
-struct ftdm_sigmsg {
-	ftdm_signal_event_t event_id; /*!< The type of message */
-	ftdm_channel_t *channel; /*!< Related channel */
-	uint32_t chan_id; /*!< easy access to chan id */
-	uint32_t span_id; /*!< easy access to span_id */
-	void *raw_data; /*!< Message specific data if any */
-	uint32_t raw_data_len; /*!< Data len in case is needed */
-};
-
-/*! \brief Crash policy 
- *  Useful for debugging only, default policy is never, if you wish to crash on asserts then use ftdm_global_set_crash_policy */
-typedef enum {
-	FTDM_CRASH_NEVER = 0,
-	FTDM_CRASH_ON_ASSERT
-} ftdm_crash_policy_t;
-
 /*!
   \brief Signaling status on a given span or specific channel on protocols that support it
  */
@@ -352,6 +352,24 @@ typedef enum {
 /*! \brief Move from string to ftdm_signaling_status_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t)
 
+/*! \brief Generic signaling message */
+struct ftdm_sigmsg {
+	ftdm_signal_event_t event_id; /*!< The type of message */
+	ftdm_channel_t *channel; /*!< Related channel */
+	uint32_t chan_id; /*!< easy access to chan id */
+	uint32_t span_id; /*!< easy access to span_id */
+	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */
+	void *raw_data; /*!< Message specific data if any */
+	uint32_t raw_data_len; /*!< Data len in case is needed */
+};
+
+/*! \brief Crash policy 
+ *  Useful for debugging only, default policy is never, if you wish to crash on asserts then use ftdm_global_set_crash_policy */
+typedef enum {
+	FTDM_CRASH_NEVER = 0,
+	FTDM_CRASH_ON_ASSERT
+} ftdm_crash_policy_t;
+
 /*! \brief I/O waiting flags */
 typedef enum {
 	FTDM_NO_FLAGS = 0,
@@ -366,6 +384,9 @@ typedef struct ftdm_conf_parameter {
 	const char *val;
 	void *ptr;
 } ftdm_conf_parameter_t;
+
+/*! \brief Opaque general purpose iterator */
+typedef void ftdm_iterator_t;
 
 /*! \brief Channel commands that can be executed through ftdm_channel_command() */
 typedef enum {
@@ -1000,14 +1021,25 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t datasize, ftdm_size_t *datalen);
 
-/*! \brief Add a custom variable to the channel */
+/*! \brief Add a custom variable to the channel
+ *  \note This variables may be used by signaling modules to override signaling parameters
+ *  \todo Document which signaling variables are available
+ * */
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const char *var_name, const char *value);
 
-/*! \brief Get a custom variable from the channel */
+/*! \brief Get a custom variable from the channel. 
+ *  \note The variable pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name);
 
-/*! \brief Clear custom channel variables from the channel */
-FT_DECLARE(ftdm_status_t) ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
+/*! \brief Get an iterator to iterate over the channel variables
+ *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan);
+
+/*! \brief Get variable name and value for the current iterator position */
+FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
+
+/*! \brief Advance iterator */
+FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
 
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
