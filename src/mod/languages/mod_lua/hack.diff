@@ -1,38 +1,38 @@
---- mod_lua_wrap.cpp	2008-07-16 16:58:58.000000000 -0400
-+++ old.cpp	2008-07-16 16:58:42.000000000 -0400
-@@ -6731,7 +6731,7 @@
-   SWIG_check_num_args("LUA::Session",0,0)
+--- mod_lua_wrap.cpp.orig	2010-09-05 16:39:26.000000000 +0200
++++ mod_lua_wrap.cpp	2010-09-05 16:39:44.000000000 +0200
+@@ -4913,7 +4913,7 @@
+   
    result = (LUA::Session *)new LUA::Session();
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
-   if(0) SWIG_fail;
-@@ -6759,7 +6759,7 @@
-   
+ fail:
+@@ -4934,7 +4934,7 @@
+   arg2=(CoreSession *)SWIG_MustGetPtr(L,2,SWIGTYPE_p_CoreSession,0,2,"new_Session");
    result = (LUA::Session *)new LUA::Session(arg1,arg2);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
-   if(0) SWIG_fail;
-@@ -6780,7 +6780,7 @@
-   arg1 = (char *)lua_tostring(L, 1);
+ fail:
+@@ -4952,7 +4952,7 @@
+   arg1 = (char*)lua_tostring(L, 1);
    result = (LUA::Session *)new LUA::Session(arg1);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
-   if(0) SWIG_fail;
-@@ -6805,7 +6805,7 @@
-   
+ fail:
+@@ -4970,7 +4970,7 @@
+   arg1=(switch_core_session_t *)SWIG_MustGetPtr(L,1,SWIGTYPE_p_switch_core_session_t,0,1,"new_Session");
    result = (LUA::Session *)new LUA::Session(arg1);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
-   if(0) SWIG_fail;
+ fail:

@@ -122,6 +122,9 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 	while (listener_is_ready(listener)) {
 		uint8_t do_sleep = 1;
+		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			return SWITCH_STATUS_TIMEOUT;
+		}
 		if(bytes < SKINNY_MESSAGE_FIELD_SIZE) {
 			/* We have nothing yet, get length header field */
 			mlen = SKINNY_MESSAGE_FIELD_SIZE - bytes;
@@ -170,9 +173,6 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 					return  SWITCH_STATUS_SUCCESS;
 				}
 			}
-		}
-		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
-			return SWITCH_STATUS_TIMEOUT;
 		}
 		if (do_sleep) {
 			switch_cond_next();

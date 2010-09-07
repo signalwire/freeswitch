@@ -308,3 +308,69 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+Dbh::Dbh(char *dsn, char *user, char *pass)
+{
+  switch_cache_db_connection_options_t options = { {0} };
+
+  options.odbc_options.dsn = dsn;
+  options.odbc_options.user = user;
+  options.odbc_options.pass = pass;
+
+  if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) == SWITCH_STATUS_SUCCESS) {
+    connected = true;
+  } else {
+    connected = false;
+  }
+}
+
+Dbh::~Dbh()
+{
+  release();
+}
+
+bool Dbh::release()
+{
+  if (connected) {
+    switch_cache_db_release_db_handle(&dbh);
+    connected = false;
+    return true;
+  }
+  return false;
+}
+
+int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
+{
+  SWIGLUA_FN *lua_fun = (SWIGLUA_FN *)pArg;
+
+  lua_pushvalue(lua_fun->L, lua_fun->idx); /* get the lua callback function onto the stack */
+
+  lua_newtable(lua_fun->L); /* push a row (table) */
+
+  for (int i = 0; i < argc; i++) {
+    lua_pushstring(lua_fun->L, switch_str_nil(cargv[i]));
+    lua_pushstring(lua_fun->L, switch_str_nil(argv[i]));
+    lua_settable(lua_fun->L, -3);
+  }
+
+  lua_call(lua_fun->L, 1, 1); /* 1 in, 1 out */
+
+  if (lua_isnumber(lua_fun->L, -1)) {
+    if (lua_tonumber(lua_fun->L, -1) != 0) {
+      return 1;
+    }
+  }
+
+  return 0; /* 0 to continue with next row */
+}
+
+bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
+{
+  if (connected) {
+    if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
+      return true;
+    }
+  }
+  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no workie workie :(\n");
+  return false;
+}
