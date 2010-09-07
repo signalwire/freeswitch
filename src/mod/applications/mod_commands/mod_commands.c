@@ -73,7 +73,7 @@ SWITCH_STANDARD_API(shutdown_function)
 
 SWITCH_STANDARD_API(version_function)
 {
-	stream->write_function(stream, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
+	stream->write_function(stream, "Sangoma Media Gateway Version %s\n", SWITCH_VERSION_FULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 

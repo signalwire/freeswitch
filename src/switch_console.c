@@ -975,7 +975,7 @@ static unsigned char console_f12key(EditLine * el, int ch)
 char *prompt(EditLine * e)
 {
 	if (*prompt_str == '\0') {
-		switch_snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
+		switch_snprintf(prompt_str, sizeof(prompt_str), "sangoma-media-gateway@%s> ", hostname);
 	}
 
 	return prompt_str;
