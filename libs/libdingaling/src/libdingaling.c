@@ -1974,9 +1974,18 @@ unsigned int ldl_session_terminate(ldl_session_t *session)
 {
 	iks *iq, *sess;
 	unsigned int id;
+	apr_hash_t *hash = session->handle->sessions;
 
 	new_session_iq(session, &iq, &sess, &id, "terminate");
 	schedule_packet(session->handle, id, iq, LDL_RETRY);
+
+	if (session->id) {
+		apr_hash_set(hash, session->id, APR_HASH_KEY_STRING, NULL);
+	}
+	
+	if (session->them) {
+		apr_hash_set(hash, session->them, APR_HASH_KEY_STRING, NULL);
+	}
 
 	return id;
 
