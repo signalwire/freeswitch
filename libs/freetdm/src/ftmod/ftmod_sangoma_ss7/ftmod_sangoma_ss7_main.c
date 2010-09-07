@@ -272,10 +272,8 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[2];
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
-	sngss7_chan_data_t  *sngss7_info = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
-	int 				i;
 
 	ftdm_log (FTDM_LOG_INFO, "ftmod_sangoma_ss7 monitor thread for span=%u started.\n", ftdmspan->span_id);
 
@@ -344,73 +342,11 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		/**********************************************************************/
 		} /* switch ((ftdm_interrupt_wait(ftdm_sangoma_ss7_int, 100))) */
 
-		/* extract the span data structure */
-		sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
-
 		/* check if there is a GRS being processed on the span */
 		if (sngss7_span->rx_grs.range > 0) {
-			ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);
-			/*SS7_DEBUG("Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);*/
-
-			/* check all the circuits in the range to see if they are done resetting */
-			for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
-
-				/* extract the channel in question */
-				if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-					SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
-					SS7_ASSERT;
-				}
-
-				/* lock the channel */
-				ftdm_mutex_lock(ftdmchan->mutex);
-
-				/* check if there is a state change pending on the channel */
-				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-					/* check the state to the GRP_RESET_RX_DN flag */
-					if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
-						/* this channel is still resetting...do nothing */
-						goto GRS_UNLOCK_ALL;
-					} /* if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
-				} else {
-					/* state change pending */
-					goto GRS_UNLOCK_ALL;
-				}
-			} /* for ( i = circuit; i < (circuit + range + 1); i++) */
-
-			SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n",
-						sngss7_span->rx_grs.circuit,
-						sngss7_span->rx_grs.range);
-
-			/* check all the circuits in the range to see if they are done resetting */
-			for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
-
-				/* extract the channel in question */
-				if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-					SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
-					SS7_ASSERT;
-				}
-
-				/* throw the GRP reset flag complete flag */
-				sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
-
-				/* move the channel to the down state */
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-
-			} /* for ( i = circuit; i < (circuit + range + 1); i++) */
-
-GRS_UNLOCK_ALL:
-			for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
-				/* extract the channel in question */
-				if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-					SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
-					SS7_ASSERT;
-				}
-
-				/* unlock the channel */
-				ftdm_mutex_unlock(ftdmchan->mutex);
-			}
-
-		} /* if (ftdmspan->grs.range > 0) */
+			/* check if the rx_grs has cleared */
+			check_if_rx_grs_processed(ftdmspan);
+		} /* if (sngss7_span->rx_grs.range > 0) */
 	} /* master while loop */
 
 	/* clear the IN_THREAD flag so that we know the thread is done */
