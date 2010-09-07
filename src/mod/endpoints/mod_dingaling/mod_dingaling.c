@@ -1247,7 +1247,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			tech_pvt->rtp_session = NULL;
 		}
 
-		if (globals.auto_nat && tech_pvt->profile->local_network && !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
+		if (globals.auto_nat && tech_pvt->profile->local_network && tech_pvt->remote_ip && tech_pvt->profile->local_network &&
+			!switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
 			switch_nat_del_mapping((switch_port_t) tech_pvt->local_port, SWITCH_NAT_UDP);
 		}
 
