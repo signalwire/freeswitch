@@ -8,6 +8,16 @@ extern "C" {
 #include "mod_lua_extra.h"
 }
 #include <switch_cpp.h>
+
+
+typedef struct{
+  lua_State* L;
+  int idx;
+}SWIGLUA_FN;
+
+#define SWIGLUA_FN_GET(fn) {lua_pushvalue(fn.L,fn.idx);}
+
+
 namespace LUA {
 	class Session:public CoreSession {
 	  private:
@@ -41,5 +51,17 @@ namespace LUA {
 		void setLUA(lua_State * state);
 
 	};
+
+  class Dbh {
+    protected:
+      switch_cache_db_handle_t *dbh;
+      bool connected;
+      static int query_callback(void *pArg, int argc, char **argv, char **cargv);
+    public:
+      Dbh(char *dsn, char *user = NULL, char *pass = NULL);
+      ~Dbh();
+      bool release();
+      bool query(char *sql, SWIGLUA_FN lua_fun);
+  };
 }
 #endif

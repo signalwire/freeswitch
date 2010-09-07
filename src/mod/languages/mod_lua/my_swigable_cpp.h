@@ -49,6 +49,19 @@ class Event {
 };
 
 
+class Dbh {
+  protected:
+    switch_cache_db_handle_t *dbh;
+    bool connected;
+    static int query_callback(void *pArg, int argc, char **argv, char **cargv);
+  public:
+    Dbh(char *dsn, char *user = NULL, char *pass = NULL);
+    ~Dbh();
+    bool release();
+    bool query(char *sql, SWIGLUA_FN lua_fun);
+};
+
+
 class CoreSession {
   protected:
 	switch_input_args_t args;

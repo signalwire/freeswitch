@@ -18,6 +18,10 @@
 %}
 
 
+/* Lua function typemap */
+%typemap(in,checkfn="lua_isfunction") SWIGLUA_FN
+%{  $1.L=L; $1.idx=$input; %}
+
 
 %ignore SwitchToMempool;   
 %newobject EventConsumer::pop;
@@ -25,6 +29,7 @@
 %newobject CoreSession;
 %newobject Event;
 %newobject Stream;
+%newobject Dbh;
 
 /**
  * tell swig to grok everything defined in these header files and
@@ -66,9 +71,18 @@ class Session : public CoreSession {
 	void setLUA(lua_State *state);
 
 };
+
+class Dbh {
+  private:
+    switch_cache_db_handle_t *dbh;
+    bool connected;
+    static int query_callback(void *pArg, int argc, char **argv, char **cargv);
+  public:
+    Dbh(char *dsn, char *user = NULL, char *pass = NULL);
+    ~Dbh();
+    bool release();
+    bool query(char *sql, SWIGLUA_FN lua_fun);
+};
+
 }
-
-
-
-
 
