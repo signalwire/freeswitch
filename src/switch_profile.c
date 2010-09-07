@@ -280,7 +280,6 @@ SWITCH_DECLARE(void) switch_delete_profile_timer(switch_profile_timer_t **p)
 	if (!p) return;
 
 #ifdef __linux__
-	test
 	close((*p)->procfd);
 #endif
 	free(*p);
