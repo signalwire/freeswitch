@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s\n", SWITCH_VERSION_FULL);
+			fprintf(stdout, "Sangoma Media Gateway Version: %s\n", SWITCH_VERSION_FULL);
 			return 0;
 			known_opt++;
 		}
