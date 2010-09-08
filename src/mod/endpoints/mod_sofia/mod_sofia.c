@@ -697,7 +697,11 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
-		char *cid = generate_pai_str(session);
+		char *cid = NULL;
+
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID)) {
+			cid = generate_pai_str(session);
+		}
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
 			/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
@@ -2165,7 +2169,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
-					char *cid = generate_pai_str(session);
+					char *cid = NULL;
+
+					if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID)) {
+						cid = generate_pai_str(session);
+					}
 
 					if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 						tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
