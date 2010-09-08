@@ -2035,6 +2035,36 @@ SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *ch
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
+SWITCH_DECLARE(void) switch_channel_set_origination_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
+{
+	switch_assert(channel != NULL);
+	switch_assert(channel->caller_profile != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+
+	if (channel->caller_profile) {
+		caller_profile->next = channel->caller_profile->origination_caller_profile;
+		channel->caller_profile->origination_caller_profile = caller_profile;
+	}
+	switch_assert(channel->caller_profile->origination_caller_profile->next != channel->caller_profile->origination_caller_profile);
+	switch_mutex_unlock(channel->profile_mutex);
+}
+
+SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_origination_caller_profile(switch_channel_t *channel)
+{
+	switch_caller_profile_t *profile = NULL;
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->caller_profile) {
+		profile = channel->caller_profile->origination_caller_profile;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return profile;
+}
+
+
 SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
 	switch_assert(channel != NULL);
