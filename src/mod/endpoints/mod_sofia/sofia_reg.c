@@ -674,7 +674,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,"
 						"expires,user_agent,server_user,server_host,profile_name"
 						" from sip_registrations where (status like '%%NAT%%' "
-						"or contact like '%%fs_nat=true%%') and hostname='%s'", mod_sofia_globals.hostname);
+						"or contact like '%%fs_nat=yes%%') and hostname='%s'", mod_sofia_globals.hostname);
 
 		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_nat_callback, profile);
 	}
