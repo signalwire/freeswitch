@@ -2938,6 +2938,16 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_channel_set_origination_caller_profile(SWIGTYPE_p_switch_channel channel, switch_caller_profile caller_profile) {
+    freeswitchPINVOKE.switch_channel_set_origination_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_profile.getCPtr(caller_profile));
+  }
+
+  public static switch_caller_profile switch_channel_get_origination_caller_profile(SWIGTYPE_p_switch_channel channel) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_origination_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
+    return ret;
+  }
+
   public static string switch_channel_get_uuid(SWIGTYPE_p_switch_channel channel) {
     string ret = freeswitchPINVOKE.switch_channel_get_uuid(SWIGTYPE_p_switch_channel.getCPtr(channel));
     return ret;
@@ -8146,6 +8156,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_originatee_caller_profile_get")]
   public static extern IntPtr switch_caller_profile_originatee_caller_profile_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_origination_caller_profile_set")]
+  public static extern void switch_caller_profile_origination_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_origination_caller_profile_get")]
+  public static extern IntPtr switch_caller_profile_origination_caller_profile_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_hunt_caller_profile_set")]
   public static extern void switch_caller_profile_hunt_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -10527,6 +10543,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_originatee_caller_profile")]
   public static extern IntPtr switch_channel_get_originatee_caller_profile(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_origination_caller_profile")]
+  public static extern void switch_channel_set_origination_caller_profile(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_origination_caller_profile")]
+  public static extern IntPtr switch_channel_get_origination_caller_profile(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_uuid")]
   public static extern string switch_channel_get_uuid(HandleRef jarg1);
@@ -20143,6 +20165,17 @@ public class switch_caller_profile : IDisposable {
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_caller_profile_originatee_caller_profile_get(swigCPtr);
+      switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_caller_profile origination_caller_profile {
+    set {
+      freeswitchPINVOKE.switch_caller_profile_origination_caller_profile_set(swigCPtr, switch_caller_profile.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_caller_profile_origination_caller_profile_get(swigCPtr);
       switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
       return ret;
     } 

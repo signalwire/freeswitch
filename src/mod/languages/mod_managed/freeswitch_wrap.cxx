@@ -12514,6 +12514,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_caller_profile_originatee_caller_pro
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_origination_caller_profile_set(void * jarg1, void * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  switch_caller_profile *arg2 = (switch_caller_profile *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (switch_caller_profile *)jarg2; 
+  if (arg1) (arg1)->origination_caller_profile = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_caller_profile_origination_caller_profile_get(void * jarg1) {
+  void * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  switch_caller_profile *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (switch_caller_profile *) ((arg1)->origination_caller_profile);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_hunt_caller_profile_set(void * jarg1, void * jarg2) {
   switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
   switch_caller_profile *arg2 = (switch_caller_profile *) 0 ;
@@ -22010,6 +22033,28 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_originatee_caller_profil
   
   arg1 = (switch_channel_t *)jarg1; 
   result = (switch_caller_profile_t *)switch_channel_get_originatee_caller_profile(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_origination_caller_profile(void * jarg1, void * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_profile_t *arg2 = (switch_caller_profile_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_caller_profile_t *)jarg2; 
+  switch_channel_set_origination_caller_profile(arg1,arg2);
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_origination_caller_profile(void * jarg1) {
+  void * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_profile_t *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_caller_profile_t *)switch_channel_get_origination_caller_profile(arg1);
   jresult = (void *)result; 
   return jresult;
 }
