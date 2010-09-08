@@ -207,6 +207,13 @@ struct t30_state_s
     /*! \brief This is only used in full duplex (e.g. ISDN) modes. */
     int timer_t8;
 
+	/* These fields are guessed based on compiler error forensics, I added them to fix the build -anthm */
+	int remote_interrupts_allowed;
+	int rtp_events;
+	int rtn_events;
+	int retransmit_capable;
+	/* end guessed fields */
+
     /*! \brief TRUE once the far end FAX entity has been detected. */
     int far_end_detected;
 
