@@ -463,6 +463,7 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 			status = FTDM_FAIL;
 		}
 		ftdm_safe_free(span->type);
+		ftdm_safe_free(span->name);
 		ftdm_safe_free(span->dtmf_hangup);
 	}
 
@@ -536,7 +537,7 @@ static void ftdm_span_add(ftdm_span_t *span)
 	} else {
 		globals.spans = span;
 	}
-	hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_NONE);
+	hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_FREE_VALUE);
 	ftdm_mutex_unlock(globals.span_mutex);
 }
 
@@ -3550,12 +3551,20 @@ static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t 
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter)
 {
+	ftdm_hash_iterator_t *hashiter = NULL;
+	ftdm_channel_lock(ftdmchan);
+	hashiter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
+	ftdm_channel_unlock(ftdmchan);
+
+
+	if (hashiter == NULL) {
+		return NULL;
+	}
+	
 	if (!(iter = get_iterator(FTDM_ITERATOR_VARS, iter))) {
 		return NULL;
 	}
-	ftdm_channel_lock(ftdmchan);
-	iter->pvt.hashiter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
-	ftdm_channel_unlock(ftdmchan);
+	iter->pvt.hashiter = hashiter;
 	return iter;
 }
 
@@ -4837,11 +4846,13 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 
 	ftdm_mutex_lock(globals.mutex);
 	hashtable_destroy(globals.interface_hash);
-	hashtable_destroy(globals.module_hash);
+	hashtable_destroy(globals.module_hash);	
 	hashtable_destroy(globals.span_hash);
+	hashtable_destroy(globals.group_hash);
 	ftdm_mutex_unlock(globals.mutex);
 	ftdm_mutex_destroy(&globals.mutex);
 	ftdm_mutex_destroy(&globals.span_mutex);
+	ftdm_mutex_destroy(&globals.group_mutex);
 
 	memset(&globals, 0, sizeof(globals));
 	return FTDM_SUCCESS;

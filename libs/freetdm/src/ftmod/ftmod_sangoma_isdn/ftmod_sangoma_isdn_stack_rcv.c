@@ -239,7 +239,8 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
-		ftdm_assert(0, "Inconsistent call states\n");
+		/* It seems that Trillium has a bug where they sometimes send release twice on a call, so do not crash on these for now */
+		/* ftdm_assert(0, "Inconsistent call states\n"); */
 		return;
 	}
 
@@ -591,6 +592,7 @@ void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	/* Enqueue the event to each span within the dChan */
 	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
 		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
+
 		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
 		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
@@ -640,30 +642,24 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 
 void sngisdn_rcv_phy_ind(SuId suId, Reason reason)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	if (reason != LL1_REASON_CON_REQ_FAIL) {
 		ftdm_log(FTDM_LOG_INFO, "[SNGISDN PHY] D-chan %d : %s\n", suId, DECODE_LL1_REASON(reason));
 	}
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
     return;
 } 
 
 void sngisdn_rcv_q921_ind(BdMngmt *status)
-{
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-
-	unsigned j,k;
-	ftdm_span_t *ftdmspan = NULL;
-
-	for(j=1;j<=g_sngisdn_data.num_dchan;j++) {
-		for(k=1;k<=g_sngisdn_data.dchans[j].num_spans;k++) {
-			if (g_sngisdn_data.dchans[j].spans[k]->link_id == status->t.usta.lnkNmb) {
-				ftdmspan = (ftdm_span_t*)g_sngisdn_data.dchans[j].spans[k]->ftdm_span;
-			}
-		}
+{	
+	ftdm_span_t *ftdmspan;
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[status->t.usta.lnkNmb];
+	if (!signal_data) {
+		ftdm_log(FTDM_LOG_INFO, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.lnkNmb);
+		return;
 	}
-	if (ftdmspan == NULL) {
-		ftdm_log(FTDM_LOG_WARNING, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.lnkNmb);
+	ftdmspan = signal_data->ftdm_span;
+
+	if (!ftdmspan) {
+		ftdm_log(FTDM_LOG_INFO, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.lnkNmb);
 		return;
 	}
 
@@ -694,69 +690,56 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 			}
 			break;
 	}
-	
-	ISDN_FUNC_TRACE_EXIT(__FUNCTION__)
     return;
 }
 void sngisdn_rcv_q931_ind(InMngmt *status)
-{
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	ftdm_span_t *ftdmspan = NULL;
-	
+{	
 	if (status->t.usta.alarm.cause == 287) {
 		get_memory_info();
 		return;
 	}
 
-	switch (status->t.usta.alarm.category) {
-		case (LCM_CATEGORY_INTERFACE):
-			ftdm_log(FTDM_LOG_WARNING, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
-							status->t.usta.suId,
-							DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
-							DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
-							DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
-
-			/* clean this up later */
-
-			switch (status->t.usta.alarm.event) {
-				case LCM_EVENT_UP:
-				case LCM_EVENT_DOWN:
-					{
-						unsigned j,k;
-						for(j=1;j<=g_sngisdn_data.num_dchan;j++) {
-							for(k=1;k<=g_sngisdn_data.dchans[j].num_spans;k++) {
-								if (g_sngisdn_data.dchans[j].spans[k]->link_id == status->t.usta.suId) {
-									ftdmspan = (ftdm_span_t*)g_sngisdn_data.dchans[j].spans[k]->ftdm_span;
-								}
-							}
-						}
-
-						if (ftdmspan == NULL) {
-							ftdm_log(FTDM_LOG_CRIT, "Received q931 LCM EVENT on unconfigured span (suId:%u)\n", status->t.usta.suId);
-							return;
-						}
-
-						if (status->t.usta.alarm.event == LCM_EVENT_UP) {
-							sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_UP);
-							sng_isdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
-						} else {
-							sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_DOWN);
-							sng_isdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
-						}
-					}
-					break;
+	switch (status->t.usta.alarm.event) {
+		case LCM_EVENT_UP:
+		case LCM_EVENT_DOWN:
+		{
+			ftdm_span_t *ftdmspan;
+			sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[status->t.usta.suId];
+			if (!signal_data) {
+				ftdm_log(FTDM_LOG_INFO, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
+				return;
 			}
-			break;
+			ftdmspan = signal_data->ftdm_span;
+			
+			if (status->t.usta.alarm.event == LCM_EVENT_UP) {
+				ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
+						 status->t.usta.suId,
+								DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+								DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
+				
+				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_UP);
+				sng_isdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
+			} else {
+				ftdm_log(FTDM_LOG_WARNING, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
+						 		status->t.usta.suId,
+								DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+								DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
+				
+				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_DOWN);
+				sng_isdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
+			}
+		}
+		break;
 		default:
-			ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
-					status->t.usta.suId,
-					DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
-					DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
-					DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
-			break;
+			ftdm_log(FTDM_LOG_WARNING, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
+					 						status->t.usta.suId,
+	  										DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+						  					DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+											DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 	}
-
-
+	
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 	return;
 }
@@ -902,12 +885,13 @@ void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...)
 			break;
 		case SNG_LOGLEVEL_CRIT:
    			ftdm_log(FTDM_LOG_CRIT, "sng_isdn->%s", data);
-			/*ftdm_assert(0, "Got an error from stack");*/
+			/* ftdm_assert(0, "Got an error from stack"); */
 			break;
 		default:
 			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
 			break;
     }
+	ftdm_safe_free(data);
 	return;
 }
 
