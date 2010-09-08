@@ -37,6 +37,7 @@
 #define CC_AGENT_TYPE_UUID_STANDBY "uuid-standby"
 #define CC_SQLITE_DB_NAME "callcenter"
 
+#define CC_MAX_TIME_DIFF_CHECK 5
 /* TODO
    drop caller if no agent login
    dont allow new caller
@@ -52,6 +53,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load);
 SWITCH_MODULE_DEFINITION(mod_callcenter, mod_callcenter_load, mod_callcenter_shutdown, NULL);
 
 static const char *global_cf = "callcenter.conf";
+
+struct cc_status_table {
+	const char *name;
+	int status;
+};
+
+struct cc_state_table {
+	const char *name;
+	int state;
+};
 
 typedef enum {
 	CC_STATUS_SUCCESS,
@@ -77,12 +88,7 @@ typedef enum {
 	CC_TIER_STATE_STANDBY = 5
 } cc_tier_state_t;
 
-struct cc_tier_state_table {
-	const char *name;
-	cc_tier_state_t state;
-};
-
-static struct cc_tier_state_table STATE_CHART[] = {
+static struct cc_state_table STATE_CHART[] = {
 	{"Unknown", CC_TIER_STATE_UNKNOWN},
 	{"No Answer", CC_TIER_STATE_NO_ANSWER},
 	{"Ready", CC_TIER_STATE_READY},
@@ -101,12 +107,7 @@ typedef enum {
 	CC_AGENT_STATUS_ON_BREAK = 4
 } cc_agent_status_t;
 
-struct cc_agent_status_table {
-	const char *name;
-	cc_agent_status_t status;
-};
-
-static struct cc_agent_status_table AGENT_STATUS_CHART[] = {
+static struct cc_status_table AGENT_STATUS_CHART[] = {
 	{"Unknown", CC_AGENT_STATUS_UNKNOWN},
 	{"Logged Out", CC_AGENT_STATUS_LOGGED_OUT},
 	{"Available", CC_AGENT_STATUS_AVAILABLE},
@@ -124,12 +125,7 @@ typedef enum {
 	CC_AGENT_STATE_IDLE = 4
 } cc_agent_state_t;
 
-struct cc_agent_state_table {
-	const char *name;
-	cc_agent_state_t state;
-};
-
-static struct cc_agent_state_table AGENT_STATE_CHART[] = {
+static struct cc_state_table AGENT_STATE_CHART[] = {
 	{"Unknown", CC_AGENT_STATE_UNKNOWN},
 	{"Waiting", CC_AGENT_STATE_WAITING},
 	{"Receiving", CC_AGENT_STATE_RECEIVING},
@@ -147,12 +143,7 @@ typedef enum {
 	CC_MEMBER_STATE_ABANDONED = 4
 } cc_member_state_t;
 
-struct cc_member_state_table {
-	const char *name;
-	cc_member_state_t state;
-};
-
-static struct cc_member_state_table MEMBER_STATE_CHART[] = {
+static struct cc_state_table MEMBER_STATE_CHART[] = {
 	{"Unknown", CC_MEMBER_STATE_UNKNOWN},
 	{"Waiting", CC_MEMBER_STATE_WAITING},
 	{"Trying", CC_MEMBER_STATE_TRYING},
@@ -162,10 +153,24 @@ static struct cc_member_state_table MEMBER_STATE_CHART[] = {
 
 };
 
-/*static char queues_sql[] =
-  "CREATE TABLE queues (\n"
-  "   name	  VARCHAR(255)\n" ");\n";
- */
+struct cc_member_cancel_reason_table {
+	const char *name;
+	int reason;
+};
+
+typedef enum {
+	CC_MEMBER_CANCEL_REASON_NONE,
+	CC_MEMBER_CANCEL_REASON_TIMEOUT,
+	CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT
+} cc_member_cancel_reason_t;
+
+static struct cc_member_cancel_reason_table MEMBER_CANCEL_REASON_CHART[] = {
+	{"NONE", CC_MEMBER_CANCEL_REASON_NONE},
+	{"TIMEOUT", CC_MEMBER_CANCEL_REASON_TIMEOUT},
+	{"NO_AGENT_TIMEOUT", CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT},
+	{NULL, 0}
+};
+
 static char members_sql[] =
 "CREATE TABLE members (\n"
 "   queue	     VARCHAR(255),\n"
@@ -222,7 +227,6 @@ static char agents_sql[] =
 "   ready_time INTEGER NOT NULL DEFAULT 0\n"
 ");\n";
 
-
 static char tiers_sql[] =
 "CREATE TABLE tiers (\n"
 "   queue    VARCHAR(255),\n"
@@ -247,7 +251,7 @@ const char * cc_tier_state2str(cc_tier_state_t state)
 	uint8_t x;
 	const char *str = "Unknown";
 
-	for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct cc_tier_state_table)) - 1; x++) {
+	for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct cc_state_table)) - 1; x++) {
 		if (STATE_CHART[x].state == state) {
 			str = STATE_CHART[x].name;
 			break;
@@ -262,7 +266,7 @@ cc_tier_state_t cc_tier_str2state(const char *str)
 	uint8_t x;
 	cc_tier_state_t state = CC_TIER_STATE_UNKNOWN;
 
-	for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct cc_tier_state_table)) - 1 && STATE_CHART[x].name; x++) {
+	for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct cc_state_table)) - 1 && STATE_CHART[x].name; x++) {
 		if (!strcasecmp(STATE_CHART[x].name, str)) {
 			state = STATE_CHART[x].state;
 			break;
@@ -271,12 +275,41 @@ cc_tier_state_t cc_tier_str2state(const char *str)
 	return state;
 }
 
+const char * cc_member_cancel_reason2str(cc_member_cancel_reason_t reason)
+{
+	uint8_t x;
+	const char *str = "NONE";
+
+	for (x = 0; x < (sizeof(MEMBER_CANCEL_REASON_CHART) / sizeof(struct cc_member_cancel_reason_table)) - 1; x++) {
+		if (MEMBER_CANCEL_REASON_CHART[x].reason == reason) {
+			str = MEMBER_CANCEL_REASON_CHART[x].name;
+			break;
+		}
+	}
+
+	return str;
+}
+
+cc_member_cancel_reason_t cc_member_cancel_str2reason(const char *str)
+{
+	uint8_t x;
+	cc_member_cancel_reason_t reason = CC_MEMBER_CANCEL_REASON_NONE;
+
+	for (x = 0; x < (sizeof(MEMBER_CANCEL_REASON_CHART) / sizeof(struct cc_member_cancel_reason_table)) - 1 && MEMBER_CANCEL_REASON_CHART[x].name; x++) {
+		if (!strcasecmp(MEMBER_CANCEL_REASON_CHART[x].name, str)) {
+			reason = MEMBER_CANCEL_REASON_CHART[x].reason;
+			break;
+		}
+	}
+	return reason;
+}
+
 const char * cc_agent_status2str(cc_agent_status_t status)
 {
 	uint8_t x;
 	const char *str = "Unknown";
 
-	for (x = 0; x < (sizeof(AGENT_STATUS_CHART) / sizeof(struct cc_agent_status_table)) - 1; x++) {
+	for (x = 0; x < (sizeof(AGENT_STATUS_CHART) / sizeof(struct cc_status_table)) - 1; x++) {
 		if (AGENT_STATUS_CHART[x].status == status) {
 			str = AGENT_STATUS_CHART[x].name;
 			break;
@@ -291,7 +324,7 @@ cc_agent_status_t cc_agent_str2status(const char *str)
 	uint8_t x;
 	cc_agent_status_t status = CC_AGENT_STATUS_UNKNOWN;
 
-	for (x = 0; x < (sizeof(AGENT_STATUS_CHART) / sizeof(struct cc_agent_status_table)) - 1 && AGENT_STATUS_CHART[x].name; x++) {
+	for (x = 0; x < (sizeof(AGENT_STATUS_CHART) / sizeof(struct cc_status_table)) - 1 && AGENT_STATUS_CHART[x].name; x++) {
 		if (!strcasecmp(AGENT_STATUS_CHART[x].name, str)) {
 			status = AGENT_STATUS_CHART[x].status;
 			break;
@@ -305,7 +338,7 @@ const char * cc_agent_state2str(cc_agent_state_t state)
 	uint8_t x;
 	const char *str = "Unknown";
 
-	for (x = 0; x < (sizeof(AGENT_STATE_CHART) / sizeof(struct cc_agent_state_table)) - 1; x++) {
+	for (x = 0; x < (sizeof(AGENT_STATE_CHART) / sizeof(struct cc_state_table)) - 1; x++) {
 		if (AGENT_STATE_CHART[x].state == state) {
 			str = AGENT_STATE_CHART[x].name;
 			break;
@@ -320,7 +353,7 @@ cc_agent_state_t cc_agent_str2state(const char *str)
 	uint8_t x;
 	cc_agent_state_t state = CC_AGENT_STATE_UNKNOWN;
 
-	for (x = 0; x < (sizeof(AGENT_STATE_CHART) / sizeof(struct cc_agent_state_table)) - 1 && AGENT_STATE_CHART[x].name; x++) {
+	for (x = 0; x < (sizeof(AGENT_STATE_CHART) / sizeof(struct cc_state_table)) - 1 && AGENT_STATE_CHART[x].name; x++) {
 		if (!strcasecmp(AGENT_STATE_CHART[x].name, str)) {
 			state = AGENT_STATE_CHART[x].state;
 			break;
@@ -334,7 +367,7 @@ const char * cc_member_state2str(cc_member_state_t state)
 	uint8_t x;
 	const char *str = "Unknown";
 
-	for (x = 0; x < (sizeof(MEMBER_STATE_CHART) / sizeof(struct cc_member_state_table)) - 1; x++) {
+	for (x = 0; x < (sizeof(MEMBER_STATE_CHART) / sizeof(struct cc_state_table)) - 1; x++) {
 		if (MEMBER_STATE_CHART[x].state == state) {
 			str = MEMBER_STATE_CHART[x].name;
 			break;
@@ -349,7 +382,7 @@ cc_member_state_t cc_member_str2state(const char *str)
 	uint8_t x;
 	cc_member_state_t state = CC_MEMBER_STATE_UNKNOWN;
 
-	for (x = 0; x < (sizeof(MEMBER_STATE_CHART) / sizeof(struct cc_member_state_table)) - 1 && MEMBER_STATE_CHART[x].name; x++) {
+	for (x = 0; x < (sizeof(MEMBER_STATE_CHART) / sizeof(struct cc_state_table)) - 1 && MEMBER_STATE_CHART[x].name; x++) {
 		if (!strcasecmp(MEMBER_STATE_CHART[x].name, str)) {
 			state = MEMBER_STATE_CHART[x].state;
 			break;
@@ -384,18 +417,26 @@ struct cc_queue {
 	char *moh;
 	char *record_template;
 	char *time_base_score;
+
 	switch_bool_t tier_rules_apply;
 	uint32_t tier_rule_wait_second;
 	switch_bool_t tier_rule_wait_multiply_level;
 	switch_bool_t tier_rule_no_agent_no_wait;
+
 	uint32_t discard_abandoned_after;
 	switch_bool_t abandoned_resume_allowed;
+
+	uint32_t max_wait_time;
+	uint32_t max_wait_time_with_no_agent;
 
 	switch_mutex_t *mutex;
 
 	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
 	uint32_t flags;
+
+	switch_time_t last_agent_exist;
+	switch_time_t last_agent_exist_check;
 
 	switch_xml_config_item_t config[CC_QUEUE_CONFIGITEM_COUNT];
 	switch_xml_config_string_options_t config_str_pool;
@@ -488,12 +529,16 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "moh-sound", SWITCH_CONFIG_STRING, 0, &queue->moh, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
+
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rules-apply", SWITCH_CONFIG_BOOL, 0, &queue->tier_rules_apply, SWITCH_FALSE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-wait-second", SWITCH_CONFIG_INT, 0, &queue->tier_rule_wait_second, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-wait-multiply-level", SWITCH_CONFIG_BOOL, 0, &queue->tier_rule_wait_multiply_level, SWITCH_FALSE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "tier-rule-no-agent-no-wait", SWITCH_CONFIG_BOOL, 0, &queue->tier_rule_no_agent_no_wait, SWITCH_TRUE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "discard-abandoned-after", SWITCH_CONFIG_INT, 0, &queue->discard_abandoned_after, 60, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "abandoned-resume-allowed", SWITCH_CONFIG_BOOL, 0, &queue->abandoned_resume_allowed, SWITCH_FALSE, NULL, NULL, NULL);
+
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time", SWITCH_CONFIG_INT, 0, &queue->max_wait_time, 0, &config_int_0_86400, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent, 0, &config_int_0_86400, NULL, NULL);
 
 	switch_assert(i < CC_QUEUE_CONFIGITEM_COUNT);
 
@@ -646,6 +691,9 @@ static cc_queue_t *load_queue(const char *queue_name)
 		switch_thread_rwlock_create(&queue->rwlock, pool);
 		queue->name = switch_core_strdup(pool, queue_name);
 
+		queue->last_agent_exist = 0;
+		queue->last_agent_exist_check = 0;
+
 		if (!(dbh = cc_get_db_handle())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
 			goto end;
@@ -702,7 +750,7 @@ static cc_queue_t *get_queue(const char *queue_name)
 
 struct call_helper {
 	const char *member_uuid;
-	const char *queue;
+	const char *queue_name;
 	const char *queue_strategy;
 	const char *member_joined_epoch;
 	const char *member_caller_name;
@@ -744,7 +792,7 @@ int cc_queue_count(const char *queue)
 		count = atoi(res);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", queue);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "members-count");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Count", res);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Selection", event_name);
@@ -827,7 +875,7 @@ cc_agent_status_t cc_agent_get(const char *key, const char *agent, char *ret_res
 		result = CC_STATUS_SUCCESS;
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", agent);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-status-get");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Status", res);
 			switch_event_fire(&event);
@@ -894,7 +942,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			result = CC_STATUS_SUCCESS;
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", agent);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-status-change");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Status", value);
 				switch_event_fire(&event);
@@ -918,7 +966,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			result = CC_STATUS_SUCCESS;
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", agent);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
 				switch_event_fire(&event);
@@ -1118,13 +1166,13 @@ done:
 	return result;
 }
 
-cc_status_t cc_tier_del(const char *queue, const char *agent)
+cc_status_t cc_tier_del(const char *queue_name, const char *agent)
 {
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted tier Agent %s in Queue %s\n", agent, queue);
-	sql = switch_mprintf("DELETE FROM tiers WHERE queue = '%q' AND agent = '%q';", queue, agent);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted tier Agent %s in Queue %s\n", agent, queue_name);
+	sql = switch_mprintf("DELETE FROM tiers WHERE queue = '%q' AND agent = '%q';", queue_name, agent);
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
 
@@ -1307,8 +1355,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	}
 	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_pre_answer_uuid", "%s", h->member_uuid);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent", "%s", h->agent_name);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent_type", "%s", h->agent_type);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
 		t_agent_called = switch_epoch_time_now(NULL);
@@ -1323,6 +1374,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
 			switch_event_t *event;
 			const char *cc_warning_tone = switch_channel_get_variable(agent_channel, "cc_warning_tone");
+
+			switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
+			switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
+			switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
+			switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
+
 			/* Playback this to the agent */
 			if (cc_warning_tone && switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -1375,7 +1432,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(agent_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", h->queue);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-start");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
@@ -1398,11 +1455,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_safe_free(sql);
 
 		/* Change the agents Status in the tiers */
-		sql = switch_mprintf("UPDATE tiers SET state = '%q' WHERE agent = '%q' AND queue = '%q'",
-				cc_tier_state2str(CC_TIER_STATE_ACTIVE_INBOUND), h->agent_name, h->queue);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
-
+		cc_tier_update("state", cc_tier_state2str(CC_TIER_STATE_ACTIVE_INBOUND), h->queue_name, h->agent_name);
 		cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_IN_A_QUEUE_CALL), h->agent_name);
 
 		/* Record session if record-template is provided */
@@ -1415,9 +1468,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			}					
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" (%s) from queue %s%s\n",
-				h->agent_name, h->member_caller_name, h->member_caller_number, h->queue, (h->record_template?" (Recorded)":""));
-		switch_ivr_uuid_bridge(switch_core_session_get_uuid(agent_session), h->member_uuid);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
+				h->agent_name, h->member_caller_name, h->member_caller_number, h->queue_name, (h->record_template?" (Recorded)":""));
+		switch_ivr_uuid_bridge(h->member_uuid, switch_core_session_get_uuid(agent_session));
+
+		/* This is used for the waiting caller to quit waiting for a agent */
+		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
 
 		/* Wait until the member hangup or the agent hangup.  This will quit also if the agent transfer the call */
 		while(switch_channel_up(member_channel) && switch_channel_up(agent_channel) && globals.running) {
@@ -1427,7 +1483,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(agent_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", h->queue);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-end");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
@@ -1443,7 +1499,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		/* Update Agents Items */
 		/* Do not remove uuid of the agent if we are a standby agent */
 		sql = switch_mprintf("UPDATE agents SET %q last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
-				, (strcasecmp(h->agent_type, "uuid-standby")?"uuid = '',":""),  (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
+				, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""),  (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1455,7 +1511,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		/* Caller off event */
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(member_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", h->queue);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answer-Time", "%ld",  (long) (t_agent_answered - t_agent_called));
@@ -1463,8 +1519,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Talk-Time", "%ld",  (long) (switch_epoch_time_now(NULL) - t_agent_answered));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Total-Time", "%ld",  (long) (switch_epoch_time_now(NULL) - t_member_called));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name",
+					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number",
+					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 			switch_event_fire(&event);
 		}
 
@@ -1529,8 +1587,8 @@ done:
 	sql = switch_mprintf(
 			"UPDATE tiers SET state = '%q' WHERE agent = '%q' AND queue = '%q' AND (state = '%q' OR state = '%q' OR state = '%q');"
 			"UPDATE tiers SET state = '%q' WHERE agent = '%q' AND NOT queue = '%q' AND state = '%q'"
-			, cc_tier_state2str(tiers_state), h->agent_name, h->queue, cc_tier_state2str(CC_TIER_STATE_ACTIVE_INBOUND), cc_tier_state2str(CC_TIER_STATE_STANDBY), cc_tier_state2str(CC_TIER_STATE_OFFERING),
-			cc_tier_state2str(CC_TIER_STATE_READY), h->agent_name, h->queue, cc_tier_state2str(CC_TIER_STATE_STANDBY));
+			, cc_tier_state2str(tiers_state), h->agent_name, h->queue_name, cc_tier_state2str(CC_TIER_STATE_ACTIVE_INBOUND), cc_tier_state2str(CC_TIER_STATE_STANDBY), cc_tier_state2str(CC_TIER_STATE_OFFERING),
+			cc_tier_state2str(CC_TIER_STATE_READY), h->agent_name, h->queue_name, cc_tier_state2str(CC_TIER_STATE_STANDBY));
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
 
@@ -1558,7 +1616,7 @@ done:
 }
 
 struct agent_callback {
-	const char *queue;
+	const char *queue_name;
 	const char *system;
 	const char *uuid;
 	const char *caller_number;
@@ -1570,6 +1628,7 @@ struct agent_callback {
 	uint32_t tier_rule_wait_second;
 	switch_bool_t tier_rule_wait_multiply_level;
 	switch_bool_t tier_rule_no_agent_no_wait;
+	switch_bool_t agent_found;
 
 	int tier;
 	int tier_agent_available;
@@ -1592,6 +1651,8 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *agent_uuid = argv[15];
 
 	switch_bool_t contact_agent = SWITCH_TRUE;
+
+	cbt->agent_found = SWITCH_TRUE;
 
 	/* Check if we switch to a different tier, if so, check if we should continue further for that member */
 
@@ -1691,7 +1752,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->member_joined_epoch = switch_core_strdup(h->pool, cbt->joined_epoch); 
 				h->member_caller_name = switch_core_strdup(h->pool, cbt->caller_name);
 				h->member_caller_number = switch_core_strdup(h->pool, cbt->caller_number);
-				h->queue = switch_core_strdup(h->pool, cbt->queue);
+				h->queue_name = switch_core_strdup(h->pool, cbt->queue_name);
 				h->record_template = switch_core_strdup(h->pool, cbt->record_template);
 				h->no_answer_count = atoi(argv[4]);
 				h->max_no_answer = atoi(argv[5]);
@@ -1704,8 +1765,8 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				sql = switch_mprintf(
 						"UPDATE tiers SET state = '%q' WHERE agent = '%q' AND queue = '%q';"
 						"UPDATE tiers SET state = '%q' WHERE agent = '%q' AND NOT queue = '%q' AND state = '%q';",
-						cc_tier_state2str(CC_TIER_STATE_OFFERING), h->agent_name, h->queue,
-						cc_tier_state2str(CC_TIER_STATE_STANDBY), h->agent_name, h->queue, cc_tier_state2str(CC_TIER_STATE_READY));
+						cc_tier_state2str(CC_TIER_STATE_OFFERING), h->agent_name, h->queue_name,
+						cc_tier_state2str(CC_TIER_STATE_STANDBY), h->agent_name, h->queue_name, cc_tier_state2str(CC_TIER_STATE_READY));
 				cc_execute_sql(NULL, sql, NULL);
 				switch_safe_free(sql);
 
@@ -1772,7 +1833,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			switch_safe_free(sql);
 		}
 		/* Skip this member */
-		return 0;
+		goto end;
 	} 
 	memset(&cbt, 0, sizeof(cbt));
 	cbt.tier = 0;
@@ -1787,9 +1848,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.caller_number = argv[2];
 	cbt.caller_name = argv[3];
 	cbt.joined_epoch = argv[4];
-	cbt.queue = argv[0];
+	cbt.queue_name = argv[0];
 	cbt.strategy = queue_strategy;
 	cbt.record_template = queue_record_template;
+	cbt.agent_found = SWITCH_FALSE;
 	
 	if (!strcasecmp(queue->strategy, "longest-idle-agent")) {
 		sql_order_by = switch_mprintf("level, agents.last_offered_call, position");
@@ -1822,6 +1884,18 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 
 	switch_safe_free(sql);
 	switch_safe_free(sql_order_by);
+
+	/* We update a field in the queue struct so we can kick caller out if waiting for too long with no agent */
+	if (!argv[0] || !(queue = get_queue(argv[0]))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, skip this member\n", argv[0]);
+		goto end;
+	} else {
+		queue->last_agent_exist_check = switch_epoch_time_now(NULL);
+		if (cbt.agent_found) {
+			queue->last_agent_exist = queue->last_agent_exist_check;
+		}
+		queue_rwunlock(queue);
+	}
 
 end:
 	switch_safe_free(queue_name);
@@ -1902,30 +1976,53 @@ void cc_agent_dispatch_thread_start(void)
 	switch_thread_create(&thread, thd_attr, cc_agent_dispatch_thread_run, NULL, globals.pool);
 }
 
-struct member_helper {
-	const char *uuid;
+struct member_thread_helper {
+	const char *member_uuid;
+	const char *queue_name;
+	switch_time_t t_member_called;
+	cc_member_cancel_reason_t member_cancel_reason;
+
 	int running;
 	switch_memory_pool_t *pool;
 };
 
 void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj)
 {
-	struct member_helper *m = (struct member_helper *) obj;
-	switch_core_session_t *member_session = switch_core_session_locate(m->uuid);
-	switch_channel_t *channel = NULL;
+	struct member_thread_helper *m = (struct member_thread_helper *) obj;
+	switch_core_session_t *member_session = switch_core_session_locate(m->member_uuid);
+	switch_channel_t *member_channel = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads++;
 	switch_mutex_unlock(globals.mutex);
 
 	if (member_session) {
-		channel = switch_core_session_get_channel(member_session);
+		member_channel = switch_core_session_get_channel(member_session);
 	} else {
 		switch_core_destroy_memory_pool(&m->pool);
 		return NULL;
 	}
 
-	while(switch_channel_ready(channel) && m->running && globals.running) {
+	while(switch_channel_ready(member_channel) && m->running && globals.running) {
+		cc_queue_t *queue = NULL;
+
+		if (!m->queue_name || !(queue = get_queue(m->queue_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found\n", m->queue_name);
+			break;
+		}
+		/* Make the Caller Leave if he went over his max wait time */
+		if (queue->max_wait_time > 0 && queue->max_wait_time <= switch_epoch_time_now(NULL) - m->t_member_called) {
+			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
+			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+		}
+
+		/* Will drop the caller if no agent was found for more than X secondes */
+		if (queue->max_wait_time_with_no_agent > 0 && m->t_member_called < queue->last_agent_exist_check - CC_MAX_TIME_DIFF_CHECK &&
+				queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
+			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
+			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+		}
+
 		/* TODO Go thought the list of phrases */
 		/* SAMPLE CODE to playback something over the MOH
 
@@ -1940,8 +2037,12 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 		/* If Agent Logoff, we might need to recalculare score based on skill */
 		/* Play Announcement in order */
-		switch_yield(100000);
+
+		queue_rwunlock(queue);
+
+		switch_yield(500000);
 	}
+
 	switch_core_session_rwunlock(member_session);
 	switch_core_destroy_memory_pool(&m->pool);
 
@@ -1962,26 +2063,27 @@ SWITCH_STANDARD_APP(callcenter_function)
 	char *mydata = NULL;
 	cc_queue_t *queue = NULL;
 	const char *queue_name = NULL;
-	switch_channel_t *member_channel = switch_core_session_get_channel(session);
+	switch_core_session_t *member_session = session;
+	switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 	char *sql = NULL;
-	char *uuid = switch_core_session_get_uuid(session);
-	switch_input_args_t args = { 0 };
-	struct member_helper *h = NULL;
+	char *member_uuid = switch_core_session_get_uuid(member_session);
+	struct member_thread_helper *h = NULL;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
-	int cc_base_score_int = 0;
 	switch_channel_timetable_t *times = NULL;
-	const char *cc_base_score = switch_channel_get_variable(member_channel, "cc_base_score");
 	const char *cc_moh_override = switch_channel_get_variable(member_channel, "cc_moh_override");
+	const char *cc_base_score = switch_channel_get_variable(member_channel, "cc_base_score");
+	int cc_base_score_int = 0;
 	const char *cur_moh = NULL;
 	char start_epoch[64];
 	switch_event_t *event;
 	switch_time_t t_member_called = switch_epoch_time_now(NULL);
 	long abandoned_epoch = 0;
+	const char *agent_uuid = NULL;
 
 	if (!zstr(data)) {
-		mydata = switch_core_session_strdup(session, data);
+		mydata = switch_core_session_strdup(member_session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Queue name provided\n");
@@ -2004,7 +2106,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	times = switch_channel_get_timetable(member_channel);
 	switch_snprintf(start_epoch, sizeof(start_epoch), "%" SWITCH_TIME_T_FMT, times->answered / 1000000);
 
-	/* Check of we have a queued abandoned member we can resume from */
+	/* Check if we support and have a queued abandoned member we can resume from */
 	if (queue->abandoned_resume_allowed == SWITCH_TRUE) {
 		char res[256];
 
@@ -2028,9 +2130,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(member_channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", queue_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-%s", (abandoned_epoch==0?"start":"resume"));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", uuid);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", member_uuid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 		switch_event_fire(&event);
@@ -2045,7 +2147,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 				" (queue,system,uuid,system_epoch,joined_epoch,base_score,skill_score,caller_number,caller_name,serving_agent,serving_system,state)"
 				" VALUES('%q','single_box','%q','%q','%ld','%d','%d','%q','%q','%q','','%q')", 
 				queue_name,
-				uuid,
+				member_uuid,
 				start_epoch,
 				(long) switch_epoch_time_now(NULL),
 				cc_base_score_int,
@@ -2060,12 +2162,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 		char res[256];
 		/* Update abandoned member */
 		sql = switch_mprintf("UPDATE members SET uuid = '%q', state = '%q', rejoined_epoch = '%ld' WHERE caller_number = '%q' AND abandoned_epoch = '%ld' AND state = '%q' AND queue = '%q'",
-				uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), (long) switch_epoch_time_now(NULL), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), abandoned_epoch, cc_member_state2str(CC_MEMBER_STATE_ABANDONED), queue_name); 
+				member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), (long) switch_epoch_time_now(NULL), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), abandoned_epoch, cc_member_state2str(CC_MEMBER_STATE_ABANDONED), queue_name); 
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
 
 		/* Confirm we took that member in */
-		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND state = '%q' AND queue = '%q'", uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
+		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND state = '%q' AND queue = '%q'", member_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 		switch_safe_free(sql);
 
@@ -2083,9 +2185,14 @@ SWITCH_STANDARD_APP(callcenter_function)
 	/* Start Thread that will playback different prompt to the channel */
 	switch_core_new_memory_pool(&pool);
 	h = switch_core_alloc(pool, sizeof(*h));
+
 	h->pool = pool;
-	h->uuid = switch_core_strdup(h->pool, uuid);
+	h->member_uuid = switch_core_strdup(h->pool, member_uuid);
+	h->queue_name = switch_core_strdup(h->pool, queue_name);
+	h->t_member_called = t_member_called;
+	h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NONE;
 	h->running = 1;
+
 	switch_threadattr_create(&thd_attr, h->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -2095,16 +2202,37 @@ SWITCH_STANDARD_APP(callcenter_function)
 	/* TODO Add DTMF callback support */
 	/* TODO add MOH infitite loop */	
 	if (cc_moh_override) {
-		cur_moh = switch_core_session_strdup(session, cc_moh_override);
+		cur_moh = switch_core_session_strdup(member_session, cc_moh_override);
 	} else {
-		cur_moh = switch_core_session_strdup(session, queue->moh);
+		cur_moh = switch_core_session_strdup(member_session, queue->moh);
 	}
 	queue_rwunlock(queue);
 
-	if (cur_moh) {
-		switch_ivr_play_file(session, NULL, cur_moh, &args);
-	} else {
-		switch_ivr_collect_digits_callback(session, &args, 0, 0);
+	while (switch_channel_ready(member_channel)) {
+		switch_input_args_t args = { 0 };
+
+		/* An agent was found, time to exit and let the bridge do it job */
+		if ((agent_uuid = switch_channel_get_variable(member_channel, "cc_agent_uuid"))) {
+			break;
+		}
+		/* If the member thread set a different reason, we monitor it so we can quit the wait */
+		if (h->member_cancel_reason != CC_MEMBER_CANCEL_REASON_NONE) {
+			break;
+		}
+
+		switch_core_session_flush_private_events(member_session);
+
+		if (cur_moh) {
+			switch_status_t status = switch_ivr_play_file(member_session, NULL, cur_moh, &args);
+
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+
+		} else {
+			switch_ivr_collect_digits_callback(session, &args, 0, 0);
+		}
+
 	}
 
 	/* Stop Member Thread */
@@ -2114,33 +2242,42 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Hangup any agents been callback */
 	if (!switch_channel_up(member_channel)) { /* If channel is still up, it mean that the member didn't hangup, so we should leave the agent alone */
-		switch_core_session_hupall_matching_var("cc_member_uuid", uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+		switch_core_session_hupall_matching_var("cc_member_uuid", member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		sql = switch_mprintf("UPDATE members SET state = '%q', uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), uuid);
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), member_uuid);
 				cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
+		/* Generate an Event and update some channel variable */
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(member_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", queue_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Wait-Time", "%ld", (long) (switch_epoch_time_now(NULL) - t_member_called));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Abort");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
+					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
+					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
+					queue_name, cc_member_cancel_reason2str(h->member_cancel_reason));
+
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", cc_member_cancel_reason2str(h->member_cancel_reason));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 			switch_event_fire(&event);
 		}
+
 		/* for xml_cdr needs */
 		switch_channel_set_variable_printf(member_channel, "cc_queue_canceled_epoch", "%ld", (long) switch_epoch_time_now(NULL));
+		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", cc_member_cancel_reason2str(h->member_cancel_reason));
 
 
 		/* Send Event with queue count */
 		cc_queue_count(queue_name);
 
 	} else {
+		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");
 		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), (long) switch_epoch_time_now(NULL), uuid);
+				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), (long) switch_epoch_time_now(NULL), member_uuid);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -2516,7 +2653,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				stream->write_function(stream, "%d\n", atoi(res));
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Name", queue_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "members-count");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Count", res);
 					switch_event_fire(&event);

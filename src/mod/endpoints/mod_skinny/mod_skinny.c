@@ -1233,7 +1233,6 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	switch_hash_index_t *hi;
 	void *val;
 	skinny_profile_t *profile;
-	listener_t *l;
 
 	/* walk listeners */
 	switch_mutex_lock(globals.mutex);
@@ -1241,11 +1240,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
-		switch_mutex_lock(profile->listener_mutex);
-		for (l = profile->listeners; l; l = l->next) {
-			callback(l, pvt);
-		}
-		switch_mutex_unlock(profile->listener_mutex);
+		profile_walk_listeners(profile, callback, pvt);
 	}
 	switch_mutex_unlock(globals.mutex);
 }
@@ -1509,6 +1504,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 
 new_socket:
 	while(globals.running) {
+		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
 		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, tmp_pool);
 		if (rv)
 			goto fail;
@@ -1546,8 +1542,10 @@ new_socket:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;
 			} else if (switch_test_flag(profile, PFLAG_RESPAWN)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Creating a new socket\n");
-				switch_clear_flag_locked(profile, PFLAG_RESPAWN);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Respawn in progress. Waiting for socket to close.\n");
+				while (profile->sock) {
+					switch_cond_next();
+				}
 				goto new_socket;
 			} else {
 				/* I wish we could use strerror_r here but its not defined everywhere =/ */
@@ -1619,6 +1617,18 @@ switch_endpoint_interface_t *skinny_get_endpoint_interface()
 	return skinny_endpoint_interface;
 }
 
+switch_status_t skinny_profile_respawn(skinny_profile_t *profile, int force)
+{
+	if (force || switch_test_flag(profile, PFLAG_SHOULD_RESPAWN)) {
+		switch_clear_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
+		switch_set_flag_locked(profile, PFLAG_RESPAWN);
+		switch_clear_flag_locked(profile, PFLAG_LISTENER_READY);
+		profile_walk_listeners(profile, kill_listener, NULL);
+		close_socket(&profile->sock, profile);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, const char *val)
 {
 	if (!var)
@@ -1633,9 +1643,15 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	if (!strcasecmp(var, "domain")) {
 		profile->domain = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "ip")) {
-		profile->ip = switch_core_strdup(profile->pool, val);
+		if (!profile->ip || strcmp(val, profile->ip)) {
+			profile->ip = switch_core_strdup(profile->pool, val);
+			switch_set_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
+		}
 	} else if (!strcasecmp(var, "port")) {
-		profile->port = atoi(val);
+		if (atoi(val) != profile->port) {
+			profile->port = atoi(val);
+			switch_set_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
+		}
 	} else if (!strcasecmp(var, "patterns-dialplan")) {
 		profile->patterns_dialplan = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "patterns-context")) {
@@ -1669,13 +1685,19 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
-	if (profile->sock && (!strcasecmp(var, "ip") || !strcasecmp(var, "port"))) {
-		switch_set_flag_locked(profile, PFLAG_RESPAWN);
-		switch_clear_flag_locked(profile, PFLAG_LISTENER_READY);
-		close_socket(&profile->sock, profile);
-	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+void profile_walk_listeners(skinny_profile_t *profile, skinny_listener_callback_func_t callback, void *pvt)
+{
+	listener_t *l;
+
+	switch_mutex_lock(profile->listener_mutex);
+	for (l = profile->listeners; l; l = l->next) {
+		callback(l, pvt);
+	}
+	switch_mutex_unlock(profile->listener_mutex);
 }
 
 static switch_status_t load_skinny_config(void)
@@ -1692,8 +1714,7 @@ static switch_status_t load_skinny_config(void)
 	if ((xprofiles = switch_xml_child(xcfg, "profiles"))) {
 		for (xprofile = switch_xml_child(xprofiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *profile_name = (char *) switch_xml_attr_soft(xprofile, "name");
-			switch_xml_t xsettings;
-			switch_xml_t xdevice_types;
+			switch_xml_t xsettings, xdevice_types, xsoft_key_set_sets;
 			if (zstr(profile_name)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					"<profile> is missing name attribute\n");
@@ -1749,6 +1770,96 @@ static switch_status_t load_skinny_config(void)
 					profile->port = 2000;
 				}
 
+				/* Soft Key Set Sets */
+				switch_core_hash_init(&profile->soft_key_set_sets_hash, profile->pool);
+				if ((xsoft_key_set_sets = switch_xml_child(xprofile, "soft-key-set-sets"))) {
+					switch_xml_t xsoft_key_set_set;
+					for (xsoft_key_set_set = switch_xml_child(xsoft_key_set_sets, "soft-key-set-set"); xsoft_key_set_set; xsoft_key_set_set = xsoft_key_set_set->next) {
+						char *soft_key_set_set_name = (char *) switch_xml_attr_soft(xsoft_key_set_set, "name");
+						if (soft_key_set_set_name) {
+							switch_xml_t xsoft_key_set;
+							skinny_message_t *message;
+							message = switch_core_alloc(profile->pool, 12+sizeof(message->data.soft_key_set));
+							message->type = SOFT_KEY_SET_RES_MESSAGE;
+							message->length = 4 + sizeof(message->data.soft_key_set);
+							message->data.soft_key_set.soft_key_set_offset = 0;
+							message->data.soft_key_set.soft_key_set_count = 11;
+							message->data.soft_key_set.total_soft_key_set_count = 11;
+							for (xsoft_key_set = switch_xml_child(xsoft_key_set_set, "soft-key-set"); xsoft_key_set; xsoft_key_set = xsoft_key_set->next) {
+								uint32_t soft_key_set_id;
+								if ((soft_key_set_id = skinny_str2soft_key_set(switch_xml_attr_soft(xsoft_key_set, "name"))) != -1) {
+									char *val =switch_core_strdup(profile->pool, switch_xml_attr_soft(xsoft_key_set, "value"));
+									size_t string_len = strlen(val);
+									size_t string_pos, start = 0;
+									int field_no = 0;
+									if (soft_key_set_id > 15) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+											"soft-key-set name '%s' is greater than 15 in soft-key-set-set '%s' in profile %s.\n",
+											switch_xml_attr_soft(xsoft_key_set, "name"), soft_key_set_set_name, profile->name);
+										continue;
+									}
+									for (string_pos = 0; string_pos <= string_len; string_pos++) {
+										if ((val[string_pos] == ',') || (string_pos == string_len)) {
+											val[string_pos] = '\0';
+											if (field_no > 15) {
+												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+													"soft-key-set name '%s' is limited to 16 buttons in soft-key-set-set '%s' in profile %s.\n",
+													switch_xml_attr_soft(xsoft_key_set, "name"), soft_key_set_set_name, profile->name);
+												break;
+											}
+											message->data.soft_key_set.soft_key_set[soft_key_set_id].soft_key_template_index[field_no++] = skinny_str2soft_key_event(&val[start]);
+											start = string_pos+1;
+										}
+									}
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										"Unknown soft-key-set name '%s' in soft-key-set-set '%s' in profile %s.\n",
+										switch_xml_attr_soft(xsoft_key_set, "name"), soft_key_set_set_name, profile->name);
+								}
+							} /* soft-key-set */
+						    switch_core_hash_insert(profile->soft_key_set_sets_hash, soft_key_set_set_name, message);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								"<soft-key-set-set> is missing a name attribute in profile %s.\n", profile->name);
+						}
+					} /* soft-key-set-set */
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						"<soft-key-set-sets> is missing in profile %s.\n", profile->name);
+				} /* soft-key-set-sets */
+				if (!switch_core_hash_find(profile->soft_key_set_sets_hash, "default")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						"Profile %s doesn't have a default <soft-key-set-set>. Profile ignored.\n", profile->name);
+					switch_core_destroy_memory_pool(&profile_pool);
+					continue;
+				}
+				
+				
+				/* Device types */
+				switch_core_hash_init(&profile->device_type_params_hash, profile->pool);
+				if ((xdevice_types = switch_xml_child(xprofile, "device-types"))) {
+					switch_xml_t xdevice_type;
+					for (xdevice_type = switch_xml_child(xdevice_types, "device-type"); xdevice_type; xdevice_type = xdevice_type->next) {
+						uint32_t id = skinny_str2device_type(switch_xml_attr_soft(xdevice_type, "id"));
+						if (id != 0) {
+							char *id_str = switch_mprintf("%d", id);
+							skinny_device_type_params_t *params = switch_core_alloc(profile->pool, sizeof(skinny_device_type_params_t));
+							for (param = switch_xml_child(xdevice_type, "param"); param; param = param->next) {
+								char *var = (char *) switch_xml_attr_soft(param, "name");
+								char *val = (char *) switch_xml_attr_soft(param, "value");
+
+								if (!strcasecmp(var, "firmware-version")) {
+								    strncpy(params->firmware_version, val, 16);
+								}
+							} /* param */
+						    switch_core_hash_insert(profile->device_type_params_hash, id_str, params);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								"Unknow device type %s in profile %s.\n", switch_xml_attr_soft(xdevice_type, "id"), profile->name);
+						}
+					}
+				}
+
 				/* Database */
 				switch_snprintf(dbname, sizeof(dbname), "skinny_%s", profile->name);
 				profile->dbname = switch_core_strdup(profile->pool, dbname);
@@ -1787,30 +1898,7 @@ static switch_status_t load_skinny_config(void)
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
 
-				/* Device types */
-				switch_core_hash_init(&profile->device_type_params_hash, profile->pool);
-				if ((xdevice_types = switch_xml_child(xprofile, "device-types"))) {
-					switch_xml_t xdevice_type;
-					for (xdevice_type = switch_xml_child(xdevice_types, "device-type"); xdevice_type; xdevice_type = xdevice_type->next) {
-						uint32_t id = skinny_str2device_type(switch_xml_attr_soft(xdevice_type, "id"));
-						if (id != 0) {
-							char *id_str = switch_mprintf("%d", id);
-							skinny_device_type_params_t *params = switch_core_alloc(profile->pool, sizeof(skinny_device_type_params_t));
-							for (param = switch_xml_child(xdevice_type, "param"); param; param = param->next) {
-								char *var = (char *) switch_xml_attr_soft(param, "name");
-								char *val = (char *) switch_xml_attr_soft(param, "value");
-
-								if (!strcasecmp(var, "firmware-version")) {
-								    strncpy(params->firmware_version, val, 16);
-								}
-							} /* param */
-						    switch_core_hash_insert(profile->device_type_params_hash, id_str, params);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-								"Unknow device type %s in profile %s.\n", switch_xml_attr_soft(xdevice_type, "id"), profile->name);
-						}
-					}
-				}
+				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
 			    switch_mutex_lock(globals.mutex);
@@ -2009,6 +2097,7 @@ static void skinny_trap_event_handler(switch_event_t *event)
 					} else if (!strcmp(profile->ip, old_ip6)) {
 						skinny_profile_set(profile, "ip", new_ip6);
 					}
+					skinny_profile_respawn(profile, 0);
 				}
 			}
 		}
@@ -2034,9 +2123,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 
 	load_skinny_config();
 
+	/* at least one profile */
+	if (!switch_hash_first(NULL, globals.profile_hash)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No profile found!\n");
+		return SWITCH_STATUS_TERM;
+	}
 	/* bind to events */
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, skinny_heartbeat_event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our heartbeat handler!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our heartbeat handler!\n");
 		/* Not such severe to prevent loading */
 	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
@@ -2044,11 +2138,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_WAITING, NULL, skinny_message_waiting_event_handler, NULL, &globals.message_waiting_node) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our message waiting handler!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our message waiting handler!\n");
 		/* Not such severe to prevent loading */
 	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, NULL, skinny_trap_event_handler, NULL, &globals.trap_node) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our trap handler!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our trap handler!\n");
 		/* Not such severe to prevent loading */
 	}
 

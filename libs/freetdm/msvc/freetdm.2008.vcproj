@@ -339,6 +339,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\include\private\ftdm_call_utils.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\include\private\ftdm_config.h"
 				>
 			</File>
@@ -414,6 +418,10 @@
 			</File>
 			<File
 				RelativePath="..\src\ftdm_buffer.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\ftdm_call_utils.c"
 				>
 			</File>
 			<File

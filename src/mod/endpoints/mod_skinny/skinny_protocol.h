@@ -151,7 +151,7 @@ struct PACKED open_receive_channel_ack_message {
 /* SoftKeyEventMessage */
 #define SOFT_KEY_EVENT_MESSAGE 0x0026
 struct PACKED soft_key_event_message {
-    uint32_t event;
+    uint32_t event; /* See enum skinny_soft_key_event */
     uint32_t line_instance;
     uint32_t call_id;
 };

@@ -551,6 +551,15 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 			} else if (!strcasecmp(parm->val, "INDIA")) {
 				mtpLink->mtp3.switchType = LSI_SW_INDIA;
 				SS7_DEBUG("\tFoundmtpLink->switchType = \"INDIA\"\n");
+			} else if (!strcasecmp(parm->val, "ansi88")) {
+				mtpLink->mtp3.switchType = LSI_SW_ANS88;
+				SS7_DEBUG("\tFoundmtpLink->switchType = \"ANSI88\"\n");
+			} else if (!strcasecmp(parm->val, "ansi92")) {
+				mtpLink->mtp3.switchType = LSI_SW_ANS92;
+				SS7_DEBUG("\tFoundmtpLink->switchType = \"ANSI92\"\n");
+			} else if (!strcasecmp(parm->val, "ansi95")) {
+				mtpLink->mtp3.switchType = LSI_SW_ANS95;
+				SS7_DEBUG("\tFoundmtpLink->switchType = \"ANSI95\"\n");
 			} else {
 				SS7_ERROR("\tFound an invalid linktype of \"%s\"!\n", parm->val);
 				return FTDM_FAIL;
@@ -1158,6 +1167,11 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t25		= mtp3_route->t25;
 	} else {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t25	   = 100;
+	}
+	if (mtp3_route->t26 != 0) {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].t26		= mtp3_route->t26;
+	} else {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].t26	   = 100;
 	}
 
 	return 0;

@@ -111,7 +111,7 @@ static const struct dtmf_to_ascii_s dtmf_to_ascii[] =
     {"##8", 'W'},
     {"##9", 'Z'},
     {"##0", ' '},
-#if defined(WIN32) || ( defined(__SVR4) && defined (__sun))
+#if defined(WIN32)  ||  ( defined(__SVR4) && defined (__sun))
     {"#*1", 'X'},   // (Note 1) 111 1011
     {"#*2", 'X'},   // (Note 1) 111 1100
     {"#*3", 'X'},   // (Note 1) 111 1101

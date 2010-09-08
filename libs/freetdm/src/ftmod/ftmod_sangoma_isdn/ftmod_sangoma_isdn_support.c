@@ -73,8 +73,10 @@ void __inline__ clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 										sngisdn_info->glare.suInstId, sngisdn_info->glare.spInstId,
 										sngisdn_info->suInstId, sngisdn_info->spInstId);
 
-	ftdm_mutex_lock(g_sngisdn_data.ccs[sngisdn_info->glare.suId].mutex);
-	g_sngisdn_data.ccs[sngisdn_info->glare.suId].active_spInstIds[sngisdn_info->glare.spInstId]=NULL;
+	ftdm_mutex_lock(g_sngisdn_data.ccs[sngisdn_info->glare.suId].mutex);	
+	if (sngisdn_info->glare.spInstId != sngisdn_info->spInstId) {
+		g_sngisdn_data.ccs[sngisdn_info->glare.suId].active_spInstIds[sngisdn_info->glare.spInstId]=NULL;
+	}
 	g_sngisdn_data.ccs[sngisdn_info->glare.suId].active_suInstIds[sngisdn_info->glare.suInstId]=NULL;
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[sngisdn_info->glare.suId].mutex);
 
@@ -423,6 +425,24 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info)
  		sngisdn_snd_disconnect(ftdmchan);
 	}
 
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return;
+}
+
+void sngisdn_facility_timeout(void* p_sngisdn_info)
+{
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
+	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;	
+
+	ftdm_mutex_lock(ftdmchan->mutex);
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_GET_CALLERID) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Facility timeout reached proceeding with call (suId:%d suInstId:%u spInstId:%u)\n",
+					  signal_data->cc_id, sngisdn_info->spInstId, sngisdn_info->suInstId);
+		
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+	}
+	
 	ftdm_mutex_unlock(ftdmchan->mutex);
 	return;
 }

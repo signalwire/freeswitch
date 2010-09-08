@@ -259,7 +259,10 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 			chan->physical_chan_id = x;
 			chan->rate = 8000;
 			
-			if (type == FTDM_CHAN_TYPE_FXS || type == FTDM_CHAN_TYPE_FXO || type == FTDM_CHAN_TYPE_B) {
+			if (type == FTDM_CHAN_TYPE_FXS 
+			|| type == FTDM_CHAN_TYPE_FXO 
+			|| type == FTDM_CHAN_TYPE_CAS
+			|| type == FTDM_CHAN_TYPE_B) {
 				int err;
 				
 				dtmf = "software";

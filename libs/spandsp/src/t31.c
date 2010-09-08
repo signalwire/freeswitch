@@ -2602,7 +2602,9 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
                                      t38_tx_packet_handler_t *tx_t38_packet_handler,
                                      void *tx_t38_packet_user_data)
 {
+#if 0
     v8_parms_t v8_parms;
+#endif
     int alloced;
 
     if (at_tx_handler == NULL  ||  modem_control_handler == NULL)

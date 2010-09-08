@@ -1490,29 +1490,31 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_Event swig_types[3]
 #define SWIGTYPE_p_EventConsumer swig_types[4]
 #define SWIGTYPE_p_IVRMenu swig_types[5]
-#define SWIGTYPE_p_LUA__Session swig_types[6]
-#define SWIGTYPE_p_Stream swig_types[7]
-#define SWIGTYPE_p_input_callback_state swig_types[8]
-#define SWIGTYPE_p_lua_State swig_types[9]
-#define SWIGTYPE_p_p_switch_event_node_t swig_types[10]
-#define SWIGTYPE_p_session_flag_t swig_types[11]
-#define SWIGTYPE_p_switch_call_cause_t swig_types[12]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[13]
-#define SWIGTYPE_p_switch_channel_t swig_types[14]
-#define SWIGTYPE_p_switch_core_session_t swig_types[15]
-#define SWIGTYPE_p_switch_event_t swig_types[16]
-#define SWIGTYPE_p_switch_event_types_t swig_types[17]
-#define SWIGTYPE_p_switch_input_args_t swig_types[18]
-#define SWIGTYPE_p_switch_input_type_t swig_types[19]
-#define SWIGTYPE_p_switch_priority_t swig_types[20]
-#define SWIGTYPE_p_switch_queue_t swig_types[21]
-#define SWIGTYPE_p_switch_state_handler_table_t swig_types[22]
-#define SWIGTYPE_p_switch_status_t swig_types[23]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[24]
-#define SWIGTYPE_p_uint32_t swig_types[25]
-#define SWIGTYPE_p_void swig_types[26]
-static swig_type_info *swig_types[28];
-static swig_module_info swig_module = {swig_types, 27, 0, 0, 0, 0};
+#define SWIGTYPE_p_LUA__Dbh swig_types[6]
+#define SWIGTYPE_p_LUA__Session swig_types[7]
+#define SWIGTYPE_p_SWIGLUA_FN swig_types[8]
+#define SWIGTYPE_p_Stream swig_types[9]
+#define SWIGTYPE_p_input_callback_state swig_types[10]
+#define SWIGTYPE_p_lua_State swig_types[11]
+#define SWIGTYPE_p_p_switch_event_node_t swig_types[12]
+#define SWIGTYPE_p_session_flag_t swig_types[13]
+#define SWIGTYPE_p_switch_call_cause_t swig_types[14]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[15]
+#define SWIGTYPE_p_switch_channel_t swig_types[16]
+#define SWIGTYPE_p_switch_core_session_t swig_types[17]
+#define SWIGTYPE_p_switch_event_t swig_types[18]
+#define SWIGTYPE_p_switch_event_types_t swig_types[19]
+#define SWIGTYPE_p_switch_input_args_t swig_types[20]
+#define SWIGTYPE_p_switch_input_type_t swig_types[21]
+#define SWIGTYPE_p_switch_priority_t swig_types[22]
+#define SWIGTYPE_p_switch_queue_t swig_types[23]
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[24]
+#define SWIGTYPE_p_switch_status_t swig_types[25]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[26]
+#define SWIGTYPE_p_uint32_t swig_types[27]
+#define SWIGTYPE_p_void swig_types[28]
+static swig_type_info *swig_types[30];
+static swig_module_info swig_module = {swig_types, 29, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -7005,6 +7007,230 @@ static swig_lua_class *swig_LUA_Session_bases[] = {0,0};
 static const char *swig_LUA_Session_base_names[] = {"CoreSession *",0};
 static swig_lua_class _wrap_class_LUA_Session = { "Session", &SWIGTYPE_p_LUA__Session,_wrap_new_Session, swig_delete_Session, swig_LUA_Session_methods, swig_LUA_Session_attributes, swig_LUA_Session_bases, swig_LUA_Session_base_names };
 
+static int _wrap_new_Dbh__SWIG_0(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  LUA::Dbh *result = 0 ;
+  
+  SWIG_check_num_args("LUA::Dbh",3,3)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("LUA::Dbh",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("LUA::Dbh",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("LUA::Dbh",3,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  result = (LUA::Dbh *)new LUA::Dbh(arg1,arg2,arg3);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Dbh,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_Dbh__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  LUA::Dbh *result = 0 ;
+  
+  SWIG_check_num_args("LUA::Dbh",2,2)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("LUA::Dbh",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("LUA::Dbh",2,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (LUA::Dbh *)new LUA::Dbh(arg1,arg2);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Dbh,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_Dbh__SWIG_2(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  LUA::Dbh *result = 0 ;
+  
+  SWIG_check_num_args("LUA::Dbh",1,1)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("LUA::Dbh",1,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  result = (LUA::Dbh *)new LUA::Dbh(arg1);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Dbh,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_Dbh(lua_State* L) {
+  int argc;
+  int argv[4]={
+    1,2,3,4
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 1) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      return _wrap_new_Dbh__SWIG_2(L);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_new_Dbh__SWIG_1(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_new_Dbh__SWIG_0(L);
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'new_Dbh'");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_delete_Dbh(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  
+  SWIG_check_num_args("LUA::~Dbh",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::~Dbh",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,SWIG_POINTER_DISOWN))){
+    SWIG_fail_ptr("delete_Dbh",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  delete arg1;
+  
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Dbh_release(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("release",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("release",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_release",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  result = (bool)(arg1)->release();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Dbh_query(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  char *arg2 = (char *) 0 ;
+  SWIGLUA_FN arg3 ;
+  bool result;
+  
+  SWIG_check_num_args("query",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("query",1,"LUA::Dbh *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("query",2,"char *");
+  if(!lua_isfunction(L,3)) SWIG_fail_arg("query",3,"SWIGLUA_FN");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_query",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  (&arg3)->L=L; (&arg3)->idx=3; 
+  result = (bool)(arg1)->query(arg2,arg3);
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static void swig_delete_Dbh(void *obj) {
+LUA::Dbh *arg1 = (LUA::Dbh *) obj;
+delete arg1;
+}
+static swig_lua_method swig_LUA_Dbh_methods[] = {
+    {"release", _wrap_Dbh_release}, 
+    {"query", _wrap_Dbh_query}, 
+    {0,0}
+};
+static swig_lua_attribute swig_LUA_Dbh_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_class *swig_LUA_Dbh_bases[] = {0};
+static const char *swig_LUA_Dbh_base_names[] = {0};
+static swig_lua_class _wrap_class_LUA_Dbh = { "Dbh", &SWIGTYPE_p_LUA__Dbh,_wrap_new_Dbh, swig_delete_Dbh, swig_LUA_Dbh_methods, swig_LUA_Dbh_attributes, swig_LUA_Dbh_bases, swig_LUA_Dbh_base_names };
+
 #ifdef __cplusplus
 }
 #endif
@@ -7043,7 +7269,9 @@ static swig_type_info _swigt__p_DTMF = {"_p_DTMF", "DTMF *", 0, 0, (void*)&_wrap
 static swig_type_info _swigt__p_Event = {"_p_Event", "Event *", 0, 0, (void*)&_wrap_class_Event, 0};
 static swig_type_info _swigt__p_EventConsumer = {"_p_EventConsumer", "EventConsumer *", 0, 0, (void*)&_wrap_class_EventConsumer, 0};
 static swig_type_info _swigt__p_IVRMenu = {"_p_IVRMenu", "IVRMenu *", 0, 0, (void*)&_wrap_class_IVRMenu, 0};
+static swig_type_info _swigt__p_LUA__Dbh = {"_p_LUA__Dbh", "LUA::Dbh *", 0, 0, (void*)&_wrap_class_LUA_Dbh, 0};
 static swig_type_info _swigt__p_LUA__Session = {"_p_LUA__Session", "LUA::Session *", 0, 0, (void*)&_wrap_class_LUA_Session, 0};
+static swig_type_info _swigt__p_SWIGLUA_FN = {"_p_SWIGLUA_FN", "SWIGLUA_FN *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)&_wrap_class_Stream, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)&_wrap_class_input_callback_state_t, 0};
 static swig_type_info _swigt__p_lua_State = {"_p_lua_State", "lua_State *", 0, 0, (void*)0, 0};
@@ -7072,7 +7300,9 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_Event,
   &_swigt__p_EventConsumer,
   &_swigt__p_IVRMenu,
+  &_swigt__p_LUA__Dbh,
   &_swigt__p_LUA__Session,
+  &_swigt__p_SWIGLUA_FN,
   &_swigt__p_Stream,
   &_swigt__p_input_callback_state,
   &_swigt__p_lua_State,
@@ -7101,7 +7331,9 @@ static swig_cast_info _swigc__p_DTMF[] = {  {&_swigt__p_DTMF, 0, 0, 0},{0, 0, 0,
 static swig_cast_info _swigc__p_Event[] = {  {&_swigt__p_Event, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_EventConsumer[] = {  {&_swigt__p_EventConsumer, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_IVRMenu[] = {  {&_swigt__p_IVRMenu, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_LUA__Dbh[] = {  {&_swigt__p_LUA__Dbh, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_LUA__Session[] = {  {&_swigt__p_LUA__Session, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_SWIGLUA_FN[] = {  {&_swigt__p_SWIGLUA_FN, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_lua_State[] = {  {&_swigt__p_lua_State, 0, 0, 0},{0, 0, 0, 0}};
@@ -7130,7 +7362,9 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_Event,
   _swigc__p_EventConsumer,
   _swigc__p_IVRMenu,
+  _swigc__p_LUA__Dbh,
   _swigc__p_LUA__Session,
+  _swigc__p_SWIGLUA_FN,
   _swigc__p_Stream,
   _swigc__p_input_callback_state,
   _swigc__p_lua_State,

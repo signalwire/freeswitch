@@ -682,6 +682,8 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t);
     \param state TRUE to enable interrupt request, else FALSE. */
 SPAN_DECLARE(void) t30_local_interrupt_request(t30_state_t *s, int state);
 
+SPAN_DECLARE(void) t30_remote_interrupts_allowed(t30_state_t *s, int state);
+
 #if defined(__cplusplus)
 }
 #endif

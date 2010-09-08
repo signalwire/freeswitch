@@ -61,7 +61,8 @@ extern skinny_globals_t globals;
 
 typedef enum {
     PFLAG_LISTENER_READY = (1 << 0),
-    PFLAG_RESPAWN = (1 << 1),
+    PFLAG_SHOULD_RESPAWN = (1 << 1),
+    PFLAG_RESPAWN = (1 << 2),
 } profile_flag_t;
 
 struct skinny_profile {
@@ -78,6 +79,7 @@ struct skinny_profile {
     char date_format[6];
     int debug;
 	int auto_restart;
+    switch_hash_t *soft_key_set_sets_hash;
     switch_hash_t *device_type_params_hash;
     /* db */
     char *dbname;
@@ -133,6 +135,7 @@ struct listener {
     uint32_t device_type;
     
 	char firmware_version[16];
+	char *soft_key_set_set;
 
     switch_socket_t *sock;
     switch_memory_pool_t *pool;
@@ -220,6 +223,9 @@ switch_core_session_t * skinny_profile_perform_find_session(skinny_profile_t *pr
 switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, listener_t *listener, uint32_t *line_instance_p, uint32_t call_id);
 #endif
 switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream);
+switch_status_t skinny_profile_respawn(skinny_profile_t *profile, int force);
+switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, const char *val);
+void profile_walk_listeners(skinny_profile_t *profile, skinny_listener_callback_func_t callback, void *pvt);
 
 /*****************************************************************************/
 /* SQL FUNCTIONS */
@@ -262,7 +268,6 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 /* MODULE FUNCTIONS */
 /*****************************************************************************/
 switch_endpoint_interface_t *skinny_get_endpoint_interface();
-switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, const char *val);
 
 #endif /* _MOD_SKINNY_H */
 

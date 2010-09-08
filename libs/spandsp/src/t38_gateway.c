@@ -426,7 +426,6 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     t38_gateway_hdlc_state_t *u;
 
     t = &s->audio.modems;
-    u = &s->core.hdlc_to_modem;
     t38_non_ecm_buffer_report_output_status(&s->core.non_ecm_to_modem, &s->logging);
     if (t->next_tx_handler)
     {
@@ -447,6 +446,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         return TRUE;
     }
     /*endif*/
+    u = &s->core.hdlc_to_modem;
     if (u->in == u->out)
         return FALSE;
     /*endif*/
@@ -1057,7 +1057,9 @@ static int process_rx_missing(t38_core_state_t *t, void *user_data, int rx_seq_n
 static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indicator)
 {
     t38_gateway_state_t *s;
-    
+    t38_gateway_hdlc_state_t *u;
+    int immediate;
+
     s = (t38_gateway_state_t *) user_data;
 
     t38_non_ecm_buffer_report_input_status(&s->core.non_ecm_to_modem, &s->logging);
@@ -1067,25 +1069,50 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
         return 0;
     }
     /*endif*/
-    if (s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].contents)
+
+    u = &s->core.hdlc_to_modem;
+    immediate = (u->in == u->out);
+    if (u->buf[u->in].contents)
     {
-        if (++s->core.hdlc_to_modem.in >= T38_TX_HDLC_BUFS)
-            s->core.hdlc_to_modem.in = 0;
+        if (++u->in >= T38_TX_HDLC_BUFS)
+            u->in = 0;
         /*endif*/
     }
     /*endif*/
-    s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].contents = (indicator | FLAG_INDICATOR);
-    if (++s->core.hdlc_to_modem.in >= T38_TX_HDLC_BUFS)
-        s->core.hdlc_to_modem.in = 0;
+    u->buf[u->in].contents = (indicator | FLAG_INDICATOR);
+    if (++u->in >= T38_TX_HDLC_BUFS)
+        u->in = 0;
     /*endif*/
-    t38_non_ecm_buffer_set_mode(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
 
-    span_log(&s->logging,
-             SPAN_LOG_FLOW,
-             "Queued change - (%d) %s -> %s\n",
-             silence_gen_remainder(&(s->audio.modems.silence_gen)),
-             t38_indicator_to_str(t->current_rx_indicator),
-             t38_indicator_to_str(indicator));
+    if (immediate)
+    {
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Changing - (%d) %s -> %s\n",
+                 silence_gen_remainder(&(s->audio.modems.silence_gen)),
+                 t38_indicator_to_str(t->current_rx_indicator),
+                 t38_indicator_to_str(indicator));
+        switch (s->t38x.current_rx_field_class)
+        {
+        case T38_FIELD_CLASS_NONE:
+            break;
+        case T38_FIELD_CLASS_HDLC:
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC shutdown\n");
+            hdlc_tx_frame(&s->audio.modems.hdlc_tx, NULL, 0);
+            break;
+        case T38_FIELD_CLASS_NON_ECM:
+            break;
+        }
+    }
+    else
+    {
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Queued change - (%d) %s -> %s\n",
+                 silence_gen_remainder(&(s->audio.modems.silence_gen)),
+                 t38_indicator_to_str(t->current_rx_indicator),
+                 t38_indicator_to_str(indicator));
+    }
     s->t38x.current_rx_field_class = T38_FIELD_CLASS_NONE;
     /* We need to set this here, since we might have been called as a fake
        indication when the real one was missing */
@@ -1440,6 +1467,8 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         xx->corrupt_current_frame[0] = FALSE;
         break;
     case T38_FIELD_T4_NON_ECM_DATA:
+        if (xx->current_rx_field_class == T38_FIELD_CLASS_NONE)
+            t38_non_ecm_buffer_set_mode(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
         xx->current_rx_field_class = T38_FIELD_CLASS_NON_ECM;
         hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (hdlc_buf->contents != (data_type | FLAG_DATA))
@@ -1454,6 +1483,8 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         xx->corrupt_current_frame[0] = FALSE;
         break;
     case T38_FIELD_T4_NON_ECM_SIG_END:
+        if (xx->current_rx_field_class == T38_FIELD_CLASS_NONE)
+            t38_non_ecm_buffer_set_mode(&s->core.non_ecm_to_modem, s->core.image_data_mode, s->core.min_row_bits);
         hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         /* Some T.38 implementations send multiple T38_FIELD_T4_NON_ECM_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
@@ -2432,8 +2463,8 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
 
     s->core.to_t38.octets_per_data_packet = 1;
     s->core.ecm_allowed = TRUE;
-    t38_non_ecm_buffer_init(&s->core.non_ecm_to_modem, FALSE, 0);
     //s->core.ms_per_tx_chunk = DEFAULT_MS_PER_TX_CHUNK;
+    t38_non_ecm_buffer_init(&s->core.non_ecm_to_modem, FALSE, 0);
     restart_rx_modem(s);
     s->core.timed_mode = TIMED_MODE_STARTUP;
     s->core.samples_to_timeout = 1;

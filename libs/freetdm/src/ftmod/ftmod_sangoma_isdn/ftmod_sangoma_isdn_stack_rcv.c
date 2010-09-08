@@ -45,8 +45,8 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	uint8_t bchan_no = 0;
-	sngisdn_chan_data_t *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;	
+	sngisdn_chan_data_t *sngisdn_info = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Ind on unconfigured dchan\n");
@@ -96,7 +96,7 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 
 	memcpy(&sngisdn_event->event.conEvnt, conEvnt, sizeof(*conEvnt));
-	
+
 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -104,8 +104,8 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces)
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	sngisdn_chan_data_t *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_chan_data_t *sngisdn_info = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Cfm on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Cfm on unconfigured dchan\n");
@@ -118,6 +118,7 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 
 	if (!sngisdn_info->spInstId) {
 		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
+
 		sngisdn_info->spInstId = spInstId;
 		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
 		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
@@ -146,8 +147,8 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces)
 {	
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	sngisdn_chan_data_t *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_chan_data_t *sngisdn_info = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Cnst Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Cnst Ind on unconfigured dchan\n");
@@ -160,6 +161,7 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 
 	if (!sngisdn_info->spInstId) {
 		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
+
 		sngisdn_info->spInstId = spInstId;
 		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
 		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
@@ -188,15 +190,15 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 
 	memcpy(&sngisdn_event->event.cnStEvnt, cnStEvnt, sizeof(*cnStEvnt));
 	
- ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
+	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
 void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt)
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	sngisdn_chan_data_t *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_chan_data_t *sngisdn_info = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_assert(spInstId != 0, "Received DISCONNECT with invalid id");
 
@@ -206,13 +208,6 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
 		return;
-	}
-
-	if (!sngisdn_info->spInstId) {
-		ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
-		sngisdn_info->spInstId = spInstId;
-		g_sngisdn_data.ccs[suId].active_spInstIds[spInstId] = sngisdn_info;
-		ftdm_mutex_unlock(g_sngisdn_data.ccs[suId].mutex);
 	}
 	
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received DISCONNECT (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
@@ -229,7 +224,7 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 
 	memcpy(&sngisdn_event->event.discEvnt, discEvnt, sizeof(*discEvnt));
 	
- ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
+	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -237,8 +232,8 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt)
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_chan_data_t  *sngisdn_info = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -251,7 +246,7 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received RELEASE/RELEASE COMPLETE (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_REL_IND;
@@ -270,7 +265,7 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -283,7 +278,7 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received DATA IND suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_DAT_IND;
@@ -302,7 +297,7 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -315,7 +310,7 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received SSHL IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_SSHL_IND;
@@ -335,7 +330,7 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -348,7 +343,7 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received SSHL CFM (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_SSHL_CFM;
@@ -360,14 +355,14 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 
 	memcpy(&sngisdn_event->event.ssHlEvnt, ssHlEvnt, sizeof(*ssHlEvnt));
 
- ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
+	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action)
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -380,7 +375,7 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received RMRT IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_RMRT_IND;
@@ -392,7 +387,7 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 
 	memcpy(&sngisdn_event->event.rmRtEvnt, rmRtEvnt, sizeof(*rmRtEvnt));
 
- ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
+	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
@@ -400,7 +395,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -413,7 +408,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received RESUME/RETRIEVE CFM (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_RMRT_CFM;
@@ -425,7 +420,7 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 
 	memcpy(&sngisdn_event->event.rmRtEvnt, rmRtEvnt, sizeof(*rmRtEvnt));
 
- 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
+	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
@@ -433,7 +428,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 			 !(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -446,7 +441,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received FLOW CONTROL IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_FLC_IND;
@@ -457,7 +452,7 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 	memcpy(&sngisdn_event->event.staEvnt, staEvnt, sizeof(*staEvnt));
 
- 	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
+	ftdm_queue_enqueue(((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->event_queue, sngisdn_event);
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
@@ -466,7 +461,7 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -478,7 +473,7 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received FACILITY IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_FAC_IND;
@@ -499,7 +494,7 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -512,7 +507,7 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received STATUS CONFIRM (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-	ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+	ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 	memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 	sngisdn_event->event_id = SNGISDN_EVENT_STA_CFM;
@@ -532,7 +527,7 @@ void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	sngisdn_span_data_t	*signal_data;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE IND (dChan:%d ces:%u)\n", dChan, ces);
 	
@@ -540,7 +535,7 @@ void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
 		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
 		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 		sngisdn_event->event_id = SNGISDN_EVENT_SRV_IND;		
@@ -550,7 +545,7 @@ void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 		sngisdn_event->signal_data = signal_data;
 		
 		memcpy(&sngisdn_event->event.srvEvnt, srvEvnt, sizeof(*srvEvnt));
-  		ftdm_queue_enqueue((signal_data)->event_queue, sngisdn_event);
+		ftdm_queue_enqueue((signal_data)->event_queue, sngisdn_event);
 	}
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -560,8 +555,8 @@ void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
-	sngisdn_span_data_t	*signal_data;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_span_data_t	*signal_data = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE CFM (dChan:%d ces:%u)\n", dChan, ces);
 
@@ -569,7 +564,7 @@ void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
 		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
 		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 		sngisdn_event->event_id = SNGISDN_EVENT_SRV_CFM;		
@@ -588,8 +583,8 @@ void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
-	sngisdn_span_data_t	*signal_data;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_span_data_t	*signal_data = NULL;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART IND (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
 	
@@ -597,7 +592,7 @@ void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
 		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
 		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 		sngisdn_event->event_id = SNGISDN_EVENT_RST_IND;
@@ -618,7 +613,7 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	sngisdn_span_data_t	*signal_data;
-	sngisdn_event_data_t *sngisdn_event;
+	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART CFM (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
 	
@@ -626,7 +621,7 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
 		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
 		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event, "Failed to allocate memory\n");
+		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
 		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
 		sngisdn_event->event_id = SNGISDN_EVENT_RST_CFM;
