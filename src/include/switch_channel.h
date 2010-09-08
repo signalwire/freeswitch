@@ -215,6 +215,20 @@ SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_profile(switch_channel_t *channel);
 
+/*!
+  \brief Set the given channel's origination caller profile
+  \param channel channel to assign the profile to
+  \param caller_profile the profile to assign
+*/
+SWITCH_DECLARE(void) switch_channel_set_origination_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+
+/*!
+  \brief Retrive the given channel's origination caller profile
+  \param channel channel to retrive the profile from
+  \return the requested profile
+*/
+SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_origination_caller_profile(switch_channel_t *channel);
+
 
 /*!
   \brief Retrive the given channel's unique id

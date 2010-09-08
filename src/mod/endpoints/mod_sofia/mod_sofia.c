@@ -697,7 +697,11 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
-		char *cid = generate_pai_str(session);
+		char *cid = NULL;
+
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID)) {
+			cid = generate_pai_str(session);
+		}
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
 			/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
@@ -1761,7 +1765,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							nua_update(tech_pvt->nh,
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						}
+						} else if ((ua && (switch_stristr("cisco", ua)))) {
+                                                        snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
+
+                                                        sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
+                                                        nua_update(tech_pvt->nh,
+                                                                           TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+                                                                           TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+                                                }
 
 						tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
 						tech_pvt->last_sent_callee_id_number = switch_core_session_strdup(tech_pvt->session, number);
@@ -2158,7 +2169,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
-					char *cid = generate_pai_str(session);
+					char *cid = NULL;
+
+					if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID)) {
+						cid = generate_pai_str(session);
+					}
 
 					if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 						tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {

@@ -1805,6 +1805,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 			status = FTDM_SUCCESS;
 		}
 		ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
+		ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
 		*ftdmchan = check;
 	}
 

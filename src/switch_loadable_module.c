@@ -1683,16 +1683,20 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 {
 	switch_api_interface_t *api;
 	switch_status_t status;
-	char *arg_no_spaces;
-	char *cmd_no_spaces;
+	char *arg_used;
+	char *cmd_used;
 
 	switch_assert(stream != NULL);
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
 
-
-	cmd_no_spaces = switch_strip_whitespace(cmd);
-	arg_no_spaces = switch_strip_whitespace(arg);
+	if (strcasecmp(cmd, "console_complete")) {
+		cmd_used = switch_strip_whitespace(cmd);
+		arg_used = switch_strip_whitespace(arg);
+	} else {
+		cmd_used = (char *) cmd;
+		arg_used = (char *) arg;
+	}
 			
 
 	if (!stream->param_event) {
@@ -1700,17 +1704,17 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	}
 
 	if (stream->param_event) {
-		if (cmd_no_spaces) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_no_spaces);
+		if (cmd_used) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
 		}
-		if (arg_no_spaces) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_no_spaces);
+		if (arg_used) {
+			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
 		}
 	}
 
 
-	if (cmd_no_spaces && (api = switch_loadable_module_get_api_interface(cmd_no_spaces)) != 0) {
-		if ((status = api->function(arg_no_spaces, session, stream)) != SWITCH_STATUS_SUCCESS) {
+	if (cmd_used && (api = switch_loadable_module_get_api_interface(cmd_used)) != 0) {
+		if ((status = api->function(arg_used, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
 		UNPROTECT_INTERFACE(api);
@@ -1723,8 +1727,13 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 		switch_event_fire(&stream->param_event);
 	}
 
-	switch_safe_free(cmd_no_spaces);
-	switch_safe_free(arg_no_spaces);
+	if (cmd_used != cmd) {
+		switch_safe_free(cmd_used);
+	}
+	
+	if (arg_used != arg) {
+		switch_safe_free(arg_used);
+	}
 
 	return status;
 }

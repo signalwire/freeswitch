@@ -3896,7 +3896,7 @@ SWITCH_STANDARD_API(ft_function)
 		ftdm_channel_t *fchan = NULL;
 		ftdm_span_t *span = NULL;
 		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: oz notrace <span_id> [<chan_id>]\n");
+			stream->write_function(stream, "-ERR Usage: ftdm notrace <span_id> [<chan_id>]\n");
 			goto end;
 		} 
 		ftdm_span_find_by_name(argv[1], &span);

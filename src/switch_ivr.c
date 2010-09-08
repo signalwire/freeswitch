@@ -2012,6 +2012,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 		cp_off += switch_ivr_set_xml_profile_data(x_main_cp, caller_profile, 0);
 
+		if (caller_profile->origination_caller_profile) {
+			switch_caller_profile_t *cp = NULL;
+			int off = 0;
+			if (!(x_o = switch_xml_add_child_d(x_main_cp, "origination", cp_off++))) {
+				goto error;
+			}
+
+			for (cp = caller_profile->origination_caller_profile; cp; cp = cp->next) {
+				if (!(x_caller_profile = switch_xml_add_child_d(x_o, "origination_caller_profile", off++))) {
+					goto error;
+				}
+				switch_ivr_set_xml_profile_data(x_caller_profile, cp, 0);
+			}
+		}
+
 		if (caller_profile->originator_caller_profile) {
 			switch_caller_profile_t *cp = NULL;
 			int off = 0;
