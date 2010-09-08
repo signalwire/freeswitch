@@ -85,6 +85,10 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		sofia_glue_tech_absorb_sdp(tech_pvt);
 	}
 
+	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
+		sofia_set_flag(tech_pvt, TFLAG_RECOVERED);
+	}
+
 	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
 		const char *var;
 

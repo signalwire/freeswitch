@@ -1225,7 +1225,7 @@ static void sofia_perform_profile_start_failure(sofia_profile_t *profile, char *
 #define sofia_profile_start_failure(p, xp) sofia_perform_profile_start_failure(p, xp, __FILE__, __LINE__)
 
 
-#define SQLLEN 1024 * 64
+#define SQLLEN 1024 * 32
 void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
@@ -1236,7 +1236,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	void *pop;
 	int loop_count = 0;
 	switch_size_t sql_len = SQLLEN;
-	char *tmp, *sqlbuf = NULL;
+	char *sqlbuf = NULL;
+	char *sql = NULL;
 
 	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 		sqlbuf = (char *) malloc(sql_len);
@@ -1253,7 +1254,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || qsize) {
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) {
+			if ((qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) || sql) {
 				switch_size_t newlen;
 				uint32_t itterations = 0;
 				switch_size_t len = 0;
@@ -1262,28 +1263,24 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				
 				//sofia_glue_actually_execute_sql(profile, "begin;\n", NULL);
 
-				while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-					char *sql = (char *) pop;
-
+				while (sql || (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop)) {
+					
+					if (!sql) {
+						sql = (char *) pop;
+					}
+					
 					newlen = strlen(sql) + 2;
-
-					if (newlen + 10 < SQLLEN) {
-						itterations++;
-						if (len + newlen + 10 > sql_len) {
-							sql_len = len + 10 + SQLLEN;
-							if (!(tmp = realloc(sqlbuf, sql_len))) {
-								abort();
-								break;
-							}
-							sqlbuf = tmp;
-						}
+					itterations++;
+					
+					if (len + newlen + 10 < sql_len) {
 						sprintf(sqlbuf + len, "%s;\n", sql);
 						len += newlen;
+						switch_safe_free(sql);
+					} else {
+						break;
 					}
-
-					free(pop);
 				}
-
+				
 				//printf("TRANS:\n%s\n", sqlbuf);
 				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
 				//sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
@@ -2860,7 +2857,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					goto done;
 				}
 
-				profile->trans_timeout = 500;
+				profile->trans_timeout = 100;
 
 				profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833;// | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
 

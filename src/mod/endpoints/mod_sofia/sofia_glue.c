@@ -2059,6 +2059,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
+				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
@@ -2087,6 +2088,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
+				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
@@ -4644,7 +4646,7 @@ void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *se
 			}
 		}
 		
-		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		sofia_clear_flag(tech_pvt, TFLAG_TRACKED);
 		
 		switch_safe_free(sql);

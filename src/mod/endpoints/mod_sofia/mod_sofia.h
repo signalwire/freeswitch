@@ -275,6 +275,7 @@ typedef enum {
 	TFLAG_RECOVERING,
 	TFLAG_RECOVERING_BRIDGE,
 	TFLAG_T38_PASSTHRU,
+	TFLAG_RECOVERED,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
