@@ -173,7 +173,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	if (fh->samplerate && rate && fh->samplerate != rate) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Sample rate doesn't match\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "File %s sample rate %d doesn't match requested rate %d\n", file_path, fh->samplerate, rate);
 		if ((flags & SWITCH_FILE_FLAG_READ)) {
 			fh->samplerate = rate;
 		}
