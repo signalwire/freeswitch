@@ -2292,9 +2292,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 				switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mwi-account", mwi_account);
 			}
 
-			if ((uparams = switch_xml_child(user, "params"))) {
+			if ((dparams = switch_xml_child(domain, "params"))) {
 				xparams_type[i] = 0;
-				xparams[i++] = uparams;
+				xparams[i++] = dparams;
 			}
 
 			if (group && (gparams = switch_xml_child(group, "params"))) {
@@ -2302,19 +2302,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 				xparams[i++] = gparams;
 			}
 
-			if ((dparams = switch_xml_child(domain, "params"))) {
+			if ((uparams = switch_xml_child(user, "params"))) {
 				xparams_type[i] = 0;
-				xparams[i++] = dparams;
-			}
-
-			if ((uparams = switch_xml_child(user, "variables"))) {
-				xparams_type[i] = 1;
 				xparams[i++] = uparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = gparams;
 			}
 
 			if ((dparams = switch_xml_child(domain, "variables"))) {
@@ -2322,82 +2312,88 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 				xparams[i++] = dparams;
 			}
 
+			if (group && (gparams = switch_xml_child(group, "variables"))) {
+				xparams_type[i] = 1;
+				xparams[i++] = gparams;
+			}
+
+			if ((uparams = switch_xml_child(user, "variables"))) {
+				xparams_type[i] = 1;
+				xparams[i++] = uparams;
+			}
+
 			if (i <= 6) {
 				int j = 0;
+				const char *gw_val = NULL;
 
 				for (j = 0; j < i; j++) {
 					for (param = switch_xml_child(xparams[j], (xparams_type[j] ? "variable" : "param")); param; param = param->next) {
 						const char *var = switch_xml_attr_soft(param, "name");
 						const char *val = switch_xml_attr_soft(param, "value");
-						sofia_gateway_t *gateway_ptr = NULL;
 
 						if (!zstr(var) && !zstr(val) && (xparams_type[j] == 1 || !strncasecmp(var, "sip-", 4) || !strcasecmp(var, "register-gateway"))) {
-							if (!switch_event_get_header(*v_event, var)) {
-								if (profile->debug) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event_add_header -> '%s' = '%s'\n", var, val);
-								}
-								switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, var, val);
-							} else {
-								continue;
+							if (profile->debug) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event_add_header -> '%s' = '%s'\n", var, val);
 							}
-
-							if (!strcasecmp(var, "register-gateway")) {
-								if (!strcasecmp(val, "all")) {
-									switch_xml_t gateways_tag, gateway_tag;
-									if ((gateways_tag = switch_xml_child(user, "gateways"))) {
-										for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
-											char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
-											if (zstr(name)) {
-												name = "anonymous";
-											}
-
-											if ((gateway_ptr = sofia_reg_find_gateway(name))) {
-												reg_state_t ostate = gateway_ptr->state;
-												gateway_ptr->retry = 0;
-												if (exptime) {
-													gateway_ptr->state = REG_STATE_UNREGED;
-												} else {
-													gateway_ptr->state = REG_STATE_UNREGISTER;
-												}
-												if (ostate != gateway_ptr->state) {
-													sofia_reg_fire_custom_gateway_state_event(gateway_ptr, 0, NULL);
-												}
-												sofia_reg_release_gateway(gateway_ptr);
-											}
-
-										}
-									}
-								} else {
-									int x, argc;
-									char *mydata, *argv[50];
-
-									mydata = strdup(val);
-									switch_assert(mydata != NULL);
-
-									argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-
-									for (x = 0; x < argc; x++) {
-										if ((gateway_ptr = sofia_reg_find_gateway((char *) argv[x]))) {
-											reg_state_t ostate = gateway_ptr->state;
-											gateway_ptr->retry = 0;
-											if (exptime) {
-												gateway_ptr->state = REG_STATE_UNREGED;
-											} else {
-												gateway_ptr->state = REG_STATE_UNREGISTER;
-											}
-											if (ostate != gateway_ptr->state) {
-												sofia_reg_fire_custom_gateway_state_event(gateway_ptr, 0, NULL);
-											}
-											sofia_reg_release_gateway(gateway_ptr);
-										} else {
-											switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Gateway '%s' not found.\n", argv[x]);
-										}
-									}
-
-									free(mydata);
+							switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, var, val);
+						}
+					}
+				}
+				if ((gw_val = switch_event_get_header(*v_event, "register-gateway"))) {
+					sofia_gateway_t *gateway_ptr = NULL;
+					if (!strcasecmp(gw_val, "all")) {
+						switch_xml_t gateways_tag, gateway_tag;
+						if ((gateways_tag = switch_xml_child(user, "gateways"))) {
+							for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
+								char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
+								if (zstr(name)) {
+									name = "anonymous";
 								}
+
+								if ((gateway_ptr = sofia_reg_find_gateway(name))) {
+									reg_state_t ostate = gateway_ptr->state;
+									gateway_ptr->retry = 0;
+									if (exptime) {
+										gateway_ptr->state = REG_STATE_UNREGED;
+									} else {
+										gateway_ptr->state = REG_STATE_UNREGISTER;
+									}
+									if (ostate != gateway_ptr->state) {
+										sofia_reg_fire_custom_gateway_state_event(gateway_ptr, 0, NULL);
+									}
+									sofia_reg_release_gateway(gateway_ptr);
+								}
+
 							}
 						}
+					} else {
+						int x, argc;
+						char *mydata, *argv[50];
+
+						mydata = strdup(gw_val);
+						switch_assert(mydata != NULL);
+
+						argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+
+						for (x = 0; x < argc; x++) {
+							if ((gateway_ptr = sofia_reg_find_gateway((char *) argv[x]))) {
+								reg_state_t ostate = gateway_ptr->state;
+								gateway_ptr->retry = 0;
+								if (exptime) {
+									gateway_ptr->state = REG_STATE_UNREGED;
+								} else {
+									gateway_ptr->state = REG_STATE_UNREGISTER;
+								}
+								if (ostate != gateway_ptr->state) {
+									sofia_reg_fire_custom_gateway_state_event(gateway_ptr, 0, NULL);
+								}
+								sofia_reg_release_gateway(gateway_ptr);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Gateway '%s' not found.\n", argv[x]);
+							}
+						}
+
+						free(mydata);
 					}
 				}
 			}
