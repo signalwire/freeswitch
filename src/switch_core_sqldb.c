@@ -850,7 +850,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 
 static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, void *obj)
 {
-	void *pop;
+	void *pop = NULL;
 	uint32_t itterations = 0;
 	uint8_t trans = 0, nothing_in_queue = 0;
 	uint32_t target = 100000;
