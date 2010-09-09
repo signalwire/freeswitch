@@ -367,10 +367,15 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
 {
   if (connected) {
-    if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
-      return true;
+    if (lua_fun.L && lua_fun.idx != 0) {
+      if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
+        return true;
+      }
+    } else { /* if no lua_fun arg is passed from Lua, an empty initialized struct will be sent - see freeswitch.i */
+      if (switch_cache_db_execute_sql(dbh, sql, NULL) == SWITCH_STATUS_SUCCESS) {
+        return true;
+      }
     }
   }
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no workie workie :(\n");
   return false;
 }

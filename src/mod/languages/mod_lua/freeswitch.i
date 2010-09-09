@@ -19,8 +19,15 @@
 
 
 /* Lua function typemap */
-%typemap(in,checkfn="lua_isfunction") SWIGLUA_FN
-%{  $1.L=L; $1.idx=$input; %}
+%typemap(in, checkfn = "lua_isfunction") SWIGLUA_FN {
+  $1.L = L;
+  $1.idx = $input;
+}
+
+%typemap(default) SWIGLUA_FN {
+  SWIGLUA_FN default_swiglua_fn = { 0 };
+  $1 = default_swiglua_fn;
+}
 
 
 %ignore SwitchToMempool;   
