@@ -4518,7 +4518,20 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_completing:
-		nua_ack(nh, TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+		{
+			if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
+				const char *invite_full_via = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_via");
+				const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");			
+
+				nua_ack(nh, 
+						TAG_IF(!zstr(invite_full_via), SIPTAG_VIA_STR(invite_full_via)),
+						TAG_IF(!zstr(invite_route_uri), SIPTAG_ROUTE_STR(invite_route_uri)),
+						TAG_END());
+						
+			} else {
+				nua_ack(nh, TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+			}
+		}
 		goto done;
 	case nua_callstate_received:
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
@@ -5897,6 +5910,26 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 								 tagi_t tags[])
 {
 	char *call_info = NULL;
+
+	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+		char network_ip[80];
+		int network_port = 0;
+		char via_space[2048];
+		char branch[16] = "";
+
+		sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
+		switch_stun_random_string(branch, sizeof(branch) - 1, "0123456789abcdef");
+
+		switch_snprintf(via_space, sizeof(via_space), "SIP/2.0/UDP %s;rport=%d;branch=%s", network_ip, network_port, branch);
+		switch_channel_set_variable(channel, "sip_full_via", via_space);
+		switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
+		switch_channel_set_variable_printf(channel, "sip_recieved_port", "%d", network_port);
+		switch_channel_set_variable_printf(channel, "sip_via_rport", "%d", network_port);
+		
+		sofia_glue_tech_track(tech_pvt->profile, session);
+	}
 
 	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
