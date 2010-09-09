@@ -1472,7 +1472,7 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 	if (sng_isap->tex != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].tex		= sng_isap->tex;
 	} else {
-		g_ftdm_sngss7_data.cfg.isap[i].tex		= 10;
+		g_ftdm_sngss7_data.cfg.isap[i].tex		= 1000;
 	}
 	if (sng_isap->tcrm != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].tcrm		= sng_isap->tcrm;

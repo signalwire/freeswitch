@@ -915,12 +915,12 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case SIT_STA_CGBRSP:			/* mntc. oriented CGB response */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx mntc CGB\n");
-		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
+		/*handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGURSP:			/* mntc. oriented CGU response */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx mntc CGU\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		/*SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSREQ:			/* circuit group reset request */
@@ -1020,7 +1020,7 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case SIT_STA_LMCQMINFOREQ:	  /* when LM requests ckt grp query */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LM CQM\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+// 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCGRS:		 /* group reset initiated locally by the software */
@@ -2073,7 +2073,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			SS7_ASSERT;
 		};
 
-#if 1
+#if 0
 		SS7_ERROR("KONRAD -> circuit=%d, byte=%d, bit=%d, status[byte]=%d, math=%d\n",
 					x,
 					byte,
