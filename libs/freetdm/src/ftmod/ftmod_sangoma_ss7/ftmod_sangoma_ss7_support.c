@@ -458,6 +458,9 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
 	int 				i;
+	int					byte = 0;
+	int					bit = 0;
+
 
 	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);
 
@@ -505,6 +508,21 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 			/* move the channel to the down state */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
+			/* update the status map if the ckt is in blocked state */
+			if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+				(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
+				(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
+				(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+			
+				sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
+			} /* if blocked */
+			
+			/* update the bit and byte counter*/
+			bit ++;
+			if (bit == 8) {
+				byte++;
+				bit = 0;
+			}
 		} /* for ( i = circuit; i < (circuit + range + 1); i++) */
 
 GRS_UNLOCK_ALL:

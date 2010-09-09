@@ -48,8 +48,6 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream);
 
 static ftdm_status_t handle_set_function_trace(ftdm_stream_handle_t *stream, int on, int level);
 static ftdm_status_t handle_set_message_trace(ftdm_stream_handle_t *stream, int on, int level);
-static ftdm_status_t handle_set_blocks(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
-static ftdm_status_t handle_set_unblks(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
 static ftdm_status_t handle_set_inhibit(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_set_uninhibit(ftdm_stream_handle_t *stream, char *name);
 
@@ -62,6 +60,13 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 
 static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
 static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
+
+static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
+static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
+
+static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
+static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
+
 
 static ftdm_status_t handle_status_link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_status_linkset(ftdm_stream_handle_t *stream, char *name);
@@ -282,20 +287,12 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		}  
 	/**************************************************************************/
-	} else if (!strcasecmp(argv[c], "block")) {
+	} else if (!strcasecmp(argv[c], "inhibit")) {
 	/**************************************************************************/
 		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
 		c++;
 
-		if (!strcasecmp(argv[c], "span")) {
-		/**********************************************************************/
-			if (check_arg_count(argc, 5)) goto handle_cli_error_argc;
-
-			if (extract_span_chan(argv, c, &span, &chan)) goto handle_cli_error_span_chan;
-
-			handle_set_blocks(stream, span, chan, verbose);
-		/**********************************************************************/
-		} else if (!strcasecmp(argv[c], "link")) {
+		if (!strcasecmp(argv[c], "link")) {
 		/**********************************************************************/
 			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
 			c++;
@@ -309,7 +306,26 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		}   
 	/**************************************************************************/
-	} else if (!strcasecmp(argv[c], "unblock")) {
+	} else if (!strcasecmp(argv[c], "uninhibit")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_set_uninhibit(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"unblock\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		} 
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "blo")) {
 	/**************************************************************************/
 		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
 		c++;
@@ -320,18 +336,101 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 
 			if (extract_span_chan(argv, c, &span, &chan)) goto handle_cli_error_span_chan;
 
-			handle_set_unblks(stream, span, chan, verbose);
-		/**********************************************************************/
-		} else if (!strcasecmp(argv[c], "link")) {
-		/**********************************************************************/
-			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
-			c++;
-			
-			handle_set_uninhibit(stream, argv[c]);
+			handle_tx_blo(stream, span, chan, verbose);
 		/**********************************************************************/
 		} else {
 		/**********************************************************************/
-			stream->write_function(stream, "Unknown \"unblock\" command\n");
+			stream->write_function(stream, "Unknown \"block\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "ubl")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "span")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 5)) goto handle_cli_error_argc;
+
+			if (extract_span_chan(argv, c, &span, &chan)) goto handle_cli_error_span_chan;
+
+			handle_tx_ubl(stream, span, chan, verbose);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"ubl\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		} 
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "cgb")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "span")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 5)) goto handle_cli_error_argc;
+
+			if (extract_span_chan(argv, c, &span, &chan)) goto handle_cli_error_span_chan;
+			c = c + 4;
+
+			if (check_arg_count(argc, 7)) goto handle_cli_error_argc;
+
+			if (!strcasecmp(argv[c], "range")) {
+			/******************************************************************/
+				c++;
+				range =  atoi(argv[c]);
+			/******************************************************************/
+			} else {
+			/******************************************************************/
+				stream->write_function(stream, "Unknown \"cgb range\" command\n");
+				goto handle_cli_error;
+			/******************************************************************/
+			}
+
+			handle_tx_cgb(stream, span, chan, range, verbose);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"cgb\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		} 
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "cgu")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "span")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 5)) goto handle_cli_error_argc;
+
+			if (extract_span_chan(argv, c, &span, &chan)) goto handle_cli_error_span_chan;
+			c = c + 4;
+
+			if (check_arg_count(argc, 7)) goto handle_cli_error_argc;
+
+			if (!strcasecmp(argv[c], "range")) {
+			/******************************************************************/
+				c++;
+				range =  atoi(argv[c]);
+			/******************************************************************/
+			} else {
+			/******************************************************************/
+				stream->write_function(stream, "Unknown \"cgu range\" command\n");
+				goto handle_cli_error;
+			/******************************************************************/
+			}
+
+			handle_tx_cgu(stream, span, chan, range, verbose);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"cgu\" command\n");
 			goto handle_cli_error;
 		/**********************************************************************/
 		} 
@@ -433,10 +532,15 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 show inreset span X chan Y\n");
 	stream->write_function(stream, "\n");
 	stream->write_function(stream, "Ftmod_sangoma_ss7 circuit control:\n");
-	stream->write_function(stream, "ftdm ss7 block span X chan Y\n");
-	stream->write_function(stream, "ftdm ss7 unblk span X chan Y\n");
+	stream->write_function(stream, "ftdm ss7 blo span X chan Y\n");
+	stream->write_function(stream, "ftdm ss7 ubl span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 rsc span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 grs span X chan Y range Z\n");
+	stream->write_function(stream, "\n");
+	stream->write_function(stream, "Ftmod_sangoma_ss7 link control:\n");
+	stream->write_function(stream, "ftdm ss7 inhibit link X\n");
+	stream->write_function(stream, "ftdm ss7 uninhibit link X\n");
+
 	stream->write_function(stream, "\n");
 
 	return FTDM_SUCCESS;
@@ -899,7 +1003,7 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 	return FTDM_SUCCESS;
 }
 /******************************************************************************/
-static ftdm_status_t handle_set_blocks(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
+static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
 	int				 x;
 	sngss7_chan_data_t  *ss7_info;
@@ -960,7 +1064,7 @@ static ftdm_status_t handle_set_blocks(ftdm_stream_handle_t *stream, int span, i
 }
 
 /******************************************************************************/
-static ftdm_status_t handle_set_unblks(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
+static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
 	int				 x;
 	sngss7_chan_data_t  *ss7_info;
@@ -1154,17 +1258,17 @@ static ftdm_status_t handle_set_uninhibit(ftdm_stream_handle_t *stream, char *na
 /******************************************************************************/
 static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
-	int				 x;
-	sngss7_chan_data_t  *ss7_info;
-	ftdm_channel_t	  *ftdmchan;
-	int				 lspan;
-	int				 lchan;
+	int				 	x;
+	sngss7_chan_data_t  *sngss7_info;
+	ftdm_channel_t	  	*ftdmchan;
+	int				 	lspan;
+	int				 	lchan;
 
 	x=1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
-			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
-			ftdmchan = ss7_info->ftdmchan;
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
 
 			/* if span == 0 then all spans should be printed */
 			if (span == 0) {
@@ -1181,27 +1285,31 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 			}
 
 			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
-				/* now that we have the right channel...put a lock on it so no-one else can use it */
+				/* lock the channel */
 				ftdm_mutex_lock(ftdmchan->mutex);
 
-				/* check if there is a pending state change|give it a bit to clear */
-				if (check_for_state_change(ftdmchan)) {
-					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
-					SS7_ASSERT;
-				} else {
-					/* throw the ckt block flag */
-					sngss7_set_flag(ss7_info, FLAG_RESET_TX);
+				/* throw the reset flag */
+				sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
 
-					/* set the channel to suspended state */
+				switch (ftdmchan->state) {
+				/**************************************************************************/
+				case FTDM_CHANNEL_STATE_RESTART:
+					/* go to idle so that we can redo the restart state*/
+					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+					break;
+				/**************************************************************************/
+				default:
+					/* set the state of the channel to restart...the rest is done by the chan monitor */
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+					break;
+				/**************************************************************************/
 				}
-
+			
 				/* unlock the channel again before we exit */
 				ftdm_mutex_unlock(ftdmchan->mutex);
-
 			} /* if ( span and chan) */
 
-		} /* if ( cic != 0) */
+		} /* if ( cic == voice) */
 
 		/* go the next circuit */
 		x++;
@@ -1265,6 +1373,144 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 		/* go the next circuit */
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+	
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose)
+{
+	int					x;
+	sngss7_chan_data_t	*sngss7_info;
+	ftdm_channel_t		*ftdmchan;
+	ftdm_channel_t		*main_chan = NULL;
+	sngss7_span_data_t	*sngss7_span;
+	int					byte = 0;
+	int					bit = 0;
+
+	if (range > 31) {
+		stream->write_function(stream, "Invalid range value %d", range);
+		return FTDM_SUCCESS;
+	}
+
+	x=1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			/* extract the channel and span info for this circuit */
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
+			sngss7_span = ftdmchan->span->mod_data;
+
+			/* check if this circuit is part of the block */
+			if ((ftdmchan->physical_span_id == span) && 
+				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
+
+				/* now that we have the right channel...put a lock on it so no-one else can use it */
+				ftdm_mutex_lock(ftdmchan->mutex);
+
+				/* throw the grp maint. block flag */
+				sngss7_set_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+
+				/* if this is the first channel in the range */
+				if (ftdmchan->physical_chan_id == chan) {
+					/* attach the cgb information */
+					main_chan = ftdmchan;
+					sngss7_span->tx_cgb.circuit = sngss7_info->circuit->id;
+					sngss7_span->tx_cgb.range = range-1;
+					sngss7_span->tx_cgb.type = 0; /* maintenace block */
+				} /* if (ftdmchan->physical_chan_id == chan) */
+				
+				/* update the status field */
+				sngss7_span->tx_cgb.status[byte] = (sngss7_span->tx_cgb.status[byte] | (1 << bit));
+
+				/* update the bit and byte counter*/
+				bit ++;
+				if (bit == 8) {
+					byte++;
+					bit = 0;
+				}
+
+				/* unlock the channel again before we exit */
+				ftdm_mutex_unlock(ftdmchan->mutex);
+			} /* if ( span and chan) */
+		} /* if ( cic == voice) */
+		/* go the next circuit */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+
+	/* send the circuit group block */
+	ft_to_sngss7_cgb(main_chan);
+	
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose)
+{
+	int					x;
+	sngss7_chan_data_t	*sngss7_info;
+	ftdm_channel_t		*ftdmchan;
+	ftdm_channel_t		*main_chan = NULL;
+	sngss7_span_data_t	*sngss7_span;
+	int					byte = 0;
+	int					bit = 0;
+
+	if (range > 31) {
+		stream->write_function(stream, "Invalid range value %d", range);
+		return FTDM_SUCCESS;
+	}
+
+	x=1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			/* extract the channel and span info for this circuit */
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
+			sngss7_span = ftdmchan->span->mod_data;
+
+			/* check if this circuit is part of the block */
+			if ((ftdmchan->physical_span_id == span) && 
+				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
+
+				/* now that we have the right channel...put a lock on it so no-one else can use it */
+				ftdm_mutex_lock(ftdmchan->mutex);
+
+				/* throw the grp maint. block flag */
+				sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+
+				/* if this is the first channel in the range */
+				if (ftdmchan->physical_chan_id == chan) {
+					/* attach the cgb information */
+					main_chan = ftdmchan;
+					sngss7_span->tx_cgu.circuit = sngss7_info->circuit->id;
+					sngss7_span->tx_cgu.range = range-1;
+					sngss7_span->tx_cgu.type = 0; /* maintenace block */
+				} /* if (ftdmchan->physical_chan_id == chan) */
+				
+				/* update the status field */
+				sngss7_span->tx_cgu.status[byte] = (sngss7_span->tx_cgu.status[byte] | (1 << bit));
+
+				/* update the bit and byte counter*/
+				bit ++;
+				if (bit == 8) {
+					byte++;
+					bit = 0;
+				}
+
+				/* unlock the channel again before we exit */
+				ftdm_mutex_unlock(ftdmchan->mutex);
+			} /* if ( span and chan) */
+		} /* if ( cic == voice) */
+		/* go the next circuit */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+
+	/* send the circuit group block */
+	ft_to_sngss7_cgu(main_chan);
 	
 
 	return FTDM_SUCCESS;

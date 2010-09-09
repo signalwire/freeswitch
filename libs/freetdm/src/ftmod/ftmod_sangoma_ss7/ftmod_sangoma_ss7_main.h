@@ -471,6 +471,8 @@ void ft_to_sngss7_gra(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_grs(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);

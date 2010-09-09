@@ -61,6 +61,9 @@ void ft_to_sngss7_lpa(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_gra(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_grs(ftdm_channel_t * ftdmchan);
 
+void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
+
 void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
 /******************************************************************************/
@@ -120,6 +123,10 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	if ((g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS88) ||
 		(g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS92) ||
 		(g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS95)) {
+
+		/* include only if we're running ANSI */
+		iam.fwdCallInd.transCallNInd.pres   = PRSNT_NODEF;
+		iam.fwdCallInd.transCallNInd.val    = 0x0;
 
 		iam.usrServInfoA.eh.pres				= PRSNT_NODEF;
 
@@ -633,6 +640,106 @@ void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan)
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
+
+/******************************************************************************/
+void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan)
+{
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SiStaEvnt 			cgb;
+	int					x = 0;
+
+
+	memset (&cgb, 0x0, sizeof(cgb));
+
+	/* fill in the circuit group supervisory message */
+	cgb.cgsmti.eh.pres			= PRSNT_NODEF;
+	cgb.cgsmti.typeInd.pres		= PRSNT_NODEF;
+	cgb.cgsmti.typeInd.val		= sngss7_span->tx_cgb.type;
+
+	/* fill in the range */	
+	cgb.rangStat.eh.pres 		= PRSNT_NODEF;
+	cgb.rangStat.range.pres		= PRSNT_NODEF;
+	cgb.rangStat.range.val 		= sngss7_span->tx_cgb.range;
+
+	/* fill in the status */
+	cgb.rangStat.status.pres	= PRSNT_NODEF;
+	cgb.rangStat.status.len 	= ((sngss7_span->tx_cgb.range + 1) >> 3) + (((sngss7_span->tx_cgb.range + 1) & 0x07) ? 1 : 0);
+	for(x = 0; x < cgb.rangStat.status.len; x++){
+		cgb.rangStat.status.val[x] = sngss7_span->tx_cgb.status[x];
+	}
+
+	sng_cc_sta_request (1,
+						0,
+						0,
+						sngss7_span->tx_cgb.circuit,
+						0,
+						SIT_STA_CGBREQ,
+						&cgb);
+	
+	SS7_INFO_CHAN(ftdmchan, "Tx CGB (%d:%d)\n",
+							sngss7_info->circuit->cic,
+							(sngss7_info->circuit->cic + sngss7_span->tx_cgb.range));
+
+	/* clean out the saved data */
+	memset(&sngss7_span->tx_cgb, 0x0, sizeof(sngss7_group_data_t));
+
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
+
+/******************************************************************************/
+void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
+{
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SiStaEvnt 			cgu;
+	int					x = 0;
+
+
+	memset (&cgu, 0x0, sizeof(cgu));
+
+	/* fill in the circuit group supervisory message */
+	cgu.cgsmti.eh.pres			= PRSNT_NODEF;
+	cgu.cgsmti.typeInd.pres		= PRSNT_NODEF;
+	cgu.cgsmti.typeInd.val		= sngss7_span->tx_cgu.type;
+
+	/* fill in the range */	
+	cgu.rangStat.eh.pres 		= PRSNT_NODEF;
+	cgu.rangStat.range.pres		= PRSNT_NODEF;
+	cgu.rangStat.range.val 		= sngss7_span->tx_cgu.range;
+
+	/* fill in the status */
+	cgu.rangStat.status.pres	= PRSNT_NODEF;
+	cgu.rangStat.status.len 	= ((sngss7_span->tx_cgu.range + 1) >> 3) + (((sngss7_span->tx_cgu.range + 1) & 0x07) ? 1 : 0);
+	for(x = 0; x < cgu.rangStat.status.len; x++){
+		cgu.rangStat.status.val[x] = sngss7_span->tx_cgu.status[x];
+	}
+
+	sng_cc_sta_request (1,
+						0,
+						0,
+						sngss7_span->tx_cgu.circuit,
+						0,
+						SIT_STA_CGUREQ,
+						&cgu);
+	
+	SS7_INFO_CHAN(ftdmchan, "Tx CGU (%d:%d)\n",
+							sngss7_info->circuit->cic,
+							(sngss7_info->circuit->cic + sngss7_span->tx_cgu.range));
+
+	/* clean out the saved data */
+	memset(&sngss7_span->tx_cgu, 0x0, sizeof(sngss7_group_data_t));
+
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
+
+
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:
