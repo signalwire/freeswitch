@@ -351,15 +351,35 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 /******************************************************************************/
 void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 {
+	char	buf[50];
+	int		x = 1;
+
+	memset(buf, '\0', sizeof(buf));
 
 	switch (sta->hdr.elmId.elmnt) {
 	/**************************************************************************/
 	case (STDLSAP):
+
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->hdr.elmId.elmntInst1) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->hdr.elmId.elmntInst1);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
 		switch (sta->t.usta.alarm.event) {
 		/**********************************************************************/
 		case (LSN_EVENT_INV_OPC_OTHER_END):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s : %s : OPC(0x%X%X%X%X)\n",
-										sta->hdr.elmId.elmntInst1,
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : OPC(0x%X%X%X%X)\n",
+										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
 										sta->t.usta.evntParm[3],
@@ -369,16 +389,16 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		case (LSN_EVENT_INV_SLC_OTHER_END):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s : %s : SLC(%d)\n",
-										sta->hdr.elmId.elmntInst1,
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : SLC(%d)\n",
+										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
 										sta->t.usta.evntParm[0]);
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s(%d) : %s(%d)\n",
-										sta->hdr.elmId.elmntInst1,
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s(%d) : %s(%d)\n",
+										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.alarm.event,
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
