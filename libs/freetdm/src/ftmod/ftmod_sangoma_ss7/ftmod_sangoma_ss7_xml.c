@@ -965,7 +965,7 @@ static int ftmod_ss7_fill_in_mtpLink(sng_mtp_link_t *mtpLink)
 	if ( mtpLink->mtp2.t7 != 0 ) {
 		g_ftdm_sngss7_data.cfg.mtpLink[i].mtp2.t7		= mtpLink->mtp2.t7;
 	}else {
-		g_ftdm_sngss7_data.cfg.mtpLink[i].mtp2.t7		= 20;
+		g_ftdm_sngss7_data.cfg.mtpLink[i].mtp2.t7		= 40;
 	}
 
 	if (mtpLink->mtp3.t1 != 0) {
