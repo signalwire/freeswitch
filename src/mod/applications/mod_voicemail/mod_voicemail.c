@@ -824,7 +824,8 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 			if (!cc->noexit
 				&& (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key
 					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key
-					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key)) {
+					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key
+					|| dtmf->digit == *cc->profile->email_key || dtmf->digit == *cc->profile->forward_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
