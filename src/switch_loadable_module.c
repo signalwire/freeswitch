@@ -1277,6 +1277,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *path = switch_xml_attr_soft(ld, "path");
 				const char *critical = switch_xml_attr_soft(ld, "critical");
 				const char *sglobal = switch_xml_attr_soft(ld, "global");
 				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
@@ -1285,7 +1286,10 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				}
 				global = switch_true(sglobal);
 				
-				if (switch_loadable_module_load_module_ex((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_FALSE) {
+				if (path && zstr(path)) {
+					path = SWITCH_GLOBAL_dirs.mod_dir;
+				}
+				if (switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_FALSE) {
 					if (critical && switch_true(critical)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
 						abort();
@@ -1307,13 +1311,18 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *path = switch_xml_attr_soft(ld, "path");
 				const char *sglobal = switch_xml_attr_soft(ld, "global");
 				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
 				global = switch_true(sglobal);
-				switch_loadable_module_load_module_ex((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, global, &err);
+
+				if (path && zstr(path)) {
+					path = SWITCH_GLOBAL_dirs.mod_dir;
+				}
+				switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err);
 				count++;
 			}
 		}
