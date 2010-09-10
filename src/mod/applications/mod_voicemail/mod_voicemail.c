@@ -2687,21 +2687,27 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
-	} else {
-		domain = user;
-	}
 
-	if ((profile_name = strchr(domain, '@'))) {
-		*profile_name++ = '\0';
-	} else {
-		profile_name = domain;
+		if ((profile_name = strchr(domain, '@'))) {
+			*profile_name++ = '\0';
+		} else {
+			profile_name = domain;
+		}
 	}
 
 	if (switch_stristr("group=", user)) {
 		user += 6;
 		isgroup++;
-	} else if (user == domain) {
+	} else if (switch_stristr("domain=", user)) {
+		user += 7;
+		domain = user;
+		profile_name = domain;
 		isall++;
+	}
+
+	if (zstr(domain)) {
+		domain = switch_core_get_variable("domain");
+		profile_name = domain;
 	}
 
 	if (!(user && domain)) {
@@ -2747,6 +2753,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
 			status = SWITCH_STATUS_FALSE;
 			switch_event_destroy(&my_params);
+			profile_rwunlock(profile);
 			goto end;
 		}
 
@@ -3962,7 +3969,7 @@ static void do_web(vm_profile_t *profile, const char *user_in, const char *domai
 	}
 }
 
-#define VM_INJECT_USAGE "[group=]<box> <sound_file> [<cid_num>] [<cid_name>]"
+#define VM_INJECT_USAGE "[group=<group>[@domain]|domain=<domain>|<box>[@<domain>]] <sound_file> [<cid_num>] [<cid_name>]"
 SWITCH_STANDARD_API(voicemail_inject_api_function)
 {
 	if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
