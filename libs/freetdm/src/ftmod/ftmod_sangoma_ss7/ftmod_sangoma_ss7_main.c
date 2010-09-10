@@ -1249,7 +1249,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 
 		/* throw the pause flag */
 		sngss7_set_flag(sngss7_info, FLAG_INFID_PAUSED);
-
+#if 0
 		/* throw the grp reset flag */
 		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
 		if (x == 1) {
@@ -1257,7 +1257,10 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 			sngss7_span->tx_grs.circuit = sngss7_info->circuit->id;
 			sngss7_span->tx_grs.range = span->chan_count -1;
 		}
-
+#else
+		/* throw the channel into reset */
+		sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
+#endif
 		/* throw the channel to suspend */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 
