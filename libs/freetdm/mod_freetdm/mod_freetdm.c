@@ -3597,6 +3597,8 @@ SWITCH_STANDARD_API(ft_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -3642,11 +3644,11 @@ SWITCH_STANDARD_API(ft_function)
 							dump_chan_xml(span, chan_id, stream);
 						}
 					} else {
-						uint32_t j;
-						uint32_t ccount = ftdm_span_get_chan_count(span);
-						for (j = 1; j <= ccount; j++) {
-							dump_chan_xml(span, j, stream);
+						chaniter = ftdm_span_get_chan_iterator(span, NULL);
+						for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+							dump_chan_xml(span, ftdm_channel_get_id(ftdm_iterator_current(curr)), stream);
 						}
+						ftdm_iterator_free(chaniter);
 						
 					}
 				}
@@ -3662,12 +3664,12 @@ SWITCH_STANDARD_API(ft_function)
 							dump_chan(span, chan_id, stream);
 						}
 					} else {
-						uint32_t j;
-						uint32_t ccount = ftdm_span_get_chan_count(span);	
 						stream->write_function(stream, "+OK\n");
-						for (j = 1; j <= ccount; j++) {
-							dump_chan(span, j, stream);
+						chaniter = ftdm_span_get_chan_iterator(span, NULL);
+						for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+							dump_chan(span, ftdm_channel_get_id(ftdm_iterator_current(curr)), stream);
 						}
+						ftdm_iterator_free(chaniter);
 						
 					}
 				}

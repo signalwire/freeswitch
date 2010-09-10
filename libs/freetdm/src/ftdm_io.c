@@ -3602,9 +3602,8 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter)
 		}
 		return iter;
 	case FTDM_ITERATOR_CHANS:
-		if (iter->pvt.chaniter.index == iter->pvt.chaniter.span->chan_count) {
-			return NULL;
-		}
+		ftdm_assert_return(iter->pvt.chaniter.index, NULL, "channel iterator index cannot be zero!\n");
+		ftdm_assert_return(iter->pvt.chaniter.index <= iter->pvt.chaniter.span->chan_count, NULL, "channel iterator index bigger than span chan count!\n");
 		iter->pvt.chaniter.index++;
 		return iter;
 	default:
@@ -3629,7 +3628,7 @@ FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter)
 		return (void *)key;
 	case FTDM_ITERATOR_CHANS:
 		ftdm_assert_return(iter->pvt.chaniter.index, NULL, "channel iterator index cannot be zero!\n");
-		ftdm_assert_return(iter->pvt.chaniter.index > iter->pvt.chaniter.span->chan_count, NULL, "channel iterator index bigger than span chan count!\n");
+		ftdm_assert_return(iter->pvt.chaniter.index <= iter->pvt.chaniter.span->chan_count, NULL, "channel iterator index bigger than span chan count!\n");
 		return iter->pvt.chaniter.span->channels[iter->pvt.chaniter.index];
 	default:
 		break;
@@ -3652,6 +3651,7 @@ FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter)
 	}
 
 	ftdm_assert_return(iter->type, FTDM_FAIL, "Cannot free invalid iterator\n");
+	ftdm_log(FTDM_LOG_DEBUG, "Freeing iterator %p\n", iter);
 	ftdm_safe_free(iter);
 
 	return FTDM_SUCCESS;
