@@ -644,7 +644,7 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 	cfg.t.cfg.s.sdDLSAP.memMac.region	= S_REG;					/* memory region and pool id for MAC */
 	cfg.t.cfg.s.sdDLSAP.memMac.pool		= S_POOL;
 	cfg.t.cfg.s.sdDLSAP.maxOutsFrms		= MAX_SD_OUTSTANDING;		/* maximum outstanding frames */
-	cfg.t.cfg.s.sdDLSAP.errType			= SD_ERR_NRM;
+	cfg.t.cfg.s.sdDLSAP.errType			= k->mtp2.errorType;
 	cfg.t.cfg.s.sdDLSAP.t1.enb			= TRUE;						/* timer 1 - Alignment Ready Timer */
 	cfg.t.cfg.s.sdDLSAP.t1.val			= k->mtp2.t1;
 	cfg.t.cfg.s.sdDLSAP.t2.enb			= TRUE;						/* timer 2 - Not Aligned Timer */
