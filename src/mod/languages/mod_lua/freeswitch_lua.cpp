@@ -367,7 +367,7 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
 {
   if (connected) {
-    if (lua_fun.L && lua_fun.idx != 0) {
+    if (lua_fun.L) {
       if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
         return true;
       }
