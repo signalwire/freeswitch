@@ -605,11 +605,12 @@ SWITCH_STANDARD_API(in_group_function)
 
 SWITCH_STANDARD_API(user_data_function)
 {
-	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;
+	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	int argc;
 	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain;
 	char delim = ' ';
 	const char *container = "params", *elem = "param";
+	const char *result = NULL;
 	switch_event_t *params = NULL;
 
 	if (zstr(cmd) || !(mydata = strdup(cmd))) {
@@ -637,10 +638,10 @@ SWITCH_STANDARD_API(user_data_function)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
 
-	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, params) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
 			const char *attr = switch_xml_attr_soft(x_user, key);
-			stream->write_function(stream, "%s", attr);
+			result = attr;
 			goto end;
 		}
 
@@ -649,33 +650,45 @@ SWITCH_STANDARD_API(user_data_function)
 			elem = "variable";
 		}
 
-		if ((x_params = switch_xml_child(x_user, container))) {
-			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
-				const char *var = switch_xml_attr(x_param, "name");
-				const char *val = switch_xml_attr(x_param, "value");
-
-				if (var && val && !strcasecmp(var, key)) {
-					stream->write_function(stream, "%s", val);
-					goto end;
-				}
-
-			}
-		}
-
 		if ((x_params = switch_xml_child(x_domain, container))) {
 			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
 				const char *var = switch_xml_attr(x_param, "name");
 				const char *val = switch_xml_attr(x_param, "value");
 
 				if (var && val && !strcasecmp(var, key)) {
-					stream->write_function(stream, "%s", val);
-					goto end;
+					result = val;
+				}
+
+			}
+		}
+
+		if (x_group && (x_params = switch_xml_child(x_group, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+
+				if (var && val && !strcasecmp(var, key)) {
+					result = val;
+				}
+			}
+		}
+
+		if ((x_params = switch_xml_child(x_user, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+
+				if (var && val && !strcasecmp(var, key)) {
+					result = val;
 				}
 			}
 		}
 	}
 
   end:
+	if (result) {
+		stream->write_function(stream, "%s", result);
+	}
 	switch_xml_free(xml);
 	switch_safe_free(mydata);
 	switch_event_destroy(&params);
