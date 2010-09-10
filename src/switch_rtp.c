@@ -2191,6 +2191,9 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 				rtp_session->rtcp_fresh_frame = 1;
 
+				rtp_session->stats.rtcp.packet_count += sr->pc;
+				rtp_session->stats.rtcp.octet_count += sr->oc;
+
 				/* sender report */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,"Received a SR with %d report blocks, " \
 								  "length in words = %d, " \

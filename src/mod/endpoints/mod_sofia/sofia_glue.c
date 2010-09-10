@@ -2238,6 +2238,9 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 		add_stat(stats->outbound.dtmf_packet_count, "out_dtmf_packet_count");
 		add_stat(stats->outbound.cng_packet_count, "out_cng_packet_count");
 
+		add_stat(stats->rtcp.packet_count, "rtcp_packet_count");
+		add_stat(stats->rtcp.octet_count, "rtcp_octet_count");
+
 	}
 }
 

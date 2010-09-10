@@ -479,9 +479,16 @@ typedef struct {
 	switch_size_t flush_packet_count;
 } switch_rtp_numbers_t;
 
+
+typedef struct {
+	uint32_t packet_count;
+	uint32_t octet_count;
+} switch_rtcp_numbers_t;
+
 typedef struct {
 	switch_rtp_numbers_t inbound;
 	switch_rtp_numbers_t outbound;
+	switch_rtcp_numbers_t rtcp;
 } switch_rtp_stats_t;
 
 typedef enum {
