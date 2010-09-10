@@ -1240,6 +1240,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 	for (x = 1; x < (span->chan_count + 1); x++) {
 		/* extract the channel structure and sngss7 channel data */
 		ftdmchan = span->channels[x];
+		if (ftdmchan->call_data == NULL) continue;
 		sngss7_info = ftdmchan->call_data;
 		sngss7_span = ftdmchan->span->mod_data;
 
@@ -1389,6 +1390,8 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 	memset (&g_ftdm_sngss7_data, 0x0, sizeof (ftdm_sngss7_data_t));
 
 	sngss7_id = 0;
+
+	cmbLinkSetId = 1;
 
 	/* initalize the global gen_config flag */
 	g_ftdm_sngss7_data.gen_config = 0;

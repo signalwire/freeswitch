@@ -109,6 +109,10 @@ void handle_sng_mtp1_alarm(Pst *pst, L1Mngmt *sta)
 /******************************************************************************/
 void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 {
+	char	buf[50];
+	int		x = 1;
+
+	memset(buf, '\0', sizeof(buf));
 
 	switch (sta->t.usta.alarm.category) {
 	/**************************************************************************/
@@ -126,23 +130,39 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 		case (LSD_EVENT_REMOTE_CONG_END):
 		case (LSD_EVENT_RX_REMOTE_SIPO):
 
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+					
+
 			switch (sta->t.usta.alarm.cause) {
 			/******************************************************************/
 			case (LCM_CAUSE_UNKNOWN):
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s\n",
-											sta->t.usta.evntParm[0],
+				ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s\n",
+											buf,
 											DECODE_LSD_EVENT(sta->t.usta.alarm.event));
 				break;
 			/******************************************************************/
 			case (LCM_CAUSE_MGMT_INITIATED):
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d][MGMT] %s\n",
-											sta->t.usta.evntParm[0],
+				ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s[MGMT] %s\n",
+											buf,
 											DECODE_LSD_EVENT(sta->t.usta.alarm.event));
 				break;
 			/******************************************************************/
 			default:
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s (***unknown cause***)\n",
-											sta->t.usta.evntParm[0],
+				ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s (***unknown cause***)\n",
+											buf,
 											DECODE_LSD_EVENT(sta->t.usta.alarm.event));
 				break;
 			/******************************************************************/
@@ -150,23 +170,71 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			break;
 		/**********************************************************************/
 		case (LSD_EVENT_PROT_ERR):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s : %s\n",
-										sta->t.usta.evntParm[0],
+			
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
+										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSD_CAUSE(sta->t.usta.alarm.cause));
 			break;
 		/**********************************************************************/
 		case (LSD_EVENT_ALIGN_LOST):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s : %s\n",
-										sta->t.usta.evntParm[0],
+			
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
+										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));
 			break;
 		/**********************************************************************/
 		case (LSD_EVENT_RTB_FULL):
 		case (LSD_EVENT_RTB_FULL_OVER):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s : RTB Queue Len(%d)|Oldest BSN(%d)|Tx Queue Len(%d)|Outstanding Frames(%d)\n",
-										sta->t.usta.evntParm[0],
+
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : RTB Queue Len(%d)|Oldest BSN(%d)|Tx Queue Len(%d)|Outstanding Frames(%d)\n",
+										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.evntParm[1],
 										sta->t.usta.evntParm[2],
@@ -175,15 +243,47 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			break;
 		/**********************************************************************/
 		case (LSD_EVENT_NEG_ACK):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s : RTB Queue Len(%d)\n",
-										sta->t.usta.evntParm[0],
+
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : RTB Queue Len(%d)\n",
+										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.evntParm[1]);
 			break;
 		/**********************************************************************/
 		case (LSD_EVENT_DAT_CFM_SDT):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2][SAPID:%d] %s : %d\n",
-										sta->t.usta.evntParm[0],
+
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %d\n",
+										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));
 			break;
@@ -251,15 +351,35 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 /******************************************************************************/
 void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 {
+	char	buf[50];
+	int		x = 1;
+
+	memset(buf, '\0', sizeof(buf));
 
 	switch (sta->hdr.elmId.elmnt) {
 	/**************************************************************************/
 	case (STDLSAP):
+
+			/* find the name for the sap in question */
+			x = 1;
+			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->hdr.elmId.elmntInst1) {
+					break;
+				}
+				x++;
+			}
+
+			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+				sprintf(buf, "[SAPID:%d]", sta->hdr.elmId.elmntInst1);
+			} else {
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+			}
+
 		switch (sta->t.usta.alarm.event) {
 		/**********************************************************************/
 		case (LSN_EVENT_INV_OPC_OTHER_END):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s : %s : OPC(0x%X%X%X%X)\n",
-										sta->hdr.elmId.elmntInst1,
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : OPC(0x%X%X%X%X)\n",
+										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
 										sta->t.usta.evntParm[3],
@@ -269,16 +389,16 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		case (LSN_EVENT_INV_SLC_OTHER_END):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s : %s : SLC(%d)\n",
-										sta->hdr.elmId.elmntInst1,
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : SLC(%d)\n",
+										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
 										sta->t.usta.evntParm[0]);
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s(%d) : %s(%d)\n",
-										sta->hdr.elmId.elmntInst1,
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s(%d) : %s(%d)\n",
+										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.alarm.event,
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),

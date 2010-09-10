@@ -162,6 +162,8 @@ typedef struct sng_link_set {
 	uint32_t		flags;
 	uint32_t		apc;
 	uint32_t		linkType;
+	uint32_t		switchType;
+	uint32_t		ssf;
 	uint32_t 		minActive;
 	uint32_t		numLinks;
 	uint32_t		links[16];
@@ -173,9 +175,11 @@ typedef struct sng_route {
 	uint32_t		flags;
 	uint32_t		dpc;
 	uint32_t		cmbLinkSetId;
+	uint32_t		linkSetId;
 	uint32_t		linkType;
 	uint32_t		switchType;
 	uint32_t		ssf;
+	uint32_t		nwId;
 	uint32_t		isSTP;
 	uint32_t		t6;
 	uint32_t		t8;
@@ -419,6 +423,7 @@ typedef enum {
 extern ftdm_sngss7_data_t   g_ftdm_sngss7_data;
 extern uint32_t			 sngss7_id;
 extern ftdm_sched_t		 *sngss7_sched;
+extern int				cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/

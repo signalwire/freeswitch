@@ -1715,6 +1715,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* loop over the cics starting from circuit until range+1 */
 	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
 		/* grab the circuit in question */
 		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
@@ -2057,6 +2058,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* loop over the cics starting from circuit until range+1 */
 	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
 		/* grab the circuit in question */
 		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
@@ -2191,6 +2193,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* loop over the cics starting from circuit until range+1 */
 	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
 		/* grab the circuit in question */
 		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);

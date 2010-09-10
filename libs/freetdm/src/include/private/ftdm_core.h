@@ -619,6 +619,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 #define ftdm_log_chan(fchan, level, format, ...) ftdm_log(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan_msg(fchan, level, msg) ftdm_log(level, "[s%dc%d][%d:%d] " msg, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id)
 
+#define ftdm_span_lock(span) ftdm_mutex_lock(span->mutex)
+#define ftdm_span_unlock(span) ftdm_mutex_unlock(span->mutex)
+
 FT_DECLARE_DATA extern const char *FTDM_LEVEL_NAMES[9];
 
 static __inline__ void ftdm_abort(void)

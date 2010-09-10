@@ -3524,16 +3524,48 @@ done:
 	return var;
 }
 
-FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan)
+static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
 {
-	ftdm_hash_iterator_t *iter = NULL;
+	int allocated = 0;
+	if (iter) {
+		if (iter->type != type) {
+			ftdm_log(FTDM_LOG_ERROR, "Cannot switch iterator types\n");
+			return NULL;
+		}
+		allocated = iter->allocated;
+		memset(iter, 0, sizeof(*iter));
+		iter->type = type;
+		iter->allocated = allocated;
+		return iter;
+	}
 
+	iter = ftdm_calloc(1, sizeof(*iter));
+	if (!iter) {
+		return NULL;
+	}
+	iter->type = type;
+	iter->allocated = 1;
+	return iter;
+}
+
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter)
+{
+	if (!(iter = get_iterator(FTDM_ITERATOR_VARS, iter))) {
+		return NULL;
+	}
 	ftdm_channel_lock(ftdmchan);
-
-	iter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
-
+	iter->pvt.hashiter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
 	ftdm_channel_unlock(ftdmchan);
+	return iter;
+}
 
+FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
+{
+	if (!(iter = get_iterator(FTDM_ITERATOR_CHANS, iter))) {
+		return NULL;
+	}
+	iter->pvt.chaniter.index = 1;
+	iter->pvt.chaniter.span = span;
 	return iter;
 }
 
@@ -3545,11 +3577,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, co
 	*var_name = NULL;
 	*var_val = NULL;
 
-	if (!iter) {
-		return FTDM_FAIL;
-	}
+	ftdm_assert_return(iter && (iter->type == FTDM_ITERATOR_CHANS) && iter->pvt.hashiter, FTDM_FAIL, "Cannot get variable from invalid iterator!\n");
 
-	hashtable_this(iter, &key, NULL, &val);
+	hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
 
 	*var_name = key;
 	*var_val = val;
@@ -3559,10 +3589,72 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, co
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter)
 {
-	if (!iter) {
-		return NULL;
+	ftdm_assert_return(iter && iter->type, NULL, "Invalid iterator\n");
+
+	switch (iter->type) {
+	case FTDM_ITERATOR_VARS:
+		if (!iter->pvt.hashiter) {
+			return NULL;
+		}
+		iter->pvt.hashiter = hashtable_next(iter->pvt.hashiter);
+		if (!iter->pvt.hashiter) {
+			return NULL;
+		}
+		return iter;
+	case FTDM_ITERATOR_CHANS:
+		if (iter->pvt.chaniter.index == iter->pvt.chaniter.span->chan_count) {
+			return NULL;
+		}
+		iter->pvt.chaniter.index++;
+		return iter;
+	default:
+		break;
 	}
-	return hashtable_next(iter);
+
+	ftdm_assert_return(0, NULL, "Unknown iterator type\n");
+	return NULL;
+}
+
+FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter)
+{
+	const void *key = NULL;
+	void *val = NULL;
+
+	ftdm_assert_return(iter && iter->type, NULL, "Invalid iterator\n");
+
+	switch (iter->type) {
+	case FTDM_ITERATOR_VARS:
+		hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
+		/* I decided to return the key instead of the value since the value can be retrieved using the key */
+		return (void *)key;
+	case FTDM_ITERATOR_CHANS:
+		ftdm_assert_return(iter->pvt.chaniter.index, NULL, "channel iterator index cannot be zero!\n");
+		ftdm_assert_return(iter->pvt.chaniter.index > iter->pvt.chaniter.span->chan_count, NULL, "channel iterator index bigger than span chan count!\n");
+		return iter->pvt.chaniter.span->channels[iter->pvt.chaniter.index];
+	default:
+		break;
+	}
+
+	ftdm_assert_return(0, NULL, "Unknown iterator type\n");
+	return NULL;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter)
+{
+	/* it's valid to pass a NULL iterator, do not return failure  */
+	if (!iter) {
+		return FTDM_SUCCESS;
+	}
+
+	if (!iter->allocated) {
+		memset(iter, 0, sizeof(*iter));
+		return FTDM_SUCCESS;
+	}
+
+	ftdm_assert_return(iter->type, FTDM_FAIL, "Cannot free invalid iterator\n");
+	ftdm_safe_free(iter);
+
+	return FTDM_SUCCESS;
 }
 
 static struct {
