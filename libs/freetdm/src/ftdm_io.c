@@ -3577,7 +3577,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, co
 	*var_name = NULL;
 	*var_val = NULL;
 
-	ftdm_assert_return(iter && (iter->type == FTDM_ITERATOR_CHANS) && iter->pvt.hashiter, FTDM_FAIL, "Cannot get variable from invalid iterator!\n");
+	ftdm_assert_return(iter && (iter->type == FTDM_ITERATOR_VARS) && iter->pvt.hashiter, FTDM_FAIL, "Cannot get variable from invalid iterator!\n");
 
 	hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
 
