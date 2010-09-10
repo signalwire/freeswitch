@@ -1516,7 +1516,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
 	}
 	/* Add any channel variable to the dial plan */
-	iter = ftdm_channel_get_var_iterator(sigmsg->channel);
+	iter = ftdm_channel_get_var_iterator(sigmsg->channel, NULL);
 	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
 		ftdm_channel_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
@@ -2783,9 +2783,9 @@ static switch_status_t load_config(void)
 			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
 			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
 			
-			chaniter = ftdm_span_get_chan_iterator(span);
-			curr = chaniter
-			for (curr = chaniter ; curr; curr = ftdm_iterator_next(curr)) {
+			chaniter = ftdm_span_get_chan_iterator(span, NULL);
+			curr = chaniter;
+			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 				fchan = ftdm_iterator_current(curr);
 				ftdm_channel_set_private(fchan, &SPAN_CONFIG[span_id].pvts[i]);
 			}
