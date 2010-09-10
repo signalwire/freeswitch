@@ -925,6 +925,7 @@ int ftmod_ss7_mtp3_linkset_config(int id)
 {
 	Pst				pst;
 	SnMngmt			cfg;
+	int				c;
 	sng_link_set_t	*k = &g_ftdm_sngss7_data.cfg.mtpLinkSet[id];
 
 	/* initalize the post structure */
@@ -951,9 +952,11 @@ int ftmod_ss7_mtp3_linkset_config(int id)
 	cfg.t.cfg.s.snLnkSet.lnkSetType		= k->linkType;		/* link type */
 	cfg.t.cfg.s.snLnkSet.adjDpc			= k->apc;			/* adjacent DPC */
 	cfg.t.cfg.s.snLnkSet.nmbActLnkReqd	= k->minActive;		/* minimum number of active links */
-	cfg.t.cfg.s.snLnkSet.nmbCmbLnkSet	= 1;				/* number of combined link sets */
-	cfg.t.cfg.s.snLnkSet.cmbLnkSet[0].cmbLnkSetId = k->cmbLinkSetId;
-	cfg.t.cfg.s.snLnkSet.cmbLnkSet[0].lnkSetPrior = 0;
+	cfg.t.cfg.s.snLnkSet.nmbCmbLnkSet	= k->numLinks;				/* number of combined link sets */
+	for(c = 0; c < k->numLinks;c++) {
+		cfg.t.cfg.s.snLnkSet.cmbLnkSet[c].cmbLnkSetId = k->links[c];
+		cfg.t.cfg.s.snLnkSet.cmbLnkSet[c].lnkSetPrior = 0;
+	}
 
 
 	return(sng_cfg_mtp3(&pst, &cfg));

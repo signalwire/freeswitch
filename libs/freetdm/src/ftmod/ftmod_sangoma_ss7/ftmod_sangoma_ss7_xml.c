@@ -46,6 +46,8 @@ typedef struct sng_timeslot
 	int	 gap;
 	int	 hole;
 }sng_timeslot_t;
+
+int cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -385,8 +387,6 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 	if (count < 1 || count > 15 ) {
 		SS7_ERROR("Invalid number of mtp_links found (%d)\n", count);
 		return FTDM_FAIL;
-	} else {
-		mtpLinkSet.numLinks = count;
 	}
 
 	/* now we need to see if this linkset exists already or not and grab an Id */
@@ -418,8 +418,7 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 		mtpLink[i].mtp3.apc			= mtpLinkSet.apc;
 		mtpLink[i].mtp3.linkSetId	= mtpLinkSet.id;
 
-		/* fill in the mtplink structure */
-		mtpLinkSet.links[count] = ftmod_ss7_fill_in_mtpLink(&mtpLink[i]);
+		ftmod_ss7_fill_in_mtpLink(&mtpLink[i]);
 
 		/* increment the links counter */
 		count++;
@@ -427,6 +426,10 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 		/* increment the index value */
 		i++;
 	}
+
+	mtpLinkSet.linkType		= mtpLink[0].mtp3.linkType;
+	mtpLinkSet.switchType	= mtpLink[0].mtp3.switchType;
+	mtpLinkSet.ssf			= mtpLink[0].mtp3.ssf;
 
 	ftmod_ss7_fill_in_mtpLinkSet(&mtpLinkSet);
 
@@ -658,14 +661,17 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 				/* check if the name matches */
 				if (!strcasecmp((char *)g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, parm->val)) {
 
-					/* grab the mtpLink id value first*/
-					int id = g_ftdm_sngss7_data.cfg.mtpLinkSet[x].links[0];
-
 					/* now, harvest the required infomormation from the global structure */
-					mtpRoute.linkType		= g_ftdm_sngss7_data.cfg.mtpLink[id].mtp3.linkType;
-					mtpRoute.switchType		= g_ftdm_sngss7_data.cfg.mtpLink[id].mtp3.switchType;
-					mtpRoute.ssf			= g_ftdm_sngss7_data.cfg.mtpLink[id].mtp3.ssf;
-					mtpRoute.cmbLinkSetId	= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].cmbLinkSetId;
+					mtpRoute.linkType		= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].linkType;
+					mtpRoute.switchType		= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].switchType;
+					mtpRoute.ssf			= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].ssf;
+					mtpRoute.linkSetId		= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id;
+					cmbLinkSetId++;
+					mtpRoute.cmbLinkSetId	= cmbLinkSetId;
+
+					/* update the linkset with the new cmbLinkSet value */
+					g_ftdm_sngss7_data.cfg.mtpLinkSet[x].numLinks++;
+					g_ftdm_sngss7_data.cfg.mtpLinkSet[x].links[g_ftdm_sngss7_data.cfg.mtpLinkSet[x].numLinks-1] = mtpRoute.cmbLinkSetId;
 					break;
 				}
 				x++;
@@ -701,9 +707,11 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 		parm = parm + 1;
 	}
 
+	ftmod_ss7_fill_in_nsap(&mtpRoute);
+
 	ftmod_ss7_fill_in_mtp3_route(&mtpRoute);
 
-	ftmod_ss7_fill_in_nsap(&mtpRoute);
+
 
 	return FTDM_SUCCESS;
 }
@@ -747,7 +755,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	int						num_parms = isup_interface->n_parameters;
 	int						i;
 	int						linkSetId;
-	int						linkId;
 
 	memset(&sng_isup, 0x0, sizeof(sng_isup));
 	memset(&sng_isap, 0x0, sizeof(sng_isap));
@@ -844,10 +851,15 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	}
 
 	/* trickle down the SPC to all sub entities */
-	linkSetId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].cmbLinkSetId;
-	for (i = 0; i < g_ftdm_sngss7_data.cfg.mtpLinkSet[linkSetId].numLinks; i ++) {
-		linkId = g_ftdm_sngss7_data.cfg.mtpLinkSet[linkSetId].links[i];
-		g_ftdm_sngss7_data.cfg.mtpLink[linkId].mtp3.spc = g_ftdm_sngss7_data.cfg.spc;
+	linkSetId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].linkSetId;
+
+	i = 1;
+	while (g_ftdm_sngss7_data.cfg.mtpLink[i].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.mtpLink[i].mtp3.linkSetId == linkSetId) {
+			g_ftdm_sngss7_data.cfg.mtpLink[i].mtp3.spc = g_ftdm_sngss7_data.cfg.spc;
+		}
+
+		i++;
 	}
 
 	ftmod_ss7_fill_in_isap(&sng_isap);
@@ -1053,22 +1065,19 @@ static int ftmod_ss7_fill_in_mtpLink(sng_mtp_link_t *mtpLink)
 /******************************************************************************/
 static int ftmod_ss7_fill_in_mtpLinkSet(sng_link_set_t *mtpLinkSet)
 {
-	int	count;
 	int	i = mtpLinkSet->id;
 
 	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpLinkSet[i].name, (char *)mtpLinkSet->name);
 
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].id			= mtpLinkSet->id;
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].apc		= mtpLinkSet->apc;
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].linkType	= g_ftdm_sngss7_data.cfg.mtpLink[1].mtp3.linkType; /* KONRAD FIX ME */
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].cmbLinkSetId = mtpLinkSet->id;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].linkType	= mtpLinkSet->linkType;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].switchType	= mtpLinkSet->switchType;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].ssf		= mtpLinkSet->ssf;
+
+	/* these values are filled in as we find routes and start allocating cmbLinkSetIds */
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].minActive	= mtpLinkSet->minActive;
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].numLinks	= mtpLinkSet->numLinks;
-
-	for (count = 0; count < mtpLinkSet->numLinks; count++) {
-		g_ftdm_sngss7_data.cfg.mtpLinkSet[i].links[count]	= mtpLinkSet->links[count];
-	}
-
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].numLinks	= 0;
 	return 0;
 }
 
@@ -1104,6 +1113,8 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].switchType	= mtp3_route->switchType;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].cmbLinkSetId	= mtp3_route->cmbLinkSetId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].isSTP		= mtp3_route->isSTP;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].nwId			= mtp3_route->nwId;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].linkSetId	= mtp3_route->linkSetId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= mtp3_route->ssf;
 	if (mtp3_route->t6 != 0) {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t6		= mtp3_route->t6;
@@ -1185,15 +1196,17 @@ static int ftmod_ss7_fill_in_nsap(sng_route_t *mtp3_route)
 
 	if (g_ftdm_sngss7_data.cfg.nsap[i].id == 0) {
 		g_ftdm_sngss7_data.cfg.nsap[i].id = i;
+		 mtp3_route->nwId = i;
 		SS7_DEBUG("found new mtp3_isup interface, id is = %d\n", g_ftdm_sngss7_data.cfg.nsap[i].id);
 	} else {
 		g_ftdm_sngss7_data.cfg.nsap[i].id = i;
+		 mtp3_route->nwId = i;
 		SS7_DEBUG("found existing mtp3_isup interface, id is = %d\n", g_ftdm_sngss7_data.cfg.nsap[i].id);
 	}
 	
 	g_ftdm_sngss7_data.cfg.nsap[i].spId			= g_ftdm_sngss7_data.cfg.nsap[i].id;
 	g_ftdm_sngss7_data.cfg.nsap[i].suId			= g_ftdm_sngss7_data.cfg.nsap[i].id;
-	g_ftdm_sngss7_data.cfg.nsap[i].nwId			= g_ftdm_sngss7_data.cfg.nsap[i].id;
+	g_ftdm_sngss7_data.cfg.nsap[i].nwId			= mtp3_route->nwId;
 	g_ftdm_sngss7_data.cfg.nsap[i].linkType		= mtp3_route->linkType;
 	g_ftdm_sngss7_data.cfg.nsap[i].switchType	= mtp3_route->switchType;
 	g_ftdm_sngss7_data.cfg.nsap[i].ssf			= mtp3_route->ssf;
