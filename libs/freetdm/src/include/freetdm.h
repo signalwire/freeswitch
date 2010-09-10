@@ -386,7 +386,7 @@ typedef struct ftdm_conf_parameter {
 } ftdm_conf_parameter_t;
 
 /*! \brief Opaque general purpose iterator */
-typedef void ftdm_iterator_t;
+typedef struct ftdm_iterator ftdm_iterator_t;
 
 /*! \brief Channel commands that can be executed through ftdm_channel_command() */
 typedef enum {
@@ -1032,14 +1032,30 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const c
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name);
 
 /*! \brief Get an iterator to iterate over the channel variables
- *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
-FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan);
+ *  \param ftdmchan The channel structure containing the variables
+ *  \param iter Optional iterator. You can reuse an old iterator (not previously freed) to avoid the extra allocation of a new iterator.
+ *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. 
+ *        This iterator is completely non-thread safe, if you are adding variables or removing variables while iterating 
+ *        results are unpredictable
+ */
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter);
+
+/*! \brief Get iterator current value (depends on the iterator type)
+ *  \note Channel iterators return a pointer to ftdm_channel_t
+ *        Variable iterators return a pointer to the variable name (not the variable value)
+ */
+FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter);
 
 /*! \brief Get variable name and value for the current iterator position */
 FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
 
 /*! \brief Advance iterator */
 FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
+
+/*! \brief Free iterator 
+ *  \note You must free an iterator after using it unless you plan to reuse it
+ */
+FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter);
 
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
@@ -1143,6 +1159,12 @@ FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span);
 
 /*! \brief Get the span name */
 FT_DECLARE(const char *) ftdm_span_get_name(const ftdm_span_t *span);
+
+/*! \brief Get iterator for the span channels
+ *  \param span The span containing the channels
+ *  \param iter Optional iterator. You can reuse an old iterator (not previously freed) to avoid the extra allocation of a new iterator.
+ */
+FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter);
 
 /*! 
  * \brief Execute a text command. The text command output will be returned and must be free'd 

@@ -1404,6 +1404,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
 	const char *var_name = NULL;
 	const char *var_value = NULL;
 	uint32_t spanid, chanid;
@@ -1516,12 +1517,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	}
 	/* Add any channel variable to the dial plan */
 	iter = ftdm_channel_get_var_iterator(sigmsg->channel);
-	for ( ; iter; iter = ftdm_iterator_next(iter)) {
-		ftdm_channel_get_current_var(iter, &var_name, &var_value);
+	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
 	}
-		
+	ftdm_iterator_free(iter);
+
 	switch_channel_set_state(channel, CS_INIT);
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
@@ -2496,7 +2498,8 @@ static switch_status_t load_config(void)
 	unsigned boosti = 0;
 	unsigned int i = 0;
 	ftdm_channel_t *fchan = NULL;
-	unsigned int chancount = 0;
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
 
 	memset(boost_spans, 0, sizeof(boost_spans));
 	memset(&globals, 0, sizeof(globals));
@@ -2780,11 +2783,13 @@ static switch_status_t load_config(void)
 			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
 			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
 			
-			chancount = ftdm_span_get_chan_count(span);
-			for (i = 1; i <= chancount; i++) {
-				fchan = ftdm_span_get_channel(span, i);
+			chaniter = ftdm_span_get_chan_iterator(span);
+			curr = chaniter
+			for (curr = chaniter ; curr; curr = ftdm_iterator_next(curr)) {
+				fchan = ftdm_iterator_current(curr);
 				ftdm_channel_set_private(fchan, &SPAN_CONFIG[span_id].pvts[i]);
 			}
+			ftdm_iterator_free(chaniter);
 			
 			if (dial_regex) {
 				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);
