@@ -3172,7 +3172,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_event_destroy(&vars);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s@%s %s",
+				char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
 														vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
 
 				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
