@@ -447,6 +447,9 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	base_dir[(lastbacklash - base_dir)] = '\0';
 #else
 	char base_dir[1024] = SWITCH_PREFIX_DIR;
+	if (SWITCH_GLOBAL_dirs.base_dir) {
+		snprintf(base_dir, sizeof(base_dir), "%s", SWITCH_GLOBAL_dirs.base_dir);
+	}
 #endif
 
 	if (!SWITCH_GLOBAL_dirs.base_dir && (SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
@@ -1296,6 +1299,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), NULL, AF_INET6);
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
+	switch_core_set_variable("base_logdir", SWITCH_GLOBAL_dirs.log_dir);
 	switch_core_set_variable("recordings_dir", SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_core_set_variable("sound_prefix", SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_core_set_variable("sounds_dir", SWITCH_GLOBAL_dirs.sounds_dir);

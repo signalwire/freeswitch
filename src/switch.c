@@ -48,7 +48,7 @@
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
-#define PIDFILE "freeswitch.pid"
+#define PIDFILE "sangoma-media-gateway.pid"
 static char *pfile = PIDFILE;
 
 
@@ -346,6 +346,7 @@ int main(int argc, char *argv[])
 		"\t-stop                  -- stop freeswitch\n"
 		"\t-nc                    -- do not output to a console and background\n"
 		"\t-c                     -- output to a console and stay in the foreground\n"
+		"\t-base [basedir]        -- specify an alternate base dir\n"
 		"\t-conf [confdir]        -- specify an alternate config dir\n"
 		"\t-log [logdir]          -- specify an alternate log dir\n"
 		"\t-run [rundir]          -- specify an alternate run dir\n"
@@ -573,6 +574,22 @@ int main(int argc, char *argv[])
 				strcpy(SWITCH_GLOBAL_dirs.mod_dir, local_argv[x]);
 			} else {
 				fprintf(stderr, "When using -mod you must specify a module directory\n");
+				return 255;
+			}
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-base")) {
+			x++;
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.base_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
+				strcpy(SWITCH_GLOBAL_dirs.base_dir, local_argv[x]);
+			} else {
+				fprintf(stderr, "When using -base you must specify a base directory\n");
 				return 255;
 			}
 			known_opt++;
