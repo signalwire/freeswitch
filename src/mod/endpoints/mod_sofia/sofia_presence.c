@@ -1442,7 +1442,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number");
 				}
 
-				if (!op) {
+				if (zstr(op)) {
 					op = switch_event_get_header(helper->event, "Caller-Destination-Number");
 				}
 
@@ -1452,7 +1452,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 				if (!strcmp(astate, "early")) {
 					if (zstr(op)) {
-						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, status);
+						switch_snprintf(status_line, sizeof(status_line), "%sing", what);
 					} else {
 						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
 					}
