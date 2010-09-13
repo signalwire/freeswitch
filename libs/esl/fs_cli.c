@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #define CMD_BUFLEN 1024
+#define PROMPT_PREFIX "sangoma-media-gateway"
 
 #ifdef WIN32
 #define strdup(src) _strdup(src)
@@ -811,17 +812,10 @@ static void print_banner(FILE *stream)
 	fprintf(stream,
 			
 
-			"            _____ ____     ____ _     ___            \n"
-			"           |  ___/ ___|   / ___| |   |_ _|           \n"
-			"           | |_  \\___ \\  | |   | |    | |            \n"
-			"           |  _|  ___) | | |___| |___ | |            \n"
-			"           |_|   |____/   \\____|_____|___|           \n"
 			"\n"
 			"*******************************************************\n"
-			"* Anthony Minessale II, Ken Rice, Michael Jerris      *\n"
-			"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-			"* Paypal Donations Appreciated: paypal@freeswitch.org *\n" 
-			"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
+			"* Sangoma Media Gateway                               *\n"
+			"* Powered by FreeSWITCH (http://www.freeswitch.org)   *\n"
 			"*******************************************************\n"
 			"\n"
                         "Type /help <enter> to see a list of commands\n\n\n"
@@ -968,13 +962,13 @@ int main(int argc, char *argv[])
 	int rv = 0;
 
 #ifndef WIN32
-	char hfile[512] = "/etc/fs_cli_history";
-	char cfile[512] = "/etc/fs_cli.conf";
-	char dft_cfile[512] = "/etc/fs_cli.conf";
+	char hfile[512] = "/etc/smg_cli_history";
+	char cfile[512] = "/etc/smg_cli.conf";
+	char dft_cfile[512] = "/etc/smg_cli.conf";
 #else
-	char hfile[512] = "fs_cli_history";
-	char cfile[512] = "fs_cli.conf";
-	char dft_cfile[512] = "fs_cli.conf";
+	char hfile[512] = "smg_cli_history";
+	char cfile[512] = "smg_cli.conf";
+	char dft_cfile[512] = "smg_cli.conf";
 #endif
 	char *home = getenv("HOME");
 	/* Vars for optargs */
@@ -1018,8 +1012,8 @@ int main(int argc, char *argv[])
 
 
 	if (home) {
-		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
-		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
+		snprintf(hfile, sizeof(hfile), "%s/.smg_cli_history", home);
+		snprintf(cfile, sizeof(cfile), "%s/.smg_cli_conf", home);
 	}
 	
 	signal(SIGINT, handle_SIGINT);
@@ -1189,12 +1183,12 @@ int main(int argc, char *argv[])
 	
 	if (argv_host) {
 		if (argv_port && profile->port != 8021) {
-			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
+			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s:%u@%s> ", profile->host, profile->port, profile->name);
 		} else {
-			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
+			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s@%s> ", profile->host, profile->name);
 		}
 	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
+		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
 
  connect:
@@ -1320,7 +1314,7 @@ int main(int argc, char *argv[])
 
 	print_banner(stdout);
 
-	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
+	esl_log(ESL_LOG_INFO, "Sangoma Media Gateway CLI Ready.\nenter /help for a list of commands.\n");
 	printf("%s\n", handle.last_sr_reply);
 
 	while (running > 0) {
