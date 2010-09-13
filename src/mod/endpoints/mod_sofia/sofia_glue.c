@@ -3590,11 +3590,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_HOLD) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "sip_disable_hold")) && switch_true(val))) {
 		sendonly = 0;
-	}
+	} else {
 
-	if (!tech_pvt->hold_laps) {
-		tech_pvt->hold_laps++;
-		sofia_glue_toggle_hold(tech_pvt, sendonly);
+		if (!tech_pvt->hold_laps) {
+			tech_pvt->hold_laps++;
+			sofia_glue_toggle_hold(tech_pvt, sendonly);
+		}
 	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
