@@ -2043,7 +2043,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			from_host = "n/a";
 		}
 
-		exp_delta = profile->force_subscription_expires ? profile->force_subscription_expires : (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
+		if ((exp_delta = sip->sip_expires ? sip->sip_expires->ex_delta : 3600)) {
+			if (profile->force_subscription_expires) {
+				exp_delta = profile->force_subscription_expires;
+			}
+		}
 
 		if (exp_delta) {
 			exp_abs = (long) switch_epoch_time_now(NULL) + exp_delta;
