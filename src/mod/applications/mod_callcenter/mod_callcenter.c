@@ -1259,7 +1259,7 @@ static switch_status_t load_config(void)
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
-				globals.odbc_dsn = strdup(switch_xml_attr(param, "odbc-dsn"));
+				globals.odbc_dsn = strdup(val);
 
 				if (!zstr(globals.odbc_dsn)) {
 					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
