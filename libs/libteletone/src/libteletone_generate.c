@@ -302,7 +302,7 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 					ts->samples * 2);
 		}
 	}	
-	return ts->samples;
+	return ts->samples / ts->channels;
 }
 
 /* don't ask */

@@ -1315,6 +1315,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);
 
+	if (flags & SCF_MINIMAL) return SWITCH_STATUS_SUCCESS;
+													   
 	runtime.tipping_point = 5000;
 	runtime.timer_affinity = -1;
 	
@@ -1594,7 +1596,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
-	if (switch_loadable_module_init() != SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_init(SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
 		*err = "Cannot load modules";
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
 		return SWITCH_STATUS_GENERR;
@@ -1902,6 +1904,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_scheduler_task_thread_stop();
 
 	switch_rtp_shutdown();
+
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
 		switch_nat_shutdown();
 	}

@@ -690,7 +690,7 @@ SWITCH_DECLARE(void) switch_nat_late_init(void)
 {
 	if (nat_globals_perm.running == 1) {
 		switch_scheduler_add_task(switch_epoch_time_now(NULL) + NAT_REFRESH_INTERVAL, switch_nat_republish_sched, "nat_republish", "core", 0, NULL,
-								  SSHF_NONE);
+								  SSHF_OWN_THREAD);
 	}
 }
 

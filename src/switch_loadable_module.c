@@ -1218,7 +1218,7 @@ static void switch_loadable_module_path_init()
 }
 #endif
 
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autoload)
 {
 
 	apr_finfo_t finfo = { 0 };
@@ -1267,6 +1267,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init_nocase(&loadable_modules.limit_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
+
+	if (!autoload) return SWITCH_STATUS_SUCCESS;
 
 	switch_loadable_module_load_module("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, &err);
 	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_FALSE, &err);
