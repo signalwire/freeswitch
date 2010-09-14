@@ -106,6 +106,13 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				break;
 			}
 
+#if 0
+			/* Export ftdmchan variables here if we need to */
+			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
+			ftdm_channel_add_var(ftdmchan, "isdn_crap", "morecrap");
+			ftdm_channel_add_var(ftdmchan, "isdn_stuff", "s");
+			ftdm_channel_add_var(ftdmchan, "isdn_d", "asdsadasdasdsad");
+#endif
 			/* Fill in call information */
 			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
 			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
@@ -266,6 +273,9 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 			case FTDM_CHANNEL_STATE_UP:
 				/* This is the only valid state we should get a CONNECT ACK on */
 				/* do nothing */
+				break;
+			case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+				/* We just hung up an incoming call right after we sent a CONNECT so ignore this message */
 				break;
 			default:
 				ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Processing CONNECT/CONNECT ACK in an invalid state (%s)\n", ftdm_channel_state2str(ftdmchan->state));

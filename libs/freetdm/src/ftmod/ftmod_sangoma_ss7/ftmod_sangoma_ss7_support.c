@@ -58,6 +58,7 @@ unsigned long get_unique_id(void);
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
 
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -536,6 +537,64 @@ GRS_UNLOCK_ALL:
 			/* unlock the channel */
 			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_sigmsg_t 		sigev;
+	int 				x;
+
+	for (x = 1; x < (ftdmspan->chan_count + 1); x++) {
+
+		/* extract the channel structure and sngss7 channel data */
+		ftdmchan = ftdmspan->channels[x];
+		
+		/* if the call data is NULL move on */
+		if (ftdmchan->call_data == NULL) continue;
+
+		sngss7_info = ftdmchan->call_data;
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		memset (&sigev, 0, sizeof (sigev));
+
+		sigev.chan_id = ftdmchan->chan_id;
+		sigev.span_id = ftdmchan->span_id;
+		sigev.channel = ftdmchan;
+
+		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) &&
+			(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
+			
+			/* bring the sig status down */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			ftdm_span_send_signal(ftdmchan->span, &sigev);	
+		}
+
+		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) &&
+			!(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
+			
+			/* bring the sig status back up */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			ftdm_span_send_signal(ftdmchan->span, &sigev);
+
+			sngss7_clear_flag(sngss7_info, FLAG_INFID_RESUME);
+		}
+
+		/* unlock the channel */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+	} /* for (x = 1; x < (span->chan_count + 1); x++) */
+
+	/* signal the core that sig events are queued for processing */
+	ftdm_span_trigger_signals(ftdmspan);
 
 	return FTDM_SUCCESS;
 }

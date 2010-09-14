@@ -423,13 +423,53 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (STROUT):
-		ftdm_log(FTDM_LOG_ERROR,"[MTP3][DPC:0x%d%d%d%d] %s : %s\n",
-									sta->t.usta.evntParm[0],
-									sta->t.usta.evntParm[1],
-									sta->t.usta.evntParm[2],
-									sta->t.usta.evntParm[3],
-									DECODE_LSN_EVENT(sta->t.usta.alarm.event),
-									DECODE_LSN_CAUSE(sta->t.usta.alarm.cause));
+		switch (sta->t.usta.alarm.event) {
+		/**********************************************************************/
+		case (LSN_EVENT_RX_TRANSFER_MSG):
+			switch (sta->t.usta.evntParm[5]) {
+			/******************************************************************/
+			case (0x23):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFC\n");
+				break;
+			/******************************************************************/
+			case (0x34):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFR\n");
+				break;
+			/******************************************************************/
+			case (0x54):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFA\n");
+				break;
+			/******************************************************************/
+			case (0x14):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFP\n");
+				break;
+			/******************************************************************/
+			case (0x24):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFP (cluster)\n");
+				break;
+			/******************************************************************/
+			case (0x64):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFA (cluster)\n");
+				break;
+			/******************************************************************/
+			case (0x44):
+				ftdm_log(FTDM_LOG_INFO,"[MTP3] Rx SNM TFR (cluster)\n");
+				break;
+			/******************************************************************/
+			} /* switch (sta->t.usta.evntParm[5]) */
+			break;
+		/**********************************************************************/
+		default:
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3][DPC:0x%d%d%d%d] %s : %s\n",
+										sta->t.usta.evntParm[0],
+										sta->t.usta.evntParm[1],
+										sta->t.usta.evntParm[2],
+										sta->t.usta.evntParm[3],
+										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
+										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause));
+			break;
+		/**********************************************************************/
+		} /* switch (sta->t.usta.alarm.event) */
 		break;
 	/**************************************************************************/
 	default:

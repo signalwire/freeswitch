@@ -347,6 +347,9 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 			/* check if the rx_grs has cleared */
 			check_if_rx_grs_processed(ftdmspan);
 		} /* if (sngss7_span->rx_grs.range > 0) */
+
+		/* check each channel on the span to see if there is an un-procressed SUS/RES flag */
+		check_for_res_sus_flag(ftdmspan);
 	} /* master while loop */
 
 	/* clear the IN_THREAD flag so that we know the thread is done */
@@ -946,31 +949,6 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	case FTDM_CHANNEL_STATE_SUSPENDED:	/* circuit has been blocked */
 
 		  SS7_DEBUG_CHAN(ftdmchan,"Current flags: 0x%X\n", sngss7_info->flags);
-
-		/**********************************************************************/
-		if (sngss7_test_flag (sngss7_info, FLAG_INFID_PAUSED)) 	{
-			SS7_DEBUG_CHAN(ftdmchan, "Processing PAUSE flag %s\n", "");
-			
-			/* bring the channel signaling status to down */
-			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
-			ftdm_span_send_signal (ftdmchan->span, &sigev);
-
-			/* check the last state and return to it to allow the call to finish */
-			goto suspend_goto_last;
-		}
-
-		if (sngss7_test_flag (sngss7_info, FLAG_INFID_RESUME)) {
-			SS7_DEBUG_CHAN(ftdmchan, "Processing RESUME flag %s\n", "");
-
-			/* the reset flag is set for the first channel in the span at handle_resume */
-
-			/* clear the resume flag */
-			sngss7_clear_flag(sngss7_info, FLAG_INFID_RESUME);
-
-			/* go to restart state */
-			goto suspend_goto_last;
-		}
 
 		/**********************************************************************/
 		if (sngss7_test_flag (sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {

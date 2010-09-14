@@ -2182,9 +2182,8 @@ static void ftdm_logger(const char *file, const char *func, int line, int level,
 
 	if (switch_vasprintf(&data, fmt, ap) != -1) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, (char *)func, line, NULL, level, "%s", data);
-		free(data);
 	}
-	
+	if (data) free(data);
     va_end(ap);
 
 }

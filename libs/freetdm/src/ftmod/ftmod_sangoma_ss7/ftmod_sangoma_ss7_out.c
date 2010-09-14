@@ -73,8 +73,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;;
-	SiConEvnt iam;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
+	const char			*nadi = NULL;
+	SiConEvnt 			iam;
 	
 	sngss7_info->suInstId 	= get_unique_id ();
 	sngss7_info->spInstId 	= 0;
@@ -179,7 +180,17 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	
 	/* copy down the calling number information */
 	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
-	
+
+	/* check if the user would like a custom NADI value for the calling Pty Num */
+	nadi = ftdm_channel_get_var(ftdmchan, "ss7_nadi");
+	if ((nadi != NULL) && (nadi != "")) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied NADI value \"%s\"\n", nadi);
+		iam.cgPtyNum.natAddrInd.val	= atoi(nadi);
+	} else {
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found, using \"3\" %s\n", " ");
+		iam.cgPtyNum.natAddrInd.val	= 0x03;
+	}
+
 	sng_cc_con_request (sngss7_info->spId,
 						sngss7_info->suInstId,
 						sngss7_info->spInstId,
@@ -204,29 +215,29 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	memset (&acm, 0x0, sizeof (acm));
 	
 	/* fill in the needed information for the ACM */
-	acm.bckCallInd.eh.pres = PRSNT_NODEF;
-	acm.bckCallInd.chrgInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.chrgInd.val = 0x00;
-	acm.bckCallInd.cadPtyStatInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.cadPtyStatInd.val = 0x01;
-	acm.bckCallInd.cadPtyCatInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.cadPtyCatInd.val = 0x00;
-	acm.bckCallInd.end2EndMethInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.end2EndMethInd.val = 0x00;
-	acm.bckCallInd.intInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.intInd.val = 0x00;
-	acm.bckCallInd.end2EndInfoInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.end2EndInfoInd.val = 0x00;
-	acm.bckCallInd.isdnUsrPrtInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.isdnUsrPrtInd.val = 0x0;
-	acm.bckCallInd.holdInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.holdInd.val = 0x00;
-	acm.bckCallInd.isdnAccInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.isdnAccInd.val = 0x0;
-	acm.bckCallInd.echoCtrlDevInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.echoCtrlDevInd.val = 0x0;
-	acm.bckCallInd.sccpMethInd.pres = PRSNT_NODEF;
-	acm.bckCallInd.sccpMethInd.val = 0x00;
+	acm.bckCallInd.eh.pres 				= PRSNT_NODEF;
+	acm.bckCallInd.chrgInd.pres			= PRSNT_NODEF;
+	acm.bckCallInd.chrgInd.val			= 0x00;
+	acm.bckCallInd.cadPtyStatInd.pres	= PRSNT_NODEF;
+	acm.bckCallInd.cadPtyStatInd.val	= 0x01;
+	acm.bckCallInd.cadPtyCatInd.pres	= PRSNT_NODEF;
+	acm.bckCallInd.cadPtyCatInd.val		= 0x00;
+	acm.bckCallInd.end2EndMethInd.pres	= PRSNT_NODEF;
+	acm.bckCallInd.end2EndMethInd.val	= 0x00;
+	acm.bckCallInd.intInd.pres			= PRSNT_NODEF;
+	acm.bckCallInd.intInd.val 			= 0x00;
+	acm.bckCallInd.end2EndInfoInd.pres	= PRSNT_NODEF;
+	acm.bckCallInd.end2EndInfoInd.val	= 0x00;
+	acm.bckCallInd.isdnUsrPrtInd.pres	= PRSNT_NODEF;
+	acm.bckCallInd.isdnUsrPrtInd.val	= 0x0;
+	acm.bckCallInd.holdInd.pres			= PRSNT_NODEF;
+	acm.bckCallInd.holdInd.val			= 0x00;
+	acm.bckCallInd.isdnAccInd.pres		= PRSNT_NODEF;
+	acm.bckCallInd.isdnAccInd.val		= 0x0;
+	acm.bckCallInd.echoCtrlDevInd.pres	= PRSNT_NODEF;
+	acm.bckCallInd.echoCtrlDevInd.val	= 0x1;	/* ec device present */
+	acm.bckCallInd.sccpMethInd.pres		= PRSNT_NODEF;
+	acm.bckCallInd.sccpMethInd.val		= 0x00;
 	
 	/* send the ACM request to LibSngSS7 */
 	sng_cc_con_status  (1,

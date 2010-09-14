@@ -67,6 +67,14 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
 static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
 
+static ftdm_status_t handle_activate_link(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_deactivate_link(ftdm_stream_handle_t *stream, char *name);
+
+static ftdm_status_t handle_activate_linkset(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_deactivate_linkset(ftdm_stream_handle_t *stream, char *name);
+
+static ftdm_status_t handle_tx_lpo(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name);
 
 static ftdm_status_t handle_status_link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_status_linkset(ftdm_stream_handle_t *stream, char *name);
@@ -488,7 +496,97 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 			stream->write_function(stream, "Unknown \"grs\" command\n");
 			goto handle_cli_error;
 		/**********************************************************************/
-		} 
+		}
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "lpo")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_tx_lpo(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"lpo\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "lpr")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_tx_lpr(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"lpr\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "activate")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_activate_link(stream, argv[c]);
+		/**********************************************************************/
+		}else if (!strcasecmp(argv[c], "linkset")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_activate_linkset(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"activate\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "deactivate")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_deactivate_link(stream, argv[c]);
+		/**********************************************************************/
+		}else if (!strcasecmp(argv[c], "linkset")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_deactivate_linkset(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"deactivate\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
 	/**************************************************************************/	
 	} else {
 	/**************************************************************************/
@@ -536,11 +634,18 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 ubl span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 rsc span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 grs span X chan Y range Z\n");
+	stream->write_function(stream, "ftdm ss7 cgb span X chan Y range Z\n");
+	stream->write_function(stream, "ftdm ss7 cgu span X chan Y range Z\n");
 	stream->write_function(stream, "\n");
 	stream->write_function(stream, "Ftmod_sangoma_ss7 link control:\n");
 	stream->write_function(stream, "ftdm ss7 inhibit link X\n");
 	stream->write_function(stream, "ftdm ss7 uninhibit link X\n");
-
+	stream->write_function(stream, "ftdm ss7 activate link X\n");
+	stream->write_function(stream, "ftdm ss7 deactivate link X\n");
+	stream->write_function(stream, "ftdm ss7 activate linkset X\n");
+	stream->write_function(stream, "ftdm ss7 deactivate linkset X\n");
+	stream->write_function(stream, "ftdm ss7 lpo link X\n");
+	stream->write_function(stream, "ftdm ss7 lpr link X\n");
 	stream->write_function(stream, "\n");
 
 	return FTDM_SUCCESS;
@@ -915,87 +1020,100 @@ static ftdm_status_t handle_show_blocks(ftdm_stream_handle_t *stream, int span, 
 /******************************************************************************/
 static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
-	int				 x;
-	sngss7_chan_data_t  *ss7_info;
-	ftdm_channel_t	  *ftdmchan;
-	int				 lspan;
-	int				 lchan;
-	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
+	int				 			x;
+	sngss7_chan_data_t  		*ss7_info;
+	ftdm_channel_t	  			*ftdmchan;
+	int				 			lspan;
+	int				 			lchan;
+	ftdm_signaling_status_t		sigstatus = FTDM_SIG_STATE_DOWN;
+	sng_isup_ckt_t				*ckt;
 
 	x=1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
-			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
-			ftdmchan = ss7_info->ftdmchan;
+			/* extract the circuit to make it easier to work with */
+			ckt = &g_ftdm_sngss7_data.cfg.isupCkt[x];
 
 			/* if span == 0 then all spans should be printed */
 			if (span == 0) {
-				lspan = ftdmchan->physical_span_id;
+				lspan = ckt->span;
 			} else {
 				lspan = span;
 			}
 
 			/* if chan == 0 then all chans should be printed */
 			if (chan == 0) {
-				lchan = ftdmchan->physical_chan_id;
+				lchan = ckt->chan;
 			} else {
 				lchan = chan;
 			}
 
-			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
-				/* grab the signaling_status */
-				ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
+			/* check if this circuit is one of the circuits we're interested in */
+			if ((ckt->span == lspan) && (ckt->chan == lchan)) {
+				if (ckt->type == HOLE) {
+					stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|NOT USED\n",
+							ckt->span,
+							ckt->chan,
+							ckt->cic);
+				} else if (ckt->type == SIG) {
+					stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|SIGNALING LINK\n",
+							ckt->span,
+							ckt->chan,
+							ckt->cic);
+				} else {
+					ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+					ftdmchan = ss7_info->ftdmchan;
 
-				stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%s|state=%s|",
-							ftdmchan->physical_span_id,
-							ftdmchan->physical_chan_id,
-							ss7_info->circuit->cic,
-							ftdm_signaling_status2str(sigstatus),
-							ftdm_channel_state2str(ftdmchan->state));
-
-				if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
-					stream->write_function(stream, "l_mn=Y|");
-				}else {
-					stream->write_function(stream, "l_mn=N|");
-				}
-
-				if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
-					stream->write_function(stream, "r_mn=Y|");
-				}else {
-					stream->write_function(stream, "r_mn=N|");
-				}
-
-				if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
-					stream->write_function(stream, "l_hw=Y|");
-				}else {
-					stream->write_function(stream, "l_hw=N|");
-				}
-
-				if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
-					stream->write_function(stream, "r_hw=Y|");
-				}else {
-					stream->write_function(stream, "r_hw=N|");
-				}
-
-				if(sngss7_test_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
-					stream->write_function(stream, "l_mngmt=Y|");
-				}else {
-					stream->write_function(stream, "l_mngmt=N|");
-				}
-
-				if(sngss7_test_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
-					stream->write_function(stream, "l_ucic=Y|");
-				}else {
-					stream->write_function(stream, "l_ucic=N|");
-				}				
-
-				stream->write_function(stream, "flags=0x%X",ss7_info->flags);
-
-				stream->write_function(stream, "\n");	
+					/* grab the signaling_status */
+					ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
+	
+					stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%s|state=%s|",
+													ckt->span,
+													ckt->chan,
+													ckt->cic,
+													ftdm_signaling_status2str(sigstatus),
+													ftdm_channel_state2str(ftdmchan->state));
+	
+					if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+						stream->write_function(stream, "l_mn=Y|");
+					}else {
+						stream->write_function(stream, "l_mn=N|");
+					}
+	
+					if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+						stream->write_function(stream, "r_mn=Y|");
+					}else {
+						stream->write_function(stream, "r_mn=N|");
+					}
+	
+					if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+						stream->write_function(stream, "l_hw=Y|");
+					}else {
+						stream->write_function(stream, "l_hw=N|");
+					}
+	
+					if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
+						stream->write_function(stream, "r_hw=Y|");
+					}else {
+						stream->write_function(stream, "r_hw=N|");
+					}
+	
+					if(sngss7_test_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
+						stream->write_function(stream, "l_mngmt=Y|");
+					}else {
+						stream->write_function(stream, "l_mngmt=N|");
+					}
+	
+					if(sngss7_test_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
+						stream->write_function(stream, "l_ucic=Y|");
+					}else {
+						stream->write_function(stream, "l_ucic=N|");
+					}				
+	
+					stream->write_function(stream, "flags=0x%X",ss7_info->flags);
+	
+					stream->write_function(stream, "\n");
+				} /* if ( hole, sig, voice) */
 			} /* if ( span and chan) */
-
-		} /* if ( cic != 0) */
-
 		/* go the next circuit */
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
@@ -1513,6 +1631,193 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 	ft_to_sngss7_cgu(main_chan);
 	
 
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_activate_link(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+
+			/* send the uninhibit request */
+			if (ftmod_ss7_activate_mtplink(x)) {
+				stream->write_function(stream, "Failed to activate link=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the link */
+			handle_status_link(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_deactivate_link(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+
+			/* send the deactivate request */
+			if (ftmod_ss7_deactivate2_mtplink(x)) {
+				stream->write_function(stream, "Failed to deactivate link=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the link */
+			handle_status_link(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_activate_linkset(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the linkset request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, name)) {
+
+			/* send the activate request */
+			if (ftmod_ss7_activate_mtplinkSet(x)) {
+				stream->write_function(stream, "Failed to activate linkset=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the linkset */
+			handle_status_linkset(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next linkset */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find linkset=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_deactivate_linkset(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the linkset request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, name)) {
+
+			/* send the deactivate request */
+			if (ftmod_ss7_deactivate2_mtplinkSet(x)) {
+				stream->write_function(stream, "Failed to deactivate linkset=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the linkset */
+			handle_status_linkset(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next linkset */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find linkset=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+
+static ftdm_status_t handle_tx_lpo(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+
+			/* send the uninhibit request */
+			if (ftmod_ss7_lpo_mtplink(x)) {
+				stream->write_function(stream, "Failed set LPO link=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the link */
+			handle_status_link(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+
+			/* send the uninhibit request */
+			if (ftmod_ss7_lpr_mtplink(x)) {
+				stream->write_function(stream, "Failed set LPR link=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the link */
+			handle_status_link(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
 	return FTDM_SUCCESS;
 }
 

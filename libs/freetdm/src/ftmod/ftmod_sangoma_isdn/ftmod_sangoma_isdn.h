@@ -243,7 +243,8 @@ typedef struct ftdm_sngisdn_data {
 	uint8_t num_cc;						/* 1 ent per switchtype */
 	struct sngisdn_cc ccs[MAX_VARIANTS+1];
 	uint8_t	num_dchan;
-	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];	
+	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
+	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
 }ftdm_sngisdn_data_t;
 
 
@@ -363,9 +364,12 @@ void sngisdn_facility_timeout(void* p_sngisdn_info);
 
 /* Stack management functions */
 ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_activate(ftdm_span_t *span);
+ftdm_status_t sng_isdn_stack_start(ftdm_span_t *span);
+ftdm_status_t sng_isdn_stack_stop(ftdm_span_t *span);
 
-
+void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+void sngisdn_print_spans(ftdm_stream_handle_t *stream);
+void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 
 #endif /* __FTMOD_SNG_ISDN_H__ */
 

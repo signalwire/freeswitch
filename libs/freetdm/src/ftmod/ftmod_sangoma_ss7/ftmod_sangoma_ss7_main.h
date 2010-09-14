@@ -454,6 +454,14 @@ int ftmod_ss7_cc_isap_config(int id);
 
 int ftmod_ss7_inhibit_mtplink(uint32_t id);
 int ftmod_ss7_uninhibit_mtplink(uint32_t id);
+int ftmod_ss7_activate_mtplink(uint32_t id);
+int ftmod_ss7_deactivate_mtplink(uint32_t id);
+int ftmod_ss7_deactivate2_mtplink(uint32_t id);
+int ftmod_ss7_activate_mtplinkSet(uint32_t id);
+int ftmod_ss7_deactivate_mtplinkSet(uint32_t id);
+int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
+int ftmod_ss7_lpo_mtplink(uint32_t id);
+int ftmod_ss7_lpr_mtplink(uint32_t id);
 
 int ftmod_ss7_mtplink_sta(uint32_t id, SnMngmt *cfm);
 int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm);
@@ -539,6 +547,7 @@ void handle_isup_t35(void *userdata);
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
 
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 /******************************************************************************/
 
 /* MACROS *********************************************************************/
