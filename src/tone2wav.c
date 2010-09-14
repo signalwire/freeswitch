@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	teletone_destroy_session(&ts);
 	switch_core_file_close(&fh);
 	
-	printf("File: %s generated.....\nPlease support:\n\nFreeSWITCH http://www.freeswitch.org\nClueCon http://www.cluecon.com\n", file);
+	printf("File: %s generated.....\n\nPlease support:\nFreeSWITCH http://www.freeswitch.org\nClueCon http://www.cluecon.com\n", file);
 
  end:
 
