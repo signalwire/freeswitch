@@ -1600,11 +1600,10 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 				g_ftdm_sngss7_data.cfg.isupCkt[x].chan			= count;
 				if (timeslot.siglink) {
 					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SIG;
-				} else if (timeslot.hole) {
-					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= HOLE;
 				} else {
-					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= VOICE;
+					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= HOLE;
 				}
+
 				if (timeslot.channel) {
 					g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= cicbase;
 					cicbase++;
@@ -1625,6 +1624,10 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 				g_ftdm_sngss7_data.cfg.isupCkt[x].obj			= ss7_info;
 
 			} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].id == 0) */
+
+			/* increment the span channel count */
+			count++;
+
 		} else { /* if ((timeslot.siglink) || (timeslot.gap)) */
 			/* find the ftdm the channel structure for this channel*/
 			i = 1;

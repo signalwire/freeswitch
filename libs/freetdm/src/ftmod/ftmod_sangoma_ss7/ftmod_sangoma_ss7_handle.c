@@ -1123,21 +1123,10 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 			/* lock the channel */
 			ftdm_mutex_lock(ftdmchan->mutex);
 	
-			/* check if there is a pending state change, give it a bit to clear */
-			if (check_for_state_change(ftdmchan)) {
-				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-				ftdm_mutex_unlock(ftdmchan->mutex);
-				i++;
-				SS7_ASSERT;
-			};
-	
 			/* check if the circuit is fully started */
 			if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_IN_THREAD)) {
 				/* set the pause flag on the channel */
 				sngss7_set_flag(sngss7_info, FLAG_INFID_PAUSED);
-	
-				/* set the statet o SUSPENDED to bring the sig status down */ 
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 			}
 	
 			/* unlock the channel again before we exit */
@@ -1185,14 +1174,6 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 			/* lock the channel */
 			ftdm_mutex_lock(ftdmchan->mutex);
 
-			/* check if there is a pending state change, give it a bit to clear */
-			if (check_for_state_change(ftdmchan)) {
-				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-				ftdm_mutex_unlock(ftdmchan->mutex);
-				i++;
-				SS7_ASSERT;
-			};
-
 			/* only resume if we are paused */
 			if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
 				/* set the resume flag on the channel */
@@ -1200,9 +1181,6 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 				/* clear the paused flag */
 				sngss7_clear_flag(sngss7_info, FLAG_INFID_PAUSED);
-
-				/* set the statet to SUSPENDED to bring the sig status up */ 
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 			}
 			
 			/* unlock the channel again before we exit */

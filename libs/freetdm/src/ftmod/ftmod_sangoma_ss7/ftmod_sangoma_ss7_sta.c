@@ -68,7 +68,7 @@ int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm)
 
 	sta.hdr.elmId.elmnt 		= STLNKSET;
 	sta.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].id;
-	sta.hdr.elmId.elmntInst2	= 1;
+	sta.hdr.elmId.elmntInst2	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].links[0];
 
 	return(sng_sta_mtp3(&sta, cfm));
 }
