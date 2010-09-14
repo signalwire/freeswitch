@@ -1225,7 +1225,7 @@ static void sofia_perform_profile_start_failure(sofia_profile_t *profile, char *
 #define sofia_profile_start_failure(p, xp) sofia_perform_profile_start_failure(p, xp, __FILE__, __LINE__)
 
 
-#define SQLLEN 1024 * 32
+#define SQLLEN 1024 * 1024
 void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
@@ -1235,10 +1235,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	uint32_t qsize;
 	void *pop;
 	int loop_count = 0;
-	switch_size_t sql_len = SQLLEN;
-	char *sqlbuf = NULL;
+	switch_size_t sql_len = 1024 * 32;
+	char *tmp, *sqlbuf = NULL;
 	char *sql = NULL;
-
+	
 	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 		sqlbuf = (char *) malloc(sql_len);
 	}
@@ -1254,33 +1254,43 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || qsize) {
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-			if ((qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) || sql) {
+			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) {
 				switch_size_t newlen;
 				uint32_t itterations = 0;
 				switch_size_t len = 0;
 
 				switch_mutex_lock(profile->ireg_mutex);
 				
-				//sofia_glue_actually_execute_sql(profile, "begin;\n", NULL);
-
 				while (sql || (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop)) {
-					
-					if (!sql) {
-						sql = (char *) pop;
-					}
-					
+					if (!sql) sql = (char *) pop;
+
 					newlen = strlen(sql) + 2;
 					itterations++;
-					
-					if (len + newlen + 10 < sql_len) {
-						sprintf(sqlbuf + len, "%s;\n", sql);
-						len += newlen;
-						switch_safe_free(sql);
-					} else {
-						break;
+
+					if (len + newlen + 10 > sql_len) {
+						int new_mlen = len + newlen + 10 + 10240;
+						
+						if (new_mlen < SQLLEN) {
+							sql_len = new_mlen;
+							
+							if (!(tmp = realloc(sqlbuf, sql_len))) {
+								abort();
+								break;
+							}
+							sqlbuf = tmp;
+						} else {
+							goto skip;
+						}
 					}
+
+					sprintf(sqlbuf + len, "%s;\n", sql);
+					len += newlen;
+					free(sql);
+					sql = NULL;
 				}
-				
+
+			skip:
+
 				//printf("TRANS:\n%s\n", sqlbuf);
 				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
 				//sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
