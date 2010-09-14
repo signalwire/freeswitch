@@ -73,8 +73,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;;
-	SiConEvnt iam;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
+	const char			*nadi = NULL;
+	SiConEvnt 			iam;
 	
 	sngss7_info->suInstId 	= get_unique_id ();
 	sngss7_info->spInstId 	= 0;
@@ -179,7 +180,17 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	
 	/* copy down the calling number information */
 	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
-	
+
+	/* check if the user would like a custom NADI value for the calling Pty Num */
+	nadi = ftdm_channel_get_var(ftdmchan, "ss7_nadi");
+	if ((nadi != NULL) && (nadi != "")) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied NADI value \"%s\"\n", nadi);
+		iam.cgPtyNum.natAddrInd.val	= atoi(nadi);
+	} else {
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found, using \"3\" %s\n", " ");
+		iam.cgPtyNum.natAddrInd.val	= 0x03;
+	}
+
 	sng_cc_con_request (sngss7_info->spId,
 						sngss7_info->suInstId,
 						sngss7_info->spInstId,

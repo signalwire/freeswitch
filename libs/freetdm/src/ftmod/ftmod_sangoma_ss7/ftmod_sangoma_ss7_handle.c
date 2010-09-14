@@ -82,6 +82,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  	*ftdmchan = NULL;
+	char				nadi[2];
+
+	memset(nadi, '\0', sizeof(nadi));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -212,7 +215,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			}
 
 			/* add any special variables for the dialplan */
-			/*ftdm_channel_add_var(ftdmchan, "ss7_stuff", "s");*/
+			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
+			ftdm_channel_add_var(ftdmchan, "ss7_nadi", nadi);
 
 			/* set the state of the channel to collecting...the rest is done by the chan monitor */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
