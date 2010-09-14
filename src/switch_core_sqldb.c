@@ -851,7 +851,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, void *obj)
 {
 	void *pop;
-	uint32_t itterations = 0;
+	uint32_t iterations = 0;
 	uint8_t trans = 0;
 	uint32_t target = 20000;
 	switch_size_t len = 0, sql_len = runtime.sql_buffer_len;
@@ -910,7 +910,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 			if (sql) {
 				newlen = strlen(sql) + 2;
 
-				if (itterations == 0) {
+				if (iterations == 0) {
 					trans = 1;
 				}
 
@@ -935,7 +935,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 					}
 				}
 
-				itterations++;				
+				iterations++;				
 				sprintf(sqlbuf + len, "%s;\n", sql);
 				len += newlen;
 				free(sql);
@@ -950,14 +950,14 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		
 		lc = sql ? 1 : 0 + switch_queue_size(sql_manager.sql_queue[0]) + switch_queue_size(sql_manager.sql_queue[1]);
 		
-		if (trans && itterations && (itterations > target || !lc)) {
+		if (trans && iterations && (iterations > target || !lc)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
-							  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), itterations);
+							  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), iterations);
 			if (switch_cache_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "DONE\n");
-			itterations = 0;
+			iterations = 0;
 			trans = 0;
 			len = 0;
 			*sqlbuf = '\0';

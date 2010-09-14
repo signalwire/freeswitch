@@ -1256,7 +1256,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) {
 				switch_size_t newlen;
-				uint32_t itterations = 0;
+				uint32_t iterations = 0;
 				switch_size_t len = 0;
 
 				switch_mutex_lock(profile->ireg_mutex);
@@ -1265,7 +1265,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 					if (!sql) sql = (char *) pop;
 
 					newlen = strlen(sql) + 2;
-					itterations++;
+					iterations++;
 
 					if (len + newlen + 10 > sql_len) {
 						int new_mlen = len + newlen + 10 + 10240;
