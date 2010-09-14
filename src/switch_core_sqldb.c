@@ -35,7 +35,7 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-#define SQLLEN 32768
+#define SQLLEN 1024*1024
 
 static struct {
 	switch_cache_db_handle_t *event_db;
