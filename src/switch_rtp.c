@@ -662,6 +662,10 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	const void *var;
 	void *val;
 
+	if (!global_init) {
+		return;
+	}
+
 	switch_mutex_lock(port_lock);
 
 	for (hi = switch_hash_first(NULL, alloc_hash); hi; hi = switch_hash_next(hi)) {
