@@ -355,7 +355,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 					ts->rate = atoi(cur + 2);
 					break;
 				case 'd':
-					ts->duration = atoi(cur + 2) * (ts->rate / 1000 / ts->channels ? ts->channels : 1);
+					ts->duration = atoi(cur + 2) * (ts->rate / 1000);
 					break;
 				case 'v':
 					{
@@ -366,18 +366,18 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 					}
 					break;
 				case '>':
-					ts->decay_step = atoi(cur + 2) * (ts->rate / 1000 / ts->channels ? ts->channels : 1);
+					ts->decay_step = atoi(cur + 2) * (ts->rate / 1000);
 					ts->decay_direction = -1;
 					break;
 				case '<':
-					ts->decay_step = atoi(cur + 2) * (ts->rate / 1000 / ts->channels ? ts->channels : 1);
+					ts->decay_step = atoi(cur + 2) * (ts->rate / 1000);
 					ts->decay_direction = 1;
 					break;
 				case '+':
 					ts->decay_factor = (float)atof(cur + 2);
 					break;
 				case 'w':
-					ts->wait = atoi(cur + 2) * (ts->rate / 1000 / ts->channels ? ts->channels : 1);
+					ts->wait = atoi(cur + 2) * (ts->rate / 1000);
 					break;
 				case 'l':
 					ts->loops = atoi(cur + 2); 
@@ -417,10 +417,10 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 									*next++ = '\0';
 								}
 								if (i == 0) {
-									ts->tmp_duration = atoi(p) * (ts->rate / 1000 / ts->channels ? ts->channels : 1);
+									ts->tmp_duration = atoi(p) * (ts->rate / 1000);
 									i++;
 								} else if (i == 1) {
-									ts->tmp_wait = atoi(p) * (ts->rate / 1000 / ts->channels ? ts->channels : 1);
+									ts->tmp_wait = atoi(p) * (ts->rate / 1000);
 									i++;
 								} else {
 									mymap.freqs[i++ - 2] = atof(p);
