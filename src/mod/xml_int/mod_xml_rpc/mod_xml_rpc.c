@@ -275,7 +275,6 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 
 	
 	err = 686;
-	status = "EXECUTION OF SPECIFIED API COMMAND NOT PERMITTED IN USER ACCOUNT";
 
 	if (!user_attributes(user, domain_name, NULL, NULL, NULL, &allowed_commands)) {
 		goto end;
@@ -305,11 +304,6 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 
 	if (!ok) {
 		ResponseStatus(r, err);
-		if (status) {
-			ResponseError2(r, status);
-		} else {
-			ResponseError(r);
-		}
 	}
 
 
