@@ -74,9 +74,10 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	int k;
 	int j;
 	int flag;
+	int odd;
 	char tmp[2];
-	unsigned char lower;
-	unsigned char upper;
+	uint8_t lower;
+	uint8_t upper;
 
 	/**************************************************************************/
 	cgPtyNum->eh.pres		   = PRSNT_NODEF;
@@ -106,81 +107,73 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	k = 0;
 	j = 0;
 	flag = 0;
+	odd = 0;
+	upper = 0x0;
+	lower = 0x0;
 
 	while (1) {
+		/* grab a digit from the ftdm digits */
 		tmp[0] = ftdm->cid_num.digits[k];
 
+		/* check if the digit is a number and that is not null */
+		while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+			/* move on to the next value */
+			k++;
+			tmp[0] = ftdm->cid_num.digits[k];
+		} /* while(!(isdigit(tmp))) */
+
+		/* check if tmp is null or a digit */
 		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
-				lower = atoi(&tmp[0]);
+			/* push it into the lower nibble */
+			lower = atoi(&tmp[0]);
+			/* move to the next digit */
+			k++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = ftdm->cid_num.digits[k];
+
+			/* check if the digit is a number and that is not null */
+			while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
 				k++;
 				tmp[0] = ftdm->cid_num.digits[k];
-			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->cid_num.digits[k];
-				} /* while(!(isdigit(tmp))) */
+			} /* while(!(isdigit(tmp))) */
 
-				if (tmp[0] != '\0') {
-					lower = atoi(&tmp[0]);
-					k++;
-					tmp[0] = ftdm->cid_num.digits[k];
-				} else {
-					flag = 1;
-					lower = 0xf;
-				} /* if (tmp != '\0') */
-			} /* (isdigit(tmp)) */
-		} else {
-			flag = 1;
-			lower = 0xf;
-		} /* if (tmp != '\0') */
-
-		tmp[0] = ftdm->cid_num.digits[k];
-
-		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble */
 				upper = (atoi(&tmp[0])) << 4;
 			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->cid_num.digits[k];
-				} /* while(!(isdigit(tmp))) */
-
-				if (tmp[0] != '\0') {
-					upper = (atoi(&tmp[0])) << 4;
-					k++;
-				} else {
-					flag = 1;
-					upper = 0xf;
-				} /*  if (tmp != '\0') */
-			} /* if (isdigit(tmp)) */
-		} else {
-			if (flag == 1) {
+				/* there is no upper ... fill in 0 */
 				upper = 0x0;
-			} else {
+				/* throw the odd flag */
+				odd = 1;
+				/* throw the end flag */
 				flag = 1;
-				upper = 0xf;
-			} /* if (flag == 1) */
-		} /* if (tmp != '\0') */
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 0;
+			/* throw the flag */
+			flag = 1;
+		}
 
+		/* push the digits into the trillium structure */
 		cgPtyNum->addrSig.val[j] = upper | lower;
 
+		/* increment the trillium pointer */
 		j++;
 
-		if (flag) {
-			break;
-		} else {
-			k++;
-		}
+		/* if the flag is up we're through all the digits */
+		if (flag) break;
+
+		/* move to the next digit */
+		k++;
 	} /* while(1) */
 
 	cgPtyNum->addrSig.len = j;
 
 	/**************************************************************************/
 	cgPtyNum->oddEven.pres	  = PRSNT_NODEF;
-
-	cgPtyNum->oddEven.val	   = ((cgPtyNum->addrSig.val[j] >> 4) == 0x0 ) ? 0x01 : 0x00;
-
+	cgPtyNum->oddEven.val	   = odd;
 	/**************************************************************************/
 	return 0;
 }
@@ -198,9 +191,10 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	int k;
 	int j;
 	int flag;
+	int odd;
 	char tmp[2];
-	unsigned char lower;
-	unsigned char upper;
+	uint8_t lower;
+	uint8_t upper;
 
 	/**************************************************************************/
 	cdPtyNum->eh.pres		   = PRSNT_NODEF;
@@ -219,77 +213,74 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	/* atoi will search through memory starting from the pointer it is given until
 	 * it finds the \0...since tmp is on the stack it will start going through the
 	 * possibly causing corruption.  Hard code a \0 to prevent this
-	 */
+	 */ /* dnis */
 	tmp[1] = '\0';
 	k = 0;
 	j = 0;
 	flag = 0;
+	odd = 0;
+	upper = 0x0;
+	lower = 0x0;
 
 	while (1) {
+		/* grab a digit from the ftdm digits */
 		tmp[0] = ftdm->dnis.digits[k];
 
+		/* check if the digit is a number and that is not null */
+		while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+			/* move on to the next value */
+			k++;
+			tmp[0] = ftdm->dnis.digits[k];
+		} /* while(!(isdigit(tmp))) */
+
+		/* check if tmp is null or a digit */
 		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
-				lower = atoi(&tmp[0]);
+			/* push it into the lower nibble */
+			lower = atoi(&tmp[0]);
+			/* move to the next digit */
+			k++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = ftdm->dnis.digits[k];
+
+			/* check if the digit is a number and that is not null */
+			while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
 				k++;
 				tmp[0] = ftdm->dnis.digits[k];
-			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->dnis.digits[k];
-				} /* while(!(isdigit(tmp))) */
+			} /* while(!(isdigit(tmp))) */
 
-				if (tmp[0] != '\0') {
-					lower = atoi(&tmp[0]);
-					k++;
-					tmp[0] = ftdm->dnis.digits[k];
-				} else {
-					flag = 1;
-					lower = 0xf;
-				} /* if (tmp != '\0') */
-			} /* (isdigit(tmp)) */
-		} else {
-			flag = 1;
-			lower = 0xf;
-		} /* if (tmp != '\0') */
-
-		tmp[0] = ftdm->dnis.digits[k];
-
-		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble */
 				upper = (atoi(&tmp[0])) << 4;
 			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->dnis.digits[k];
-				} /* while(!(isdigit(tmp))) */
-
-				if (tmp[0] != '\0') {
-					upper = (atoi(&tmp[0])) << 4;
-					k++;
-				} else {
-					flag = 1;
-					upper = 0xf;
-				} /*  if (tmp != '\0') */
-			} /* if (isdigit(tmp)) */
-		} else {
-			if (flag == 1) {
-				upper = 0x0;
-			} else {
+				/* there is no upper ... fill in ST */
+				upper = 0xF;
+				/* throw the odd flag */
+				odd = 1;
+				/* throw the end flag */
 				flag = 1;
-				upper = 0xf;
-			} /* if (flag == 1) */
-		} /* if (tmp != '\0') */
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 1;
+			/* need to add the ST */
+			lower = 0xF;
+			upper = 0x0;
+			/* throw the flag */
+			flag = 1;
+		}
 
+		/* push the digits into the trillium structure */
 		cdPtyNum->addrSig.val[j] = upper | lower;
 
+		/* increment the trillium pointer */
 		j++;
 
-		if (flag) {
-			break;
-		} else {
-			k++;
-		}
+		/* if the flag is up we're through all the digits */
+		if (flag) break;
+
+		/* move to the next digit */
+		k++;
 	} /* while(1) */
 
 	cdPtyNum->addrSig.len = j;
@@ -297,7 +288,7 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	/**************************************************************************/
 	cdPtyNum->oddEven.pres	  = PRSNT_NODEF;
 
-	cdPtyNum->oddEven.val	   = ((cdPtyNum->addrSig.val[j] >> 4) == 0x0 ) ? 0x01 : 0x00;
+	cdPtyNum->oddEven.val	   = odd;
 
 	/**************************************************************************/
 	return 0;
