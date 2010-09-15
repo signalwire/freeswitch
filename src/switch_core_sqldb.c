@@ -920,7 +920,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 					if (new_mlen < runtime.max_sql_buffer_len) {
 						sql_len = new_mlen;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
-										  "REALLOC %ld %d %d\n", sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
+										  "REALLOC %ld %d %d\n", (long int)sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
 										  switch_queue_size(sql_manager.sql_queue[1]));
 						if (!(tmp = realloc(sqlbuf, sql_len))) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
