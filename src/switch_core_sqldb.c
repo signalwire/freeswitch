@@ -1673,6 +1673,7 @@ void switch_core_sqldb_stop(void)
 			switch_queue_push(sql_manager.sql_queue[0], NULL);
 			switch_queue_push(sql_manager.sql_queue[1], NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
+			switch_thread_cond_broadcast(sql_manager.cond);
 		}
 
 		sql_manager.thread_running = -1;
