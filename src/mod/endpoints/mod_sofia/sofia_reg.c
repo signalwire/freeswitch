@@ -1135,7 +1135,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
 
 	if (exptime) {
-		const char *agent = "dunno";
+		const char *agent = "unknown";
 		char guess_ip4[256];
 		const char *username = "unknown";
 		const char *realm = reg_host;
