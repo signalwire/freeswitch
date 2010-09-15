@@ -2309,8 +2309,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_loadable_module_init() {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_init();
+  public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_init((int)autoload);
     return ret;
   }
 
@@ -3101,6 +3101,16 @@ public class freeswitch {
 
   public static switch_caller_profile switch_channel_get_originatee_caller_profile(SWIGTYPE_p_switch_channel channel) {
     IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_originatee_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
+    return ret;
+  }
+
+  public static void switch_channel_set_origination_caller_profile(SWIGTYPE_p_switch_channel channel, switch_caller_profile caller_profile) {
+    freeswitchPINVOKE.switch_channel_set_origination_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_profile.getCPtr(caller_profile));
+  }
+
+  public static switch_caller_profile switch_channel_get_origination_caller_profile(SWIGTYPE_p_switch_channel channel) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_origination_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel));
     switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
     return ret;
   }
@@ -6115,6 +6125,24 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_numbers_t")]
   public static extern void delete_switch_rtp_numbers_t(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_packet_count_set")]
+  public static extern void switch_rtcp_numbers_t_packet_count_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_packet_count_get")]
+  public static extern uint switch_rtcp_numbers_t_packet_count_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_octet_count_set")]
+  public static extern void switch_rtcp_numbers_t_octet_count_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_octet_count_get")]
+  public static extern uint switch_rtcp_numbers_t_octet_count_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtcp_numbers_t")]
+  public static extern IntPtr new_switch_rtcp_numbers_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtcp_numbers_t")]
+  public static extern void delete_switch_rtcp_numbers_t(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_inbound_set")]
   public static extern void switch_rtp_stats_t_inbound_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -6126,6 +6154,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_outbound_get")]
   public static extern IntPtr switch_rtp_stats_t_outbound_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_rtcp_set")]
+  public static extern void switch_rtp_stats_t_rtcp_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_rtcp_get")]
+  public static extern IntPtr switch_rtp_stats_t_rtcp_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtp_stats_t")]
   public static extern IntPtr new_switch_rtp_stats_t();
@@ -7982,7 +8016,7 @@ class freeswitchPINVOKE {
   public static extern void delete_switch_loadable_module_interface(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_init")]
-  public static extern int switch_loadable_module_init();
+  public static extern int switch_loadable_module_init(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_shutdown")]
   public static extern void switch_loadable_module_shutdown();
@@ -8517,6 +8551,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_originatee_caller_profile_get")]
   public static extern IntPtr switch_caller_profile_originatee_caller_profile_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_origination_caller_profile_set")]
+  public static extern void switch_caller_profile_origination_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_origination_caller_profile_get")]
+  public static extern IntPtr switch_caller_profile_origination_caller_profile_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_hunt_caller_profile_set")]
   public static extern void switch_caller_profile_hunt_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
@@ -10899,6 +10939,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_originatee_caller_profile")]
   public static extern IntPtr switch_channel_get_originatee_caller_profile(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_origination_caller_profile")]
+  public static extern void switch_channel_set_origination_caller_profile(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_origination_caller_profile")]
+  public static extern IntPtr switch_channel_get_origination_caller_profile(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_uuid")]
   public static extern string switch_channel_get_uuid(HandleRef jarg1);
@@ -20494,6 +20540,17 @@ public class switch_caller_profile : IDisposable {
     } 
   }
 
+  public switch_caller_profile origination_caller_profile {
+    set {
+      freeswitchPINVOKE.switch_caller_profile_origination_caller_profile_set(swigCPtr, switch_caller_profile.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_caller_profile_origination_caller_profile_get(swigCPtr);
+      switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
+      return ret;
+    } 
+  }
+
   public switch_caller_profile hunt_caller_profile {
     set {
       freeswitchPINVOKE.switch_caller_profile_hunt_caller_profile_set(swigCPtr, switch_caller_profile.getCPtr(value));
@@ -22237,7 +22294,8 @@ namespace FreeSWITCH.Native {
   SCF_USE_CLOCK_RT = (1 << 10),
   SCF_VERBOSE_EVENTS = (1 << 11),
   SCF_USE_WIN32_MONOTONIC = (1 << 12),
-  SCF_AUTO_SCHEMAS = (1 << 13)
+  SCF_AUTO_SCHEMAS = (1 << 13),
+  SCF_MINIMAL = (1 << 14)
 }
 
 }
@@ -27451,6 +27509,75 @@ public class switch_rtcp_hdr_t : IDisposable {
 
 namespace FreeSWITCH.Native {
 
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_rtcp_numbers_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_rtcp_numbers_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_rtcp_numbers_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_rtcp_numbers_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_rtcp_numbers_t(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint packet_count {
+    set {
+      freeswitchPINVOKE.switch_rtcp_numbers_t_packet_count_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_numbers_t_packet_count_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint octet_count {
+    set {
+      freeswitchPINVOKE.switch_rtcp_numbers_t_octet_count_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_numbers_t_octet_count_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_rtcp_numbers_t() : this(freeswitchPINVOKE.new_switch_rtcp_numbers_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
 public enum switch_rtp_bug_flag_t {
   RTP_BUG_NONE = 0,
   RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
@@ -28017,6 +28144,17 @@ public class switch_rtp_stats_t : IDisposable {
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_outbound_get(swigCPtr);
       switch_rtp_numbers_t ret = (cPtr == IntPtr.Zero) ? null : new switch_rtp_numbers_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_rtcp_numbers_t rtcp {
+    set {
+      freeswitchPINVOKE.switch_rtp_stats_t_rtcp_set(swigCPtr, switch_rtcp_numbers_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_rtcp_get(swigCPtr);
+      switch_rtcp_numbers_t ret = (cPtr == IntPtr.Zero) ? null : new switch_rtcp_numbers_t(cPtr, false);
       return ret;
     } 
   }

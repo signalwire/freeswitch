@@ -1233,7 +1233,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	uint32_t gateway_loops = 0;
 	int loops = 0;
 	uint32_t qsize;
-	void *pop;
+	void *pop = NULL;
 	int loop_count = 0;
 	switch_size_t sql_len = 1024 * 32;
 	char *tmp, *sqlbuf = NULL;
@@ -1254,7 +1254,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || qsize) {
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) {
+			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= (int)profile->trans_timeout)) {
 				switch_size_t newlen;
 				uint32_t iterations = 0;
 				switch_size_t len = 0;
