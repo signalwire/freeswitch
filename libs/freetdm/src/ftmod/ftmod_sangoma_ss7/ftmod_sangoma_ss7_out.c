@@ -103,11 +103,11 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	iam.fwdCallInd.end2EndInfoInd.pres 	= PRSNT_NODEF;
 	iam.fwdCallInd.end2EndInfoInd.val 	= E2EINF_NOINFO;
 	iam.fwdCallInd.isdnUsrPrtInd.pres 	= PRSNT_NODEF;
-	iam.fwdCallInd.isdnUsrPrtInd.val 	= ISUP_NOTUSED;
+	iam.fwdCallInd.isdnUsrPrtInd.val 	= ISUP_USED;
 	iam.fwdCallInd.isdnUsrPrtPrfInd.pres = PRSNT_NODEF;
 	iam.fwdCallInd.isdnUsrPrtPrfInd.val = PREF_PREFAW;
 	iam.fwdCallInd.isdnAccInd.pres 		= PRSNT_NODEF;
-	iam.fwdCallInd.isdnAccInd.val 		= ISDNACC_NONISDN;
+	iam.fwdCallInd.isdnAccInd.val 		= ISDNACC_ISDN;
 	iam.fwdCallInd.sccpMethInd.pres 	= PRSNT_NODEF;
 	iam.fwdCallInd.sccpMethInd.val 		= SCCPMTH_NOIND;
 	
