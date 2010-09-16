@@ -1659,8 +1659,8 @@ static switch_status_t t38_gateway_on_reset(switch_core_session_t *session)
     
     switch_channel_clear_flag(channel, CF_REDIRECT);
 
-    if (switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
-        switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
+    if (switch_channel_test_app_flag_key("T38", channel, CF_APP_TAGGED)) {
+        switch_channel_clear_app_flag_key("T38", channel, CF_APP_TAGGED);
         switch_channel_set_state(channel, CS_CONSUME_MEDIA);
     } else {
         switch_channel_set_state(channel, CS_SOFT_EXECUTE);
@@ -1697,6 +1697,9 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
         switch_channel_set_variable(channel, "t38_peer", switch_core_session_get_uuid(other_session));
         switch_channel_set_variable(other_channel, "t38_peer", switch_core_session_get_uuid(session));
 
+        switch_channel_set_variable(peer ? other_channel : channel, "t38_gateway_format", "audio");
+        switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "udptl");
+
 
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n", 
                           switch_channel_get_name(peer ? channel : other_channel),
@@ -1709,8 +1712,8 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
         switch_channel_add_state_handler(channel, &t38_gateway_state_handlers);
         switch_channel_add_state_handler(other_channel, &t38_gateway_state_handlers);
 
-        switch_channel_set_app_flag(peer ? channel : other_channel, CF_APP_TAGGED);
-        switch_channel_clear_app_flag(peer ? other_channel : channel, CF_APP_TAGGED);   
+        switch_channel_set_app_flag_key("T38", peer ? channel : other_channel, CF_APP_TAGGED);
+        switch_channel_clear_app_flag_key("T38", peer ? other_channel : channel, CF_APP_TAGGED);   
         
         switch_channel_set_flag(channel, CF_REDIRECT);
         switch_channel_set_state(channel, CS_RESET);
