@@ -99,7 +99,7 @@ typedef enum {
 	CALLER_CONTROL_DEAF_MUTE,
 	CALLER_CONTROL_ENERGY_UP,
 	CALLER_CONTROL_ENERGY_EQU_CONF,
-	CALLER_CONTROL_ENERGEY_DN,
+	CALLER_CONTROL_ENERGY_DN,
 	CALLER_CONTROL_VOL_TALK_UP,
 	CALLER_CONTROL_VOL_TALK_ZERO,
 	CALLER_CONTROL_VOL_TALK_DN,
@@ -121,7 +121,7 @@ typedef struct conference_member conference_member_t;
 
 struct call_list {
 	char *string;
-	int itteration;
+	int iteration;
 	struct call_list *next;
 };
 typedef struct call_list call_list_t;
@@ -717,7 +717,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		if (call_list) {
 			char saymsg[1024];
-			switch_snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->itteration);
+			switch_snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->iteration);
 			conference_member_say(member, saymsg, 0);
 		} else {
 			if (zstr(conference->special_announce)) {
@@ -2298,7 +2298,7 @@ static caller_control_fn_table_t ccfntbl[] = {
 	{"deaf mute", "*", CALLER_CONTROL_DEAF_MUTE, conference_loop_fn_deafmute_toggle},
 	{"energy up", "9", CALLER_CONTROL_ENERGY_UP, conference_loop_fn_energy_up},
 	{"energy equ", "8", CALLER_CONTROL_ENERGY_EQU_CONF, conference_loop_fn_energy_equ_conf},
-	{"energy dn", "7", CALLER_CONTROL_ENERGEY_DN, conference_loop_fn_energy_dn},
+	{"energy dn", "7", CALLER_CONTROL_ENERGY_DN, conference_loop_fn_energy_dn},
 	{"vol talk up", "3", CALLER_CONTROL_VOL_TALK_UP, conference_loop_fn_volume_talk_up},
 	{"vol talk zero", "2", CALLER_CONTROL_VOL_TALK_ZERO, conference_loop_fn_volume_talk_zero},
 	{"vol talk dn", "1", CALLER_CONTROL_VOL_TALK_DN, conference_loop_fn_volume_talk_dn},
@@ -5199,9 +5199,9 @@ SWITCH_STANDARD_APP(conference_auto_function)
 		np->string = switch_core_session_strdup(session, data);
 		if (call_list) {
 			np->next = call_list;
-			np->itteration = call_list->itteration + 1;
+			np->iteration = call_list->iteration + 1;
 		} else {
-			np->itteration = 1;
+			np->iteration = 1;
 		}
 		call_list = np;
 	}
