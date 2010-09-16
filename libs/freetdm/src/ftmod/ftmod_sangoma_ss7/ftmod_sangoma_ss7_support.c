@@ -306,9 +306,9 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		j = 0;
 
 		for (i = 0; i < str.len; i++) {
-			sprintf(&ftdm[j], "%d", (str.val[i] & 0x0F));
+			sprintf(&ftdm[j], "%X", (str.val[i] & 0x0F));
 			j++;
-			sprintf(&ftdm[j], "%d", ((str.val[i] & 0xF0) >> 4));
+			sprintf(&ftdm[j], "%X", ((str.val[i] & 0xF0) >> 4));
 			j++;
 		}
 
@@ -318,6 +318,8 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		} else {
 			ftdm[j] = '\0';
 		}
+
+		
 	} else {
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
 		return 1;

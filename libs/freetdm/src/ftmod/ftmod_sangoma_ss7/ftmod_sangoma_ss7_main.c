@@ -483,14 +483,17 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			i++;
 		}
 
-		/* check if the end of pulsing character has arrived or the right number of digits */
-		if (ftdmchan->caller_data.dnis.digits[i] == 0xF) {
+		/* check if the end of pulsing (ST) character has arrived or the right number of digits */
+		if (ftdmchan->caller_data.dnis.digits[i-1] == 'F') {
 			SS7_DEBUG_CHAN(ftdmchan, "Received the end of pulsing character %s\n", "");
 
+			/* remove the ST */
+			ftdmchan->caller_data.dnis.digits[i-1] = '\0';
+			
 			/*now go to the RING state */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
 			
-		} else if (i >= g_ftdm_sngss7_data.min_digits) {
+		} else if (i > g_ftdm_sngss7_data.min_digits) {
 			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, g_ftdm_sngss7_data.min_digits);
 
 			/*now go to the RING state */
