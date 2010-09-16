@@ -184,6 +184,7 @@ typedef struct {
 	switch_mutex_t *h323_io_mutex;
 
 	FSH323Connection *me;
+	char			*token;
 } h323_private_t;
 
 #define DECLARE_CALLBACK0(name)                           \
@@ -306,7 +307,11 @@ class FSH323Connection:public H323Connection {
 					 unsigned callReference, switch_caller_profile_t *outbound_profile,
 					 switch_core_session_t *fsSession, switch_channel_t *fsChannel);
 	~FSH323Connection();
-
+	virtual void AttachSignalChannel(
+      const PString & token,
+      H323Transport * channel,
+      PBoolean answeringCall
+    );
 	virtual H323Channel *CreateRealTimeLogicalChannel(const H323Capability & capability,
 							H323Channel::Directions dir,
 							unsigned sessionID, const H245_H2250LogicalChannelParameters * param, RTP_QOS * rtpqos = NULL);
