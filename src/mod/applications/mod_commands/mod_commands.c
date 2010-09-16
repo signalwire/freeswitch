@@ -1387,7 +1387,7 @@ SWITCH_STANDARD_API(cond_function)
 
 	argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc != 3) {
+	if (! (argc >= 2 && argc <= 3)) {
 		goto error;
 	}
 
@@ -1464,7 +1464,12 @@ SWITCH_STANDARD_API(cond_function)
 		}
 		switch_safe_free(s_a);
 		switch_safe_free(s_b);
-		stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
+
+		if ((argc == 2 && !is_true)) {
+			stream->write_function(stream, "");
+		} else {
+			stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
+		}
 		goto ok;
 	}
 
