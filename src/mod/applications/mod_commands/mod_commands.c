@@ -1179,17 +1179,18 @@ SWITCH_STANDARD_API(xml_locate_function)
 SWITCH_STANDARD_API(reload_acl_function)
 {
 	const char *err;
-	switch_xml_t xml_root;
 
-	if (cmd && !strcmp(cmd, "reloadxml")) {
-		if ((xml_root = switch_xml_open_root(1, &err))) {
-			switch_xml_free(xml_root);
-		}
+	if (cmd && !strcasecmp(cmd, "reloadxml")) {
+		stream->write_function(stream, "This option is depricated, we now always reloadxml.\n");
+	}
+	
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		switch_load_network_lists(SWITCH_TRUE);
+		stream->write_function(stream, "+OK acl reloaded\n");
+	} else {
+		stream->write_function(stream, "-Error [%s]\n", err);
 	}
 
-	switch_load_network_lists(SWITCH_TRUE);
-
-	stream->write_function(stream, "+OK acl reloaded\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1738,6 +1739,10 @@ SWITCH_STANDARD_API(load_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Reloading XML\n");
+	}
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
@@ -1832,6 +1837,10 @@ SWITCH_STANDARD_API(reload_function)
 		stream->write_function(stream, "-ERR unloading module [%s]\n", err);
 	}
 
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Reloading XML\n");
+	}
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK module loaded\n");
 	} else {
@@ -1843,13 +1852,9 @@ SWITCH_STANDARD_API(reload_function)
 
 SWITCH_STANDARD_API(reload_xml_function)
 {
-	const char *err;
-	switch_xml_t xml_root;
+	const char *err = "";
 
-	if ((xml_root = switch_xml_open_root(1, &err))) {
-		switch_xml_free(xml_root);
-	}
-
+	switch_xml_reload(&err);
 	stream->write_function(stream, "+OK [%s]\n", err);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4569,7 +4574,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
-	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
+	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload Module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
 	SWITCH_ADD_API(commands_api_interface, "replace", "replace a string", replace_function, "<data>|<string1>|<string2>");

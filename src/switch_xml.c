@@ -2039,6 +2039,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	return r;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_reload(const char **err)
+{
+	switch_xml_t xml_root;
+	
+	if ((xml_root = switch_xml_open_root(1, err))) {
+		switch_xml_free(xml_root);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_GENERR;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
 {
 	switch_xml_t xml;
