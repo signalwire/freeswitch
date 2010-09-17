@@ -4274,7 +4274,7 @@ void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *s
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (gp = profile->gateways; gp; gp = gp->next) {
-		int reged = (gp->state == REG_STATE_REGED);
+		int reged = (gp->status == SOFIA_GATEWAY_UP);
 		
 		if (up ? reged : !reged) {
 			stream->write_function(stream, "%s ", gp->name);
