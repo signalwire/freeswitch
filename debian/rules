@@ -13,7 +13,7 @@ export APPLICATIONS_MODULES=applications/mod_cluechoo applications/mod_commands 
                             applications/mod_hash applications/mod_db applications/mod_valet_parking applications/mod_voicemail applications/mod_rss \
                             applications/mod_spandsp applications/mod_cidlookup applications/mod_curl applications/mod_easyroute \
 			    applications/mod_lcr applications/mod_nibblebill applications/mod_snom \
-			    applications/mod_spy applications/mod_vmd applications/mod_directory
+			    applications/mod_spy applications/mod_vmd applications/mod_directory applications/mod_callcenter
 export ASR_TTS_MODULES=asr_tts/mod_tts_commandline
 export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_siren codecs/mod_celt
 export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml
@@ -24,11 +24,11 @@ export ENDPOINTS_MODULES=endpoints/mod_dingaling endpoints/mod_portaudio endpoin
 			 endpoints/mod_skinny
 export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
 export FORMATS_MODULES=formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout
-export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages/mod_lua
+export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
 export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
 export TIMERS_MODULES=
-export DISABLED_MODULES=applications/mod_memcache applications/mod_soundtouch directories/mod_ldap languages/mod_java languages/mod_python \
+export DISABLED_MODULES=applications/mod_memcache applications/mod_soundtouch directories/mod_ldap languages/mod_java \
 			asr_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe \
 			event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf
 export XML_INT_MODULES=xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr
