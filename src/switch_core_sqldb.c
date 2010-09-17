@@ -464,8 +464,13 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	return status;
 }
 
-static void wake_thread(void)
+static void wake_thread(int force)
 {
+	if (force) {
+		switch_thread_cond_signal(sql_manager.cond);
+		return;
+	}
+
 	if (switch_mutex_trylock(sql_manager.cond_mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(sql_manager.cond);
 		switch_mutex_unlock(sql_manager.cond_mutex);
@@ -1407,7 +1412,7 @@ static void core_event_handler(switch_event_t *event)
 				switch_queue_push(sql_manager.sql_queue[0], sql[i]);
 			}
 			sql[i] = NULL;
-			wake_thread();
+			wake_thread(0);
 		}
 	}
 }
@@ -1681,7 +1686,7 @@ void switch_core_sqldb_stop(void)
 			switch_queue_push(sql_manager.sql_queue[0], NULL);
 			switch_queue_push(sql_manager.sql_queue[1], NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
-			wake_thread();
+			wake_thread(1);
 		}
 
 		sql_manager.thread_running = -1;
