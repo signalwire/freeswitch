@@ -255,7 +255,8 @@ typedef enum {
 	SCF_USE_CLOCK_RT = (1 << 10),
 	SCF_VERBOSE_EVENTS = (1 << 11),
 	SCF_USE_WIN32_MONOTONIC = (1 << 12),
-	SCF_AUTO_SCHEMAS = (1 << 13)
+	SCF_AUTO_SCHEMAS = (1 << 13),
+	SCF_MINIMAL = (1 << 14)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -479,9 +480,16 @@ typedef struct {
 	switch_size_t flush_packet_count;
 } switch_rtp_numbers_t;
 
+
+typedef struct {
+	uint32_t packet_count;
+	uint32_t octet_count;
+} switch_rtcp_numbers_t;
+
 typedef struct {
 	switch_rtp_numbers_t inbound;
 	switch_rtp_numbers_t outbound;
+	switch_rtcp_numbers_t rtcp;
 } switch_rtp_stats_t;
 
 typedef enum {

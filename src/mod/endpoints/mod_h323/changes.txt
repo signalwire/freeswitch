@@ -1,3 +1,4 @@
+fix crashes on FSH323Connection calls in on_hangup routine in different threads.
 move PTrace level set to FSH323EndPoint::Initialise
 partially apply patch from from Peter Olsson, Remove UnLock() when TryLock() failed and DEBUG_RTP_PACKETS directive.
 apply changes from mod_h323-patch.diff by Peter Olsson.

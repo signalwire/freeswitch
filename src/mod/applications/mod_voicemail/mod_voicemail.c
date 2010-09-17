@@ -824,7 +824,8 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 			if (!cc->noexit
 				&& (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key
 					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key
-					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key)) {
+					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key
+					|| dtmf->digit == *cc->profile->email_key || dtmf->digit == *cc->profile->forward_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -2686,21 +2687,27 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
-	} else {
-		domain = user;
-	}
 
-	if ((profile_name = strchr(domain, '@'))) {
-		*profile_name++ = '\0';
-	} else {
-		profile_name = domain;
+		if ((profile_name = strchr(domain, '@'))) {
+			*profile_name++ = '\0';
+		} else {
+			profile_name = domain;
+		}
 	}
 
 	if (switch_stristr("group=", user)) {
 		user += 6;
 		isgroup++;
-	} else if (user == domain) {
+	} else if (switch_stristr("domain=", user)) {
+		user += 7;
+		domain = user;
+		profile_name = domain;
 		isall++;
+	}
+
+	if (zstr(domain)) {
+		domain = switch_core_get_variable("domain");
+		profile_name = domain;
 	}
 
 	if (!(user && domain)) {
@@ -2746,6 +2753,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
 			status = SWITCH_STATUS_FALSE;
 			switch_event_destroy(&my_params);
+			profile_rwunlock(profile);
 			goto end;
 		}
 
@@ -3164,7 +3172,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_event_destroy(&vars);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s@%s %s",
+				char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
 														vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
 
 				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
@@ -3961,7 +3969,7 @@ static void do_web(vm_profile_t *profile, const char *user_in, const char *domai
 	}
 }
 
-#define VM_INJECT_USAGE "[group=]<box> <sound_file> [<cid_num>] [<cid_name>]"
+#define VM_INJECT_USAGE "[group=<group>[@domain]|domain=<domain>|<box>[@<domain>]] <sound_file> [<cid_num>] [<cid_name>]"
 SWITCH_STANDARD_API(voicemail_inject_api_function)
 {
 	if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {

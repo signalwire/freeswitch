@@ -85,6 +85,10 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		sofia_glue_tech_absorb_sdp(tech_pvt);
 	}
 
+	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
+		sofia_set_flag(tech_pvt, TFLAG_RECOVERED);
+	}
+
 	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
 		const char *var;
 
@@ -717,6 +721,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(session_timeout),
+						TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
@@ -732,6 +737,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(session_timeout),
+						TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
@@ -2951,7 +2957,6 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	sofia_profile_t *profile = NULL;
 	char *profile_name = argv[0];
 	const char *err;
-	switch_xml_t xml_root;
 
 	if (argc < 2) {
 		stream->write_function(stream, "Invalid Args!\n");
@@ -2959,12 +2964,10 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	}
 
 	if (!strcasecmp(argv[1], "start")) {
-		if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
-			if ((xml_root = switch_xml_open_root(1, &err))) {
-				switch_xml_free(xml_root);
-			}
-			stream->write_function(stream, "Reload XML [%s]\n", err);
-		}
+
+		switch_xml_reload(&err);
+		stream->write_function(stream, "Reload XML [%s]\n", err);
+
 		if (config_sofia(1, argv[0]) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "%s started successfully\n", argv[0]);
 		} else {
@@ -3039,12 +3042,8 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 	if (!strcasecmp(argv[1], "rescan")) {
 
-		if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
-			if ((xml_root = switch_xml_open_root(1, &err))) {
-				switch_xml_free(xml_root);
-			}
-			stream->write_function(stream, "Reload XML [%s]\n", err);
-		}
+		switch_xml_reload(&err);
+		stream->write_function(stream, "Reload XML [%s]\n", err);
 
 		if (reconfig_sofia(profile) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK scan complete\n");
@@ -3141,12 +3140,8 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 								   profile->name, rsec, remain, remain == 1 ? "" : "s");
 		} else {
 
-			if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
-				if ((xml_root = switch_xml_open_root(1, &err))) {
-					switch_xml_free(xml_root);
-				}
-				stream->write_function(stream, "Reload XML [%s]\n", err);
-			}
+			switch_xml_reload(&err);
+			stream->write_function(stream, "Reload XML [%s]\n", err);
 
 			if (!strcasecmp(argv[1], "stop")) {
 				sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
@@ -3576,7 +3571,7 @@ SWITCH_STANDARD_API(sofia_function)
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
-		"sofia profile <profile_name> [[start|stop|restart|rescan] [reloadxml]|"
+		"sofia profile <profile_name> [[start|stop|restart|rescan]|"
 		"flush_inbound_reg [<call_id>] [reboot]|"
 		"[register|unregister] [<gateway name>|all]|"
 		"killgw <gateway name>|"
@@ -4717,10 +4712,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
 
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles start reloadxml");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop reloadxml");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles rescan reloadxml");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart reloadxml");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles start");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles rescan");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart");
 
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles register ::sofia::list_profile_gateway");

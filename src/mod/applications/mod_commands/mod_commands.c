@@ -605,11 +605,12 @@ SWITCH_STANDARD_API(in_group_function)
 
 SWITCH_STANDARD_API(user_data_function)
 {
-	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;
+	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	int argc;
 	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain;
 	char delim = ' ';
 	const char *container = "params", *elem = "param";
+	const char *result = NULL;
 	switch_event_t *params = NULL;
 
 	if (zstr(cmd) || !(mydata = strdup(cmd))) {
@@ -637,10 +638,10 @@ SWITCH_STANDARD_API(user_data_function)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
 
-	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, params) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
 			const char *attr = switch_xml_attr_soft(x_user, key);
-			stream->write_function(stream, "%s", attr);
+			result = attr;
 			goto end;
 		}
 
@@ -649,33 +650,45 @@ SWITCH_STANDARD_API(user_data_function)
 			elem = "variable";
 		}
 
-		if ((x_params = switch_xml_child(x_user, container))) {
-			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
-				const char *var = switch_xml_attr(x_param, "name");
-				const char *val = switch_xml_attr(x_param, "value");
-
-				if (var && val && !strcasecmp(var, key)) {
-					stream->write_function(stream, "%s", val);
-					goto end;
-				}
-
-			}
-		}
-
 		if ((x_params = switch_xml_child(x_domain, container))) {
 			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
 				const char *var = switch_xml_attr(x_param, "name");
 				const char *val = switch_xml_attr(x_param, "value");
 
 				if (var && val && !strcasecmp(var, key)) {
-					stream->write_function(stream, "%s", val);
-					goto end;
+					result = val;
+				}
+
+			}
+		}
+
+		if (x_group && (x_params = switch_xml_child(x_group, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+
+				if (var && val && !strcasecmp(var, key)) {
+					result = val;
+				}
+			}
+		}
+
+		if ((x_params = switch_xml_child(x_user, container))) {
+			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+				const char *var = switch_xml_attr(x_param, "name");
+				const char *val = switch_xml_attr(x_param, "value");
+
+				if (var && val && !strcasecmp(var, key)) {
+					result = val;
 				}
 			}
 		}
 	}
 
   end:
+	if (result) {
+		stream->write_function(stream, "%s", result);
+	}
 	switch_xml_free(xml);
 	switch_safe_free(mydata);
 	switch_event_destroy(&params);
@@ -1166,17 +1179,18 @@ SWITCH_STANDARD_API(xml_locate_function)
 SWITCH_STANDARD_API(reload_acl_function)
 {
 	const char *err;
-	switch_xml_t xml_root;
 
-	if (cmd && !strcmp(cmd, "reloadxml")) {
-		if ((xml_root = switch_xml_open_root(1, &err))) {
-			switch_xml_free(xml_root);
-		}
+	if (cmd && !strcasecmp(cmd, "reloadxml")) {
+		stream->write_function(stream, "This option is deprecated, we now always reloadxml.\n");
+	}
+	
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		switch_load_network_lists(SWITCH_TRUE);
+		stream->write_function(stream, "+OK acl reloaded\n");
+	} else {
+		stream->write_function(stream, "-Error [%s]\n", err);
 	}
 
-	switch_load_network_lists(SWITCH_TRUE);
-
-	stream->write_function(stream, "+OK acl reloaded\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1374,7 +1388,7 @@ SWITCH_STANDARD_API(cond_function)
 
 	argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc != 3) {
+	if (! (argc >= 2 && argc <= 3)) {
 		goto error;
 	}
 
@@ -1451,7 +1465,12 @@ SWITCH_STANDARD_API(cond_function)
 		}
 		switch_safe_free(s_a);
 		switch_safe_free(s_b);
-		stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
+
+		if ((argc == 2 && !is_true)) {
+			stream->write_function(stream, "");
+		} else {
+			stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
+		}
 		goto ok;
 	}
 
@@ -1720,6 +1739,10 @@ SWITCH_STANDARD_API(load_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Reloading XML\n");
+	}
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
@@ -1814,6 +1837,10 @@ SWITCH_STANDARD_API(reload_function)
 		stream->write_function(stream, "-ERR unloading module [%s]\n", err);
 	}
 
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Reloading XML\n");
+	}
+
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK module loaded\n");
 	} else {
@@ -1825,13 +1852,9 @@ SWITCH_STANDARD_API(reload_function)
 
 SWITCH_STANDARD_API(reload_xml_function)
 {
-	const char *err;
-	switch_xml_t xml_root;
+	const char *err = "";
 
-	if ((xml_root = switch_xml_open_root(1, &err))) {
-		switch_xml_free(xml_root);
-	}
-
+	switch_xml_reload(&err);
 	stream->write_function(stream, "+OK [%s]\n", err);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4551,7 +4574,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
-	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "[reloadxml]");
+	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload Module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
 	SWITCH_ADD_API(commands_api_interface, "replace", "replace a string", replace_function, "<data>|<string1>|<string2>");

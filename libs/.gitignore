@@ -355,6 +355,7 @@
 /libsndfile/Cfg/missing
 /libsndfile/M4/Makefile
 /libsndfile/M4/Makefile.in
+/libsndfile/M4/lt~obsolete.m4
 /libsndfile/Makefile
 /libsndfile/Makefile.in
 /libsndfile/Octave/Makefile

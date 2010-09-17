@@ -11,6 +11,14 @@
       </condition>
     </extension>
 
+    <extension name="att_xfer">
+     <condition field="destination_number" expression="^att_xfer$">
+       <action application="read" data="3 4 'tone_stream://%(10000,0,350,440)' digits 30000 #"/>
+       <action application="set" data="origination_cancel_key=#"/>
+       <action application="att_xfer" data="user/${digits}@$${domain}"/>
+     </condition>
+    </extension>
+
     <extension name="is_transfer">
       <condition field="destination_number" expression="^is_transfer$"/>
       <condition field="${digits}" expression="^(\d+)$">

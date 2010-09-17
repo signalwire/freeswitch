@@ -106,6 +106,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
 #define FREESWITCH_SUPPORT "update_display"
 
+#include <switch_stun.h>
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sdp.h>
@@ -199,6 +200,7 @@ typedef enum {
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_AUTOFLUSH,
 	PFLAG_NAT_OPTIONS_PING,
+	PFLAG_ALL_REG_OPTIONS_PING,
 	PFLAG_AUTOFIX_TIMING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER,
@@ -275,6 +277,7 @@ typedef enum {
 	TFLAG_RECOVERING,
 	TFLAG_RECOVERING_BRIDGE,
 	TFLAG_T38_PASSTHRU,
+	TFLAG_RECOVERED,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;

@@ -233,6 +233,8 @@ struct switch_runtime {
 	switch_profile_timer_t *profile_timer;
 	double profile_time;
 	double min_idle_time;
+	int sql_buffer_len;
+	int max_sql_buffer_len;
 };
 
 extern struct switch_runtime runtime;

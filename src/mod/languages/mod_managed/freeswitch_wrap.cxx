@@ -2975,6 +2975,71 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtp_numbers_t(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_numbers_t_packet_count_set(void * jarg1, unsigned long jarg2) {
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtcp_numbers_t_packet_count_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  result = (uint32_t) ((arg1)->packet_count);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_numbers_t_octet_count_set(void * jarg1, unsigned long jarg2) {
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->octet_count = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtcp_numbers_t_octet_count_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  result = (uint32_t) ((arg1)->octet_count);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_rtcp_numbers_t() {
+  void * jresult ;
+  switch_rtcp_numbers_t *result = 0 ;
+  
+  result = (switch_rtcp_numbers_t *)new switch_rtcp_numbers_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtcp_numbers_t(void * jarg1) {
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_stats_t_inbound_set(void * jarg1, void * jarg2) {
   switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
   switch_rtp_numbers_t *arg2 = (switch_rtp_numbers_t *) 0 ;
@@ -3016,6 +3081,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_stats_t_outbound_get(void * jarg
   
   arg1 = (switch_rtp_stats_t *)jarg1; 
   result = (switch_rtp_numbers_t *)& ((arg1)->outbound);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_stats_t_rtcp_set(void * jarg1, void * jarg2) {
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  switch_rtcp_numbers_t *arg2 = (switch_rtcp_numbers_t *) 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  arg2 = (switch_rtcp_numbers_t *)jarg2; 
+  if (arg1) (arg1)->rtcp = *arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_stats_t_rtcp_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  switch_rtcp_numbers_t *result = 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  result = (switch_rtcp_numbers_t *)& ((arg1)->rtcp);
   jresult = (void *)result; 
   return jresult;
 }
@@ -10379,6 +10467,858 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_in_thread(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_module_name_set(void * jarg1, char * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->module_name = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->module_name, (const char *)arg2);
+    } else {
+      arg1->module_name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_loadable_module_interface_module_name_get(void * jarg1) {
+  char * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (char *) ((arg1)->module_name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_endpoint_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_endpoint_interface_t *arg2 = (switch_endpoint_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_endpoint_interface_t *)jarg2; 
+  if (arg1) (arg1)->endpoint_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_endpoint_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_endpoint_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_endpoint_interface_t *) ((arg1)->endpoint_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_timer_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_timer_interface_t *arg2 = (switch_timer_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_timer_interface_t *)jarg2; 
+  if (arg1) (arg1)->timer_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_timer_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_timer_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_timer_interface_t *) ((arg1)->timer_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_dialplan_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_dialplan_interface_t *arg2 = (switch_dialplan_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_dialplan_interface_t *)jarg2; 
+  if (arg1) (arg1)->dialplan_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_dialplan_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_dialplan_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_dialplan_interface_t *) ((arg1)->dialplan_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_codec_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_codec_interface_t *arg2 = (switch_codec_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_codec_interface_t *)jarg2; 
+  if (arg1) (arg1)->codec_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_codec_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_codec_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_codec_interface_t *) ((arg1)->codec_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_application_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_application_interface_t *arg2 = (switch_application_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_application_interface_t *)jarg2; 
+  if (arg1) (arg1)->application_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_application_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_application_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_application_interface_t *) ((arg1)->application_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_api_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_api_interface_t *arg2 = (switch_api_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_api_interface_t *)jarg2; 
+  if (arg1) (arg1)->api_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_api_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_api_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_api_interface_t *) ((arg1)->api_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_file_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_file_interface_t *arg2 = (switch_file_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_file_interface_t *)jarg2; 
+  if (arg1) (arg1)->file_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_file_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_file_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_file_interface_t *) ((arg1)->file_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_speech_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_speech_interface_t *arg2 = (switch_speech_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_speech_interface_t *)jarg2; 
+  if (arg1) (arg1)->speech_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_speech_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_speech_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_speech_interface_t *) ((arg1)->speech_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_directory_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_directory_interface_t *arg2 = (switch_directory_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_directory_interface_t *)jarg2; 
+  if (arg1) (arg1)->directory_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_directory_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_directory_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_directory_interface_t *) ((arg1)->directory_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_chat_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_chat_interface_t *arg2 = (switch_chat_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_chat_interface_t *)jarg2; 
+  if (arg1) (arg1)->chat_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_chat_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_chat_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_chat_interface_t *) ((arg1)->chat_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_say_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_say_interface_t *arg2 = (switch_say_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_say_interface_t *)jarg2; 
+  if (arg1) (arg1)->say_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_say_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_say_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_say_interface_t *) ((arg1)->say_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_asr_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_asr_interface_t *arg2 = (switch_asr_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_asr_interface_t *)jarg2; 
+  if (arg1) (arg1)->asr_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_asr_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_asr_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_asr_interface_t *) ((arg1)->asr_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_management_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_management_interface_t *arg2 = (switch_management_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_management_interface_t *)jarg2; 
+  if (arg1) (arg1)->management_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_management_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_management_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_management_interface_t *) ((arg1)->management_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_limit_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_limit_interface_t *arg2 = (switch_limit_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_limit_interface_t *)jarg2; 
+  if (arg1) (arg1)->limit_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_limit_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_limit_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_limit_interface_t *) ((arg1)->limit_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_rwlock_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_thread_rwlock_t *arg2 = (switch_thread_rwlock_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_thread_rwlock_t *)jarg2; 
+  if (arg1) (arg1)->rwlock = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_rwlock_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_thread_rwlock_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_thread_rwlock_t *) ((arg1)->rwlock);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_refs_set(void * jarg1, int jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->refs = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_interface_refs_get(void * jarg1) {
+  int jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  int result;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (int) ((arg1)->refs);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_pool_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_memory_pool_t *arg2 = (switch_memory_pool_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_memory_pool_t *)jarg2; 
+  if (arg1) (arg1)->pool = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_pool_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_memory_pool_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_memory_pool_t *) ((arg1)->pool);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_loadable_module_interface() {
+  void * jresult ;
+  switch_loadable_module_interface *result = 0 ;
+  
+  result = (switch_loadable_module_interface *)new switch_loadable_module_interface();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_loadable_module_interface(void * jarg1) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  delete arg1;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_init(int jarg1) {
+  int jresult ;
+  switch_bool_t arg1 ;
+  switch_status_t result;
+  
+  arg1 = (switch_bool_t)jarg1; 
+  result = (switch_status_t)switch_loadable_module_init(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_shutdown() {
+  switch_loadable_module_shutdown();
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_endpoint_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_endpoint_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_endpoint_interface_t *)switch_loadable_module_get_endpoint_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_codec_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_codec_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_codec_interface_t *)switch_loadable_module_get_codec_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_dialplan_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_dialplan_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_dialplan_interface_t *)switch_loadable_module_get_dialplan_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_enumerate_available(char * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_modulename_callback_func_t arg2 = (switch_modulename_callback_func_t) 0 ;
+  void *arg3 = (void *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_modulename_callback_func_t)jarg2; 
+  arg3 = (void *)jarg3; 
+  result = (switch_status_t)switch_loadable_module_enumerate_available((char const *)arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_enumerate_loaded(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_modulename_callback_func_t arg1 = (switch_modulename_callback_func_t) 0 ;
+  void *arg2 = (void *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_modulename_callback_func_t)jarg1; 
+  arg2 = (void *)jarg2; 
+  result = (switch_status_t)switch_loadable_module_enumerate_loaded(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_build_dynamic(char * jarg1, void * jarg2, void * jarg3, void * jarg4, int jarg5) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_module_load_t arg2 = (switch_module_load_t) 0 ;
+  switch_module_runtime_t arg3 = (switch_module_runtime_t) 0 ;
+  switch_module_shutdown_t arg4 = (switch_module_shutdown_t) 0 ;
+  switch_bool_t arg5 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_module_load_t)jarg2; 
+  arg3 = (switch_module_runtime_t)jarg3; 
+  arg4 = (switch_module_shutdown_t)jarg4; 
+  arg5 = (switch_bool_t)jarg5; 
+  result = (switch_status_t)switch_loadable_module_build_dynamic(arg1,arg2,arg3,arg4,arg5);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_timer_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_timer_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_timer_interface_t *)switch_loadable_module_get_timer_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_application_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_application_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_application_interface_t *)switch_loadable_module_get_application_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_api_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_api_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_api_interface_t *)switch_loadable_module_get_api_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_file_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_file_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_file_interface_t *)switch_loadable_module_get_file_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_speech_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_speech_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_speech_interface_t *)switch_loadable_module_get_speech_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_asr_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_asr_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_asr_interface_t *)switch_loadable_module_get_asr_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_directory_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_directory_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_directory_interface_t *)switch_loadable_module_get_directory_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_chat_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_chat_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_chat_interface_t *)switch_loadable_module_get_chat_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_say_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_say_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_say_interface_t *)switch_loadable_module_get_say_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_management_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_management_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_management_interface_t *)switch_loadable_module_get_management_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_limit_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_limit_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_limit_interface_t *)switch_loadable_module_get_limit_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_get_codecs(void * jarg1, int jarg2) {
+  int jresult ;
+  switch_codec_implementation_t **arg1 = (switch_codec_implementation_t **) 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (switch_codec_implementation_t **)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)switch_loadable_module_get_codecs((switch_codec_implementation const **)arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_get_codecs_sorted(void * jarg1, int jarg2, void * jarg3, int jarg4) {
+  int jresult ;
+  switch_codec_implementation_t **arg1 = (switch_codec_implementation_t **) 0 ;
+  int arg2 ;
+  char **arg3 = (char **) 0 ;
+  int arg4 ;
+  int result;
+  
+  arg1 = (switch_codec_implementation_t **)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (char **)jarg3; 
+  arg4 = (int)jarg4; 
+  result = (int)switch_loadable_module_get_codecs_sorted((switch_codec_implementation const **)arg1,arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_api_execute(char * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_session_t *arg3 = (switch_core_session_t *) 0 ;
+  switch_stream_handle_t *arg4 = (switch_stream_handle_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_session_t *)jarg3; 
+  arg4 = (switch_stream_handle_t *)jarg4; 
+  result = (switch_status_t)switch_api_execute((char const *)arg1,(char const *)arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_load_module(char * jarg1, char * jarg2, int jarg3, void * jarg4) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_bool_t arg3 ;
+  char **arg4 = (char **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  arg4 = (char **)jarg4; 
+  result = (switch_status_t)switch_loadable_module_load_module(arg1,arg2,arg3,(char const **)arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_exists(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_status_t)switch_loadable_module_exists((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_loadable_module_unload_module(char * jarg1, char * jarg2, int jarg3, void * jarg4) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_bool_t arg3 ;
+  char **arg4 = (char **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  arg4 = (char **)jarg4; 
+  result = (switch_status_t)switch_loadable_module_unload_module(arg1,arg2,arg3,(char const **)arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_codec_next_id() {
+  unsigned long jresult ;
+  uint32_t result;
+  
+  result = (uint32_t)switch_core_codec_next_id();
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_check_interval(unsigned long jarg1, unsigned long jarg2) {
+  int jresult ;
+  uint32_t arg1 ;
+  uint32_t arg2 ;
+  int result;
+  
+  arg1 = (uint32_t)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  result = (int)switch_check_interval(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_codec_add_implementation(void * jarg1, void * jarg2, int jarg3, unsigned char jarg4, char * jarg5, char * jarg6, unsigned long jarg7, unsigned long jarg8, int jarg9, int jarg10, unsigned long jarg11, unsigned long jarg12, unsigned long jarg13, unsigned char jarg14, int jarg15, void * jarg16, void * jarg17, void * jarg18, void * jarg19) {
+  switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
+  switch_codec_interface_t *arg2 = (switch_codec_interface_t *) 0 ;
+  switch_codec_type_t arg3 ;
+  switch_payload_t arg4 ;
+  char *arg5 = (char *) 0 ;
+  char *arg6 = (char *) 0 ;
+  uint32_t arg7 ;
+  uint32_t arg8 ;
+  int arg9 ;
+  int arg10 ;
+  uint32_t arg11 ;
+  uint32_t arg12 ;
+  uint32_t arg13 ;
+  uint8_t arg14 ;
+  int arg15 ;
+  switch_core_codec_init_func_t arg16 = (switch_core_codec_init_func_t) 0 ;
+  switch_core_codec_encode_func_t arg17 = (switch_core_codec_encode_func_t) 0 ;
+  switch_core_codec_decode_func_t arg18 = (switch_core_codec_decode_func_t) 0 ;
+  switch_core_codec_destroy_func_t arg19 = (switch_core_codec_destroy_func_t) 0 ;
+  
+  arg1 = (switch_memory_pool_t *)jarg1; 
+  arg2 = (switch_codec_interface_t *)jarg2; 
+  arg3 = (switch_codec_type_t)jarg3; 
+  arg4 = (switch_payload_t)jarg4; 
+  arg5 = (char *)jarg5; 
+  arg6 = (char *)jarg6; 
+  arg7 = (uint32_t)jarg7; 
+  arg8 = (uint32_t)jarg8; 
+  arg9 = (int)jarg9; 
+  arg10 = (int)jarg10; 
+  arg11 = (uint32_t)jarg11; 
+  arg12 = (uint32_t)jarg12; 
+  arg13 = (uint32_t)jarg13; 
+  arg14 = (uint8_t)jarg14; 
+  arg15 = (int)jarg15; 
+  arg16 = (switch_core_codec_init_func_t)jarg16; 
+  arg17 = (switch_core_codec_encode_func_t)jarg17; 
+  arg18 = (switch_core_codec_decode_func_t)jarg18; 
+  arg19 = (switch_core_codec_destroy_func_t)jarg19; 
+  switch_core_codec_add_implementation(arg1,arg2,arg3,arg4,(char const *)arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12,arg13,arg14,arg15,arg16,arg17,arg18,arg19);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_ready(void * jarg1) {
+  int jresult ;
+  switch_codec_t *arg1 = (switch_codec_t *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_codec_t *)jarg1; 
+  result = (switch_bool_t)switch_core_codec_ready(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CMD_CHUNK_LEN_get() {
   int jresult ;
   int result;
@@ -11764,6 +12704,44 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_network_list_validate_ip_token(void * j
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_dow_int2str(int jarg1) {
+  char * jresult ;
+  int arg1 ;
+  char *result = 0 ;
+  
+  arg1 = (int)jarg1; 
+  result = (char *)switch_dow_int2str(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_dow_str2int(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_dow_str2int((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_dow_cmp(char * jarg1, int jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)switch_dow_cmp((char const *)arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_number_cmp(char * jarg1, int jarg2) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -11775,6 +12753,62 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_number_cmp(char * jarg1, int jarg2) {
   result = (int)switch_number_cmp((char const *)arg1,arg2);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_tod_cmp(char * jarg1, int jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)switch_tod_cmp((char const *)arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_fulldate_cmp(char * jarg1, void * jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_time_t *arg2 = (switch_time_t *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_time_t *)jarg2; 
+  result = (int)switch_fulldate_cmp((char const *)arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_split_date(char * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+  char *arg1 = (char *) 0 ;
+  int *arg2 = (int *) 0 ;
+  int *arg3 = (int *) 0 ;
+  int *arg4 = (int *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int *)jarg2; 
+  arg3 = (int *)jarg3; 
+  arg4 = (int *)jarg4; 
+  switch_split_date((char const *)arg1,arg2,arg3,arg4);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_split_time(char * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+  char *arg1 = (char *) 0 ;
+  int *arg2 = (int *) 0 ;
+  int *arg3 = (int *) 0 ;
+  int *arg4 = (int *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int *)jarg2; 
+  arg3 = (int *)jarg3; 
+  arg4 = (int *)jarg4; 
+  switch_split_time((char const *)arg1,arg2,arg3,arg4);
 }
 
 
@@ -12509,6 +13543,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_caller_profile_originatee_caller_pro
   
   arg1 = (switch_caller_profile *)jarg1; 
   result = (switch_caller_profile *) ((arg1)->originatee_caller_profile);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_origination_caller_profile_set(void * jarg1, void * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  switch_caller_profile *arg2 = (switch_caller_profile *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (switch_caller_profile *)jarg2; 
+  if (arg1) (arg1)->origination_caller_profile = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_caller_profile_origination_caller_profile_get(void * jarg1) {
+  void * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  switch_caller_profile *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (switch_caller_profile *) ((arg1)->origination_caller_profile);
   jresult = (void *)result; 
   return jresult;
 }
@@ -22015,6 +23072,28 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_originatee_caller_profil
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_origination_caller_profile(void * jarg1, void * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_profile_t *arg2 = (switch_caller_profile_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_caller_profile_t *)jarg2; 
+  switch_channel_set_origination_caller_profile(arg1,arg2);
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_origination_caller_profile(void * jarg1) {
+  void * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_profile_t *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_caller_profile_t *)switch_channel_get_origination_caller_profile(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_uuid(void * jarg1) {
   char * jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -28850,6 +29929,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_init(void * jarg1, void * jarg2) {
   arg1 = (switch_memory_pool_t *)jarg1; 
   arg2 = (char **)jarg2; 
   result = (switch_status_t)switch_xml_init(arg1,(char const **)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_reload(void * jarg1) {
+  int jresult ;
+  char **arg1 = (char **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char **)jarg1; 
+  result = (switch_status_t)switch_xml_reload((char const **)arg1);
   jresult = result; 
   return jresult;
 }

@@ -662,6 +662,10 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	const void *var;
 	void *val;
 
+	if (!global_init) {
+		return;
+	}
+
 	switch_mutex_lock(port_lock);
 
 	for (hi = switch_hash_first(NULL, alloc_hash); hi; hi = switch_hash_next(hi)) {
@@ -2190,6 +2194,9 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 				struct switch_rtcp_senderinfo* sr = (struct switch_rtcp_senderinfo*)rtp_session->rtcp_recv_msg.body;
 
 				rtp_session->rtcp_fresh_frame = 1;
+
+				rtp_session->stats.rtcp.packet_count += sr->pc;
+				rtp_session->stats.rtcp.octet_count += sr->oc;
 
 				/* sender report */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,"Received a SR with %d report blocks, " \

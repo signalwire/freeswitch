@@ -193,7 +193,10 @@ char * SWIG_csharp_string_callback(const char * str) {
 %include switch_core_db.h
 %include switch_regex.h
 %include switch_core.h
-//%include switch_loadable_module.h // todo: Sort out some linking issues
+%ignore switch_module_runtime;
+%ignore switch_module_load;
+%ignore switch_module_shutdown;
+%include switch_loadable_module.h // note: Above three ignore lines sort out some linking issues 
 %include switch_console.h // Has unsupported varargs functions
 %include switch_utils.h
 %include switch_caller.h

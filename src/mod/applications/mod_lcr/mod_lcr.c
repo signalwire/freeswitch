@@ -1571,7 +1571,6 @@ SWITCH_STANDARD_APP(lcr_app_function)
 				switch_channel_set_variable(channel, vbuf, cur_route->carrier_name);
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_codec_%d", cnt);
 				switch_channel_set_variable(channel, vbuf, cur_route->codec);
-				cnt++;
 				if (cur_route->next) {
 					if (routes.profile->enable_sip_redir) {
 						dig_stream.write_function(&dig_stream, "%s,", cur_route->dialstring);

@@ -1225,7 +1225,7 @@ static void sofia_perform_profile_start_failure(sofia_profile_t *profile, char *
 #define sofia_profile_start_failure(p, xp) sofia_perform_profile_start_failure(p, xp, __FILE__, __LINE__)
 
 
-#define SQLLEN 1024 * 64
+#define SQLLEN 1024 * 1024
 void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
@@ -1233,11 +1233,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	uint32_t gateway_loops = 0;
 	int loops = 0;
 	uint32_t qsize;
-	void *pop;
+	void *pop = NULL;
 	int loop_count = 0;
-	switch_size_t sql_len = SQLLEN;
+	switch_size_t sql_len = 1024 * 32;
 	char *tmp, *sqlbuf = NULL;
-
+	char *sql = NULL;
+	
 	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 		sqlbuf = (char *) malloc(sql_len);
 	}
@@ -1253,36 +1254,42 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || qsize) {
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= profile->trans_timeout)) {
+			if (qsize > 0 && (qsize >= 1024 || ++loop_count >= (int)profile->trans_timeout)) {
 				switch_size_t newlen;
-				uint32_t itterations = 0;
+				uint32_t iterations = 0;
 				switch_size_t len = 0;
 
 				switch_mutex_lock(profile->ireg_mutex);
 				
-				//sofia_glue_actually_execute_sql(profile, "begin;\n", NULL);
-
-				while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-					char *sql = (char *) pop;
+				while (sql || (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop)) {
+					if (!sql) sql = (char *) pop;
 
 					newlen = strlen(sql) + 2;
+					iterations++;
 
-					if (newlen + 10 < SQLLEN) {
-						itterations++;
-						if (len + newlen + 10 > sql_len) {
-							sql_len = len + 10 + SQLLEN;
+					if (len + newlen + 10 > sql_len) {
+						int new_mlen = len + newlen + 10 + 10240;
+						
+						if (new_mlen < SQLLEN) {
+							sql_len = new_mlen;
+							
 							if (!(tmp = realloc(sqlbuf, sql_len))) {
 								abort();
 								break;
 							}
 							sqlbuf = tmp;
+						} else {
+							goto skip;
 						}
-						sprintf(sqlbuf + len, "%s;\n", sql);
-						len += newlen;
 					}
 
-					free(pop);
+					sprintf(sqlbuf + len, "%s;\n", sql);
+					len += newlen;
+					free(sql);
+					sql = NULL;
 				}
+
+			skip:
 
 				//printf("TRANS:\n%s\n", sqlbuf);
 				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
@@ -2549,6 +2556,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
 						}
+					} else if (!strcasecmp(var, "all-reg-options-ping")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
+						}
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
 						if (!strcasecmp(val, "greedy")) {
 							sofia_set_pflag(profile, PFLAG_GREEDY);
@@ -2860,7 +2873,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					goto done;
 				}
 
-				profile->trans_timeout = 500;
+				profile->trans_timeout = 100;
 
 				profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833;// | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
 
@@ -3302,6 +3315,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+						}
+					} else if (!strcasecmp(var, "all-options-ping")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
 						}
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
 						if (!strcasecmp(val, "greedy")) {
@@ -4521,7 +4540,20 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_completing:
-		nua_ack(nh, TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+		{
+			if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
+				const char *invite_full_via = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_via");
+				const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");			
+
+				nua_ack(nh, 
+						TAG_IF(!zstr(invite_full_via), SIPTAG_VIA_STR(invite_full_via)),
+						TAG_IF(!zstr(invite_route_uri), SIPTAG_ROUTE_STR(invite_route_uri)),
+						TAG_END());
+						
+			} else {
+				nua_ack(nh, TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+			}
+		}
 		goto done;
 	case nua_callstate_received:
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
@@ -5900,6 +5932,26 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 								 tagi_t tags[])
 {
 	char *call_info = NULL;
+
+	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+		char network_ip[80];
+		int network_port = 0;
+		char via_space[2048];
+		char branch[16] = "";
+
+		sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
+		switch_stun_random_string(branch, sizeof(branch) - 1, "0123456789abcdef");
+
+		switch_snprintf(via_space, sizeof(via_space), "SIP/2.0/UDP %s;rport=%d;branch=%s", network_ip, network_port, branch);
+		switch_channel_set_variable(channel, "sip_full_via", via_space);
+		switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
+		switch_channel_set_variable_printf(channel, "sip_recieved_port", "%d", network_port);
+		switch_channel_set_variable_printf(channel, "sip_via_rport", "%d", network_port);
+		
+		sofia_glue_tech_track(tech_pvt->profile, session);
+	}
 
 	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
