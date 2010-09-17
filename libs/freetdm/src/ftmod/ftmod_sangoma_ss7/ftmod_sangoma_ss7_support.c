@@ -561,24 +561,19 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 		sigev.span_id = ftdmchan->span_id;
 		sigev.channel = ftdmchan;
 
+		/* if we have the PAUSED flag and the sig status is still UP */
 		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) &&
 			(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
 			
-			/* bring the sig status down */
-			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
-			ftdm_span_send_signal(ftdmchan->span, &sigev);	
+			/* throw the channel into SUSPENDED to process the flag */
+			/* after doing this once the sig status will be down */
+			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 		}
 
-		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) &&
-			!(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
-			
-			/* bring the sig status back up */
-			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_UP;
-			ftdm_span_send_signal(ftdmchan->span, &sigev);
-
-			sngss7_clear_flag(sngss7_info, FLAG_INFID_RESUME);
+		/* if the RESUME flag is up go to SUSPENDED to process the flag */
+		/* after doing this the flag will be cleared */
+		if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) {
+			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 		}
 
 		/* unlock the channel */

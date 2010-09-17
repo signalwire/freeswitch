@@ -954,6 +954,42 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		  SS7_DEBUG_CHAN(ftdmchan,"Current flags: 0x%X\n", sngss7_info->flags);
 
 		/**********************************************************************/
+		if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) {
+
+			/* clear the RESUME flag */
+			sngss7_clear_flag(sngss7_info, FLAG_INFID_RESUME);
+
+			/* if there are any resets present */
+			if ((sngss7_test_flag (sngss7_info, FLAG_RESET_TX)) ||
+				(sngss7_test_flag (sngss7_info, FLAG_RESET_RX)) ||
+				(sngss7_test_flag (sngss7_info, FLAG_GRP_RESET_TX)) ||
+				(sngss7_test_flag (sngss7_info, FLAG_GRP_RESET_RX))) {
+
+				/* go back to the reset state */
+				goto suspend_goto_restart;
+			} else {
+
+				/* bring the sig status back up */
+				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+				sigev.sigstatus = FTDM_SIG_STATE_UP;
+				ftdm_span_send_signal(ftdmchan->span, &sigev);
+			}
+
+			/* go back to the last state */
+			goto suspend_goto_last;
+		} /* if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) */
+
+		if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+
+			/* bring the sig status down */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			ftdm_span_send_signal(ftdmchan->span, &sigev);
+
+			/* go back to the last state */
+			goto suspend_goto_last;
+		} /* if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) { */
+		/**********************************************************************/
 		if (sngss7_test_flag (sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_BLOCK_RX flag %s\n", "");
 
