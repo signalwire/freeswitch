@@ -681,6 +681,7 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst);
 
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val);
+SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val);
 
 /*!
   \brief Split a user@domain string as user and domain

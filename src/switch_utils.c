@@ -2375,6 +2375,49 @@ SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 
 }
 
+SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val)
+{
+	char *dup = strdup(exp);
+	char *minh;
+	char *minm;
+	char *mins;
+	char *maxh;
+	char *maxm;
+	char *maxs;
+
+	switch_assert(dup);
+
+	minh = dup;
+	if ((minm=strchr(dup, ':'))) {
+		*minm++ = '\0';
+		if ((maxh=strchr(minm, '-'))) {
+			if ((maxm=strchr(maxh, ':'))) {
+				*maxh++ = '\0';
+				*maxm++ = '\0';
+				/* Check if min/max seconds are present */
+				if ((mins=strchr(minm, ':'))) {
+					*mins++ = '\0';
+				} else {
+					mins = "00";
+				}
+				if ((maxs=strchr(maxm, ':'))) {
+					*maxs++ = '\0';
+				} else {
+					maxs = "00";
+				}
+
+				if (val >= (atol(minh) * 60 * 60) + (atol(minm) * 60) + atol(mins) && val < (atol(maxh) * 60 * 60) + (atol(maxm) * 60) + atol(maxs)) {
+					switch_safe_free(dup);
+					return 1;
+				}
+			}
+		}
+	}
+	switch_safe_free(dup);
+	return 0;
+
+}
+
 SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domain)
 {
 	char *p = NULL, *h = NULL, *u = in;
