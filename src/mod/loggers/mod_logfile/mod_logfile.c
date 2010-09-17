@@ -53,6 +53,7 @@ struct logfile_profile {
 	char *name;
 	switch_size_t log_size;		/* keep the log size in check for rotation */
 	switch_size_t roll_size;	/* the size that we want to rotate the file at */
+	uint32_t max_file_count; /* Max number of log files */
 	char *logfile;
 	switch_file_t *log_afd;
 	switch_hash_t *log_hash;
@@ -114,6 +115,8 @@ static switch_status_t mod_logfile_openlogfile(logfile_profile_t *profile, switc
 static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 {
 	unsigned int i = 0;
+	unsigned int fcount = 0;
+	const char *fname = NULL;
 	char *filename = NULL;
 	switch_status_t stat = 0;
 	int64_t offset = 0;
@@ -121,6 +124,15 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
+	char *dend = NULL;
+	char *hay = NULL;
+	switch_dir_t *dirhandle = NULL;
+	switch_time_t wtime = 0;
+	char dirname[128];
+	char filebuf[128];
+	char fullfile[512];
+	char filetodelete[128];
+	switch_finfo_t statinfo;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_mutex_lock(globals.mutex);
@@ -156,6 +168,54 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
+
+	if (profile->max_file_count) {
+		switch_copy_string(dirname, profile->logfile, sizeof(dirname));
+		dend = strstr(dirname, SWITCH_PATH_SEPARATOR);
+		if (dend) {
+			dend++;
+			while ((hay = strstr(dend, SWITCH_PATH_SEPARATOR))) {
+				hay += strlen(SWITCH_PATH_SEPARATOR);
+				dend = hay;
+			}
+			*dend = '\0';
+scanning:
+			status = switch_dir_open(&dirhandle, dirname, pool);
+			if (status != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open directory: %s\n", dirname);
+				goto end;
+			}
+
+			wtime = switch_time_now();
+			while ((fname = switch_dir_next_file(dirhandle, filebuf, sizeof(filebuf)))) {
+				memset(&statinfo, 0, sizeof(statinfo));
+				snprintf(fullfile, sizeof(fullfile), "%s%s", dirname, fname);
+				if (strstr(fullfile, profile->logfile)) {
+					if (switch_file_stat(&statinfo, fullfile, SWITCH_FINFO_CTIME, pool) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to stat file %s\n", fullfile);
+						continue;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "File: %s has stat %llu, size = %llu\n", fullfile, (unsigned long long)statinfo.ctime, (unsigned long long)statinfo.size);
+					if (statinfo.ctime < wtime) {
+						switch_copy_string(filetodelete, fullfile, sizeof(filetodelete));
+						wtime = statinfo.ctime;
+					}
+					fcount++;
+				}
+			}
+			if (fcount > profile->max_file_count) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting old logfile: %s\n", filetodelete);
+				switch_file_remove(filetodelete, pool);
+				fcount--;
+			}
+			switch_dir_close(dirhandle);
+			if (fcount > profile->max_file_count) {
+				goto scanning;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "No separator %s found in %s\n", SWITCH_PATH_SEPARATOR, dirname);
+		}
+	}
 
   end:
 
@@ -270,6 +330,11 @@ static switch_status_t load_profile(switch_xml_t xml)
 				new_profile->roll_size = atoi(val);
 				if (new_profile->roll_size < 0) {
 					new_profile->roll_size = 0;
+				}
+			} else if (!strcmp(var, "maxfilecount")) {
+				new_profile->max_file_count = atoi(val);
+				if (new_profile->max_file_count < 1) {
+					new_profile->max_file_count = 1;
 				}
 			} else if (!strcmp(var, "uuid") && switch_true(val)) {
 				new_profile->log_uuid = SWITCH_TRUE;
