@@ -884,6 +884,18 @@ SWITCH_STANDARD_APP(directory_function)
 	if (strcasecmp(profile->search_order, "last_name")) {
 		s_param.search_by_last_name = 0;
 	}
+ 	 
+	{
+		const char *var_search_order = switch_channel_get_variable(channel, "directory_search_order");
+		if (var_search_order) {
+			if (!strcasecmp(var_search_order, "first_name")) {
+				s_param.search_by_last_name = 0;
+			} else {
+				s_param.search_by_last_name = 1;
+			}
+		}
+	}
+
 	attempts = profile->max_menu_attempt;
 	s_param.try_again = 1;
 	while (switch_channel_ready(channel) && (s_param.try_again && attempts-- > 0)) {

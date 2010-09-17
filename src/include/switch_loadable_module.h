@@ -92,7 +92,7 @@ SWITCH_BEGIN_EXTERN_C
   \brief Initilize the module backend and load all the modules
   \return SWITCH_STATUS_SUCCESS when complete
  */
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(void);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autoload);
 
 /*!
   \brief Shutdown the module backend and call the shutdown routine in all loaded modules

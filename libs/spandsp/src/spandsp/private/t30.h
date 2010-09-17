@@ -60,10 +60,8 @@ struct t30_state_s
     int supported_t30_features;
     /*! \brief TRUE is ECM mode handling is enabled. */
     int ecm_allowed;
-#if 0
     /*! \brief TRUE if we are capable of retransmitting pages */
     int retransmit_capable;
-#endif
 
     /*! \brief The received DCS, formatted as an ASCII string, for inclusion
                in the TIFF file. */
@@ -71,12 +69,12 @@ struct t30_state_s
     /*! \brief The text which will be used in FAX page header. No text results
                in no header line. */
     char header_info[T30_MAX_PAGE_HEADER_INFO + 1];
-#if 0
     /*! \brief TRUE for FAX page headers to overlay (i.e. replace) the beginning of the
                page image. FALSE for FAX page headers to add to the overall length of
                the page. */
     int header_overlays_image;
-#endif
+    /*! \brief TRUE if remote T.30 procedural interrupts are allowed. */
+    int remote_interrupts_allowed;
 
     /*! \brief The information fields received. */
     t30_exchanged_info_t rx_info;
@@ -207,13 +205,6 @@ struct t30_state_s
     /*! \brief This is only used in full duplex (e.g. ISDN) modes. */
     int timer_t8;
 
-	/* These fields are guessed based on compiler error forensics, I added them to fix the build -anthm */
-	int remote_interrupts_allowed;
-	int rtp_events;
-	int rtn_events;
-	int retransmit_capable;
-	/* end guessed fields */
-
     /*! \brief TRUE once the far end FAX entity has been detected. */
     int far_end_detected;
 
@@ -283,12 +274,10 @@ struct t30_state_s
     /*! \brief The current completion status. */
     int current_status;
 
-#if 0
     /*! \brief The number of RTP events */
     int rtp_events;
     /*! \brief The number of RTN events */
     int rtn_events;
-#endif
 
     /*! \brief the FCF2 field of the last PPS message we received. */
     uint8_t last_pps_fcf2;

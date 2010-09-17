@@ -1658,7 +1658,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str;
 		const char *t_var;
-		char *rpid_domain = "cluecon.com", *p;
+		char *rpid_domain = NULL, *p;
 		const char *priv = "off";
 		const char *screen = "no";
 		const char *invite_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_params");
@@ -1670,6 +1670,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
 		const char *from_display = switch_channel_get_variable(tech_pvt->channel, "sip_from_display");
 		const char *invite_req_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_req_uri");
+		const char *invite_domain = switch_channel_get_variable(tech_pvt->channel, "sip_invite_domain");
 		const char *use_name, *use_number;
 
 		if (zstr(tech_pvt->dest)) {
@@ -1688,7 +1689,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (!tech_pvt->from_str) {
 			const char *sipip;
 			const char *format;
-			const char *alt = NULL;
 
 			sipip = tech_pvt->profile->sipip;
 
@@ -1698,8 +1698,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 			format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
 
-			if ((alt = switch_channel_get_variable(channel, "sip_invite_domain"))) {
-				sipip = alt;
+			if (!zstr(invite_domain)) {
+				sipip = invite_domain;
 			}
 
 			tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, cid_num, !zstr(cid_num) ? "@" : "", sipip);
@@ -1737,6 +1737,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			} else {
 				rpid_domain = tech_pvt->profile->sipip;
 			}
+		}
+
+		if (!zstr(invite_domain)) {
+			rpid_domain = (char *)invite_domain;
 		}
 
 		if (zstr(rpid_domain)) {
@@ -2055,10 +2059,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 	}
 
+	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERED)) {
+		session_timeout = 0;
+	}
+
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
+				   TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
+				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
@@ -2087,6 +2097,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
+				   TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
+				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
@@ -2229,6 +2241,9 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 		add_stat(stats->outbound.skip_packet_count, "out_skip_packet_count");
 		add_stat(stats->outbound.dtmf_packet_count, "out_dtmf_packet_count");
 		add_stat(stats->outbound.cng_packet_count, "out_cng_packet_count");
+
+		add_stat(stats->rtcp.packet_count, "rtcp_packet_count");
+		add_stat(stats->rtcp.octet_count, "rtcp_octet_count");
 
 	}
 }
@@ -3579,11 +3594,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_HOLD) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "sip_disable_hold")) && switch_true(val))) {
 		sendonly = 0;
-	}
+	} else {
 
-	if (!tech_pvt->hold_laps) {
-		tech_pvt->hold_laps++;
-		sofia_glue_toggle_hold(tech_pvt, sendonly);
+		if (!tech_pvt->hold_laps) {
+			tech_pvt->hold_laps++;
+			sofia_glue_toggle_hold(tech_pvt, sendonly);
+		}
 	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
@@ -4644,7 +4660,7 @@ void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *se
 			}
 		}
 		
-		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		sofia_clear_flag(tech_pvt, TFLAG_TRACKED);
 		
 		switch_safe_free(sql);

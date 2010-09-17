@@ -24,7 +24,7 @@
  *
  * mod_h323.cpp -- H323 endpoint
  *
- *	Version 0.0.55
+ *	Version 0.0.56
 */
 
 //#define DEBUG_RTP_PACKETS
@@ -746,6 +746,17 @@ FSH323Connection::~FSH323Connection()
 //	switch_mutex_unlock(tech_pvt->h323_mutex);
 //	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 }	
+
+void FSH323Connection::AttachSignalChannel(const PString & token,
+                                         H323Transport * channel,
+                                         PBoolean answeringCall)
+{
+	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(m_fsSession);
+	tech_pvt->token = strdup((const char *)token);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"---------->token = %s [%p]\n",(const char *)token,this);
+	H323Connection::AttachSignalChannel(token,channel,answeringCall);
+}
+
 
 void FSH323Connection::OnSetLocalCapabilities()
 {
@@ -2321,8 +2332,9 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_get_private(session);
 	FSH323Connection *me = tech_pvt->me;
+	FSH323EndPoint & ep = h323_process->GetH323EndPoint();
 	tech_pvt->me = NULL;
-
+    
 	if (me) {
 		if (me->m_rtp_resetting == 1) {
 			switch_core_session_unlock_codec_read(session);
@@ -2340,12 +2352,12 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 			me->CloseAllLogicalChannels(false);
 			me->Unlock();
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----->%s\n",(const char *)(me->GetCallToken()));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----->%s\n",(const char *)(tech_pvt->token));
 		Q931::CauseValues cause = (Q931::CauseValues)switch_channel_get_cause_q850(channel);
 		int trylock = me->TryLock();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"-----> () = %d\n",trylock);
 		if (trylock == 1) {
-			const PString currentToken(me->GetCallToken());
+			const PString currentToken(tech_pvt->token);
 			FSH323Connection *connection = (FSH323Connection *)me->GetEndPoint()->FindConnectionWithLock(currentToken); 
 			if (connection) {
 				connection->Unlock();
@@ -2356,8 +2368,10 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 		} else if (trylock == -1) {
 			/* Failed to lock - just go on */
 		}
+		const PString currentToken(tech_pvt->token);
 		me->SetQ931Cause(cause);
-		me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
+//		me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
+		ep.ClearCall(currentToken, H323TranslateToCallEndReason(cause, UINT_MAX));
 //		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_lock\n");
 //		switch_mutex_lock(tech_pvt->h323_mutex);
 	}

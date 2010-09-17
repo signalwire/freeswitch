@@ -2090,6 +2090,137 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	return s;
 }
 
+SWITCH_DECLARE(void) switch_split_time(const char *exp, int *hour, int *min, int *sec)
+{
+	char *dup = strdup(exp);
+	char *shour = NULL;
+	char *smin = NULL;
+	char *ssec = NULL;
+
+	switch_assert(dup);
+
+	shour = dup;
+	if ((smin=strchr(dup, ':'))) {
+		*smin++ = '\0';
+		if ((ssec=strchr(smin, ':'))) {
+			*ssec++ = '\0';
+		} else {
+			ssec = "00";
+		}
+		if (hour && shour) {
+			*hour = atol(shour);
+		}
+		if (min && smin) {
+			*min = atol(smin);
+		}
+		if (sec && ssec) {
+			*sec = atol(ssec);
+		}
+
+	}
+	switch_safe_free(dup);
+	return;
+
+}
+
+SWITCH_DECLARE(void) switch_split_date(const char *exp, int *year, int *month, int *day)
+{
+	char *dup = strdup(exp);
+	char *syear = NULL;
+	char *smonth = NULL;
+	char *sday = NULL;
+
+	switch_assert(dup);
+
+	syear = dup;
+	if ((smonth=strchr(dup, '-'))) {
+		*smonth++ = '\0';
+		if ((sday=strchr(smonth, '-'))) {
+			*sday++ = '\0';
+			if (year && syear) {
+				*year = atol(syear);
+			}
+			if (month && smonth) {
+				*month = atol(smonth);
+			}
+			if (day && sday) {
+				*day = atol(sday);
+			}
+		}
+	}
+	switch_safe_free(dup);
+	return;
+
+}
+
+/* Ex exp value "2009-10-10 14:33:22~2009-11-10 17:32:31" */
+SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
+{
+	char *dup = strdup(exp);
+	char *sStart;
+	char *sEnd;
+	char *sDate;
+	char *sTime;
+	switch_time_t tsStart;
+	switch_time_t tsEnd;
+
+	switch_assert(dup);
+
+	sStart = dup;
+	if ((sEnd=strchr(dup, '~'))) {
+		*sEnd++ = '\0';
+		sDate = sStart;
+		if ((sTime=strchr(sStart, ' '))) {
+			struct tm tmTmp;
+			int year, month, day;
+			int hour, min, sec;
+
+			*sTime++ = '\0';
+
+			switch_split_date(sDate, &year, &month, &day);
+			switch_split_time(sTime, &hour, &min, &sec);
+			tmTmp.tm_year = year;
+			tmTmp.tm_mon = month;
+			tmTmp.tm_mday = day;
+
+			tmTmp.tm_hour = hour;
+			tmTmp.tm_min = min;
+			tmTmp.tm_sec = sec;
+			tmTmp.tm_isdst = 0;
+			tsStart = mktime(&tmTmp);
+
+			sDate = sEnd;
+			if ((sTime=strchr(sEnd, ' '))) {
+				struct tm tmTmp;
+				int year, month, day;
+				int hour, min, sec;
+
+				*sTime++ = '\0';
+
+				switch_split_date(sDate, &year, &month, &day);
+				switch_split_time(sTime, &hour, &min, &sec);
+				tmTmp.tm_year = year;
+				tmTmp.tm_mon = month;
+				tmTmp.tm_mday = day;
+
+				tmTmp.tm_hour = hour;
+				tmTmp.tm_min = min;
+				tmTmp.tm_sec = sec;
+				tmTmp.tm_isdst = 0;
+				tsEnd = mktime(&tmTmp);
+
+				if (tsStart <= *ts && tsEnd > *ts) {
+					switch_safe_free(dup);
+					return 1;
+				}
+			}
+		}
+	}
+	switch_safe_free(dup);
+	return 0;
+
+}
+
 
 /* Written by Marc Espie, public domain */
 #define SWITCH_CTYPE_NUM_CHARS       256
@@ -2335,6 +2466,82 @@ SWITCH_DECLARE(int) switch_isxdigit(int c)
 	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_N | _X)));
 }
 
+static const char *DOW[] = {
+	"sat",
+	"sun",
+	"mon",
+	"tue",
+	"wed",
+	"thu",
+	"fri",
+	"sat",
+	"sun",
+	NULL
+};
+
+SWITCH_DECLARE(const char *) switch_dow_int2str(int val) {
+	if (val >= sizeof(DOW) / sizeof (const char*)) {
+		return NULL;
+	}
+	return DOW[val];
+}
+
+SWITCH_DECLARE(int) switch_dow_str2int(const char *exp) {
+	int ret = -1;
+	int x = -1;
+	for (x = 0;; x++) {
+		if (!DOW[x]) {
+			break;  
+		}
+
+		if (!strcasecmp(DOW[x], exp)) {
+			ret =  x;
+			break;
+		}
+	}
+	return ret;
+}
+
+SWITCH_DECLARE(int) switch_dow_cmp(const char *exp, int val)
+{
+	char *dup = strdup(exp);
+	char *p_start;
+	char *p_end;
+	int ret = 0;
+	int start, end;
+
+	switch_assert(dup);
+
+	p_start = dup;
+
+	if ((p_end=strchr(dup, '-'))) {
+		*p_end++ = '\0';
+	} else {
+		p_end = p_start;
+	}
+	if (strlen(p_start) == 3) {
+		start = switch_dow_str2int(p_start);
+	} else {
+		start = atol(p_start);
+	}
+	if (strlen(p_end) == 3) {
+		end = switch_dow_str2int(p_end);
+	} else {
+		end = atol(p_end);
+	}
+	/* Following used for this example : mon-sat = 2-0, so we need to make 0(sat) + 7 */
+	if (end < start) {
+		end += 7;
+	}
+	if (start != -1 && end != -1 && val >= start && val <= end) {
+		ret = 1;
+	}
+
+	switch_safe_free(dup);
+
+	return ret;	
+}
+
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 {
 	char *p;
@@ -2371,6 +2578,49 @@ SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 		}
 	}
 
+	return 0;
+
+}
+
+SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val)
+{
+	char *dup = strdup(exp);
+	char *minh;
+	char *minm;
+	char *mins;
+	char *maxh;
+	char *maxm;
+	char *maxs;
+
+	switch_assert(dup);
+
+	minh = dup;
+	if ((minm=strchr(dup, ':'))) {
+		*minm++ = '\0';
+		if ((maxh=strchr(minm, '-'))) {
+			if ((maxm=strchr(maxh, ':'))) {
+				*maxh++ = '\0';
+				*maxm++ = '\0';
+				/* Check if min/max seconds are present */
+				if ((mins=strchr(minm, ':'))) {
+					*mins++ = '\0';
+				} else {
+					mins = "00";
+				}
+				if ((maxs=strchr(maxm, ':'))) {
+					*maxs++ = '\0';
+				} else {
+					maxs = "00";
+				}
+
+				if (val >= (atol(minh) * 60 * 60) + (atol(minm) * 60) + atol(mins) && val < (atol(maxh) * 60 * 60) + (atol(maxm) * 60) + atol(maxs)) {
+					switch_safe_free(dup);
+					return 1;
+				}
+			}
+		}
+	}
+	switch_safe_free(dup);
 	return 0;
 
 }

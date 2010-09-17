@@ -214,12 +214,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, const char *arg, const char *bind)
 {
-	switch_ivr_menu_action_t *action;
+	switch_ivr_menu_action_t *action, *ap;
 	uint32_t len;
 
 	if ((action = switch_core_alloc(menu->pool, sizeof(*action)))) {
 		action->bind = switch_core_strdup(menu->pool, bind);
-		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
 		if (*action->bind == '/') {
 			action->re = 1;
@@ -230,7 +229,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *m
 			}
 		}
 		action->ivr_action = ivr_action;
+
+		if (menu->actions) {
+			for(ap = menu->actions; ap && ap->next; ap = ap->next);
+			ap->next = action;
+		} else {
 		menu->actions = action;
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -240,13 +246,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *m
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu,
 															  switch_ivr_menu_action_function_t *function, const char *arg, const char *bind)
 {
-	switch_ivr_menu_action_t *action;
+	switch_ivr_menu_action_t *action, *ap;
 	uint32_t len;
 
 	if ((action = switch_core_alloc(menu->pool, sizeof(*action)))) {
 		action->bind = switch_core_strdup(menu->pool, bind);
-		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
+
 		if (*action->bind == '/') {
 			action->re = 1;
 		} else {
@@ -255,8 +261,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t 
 				menu->inlen = len;
 			}
 		}
+
 		action->function = function;
+		
+		if (menu->actions) {
+			for(ap = menu->actions; ap && ap->next; ap = ap->next);
+			ap->next = action;
+		} else {
 		menu->actions = action;
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
