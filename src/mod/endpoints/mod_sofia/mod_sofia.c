@@ -3166,6 +3166,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
+
+	if (!strcasecmp(argv[1], "gwlist")) {
+		int up = 1;
+		
+		if (argc > 2) {
+			if (!strcasecmp(argv[2], "down")) {
+				up = 0;
+			}
+		}
+
+		sofia_glue_gateway_list(profile, stream, up);
+		goto done;
+	}
+
+
 	stream->write_function(stream, "-ERR Unknown command!\n");
 
   done:
@@ -4636,6 +4651,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace on");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace off");
+
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist up");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist down");
 
 	switch_console_set_complete("add sofia status profile ::sofia::list_profiles");
 	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
