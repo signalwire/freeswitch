@@ -464,6 +464,14 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	return status;
 }
 
+static void wake_thread(void)
+{
+	if (switch_mutex_trylock(sql_manager.cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(sql_manager.cond);
+		switch_mutex_unlock(sql_manager.cond_mutex);
+	}
+}
+
 /**
    OMFG you cruel bastards.  Who chooses 64k as a max buffer len for a sql statement, have you ever heard of transactions?
 **/
@@ -1399,7 +1407,7 @@ static void core_event_handler(switch_event_t *event)
 				switch_queue_push(sql_manager.sql_queue[0], sql[i]);
 			}
 			sql[i] = NULL;
-			switch_thread_cond_broadcast(sql_manager.cond);
+			wake_thread();
 		}
 	}
 }
@@ -1673,7 +1681,7 @@ void switch_core_sqldb_stop(void)
 			switch_queue_push(sql_manager.sql_queue[0], NULL);
 			switch_queue_push(sql_manager.sql_queue[1], NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
-			switch_thread_cond_broadcast(sql_manager.cond);
+			wake_thread();
 		}
 
 		sql_manager.thread_running = -1;
