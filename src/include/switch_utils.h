@@ -683,6 +683,10 @@ SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst);
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val);
 SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val);
 
+SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts);
+SWITCH_DECLARE(void) switch_split_date(const char *exp, int *year, int *month, int *day);
+SWITCH_DECLARE(void) switch_split_time(const char *exp, int *hour, int *min, int *sec);
+
 /*!
   \brief Split a user@domain string as user and domain
   \param in the input string

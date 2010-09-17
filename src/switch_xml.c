@@ -2652,6 +2652,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 
 SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 
+	const char *xdt = switch_xml_attr(xcond, "date-time");
 	const char *xyear = switch_xml_attr(xcond, "year");
 	const char *xyday = switch_xml_attr(xcond, "yday");
 	const char *xmon = switch_xml_attr(xcond, "mon");
@@ -2669,6 +2670,15 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 	switch_time_exp_t tm;
 
 	switch_time_exp_lt(&tm, ts);
+
+	if (time_match && xdt) {
+		char tmpdate[80];
+		switch_size_t retsize;
+		switch_strftime(tmpdate, &retsize, sizeof(tmpdate), "%Y-%m-%d %H:%M:%S", &tm);
+		time_match = switch_fulldate_cmp(xdt, &ts);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+				"XML DateTime Check: date time[%s] =~ %s (%s)\n", tmpdate, xdt, time_match ? "PASS" : "FAIL");
+	}
 
 	if (time_match && xyear) {
 		int test = tm.tm_year + 1900;
