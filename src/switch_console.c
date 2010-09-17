@@ -483,9 +483,29 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 		return -1;
 	}
 
+	if (!zstr(target) && *target == ':' && *(target + 1) == ':' && *(target + 2) == '[') {
+		char *p = target + 3, *list = NULL;
+
+		if (p) {
+			char *argv[100] = { 0 };
+			char *r_argv[1] = { 0 }, *r_cols[1] = {0};
+			list = strdup(p);
+			
+			argc = switch_separate_string(list, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+
+			for (i = 0; i < argc; i++) {
+				if (!cur || !strncmp(argv[i], cur, strlen(cur))) {
+					r_argv[0] = argv[i];
+					comp_callback(h, 1, r_argv, r_cols);
+				}
+			}
+			switch_safe_free(list);
+		}
+		return 0;
+	}
+
 	if (!zstr(target) && *target == ':' && *(target + 1) == ':') {
-		char *r_argv[1] = { 0 }, *r_cols[1] = {
-		0};
+		char *r_argv[1] = { 0 }, *r_cols[1] = {0};
 		switch_console_callback_match_t *matches;
 		if (switch_console_run_complete_func(target, str, cur, &matches) == SWITCH_STATUS_SUCCESS) {
 			switch_console_callback_match_node_t *m;
@@ -797,6 +817,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		}
 
 		stream.write_function(&stream, " and hostname='%s' order by a%d", switch_core_get_variable("hostname"), h.words + 1);
+		
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
 
 		if (errmsg) {

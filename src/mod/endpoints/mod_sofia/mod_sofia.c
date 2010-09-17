@@ -4618,8 +4618,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia help");
 	switch_console_set_complete("add sofia status");
 	switch_console_set_complete("add sofia xmlstatus");
-	switch_console_set_complete("add sofia loglevel");
-	switch_console_set_complete("add sofia tracelevel");
+
+	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
+	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
+
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
 
