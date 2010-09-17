@@ -2733,9 +2733,9 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 
 	if (time_match && xwday) {
 		int test = tm.tm_wday + 1;
-		time_match = switch_number_cmp(xwday, test);
+		time_match = switch_dow_cmp(xwday, test);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: day of week[%d] =~ %s (%s)\n", test, xwday, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: day of week[%s] =~ %s (%s)\n", switch_dow_int2str(test), xwday, time_match ? "PASS" : "FAIL");
 	}
 	if (time_match && xhour) {
 		int test = tm.tm_hour;

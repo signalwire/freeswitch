@@ -2466,6 +2466,82 @@ SWITCH_DECLARE(int) switch_isxdigit(int c)
 	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_N | _X)));
 }
 
+static const char *DOW[] = {
+	"sat",
+	"sun",
+	"mon",
+	"tue",
+	"wed",
+	"thu",
+	"fri",
+	"sat",
+	"sun",
+	NULL
+};
+
+SWITCH_DECLARE(const char *) switch_dow_int2str(int val) {
+	if (val >= sizeof(DOW) / sizeof (const char*)) {
+		return NULL;
+	}
+	return DOW[val];
+}
+
+SWITCH_DECLARE(int) switch_dow_str2int(const char *exp) {
+	int ret = -1;
+	int x = -1;
+	for (x = 0;; x++) {
+		if (!DOW[x]) {
+			break;  
+		}
+
+		if (!strcasecmp(DOW[x], exp)) {
+			ret =  x;
+			break;
+		}
+	}
+	return ret;
+}
+
+SWITCH_DECLARE(int) switch_dow_cmp(const char *exp, int val)
+{
+	char *dup = strdup(exp);
+	char *p_start;
+	char *p_end;
+	int ret = 0;
+	int start, end;
+
+	switch_assert(dup);
+
+	p_start = dup;
+
+	if ((p_end=strchr(dup, '-'))) {
+		*p_end++ = '\0';
+	} else {
+		p_end = p_start;
+	}
+	if (strlen(p_start) == 3) {
+		start = switch_dow_str2int(p_start);
+	} else {
+		start = atol(p_start);
+	}
+	if (strlen(p_end) == 3) {
+		end = switch_dow_str2int(p_end);
+	} else {
+		end = atol(p_end);
+	}
+	/* Following used for this example : mon-sat = 2-0, so we need to make 0(sat) + 7 */
+	if (end < start) {
+		end += 7;
+	}
+	if (start != -1 && end != -1 && val >= start && val <= end) {
+		ret = 1;
+	}
+
+	switch_safe_free(dup);
+
+	return ret;	
+}
+
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
 {
 	char *p;
