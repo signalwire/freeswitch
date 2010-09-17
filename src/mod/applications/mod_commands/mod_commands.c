@@ -1181,7 +1181,7 @@ SWITCH_STANDARD_API(reload_acl_function)
 	const char *err;
 
 	if (cmd && !strcasecmp(cmd, "reloadxml")) {
-		stream->write_function(stream, "This option is depricated, we now always reloadxml.\n");
+		stream->write_function(stream, "This option is deprecated, we now always reloadxml.\n");
 	}
 	
 	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
