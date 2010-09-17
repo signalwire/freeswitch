@@ -647,11 +647,98 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
  * @{
  */
 
+/** File types. */
+typedef enum {
+	SWITCH_NOFILE = 0,     /**< no file type determined */
+	SWITCH_REG,            /**< a regular file */
+	SWITCH_DIR,            /**< a directory */
+	SWITCH_CHR,            /**< a character device */
+	SWITCH_BLK,            /**< a block device */
+	SWITCH_PIPE,           /**< a FIFO / pipe */
+	SWITCH_LNK,            /**< a symbolic link */
+	SWITCH_SOCK,           /**< a [unix domain] socket */
+	SWITCH_UNKFILE = 127   /**< a file of some other unknown type */
+} switch_filetype_e; 
+
+
 /** Structure for referencing files. */
 	 typedef struct apr_file_t switch_file_t;
 
 	 typedef int32_t switch_fileperms_t;
 	 typedef int switch_seek_where_t;
+
+/** 
+ * Structure for determining user ownership.
+ */ 
+#ifdef WIN32
+typedef PSID                      switch_uid_t;
+#else
+typedef uid_t                     switch_uid_t;
+#endif
+
+/**
+ * Structure for determining group ownership.
+ */
+#ifdef WIN32
+typedef PSID                      switch_gid_t;
+#else
+typedef gid_t                     switch_gid_t;
+#endif
+
+#ifdef WIN32
+	 typedef uint32_t switch_dev_t;
+	 typedef uint64_t switch_ino_t;
+#else
+	 typedef ino_t switch_ino_t;
+	 typedef dev_t switch_dev_t;
+#endif
+	 typedef off_t switch_off_t;
+
+/**
+ * Structure for referencing file information
+ */
+//typedef struct apr_stat_t switch_finfo_t;
+typedef struct {
+    /** Allocates memory and closes lingering handles in the specified pool */
+    switch_memory_pool_t *pool;
+    /** The bitmask describing valid fields of this switch_finfo_t structure 
+     *  including all available 'wanted' fields and potentially more */
+    int32_t valid;
+    /** The access permissions of the file.  Mimics Unix access rights. */
+    switch_fileperms_t protection;
+    /** The type of file.  One of APR_REG, APR_DIR, APR_CHR, APR_BLK, APR_PIPE, 
+     * APR_LNK or APR_SOCK.  If the type is undetermined, the value is APR_NOFILE.
+     * If the type cannot be determined, the value is APR_UNKFILE.
+     */
+    switch_filetype_e filetype;
+    /** The user id that owns the file */
+    switch_uid_t user;
+    /** The group id that owns the file */
+    switch_gid_t group;
+    /** The inode of the file. */
+    switch_ino_t inode;
+    /** The id of the device the file is on. */
+    switch_dev_t device;
+    /** The number of hard links to the file. */
+    int32_t nlink;
+    /** The size of the file */
+    switch_off_t size;
+    /** The storage size consumed by the file */
+    switch_off_t csize;
+    /** The time the file was last accessed */
+    switch_time_t atime;
+    /** The time the file was last modified */
+    switch_time_t mtime;
+    /** The time the file was created, or the inode was last changed */
+    switch_time_t ctime;
+    /** The pathname of the file (possibly unrooted) */
+    const char *fname;
+    /** The file's name (no path) in filesystem case */
+    const char *name;
+    /** The file's handle, if accessed (can be submitted to apr_duphandle) */
+    switch_file_t *filehand;
+} switch_finfo_t;
+
 
 	 /**
  * @defgroup apr_file_seek_flags File Seek Flags
@@ -740,6 +827,37 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 /** @} */
 
 /**
+ * @defgroup switch_file_stat flags
+ * @ingroup switch_file_io
+ * @{
+ */
+#define SWITCH_FINFO_LINK   0x00000001 /**< Stat the link not the file itself if it is a link */
+#define SWITCH_FINFO_MTIME  0x00000010 /**< Modification Time */
+#define SWITCH_FINFO_CTIME  0x00000020 /**< Creation or inode-changed time */
+#define SWITCH_FINFO_ATIME  0x00000040 /**< Access Time */
+#define SWITCH_FINFO_SIZE   0x00000100 /**< Size of the file */
+#define SWITCH_FINFO_CSIZE  0x00000200 /**< Storage size consumed by the file */
+#define SWITCH_FINFO_DEV    0x00001000 /**< Device */
+#define SWITCH_FINFO_INODE  0x00002000 /**< Inode */
+#define SWITCH_FINFO_NLINK  0x00004000 /**< Number of links */
+#define SWITCH_FINFO_TYPE   0x00008000 /**< Type */
+#define SWITCH_FINFO_USER   0x00010000 /**< User */
+#define SWITCH_FINFO_GROUP  0x00020000 /**< Group */
+#define SWITCH_FINFO_UPROT  0x00100000 /**< User protection bits */
+#define SWITCH_FINFO_GPROT  0x00200000 /**< Group protection bits */
+#define SWITCH_FINFO_WPROT  0x00400000 /**< World protection bits */
+#define SWITCH_FINFO_ICASE  0x01000000 /**< if dev is case insensitive */
+#define SWITCH_FINFO_NAME   0x02000000 /**< ->name in proper case */
+
+#define SWITCH_FINFO_MIN    0x00008170 /**< type, mtime, ctime, atime, size */
+#define SWITCH_FINFO_IDENT  0x00003000 /**< dev and inode */
+#define SWITCH_FINFO_OWNER  0x00030000 /**< user and group */
+#define SWITCH_FINFO_PROT   0x00700000 /**<  all protections */
+#define SWITCH_FINFO_NORM   0x0073b170 /**<  an atomic unix apr_stat() */
+#define SWITCH_FINFO_DIRENT 0x02000000 /**<  an atomic unix apr_dir_read() */
+/** @} */
+
+/**
  * Open the specified file.
  * @param newf The opened file descriptor.
  * @param fname The full path to the file (using / on all systems)
@@ -781,6 +899,8 @@ SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t *thefile, switch_
 
 
 SWITCH_DECLARE(switch_status_t) switch_file_copy(const char *from_path, const char *to_path, switch_fileperms_t perms, switch_memory_pool_t *pool);
+
+SWITCH_DECLARE(switch_status_t) switch_file_stat(switch_finfo_t *finfo, const char *fname, int32_t wanted, switch_memory_pool_t *pool);
 
 /**
  * Close the specified file.
