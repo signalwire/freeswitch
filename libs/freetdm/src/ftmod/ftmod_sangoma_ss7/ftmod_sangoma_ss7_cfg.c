@@ -213,7 +213,7 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_CRITICAL("MTP3 ROUTE %d configuration FAILED!\n", x);
 				SS7_ASSERT
 			} else {
-				SS7_INFO("MTP3 ROUTE %d configuration DONE!\n");
+				SS7_INFO("MTP3 ROUTE %d configuration DONE!\n",x);
 			}
 
 			/* set the CONFIGURED flag */
@@ -229,7 +229,7 @@ int  ft_to_sngss7_cfg_all(void)
 			SS7_CRITICAL("MTP3 ROUTE 0 configuration FAILED!\n");
 			SS7_ASSERT
 		} else {
-			SS7_INFO("MTP3 ROUTE %d configuration DONE!\n");
+			SS7_INFO("MTP3 ROUTE 0 configuration DONE!\n");
 		}
 
 		/* set the CONFIGURED flag */
@@ -444,8 +444,8 @@ int ftmod_ss7_mtp3_gen_config(void)
 	cfg.t.cfg.s.snGen.tmr.t21.enb	= TRUE;				/* t21 - waiting to restart traffic routed through adjacent SP */
 	cfg.t.cfg.s.snGen.tmr.t21.val	= 650;
 # if (SS7_ANS92 || SS7_ANS88 || SS7_ANS96 || defined(TDS_ROLL_UPGRADE_SUPPORT))
-	cfg.t.cfg.s.snGen.t26.enb		= TRUE;				/* t26 - waiting to repeat traffic restart waiting message for ANSI */
-	cfg.t.cfg.s.snGen.t26.val		= 600;
+	cfg.t.cfg.s.snGen.tmr.t26.enb		= TRUE;				/* t26 - waiting to repeat traffic restart waiting message for ANSI */
+	cfg.t.cfg.s.snGen.tmr.t26.val		= 600;
 # endif
 #endif
 
@@ -644,7 +644,7 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 	cfg.t.cfg.s.sdDLSAP.memMac.region	= S_REG;					/* memory region and pool id for MAC */
 	cfg.t.cfg.s.sdDLSAP.memMac.pool		= S_POOL;
 	cfg.t.cfg.s.sdDLSAP.maxOutsFrms		= MAX_SD_OUTSTANDING;		/* maximum outstanding frames */
-	cfg.t.cfg.s.sdDLSAP.errType			= SD_ERR_NRM;
+	cfg.t.cfg.s.sdDLSAP.errType			= k->mtp2.errorType;
 	cfg.t.cfg.s.sdDLSAP.t1.enb			= TRUE;						/* timer 1 - Alignment Ready Timer */
 	cfg.t.cfg.s.sdDLSAP.t1.val			= k->mtp2.t1;
 	cfg.t.cfg.s.sdDLSAP.t2.enb			= TRUE;						/* timer 2 - Not Aligned Timer */
@@ -744,10 +744,6 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 	cfg.t.cfg.s.snDLSAP.msgPrior		= 0;					/* management message priority */
 	cfg.t.cfg.s.snDLSAP.lnkType			= k->mtp3.linkType;		/* link type ANSI, ITU, BICI or CHINA */
 	cfg.t.cfg.s.snDLSAP.upSwtch			= k->mtp3.switchType;	/* user part switch type */
-# if (SS7_ANS92 || SS7_ANS88 || SS7_ANS96 || SS7_CHINA)
-	cfg.t.cfg.s.snDLSAP.l2Type			= LSN_MTP2_56KBPS;		/* layer 2 type - 56kbps MTP2 link, 1.536Mbps MTP2 link or QSAAL link */
-	cfg.t.cfg.s.snDLSAP.isCLink			= FALSE;				/* identifies if the link is a C type link.Required to check if sls has to be rotated.*/
-# endif
 	cfg.t.cfg.s.snDLSAP.maxSLTtry		= MAX_SLTM_RETRIES;		/* maximun times to retry SLTM */
 	cfg.t.cfg.s.snDLSAP.p0QLen			= 32;					/* size of the priority 0 Q */
 	cfg.t.cfg.s.snDLSAP.p1QLen			= 32;					/* size of the priority 1 Q */
@@ -775,17 +771,46 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 	cfg.t.cfg.s.snDLSAP.selector		= 0;					/* lower layer selector */
 	cfg.t.cfg.s.snDLSAP.mem.region		= S_REG;				/* memory region id */
 	cfg.t.cfg.s.snDLSAP.mem.pool		= S_POOL;				/* memory pool id */
-#if( SS7_ANS92 || SS7_ANS88 || SS7_ANS96 || SS7_CHINA )
-	cfg.t.cfg.s.snDLSAP.dpcLen			= DPC24;				/* dpc length 24 bits */
-#else
-	cfg.t.cfg.s.snDLSAP.dpcLen			= DPC14;				/* dpc length 14 bits */
-#endif
 	cfg.t.cfg.s.snDLSAP.spId			= k->mtp3.mtp2Id		;/* service provider id */
-#if (SS7_ITU88 || SS7_CHINA || SS7_TTC || SS7_NTT || SS7_BICI )
-	cfg.t.cfg.s.snDLSAP.flushContFlag	= FALSE;				/* flush continue handling */
-#else
-	cfg.t.cfg.s.snDLSAP.flushContFlag	= TRUE;					/* flush continue handling */
-#endif
+
+	switch (k->mtp3.linkType) {
+	/**************************************************************************/
+	case (LSN_SW_ANS):
+	case (LSN_SW_ANS96):
+	case (LSN_SW_CHINA):
+		cfg.t.cfg.s.snDLSAP.dpcLen		= DPC24;				/* dpc length 24 bits */
+		cfg.t.cfg.s.snDLSAP.l2Type		= LSN_MTP2_56KBPS;		/* layer 2 type - 56kbps MTP2 link, 1.536Mbps MTP2 link or QSAAL link */
+		cfg.t.cfg.s.snDLSAP.isCLink		= FALSE;				/* identifies if the link is a C type link.Required to check if sls has to be rotated.*/
+		break;
+	/**************************************************************************/
+	case (LSN_SW_ITU):
+		cfg.t.cfg.s.snDLSAP.dpcLen		= DPC14;				/* dpc length 14 bits */
+		break;
+	/**************************************************************************/
+	default:
+		cfg.t.cfg.s.snDLSAP.dpcLen		= DPC14;				/* dpc length 14 bits */
+		break;
+	/**************************************************************************/
+	} /* switch (k->mtp3.linkType) */
+
+	switch (k->mtp3.linkType) {
+	/**************************************************************************/
+	case (LSN_SW_ANS):
+	case (LSN_SW_ANS96):
+		cfg.t.cfg.s.snDLSAP.flushContFlag	= TRUE;			/* flush continue handling */
+		break;
+	/**************************************************************************/
+	case (LSN_SW_ITU):
+	case (LSN_SW_CHINA):
+		cfg.t.cfg.s.snDLSAP.flushContFlag	= FALSE;			/* flush continue handling */
+		break;
+	/**************************************************************************/
+	default:
+		cfg.t.cfg.s.snDLSAP.flushContFlag	= FALSE;			/* flush continue handling */
+		break;
+	/**************************************************************************/
+	} /* switch (k->mtp3.linkType) */
+
 	cfg.t.cfg.s.snDLSAP.tmr.t1.enb		= TRUE;					/* t1 - delay to avoid missequencing on changeover */
 	cfg.t.cfg.s.snDLSAP.tmr.t1.val		= k->mtp3.t1;
 	cfg.t.cfg.s.snDLSAP.tmr.t2.enb		= TRUE;					/* t2 - waiting for changeover ack */
@@ -900,7 +925,7 @@ int ftmod_ss7_mtp3_linkset_config(int id)
 {
 	Pst				pst;
 	SnMngmt			cfg;
-	U16				c;
+	int				c;
 	sng_link_set_t	*k = &g_ftdm_sngss7_data.cfg.mtpLinkSet[id];
 
 	/* initalize the post structure */
@@ -927,11 +952,12 @@ int ftmod_ss7_mtp3_linkset_config(int id)
 	cfg.t.cfg.s.snLnkSet.lnkSetType		= k->linkType;		/* link type */
 	cfg.t.cfg.s.snLnkSet.adjDpc			= k->apc;			/* adjacent DPC */
 	cfg.t.cfg.s.snLnkSet.nmbActLnkReqd	= k->minActive;		/* minimum number of active links */
-	cfg.t.cfg.s.snLnkSet.nmbCmbLnkSet	= 1;				/* number of combined link sets */
-	for (c = 0; c < LSN_MAXCMBLNK; c++) {
-		cfg.t.cfg.s.snLnkSet.cmbLnkSet[c].cmbLnkSetId = c+1;
+	cfg.t.cfg.s.snLnkSet.nmbCmbLnkSet	= k->numLinks;				/* number of combined link sets */
+	for(c = 0; c < k->numLinks;c++) {
+		cfg.t.cfg.s.snLnkSet.cmbLnkSet[c].cmbLnkSetId = k->links[c];
 		cfg.t.cfg.s.snLnkSet.cmbLnkSet[c].lnkSetPrior = 0;
 	}
+
 
 	return(sng_cfg_mtp3(&pst, &cfg));
 }
@@ -1209,12 +1235,12 @@ int ftmod_ss7_isup_ckt_config(int id)
 	cfg.t.cfg.s.siCir.typeCntrl			= k->typeCntrl;		/* type of control						 */
 	cfg.t.cfg.s.siCir.contReq			= FALSE;		 	/* continuity check required				*/
 #if (SI_218_COMP || SS7_ANS88 || SS7_ANS92 || SS7_ANS95 || SS7_BELL)
-	cfg.t.cfg.s.siCir.firstCic			=;					/* First cic in the circuit group		  */
-	cfg.t.cfg.s.siCir.numCir			=;					/* Number of circuits in the circuit group */
+	cfg.t.cfg.s.siCir.firstCic			= 1;					/* First cic in the circuit group		  */
+	cfg.t.cfg.s.siCir.numCir			= 24;					/* Number of circuits in the circuit group */
 	cfg.t.cfg.s.siCir.nonSS7Con			= TRUE;				/* connecting to non SS7 network			*/
-	cfg.t.cfg.s.siCir.outTrkGrpN		=;					/* outgoing trunk group number (For EXM)	*/
-	cfg.t.cfg.s.siCir.cvrTrkClli		=;					/* Trunk Group number (For CVR validation) */
-	cfg.t.cfg.s.siCir.clli				=;					/* common language location identifier	 */
+	cfg.t.cfg.s.siCir.outTrkGrpN.length	= 0;					/* outgoing trunk group number (For EXM)	*/
+	cfg.t.cfg.s.siCir.cvrTrkClli.length	= 0;					/* Trunk Group number (For CVR validation) */
+	cfg.t.cfg.s.siCir.clli.length		= 0;					/* common language location identifier	 */
 #endif
 	cfg.t.cfg.s.siCir.cirTmr.t3.enb		= TRUE;				/* t3 timer - overload received			*/
 	cfg.t.cfg.s.siCir.cirTmr.t3.val		= k->t3;

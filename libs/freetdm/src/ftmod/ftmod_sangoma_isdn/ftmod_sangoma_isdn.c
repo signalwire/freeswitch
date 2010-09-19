@@ -189,7 +189,8 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS,
+		 FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_OUTBOUND,
@@ -471,10 +472,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	case FTDM_CHANNEL_STATE_RING: /* incoming call request */
 		{
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending incoming call from %s to %s to FTDM core\n", ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.dnis.digits);
-			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
-			ftdm_channel_add_var(ftdmchan, "isdn_crap", "morecrap");
-			ftdm_channel_add_var(ftdmchan, "isdn_stuff", "s");
-			ftdm_channel_add_var(ftdmchan, "isdn_d", "asdsadasdasdsad");
+
 			/* we have enough information to inform FTDM of the call*/
 			sigev.event_id = FTDM_SIGEVENT_START;
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
@@ -558,6 +556,9 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				/* We are hangup local call because there was a glare, we are waiting for a
 				RELEASE on this call, before we can process the saved call */
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Waiting for RELEASE on hungup glared call\n");
+			} else if (sngisdn_test_flag(sngisdn_info, FLAG_SEND_DISC)) {
+				/* Remote side sent a PROGRESS message, but cause indicates disconnect or T310 expired*/
+				sngisdn_snd_disconnect(ftdmchan);
 			} else {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Hanging up call upon local request!\n");
 
@@ -568,16 +569,15 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RING ||
 					ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALING) {
 
+					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+					sngisdn_snd_release(ftdmchan, 0);
+
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 						sng_isdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 					}
-
-					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
-					sngisdn_snd_release(ftdmchan, 0);
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
 				}
-				
 			}
 
 			/* now go to the HANGUP complete state */
@@ -691,7 +691,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 	return status;
 }
 
-static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_sig_status)
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_chan_sig_status)
 {
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 		*status = FTDM_SIG_STATE_UP;
@@ -702,17 +702,34 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_sig_status)
 	return FTDM_SUCCESS;
 }
 
-static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_sig_status)
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_chan_sig_status)
 {
 	ftdm_log(FTDM_LOG_ERROR,"Cannot set channel status in this module\n");
+	return FTDM_NOTIMPL;
+}
+
+static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_span_sig_status)
+{	
+	if (ftdm_test_flag(span->channels[1], FTDM_CHANNEL_SIG_UP)) {
+		*status = FTDM_SIG_STATE_UP;
+	} else {
+		*status = FTDM_SIG_STATE_DOWN;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
+{
+	ftdm_log(FTDM_LOG_ERROR,"Cannot set span status in this module\n");
 	return FTDM_NOTIMPL;
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 {
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
-	if (sng_isdn_stack_activate(span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "Failed to activate span %s\n", span->name);
+	if (sng_isdn_stack_start(span) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
 		return FTDM_FAIL;
 	}
 	/* clear the monitor thread stop flag */
@@ -731,7 +748,8 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 {
-	unsigned i;
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
 	ftdm_log(FTDM_LOG_INFO, "Stopping span %s\n", span->name);
 	
 	/* throw the STOP_THREAD flag to signal monitor thread stop */
@@ -743,11 +761,19 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 		ftdm_sleep(10);
 	}
 
-	/* FIXME: deconfigure any links, attached to this span */
-	/* TODO: Use Moy's channel Iterator when its implemented */
-	for (i=1;i<=span->chan_count;i++) {
-		ftdm_safe_free(span->channels[i]->call_data);
+	if (sng_isdn_stack_stop(span) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to stop span %s\n", span->name);
 	}
+	
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_safe_free(((ftdm_channel_t*)ftdm_iterator_current(curr))->call_data);
+		((ftdm_channel_t*)ftdm_iterator_current(curr))->call_data = NULL;
+	}
+	ftdm_iterator_free(chaniter);
+
+	ftdm_sched_destroy(&((sngisdn_span_data_t*)span->signal_data)->sched);
+	ftdm_queue_destroy(&((sngisdn_span_data_t*)span->signal_data)->event_queue);
 	ftdm_safe_free(span->signal_data);
 
 	ftdm_log(FTDM_LOG_DEBUG, "Finished stopping span %s\n", span->name);
@@ -757,6 +783,9 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 {
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+
 	sngisdn_span_data_t *span_data;
 	
 	ftdm_log(FTDM_LOG_INFO, "Configuring ftmod_sangoma_isdn span = %s\n", span->name);	
@@ -764,13 +793,15 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span_data = ftdm_calloc(1, sizeof(sngisdn_span_data_t));
 	span_data->ftdm_span = span;
 	span->signal_data = span_data;
-
-	unsigned i;
-	for (i=1;i <= span->chan_count; i++) {
+	
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 		sngisdn_chan_data_t *chan_data = ftdm_calloc(1, sizeof(sngisdn_chan_data_t));
-		chan_data->ftdmchan = span->channels[i];
-		span->channels[i]->call_data = chan_data;
+		chan_data->ftdmchan = ((ftdm_channel_t*)ftdm_iterator_current(curr));
+		((ftdm_channel_t*)ftdm_iterator_current(curr))->call_data = chan_data;
+		
 	}
+	ftdm_iterator_free(chaniter);
 
 	if (ftmod_isdn_parse_cfg(ftdm_parameters, span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to parse configuration\n");
@@ -789,8 +820,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->outgoing_call = ftdm_sangoma_isdn_outgoing_call;
 	span->channel_request = NULL;
 	span->signal_cb	= sig_cb;
-	span->get_channel_sig_status = ftdm_sangoma_isdn_get_sig_status;
-	span->set_channel_sig_status = ftdm_sangoma_isdn_set_sig_status;
+	span->get_channel_sig_status = ftdm_sangoma_isdn_get_chan_sig_status;
+	span->set_channel_sig_status = ftdm_sangoma_isdn_set_chan_sig_status;
+	span->get_span_sig_status = ftdm_sangoma_isdn_get_span_sig_status;
+	span->set_span_sig_status = ftdm_sangoma_isdn_set_span_sig_status;
 	span->state_map	= &sangoma_isdn_state_map;
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
@@ -852,7 +885,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	for(i=1;i<=MAX_VARIANTS;i++) {		
 		ftdm_mutex_create(&g_sngisdn_data.ccs[i].mutex);
 	}
-
+	
 	/* initalize sng_isdn library */
 	sng_isdn_init(&g_sngisdn_event_interface);
 	return FTDM_SUCCESS;
@@ -920,16 +953,35 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 	if (!strcasecmp(argv[0], "l1_stats")) {
 		ftdm_span_t *span;
 		if (argc < 2) {
-			ftdm_log(FTDM_LOG_ERROR, "Usage: ftdm sangoma_isdn l1_stats <span name>\n");
+			stream->write_function(stream, "Usage: ftdm sangoma_isdn l1_stats <span name>\n");
 			status = FTDM_FAIL;
 			goto done;
 		}
 		status = ftdm_span_find_by_name(argv[1], &span);
 		if (FTDM_SUCCESS != status) {
-			stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[2]);
+			stream->write_function(stream, "-ERR failed to find span with name %s\n", argv[1]);
+			/* Return SUCCESS because we do not want to print the general FTDM usage list */
+			status = FTDM_SUCCESS; 
 			goto done;
 		}
-		/* TODO: implement PHY stats */
+		sngisdn_print_phy_stats(stream, span);
+	}
+
+	if (!strcasecmp(argv[0], "show_spans")) {
+		ftdm_span_t *span = NULL;
+		if (argc == 2) {
+			status = ftdm_span_find_by_name(argv[1], &span);
+			if (FTDM_SUCCESS != status) {
+				stream->write_function(stream, "-ERR failed to find span with name %s\n", argv[1]);
+				/* Return SUCCESS because we do not want to print the general FTDM usage list */
+				status = FTDM_SUCCESS;
+				goto done;
+			}
+			sngisdn_print_span(stream, span);
+			status = FTDM_SUCCESS;
+			goto done;
+		}
+		sngisdn_print_spans(stream);
 	}
 	if (!strcasecmp(argv[0], "check_ids")) {
 		sngisdn_check_free_ids();

@@ -57,6 +57,8 @@ unsigned long get_unique_id(void);
 
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
 
+ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -72,9 +74,10 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	int k;
 	int j;
 	int flag;
+	int odd;
 	char tmp[2];
-	unsigned char lower;
-	unsigned char upper;
+	uint8_t lower;
+	uint8_t upper;
 
 	/**************************************************************************/
 	cgPtyNum->eh.pres		   = PRSNT_NODEF;
@@ -104,81 +107,73 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	k = 0;
 	j = 0;
 	flag = 0;
+	odd = 0;
+	upper = 0x0;
+	lower = 0x0;
 
 	while (1) {
+		/* grab a digit from the ftdm digits */
 		tmp[0] = ftdm->cid_num.digits[k];
 
+		/* check if the digit is a number and that is not null */
+		while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+			/* move on to the next value */
+			k++;
+			tmp[0] = ftdm->cid_num.digits[k];
+		} /* while(!(isdigit(tmp))) */
+
+		/* check if tmp is null or a digit */
 		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
-				lower = atoi(&tmp[0]);
+			/* push it into the lower nibble */
+			lower = atoi(&tmp[0]);
+			/* move to the next digit */
+			k++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = ftdm->cid_num.digits[k];
+
+			/* check if the digit is a number and that is not null */
+			while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
 				k++;
 				tmp[0] = ftdm->cid_num.digits[k];
-			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->cid_num.digits[k];
-				} /* while(!(isdigit(tmp))) */
+			} /* while(!(isdigit(tmp))) */
 
-				if (tmp[0] != '\0') {
-					lower = atoi(&tmp[0]);
-					k++;
-					tmp[0] = ftdm->cid_num.digits[k];
-				} else {
-					flag = 1;
-					lower = 0xf;
-				} /* if (tmp != '\0') */
-			} /* (isdigit(tmp)) */
-		} else {
-			flag = 1;
-			lower = 0xf;
-		} /* if (tmp != '\0') */
-
-		tmp[0] = ftdm->cid_num.digits[k];
-
-		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble */
 				upper = (atoi(&tmp[0])) << 4;
 			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->cid_num.digits[k];
-				} /* while(!(isdigit(tmp))) */
-
-				if (tmp[0] != '\0') {
-					upper = (atoi(&tmp[0])) << 4;
-					k++;
-				} else {
-					flag = 1;
-					upper = 0xf;
-				} /*  if (tmp != '\0') */
-			} /* if (isdigit(tmp)) */
-		} else {
-			if (flag == 1) {
+				/* there is no upper ... fill in 0 */
 				upper = 0x0;
-			} else {
+				/* throw the odd flag */
+				odd = 1;
+				/* throw the end flag */
 				flag = 1;
-				upper = 0xf;
-			} /* if (flag == 1) */
-		} /* if (tmp != '\0') */
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 0;
+			/* throw the flag */
+			flag = 1;
+		}
 
+		/* push the digits into the trillium structure */
 		cgPtyNum->addrSig.val[j] = upper | lower;
 
+		/* increment the trillium pointer */
 		j++;
 
-		if (flag) {
-			break;
-		} else {
-			k++;
-		}
+		/* if the flag is up we're through all the digits */
+		if (flag) break;
+
+		/* move to the next digit */
+		k++;
 	} /* while(1) */
 
 	cgPtyNum->addrSig.len = j;
 
 	/**************************************************************************/
 	cgPtyNum->oddEven.pres	  = PRSNT_NODEF;
-
-	cgPtyNum->oddEven.val	   = ((cgPtyNum->addrSig.val[j] >> 4) == 0x0 ) ? 0x01 : 0x00;
-
+	cgPtyNum->oddEven.val	   = odd;
 	/**************************************************************************/
 	return 0;
 }
@@ -196,9 +191,10 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	int k;
 	int j;
 	int flag;
+	int odd;
 	char tmp[2];
-	unsigned char lower;
-	unsigned char upper;
+	uint8_t lower;
+	uint8_t upper;
 
 	/**************************************************************************/
 	cdPtyNum->eh.pres		   = PRSNT_NODEF;
@@ -217,77 +213,74 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	/* atoi will search through memory starting from the pointer it is given until
 	 * it finds the \0...since tmp is on the stack it will start going through the
 	 * possibly causing corruption.  Hard code a \0 to prevent this
-	 */
+	 */ /* dnis */
 	tmp[1] = '\0';
 	k = 0;
 	j = 0;
 	flag = 0;
+	odd = 0;
+	upper = 0x0;
+	lower = 0x0;
 
 	while (1) {
+		/* grab a digit from the ftdm digits */
 		tmp[0] = ftdm->dnis.digits[k];
 
+		/* check if the digit is a number and that is not null */
+		while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+			/* move on to the next value */
+			k++;
+			tmp[0] = ftdm->dnis.digits[k];
+		} /* while(!(isdigit(tmp))) */
+
+		/* check if tmp is null or a digit */
 		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
-				lower = atoi(&tmp[0]);
+			/* push it into the lower nibble */
+			lower = atoi(&tmp[0]);
+			/* move to the next digit */
+			k++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = ftdm->dnis.digits[k];
+
+			/* check if the digit is a number and that is not null */
+			while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
 				k++;
 				tmp[0] = ftdm->dnis.digits[k];
-			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->dnis.digits[k];
-				} /* while(!(isdigit(tmp))) */
+			} /* while(!(isdigit(tmp))) */
 
-				if (tmp[0] != '\0') {
-					lower = atoi(&tmp[0]);
-					k++;
-					tmp[0] = ftdm->dnis.digits[k];
-				} else {
-					flag = 1;
-					lower = 0xf;
-				} /* if (tmp != '\0') */
-			} /* (isdigit(tmp)) */
-		} else {
-			flag = 1;
-			lower = 0xf;
-		} /* if (tmp != '\0') */
-
-		tmp[0] = ftdm->dnis.digits[k];
-
-		if (tmp[0] != '\0') {
-			if (isdigit(tmp[0])) {
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble */
 				upper = (atoi(&tmp[0])) << 4;
 			} else {
-				while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
-					k++;
-					tmp[0] = ftdm->dnis.digits[k];
-				} /* while(!(isdigit(tmp))) */
-
-				if (tmp[0] != '\0') {
-					upper = (atoi(&tmp[0])) << 4;
-					k++;
-				} else {
-					flag = 1;
-					upper = 0xf;
-				} /*  if (tmp != '\0') */
-			} /* if (isdigit(tmp)) */
-		} else {
-			if (flag == 1) {
-				upper = 0x0;
-			} else {
+				/* there is no upper ... fill in ST */
+				upper = 0xF;
+				/* throw the odd flag */
+				odd = 1;
+				/* throw the end flag */
 				flag = 1;
-				upper = 0xf;
-			} /* if (flag == 1) */
-		} /* if (tmp != '\0') */
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 1;
+			/* need to add the ST */
+			lower = 0xF;
+			upper = 0x0;
+			/* throw the flag */
+			flag = 1;
+		}
 
+		/* push the digits into the trillium structure */
 		cdPtyNum->addrSig.val[j] = upper | lower;
 
+		/* increment the trillium pointer */
 		j++;
 
-		if (flag) {
-			break;
-		} else {
-			k++;
-		}
+		/* if the flag is up we're through all the digits */
+		if (flag) break;
+
+		/* move to the next digit */
+		k++;
 	} /* while(1) */
 
 	cdPtyNum->addrSig.len = j;
@@ -295,7 +288,7 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	/**************************************************************************/
 	cdPtyNum->oddEven.pres	  = PRSNT_NODEF;
 
-	cdPtyNum->oddEven.val	   = ((cdPtyNum->addrSig.val[j] >> 4) == 0x0 ) ? 0x01 : 0x00;
+	cdPtyNum->oddEven.val	   = odd;
 
 	/**************************************************************************/
 	return 0;
@@ -313,9 +306,9 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		j = 0;
 
 		for (i = 0; i < str.len; i++) {
-			sprintf(&ftdm[j], "%d", (str.val[i] & 0x0F));
+			sprintf(&ftdm[j], "%X", (str.val[i] & 0x0F));
 			j++;
-			sprintf(&ftdm[j], "%d", ((str.val[i] & 0xF0) >> 4));
+			sprintf(&ftdm[j], "%X", ((str.val[i] & 0xF0) >> 4));
 			j++;
 		}
 
@@ -325,6 +318,8 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		} else {
 			ftdm[j] = '\0';
 		}
+
+		
 	} else {
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
 		return 1;
@@ -451,6 +446,149 @@ unsigned long get_unique_id(void)
 }
 
 /******************************************************************************/
+ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t 		*ftdmchan = NULL;
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	int 				i;
+	int					byte = 0;
+	int					bit = 0;
+
+
+	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);
+
+	/* check all the circuits in the range to see if they are done resetting */
+	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+			SS7_ASSERT;
+		}
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		/* check if there is a state change pending on the channel */
+		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+			/* check the state to the GRP_RESET_RX_DN flag */
+			if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
+				/* this channel is still resetting...do nothing */
+					goto GRS_UNLOCK_ALL;
+				} /* if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
+			} else {
+				/* state change pending */
+				goto GRS_UNLOCK_ALL;
+			}
+		} /* for ( i = circuit; i < (circuit + range + 1); i++) */
+
+		SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n",
+						sngss7_span->rx_grs.circuit,
+						sngss7_span->rx_grs.range);
+
+		/* check all the circuits in the range to see if they are done resetting */
+		for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
+				SS7_ASSERT;
+			}
+
+			/* throw the GRP reset flag complete flag */
+			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
+
+			/* move the channel to the down state */
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+
+			/* update the status map if the ckt is in blocked state */
+			if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+				(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
+				(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
+				(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+			
+				sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
+			} /* if blocked */
+			
+			/* update the bit and byte counter*/
+			bit ++;
+			if (bit == 8) {
+				byte++;
+				bit = 0;
+			}
+		} /* for ( i = circuit; i < (circuit + range + 1); i++) */
+
+GRS_UNLOCK_ALL:
+		for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+				SS7_ASSERT;
+			}
+
+			/* unlock the channel */
+			ftdm_mutex_unlock(ftdmchan->mutex);
+		}
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_sigmsg_t 		sigev;
+	int 				x;
+
+	for (x = 1; x < (ftdmspan->chan_count + 1); x++) {
+
+		/* extract the channel structure and sngss7 channel data */
+		ftdmchan = ftdmspan->channels[x];
+		
+		/* if the call data is NULL move on */
+		if (ftdmchan->call_data == NULL) continue;
+
+		sngss7_info = ftdmchan->call_data;
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		memset (&sigev, 0, sizeof (sigev));
+
+		sigev.chan_id = ftdmchan->chan_id;
+		sigev.span_id = ftdmchan->span_id;
+		sigev.channel = ftdmchan;
+
+		/* if we have the PAUSED flag and the sig status is still UP */
+		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) &&
+			(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
+			
+			/* throw the channel into SUSPENDED to process the flag */
+			/* after doing this once the sig status will be down */
+			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+		}
+
+		/* if the RESUME flag is up go to SUSPENDED to process the flag */
+		/* after doing this the flag will be cleared */
+		if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) {
+			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+		}
+
+		/* unlock the channel */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+	} /* for (x = 1; x < (span->chan_count + 1); x++) */
+
+	/* signal the core that sig events are queued for processing */
+	ftdm_span_trigger_signals(ftdmspan);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+
 
 /******************************************************************************/
 /* For Emacs:

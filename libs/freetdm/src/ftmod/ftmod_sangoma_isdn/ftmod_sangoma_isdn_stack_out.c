@@ -409,7 +409,7 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+ 	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending CONNECT, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -450,6 +450,14 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 		cnStEvnt.chanId.chanNmbSlotMap.len = 1;
 		cnStEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
 	}
+	
+	cnStEvnt.progInd.eh.pres = PRSNT_NODEF;
+	cnStEvnt.progInd.location.pres = PRSNT_NODEF;
+	cnStEvnt.progInd.location.val = IN_LOC_USER;
+	cnStEvnt.progInd.codeStand0.pres = PRSNT_NODEF;
+	cnStEvnt.progInd.codeStand0.val = IN_CSTD_CCITT;
+	cnStEvnt.progInd.progDesc.pres = PRSNT_NODEF;
+	cnStEvnt.progInd.progDesc.val = IN_PD_NOTETEISDN; /* Not end-to-end ISDN */
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if (sng_isdn_con_response(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, signal_data->dchan_id, sngisdn_info->ces)) {

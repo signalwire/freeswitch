@@ -139,7 +139,6 @@ typedef struct sng_mtp_link {
 		uint32_t	t23;
 		uint32_t	t24;
 		uint32_t	t25;
-		uint32_t	t26;
 		uint32_t	t27;
 		uint32_t	t28;
 		uint32_t	t29;
@@ -163,6 +162,8 @@ typedef struct sng_link_set {
 	uint32_t		flags;
 	uint32_t		apc;
 	uint32_t		linkType;
+	uint32_t		switchType;
+	uint32_t		ssf;
 	uint32_t 		minActive;
 	uint32_t		numLinks;
 	uint32_t		links[16];
@@ -174,9 +175,11 @@ typedef struct sng_route {
 	uint32_t		flags;
 	uint32_t		dpc;
 	uint32_t		cmbLinkSetId;
+	uint32_t		linkSetId;
 	uint32_t		linkType;
 	uint32_t		switchType;
 	uint32_t		ssf;
+	uint32_t		nwId;
 	uint32_t		isSTP;
 	uint32_t		t6;
 	uint32_t		t8;
@@ -188,6 +191,7 @@ typedef struct sng_route {
 	uint32_t		t19;
 	uint32_t		t21;
 	uint32_t		t25;
+	uint32_t		t26;
 } sng_route_t;
 
 typedef struct sng_isup_intf {
@@ -329,6 +333,8 @@ typedef struct sngss7_glare_data {
 typedef struct sngss7_group_data {
 	uint32_t				circuit;
 	uint32_t				range;
+	uint8_t					status[255];
+	uint8_t					type;
 }sngss7_group_data_t;
 
 typedef struct sngss7_chan_data {
@@ -348,6 +354,10 @@ typedef struct sngss7_span_data {
 	ftdm_sched_t			*sched;
 	sngss7_group_data_t		rx_grs;
 	sngss7_group_data_t		tx_grs;
+	sngss7_group_data_t		rx_cgb;
+	sngss7_group_data_t		tx_cgb;
+	sngss7_group_data_t		rx_cgu;
+	sngss7_group_data_t		tx_cgu;
 	ftdm_queue_t 			*event_queue;
 }sngss7_span_data_t;
 
@@ -376,8 +386,8 @@ typedef struct sngss7_event_data
 
 
 typedef enum {
-	FLAG_RESET_RX		   = (1 << 0),
-	FLAG_RESET_TX		   = (1 << 1),
+	FLAG_RESET_RX			= (1 << 0),
+	FLAG_RESET_TX			= (1 << 1),
 	FLAG_RESET_SENT			= (1 << 2),
 	FLAG_RESET_TX_RSP		= (1 << 3),
 	FLAG_GRP_RESET_RX		= (1 << 4),
@@ -387,27 +397,25 @@ typedef enum {
 	FLAG_GRP_RESET_TX		= (1 << 8),
 	FLAG_GRP_RESET_SENT		= (1 << 9),
 	FLAG_GRP_RESET_TX_RSP	= (1 << 10),
-	FLAG_REMOTE_REL		 = (1 << 11),
-	FLAG_LOCAL_REL		  = (1 << 12),
-	FLAG_GLARE			  = (1 << 13),
-	FLAG_INFID_RESUME	   = (1 << 14),
-	FLAG_INFID_PAUSED	   = (1 << 15),
+	FLAG_REMOTE_REL			= (1 << 11),
+	FLAG_LOCAL_REL			= (1 << 12),
+	FLAG_GLARE				= (1 << 13),
+	FLAG_INFID_RESUME		= (1 << 14),
+	FLAG_INFID_PAUSED		= (1 << 15),
 	FLAG_CKT_UCIC_BLOCK		= (1 << 16),
 	FLAG_CKT_UCIC_UNBLK		= (1 << 17),
 	FLAG_CKT_LC_BLOCK_RX	= (1 << 18),
 	FLAG_CKT_LC_UNBLK_RX	= (1 << 19),
 	FLAG_CKT_MN_BLOCK_RX	= (1 << 20),
-	FLAG_CKT_MN_BLOCK_TX	= (1 << 21),
-	FLAG_CKT_MN_UNBLK_RX	= (1 << 22),
+	FLAG_CKT_MN_UNBLK_RX	= (1 << 21),
+	FLAG_CKT_MN_BLOCK_TX	= (1 << 22),
 	FLAG_CKT_MN_UNBLK_TX	= (1 << 23),
 	FLAG_GRP_HW_BLOCK_RX	= (1 << 24),
 	FLAG_GRP_HW_BLOCK_TX	= (1 << 25),
 	FLAG_GRP_MN_BLOCK_RX	= (1 << 26),
 	FLAG_GRP_MN_BLOCK_TX	= (1 << 27),
-	FLAG_GRP_HW_UNBLK_RX	= (1 << 28),
-	FLAG_GRP_HW_UNBLK_TX	= (1 << 29),
-	FLAG_GRP_MN_UNBLK_RX	= (1 << 30),
-	FLAG_GRP_MN_UNBLK_TX	= (1 << 31)
+	FLAG_GRP_HW_UNBLK_TX	= (1 << 28),
+	FLAG_GRP_MN_UNBLK_TX	= (1 << 29)
 } flag_t;
 /******************************************************************************/
 
@@ -415,6 +423,7 @@ typedef enum {
 extern ftdm_sngss7_data_t   g_ftdm_sngss7_data;
 extern uint32_t			 sngss7_id;
 extern ftdm_sched_t		 *sngss7_sched;
+extern int				cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -445,6 +454,14 @@ int ftmod_ss7_cc_isap_config(int id);
 
 int ftmod_ss7_inhibit_mtplink(uint32_t id);
 int ftmod_ss7_uninhibit_mtplink(uint32_t id);
+int ftmod_ss7_activate_mtplink(uint32_t id);
+int ftmod_ss7_deactivate_mtplink(uint32_t id);
+int ftmod_ss7_deactivate2_mtplink(uint32_t id);
+int ftmod_ss7_activate_mtplinkSet(uint32_t id);
+int ftmod_ss7_deactivate_mtplinkSet(uint32_t id);
+int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
+int ftmod_ss7_lpo_mtplink(uint32_t id);
+int ftmod_ss7_lpr_mtplink(uint32_t id);
 
 int ftmod_ss7_mtplink_sta(uint32_t id, SnMngmt *cfm);
 int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm);
@@ -465,6 +482,10 @@ void ft_to_sngss7_uba(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_lpa(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_gra(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_grs(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -524,6 +545,9 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 void handle_isup_t35(void *userdata);
 
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
+
+ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 /******************************************************************************/
 
 /* MACROS *********************************************************************/

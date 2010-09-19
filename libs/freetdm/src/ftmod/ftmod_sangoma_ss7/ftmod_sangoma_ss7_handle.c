@@ -71,6 +71,8 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -80,6 +82,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  	*ftdmchan = NULL;
+	char				nadi[2];
+
+	memset(nadi, '\0', sizeof(nadi));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -210,7 +215,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			}
 
 			/* add any special variables for the dialplan */
-			/*ftdm_channel_add_var(ftdmchan, "ss7_stuff", "s");*/
+			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
+			ftdm_channel_add_var(ftdmchan, "ss7_nadi", nadi);
 
 			/* set the state of the channel to collecting...the rest is done by the chan monitor */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
@@ -898,12 +904,12 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case SIT_STA_CGBREQ:			/* CGB request */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGB\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGUREQ:			/* CGU request */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGU\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		handle_cgu_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGQRYREQ:		  /* circuit group query request */
@@ -913,12 +919,12 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case SIT_STA_CGBRSP:			/* mntc. oriented CGB response */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx mntc CGB\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		/*handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGURSP:			/* mntc. oriented CGU response */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx mntc CGU\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		/*SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSREQ:			/* circuit group reset request */
@@ -1012,13 +1018,13 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBINFOIND:		/* circuit grp blking ind , no resp req */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGB no resp req\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		/*SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGB no resp req\n");*/
+/*		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCQMINFOREQ:	  /* when LM requests ckt grp query */
 		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LM CQM\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+// 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCGRS:		 /* group reset initiated locally by the software */
@@ -1121,21 +1127,10 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 			/* lock the channel */
 			ftdm_mutex_lock(ftdmchan->mutex);
 	
-			/* check if there is a pending state change, give it a bit to clear */
-			if (check_for_state_change(ftdmchan)) {
-				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-				ftdm_mutex_unlock(ftdmchan->mutex);
-				i++;
-				SS7_ASSERT;
-			};
-	
 			/* check if the circuit is fully started */
 			if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_IN_THREAD)) {
 				/* set the pause flag on the channel */
 				sngss7_set_flag(sngss7_info, FLAG_INFID_PAUSED);
-	
-				/* set the statet o SUSPENDED to bring the sig status down */ 
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 			}
 	
 			/* unlock the channel again before we exit */
@@ -1183,14 +1178,6 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 			/* lock the channel */
 			ftdm_mutex_lock(ftdmchan->mutex);
 
-			/* check if there is a pending state change, give it a bit to clear */
-			if (check_for_state_change(ftdmchan)) {
-				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-				ftdm_mutex_unlock(ftdmchan->mutex);
-				i++;
-				SS7_ASSERT;
-			};
-
 			/* only resume if we are paused */
 			if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
 				/* set the resume flag on the channel */
@@ -1198,9 +1185,6 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 				/* clear the paused flag */
 				sngss7_clear_flag(sngss7_info, FLAG_INFID_PAUSED);
-
-				/* set the statet to SUSPENDED to bring the sig status up */ 
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 			}
 			
 			/* unlock the channel again before we exit */
@@ -1713,6 +1697,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* loop over the cics starting from circuit until range+1 */
 	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
 		/* grab the circuit in question */
 		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
@@ -1989,6 +1974,267 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	return FTDM_SUCCESS;
 }
 
+/******************************************************************************/
+ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	int					range;
+	uint8_t				status[255];
+	int					blockType = 0;
+	int					byte = 0;
+	int					bit = 0;
+	int 				x;
+
+	memset(&status[0], '\0', sizeof(status));
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* grab the span info */
+	sngss7_span = ftdmchan->span->mod_data;
+
+	/* figure out what type of block needs to be applied */
+	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
+		blockType = siStaEvnt->cgsmti.typeInd.val;
+	} else {
+		SS7_ERROR("Received CGB with no circuit group supervision value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}	
+
+	/* pull out the range value */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
+		range = siStaEvnt->rangStat.range.val;
+	} else {
+		SS7_ERROR("Received CGB with no range value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* pull out the status field */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.status.pres == PRSNT_NODEF)) {
+		for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+			status[x] = siStaEvnt->rangStat.status.val[x];
+		}
+	} else {
+		SS7_ERROR("Received CGB with no status value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* save the circuit, range and status */
+	sngss7_span->rx_cgb.circuit = circuit;
+	sngss7_span->rx_cgb.range = range;
+	sngss7_span->rx_cgb.type = blockType;
+	for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+		sngss7_span->rx_cgb.status[x] = status[x];
+	}
+
+	/* loop over the cics starting from circuit until range+1 */
+	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
+		/* grab the circuit in question */
+		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
+			break;
+		}
+	
+		/* now that we have the right channel...put a lock on it so no-one else can use it */
+		ftdm_mutex_lock(ftdmchan->mutex);
+	
+		/* check if there is a pending state change, give it a bit to clear */
+		if (check_for_state_change(ftdmchan)) {
+			SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
+			ftdm_mutex_unlock(ftdmchan->mutex);
+			SS7_ASSERT;
+		};
+
+#if 0
+		SS7_ERROR("KONRAD -> circuit=%d, byte=%d, bit=%d, status[byte]=%d, math=%d\n",
+					x,
+					byte,
+					bit,
+					status[byte],
+					(status[byte] & (1 << bit)));
+#endif
+		if (status[byte] & (1 << bit)) {
+			switch (blockType) {
+			/**********************************************************************/
+			case 0:	/* maintenance oriented */
+				sngss7_set_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 1: /* hardware failure oriented */
+				sngss7_set_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 2: /* reserved for national use */
+				break;
+			/**********************************************************************/
+			default:
+				break;
+			/**********************************************************************/
+			} /* switch (blockType) */
+		}
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+		/* update the bit and byte counter*/
+		bit ++;
+		if (bit == 8) {
+			byte++;
+			bit = 0;
+		}
+
+	} /* for (x = circuit; x < (circuit + range + 1); x++) */
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	ft_to_sngss7_cgba(ftdmchan);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	int					range;
+	uint8_t				status[255];
+	int					blockType = 0;
+	int					byte = 0;
+	int					bit = 0;
+	int 				x;
+
+	memset(&status[0], '\0', sizeof(status));
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* grab the span info */
+	sngss7_span = ftdmchan->span->mod_data;
+
+	/* figure out what type of block needs to be applied */
+	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
+		blockType = siStaEvnt->cgsmti.typeInd.val;
+	} else {
+		SS7_ERROR("Received CGB with no circuit group supervision value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}	
+
+	/* pull out the range value */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
+		range = siStaEvnt->rangStat.range.val;
+	} else {
+		SS7_ERROR("Received CGB with no range value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* pull out the status field */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.status.pres == PRSNT_NODEF)) {
+		for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+			status[x] = siStaEvnt->rangStat.status.val[x];
+		}
+	} else {
+		SS7_ERROR("Received CGB with no status value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* save the circuit, range and status */
+	sngss7_span->rx_cgu.circuit = circuit;
+	sngss7_span->rx_cgu.range = range;
+	sngss7_span->rx_cgu.type = blockType;
+	for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+		sngss7_span->rx_cgu.status[x] = status[x];
+	}
+
+	/* loop over the cics starting from circuit until range+1 */
+	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
+		/* grab the circuit in question */
+		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
+			break;
+		}
+	
+		/* now that we have the right channel...put a lock on it so no-one else can use it */
+		ftdm_mutex_lock(ftdmchan->mutex);
+	
+		/* check if there is a pending state change, give it a bit to clear */
+		if (check_for_state_change(ftdmchan)) {
+			SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
+			ftdm_mutex_unlock(ftdmchan->mutex);
+			SS7_ASSERT;
+		};
+
+		if (status[byte] & (1 << bit)) {
+			switch (blockType) {
+			/**********************************************************************/
+			case 0:	/* maintenance oriented */
+				sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 1: /* hardware failure oriented */
+				sngss7_clear_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 2: /* reserved for national use */
+				break;
+			/**********************************************************************/
+			default:
+				break;
+			/**********************************************************************/
+			} /* switch (blockType) */
+		} /* */
+	
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+		/* update the bit and byte counter*/
+		bit ++;
+		if (bit == 8) {
+			byte++;
+			bit = 0;
+		}
+
+	} /* for (x = circuit; x < (circuit + range + 1); x++) */
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	ft_to_sngss7_cgua(ftdmchan);
+
+	return FTDM_SUCCESS;
+}
 
 /******************************************************************************/
 /* For Emacs:
