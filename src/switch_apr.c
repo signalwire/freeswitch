@@ -416,6 +416,18 @@ SWITCH_DECLARE(switch_status_t) switch_file_copy(const char *from_path, const ch
 	return apr_file_copy(from_path, to_path, perms, pool);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_file_stat(switch_finfo_t *finfo, const char *fname, int32_t wanted, switch_memory_pool_t *pool)
+{
+	apr_status_t status;
+	apr_finfo_t aprinfo;
+	if (sizeof(*finfo) != sizeof(aprinfo)) {
+		return SWITCH_STATUS_MEMERR;
+	}
+	status = apr_stat(&aprinfo, fname, wanted, pool);
+	memcpy(finfo, &aprinfo, sizeof(*finfo));
+	return status;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t *thefile)
 {
