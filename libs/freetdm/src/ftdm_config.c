@@ -268,13 +268,24 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_create(const char *name, ftdm_conf_node
 	if (parent) {
 		/* store who my parent is */
 		newnode->parent = parent;
-		/* save any siblings */
-		sibling = parent->child;
-		/* as a newborn I am first */
-		parent->child = newnode;
-		if (sibling) {
-			/* store a pointer to my next sibling */
-			newnode->next = sibling;
+
+		/* arrange them in FIFO order (newnode should be last) */
+		if (!parent->child) {
+			/* we're the first node being added */
+			parent->child = newnode;
+		} else {
+			if (!parent->last) {
+				/* we're the second node being added */
+				parent->last = newnode;
+				parent->child->next = newnode;
+				newnode->prev = parent->child;
+			} else {
+				/* we're the third or Nth node to be added */
+				sibling = parent->last;
+				sibling->next = newnode;
+				parent->last = newnode;
+				newnode->prev = sibling;
+			}
 		}
 	}
 
