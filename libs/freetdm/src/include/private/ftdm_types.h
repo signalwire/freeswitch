@@ -376,7 +376,7 @@ struct ftdm_iterator {
 	unsigned int allocated:1;
 	union {
 		struct {
-			int32_t index;
+			uint32_t index;
 			const ftdm_span_t *span;
 		} chaniter;
 		ftdm_hash_iterator_t *hashiter;
