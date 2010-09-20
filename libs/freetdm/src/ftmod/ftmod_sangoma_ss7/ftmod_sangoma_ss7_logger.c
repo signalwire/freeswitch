@@ -496,6 +496,12 @@ void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta)
 	/* initalize the msg variable to NULLs */
 	memset(&msg[0], '\0', sizeof(&msg));
 
+	/* if the event is REMOTE/LOCAL we don't need to print these */
+	if ((sta->t.usta.alarm.event == LSI_EVENT_REMOTE) ||
+		(sta->t.usta.alarm.event == LSI_EVENT_LOCAL)) {
+		return;
+	}
+
 
 	/* point p to the first spot in msg */
 	p = &msg[0];
@@ -727,6 +733,8 @@ void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta)
 								msg,
 								DECODE_LSI_EVENT(sta->t.usta.alarm.event),
 								DECODE_LSI_CAUSE(sta->t.usta.alarm.cause));
+
+	return;
 
 }   /* handle_isup_alarm */
 
