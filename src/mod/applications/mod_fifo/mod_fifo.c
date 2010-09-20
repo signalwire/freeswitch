@@ -439,7 +439,7 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 
 #define check_string(s) if (!zstr(s) && !strcasecmp(s, "undef")) { s = NULL; }
 
-static int node_consumer_wait_count(fifo_node_t *node)
+static int node_caller_count(fifo_node_t *node)
 {
 	int i, len = 0;
 
@@ -458,7 +458,7 @@ static void node_remove_uuid(fifo_node_t *node, const char *uuid)
 		fifo_queue_popfly(node->fifo_list[i], uuid);
 	}
 
-	if (!node_consumer_wait_count(node)) {
+	if (!node_caller_count(node)) {
 		node->start_waiting = 0;
 	}
 
@@ -1683,7 +1683,7 @@ static void find_consumers(fifo_node_t *node)
 	switch(node->outbound_strategy) {
 	case NODE_STRATEGY_ENTERPRISE:
 		{
-			int need = node_consumer_wait_count(node);
+			int need = node_caller_count(node);
 
 			if (node->outbound_per_cycle && node->outbound_per_cycle < need) {
 				need = node->outbound_per_cycle;
@@ -1753,7 +1753,7 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 			if ((node = (fifo_node_t *) val)) {
 				if (node->outbound_priority == 0) node->outbound_priority = 5;
 				if (node->has_outbound && node->ready && !node->busy && node->outbound_priority == cur_priority) {
-					ppl_waiting = node_consumer_wait_count(node);
+					ppl_waiting = node_caller_count(node);
 					consumer_total = node->consumer_count;
 					idle_consumers = node_idle_consumers(node);
 
@@ -1831,7 +1831,7 @@ static void check_cancel(fifo_node_t *node)
 		return;
 	}
 
-	ppl_waiting = node_consumer_wait_count(node);
+	ppl_waiting = node_caller_count(node);
 
     if (node->ring_consumer_count > 0 && ppl_waiting < 1) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound call count (%d) exceeds required value for queue %s (%d), "
@@ -1855,7 +1855,7 @@ static void send_presence(fifo_node_t *node)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "park");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", node->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", node->name);
-		if ((wait_count = node_consumer_wait_count(node)) > 0) {
+		if ((wait_count = node_caller_count(node)) > 0) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d waiting)", wait_count);
 		} else {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Idle");
@@ -2296,7 +2296,6 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_channel_answer(channel);
 
 		switch_thread_rwlock_wrlock(node->rwlock);
-		node->caller_count++;
 
 		if ((pri = switch_channel_get_variable(channel, "fifo_priority"))) {
 			p = atoi(pri);
@@ -2306,7 +2305,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			p = MAX_PRI - 1;
 		}
 
-		if (!node_consumer_wait_count(node)) {
+		if (!node_caller_count(node)) {
 			node->start_waiting = switch_micro_time_now();
 		}
 
@@ -2442,7 +2441,6 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_mutex_lock(globals.mutex);
 			switch_thread_rwlock_wrlock(node->rwlock);
 			node_remove_uuid(node, uuid);
-			node->caller_count--;
 			switch_thread_rwlock_unlock(node->rwlock);
 			send_presence(node);
 			check_cancel(node);
@@ -2583,7 +2581,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					continue;
 				}
 
-				if ((waiting = node_consumer_wait_count(node))) {
+				if ((waiting = node_caller_count(node))) {
 
 					if (!importance || node->importance > importance) {
 						if (strat == STRAT_WAITING_LONGER) {
@@ -2671,7 +2669,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					}
 				}
 
-				if (pop && !node_consumer_wait_count(node)) {
+				if (pop && !node_caller_count(node)) {
 					switch_thread_rwlock_wrlock(node->rwlock);
 					node->start_waiting = 0;
 					switch_thread_rwlock_unlock(node->rwlock);
@@ -2787,9 +2785,6 @@ SWITCH_STANDARD_APP(fifo_function)
 					const char *arg = switch_channel_get_variable(other_channel, "current_application_data");
 					switch_caller_extension_t *extension = NULL;
 
-					switch_thread_rwlock_wrlock(node->rwlock);
-					node->caller_count--;
-					switch_thread_rwlock_unlock(node->rwlock);
 					send_presence(node);
 					check_cancel(node);
 
@@ -2955,8 +2950,6 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_variable(other_channel, "fifo_status", "DONE");
 				switch_channel_set_variable(other_channel, "fifo_timestamp", date);
 
-				switch_thread_rwlock_wrlock(node->rwlock);
-				node->caller_count--;
 				switch_thread_rwlock_unlock(node->rwlock);
 				send_presence(node);
 				check_cancel(node);
@@ -3070,7 +3063,7 @@ SWITCH_STANDARD_APP(fifo_function)
   done:
 
 	switch_mutex_lock(globals.mutex);
-	if (node && node->ready == FIFO_DELAY_DESTROY && node->consumer_count == 0 && node->caller_count == 0) {
+	if (node && node->ready == FIFO_DELAY_DESTROY && node->consumer_count == 0 && node_caller_count(node) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s removed.\n", node->name);
 		switch_core_hash_delete(globals.fifo_hash, node->name);
 		switch_thread_rwlock_wrlock(node->rwlock);
@@ -3505,9 +3498,9 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	switch_xml_set_attr_d(x_fifo, "name", node->name);
 	switch_snprintf(tmp, sizeof(buffer), "%d", node->consumer_count);
 	switch_xml_set_attr_d(x_fifo, "consumer_count", tmp);
-	switch_snprintf(tmp, sizeof(buffer), "%d", node->caller_count);
+	switch_snprintf(tmp, sizeof(buffer), "%d", node_caller_count(node));
 	switch_xml_set_attr_d(x_fifo, "caller_count", tmp);
-	switch_snprintf(tmp, sizeof(buffer), "%d", node_consumer_wait_count(node));
+	switch_snprintf(tmp, sizeof(buffer), "%d", node_caller_count(node));
 	switch_xml_set_attr_d(x_fifo, "waiting_count", tmp);
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->importance);
 	switch_xml_set_attr_d(x_fifo, "importance", tmp);
@@ -3569,7 +3562,7 @@ void node_dump(switch_stream_handle_t *stream)
 								   node->outbound_priority,
 								   node->busy,
 								   node->ready,
-								   node_consumer_wait_count(node)
+								   node_caller_count(node)
 								   
 								   );
 		}
@@ -3687,9 +3680,9 @@ SWITCH_STANDARD_API(fifo_api_function)
 			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
-				len = node_consumer_wait_count(node);
+				len = node_caller_count(node);
 				switch_thread_rwlock_wrlock(node->rwlock);
-				stream->write_function(stream, "%s:%d:%d:%d\n", (char *) var, node->consumer_count, node->caller_count, len);
+				stream->write_function(stream, "%s:%d:%d:%d\n", (char *) var, node->consumer_count, node_caller_count(node), len);
 				switch_thread_rwlock_unlock(node->rwlock);
 				x++;
 			}
@@ -3698,9 +3691,9 @@ SWITCH_STANDARD_API(fifo_api_function)
 				stream->write_function(stream, "none\n");
 			}
 		} else if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
-			len = node_consumer_wait_count(node);
+			len = node_caller_count(node);
 			switch_thread_rwlock_wrlock(node->rwlock);
-			stream->write_function(stream, "%s:%d:%d:%d\n", argv[1], node->consumer_count, node->caller_count, len);
+			stream->write_function(stream, "%s:%d:%d:%d\n", argv[1], node->consumer_count, node_caller_count(node), len);
 			switch_thread_rwlock_unlock(node->rwlock);
 		} else {
 			stream->write_function(stream, "none\n");
@@ -3710,7 +3703,7 @@ SWITCH_STANDARD_API(fifo_api_function)
 			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
-				len = node_consumer_wait_count(node);
+				len = node_caller_count(node);
 				switch_thread_rwlock_wrlock(node->rwlock);
 				stream->write_function(stream, "%s:%d\n", (char *) var, node->has_outbound);
 				switch_thread_rwlock_unlock(node->rwlock);
@@ -3721,7 +3714,7 @@ SWITCH_STANDARD_API(fifo_api_function)
 				stream->write_function(stream, "none\n");
 			}
 		} else if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
-			len = node_consumer_wait_count(node);
+			len = node_caller_count(node);
 			switch_thread_rwlock_wrlock(node->rwlock);
 			stream->write_function(stream, "%s:%d\n", argv[1], node->has_outbound);
 			switch_thread_rwlock_unlock(node->rwlock);
@@ -4072,7 +4065,7 @@ static switch_status_t load_config(int reload, int del_all)
 				continue;
 			}
 
-			if (node_consumer_wait_count(node) || node->consumer_count || node_idle_consumers(node)) {
+			if (node_caller_count(node) || node->consumer_count || node_idle_consumers(node)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s removal delayed, still in use.\n", node->name);
 				node->ready = FIFO_DELAY_DESTROY;
 			} else {
