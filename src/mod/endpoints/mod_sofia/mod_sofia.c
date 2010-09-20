@@ -3507,6 +3507,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"sofia status|xmlstatus gateway <name>\n"
 		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
 		"sofia tracelevel <console|alert|crit|err|warning|notice|info|debug>\n"
+		"sofa global siptrace [on|off]\n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (session) {
@@ -3562,6 +3563,26 @@ SWITCH_STANDARD_API(sofia_function)
 	} else if (!strcasecmp(argv[0], "help")) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
+	} else if (!strcasecmp(argv[0], "global")) {
+		int on = -1;
+
+		if (argc > 1) {
+			if (!strcasecmp(argv[1], "siptrace")) {
+				if (argc > 2) {
+					on = switch_true(argv[2]);
+				}
+			}
+		}
+
+		if (on != -1) {
+			sofia_glue_global_siptrace(on);
+			stream->write_function(stream, "+OK Global siptrace %s", on ? "on" : "off");
+		} else {
+			stream->write_function(stream, "-ERR Usage: siptrace on|off");
+		}
+		
+		goto done;
+
 	} else if (!strcasecmp(argv[0], "recover")) {
 		if (argv[1] && !strcasecmp(argv[1], "flush")) {
 			sofia_glue_recover(SWITCH_TRUE);
@@ -4636,6 +4657,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
+
+	switch_console_set_complete("add sofia global siptrace ::[on:off");
 
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");

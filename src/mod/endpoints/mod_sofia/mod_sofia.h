@@ -1012,3 +1012,4 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
+void sofia_glue_global_siptrace(switch_bool_t on);
