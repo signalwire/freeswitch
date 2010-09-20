@@ -2724,7 +2724,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 		name++;
 		name = switch_core_sprintf(ah->memory_pool, "%s ASR-%d", name, speech_channel_number);
 	} else {
-		name = switch_core_sprintf(ah->memory_pool, "ASR-%d", name, speech_channel_number);
+		name = switch_core_sprintf(ah->memory_pool, "ASR-%d", speech_channel_number);
 	}
 
 	/* Allocate the channel */

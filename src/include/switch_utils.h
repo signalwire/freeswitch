@@ -139,6 +139,9 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 #define switch_is_valid_rate(_tmp) (_tmp == 8000 || _tmp == 12000 || _tmp == 16000 || _tmp == 24000 || _tmp == 32000 || _tmp == 11025 || _tmp == 22050 || _tmp == 44100 || _tmp == 48000)
 
 
+#ifdef _MSC_VER
+#pragma warning(disable:6011)
+#endif
 static inline int switch_string_has_escaped_data(const char *in)
 {
 	const char *i = strchr(in, '\\');
@@ -153,6 +156,9 @@ static inline int switch_string_has_escaped_data(const char *in)
 
 	return 0;
 }
+#ifdef _MSC_VER
+#pragma warning(default:6011)
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen);
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
@@ -455,6 +461,9 @@ static inline char *switch_safe_strdup(const char *it)
 }
 
 
+#ifdef _MSC_VER
+#pragma warning(disable:6011)
+#endif
 static inline char *switch_lc_strdup(const char *it)
 {
 	char *dup;
@@ -487,6 +496,9 @@ static inline char *switch_uc_strdup(const char *it)
 
 	return NULL;
 }
+#ifdef _MSC_VER
+#pragma warning(default:6011)
+#endif
 
 
 /*!

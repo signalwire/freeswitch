@@ -110,7 +110,7 @@ ESL_DECLARE(int) esl_config_next_pair(esl_config_t *cfg, char **var, char **val)
 
 	*var = *val = NULL;
 
-	if (!cfg->path) {
+	if (!cfg || !cfg->file) {
 		return 0;
 	}
 
