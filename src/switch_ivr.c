@@ -1417,13 +1417,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			if (profile->callee_id_name) {
 				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", new_profile->caller_id_name);
 				new_profile->caller_id_name = switch_core_strdup(new_profile->pool, profile->callee_id_name);
-				profile->callee_id_name = NULL;
+				profile->callee_id_name = SWITCH_BLANK_STRING;
 			}
 
 			if (profile->callee_id_number) {
 				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", new_profile->caller_id_number);
 				new_profile->caller_id_number = switch_core_strdup(new_profile->pool, profile->callee_id_number);
-				profile->callee_id_number = NULL;
+				profile->callee_id_number = SWITCH_BLANK_STRING;
 			}
 		}
 		
