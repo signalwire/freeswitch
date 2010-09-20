@@ -4063,7 +4063,7 @@ SWITCH_STANDARD_API(uuid_dump_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define GLOBAL_SETVAR_SYNTAX "<var> <value> [<value2>]"
+#define GLOBAL_SETVAR_SYNTAX "<var>=<value> [=<value2>]"
 SWITCH_STANDARD_API(global_setvar_function)
 {
 	char *mycmd = NULL, *argv[3] = { 0 };

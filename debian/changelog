@@ -1,3 +1,10 @@
+freeswitch (1.0.6-1ubuntu1) maverick; urgency=low
+
+    * upgrade: Added mod_callcenter and pulled out Python into its own
+      package.
+
+ -- Gabriel Gunderson <gabe@gundy.org>  Thu, 16 Nov 2010 18:28:30 -0800
+
 freeswitch (1.0.4-1ubuntu2) karmic; urgency=low
 
     * upgrade: Add more verbosity when building to make it easier to find build

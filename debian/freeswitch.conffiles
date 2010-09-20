@@ -1,5 +1,6 @@
 /opt/freeswitch/conf/autoload_configs/acl.conf.xml
 /opt/freeswitch/conf/autoload_configs/alsa.conf.xml
+/opt/freeswitch/conf/autoload_configs/callcenter.conf.xml
 /opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 /opt/freeswitch/conf/autoload_configs/cidlookup.conf.xml
 /opt/freeswitch/conf/autoload_configs/conference.conf.xml
@@ -26,7 +27,6 @@
 /opt/freeswitch/conf/autoload_configs/pocketsphinx.conf.xml
 /opt/freeswitch/conf/autoload_configs/portaudio.conf.xml
 /opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
-/opt/freeswitch/conf/autoload_configs/python.conf.xml
 /opt/freeswitch/conf/autoload_configs/rss.conf.xml
 /opt/freeswitch/conf/autoload_configs/shout.conf.xml
 /opt/freeswitch/conf/autoload_configs/skinny.conf.xml
@@ -43,7 +43,6 @@
 /opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
 /opt/freeswitch/conf/dialplan/default/00_pizza_demo.xml
 /opt/freeswitch/conf/dialplan/default/01_example.com.xml
-/opt/freeswitch/conf/dialplan/default/99999_enum.xml
 /opt/freeswitch/conf/dialplan/default.xml
 /opt/freeswitch/conf/dialplan/features.xml
 /opt/freeswitch/conf/dialplan/public/00_inbound_did.xml

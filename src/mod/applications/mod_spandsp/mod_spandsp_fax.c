@@ -120,6 +120,21 @@ static struct {
     int thread_running;
 } t38_state_list;
 
+
+
+static void wake_thread(int force)
+{
+	if (force) {
+        switch_thread_cond_signal(globals.cond);
+		return;
+	}
+
+	if (switch_mutex_trylock(globals.cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(globals.cond);
+		switch_mutex_unlock(globals.cond_mutex);
+	}
+}
+
 static int add_pvt(pvt_t *pvt)
 {
     int r = 0;
@@ -130,7 +145,7 @@ static int add_pvt(pvt_t *pvt)
         t38_state_list.head = pvt;
         switch_mutex_unlock(t38_state_list.mutex);
         r = 1;
-        switch_thread_cond_broadcast(globals.cond);
+        wake_thread(0);
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error launching thread\n");
     }
@@ -165,7 +180,7 @@ static int del_pvt(pvt_t *del_pvt)
 
     switch_mutex_unlock(t38_state_list.mutex);
 
-    switch_thread_cond_broadcast(globals.cond);
+    wake_thread(0);
 
     return r;
 }
@@ -1335,7 +1350,7 @@ void mod_spandsp_fax_shutdown(void)
     switch_status_t tstatus = SWITCH_STATUS_SUCCESS;
 
     t38_state_list.thread_running = 0;
-    switch_thread_cond_broadcast(globals.cond);
+    wake_thread(1);
     switch_thread_join(&tstatus, t38_state_list.thread);
 	memset(&globals, 0, sizeof(globals));
 }
