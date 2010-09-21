@@ -1,7 +1,7 @@
 BASE=../../../..
 
-CODEC2_DIR=$(switch_srcdir)/libs/libcodec2-1.0
-CODEC2_BUILDDIR=$(switch_builddir)/libs/libcodec2-1.0
+CODEC2_DIR=$(switch_srcdir)/libs/libcodec2
+CODEC2_BUILDDIR=$(switch_builddir)/libs/libcodec2
 CODEC2LA=$(CODEC2_BUILDDIR)/src/libcodec2.la
 
 LOCAL_CFLAGS=-I$(CODEC2_DIR)/include -I$(CODEC2_BUILDDIR)/src
