@@ -1557,13 +1557,16 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	for (hi = switch_hash_first(NULL, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		codec_interface = (switch_codec_interface_t *) val;
-		/* Look for a 20ms implementation because it's the safest choice */
+		
+		/* Look for the default ptime of the codec because it's the safest choice */
 		for (imp = codec_interface->implementations; imp; imp = imp->next) {
+			uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+
 			if (lock && imp->microseconds_per_packet != lock) {
 				continue;
 			}
 
-			if (imp->microseconds_per_packet / 1000 == 20) {
+			if (imp->microseconds_per_packet / 1000 == default_ptime) {
 				array[i++] = imp;
 				goto found;
 			}
@@ -1623,15 +1626,16 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		}
 
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
-			/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
+			/* If no specific codec interval is requested opt for the default above all else because lots of stuff assumes it */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
-
+				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 					if (lock && imp->microseconds_per_packet != lock) {
 						continue;
 					}
-
-					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != 20) ||
+					
+					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != default_ptime) ||
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
 						continue;
 					}
@@ -1647,7 +1651,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 			}
 
-			/* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available */
+			/* Either looking for a specific interval or there was no interval specified and there wasn't one at the default ptime available */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 

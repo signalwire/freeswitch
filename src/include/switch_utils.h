@@ -359,7 +359,16 @@ switch_mutex_unlock(obj->flag_mutex);
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
 
-	 static inline char *switch_sanitize_number(char *number)
+static inline uint32_t switch_default_ptime(const char *name, uint32_t number)
+{
+	if (!strcasecmp(name, "G723")) {
+		return 30;
+	}
+
+	return 20;
+}
+
+static inline char *switch_sanitize_number(char *number)
 {
 	char *p = number, *q;
 	char warp[] = "/:";

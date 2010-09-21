@@ -3839,7 +3839,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 
 				if (!ptime) {
-					ptime = 20;
+					ptime = switch_default_ptime(rm_encoding, map->rm_pt);
 				}
 
 				if (!strcasecmp((char *) rm_encoding, "ilbc")) {
