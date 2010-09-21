@@ -2428,7 +2428,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 							ob_failed += gp->ob_failed_calls;
 							ob += gp->ob_calls;
 
-							stream->write_function(stream, "%25s\t%32s\t%s\t%ld/%ld\t%ld/%ld",
+							stream->write_function(stream, "%25s\t%32s\t%s\t%u/%u\t%u/%u",
 												   pkey, gp->register_to, sofia_state_names[gp->state],
 												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
 
@@ -2447,8 +2447,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			}
 			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 			stream->write_function(stream, "%s\n", line);
-			stream->write_function(stream, "%d gateway%s: Inound(Failed/Total): %ld/%ld,"
-								   "Outbound(Failed/Total):%ld/%ld\n", c, c == 1 ? "" : "s", ib_failed, ib, ob_failed, ob);
+			stream->write_function(stream, "%d gateway%s: Inbound(Failed/Total): %u/%u,"
+								   "Outbound(Failed/Total):%u/%u\n", c, c == 1 ? "" : "s", ib_failed, ib, ob_failed, ob);
 
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -2477,10 +2477,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "PingState\t%d/%d/%d\n", gp->ping_min, gp->ping_count, gp->ping_max);
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
-				stream->write_function(stream, "CallsIN \t%d\n", gp->ib_calls);
-				stream->write_function(stream, "CallsOUT\t%d\n", gp->ob_calls);
-				stream->write_function(stream, "FailedCallsIN\t%d\n", gp->ib_failed_calls);
-				stream->write_function(stream, "FailedCallsOUT\t%d\n", gp->ob_failed_calls);
+				stream->write_function(stream, "CallsIN \t%u\n", gp->ib_calls);
+				stream->write_function(stream, "CallsOUT\t%u\n", gp->ob_calls);
+				stream->write_function(stream, "FailedCallsIN\t%u\n", gp->ib_failed_calls);
+				stream->write_function(stream, "FailedCallsOUT\t%u\n", gp->ob_failed_calls);
 				stream->write_function(stream, "%s\n", line);
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -2554,10 +2554,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					if (profile->max_registrations_perext > 0) {
 						stream->write_function(stream, "MAX-REG-PEREXT   \t%d\n", profile->max_registrations_perext);
 					}
-					stream->write_function(stream, "CALLS-IN         \t%d\n", profile->ib_calls);
-					stream->write_function(stream, "FAILED-CALLS-IN  \t%d\n", profile->ib_failed_calls);
-					stream->write_function(stream, "CALLS-OUT        \t%d\n", profile->ob_calls);
-					stream->write_function(stream, "FAILED-CALLS-OUT \t%d\n", profile->ob_failed_calls);
+					stream->write_function(stream, "CALLS-IN         \t%u\n", profile->ib_calls);
+					stream->write_function(stream, "FAILED-CALLS-IN  \t%u\n", profile->ib_failed_calls);
+					stream->write_function(stream, "CALLS-OUT        \t%u\n", profile->ob_calls);
+					stream->write_function(stream, "FAILED-CALLS-OUT \t%u\n", profile->ob_failed_calls);
 				}
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
@@ -2703,10 +2703,10 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
 	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
 	stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
-	stream->write_function(stream, "    <calls-in>%d</calls-in>\n", gp->ib_calls);
-	stream->write_function(stream, "    <calls-out>%d</calls-out>\n", gp->ob_calls);
-	stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", gp->ib_failed_calls);
-	stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", gp->ob_failed_calls);
+	stream->write_function(stream, "    <calls-in>%u</calls-in>\n", gp->ib_calls);
+	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", gp->ob_calls);
+	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
+	stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", gp->ob_failed_calls);
 
 	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 		time_t now = switch_epoch_time_now(NULL);
@@ -2825,10 +2825,10 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <user-agent-filter>%s</user-agent-filter>\n", switch_str_nil(profile->user_agent_filter));
 					stream->write_function(stream, "    <max-registrations-per-extension>%d</max-registrations-per-extension>\n",
 										   profile->max_registrations_perext);
-					stream->write_function(stream, "    <calls-in>%d</calls-in>\n", profile->ib_calls);
-					stream->write_function(stream, "    <calls-out>%d</calls-out>\n", profile->ob_calls);
-					stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", profile->ib_failed_calls);
-					stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", profile->ob_failed_calls);
+					stream->write_function(stream, "    <calls-in>%u</calls-in>\n", profile->ib_calls);
+					stream->write_function(stream, "    <calls-out>%u</calls-out>\n", profile->ob_calls);
+					stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", profile->ib_failed_calls);
+					stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", profile->ob_failed_calls);
 					stream->write_function(stream, "  </profile-info>\n");
 				}
 				stream->write_function(stream, "  <registrations>\n");
