@@ -50,6 +50,7 @@
 #endif
 #include "ftdm_cpu_monitor.h"
 
+#define FORCE_HANGUP_TIMER 3000
 #define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
 #define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
 #define FTDM_READ_TRACE_INDEX 0
@@ -4615,8 +4616,8 @@ static void execute_safety_hangup(void *data)
 	ftdm_channel_lock(fchan);
 	fchan->hangup_timer = 0;
 	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_CRIT, "Forcing hangup\n");
-		ftdm_channel_call_hangup(fchan);
+		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
+		call_hangup(fchan, __FILE__, __FUNCTION__, __LINE__);
 	} else {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
 	}
@@ -4659,7 +4660,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		if (sigmsg->channel->state == FTDM_CHANNEL_STATE_TERMINATING) {
 			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Scheduling safety hangup timer\n");
 			/* if the user does not move us to hangup in 2 seconds, we will do it ourselves */
-			ftdm_sched_timer(globals.timingsched, "safety-hangup", 2000, execute_safety_hangup, sigmsg->channel, &sigmsg->channel->hangup_timer);
+			ftdm_sched_timer(globals.timingsched, "safety-hangup", FORCE_HANGUP_TIMER, execute_safety_hangup, sigmsg->channel, &sigmsg->channel->hangup_timer);
 		}
 		break;
 
