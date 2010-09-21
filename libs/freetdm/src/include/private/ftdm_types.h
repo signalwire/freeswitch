@@ -322,8 +322,14 @@ struct ftdm_conf_node {
 	/* first node child */
 	struct ftdm_conf_node *child;
 
+	/* last node child */
+	struct ftdm_conf_node *last;
+
 	/* next node sibling */
 	struct ftdm_conf_node *next;
+
+	/* prev node sibling */
+	struct ftdm_conf_node *prev;
 
 	/* my parent if any */
 	struct ftdm_conf_node *parent;

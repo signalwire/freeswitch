@@ -454,9 +454,9 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 /******************************************************************************/
 static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 {
-	ftdm_sigmsg_t 		sigev;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	int 				i = 0;
+	ftdm_sigmsg_t 		sigev;
 
 	memset (&sigev, 0, sizeof (sigev));
 
@@ -788,14 +788,24 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				!(sngss7_test_flag (sngss7_info, FLAG_GRP_RESET_TX)) &&
 				!(sngss7_test_flag (sngss7_info, FLAG_GRP_RESET_RX))) {
 
-				/* check if the sig status is down, and bring it up if it isn't */
-				if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-					SS7_DEBUG_CHAN(ftdmchan,"All reset flags cleared %s\n", "");
-					/* all flags are down so we can bring up the sig status */
-					sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-					sigev.sigstatus = FTDM_SIG_STATE_UP;
-					ftdm_span_send_signal (ftdmchan->span, &sigev);
-				}
+				/* now check if there is an active block */
+				if (!(sngss7_test_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) &&
+					!(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+				
+					/* check if the sig status is down, and bring it up if it isn't */
+					if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+						SS7_DEBUG_CHAN(ftdmchan,"All reset flags cleared %s\n", "");
+						/* all flags are down so we can bring up the sig status */
+						sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+						sigev.sigstatus = FTDM_SIG_STATE_UP;
+						ftdm_span_send_signal (ftdmchan->span, &sigev);
+					} /* if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) */
+				} /* if !blocked */
 			} else {
 			
 				SS7_DEBUG_CHAN(ftdmchan,"Reset flags present (0x%X)\n", sngss7_info->flags);
@@ -993,6 +1003,11 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_flag (sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_BLOCK_RX flag %s\n", "");
 
+			/* bring the sig status down */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			ftdm_span_send_signal(ftdmchan->span, &sigev); 
+
 			/* send a BLA */
 			ft_to_sngss7_bla (ftdmchan);
 
@@ -1006,6 +1021,11 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/* clear the unblock flag */
 			sngss7_clear_flag (sngss7_info, FLAG_CKT_MN_UNBLK_RX);
 
+			/* bring the sig status up */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			ftdm_span_send_signal(ftdmchan->span, &sigev); 
+
 			/* send a uba */
 			ft_to_sngss7_uba (ftdmchan);
 
@@ -1016,6 +1036,11 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		/**********************************************************************/
 		if (sngss7_test_flag (sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_BLOCK_TX flag %s\n", "");
+
+			/* bring the sig status down */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a blo */
 			ft_to_sngss7_blo (ftdmchan);
@@ -1029,6 +1054,11 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* clear the unblock flag */
 			sngss7_clear_flag (sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+
+			/* bring the sig status up */
+			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a ubl */
 			ft_to_sngss7_ubl (ftdmchan);
@@ -1403,6 +1433,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 {
 	/*this function is called by the FT-core to load the signaling module */
+	uint32_t major = 0;
+	uint32_t minor = 0;
+	uint32_t build = 0;
 
 	ftdm_log (FTDM_LOG_INFO, "Loading ftmod_sangoma_ss7...\n");
 
@@ -1451,6 +1484,10 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 
 	/* initalize sng_ss7 library */
 	sng_isup_init (&sng_event);
+
+	/* print the version of the library being used */
+	sng_isup_version(&major, &minor, &build);
+	SS7_INFO("Loaded LibSng-SS7 %d.%d.%d\n", major, minor, build);
 
 	/* crash on assert fail */
 	ftdm_global_set_crash_policy (FTDM_CRASH_ON_ASSERT);

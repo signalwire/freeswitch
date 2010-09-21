@@ -131,14 +131,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				}
 
 				
-				if (conEvnt->facilityStr.eh.pres) {
+				if (signal_data->facility == SNGISDN_OPT_TRUE && conEvnt->facilityStr.eh.pres) {
 					/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 					uint16_t ret_val;
-					uint8_t facility_str[255];
 					char retrieved_str[255];
-					memcpy(facility_str, (uint8_t*)&conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
-
-					ret_val = sng_isdn_retrieve_facility_caller_name(facility_str, conEvnt->facilityStr.facilityStr.len, retrieved_str);
+					
+					ret_val = sng_isdn_retrieve_facility_caller_name(conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len, retrieved_str);
 					/*
 						return values for "sng_isdn_retrieve_facility_information_following":
 						If there will be no information following, or fails to decode IE, returns -1
@@ -151,7 +149,8 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_GET_CALLERID);
 						/* Launch timer in case we never get a FACILITY msg */
 						if (signal_data->facility_timeout) {
-							ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout, sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+							ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout, 
+									sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
 						}
 						break;
 					} else if (ret_val == 0) {
@@ -702,14 +701,23 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 		case FTDM_CHANNEL_STATE_GET_CALLERID:
 			/* Update the caller ID Name */
 			if (facEvnt->facElmt.facStr.pres) {
-				uint8_t facility_str[255];
-				memcpy(facility_str, (uint8_t*)&facEvnt->facElmt.facStr.val, facEvnt->facElmt.facStr.len);
 				char retrieved_str[255];
-				if (sng_isdn_retrieve_facility_caller_name(facility_str, facEvnt->facElmt.facStr.len, retrieved_str) != FTDM_SUCCESS) {
+				
+				/* return values for "sng_isdn_retrieve_facility_information_following":
+				If there will be no information following, or fails to decode IE, returns -1
+				If there will be no information following, but current FACILITY IE contains a caller name, returns 0
+				If there will be information following, returns 1
+				*/
+				
+				if (sng_isdn_retrieve_facility_caller_name(&facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len, retrieved_str) == 0) {
+					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
+				} else {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
 				}
-				/* Cancel facility timeout */
-				ftdm_sched_cancel_timer(signal_data->sched, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+				if (signal_data->facility_timeout) {
+					/* Cancel facility timeout */
+					ftdm_sched_cancel_timer(signal_data->sched, sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+				}
 			}
 
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
@@ -884,6 +892,22 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 						break;
 				}
 				break;
+			case 9: /* Remote switch is in "Incoming call proceeding" state */
+				switch (ftdmchan->state) {
+					case FTDM_CHANNEL_STATE_PROGRESS:
+					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
+					case FTDM_CHANNEL_STATE_GET_CALLERID:
+						/* Do nothing */
+						break;
+					case FTDM_CHANNEL_STATE_UP:
+						/* Remote switch missed our CONNECT message, re-send */
+						ftdm_sched_timer(((sngisdn_span_data_t*)ftdmchan->span->signal_data)->sched, "delayed_connect", 1, sngisdn_delayed_connect, (void*) sngisdn_info, NULL);
+						break;
+					default:
+						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
+						break;
+				}
+				break;
 			case 10: /* Remote switch is in active state */
 				switch (ftdmchan->state) {
 					case FTDM_CHANNEL_STATE_UP:
@@ -893,17 +917,6 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 					case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 						/* We sent a disconnect message, but remote side missed it ? */
 						ftdm_sched_timer(((sngisdn_span_data_t*)ftdmchan->span->signal_data)->sched, "delayed_disconnect", 1, sngisdn_delayed_disconnect, (void*) sngisdn_info, NULL);
-						break;
-					default:
-						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
-						break;
-				}
-				break;
-			case 9:
-				switch (ftdmchan->state) {
-					case FTDM_CHANNEL_STATE_PROGRESS:
-					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
-						/* Do nothing */
 						break;
 					default:
 						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
