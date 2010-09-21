@@ -325,6 +325,13 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 	}
 	newtimer->id = sched->currid;
 	sched->currid++;
+	if (!sched->currid) {
+		ftdm_log(FTDM_LOG_NOTICE, "Timer id wrap around for sched %s\n", sched->name);
+		/* we do not want currid to be zero since is an invalid id 
+		 * TODO: check that currid does not exists already in the context, it'd be insane
+		 * though, having a timer to live all that time */
+		sched->currid++;
+	}
 
 	ftdm_set_string(newtimer->name, name);
 	newtimer->callback = callback;
