@@ -22,6 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * Mathieu Rene <mrene@avgs.ca>
  *
  * mod_codec2 -- FreeSWITCH CODEC2 Module
  *
@@ -30,6 +31,17 @@
 #include <switch.h>
 #include <codec2.h>
 
+/* Uncomment to log input/output data for debugging 
+#define LOG_DATA 
+#define CODEC2_DEBUG
+*/
+
+#ifdef CODEC2_DEBUG
+#define codec2_assert(_x) switch_assert(_x)
+#else
+#define codec2_assert(_x) 
+#endif
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_codec2_load);
 
 SWITCH_MODULE_DEFINITION(mod_codec2, mod_codec2_load, NULL, NULL);
@@ -37,7 +49,46 @@ SWITCH_MODULE_DEFINITION(mod_codec2, mod_codec2_load, NULL, NULL);
 struct codec2_context {
 	void *encoder;
 	void *decoder;
+#ifdef LOG_DATA	
+	FILE *encoder_in;
+	FILE *encoder_out;
+	FILE *encoder_out_unpacked;
+	FILE *decoder_in;
+	FILE *decoder_in_unpacked;
+	FILE *decoder_out;
+#endif
 };
+
+#ifdef LOG_DATA
+static int c2_count = 0;
+#endif
+
+static void pack(uint8_t *dst, char* bits, int n)
+{
+	int i;
+	
+	for (i = 0; i < n; i++) {
+		int index = i / 8;
+		int bit = i % 8;
+
+		if (bits[i]) {
+			dst[index] |= (1 << bit);
+		} else {
+			dst[index] &= ~(1 << bit);
+		}
+	}
+}
+
+static void unpack(uint8_t *src, char* bits, int n) 
+{
+	int i;
+	for (i = 0; i < n; i++) {
+		int index = i / 8;
+		int bit = i % 8;
+		
+		bits[i] = !!(src[index] & (1 << bit));
+	}
+}
 
 static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -54,10 +105,47 @@ static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_fl
 	if (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context)))) {
 		return SWITCH_STATUS_FALSE;
 	}
-	context->encoder = codec2_create();
-	context->decoder = codec2_create();
+	
+	if (encoding) {
+		context->encoder = codec2_create();		
+	}
+	
+	if (decoding) {
+		context->decoder = codec2_create();
+	}
 
 	codec->private_info = context;
+	
+#ifdef LOG_DATA		
+	{
+		
+		int c = c2_count++;
+		char buf[1024];
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Logging as /tmp/c2-%d-*\n", c);
+		
+		if (encoding) {
+			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-in", c);
+			context->encoder_in = fopen(buf, "w");
+		
+			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-out", c);
+			context->encoder_out = fopen(buf, "w");
+		
+			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-out-unpacked", c);
+			context->encoder_out_unpacked = fopen(buf, "w");
+		}
+		if (decoding) {
+			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-in", c);
+			context->decoder_in = fopen(buf, "w");
+		
+			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-out", c);
+			context->decoder_out = fopen(buf, "w");
+		
+			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-out-unpacked", c);
+			context->decoder_in_unpacked = fopen(buf, "w");
+		}
+	}
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -72,13 +160,47 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
+	char encode_buf[CODEC2_BITS_PER_FRAME];
 	
-	switch_assert(decoded_data_len == 160 * 2);
+	codec2_assert(decoded_data_len == CODEC2_SAMPLES_PER_FRAME * 2);
 	
-	codec2_encode(context->encoder, encoded_data, decoded_data);
+#ifdef LOG_DATA	
+	fwrite(decoded_data, decoded_data_len, 1, context->encoder_in);
+	fflush(context->encoder_in);
+#endif
+
+	{
+		/*  Workaround for assertion failure until it makes it into codec2 svn */
+		uint8_t *p = (uint8_t*)decoded_data;
+		int i;
+		for (i = 0; i < 10; i++) {
+			if (*p != 0) {
+				break;
+			}
+		}
+		if (i == 10) {
+			memset(encoded_data, 0, 8);
+			*encoded_data_len = 8;
+			if (flag) {
+				*flag |= SFF_CNG;
+			}
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	codec2_encode(context->encoder, encode_buf, decoded_data);
 	
-	*encoded_data_len = 7; /* 51 bits */
-	*encoded_rate = 8000;
+	memset(encoded_data, 0, 8);
+	pack(encoded_data, encode_buf, sizeof(encode_buf));
+	
+#ifdef LOG_DATA	
+	fwrite(encode_buf, sizeof(encode_buf), 1, context->encoder_out_unpacked);
+	fflush(context->encoder_out_unpacked);
+	fwrite(encoded_data, 8, 1, context->encoder_out);
+	fflush(context->encoder_out);
+#endif
+	
+	*encoded_data_len = 8;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -94,13 +216,27 @@ static switch_status_t switch_codec2_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
+	char bits[CODEC2_BITS_PER_FRAME];
+	
+	codec2_assert(encoded_data_len == 8 /* aligned to 8 */);
+	
+	unpack(encoded_data, bits, sizeof(bits));
 
-	switch_assert(encoded_data_len == 7);
+#ifdef LOG_DATA	
+	fwrite(encoded_data, encoded_data_len, 1, context->decoder_in);
+	fflush(context->decoder_in);
+	fwrite(bits, sizeof(bits), 1, context->decoder_in_unpacked);
+	fflush(context->decoder_in_unpacked);
+#endif
+	
+	codec2_decode(context->decoder, decoded_data, bits);
 
-	codec2_encode(context->decoder, decoded_data, encoded_data);
+#ifdef LOG_DATA	
+	fwrite(decoded_data, CODEC2_SAMPLES_PER_FRAME, 2, context->decoder_out);
+	fflush(context->decoder_out);
+#endif
 
-	*decoded_data_len = 160 * 2; /* 160 samples */
-	*decoded_rate = 8000;
+	*decoded_data_len = CODEC2_SAMPLES_PER_FRAME * 2; /* 160 samples */
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -111,11 +247,31 @@ static switch_status_t switch_codec2_destroy(switch_codec_t *codec)
 	
 	codec2_destroy(context->encoder);
 	codec2_destroy(context->decoder);
-	
-	
+
 	context->encoder = NULL;
 	context->decoder = NULL;
-	
+
+#ifdef LOG_DATA
+	if (context->encoder_in) {
+		fclose(context->encoder_in);
+	}
+	if (context->encoder_out) {
+		fclose(context->encoder_out);
+	}
+	if (context->encoder_out_unpacked) {
+		fclose(context->encoder_out_unpacked);
+	}
+	if (context->decoder_in) {
+		fclose(context->decoder_in);
+	}
+	if (context->decoder_in_unpacked) {
+		fclose(context->decoder_in_unpacked);
+	}
+	if (context->decoder_out) {
+		fclose(context->decoder_out);
+	}
+#endif
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -128,23 +284,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_codec2_load)
 	SWITCH_ADD_CODEC(codec_interface, "CODEC2 2550bps");
 
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO,
-										 0,
-										 "CODEC2",
-										 NULL,
-										 8000, /* samples/sec */
-										 8000, /* samples/sec */
-										 2550, /* bps */
-										 20000, /* ptime */
-										 160,	/* samples decoded */
-										 320,	/* bytes decoded */
-										 7,	/* bytes encoded */
-										 1,	/* channels */
-										 1,	/* frames/packet */
-										 switch_codec2_init,
-										 switch_codec2_encode,
-										 switch_codec2_decode,
-										 switch_codec2_destroy);
+							 SWITCH_CODEC_TYPE_AUDIO,
+							 111,
+							 "CODEC2",
+							 NULL,
+							 8000, /* samples/sec */
+							 8000, /* samples/sec */
+							 2550, /* bps */
+							 20000, /* ptime */
+							 CODEC2_SAMPLES_PER_FRAME,	/* samples decoded */
+							 CODEC2_SAMPLES_PER_FRAME*2,	/* bytes decoded */
+							 0,	/* bytes encoded */
+							 1,	/* channels */
+							 1,	/* frames/packet */
+							 switch_codec2_init,
+							 switch_codec2_encode,
+							 switch_codec2_decode,
+							 switch_codec2_destroy);
 
 	return SWITCH_STATUS_SUCCESS;
 }
