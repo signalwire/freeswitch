@@ -102,6 +102,7 @@ static struct {
 	ftdm_mutex_t *mutex;
 	ftdm_mutex_t *span_mutex;
 	ftdm_mutex_t *group_mutex;
+	ftdm_sched_t *timingsched;
 	uint32_t span_index;
 	uint32_t group_index;
 	uint32_t running;
@@ -2002,6 +2003,9 @@ static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const c
 			/* make user's life easier, and just ignore double hangup requests */
 			return FTDM_SUCCESS;
 		}
+		if (chan->hangup_timer) {
+			ftdm_sched_cancel_timer(globals.timingsched, chan->hangup_timer);
+		}
 		ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
 		/* the signaling stack did not touch the state, 
@@ -2283,6 +2287,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	close_dtmf_debug(ftdmchan);
 #endif
 	ftdm_channel_clear_vars(ftdmchan);
+	if (ftdmchan->hangup_timer) {
+		ftdm_sched_cancel_timer(globals.timingsched, ftdmchan->hangup_timer);
+	}
 
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
@@ -4601,6 +4608,21 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
+
+static void execute_safety_hangup(void *data)
+{
+	ftdm_channel_t *fchan = data;
+	ftdm_channel_lock(fchan);
+	fchan->hangup_timer = 0;
+	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan_msg(fchan, FTDM_LOG_CRIT, "Forcing hangup\n");
+		ftdm_channel_call_hangup(fchan);
+	} else {
+		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
+	}
+	ftdm_channel_unlock(fchan);
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	if (sigmsg->channel) {
@@ -4633,6 +4655,11 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_USER_HANGUP)) {
 			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user already requested hangup\n");
 			goto done;
+		}
+		if (sigmsg->channel->state == FTDM_CHANNEL_STATE_TERMINATING) {
+			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Scheduling safety hangup timer\n");
+			/* if the user does not move us to hangup in 2 seconds, we will do it ourselves */
+			ftdm_sched_timer(globals.timingsched, "safety-hangup", 2000, execute_safety_hangup, sigmsg->channel, &sigmsg->channel->hangup_timer);
 		}
 		break;
 
@@ -4755,6 +4782,14 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 	ftdm_mutex_create(&globals.span_mutex);
 	ftdm_mutex_create(&globals.group_mutex);
 	ftdm_sched_global_init();
+	if (ftdm_sched_create(&globals.timingsched, "freetdm-master") != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to create master timing schedule context\n");
+		return FTDM_FAIL;
+	}
+	if (ftdm_sched_free_run(globals.timingsched) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to run master timing schedule context\n");
+		return FTDM_FAIL;
+	}
 	globals.running = 1;
 	return FTDM_SUCCESS;
 }
@@ -4806,6 +4841,8 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	time_end();
 
 	globals.running = 0;	
+
+	ftdm_sched_destroy(&globals.timingsched);
 
 	ftdm_cpu_monitor_stop();
 

@@ -709,7 +709,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
 				}
 				/* Cancel facility timeout */
-				ftdm_sched_cancel_timer(signal_data->sched, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+				ftdm_sched_cancel_timer(signal_data->sched, sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
 			}
 
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);

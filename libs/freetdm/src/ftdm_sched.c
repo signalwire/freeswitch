@@ -34,6 +34,8 @@
 
 #include "private/ftdm_core.h"
 
+typedef struct ftdm_timer ftdm_timer_t;
+
 static struct {
 	ftdm_sched_t *freeruns;
 	ftdm_mutex_t *mutex;
@@ -42,6 +44,7 @@ static struct {
 
 struct ftdm_sched {
 	char name[80];
+	ftdm_timer_id_t currid;
 	ftdm_mutex_t *mutex;
 	ftdm_timer_t *timers;
 	int freerun;
@@ -51,6 +54,7 @@ struct ftdm_sched {
 
 struct ftdm_timer {
 	char name[80];
+	ftdm_timer_id_t id;
 #ifdef __linux__
 	struct timeval time;
 #endif
@@ -191,6 +195,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched, const char *na
 	}
 
 	ftdm_set_string(newsched->name, name);
+	newsched->currid = 1;
 
 	*sched = newsched;
 	ftdm_log(FTDM_LOG_DEBUG, "Created schedule %s\n", name);
@@ -219,11 +224,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_run(ftdm_sched_t *sched)
 	int rc = -1;
 	void *data;
 	struct timeval now;
+
 	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "sched is null!\n");
 
-	ftdm_mutex_lock(sched->mutex);
-
 tryagain:
+
+	ftdm_mutex_lock(sched->mutex);
 
 	rc = gettimeofday(&now, NULL);
 	if (rc == -1) {
@@ -257,11 +263,16 @@ tryagain:
 				runtimer->prev->next = runtimer->next;
 			}
 
+			runtimer->id = 0;
 			ftdm_safe_free(runtimer);
+
+			/* avoid deadlocks by releasing the sched lock before triggering callbacks */
+			ftdm_mutex_unlock(sched->mutex);
 
 			callback(data);
 			/* after calling a callback we must start the scanning again since the
-			 * callback may have added or cancelled timers to the linked list */
+			 * callback or some other thread may have added or cancelled timers to 
+			 * the linked list */
 			goto tryagain;
 		}
 	}
@@ -283,7 +294,7 @@ done:
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name, 
-		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_t **timer)
+		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_id_t *timerid)
 {
 	ftdm_status_t status = FTDM_FAIL;
 #ifdef __linux__
@@ -296,8 +307,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 	ftdm_assert_return(callback != NULL, FTDM_EINVAL, "sched callback is null!\n");
 	ftdm_assert_return(ms > 0, FTDM_EINVAL, "milliseconds must be bigger than 0!\n");
 
-	if (timer) {
-		*timer = NULL;
+	if (timerid) {
+		*timerid = 0;
 	}
 
 	rc = gettimeofday(&now, NULL);
@@ -312,6 +323,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 	if (!newtimer) {
 		goto done;
 	}
+	newtimer->id = sched->currid;
+	sched->currid++;
 
 	ftdm_set_string(newtimer->name, name);
 	newtimer->callback = callback;
@@ -332,9 +345,10 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 		sched->timers = newtimer;
 	}
 
-	if (timer) {
-		*timer = newtimer;
+	if (timerid) {
+		*timerid = newtimer->id;
 	}
+
 	status = FTDM_SUCCESS;
 done:
 
@@ -418,52 +432,36 @@ done:
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_sched_cancel_timer(ftdm_sched_t *sched, ftdm_timer_t **intimer)
+FT_DECLARE(ftdm_status_t) ftdm_sched_cancel_timer(ftdm_sched_t *sched, ftdm_timer_id_t timerid)
 {
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_timer_t *timer;
 
 	ftdm_assert_return(sched != NULL, FTDM_EINVAL, "sched is null!\n");
-	ftdm_assert_return(intimer != NULL, FTDM_EINVAL, "timer is null!\n");
-	ftdm_assert_return(*intimer != NULL, FTDM_EINVAL, "timer is null!\n");
+
+	if (!timerid) {
+		return FTDM_SUCCESS;
+	}
 
 	ftdm_mutex_lock(sched->mutex);
 
-	/* special case where the cancelled timer is the head */
-	if (*intimer == sched->timers) {
-		timer = *intimer;
-		/* the timer next is the new head (even if that means the new head will be NULL)*/
-		sched->timers = timer->next;
-		/* if there is a new head, clean its prev member */
-		if (sched->timers) {
-			sched->timers->prev = NULL;
-		}
-		/* free the old head */
-		ftdm_safe_free(timer);
-		status = FTDM_SUCCESS;
-		*intimer = NULL;
-		goto done;
-	}
-
-	/* look for the timer and destroy it (we know now that is not head, se we start at the next member after head) */
-	for (timer = sched->timers->next; timer; timer = timer->next) {
-		if (timer == *intimer) {
+	/* look for the timer and destroy it */
+	for (timer = sched->timers; timer; timer = timer->next) {
+		if (timer->id == timerid) {
+			if (timer == sched->timers) {
+				/* it's the head timer, put a new head */
+				sched->timers = timer->next;
+			}
 			if (timer->prev) {
 				timer->prev->next = timer->next;
 			}
 			if (timer->next) {
 				timer->next->prev = timer->prev;
 			}
-			ftdm_log(FTDM_LOG_DEBUG, "cancelled timer %s\n", timer->name);
 			ftdm_safe_free(timer);
 			status = FTDM_SUCCESS;
-			*intimer = NULL;
 			break;
 		}
-	}
-done:
-	if (status == FTDM_FAIL) {
-		ftdm_log(FTDM_LOG_ERROR, "Could not find timer %s to cancel it\n", (*intimer)->name);
 	}
 
 	ftdm_mutex_unlock(sched->mutex);
