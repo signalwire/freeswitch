@@ -1566,7 +1566,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 				continue;
 			}
 
-			if (imp->microseconds_per_packet / 1000 == default_ptime) {
+			if (imp->microseconds_per_packet / 1000 == (int)default_ptime) {
 				array[i++] = imp;
 				goto found;
 			}
