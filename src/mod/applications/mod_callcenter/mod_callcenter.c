@@ -2675,9 +2675,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
-
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	switch_status_t status;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
@@ -2685,11 +2683,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_core_hash_init(&globals.queue_hash, globals.pool);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
+	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
 	switch_mutex_lock(globals.mutex);
 	globals.running = 1;
 	switch_mutex_unlock(globals.mutex);
 
-	load_config();
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	if (!AGENT_DISPATCH_THREAD_STARTED) {
 		cc_agent_dispatch_thread_start();
