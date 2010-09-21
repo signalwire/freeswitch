@@ -4074,6 +4074,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 
 	ftdm_global_set_logger(ftdm_logger);
 
+	ftdm_global_set_mod_directory(SWITCH_GLOBAL_dirs.mod_dir);
+
+	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
+
 	ftdm_cpu_monitor_disable();
 	
 	if (ftdm_global_init() != FTDM_SUCCESS) {

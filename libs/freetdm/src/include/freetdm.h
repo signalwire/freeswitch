@@ -1301,6 +1301,12 @@ FT_DECLARE(void) ftdm_global_set_logger(ftdm_logger_t logger);
 /*! \brief Set the default logger level */
 FT_DECLARE(void) ftdm_global_set_default_logger(int level);
 
+/*! \brief Set the directory to look for modules */
+FT_DECLARE(void) ftdm_global_set_mod_directory(const char *path);
+
+/*! \brief Set the directory to look for configs */
+FT_DECLARE(void) ftdm_global_set_config_directory(const char *path);
+
 /*! \brief Check if the FTDM library is initialized and running */
 FT_DECLARE(ftdm_bool_t) ftdm_running(void);
 

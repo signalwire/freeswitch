@@ -41,8 +41,22 @@
 #define FTDM_MOD_DIR "." 
 #endif
 
-static char g_ftdm_config_dir[] = FTDM_CONFIG_DIR;
-static char g_ftdm_mod_dir[] = FTDM_MOD_DIR;
+#define FTDM_MAX_CONF_DIR 512
+
+static char g_ftdm_config_dir[FTDM_MAX_CONF_DIR] = FTDM_CONFIG_DIR;
+static char g_ftdm_mod_dir[FTDM_MAX_CONF_DIR] = FTDM_MOD_DIR;
+
+FT_DECLARE(void) ftdm_global_set_mod_directory(const char *path)
+{
+	snprintf(g_ftdm_mod_dir, sizeof(g_ftdm_mod_dir), "%s", path);
+	ftdm_log(FTDM_LOG_DEBUG, "New mod directory: %s\n", g_ftdm_mod_dir);
+}
+
+FT_DECLARE(void) ftdm_global_set_config_directory(const char *path)
+{
+	snprintf(g_ftdm_config_dir, sizeof(g_ftdm_config_dir), "%s", path);
+	ftdm_log(FTDM_LOG_DEBUG, "New config directory: %s\n", g_ftdm_config_dir);
+}
 
 int ftdm_config_open_file(ftdm_config_t *cfg, const char *file_path)
 {
