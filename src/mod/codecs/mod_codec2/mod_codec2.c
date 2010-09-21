@@ -63,33 +63,6 @@ struct codec2_context {
 static int c2_count = 0;
 #endif
 
-static void my_pack(uint8_t *dst, unsigned char* bits, int n)
-{
-	int i;
-	
-	for (i = 0; i < n; i++) {
-		int index = i / 8;
-		int bit = i % 8;
-
-		if (bits[i]) {
-			dst[index] |= (1 << bit);
-		} else {
-			dst[index] &= ~(1 << bit);
-		}
-	}
-}
-
-static void my_unpack(uint8_t *src, unsigned char* bits, int n) 
-{
-	int i;
-	for (i = 0; i < n; i++) {
-		int index = i / 8;
-		int bit = i % 8;
-		
-		bits[i] = !!(src[index] & (1 << bit));
-	}
-}
-
 static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
@@ -160,7 +133,6 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
-	unsigned char encode_buf[CODEC2_BITS_PER_FRAME];
 	
 	codec2_assert(decoded_data_len == CODEC2_SAMPLES_PER_FRAME * 2);
 	
@@ -169,29 +141,7 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 	fflush(context->encoder_in);
 #endif
 
-	{
-		/*  Workaround for assertion failure until it makes it into codec2 svn */
-		uint8_t *p = (uint8_t*)decoded_data;
-		int i;
-		for (i = 0; i < 10; i++) {
-			if (*p != 0) {
-				break;
-			}
-		}
-		if (i == 10) {
-			memset(encoded_data, 0, 8);
-			*encoded_data_len = 8;
-			if (flag) {
-				*flag |= SFF_CNG;
-			}
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-
-	codec2_encode(context->encoder, encode_buf, decoded_data);
-	
-	memset(encoded_data, 0, 8);
-	my_pack(encoded_data, encode_buf, sizeof(encode_buf));
+	codec2_encode(context->encoder, encoded_data, decoded_data);
 	
 #ifdef LOG_DATA	
 	fwrite(encode_buf, sizeof(encode_buf), 1, context->encoder_out_unpacked);
@@ -216,12 +166,9 @@ static switch_status_t switch_codec2_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
-	unsigned char bits[CODEC2_BITS_PER_FRAME];
 	
 	codec2_assert(encoded_data_len == 8 /* aligned to 8 */);
 	
-	my_unpack(encoded_data, bits, sizeof(bits));
-
 #ifdef LOG_DATA	
 	fwrite(encoded_data, encoded_data_len, 1, context->decoder_in);
 	fflush(context->decoder_in);
@@ -229,7 +176,7 @@ static switch_status_t switch_codec2_decode(switch_codec_t *codec,
 	fflush(context->decoder_in_unpacked);
 #endif
 	
-	codec2_decode(context->decoder, decoded_data, bits);
+	codec2_decode(context->decoder, decoded_data, encoded_data);
 
 #ifdef LOG_DATA	
 	fwrite(decoded_data, CODEC2_SAMPLES_PER_FRAME, 2, context->decoder_out);
