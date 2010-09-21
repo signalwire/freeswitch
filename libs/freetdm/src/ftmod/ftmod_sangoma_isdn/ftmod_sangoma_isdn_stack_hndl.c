@@ -150,7 +150,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 						/* Launch timer in case we never get a FACILITY msg */
 						if (signal_data->facility_timeout) {
 							ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout, 
-									sngisdn_facility_timeout, (void*) sngisdn_info, sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+									sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
 						}
 						break;
 					} else if (ret_val == 0) {
