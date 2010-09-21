@@ -4073,27 +4073,6 @@ static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t len)
-{
-#ifdef WIN32
-    const char *ext = ".dll";
-    //const char *EXT = ".DLL";
-#define FTDM_MOD_DIR "." //todo
-#elif defined (MACOSX) || defined (DARWIN)
-    const char *ext = ".dylib";
-    //const char *EXT = ".DYLIB";
-#else
-    const char *ext = ".so";
-    //const char *EXT = ".SO";
-#endif
-	if (*name == *FTDM_PATH_SEPARATOR) {
-		snprintf(path, len, "%s%s", name, ext);
-	} else {
-		snprintf(path, len, "%s%s%s%s", FTDM_MOD_DIR, FTDM_PATH_SEPARATOR, name, ext);
-	}
-	return path;	
-}
-
 FT_DECLARE(ftdm_status_t) ftdm_global_add_io_interface(ftdm_io_interface_t *interface1)
 {
 	ftdm_status_t ret = FTDM_SUCCESS;
