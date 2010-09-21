@@ -1983,12 +1983,20 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			is_nat = NULL;
 		}
 
+		if (zstr(contact_host)) {
+			is_nat = "No contact host";
+		}
+
 		if (is_nat) {
 			contact_host = network_ip;
 			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
 			port = NULL;
 		}
 
+		if (zstr(contact_host)) {
+			nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());
+			return;
+		}
 
 		if (port) {
 			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
