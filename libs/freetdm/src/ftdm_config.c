@@ -37,6 +37,13 @@
 
 #include "private/ftdm_core.h"
 
+#ifndef FTDM_MOD_DIR
+#define FTDM_MOD_DIR "." 
+#endif
+
+static char g_ftdm_config_dir[] = FTDM_CONFIG_DIR;
+static char g_ftdm_mod_dir[] = FTDM_MOD_DIR;
+
 int ftdm_config_open_file(ftdm_config_t *cfg, const char *file_path)
 {
 	FILE *f;
@@ -46,7 +53,7 @@ int ftdm_config_open_file(ftdm_config_t *cfg, const char *file_path)
 	if (file_path[0] == '/') {
 		path = file_path;
 	} else {
-		snprintf(path_buf, sizeof(path_buf), "%s%s%s", FTDM_CONFIG_DIR, FTDM_PATH_SEPARATOR, file_path);
+		snprintf(path_buf, sizeof(path_buf), "%s%s%s", g_ftdm_config_dir, FTDM_PATH_SEPARATOR, file_path);
 		path = path_buf;
 	}
 
@@ -64,7 +71,7 @@ int ftdm_config_open_file(ftdm_config_t *cfg, const char *file_path)
 			int last = -1;
 			char *var, *val;
 
-			snprintf(path_buf, sizeof(path_buf), "%s%sfreetdm.conf", FTDM_CONFIG_DIR, FTDM_PATH_SEPARATOR);
+			snprintf(path_buf, sizeof(path_buf), "%s%sfreetdm.conf", g_ftdm_config_dir, FTDM_PATH_SEPARATOR);
 			path = path_buf;
 
 			if ((f = fopen(path, "r")) == 0) {
@@ -327,6 +334,26 @@ FT_DECLARE(ftdm_status_t) ftdm_conf_node_destroy(ftdm_conf_node_t *node)
 	ftdm_free(node->parameters);
 	ftdm_free(node);
 	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t len)
+{
+#ifdef WIN32
+    const char *ext = ".dll";
+    //const char *EXT = ".DLL";
+#elif defined (MACOSX) || defined (DARWIN)
+    const char *ext = ".dylib";
+    //const char *EXT = ".DYLIB";
+#else
+    const char *ext = ".so";
+    //const char *EXT = ".SO";
+#endif
+	if (*name == *FTDM_PATH_SEPARATOR) {
+		snprintf(path, len, "%s%s", name, ext);
+	} else {
+		snprintf(path, len, "%s%s%s%s", g_ftdm_mod_dir, FTDM_PATH_SEPARATOR, name, ext);
+	}
+	return path;	
 }
 
 /* For Emacs:
