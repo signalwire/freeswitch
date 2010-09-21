@@ -156,7 +156,7 @@ typedef struct sngisdn_chan_data {
 
 	uint8_t                 globalFlg;
 	sngisdn_glare_data_t	glare;
-	ftdm_timer_t 			*timers[SNGISDN_NUM_TIMERS];
+	ftdm_timer_id_t 		timers[SNGISDN_NUM_TIMERS];
 } sngisdn_chan_data_t;
 
 /* Span specific data */

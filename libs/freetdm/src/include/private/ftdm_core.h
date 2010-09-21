@@ -425,6 +425,7 @@ struct ftdm_channel {
 	float txgain;
 	int availability_rate;
 	void *user_private;
+	ftdm_timer_id_t hangup_timer;
 #ifdef FTDM_DEBUG_DTMF
 	ftdm_dtmf_debug_t dtmfdbg;
 #endif
