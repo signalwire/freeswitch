@@ -63,7 +63,7 @@ struct codec2_context {
 static int c2_count = 0;
 #endif
 
-static void pack(uint8_t *dst, char* bits, int n)
+static void my_pack(uint8_t *dst, unsigned char* bits, int n)
 {
 	int i;
 	
@@ -79,7 +79,7 @@ static void pack(uint8_t *dst, char* bits, int n)
 	}
 }
 
-static void unpack(uint8_t *src, char* bits, int n) 
+static void my_unpack(uint8_t *src, unsigned char* bits, int n) 
 {
 	int i;
 	for (i = 0; i < n; i++) {
@@ -160,7 +160,7 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
-	char encode_buf[CODEC2_BITS_PER_FRAME];
+	unsigned char encode_buf[CODEC2_BITS_PER_FRAME];
 	
 	codec2_assert(decoded_data_len == CODEC2_SAMPLES_PER_FRAME * 2);
 	
@@ -191,7 +191,7 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 	codec2_encode(context->encoder, encode_buf, decoded_data);
 	
 	memset(encoded_data, 0, 8);
-	pack(encoded_data, encode_buf, sizeof(encode_buf));
+	my_pack(encoded_data, encode_buf, sizeof(encode_buf));
 	
 #ifdef LOG_DATA	
 	fwrite(encode_buf, sizeof(encode_buf), 1, context->encoder_out_unpacked);
@@ -216,11 +216,11 @@ static switch_status_t switch_codec2_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
-	char bits[CODEC2_BITS_PER_FRAME];
+	unsigned char bits[CODEC2_BITS_PER_FRAME];
 	
 	codec2_assert(encoded_data_len == 8 /* aligned to 8 */);
 	
-	unpack(encoded_data, bits, sizeof(bits));
+	my_unpack(encoded_data, bits, sizeof(bits));
 
 #ifdef LOG_DATA	
 	fwrite(encoded_data, encoded_data_len, 1, context->decoder_in);
