@@ -1527,7 +1527,11 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
 				const char *hname = name + strlen(prefix);
-				stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, hname, strlen(value) + 1, value);
+				if (*value == '~') {
+					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, hname, strlen(value), value + 1);
+				} else {
+					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, hname, strlen(value) + 1, value);
+				}
 				x++;
 			}
 		}
