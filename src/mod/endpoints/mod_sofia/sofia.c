@@ -4138,6 +4138,36 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
 						if (sip->sip_payload && sip->sip_payload->pl_data) {
 							switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
+							char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
+							switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+							char tmp[32] = "";
+					
+							tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, t38_options->remote_ip);
+							tech_pvt->remote_sdp_audio_port = t38_options->remote_port;
+							
+							if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && 
+								remote_port == tech_pvt->remote_sdp_audio_port) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+												  "Audio params are unchanged for %s.\n",
+												  switch_channel_get_name(tech_pvt->channel));
+							} else {
+								const char *err = NULL;
+
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+												  "Audio params changed for %s from %s:%d to %s:%d\n",
+												  switch_channel_get_name(tech_pvt->channel),
+												  remote_host, remote_port, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+								
+								switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+								switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+								switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+								if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip,
+																  tech_pvt->remote_sdp_audio_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
+									switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+								}
+							}
+
 
 							if (t38_options) {
 								sofia_glue_copy_t38_options(t38_options, other_session);

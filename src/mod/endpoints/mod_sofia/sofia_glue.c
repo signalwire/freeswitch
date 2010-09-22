@@ -41,7 +41,9 @@ switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile);
 
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
-	char buf[2048];
+	char buf[2048] = "";
+	char max_buf[128] = "";
+	char max_data[128] = "";
 	const char *ip = t38_options->local_ip;
 	uint32_t port = t38_options->local_port;
 	const char *family = "IP4";
@@ -89,6 +91,14 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"o=%s %010u %010u IN %s %s\n"
 					"s=%s\n" "c=IN %s %s\n" "t=0 0\n", username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip);
 
+	if (t38_options->T38FaxMaxBuffer) {
+		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\n", t38_options->T38FaxMaxBuffer);
+	};
+
+	if (t38_options->T38FaxMaxDatagram) {
+		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\n", t38_options->T38FaxMaxDatagram);
+	};
+
 
 	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
 					"m=image %d udptl t38\n"
@@ -98,8 +108,8 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"%s"
 					"%s"
 					"a=T38FaxRateManagement:%s\n"
-					"a=T38FaxMaxBuffer:%d\n"
-					"a=T38FaxMaxDatagram:%d\n"
+					"%s"
+					"%s"
 					"a=T38FaxUdpEC:%s\n",
 					//"a=T38VendorInfo:%s\n",
 					port,
@@ -109,8 +119,9 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					t38_options->T38FaxTranscodingMMR ? "a=T38FaxTranscodingMMR\n" : "",
 					t38_options->T38FaxTranscodingJBIG ? "a=T38FaxTranscodingJBIG\n" : "",
 					t38_options->T38FaxRateManagement,
-					t38_options->T38FaxMaxBuffer,
-					t38_options->T38FaxMaxDatagram, t38_options->T38FaxUdpEC
+					max_buf,
+					max_data,
+					t38_options->T38FaxUdpEC
 					//t38_options->T38VendorInfo ? t38_options->T38VendorInfo : "0 0 0"
 					);
 
@@ -3619,7 +3630,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 		if (got_udptl && m->m_type == sdp_media_image && m->m_port) {
 			switch_t38_options_t *t38_options = tech_process_udptl(tech_pvt, sdp, m);
-
+			
 			if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
 				match = 0;
 				goto done;
@@ -3634,10 +3645,41 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				if (sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
 					pass = 0;
 				}
-
+				
 				if (pass && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
 					switch_core_session_message_t *msg;
+					char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
+					switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+					char tmp[32] = "";
+					
+					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, t38_options->remote_ip);
+					tech_pvt->remote_sdp_audio_port = t38_options->remote_port;
+
+					if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
+										  switch_channel_get_name(tech_pvt->channel));
+					} else {
+						const char *err = NULL;
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
+										  switch_channel_get_name(tech_pvt->channel),
+										  remote_host, remote_port, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+						
+						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+
+						if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip,
+														  tech_pvt->remote_sdp_audio_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
+							switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+						}
+						
+					}
+
+
+
 					sofia_glue_copy_t38_options(t38_options, other_session);
 
 					sofia_set_flag(tech_pvt, TFLAG_T38_PASSTHRU);
