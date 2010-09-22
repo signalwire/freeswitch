@@ -203,9 +203,9 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
         goto end;
     }
 
-    while(t38_state_list.thread_running) {
+    switch_mutex_lock(globals.cond_mutex);
 
-		switch_mutex_lock(globals.cond_mutex);
+    while(t38_state_list.thread_running) {
 
         switch_mutex_lock(t38_state_list.mutex);
 
@@ -226,6 +226,8 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
         switch_core_timer_next(&timer);
     }
+
+    switch_mutex_unlock(globals.cond_mutex);
     
  end:
 

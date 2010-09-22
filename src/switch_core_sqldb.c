@@ -911,10 +911,9 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 	sql_manager.thread_running = 1;
 
+	switch_mutex_lock(sql_manager.cond_mutex);
+
 	while (sql_manager.thread_running == 1) {
-
-		switch_mutex_lock(sql_manager.cond_mutex);
-
 		if (sql || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
 			switch_queue_trypop(sql_manager.sql_queue[1], &pop) == SWITCH_STATUS_SUCCESS) {
 
@@ -992,6 +991,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 			switch_thread_cond_wait(sql_manager.cond, sql_manager.cond_mutex);
 		}
 	}
+
+	switch_mutex_unlock(sql_manager.cond_mutex);
 
 	while (switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
