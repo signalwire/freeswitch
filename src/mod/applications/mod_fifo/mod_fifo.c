@@ -875,7 +875,7 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		char *sql;
 		switch_event_t *event;
 		
-		switch_channel_clear_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_clear_app_flag_key(__FILE__, consumer_channel, FIFO_APP_BRIDGE_TAG);
 		switch_channel_set_variable(consumer_channel, "fifo_bridged", NULL);
 				
 		ts = switch_micro_time_now();
@@ -989,7 +989,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				goto end;
 			}
 
-			switch_channel_set_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG);
+			switch_channel_set_app_flag_key(__FILE__, consumer_channel, FIFO_APP_BRIDGE_TAG);
 			
 			switch_channel_set_variable(consumer_channel, "fifo_bridged", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_manual_bridge", "true");
@@ -1990,6 +1990,11 @@ static void dec_use_count(switch_core_session_t *session, switch_bool_t send_eve
 	if ((outbound_id = switch_channel_get_variable(channel, "fifo_outbound_uuid"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s untracking call on uuid %s!\n", switch_channel_get_name(channel), outbound_id);
 
+
+		sql = switch_mprintf("delete from fifo_bridge where consumer_uuid='%q'", switch_core_session_get_uuid(session));
+		fifo_execute_sql(sql, globals.sql_mutex);
+		switch_safe_free(sql);
+
 		del_bridge_call(outbound_id);
 		sql = switch_mprintf("update fifo_outbound set use_count=use_count-1, stop_time=%ld, next_avail=%ld + lag + 1 where use_count > 0 and uuid='%q'", 
 							 now, now, outbound_id);
@@ -2043,7 +2048,7 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 
 	add_bridge_call(data);
 
-	switch_channel_set_app_flag(channel, FIFO_APP_TRACKING);
+	switch_channel_set_app_flag_key(__FILE__, channel, FIFO_APP_TRACKING);
 
 	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
 	switch_channel_set_variable(channel, "fifo_track_call", "true");
@@ -2342,7 +2347,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
 		switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 
-		switch_channel_set_app_flag(channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_set_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
 
 		if (chime_list) {
 			char *list_dup = switch_core_session_strdup(session, chime_list);
@@ -2415,10 +2420,10 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-		switch_channel_clear_app_flag(channel, FIFO_APP_BRIDGE_TAG);
+	abort:
 
-	  abort:
-		
+		switch_channel_clear_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+
 		fifo_caller_del(switch_core_session_get_uuid(session));
 
 		if (!aborted && switch_channel_ready(channel)) {
@@ -2773,7 +2778,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
-				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_app_flag(other_channel, FIFO_APP_BRIDGE_TAG)) {
+				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && 
+					   switch_channel_test_app_flag(other_channel, FIFO_APP_BRIDGE_TAG)) {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
@@ -3078,7 +3084,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_mutex_unlock(globals.mutex);
 
 
-	switch_channel_clear_app_flag(channel, FIFO_APP_BRIDGE_TAG);
+	switch_channel_clear_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
 
 	switch_core_media_bug_resume(session);
 
