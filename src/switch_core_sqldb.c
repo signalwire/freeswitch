@@ -1539,6 +1539,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 {
 	switch_threadattr_t *thd_attr;
 	switch_cache_db_handle_t *dbh;
+	uint32_t sanity = 400;
 
 	sql_manager.memory_pool = pool;
 	sql_manager.manage = manage;
@@ -1678,7 +1679,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	}
 	switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
 
-	while (!sql_manager.thread_running) {
+	while (sql_manager.manage && !sql_manager.thread_running && --sanity) {
 		switch_yield(10000);
 	}
 
