@@ -2956,7 +2956,6 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_variable(other_channel, "fifo_status", "DONE");
 				switch_channel_set_variable(other_channel, "fifo_timestamp", date);
 
-				switch_thread_rwlock_unlock(node->rwlock);
 				send_presence(node);
 				check_cancel(node);
 				switch_core_session_rwunlock(other_session);
