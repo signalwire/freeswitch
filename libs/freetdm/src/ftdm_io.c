@@ -5224,15 +5224,28 @@ FT_DECLARE(char *) ftdm_strndup(const char *str, ftdm_size_t inlen)
 }
 
 #define FTDM_DEBUG_LINE_LEN 255
+#define handle_snprintf_result(buff, written, len, debugstr) \
+	if (written >= len) { \
+		ftdm_free(debugstr); \
+		return NULL; \
+	} \
+	len -= written; \
+	buff += written;
+
 FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 {
-	uint8_t j = 0;
+	char func[255];
+	char line[255];
+	char states[255];
 	int written = 0;
 	char *buff = NULL;
-	uint8_t i = fchan->hindex;
-	
+	uint8_t i = 0;
 	int dbglen = ftdm_array_len(fchan->history) * FTDM_DEBUG_LINE_LEN;
 	int len = dbglen;
+
+	if (!fchan->history[0].file) {
+		return ftdm_strdup("-- No state history --\n");
+	}
 
 	char *debugstr = ftdm_calloc(1, dbglen);
 	if (!debugstr) {
@@ -5240,33 +5253,26 @@ FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 	}
 	buff = debugstr;
 
+	written = snprintf(buff, len, "%-30.30s %-30.30s %s", "-- States --", "-- Function --", "-- Location --\n");
+	handle_snprintf_result(buff, written, len, debugstr);
+
 	for (i = fchan->hindex; i < ftdm_array_len(fchan->history); i++) {
 		if (!fchan->history[i].file) {
 			break;
 		}
-		written = snprintf(buff, len, "%s -> %s at %s %s:%d\n", 
-			ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state), fchan->history[i].func,
-			fchan->history[i].file, fchan->history[i].line);
-		if (written >= len) {
-			ftdm_free(debugstr);
-			ftdm_log(FTDM_LOG_ERROR, "Not enough memory to build debug history string\n");
-			return NULL;
-		}
-		len -= written;
-		buff += written;
+		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
+		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
+		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
+		written = snprintf(buff, len, "%-30.30s %-30.30s %s\n", states, func, line);
+		handle_snprintf_result(buff, written, len, debugstr);
 	}
 
-	for (j = 0; j < fchan->hindex; j++) {
-		written = snprintf(buff, len, "%s -> %s at %s %s:%d\n", 
-			ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state), fchan->history[i].func,
-			fchan->history[i].file, fchan->history[i].line);
-		if (written >= len) {
-			ftdm_free(debugstr);
-			ftdm_log(FTDM_LOG_ERROR, "Not enough memory to build debug history string\n");
-			return NULL;
-		}
-		len -= written;
-		buff += written;
+	for (i = 0; i < fchan->hindex; i++) {
+		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
+		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
+		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
+		written = snprintf(buff, len, "%-30.30s %-30.30s %s\n", states, func, line);
+		handle_snprintf_result(buff, written, len, debugstr);
 	}
 
 	debugstr[dbglen-1] = 0;
