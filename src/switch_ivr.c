@@ -876,7 +876,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	switch_time_t abs_started = 0, digit_started = 0;
 	uint32_t abs_elapsed = 0, digit_elapsed = 0;
 
-	if (!args || !args->input_callback) {
+	if (!args) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -917,6 +917,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 
 		if (switch_channel_has_dtmf(channel)) {
+			if (!args->input_callback && !args->buf) {
+				status = SWITCH_STATUS_BREAK;
+				break;
+			}
 			switch_channel_dequeue_dtmf(channel, &dtmf);
 			status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 			if (digit_timeout) {
