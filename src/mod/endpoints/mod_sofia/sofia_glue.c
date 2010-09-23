@@ -3450,9 +3450,9 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 	t38_options->remote_port = m->m_port;
 
-	if (m->m_connections) {
+	if (m->m_connections && m->m_connections->c_address) {
 		t38_options->remote_ip = switch_core_session_strdup(tech_pvt->session, m->m_connections->c_address);
-	} else if (sdp && sdp->sdp_connection) {
+	} else if (sdp && sdp->sdp_connection && sdp->sdp_connection->c_address) {
 		t38_options->remote_ip = switch_core_session_strdup(tech_pvt->session, sdp->sdp_connection->c_address);
 	}
 

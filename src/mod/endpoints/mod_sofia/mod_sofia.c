@@ -1238,7 +1238,12 @@ static void start_udptl(private_object_t *tech_pvt, switch_t38_options_t *t38_op
 
 		switch_rtp_udptl_mode(tech_pvt->rtp_session);
 
-		if (remote_host && remote_port && !strcmp(remote_host, t38_options->remote_ip) && remote_port == t38_options->remote_port) {
+		if (!t38_options || !t38_options->remote_ip) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No remote address\n");
+			return;
+		}
+
+		if (remote_host && remote_port && remote_port == t38_options->remote_port && !strcmp(remote_host, t38_options->remote_ip)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
 							  t38_options->remote_ip, t38_options->remote_port);
 			return;
