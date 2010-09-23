@@ -1293,6 +1293,16 @@ end:
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		ftdmchan->last_state = ftdmchan->state; 
 		ftdmchan->state = state;
+		ftdmchan->history[ftdmchan->hindex].file = file;
+		ftdmchan->history[ftdmchan->hindex].func = func;
+		ftdmchan->history[ftdmchan->hindex].line = line;
+		ftdmchan->history[ftdmchan->hindex].state = ftdmchan->state;
+		ftdmchan->history[ftdmchan->hindex].last_state = ftdmchan->last_state;
+		ftdmchan->history[ftdmchan->hindex].time = ftdm_current_time_in_ms();
+		ftdmchan->hindex++;
+		if (ftdmchan->hindex == ftdm_array_len(ftdmchan->history)) {
+			ftdmchan->hindex = 0;
+		}
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 
 		ftdm_mutex_lock(ftdmchan->span->mutex);
@@ -5190,6 +5200,63 @@ FT_DECLARE(char *) ftdm_strndup(const char *str, ftdm_size_t inlen)
 	memcpy(new, str, len-1);
 	new[len-1] = 0;
 	return new;
+}
+
+#define FTDM_DEBUG_LINE_LEN 255
+#define handle_snprintf_result(buff, written, len, debugstr) \
+	if (written >= len) { \
+		ftdm_free(debugstr); \
+		return NULL; \
+	} \
+	len -= written; \
+	buff += written;
+
+FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
+{
+	char func[255];
+	char line[255];
+	char states[255];
+	int written = 0;
+	char *buff = NULL;
+	uint8_t i = 0;
+	int dbglen = ftdm_array_len(fchan->history) * FTDM_DEBUG_LINE_LEN;
+	int len = dbglen;
+
+	if (!fchan->history[0].file) {
+		return ftdm_strdup("-- No state history --\n");
+	}
+
+	char *debugstr = ftdm_calloc(1, dbglen);
+	if (!debugstr) {
+		return NULL;
+	}
+	buff = debugstr;
+
+	written = snprintf(buff, len, "%-30.30s %-30.30s %s", "-- States --", "-- Function --", "-- Location --\n");
+	handle_snprintf_result(buff, written, len, debugstr);
+
+	for (i = fchan->hindex; i < ftdm_array_len(fchan->history); i++) {
+		if (!fchan->history[i].file) {
+			break;
+		}
+		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
+		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
+		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
+		written = snprintf(buff, len, "%-30.30s %-30.30s %s\n", states, func, line);
+		handle_snprintf_result(buff, written, len, debugstr);
+	}
+
+	for (i = 0; i < fchan->hindex; i++) {
+		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
+		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
+		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
+		written = snprintf(buff, len, "%-30.30s %-30.30s %s\n", states, func, line);
+		handle_snprintf_result(buff, written, len, debugstr);
+	}
+
+	debugstr[dbglen-1] = 0;
+
+	return debugstr;
 }
 
 
