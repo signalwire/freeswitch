@@ -49,7 +49,6 @@ struct skinny_globals {
     switch_memory_pool_t *pool;
     switch_mutex_t *mutex;
     switch_hash_t *profile_hash;
-    switch_event_node_t *heartbeat_node;
     switch_event_node_t *call_state_node;
     switch_event_node_t *message_waiting_node;
     switch_event_node_t *trap_node;

@@ -1343,19 +1343,6 @@ static switch_status_t kill_listener(listener_t *listener, void *pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t kill_expired_listener(listener_t *listener, void *pvt)
-{
-	switch_event_t *event = NULL;
-
-	if(listener->expire_time < switch_epoch_time_now(NULL)) {
-		/* skinny::expire event */
-		skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_EXPIRE);
-		switch_event_fire(&event);
-		return kill_listener(listener, pvt);
-	}
-	return SWITCH_STATUS_SUCCESS;
-}
-
 switch_status_t keepalive_listener(listener_t *listener, void *pvt)
 {
 	skinny_profile_t *profile;
@@ -1414,6 +1401,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				case SWITCH_STATUS_TIMEOUT:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Communication Time Out with %s:%d.\n",
 						listener->remote_ip, listener->remote_port);
+
+					if(listener->expire_time < switch_epoch_time_now(NULL)) {
+						switch_event_t *event = NULL;
+						/* skinny::expire event */
+						skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_EXPIRE);
+						switch_event_fire(&event);
+					}
 					break;
 				default: 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Communication Error with %s:%d.\n",
@@ -1917,11 +1911,6 @@ static switch_status_t load_skinny_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void skinny_heartbeat_event_handler(switch_event_t *event)
-{
-	walk_listeners(kill_expired_listener, NULL);
-}
-
 static void skinny_call_state_event_handler(switch_event_t *event)
 {
 	char *subclass;
@@ -2129,10 +2118,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 	/* bind to events */
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, skinny_heartbeat_event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our heartbeat handler!\n");
-		/* Not such severe to prevent loading */
-	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our call_state handler!\n");
 		return SWITCH_STATUS_TERM;
@@ -2205,7 +2190,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	skinny_api_unregister();
 	
 	/* release events */
-	switch_event_unbind(&globals.heartbeat_node);
 	switch_event_unbind(&globals.call_state_node);
 	switch_event_unbind(&globals.message_waiting_node);
 	switch_event_unbind(&globals.trap_node);

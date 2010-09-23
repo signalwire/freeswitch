@@ -135,6 +135,10 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
+		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			return SWITCH_STATUS_TIMEOUT;
+		}
+
 		if (!listener_is_ready(listener)) {
 			break;
 		}
