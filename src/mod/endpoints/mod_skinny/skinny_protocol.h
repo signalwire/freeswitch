@@ -174,6 +174,28 @@ struct PACKED register_available_lines_message {
     uint32_t count;
 };
 
+/* DeviceToUserDataMessage */
+#define DEVICE_TO_USER_DATA_MESSAGE 0x002E
+struct PACKED device_to_user_data_message {
+	uint32_t application_id;
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t transaction_id;
+	uint32_t data_length;
+	char data[1];
+};
+
+/* DeviceToUserDataResponseMessage */
+#define DEVICE_TO_USER_DATA_RESPONSE_MESSAGE 0x002F
+struct PACKED device_to_user_data_response_message {
+	uint32_t application_id;
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t transaction_id;
+	uint32_t data_length;
+	char data[1];
+};
+
 /* ServiceUrlStatReqMessage */
 #define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
 struct PACKED service_url_stat_req_message {
@@ -184,6 +206,38 @@ struct PACKED service_url_stat_req_message {
 #define FEATURE_STAT_REQ_MESSAGE 0x0034
 struct PACKED feature_stat_req_message {
     uint32_t feature_index;
+};
+
+/* DeviceToUserDataVersion1Message */
+#define DEVICE_TO_USER_DATA_VERSION1_MESSAGE 0x0041
+struct PACKED device_to_user_data_version1_message {
+	uint32_t application_id;
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t transaction_id;
+	uint32_t data_length;
+	uint32_t sequence_flag;
+	uint32_t display_priority;
+	uint32_t conference_id;
+	uint32_t app_instance_id;
+	uint32_t routing_id;
+	char data[1];
+};
+
+/* DeviceToUserDataResponseVersion1Message */
+#define DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE 0x0042
+struct PACKED device_to_user_data_response_version1_message {
+	uint32_t application_id;
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t transaction_id;
+	uint32_t data_length;
+	uint32_t sequence_flag;
+	uint32_t display_priority;
+	uint32_t conference_id;
+	uint32_t app_instance_id;
+	uint32_t routing_id;
+	char data[1];
 };
 
 /* RegisterAckMessage */
@@ -479,6 +533,17 @@ struct PACKED dialed_number_message {
     uint32_t call_id;
 };
 
+/* UserToDeviceDataMessage */
+#define USER_TO_DEVICE_DATA_MESSAGE 0x011E
+struct PACKED user_to_device_data_message {
+	uint32_t application_id;
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t transaction_id;
+	uint32_t data_length;
+	char data[1];
+};
+
 /* FeatureStatMessage */
 #define FEATURE_STAT_RES_MESSAGE 0x011F
 struct PACKED feature_stat_res_message {
@@ -504,6 +569,22 @@ struct PACKED service_url_stat_res_message {
     char display_name[40];
 };
 
+/* UserToDeviceDataVersion1Message */
+#define USER_TO_DEVICE_DATA_VERSION1_MESSAGE 0x013F
+struct PACKED user_to_device_data_version1_message {
+	uint32_t application_id;
+	uint32_t line_instance;
+	uint32_t call_id;
+	uint32_t transaction_id;
+	uint32_t data_length;
+	uint32_t sequence_flag;
+	uint32_t display_priority;
+	uint32_t conference_id;
+	uint32_t app_instance_id;
+	uint32_t routing_id;
+	char data[1];
+};
+
 /*****************************************************************************/
 /* SKINNY MESSAGE */
 /*****************************************************************************/
@@ -512,6 +593,7 @@ struct PACKED service_url_stat_res_message {
 #define SKINNY_MESSAGE_MAXSIZE 1000
 
 union skinny_data {
+	/* no data for KEEP_ALIVE_MESSAGE */
     struct register_message reg;
     struct port_message port;
     struct keypad_button_message keypad_button;
@@ -520,14 +602,25 @@ union skinny_data {
     struct on_hook_message on_hook;
     struct speed_dial_stat_req_message speed_dial_req;
     struct line_stat_req_message line_req;
+    /* no data for CONFIG_STAT_REQ_MESSAGE */
+    /* no data for TIME_DATE_REQ_MESSAGE */
+    /* no data for BUTTON_TEMPLATE_REQ_MESSAGE */
+    /* no data for VERSION_REQ_MESSAGE */
     struct capabilities_res_message cap_res;
     struct alarm_message alarm;
     struct open_receive_channel_ack_message open_receive_channel_ack;
+    /* no data for SOFT_KEY_SET_REQ_MESSAGE */
     struct soft_key_event_message soft_key_event;
-    struct service_url_stat_req_message service_url_req;
-    struct feature_stat_req_message feature_req;
+    /* no data for UNREGISTER_MESSAGE */
+    /* no data for SOFT_KEY_TEMPLATE_REQ_MESSAGE */
     struct headset_status_message headset_status;
     struct register_available_lines_message reg_lines;
+    struct device_to_user_data_message d2u_data;
+    struct device_to_user_data_response_message d2u_data_response;
+    struct service_url_stat_req_message service_url_req;
+    struct feature_stat_req_message feature_req;
+    struct device_to_user_data_version1_message d2u_data_v1;
+    struct device_to_user_data_response_version1_message d2u_data_response_v1;
     struct register_ack_message reg_ack;
     struct start_tone_message start_tone;
     struct stop_tone_message stop_tone;
@@ -543,8 +636,10 @@ union skinny_data {
     struct define_time_date_message define_time_date;
     struct button_template_message button_template;
     struct version_message version;
+    /* no data for CAPABILITIES_REQ_MESSAGE */
     struct register_reject_message reg_rej;
     struct reset_message reset;
+    /* no data for KEEP_ALIVE_ACK_MESSAGE */
     struct open_receive_channel_message open_receive_channel;
     struct close_receive_channel_message close_receive_channel;
     struct soft_key_template_res_message soft_key_template;
@@ -557,10 +652,11 @@ union skinny_data {
     struct unregister_ack_message unregister_ack;
     struct back_space_req_message back_space_req;
     struct dialed_number_message dialed_number;
+	struct user_to_device_data_message u2d_data;
     struct feature_stat_res_message feature_res;
     struct display_pri_notify_message display_pri_notify;
     struct service_url_stat_res_message service_url_res;
-
+	struct user_to_device_data_version1_message u2d_data_v1;
     uint16_t as_uint16;
     char as_char;
     void *raw;
