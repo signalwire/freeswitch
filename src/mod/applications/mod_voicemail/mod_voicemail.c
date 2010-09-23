@@ -3678,7 +3678,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	const char *fmt = "%a, %e %b %Y %T %z";
 	char heard[80];
 	char title_b4[128] = "";
-	char title_aft[128 * 3] = "";
+	char title_aft[128 * 3 + 1] = "";
 
 	if (argc > 0) {
 		l_created = switch_time_make(atol(argv[0]), 0);

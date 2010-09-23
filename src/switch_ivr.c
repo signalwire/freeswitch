@@ -1841,7 +1841,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
 	for (; hi; hi = hi->next) {
 		if (!zstr(hi->name) && !zstr(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
 			char *data;
-			switch_size_t dlen = strlen(hi->value) * 3;
+			switch_size_t dlen = strlen(hi->value) * 3 + 1;
 
 			if ((data = malloc(dlen))) {
 				memset(data, 0, dlen);

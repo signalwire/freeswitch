@@ -3733,7 +3733,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 
 static switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
 {
-	switch_size_t dlen = strlen(value) * 3;
+	switch_size_t dlen = strlen(value) * 3 + 1;
 	char *data;
 	switch_xml_t x_tag;
 

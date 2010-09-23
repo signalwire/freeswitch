@@ -3045,7 +3045,7 @@ SWITCH_STANDARD_API(xml_wrap_api_function)
 
 		if (mystream.data) {
 			if (encoded) {
-				elen = (int) strlen(mystream.data) * 3;
+				elen = (int) strlen(mystream.data) * 3 + 1;
 				edata = malloc(elen);
 				switch_assert(edata != NULL);
 				memset(edata, 0, elen);
