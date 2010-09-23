@@ -316,7 +316,7 @@ typedef struct ftdm_sngss7_data {
 }ftdm_sngss7_data_t;
 
 typedef struct sngss7_timer_data {
-	ftdm_timer_t			*heartbeat_timer;
+	ftdm_timer_id_t			hb_timer_id;
 	int						beat;
 	int						counter;
 	ftdm_sched_callback_t	callback;

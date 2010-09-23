@@ -493,7 +493,7 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/*now go to the RING state */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
 			
-		} else if (i > g_ftdm_sngss7_data.min_digits) {
+		} else if (i >= g_ftdm_sngss7_data.min_digits) {
 			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, g_ftdm_sngss7_data.min_digits);
 
 			/*now go to the RING state */
@@ -511,7 +511,7 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 									sngss7_info->t35.beat,
 									sngss7_info->t35.callback,
 									&sngss7_info->t35,
-									&sngss7_info->t35.heartbeat_timer)) {
+									&sngss7_info->t35.hb_timer_id)) {
 
 				SS7_ERROR ("Unable to schedule timer, hanging up call!\n");
 
@@ -536,8 +536,8 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		}
 
 		/* kill t35 if active */
-		if (sngss7_info->t35.heartbeat_timer) {
-			ftdm_sched_cancel_timer (sngss7_info->t35.sched,&sngss7_info->t35.heartbeat_timer);
+		if (sngss7_info->t35.hb_timer_id) {
+			ftdm_sched_cancel_timer (sngss7_info->t35.sched, sngss7_info->t35.hb_timer_id);
 		}
 
 		SS7_DEBUG_CHAN(ftdmchan, "Sending incoming call from %s to %s to FTDM core\n",
@@ -816,8 +816,8 @@ static void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		} /* if ((ftdmchan->last_state == FTDM_CHANNEL_STATE_RESTART) */
 
 		/* check if t35 is active */
-		if (sngss7_info->t35.heartbeat_timer) {
-			ftdm_sched_cancel_timer (sngss7_info->t35.sched, &sngss7_info->t35.heartbeat_timer);
+		if (sngss7_info->t35.hb_timer_id) {
+			ftdm_sched_cancel_timer (sngss7_info->t35.sched, sngss7_info->t35.hb_timer_id);
 		}
 
 		/* clear all of the call specific data store in the channel structure */
