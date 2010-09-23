@@ -1029,6 +1029,9 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 	
 	/* extract the affected infId from the circuit structure */
 	infId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
+
+	/* set the interface to paused */
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg.isupIntf[infId], SNGSS7_PAUSED);
 	
 	/* go through all the circuits now and find any other circuits on this infId */
 	i = 1;
@@ -1050,6 +1053,7 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 	
 			/* check if the circuit is fully started */
 			if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_IN_THREAD)) {
+				SS7_DEBUG_CHAN(ftdmchan, "Rx PAUSE%s\n", "");
 				/* set the pause flag on the channel */
 				sngss7_set_flag(sngss7_info, FLAG_INFID_PAUSED);
 			}
@@ -1081,6 +1085,9 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 	/* extract the affect infId from the circuit structure */
 	infId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
 
+	/* set the interface to resumed */
+	sngss7_clear_flag(&g_ftdm_sngss7_data.cfg.isupIntf[infId], SNGSS7_PAUSED);
+
 	/* go through all the circuits now and find any other circuits on this infId */
 	i = 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[i].id != 0) {
@@ -1101,6 +1108,8 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 			/* only resume if we are paused */
 			if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+				SS7_DEBUG_CHAN(ftdmchan, "Rx RESUME%s\n", "");
+
 				/* set the resume flag on the channel */
 				sngss7_set_flag(sngss7_info, FLAG_INFID_RESUME);
 
@@ -1527,7 +1536,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_span_data_t	*sngss7_span = NULL; 
 	int					range;
-	int 				x;
+
 
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
@@ -1544,51 +1553,12 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* loop over the cics starting from circuit until range+1 */
-	for (x = circuit; x < (circuit + range + 1); x++) {
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
-		/* grab the circuit in question */
-		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
-			break;
-		}
-	
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
+	/* fill in the span structure for this circuit */
+	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span->rx_grs.circuit = circuit; 
+	sngss7_span->rx_grs.range = range;
 
-		/* fill in the span structure for this circuit */
-		sngss7_span = ftdmchan->span->mod_data;
-		sngss7_span->rx_grs.circuit = circuit; 
-		sngss7_span->rx_grs.range = range;
-
-		SS7_INFO_CHAN(ftdmchan, "Rx GRS (%d:%d)\n", 
-								g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, 
-								(g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic + range));
-
-		/* flag the channel as having received a reset */
-		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX);
-
-		switch (ftdmchan->state) {
-		/**************************************************************************/
-		case FTDM_CHANNEL_STATE_RESTART:
-
-			/* go to idle so that we can redo the restart state*/
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
-
-			break;
-		/**************************************************************************/
-		default:
-
-			/* set the state of the channel to restart...the rest is done by the chan monitor */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-			break;
-		/**************************************************************************/
-		}
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-	}
+	/* the reset will be started in the main thread by "check_if_rx_grs_started" */
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
@@ -1599,10 +1569,16 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	ftdm_channel_t	  *ftdmchan = NULL;
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL; 
 	int					range;
-	int 				x;
+
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
 
 	/* extract the range value from the event structure */
 	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
@@ -1613,70 +1589,20 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* go through all the circuits in the range */
-	for ( x = circuit; x < (circuit + range + 1); x++) {
+	/* fill in the span structure for this circuit */
+	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span->rx_gra.circuit = circuit; 
+	sngss7_span->rx_gra.range = range;
 
-		/* grab the circuit in question */
-		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-			break;
-		}
+	/* check if there is a cause value in the GRA */
+	if ((siStaEvnt != NULL) &&
+		(siStaEvnt->causeDgn.eh.pres == PRSNT_NODEF) &&
+		(siStaEvnt->causeDgn.causeVal.pres == PRSNT_NODEF)) {
 
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
-		
-		SS7_INFO_CHAN(ftdmchan, "Rx GRA (%d:%d)\n", 
-								g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, 
-								(g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic + range));
+		sngss7_span->rx_gra.cause = siStaEvnt->causeDgn.causeVal.val;
+	}
 
-		switch (ftdmchan->state) {
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_RESTART:
-			
-			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-
-			/* go to DOWN */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-
-			break;
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_DOWN:
-
-			/* do nothing, just drop the message */
-			SS7_DEBUG("Receveived GRA in down state, dropping\n");
-
-			break;
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_TERMINATING:
-		case FTDM_CHANNEL_STATE_HANGUP:
-		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
-			
-			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-
-			break;
-		/**********************************************************************/
-		default:
-			/* ITU Q764-2.9.5.1.c -> release the circuit */
-			if ((siStaEvnt != NULL) &&
-				(siStaEvnt->causeDgn.eh.pres ==PRSNT_NODEF) &&
-				(siStaEvnt->causeDgn.causeVal.pres == PRSNT_NODEF)) {
-				ftdmchan->caller_data.hangup_cause = siStaEvnt->causeDgn.causeVal.val;
-			} else {
-				ftdmchan->caller_data.hangup_cause = 98;	/* Message not compatiable with call state */
-			}
-
-			/* go to terminating to hang up the call */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-			break;
-		/**********************************************************************/
-		}
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-	} /* for (( x = 0; x < (circuit + range); x++) */
+	/* the reset will be started in the main thread by "check_if_rx_gra_started" */
 	
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
