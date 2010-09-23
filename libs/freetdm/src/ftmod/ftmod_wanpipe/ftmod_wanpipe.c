@@ -865,11 +865,11 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 			continue; /* should never happen but happens when shutting down */
 		}
 		pfds[j] = ftdmchan->mod_data;
-		inflags[j] = POLLPRI;
+		inflags[j] = poll_events ? poll_events[j] : POLLPRI;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
-		pfds[j].events = POLLPRI;
+		pfds[j].events = poll_events ? poll_events[j] : POLLPRI;
 #endif
 
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */

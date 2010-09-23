@@ -895,12 +895,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_find(uint32_t id, ftdm_span_t **span)
 	
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms)
+FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms, short *poll_events)
 {
 	assert(span->fio != NULL);
 
 	if (span->fio->poll_event) {
-		return span->fio->poll_event(span, ms);
+		return span->fio->poll_event(span, ms, poll_events);
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "poll_event method not implemented in module %s!", span->fio->name);
 	}
