@@ -86,6 +86,7 @@ FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void)
 }
 
 typedef struct {
+	uint8_t 	enabled;
 	uint8_t         running;
 	uint8_t         alarm;
 	uint32_t        interval;
@@ -111,8 +112,6 @@ static struct {
 	ftdm_group_t *groups;
 	cpu_monitor_t cpu_monitor;
 } globals;
-
-static uint8_t ftdm_cpu_monitor_disabled = 0;
 
 enum ftdm_enum_cpu_alarm_action_flags
 {
@@ -4004,7 +4003,14 @@ static ftdm_status_t load_config(void)
 				ftdm_log(FTDM_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
 		} else if (!strncasecmp(cfg.category, "general", 7)) {
-			if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
+			if (!strncasecmp(var, "cpu_monitor", sizeof("cpu_monitor")-1)) {
+				if (!strncasecmp(val, "yes", 3)) {
+					globals.cpu_monitor.enabled = 1;
+					if (!globals.cpu_monitor.alarm_action_flags) {
+						globals.cpu_monitor.alarm_action_flags |= FTDM_CPU_ALARM_ACTION_WARN;
+					}
+				}
+			} else if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
 				if (atoi(val) > 0) {
 					globals.cpu_monitor.interval = atoi(val);
 				} else {
@@ -4749,12 +4755,6 @@ static void ftdm_cpu_monitor_stop(void)
 	ftdm_interrupt_destroy(&globals.cpu_monitor.interrupt);
 }
 
-FT_DECLARE(void) ftdm_cpu_monitor_disable(void)
-{
-	ftdm_cpu_monitor_disabled = 1;
-}
-
-
 FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 {
 	memset(&globals, 0, sizeof(globals));
@@ -4796,8 +4796,9 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 
 	ftdm_log(FTDM_LOG_NOTICE, "Modules configured: %d \n", modcount);
 
+	globals.cpu_monitor.enabled = 0;
 	globals.cpu_monitor.interval = 1000;
-	globals.cpu_monitor.alarm_action_flags = FTDM_CPU_ALARM_ACTION_WARN | FTDM_CPU_ALARM_ACTION_REJECT;
+	globals.cpu_monitor.alarm_action_flags = 0;
 	globals.cpu_monitor.set_alarm_threshold = 80;
 	globals.cpu_monitor.reset_alarm_threshold = 70;
 
@@ -4807,7 +4808,12 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 		return FTDM_FAIL;
 	}
 
-	if (!ftdm_cpu_monitor_disabled) {
+	if (globals.cpu_monitor.enabled) {
+		ftdm_log(FTDM_LOG_INFO, "CPU Monitor is running interval:%d lo-thres:%d hi-thres:%d\n", 
+					globals.cpu_monitor.interval, 
+					globals.cpu_monitor.set_alarm_threshold, 
+					globals.cpu_monitor.reset_alarm_threshold);
+
 		if (ftdm_cpu_monitor_start() != FTDM_SUCCESS) {
 			return FTDM_FAIL;
 		}
