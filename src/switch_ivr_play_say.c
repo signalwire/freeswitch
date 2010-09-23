@@ -1645,7 +1645,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t max_digits,
 												const char *prompt_audio_file,
 												const char *var_name,
-												char *digit_buffer, switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators)
+												char *digit_buffer, 
+												switch_size_t digit_buffer_length, 
+												uint32_t timeout, 
+												const char *valid_terminators,
+												uint32_t digit_timeout)
+
 {
 	switch_channel_t *channel;
 	switch_input_args_t args = { 0 };
@@ -1696,7 +1701,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	if ((min_digits && len < min_digits) || len < max_digits) {
 		args.buf = digit_buffer + len;
 		args.buflen = (uint32_t) (digit_buffer_length - len);
-		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0], timeout, 0, 0);
+		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0], 
+												 len ? digit_timeout : timeout, digit_timeout, 0);
 	}
 
 
@@ -1745,7 +1751,10 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *prompt_audio_file,
 														   const char *bad_input_audio_file,
 														   const char *var_name,
-														   char *digit_buffer, uint32_t digit_buffer_length, const char *digits_regex)
+														   char *digit_buffer, 
+														   uint32_t digit_buffer_length, 
+														   const char *digits_regex,
+														   uint32_t digit_timeout)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1755,7 +1764,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		memset(digit_buffer, 0, digit_buffer_length);
 		switch_channel_flush_dtmf(channel);
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name,
-								 digit_buffer, digit_buffer_length, timeout, valid_terminators);
+								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}

@@ -203,7 +203,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			}
 
 			do {
-				status = switch_ivr_read(session, min, max, prompt, NULL, dtmf_buf, sizeof(dtmf_buf), to, "#");
+				status = switch_ivr_read(session, min, max, prompt, NULL, dtmf_buf, sizeof(dtmf_buf), to, "#", 0);
 			} while (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_FALSE);
 
 			if (status == SWITCH_STATUS_SUCCESS) {

@@ -1712,10 +1712,11 @@ SWITCH_STANDARD_APP(att_xfer_function)
 SWITCH_STANDARD_APP(read_function)
 {
 	char *mydata;
-	char *argv[6] = { 0 };
+	char *argv[7] = { 0 };
 	int argc;
 	int32_t min_digits = 0;
 	int32_t max_digits = 0;
+	uint32_t digit_timeout = 0;
 	int timeout = 1000;
 	char digit_buffer[128] = "";
 	const char *prompt_audio_file = NULL;
@@ -1751,6 +1752,13 @@ SWITCH_STANDARD_APP(read_function)
 		valid_terminators = argv[5];
 	}
 
+	if (argc > 6) {
+		digit_timeout = atoi(argv[6]);
+		if (digit_timeout < 0) {
+			digit_timeout = 0;
+		}
+	}
+
 	if (min_digits <= 1) {
 		min_digits = 1;
 	}
@@ -1767,17 +1775,19 @@ SWITCH_STANDARD_APP(read_function)
 		valid_terminators = "#";
 	}
 
-	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, sizeof(digit_buffer), timeout, valid_terminators);
+	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, sizeof(digit_buffer), timeout, valid_terminators, 
+					digit_timeout);
 }
 
 SWITCH_STANDARD_APP(play_and_get_digits_function)
 {
 	char *mydata;
-	char *argv[9] = { 0 };
+	char *argv[10] = { 0 };
 	int argc;
 	int32_t min_digits = 0;
 	int32_t max_digits = 0;
 	int32_t max_tries = 0;
+	uint32_t digit_timeout = 0;
 	int timeout = 1000;
 	char digit_buffer[128] = "";
 	const char *prompt_audio_file = NULL;
@@ -1827,6 +1837,14 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 		digits_regex = argv[8];
 	}
 
+	if (argc > 9) {
+		digit_timeout = atoi(argv[9]);
+		if (digit_timeout < 0) {
+			digit_timeout = 0;
+		}
+	}
+
+
 	if (min_digits <= 1) {
 		min_digits = 1;
 	}
@@ -1844,7 +1862,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	}
 
 	switch_play_and_get_digits(session, min_digits, max_digits, max_tries, timeout, valid_terminators,
-							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex);
+							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex, digit_timeout);
 }
 
 #define SAY_SYNTAX "<module_name> <say_type> <say_method> [<say_gender>] <text>"
@@ -3367,9 +3385,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel",
 				   endless_playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "att_xfer", "Attended Transfer", "Attended Transfer", att_xfer_function, "<channel_url>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, "<min> <max> <file> <var_name> <timeout> <terminators>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, 
+				   "<min> <max> <file> <var_name> <timeout> <terminators> <digit_timeout>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "play_and_get_digits", "Play and get Digits", "Play and get Digits",
-				   play_and_get_digits_function, "<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp>", SAF_NONE);
+				   play_and_get_digits_function, 
+				   "<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp> [<digit_timeout>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,
