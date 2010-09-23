@@ -3660,7 +3660,12 @@ SWITCH_STANDARD_API(ft_function)
 						if(chan_id > ftdm_span_get_chan_count(span)) {
 							stream->write_function(stream, "-ERR invalid channel\n");
 						} else {
+							char *dbgstr = NULL;
+							ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
 							dump_chan(span, chan_id, stream);
+							dbgstr = ftdm_channel_get_history_str(fchan);
+							stream->write_function(stream, "%s\n", dbgstr);
+							ftdm_free(dbgstr);
 						}
 					} else {
 						stream->write_function(stream, "+OK\n");
@@ -3989,7 +3994,7 @@ SWITCH_STANDARD_API(ft_function)
 		
 		if (rply) {
 			stream->write_function(stream, "%s", rply);
-			free(rply);
+			ftdm_free(rply);
 		} else {
 			stream->write_function(stream, "-ERR Usage: %s\n", FT_SYNTAX);
 		}
