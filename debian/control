@@ -1,10 +1,11 @@
 Source: freeswitch
 Section: comm
 Priority: extra
-Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
+Maintainer: FreeSWITCH developers <freeswitch-dev@lists.freeswitch.org>
+Uploaders: Michal Bielicki <michal.bielicki@voiceworks.pl>, Gabriel Gunderson <gabe@gundy.org>, William King <quentusrex@gmail.com>, Mathieu Parent <sathieu@debian.org>
 Build-Depends: debhelper (>= 5), fakeroot, wget, automake (>=1.9), autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev
 Homepage: http://freeswitch.org/
-Standards-Version: 3.8.4
+Standards-Version: 3.9.1
 Vcs-Svn: http://svn.freeswitch.org/svn/freeswitch/trunk/
 Vcs-Browser: http://fisheye.freeswitch.org/browse/FreeSWITCH
 

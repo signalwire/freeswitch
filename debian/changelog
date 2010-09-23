@@ -1,9 +1,14 @@
 freeswitch (1.0.6-1ubuntu1) maverick; urgency=low
 
+  [ Gabriel Gunderson ]
     * upgrade: Added mod_callcenter and pulled out Python into its own
       package.
 
- -- Gabriel Gunderson <gabe@gundy.org>  Thu, 16 Nov 2010 18:28:30 -0800
+  [ Mathieu Parent ]
+  * Updated Uploaders list 
+  * Updated Standards-Version to 3.9.1 
+
+ -- Mathieu Parent <sathieu@debian.org>  Thu, 23 Sep 2010 15:34:00 +0200
 
 freeswitch (1.0.4-1ubuntu2) karmic; urgency=low
 
