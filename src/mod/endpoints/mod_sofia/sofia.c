@@ -4195,12 +4195,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 					
 					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
-						switch_core_session_receive_message(other_session, msg);
 						if (switch_rtp_ready(tech_pvt->rtp_session) && switch_rtp_ready(other_tech_pvt->rtp_session)) {
 							switch_rtp_udptl_mode(tech_pvt->rtp_session);
 							switch_rtp_udptl_mode(other_tech_pvt->rtp_session);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating T38 Passthru\n");
 						}
+						switch_core_session_receive_message(other_session, msg);
 					} else {
 						switch_core_session_queue_message(other_session, msg);
 					}
