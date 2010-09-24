@@ -839,6 +839,14 @@ switch_status_t send_display_pri_notify(listener_t *listener,
 switch_status_t send_reset(listener_t *listener,
     uint32_t reset_type);
 
+switch_status_t send_data(listener_t *listener, uint32_t message_type,
+	uint32_t application_id,
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t transaction_id,
+	uint32_t data_length,
+	const char *data);
+
 switch_status_t send_extended_data(listener_t *listener, uint32_t message_type,
 	uint32_t application_id,
 	uint32_t line_instance,

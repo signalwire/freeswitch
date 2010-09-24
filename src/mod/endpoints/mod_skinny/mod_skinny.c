@@ -1939,9 +1939,13 @@ static void skinny_user_to_device_event_handler(switch_event_t *event)
 			}
 			switch(message_type) {
 				case USER_TO_DEVICE_DATA_MESSAGE:
+					data_length = strlen(data); /* we ignore data_length sent */
+					send_data(listener, message_type,
+						application_id, line_instance, call_id, transaction_id, data_length,
+						data);
 				case USER_TO_DEVICE_DATA_VERSION1_MESSAGE:
 					data_length = strlen(data); /* we ignore data_length sent */
-					send_extended_data(listener, message_type, 
+					send_extended_data(listener, message_type,
 						application_id, line_instance, call_id, transaction_id, data_length,
 						sequence_flag, display_priority, conference_id, app_instance_id, routing_id,
 						data);
