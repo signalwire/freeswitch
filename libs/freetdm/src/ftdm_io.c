@@ -86,6 +86,7 @@ FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void)
 }
 
 typedef struct {
+	uint8_t 	enabled;
 	uint8_t         running;
 	uint8_t         alarm;
 	uint32_t        interval;
@@ -111,8 +112,6 @@ static struct {
 	ftdm_group_t *groups;
 	cpu_monitor_t cpu_monitor;
 } globals;
-
-static uint8_t ftdm_cpu_monitor_disabled = 0;
 
 enum ftdm_enum_cpu_alarm_action_flags
 {
@@ -3689,6 +3688,102 @@ static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
 
+static void print_channels_by_state(ftdm_stream_handle_t *stream, ftdm_channel_state_t state, int not, int *count)
+{
+	ftdm_hash_iterator_t *i = NULL;
+	ftdm_span_t *span;
+	ftdm_channel_t *fchan = NULL;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *curr = NULL;
+	const void *key = NULL;
+	void *val = NULL;
+
+	*count = 0;
+
+	ftdm_mutex_lock(globals.mutex);
+
+	for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
+		hashtable_this(i, &key, NULL, &val);
+		if (!key || !val) {
+			break;
+		}
+		span = val;
+		citer = ftdm_span_get_chan_iterator(span, NULL);
+		if (!citer) {
+			continue;
+		}
+		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
+			fchan = ftdm_iterator_current(curr);
+			if (not && (fchan->state != state)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n", 
+						fchan->span_id, fchan->chan_id, 
+						fchan->physical_span_id, fchan->physical_chan_id, ftdm_channel_state2str(fchan->state));
+				(*count)++;
+			} else if (!not && (fchan->state == state)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n", 
+						fchan->span_id, fchan->chan_id, 
+						fchan->physical_span_id, fchan->physical_chan_id, ftdm_channel_state2str(fchan->state));
+				(*count)++;
+			}
+		}
+		ftdm_iterator_free(citer);
+	}
+
+	ftdm_mutex_unlock(globals.mutex);
+}
+
+static char *handle_core_command(const char *cmd)
+{
+	char *mycmd = NULL;
+	int argc = 0;
+	int count = 0;
+	int not = 0;
+	char *argv[10] = { 0 };
+	char *state = NULL;
+	ftdm_channel_state_t i = FTDM_CHANNEL_STATE_INVALID;
+	ftdm_stream_handle_t stream = { 0 };
+
+	FTDM_STANDARD_STREAM(stream);
+
+	if (cmd) {
+		mycmd = ftdm_strdup(cmd);
+		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	} else {
+		stream.write_function(&stream, "invalid core command\n");
+		goto done;
+	}
+
+	if (!strcasecmp(argv[0], "state")) {
+		if (argc < 2) {
+			stream.write_function(&stream, "core state command requires an argument\n");
+			goto done;
+		}
+		state = argv[1];
+		if (argv[1][0] == '!') {
+			not = 1;
+			state++;
+		}
+		for (i = FTDM_CHANNEL_STATE_DOWN; i < FTDM_CHANNEL_STATE_INVALID; i++) {
+			if (!strcasecmp(state, ftdm_channel_state2str(i))) {
+				break;
+			}
+		}
+		if (i == FTDM_CHANNEL_STATE_INVALID) {
+			stream.write_function(&stream, "invalid state %s\n", state);
+			goto done;
+		}
+		print_channels_by_state(&stream, i, not, &count);
+		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "not in state" : "in state", ftdm_channel_state2str(i), count);
+	} else {
+		stream.write_function(&stream, "invalid core command %s\n", argv[0]);
+	}
+
+done:
+	ftdm_safe_free(mycmd);
+
+	return stream.data;
+}
+
 FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 {
 	ftdm_io_interface_t *fio = NULL;
@@ -3703,6 +3798,10 @@ FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 	}
 
 	type = dup;
+
+	if (!strcasecmp(type, "core")) {
+		return handle_core_command(cmd);
+	}
 	
 	ftdm_mutex_lock(globals.mutex);
 	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
@@ -4004,7 +4103,14 @@ static ftdm_status_t load_config(void)
 				ftdm_log(FTDM_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
 		} else if (!strncasecmp(cfg.category, "general", 7)) {
-			if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
+			if (!strncasecmp(var, "cpu_monitor", sizeof("cpu_monitor")-1)) {
+				if (!strncasecmp(val, "yes", 3)) {
+					globals.cpu_monitor.enabled = 1;
+					if (!globals.cpu_monitor.alarm_action_flags) {
+						globals.cpu_monitor.alarm_action_flags |= FTDM_CPU_ALARM_ACTION_WARN;
+					}
+				}
+			} else if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
 				if (atoi(val) > 0) {
 					globals.cpu_monitor.interval = atoi(val);
 				} else {
@@ -4749,12 +4855,6 @@ static void ftdm_cpu_monitor_stop(void)
 	ftdm_interrupt_destroy(&globals.cpu_monitor.interrupt);
 }
 
-FT_DECLARE(void) ftdm_cpu_monitor_disable(void)
-{
-	ftdm_cpu_monitor_disabled = 1;
-}
-
-
 FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 {
 	memset(&globals, 0, sizeof(globals));
@@ -4796,8 +4896,9 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 
 	ftdm_log(FTDM_LOG_NOTICE, "Modules configured: %d \n", modcount);
 
+	globals.cpu_monitor.enabled = 0;
 	globals.cpu_monitor.interval = 1000;
-	globals.cpu_monitor.alarm_action_flags = FTDM_CPU_ALARM_ACTION_WARN | FTDM_CPU_ALARM_ACTION_REJECT;
+	globals.cpu_monitor.alarm_action_flags = 0;
 	globals.cpu_monitor.set_alarm_threshold = 80;
 	globals.cpu_monitor.reset_alarm_threshold = 70;
 
@@ -4807,7 +4908,12 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 		return FTDM_FAIL;
 	}
 
-	if (!ftdm_cpu_monitor_disabled) {
+	if (globals.cpu_monitor.enabled) {
+		ftdm_log(FTDM_LOG_INFO, "CPU Monitor is running interval:%d lo-thres:%d hi-thres:%d\n", 
+					globals.cpu_monitor.interval, 
+					globals.cpu_monitor.set_alarm_threshold, 
+					globals.cpu_monitor.reset_alarm_threshold);
+
 		if (ftdm_cpu_monitor_start() != FTDM_SUCCESS) {
 			return FTDM_FAIL;
 		}
@@ -5202,38 +5308,21 @@ FT_DECLARE(char *) ftdm_strndup(const char *str, ftdm_size_t inlen)
 	return new;
 }
 
-#define FTDM_DEBUG_LINE_LEN 255
-#define handle_snprintf_result(buff, written, len, debugstr) \
-	if (written >= len) { \
-		ftdm_free(debugstr); \
-		return NULL; \
-	} \
-	len -= written; \
-	buff += written;
-
 FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 {
 	char func[255];
 	char line[255];
 	char states[255];
-	int written = 0;
-	char *buff = NULL;
 	uint8_t i = 0;
-	int dbglen = ftdm_array_len(fchan->history) * FTDM_DEBUG_LINE_LEN;
-	int len = dbglen;
 
+	ftdm_stream_handle_t stream = { 0 };
+	FTDM_STANDARD_STREAM(stream);
 	if (!fchan->history[0].file) {
-		return ftdm_strdup("-- No state history --\n");
+		stream.write_function(&stream, "-- No state history --\n");
+		return stream.data;
 	}
 
-	char *debugstr = ftdm_calloc(1, dbglen);
-	if (!debugstr) {
-		return NULL;
-	}
-	buff = debugstr;
-
-	written = snprintf(buff, len, "%-30.30s %-30.30s %s", "-- States --", "-- Function --", "-- Location --\n");
-	handle_snprintf_result(buff, written, len, debugstr);
+	stream.write_function(&stream, "%-30.30s %-30.30s %s", "-- States --", "-- Function --", "-- Location --\n");
 
 	for (i = fchan->hindex; i < ftdm_array_len(fchan->history); i++) {
 		if (!fchan->history[i].file) {
@@ -5242,21 +5331,17 @@ FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
 		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
 		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
-		written = snprintf(buff, len, "%-30.30s %-30.30s %s\n", states, func, line);
-		handle_snprintf_result(buff, written, len, debugstr);
+		stream.write_function(&stream, "%-30.30s %-30.30s %s\n", states, func, line);
 	}
 
 	for (i = 0; i < fchan->hindex; i++) {
 		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
 		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
 		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
-		written = snprintf(buff, len, "%-30.30s %-30.30s %s\n", states, func, line);
-		handle_snprintf_result(buff, written, len, debugstr);
+		stream.write_function(&stream, "%-30.30s %-30.30s %s\n", states, func, line);
 	}
 
-	debugstr[dbglen-1] = 0;
-
-	return debugstr;
+	return stream.data;
 }
 
 

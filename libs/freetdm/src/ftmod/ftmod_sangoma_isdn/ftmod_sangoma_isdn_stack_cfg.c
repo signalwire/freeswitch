@@ -608,9 +608,10 @@ ftdm_status_t sng_isdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
     cfg.hdr.entId.ent   = ENTIN;
     cfg.hdr.entId.inst  = S_INST;
     cfg.hdr.elmId.elmnt = STDLSAP;
-
+	
 	cfg.hdr.response.selector=0;
 
+	
 	cfg.t.cfg.s.inDLSAP.sapId = signal_data->link_id;
 	cfg.t.cfg.s.inDLSAP.spId = signal_data->link_id;
 	cfg.t.cfg.s.inDLSAP.swtch = sng_isdn_stack_switchtype(signal_data->switchtype);
