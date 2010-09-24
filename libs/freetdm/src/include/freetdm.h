@@ -1177,16 +1177,6 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *spa
 FT_DECLARE(char *) ftdm_api_execute(const char *cmd);
 
 /*! 
- * \brief Disables CPU monitoring
- *
- * \note CPU monitoring is enabled by default. This means a thread will be launched at startup (ftdm_global_init)
- *       with the sole purpose of monitoring system-wide CPU usage. If the CPU usage raises above a defined
- *       threshold, no new calls will be accepted (neither incoming or outgoing)
- *
- */
-FT_DECLARE(void) ftdm_cpu_monitor_disable(void);
-
-/*! 
  * \brief Create a configuration node
  *
  * \param name The name of the configuration node

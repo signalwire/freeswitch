@@ -85,35 +85,35 @@ int  ft_to_sngss7_cfg_all(void)
 
 		if (ftmod_ss7_mtp1_gen_config()) {
 			SS7_CRITICAL("MTP1 General configuration FAILED!\n");
-			SS7_ASSERT
+			return 1;
 		} else {
 			SS7_INFO("MTP1 General configuration DONE\n");
 		}
 
 		if (ftmod_ss7_mtp2_gen_config()) {
 			SS7_CRITICAL("MTP2 General configuration FAILED!\n");
-			SS7_ASSERT
+			return 1;
 		} else {
 			SS7_INFO("MTP2 General configuration DONE\n");
 		}
 
 		if (ftmod_ss7_mtp3_gen_config()) {
 			SS7_CRITICAL("MTP3 General configuration FAILED!\n");
-			SS7_ASSERT
+			return 1;
 		} else {
 			SS7_INFO("MTP3 General configuration DONE\n");
 		}
 
 		if (ftmod_ss7_isup_gen_config()) {
 			SS7_CRITICAL("ISUP General configuration FAILED!\n");
-			SS7_ASSERT
+			return 1;
 		} else {
 			SS7_INFO("ISUP General configuration DONE\n");
 		}
 
 		if (ftmod_ss7_cc_gen_config()) {
 			SS7_CRITICAL("CC General configuration FAILED!\n");
-			SS7_ASSERT
+			return 1;
 		} else {
 			SS7_INFO("CC General configuration DONE\n");
 		}
@@ -131,7 +131,7 @@ int  ft_to_sngss7_cfg_all(void)
 			/* configure mtp1 */
 			if (ftmod_ss7_mtp1_psap_config(x)) {
 				SS7_CRITICAL("MTP1 PSAP %d configuration FAILED!\n", x);
-				SS7_ASSERT;
+				return 1;;
 			} else {
 				SS7_INFO("MTP1 PSAP %d configuration DONE!\n", x);
 			}
@@ -139,7 +139,7 @@ int  ft_to_sngss7_cfg_all(void)
 			/* configure mtp2 */
 			if (ftmod_ss7_mtp2_dlsap_config(x)) {
 				SS7_CRITICAL("MTP2 DLSAP %d configuration FAILED!\n",x);
-				SS7_ASSERT;
+				return 1;;
 			} else {
 				SS7_INFO("MTP2 DLSAP %d configuration DONE!\n", x);
 			}
@@ -147,7 +147,7 @@ int  ft_to_sngss7_cfg_all(void)
 			/* configure mtp3 */
 			if (ftmod_ss7_mtp3_dlsap_config(x)) {
 				SS7_CRITICAL("MTP3 DLSAP %d configuration FAILED!\n", x);
-				SS7_ASSERT;
+				return 1;;
 			} else {
 				SS7_INFO("MTP3 DLSAP %d configuration DONE!\n", x);
 			}
@@ -166,14 +166,14 @@ int  ft_to_sngss7_cfg_all(void)
 
 			if (ftmod_ss7_mtp3_nsap_config(x)) {
 				SS7_CRITICAL("MTP3 NSAP %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("MTP3 NSAP %d configuration DONE!\n", x);
 			}
 
 			if (ftmod_ss7_isup_nsap_config(x)) {
 				SS7_CRITICAL("ISUP NSAP %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("ISUP NSAP %d configuration DONE!\n", x);
 			}
@@ -192,7 +192,7 @@ int  ft_to_sngss7_cfg_all(void)
 
 			if (ftmod_ss7_mtp3_linkset_config(x)) {
 				SS7_CRITICAL("MTP3 LINKSET %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("MTP3 LINKSET %d configuration DONE!\n", x);
 			}
@@ -211,7 +211,7 @@ int  ft_to_sngss7_cfg_all(void)
 
 			if (ftmod_ss7_mtp3_route_config(x)) {
 				SS7_CRITICAL("MTP3 ROUTE %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("MTP3 ROUTE %d configuration DONE!\n",x);
 			}
@@ -227,7 +227,7 @@ int  ft_to_sngss7_cfg_all(void)
 
 		if (ftmod_ss7_mtp3_route_config(0)) {
 			SS7_CRITICAL("MTP3 ROUTE 0 configuration FAILED!\n");
-			SS7_ASSERT
+			return 1;
 		} else {
 			SS7_INFO("MTP3 ROUTE 0 configuration DONE!\n");
 		}
@@ -244,14 +244,14 @@ int  ft_to_sngss7_cfg_all(void)
 			
 			if (ftmod_ss7_isup_isap_config(x)) {
 				SS7_CRITICAL("ISUP ISAP %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("ISUP ISAP %d configuration DONE!\n", x);
 			}
 
 			if (ftmod_ss7_cc_isap_config(x)) {
 				SS7_CRITICAL("CC ISAP %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("CC ISAP %d configuration DONE!\n", x);
 			}
@@ -270,9 +270,11 @@ int  ft_to_sngss7_cfg_all(void)
 
 			if (ftmod_ss7_isup_intf_config(x)) {
 				SS7_CRITICAL("ISUP INTF %d configuration FAILED!\n", x);
-				SS7_ASSERT
+				return 1;
 			} else {
 				SS7_INFO("ISUP INTF %d configuration DONE!\n", x);
+				/* set the interface to paused */
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg.isupIntf[x], SNGSS7_PAUSED);
 			}
 
 			/* set the CONFIGURED flag */
@@ -289,7 +291,7 @@ int  ft_to_sngss7_cfg_all(void)
 			if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == 0) {
 				if (ftmod_ss7_isup_ckt_config(x)) {
 					SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", x);
-					SS7_ASSERT
+					return 1;
 				} else {
 					SS7_INFO("ISUP CKT %d configuration DONE!\n", x);
 				}

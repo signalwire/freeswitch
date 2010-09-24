@@ -79,7 +79,8 @@ typedef enum {
 
 typedef enum {
 	CONFIGURED		= (1 << 0),
-	ACTIVE			= (1 << 1)
+	ACTIVE			= (1 << 1),
+	SNGSS7_PAUSED	= (1 << 7)
 } sng_flag_t;
 
 typedef struct sng_mtp_link {
@@ -335,6 +336,7 @@ typedef struct sngss7_group_data {
 	uint32_t				range;
 	uint8_t					status[255];
 	uint8_t					type;
+	uint8_t					cause;
 }sngss7_group_data_t;
 
 typedef struct sngss7_chan_data {
@@ -353,6 +355,7 @@ typedef struct sngss7_chan_data {
 typedef struct sngss7_span_data {
 	ftdm_sched_t			*sched;
 	sngss7_group_data_t		rx_grs;
+	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		rx_cgb;
 	sngss7_group_data_t		tx_cgb;
@@ -427,6 +430,8 @@ extern int				cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
+void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
+
 void handle_sng_log(uint8_t level, char *fmt,...);
 void handle_sng_mtp1_alarm(Pst *pst, L1Mngmt *sta);
 void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta);
@@ -546,7 +551,9 @@ void handle_isup_t35(void *userdata);
 
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
 
+ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 /******************************************************************************/
 
@@ -678,7 +685,14 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
 
-# define SS7_ASSERT	*(int*)0=0;
+#ifdef SS7_PRODUCTION
+# define SS7_ASSERT \
+	SS7_INFO_CHAN(ftdmchan,"Production Mode, continuing%s\n", "");
+#else
+# define SS7_ASSERT	\
+	SS7_ERROR_CHAN(ftdmchan, "Debugging Mode, ending%s\n", ""); \
+	*(int*)0=0;
+#endif
 /******************************************************************************/
 
 /******************************************************************************/

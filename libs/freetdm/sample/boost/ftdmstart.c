@@ -313,13 +313,6 @@ int main(int argc, char *argv[])
 	/* set the logging level to use */
 	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
-	/* this is optional. 
-	 * cpu monitor is a default feature in freetdm that launches 1 thread
-	 * to monitor system-wide CPU usage. If it goes above a predefined threshold
-	 * it will stop accepting calls to try to protect the quality of current calls */
-	ftdm_cpu_monitor_disable();
-
-
 	/* Initialize the FTDM library */
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		fprintf(stderr, "Error loading FreeTDM\n");

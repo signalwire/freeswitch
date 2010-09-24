@@ -75,7 +75,7 @@ int ft_to_sngss7_activate_all(void)
 
 			if (ftmod_ss7_enable_isap(x)) {	
 				SS7_CRITICAL("ISAP %d Enable: NOT OK\n", x);
-				SS7_ASSERT;
+				return 1;
 			} else {
 				SS7_INFO("ISAP %d Enable: OK\n", x);
 			}
@@ -94,7 +94,7 @@ int ft_to_sngss7_activate_all(void)
 
 			if (ftmod_ss7_enable_nsap(x)) {	
 				SS7_CRITICAL("NSAP %d Enable: NOT OK\n", x);
-				SS7_ASSERT;
+				return 1;
 			} else {
 				SS7_INFO("NSAP %d Enable: OK\n", x);
 			}
@@ -113,7 +113,7 @@ int ft_to_sngss7_activate_all(void)
 
 			if (ftmod_ss7_enable_mtpLinkSet(x)) {	
 				SS7_CRITICAL("LinkSet \"%s\" Enable: NOT OK\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
-				SS7_ASSERT;
+				return 1;
 			} else {
 				SS7_INFO("LinkSet \"%s\" Enable: OK\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
 			}
