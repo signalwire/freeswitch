@@ -98,7 +98,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxFillBitRemoval"))) {
 			switch_snprintf(FILLBIT, sizeof(FILLBIT), "a=T38FaxFillBitRemoval:1\n");
 		} else {
-			switch_set_string(FILLBIT, "");
+			switch_set_string(FILLBIT, "a=T38FaxFillBitRemoval\n");
 		}
 	} else {
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxFillBitRemoval"))) {
@@ -108,11 +108,11 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 		}
 	}
 
-	if( t38_options->T38FaxTranscodingMMR   ) {
+	if( t38_options->T38FaxTranscodingMMR) {
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingMMR"))) {
 			switch_snprintf(MMR, sizeof(MMR), "a=T38FaxTranscodingMMR:1\n");
 		} else {
-			switch_set_string(MMR, "");
+			switch_set_string(MMR, "a=T38FaxTranscodingMMR\n");
 		}
 	} else {
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingMMR"))) {
@@ -122,11 +122,11 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 		}
 	}
 
-	if( t38_options->T38FaxTranscodingJBIG   ) {
+	if( t38_options->T38FaxTranscodingJBIG) {
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingJBIG"))) {
 			switch_snprintf(JBIG, sizeof(JBIG), "a=T38FaxTranscodingJBIG:1\n");
 		} else {
-			switch_set_string(JBIG, "");
+			switch_set_string(JBIG, "a=T38FaxTranscodingJBIG\n");
 		}
 	} else {
 		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingJBIG"))) {
