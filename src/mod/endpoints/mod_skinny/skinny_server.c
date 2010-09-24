@@ -1880,7 +1880,10 @@ switch_status_t skinny_handle_data_message(listener_t *listener, skinny_message_
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Call-Id", "%d", request->data.data.call_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Transaction-Id", "%d", request->data.data.transaction_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Data-Length", "%d", request->data.data.data_length);
-	tmp = strndup(request->data.data.data, request->data.data.data_length);
+	/* Ensure that the body is null-terminated */
+	tmp = malloc(request->data.data.data_length + 1);
+	memcpy(tmp, request->data.data.data, request->data.data.data_length);
+	tmp[request->data.data.data_length] = '\0';
 	switch_event_add_body(event, tmp);
 	switch_safe_free(tmp);
 	switch_event_fire(&event);
@@ -1949,7 +1952,10 @@ switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Conference-Id", "%d", request->data.extended_data.conference_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-App-Instance-Id", "%d", request->data.extended_data.app_instance_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Routing-Id", "%d", request->data.extended_data.routing_id);
-	tmp = strndup(request->data.extended_data.data, request->data.extended_data.data_length);
+	/* Ensure that the body is null-terminated */
+	tmp = malloc(request->data.data.data_length + 1);
+	memcpy(tmp, request->data.data.data, request->data.data.data_length);
+	tmp[request->data.data.data_length] = '\0';
 	switch_event_add_body(event, tmp);
 	switch_safe_free(tmp);
 	switch_event_fire(&event);
