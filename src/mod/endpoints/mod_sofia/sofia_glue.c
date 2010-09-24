@@ -1928,10 +1928,22 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			switch_channel_set_variable(channel, "sip_req_uri", s);
 		}
 
-		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
-								  NUTAG_URL(url_str),
-								  TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
-								  SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END());
+		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
+										NUTAG_URL(url_str),
+										TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
+										SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END()))) {
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, 
+							  "Error creating HANDLE!\nurl_str=[%s]\ncall_id=[%s]\nto_str=[%s]\nfrom_str=[%s]\ninvite_contact=[%s]\n",
+							  url_str,
+							  call_id ? call_id : "N/A",
+							  to_str,
+							  from_str,
+							  invite_contact);
+			
+			switch_safe_free(d_url);
+			return SWITCH_STATUS_FALSE;
+		}
 
 		if (tech_pvt->dest && (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received")
 							   || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val)))) {
