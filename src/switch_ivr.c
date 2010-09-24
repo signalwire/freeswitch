@@ -2261,6 +2261,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 		goto done;
 	}
 
+	if (!module_name) {
+		module_name = chan_lang;
+	}
+
 	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
 		sound_path = (char *) switch_xml_attr(language, "sound_path");
 	}

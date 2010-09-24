@@ -1422,6 +1422,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
+		const char *vm_announce_cid = NULL;
 
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
 
@@ -1429,7 +1430,13 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(session, &msg);
-
+		
+		if (!zstr(cbt->cid_number) && (vm_announce_cid = switch_channel_get_variable(channel, "vm_announce_cid"))) {
+			switch_ivr_play_file(session, NULL, vm_announce_cid, NULL);
+			switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
+			switch_ivr_say(session, cbt->cid_number, NULL, "name_spelled", "pronounced", NULL, NULL);
+		}
+		
 		args.input_callback = cancel_on_dtmf;
 		
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->listen_file_key, profile->save_file_key,
