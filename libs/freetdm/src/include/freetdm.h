@@ -1277,7 +1277,13 @@ FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *channe
 /*! \brief For display debugging purposes you can display this string which describes the last channel internal state */
 FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *channel);
 
-/*! \brief For display debugging purposes you can display this string which describes the last channel internal state */
+/*! \brief For display debugging purposes you can display this string which describes the history of the channel 
+ *  \param The channel
+ *  \return History string for the channel. You must free the string with ftdm_free
+ */
+FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *channel);
+
+/*! \brief Initialize channel state for an outgoing call */
 FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *ftdmchan);
 
 /*! \brief Initialize the library */
@@ -1300,6 +1306,12 @@ FT_DECLARE(void) ftdm_global_set_logger(ftdm_logger_t logger);
 
 /*! \brief Set the default logger level */
 FT_DECLARE(void) ftdm_global_set_default_logger(int level);
+
+/*! \brief Set the directory to look for modules */
+FT_DECLARE(void) ftdm_global_set_mod_directory(const char *path);
+
+/*! \brief Set the directory to look for configs */
+FT_DECLARE(void) ftdm_global_set_config_directory(const char *path);
 
 /*! \brief Check if the FTDM library is initialized and running */
 FT_DECLARE(ftdm_bool_t) ftdm_running(void);

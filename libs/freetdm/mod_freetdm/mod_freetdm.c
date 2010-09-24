@@ -3451,7 +3451,10 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 	const char *chan_type;
 	const char *state;
 	const char *last_state;
+	const char *uuid = NULL;
+	char sessionid[255];
 	float txgain, rxgain;
+	switch_core_session_t *session = NULL;
 	ftdm_alarm_flag_t alarmflag;
 	ftdm_caller_data_t *caller_data;
 	ftdm_channel_t *ftdmchan;
@@ -3461,6 +3464,7 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 		return;
 	}
 
+	strcpy(sessionid, "(none)");
 	ftdmchan = ftdm_span_get_channel(span, chan_id);
 	span_id = ftdm_span_get_id(span);
 
@@ -3474,6 +3478,16 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 	caller_data = ftdm_channel_get_caller_data(ftdmchan);
 	ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
 	ftdm_channel_get_alarms(ftdmchan, &alarmflag);
+
+	uuid = ftdm_channel_get_uuid(ftdmchan, 0);
+	if (!zstr(uuid)) {
+		if (!(session = switch_core_session_locate(uuid))) {
+			snprintf(sessionid, sizeof(sessionid), "%s (dead)", uuid);
+		} else {
+			snprintf(sessionid, sizeof(sessionid), "%s", uuid);
+			switch_core_session_rwunlock(session);
+		}
+	}
 
 	stream->write_function(stream,
 						   "span_id: %u\n"
@@ -3494,7 +3508,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "aniII: %s\n"
 						   "dnis: %s\n"
 						   "rdnis: %s\n"
-						   "cause: %s\n\n",
+						   "cause: %s\n"
+						   "session: %s\n\n",
 						   span_id,
 						   chan_id,
 						   phspan_id,
@@ -3513,7 +3528,8 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   caller_data->aniII,
 						   caller_data->dnis.digits,
 						   caller_data->rdnis.digits,
-						   switch_channel_cause2str(caller_data->hangup_cause));
+						   switch_channel_cause2str(caller_data->hangup_cause),
+						   sessionid);
 }
 
 void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
@@ -3660,7 +3676,12 @@ SWITCH_STANDARD_API(ft_function)
 						if(chan_id > ftdm_span_get_chan_count(span)) {
 							stream->write_function(stream, "-ERR invalid channel\n");
 						} else {
+							char *dbgstr = NULL;
+							ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
 							dump_chan(span, chan_id, stream);
+							dbgstr = ftdm_channel_get_history_str(fchan);
+							stream->write_function(stream, "%s\n", dbgstr);
+							ftdm_free(dbgstr);
 						}
 					} else {
 						stream->write_function(stream, "+OK\n");
@@ -3989,7 +4010,7 @@ SWITCH_STANDARD_API(ft_function)
 		
 		if (rply) {
 			stream->write_function(stream, "%s", rply);
-			free(rply);
+			ftdm_free(rply);
 		} else {
 			stream->write_function(stream, "-ERR Usage: %s\n", FT_SYNTAX);
 		}
@@ -4074,8 +4095,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 
 	ftdm_global_set_logger(ftdm_logger);
 
-	ftdm_cpu_monitor_disable();
-	
+	ftdm_global_set_mod_directory(SWITCH_GLOBAL_dirs.mod_dir);
+
+	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
+
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		return SWITCH_STATUS_TERM;

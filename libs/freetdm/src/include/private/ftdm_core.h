@@ -356,6 +356,15 @@ typedef struct {
 } ftdm_dtmf_debug_t;
 #endif
 
+typedef struct {
+	const char *file;
+	const char *func;
+	int line;
+	ftdm_channel_state_t state;
+	ftdm_channel_state_t last_state;
+	ftdm_time_t time;
+} ftdm_channel_history_entry_t;
+
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
 struct ftdm_channel {
@@ -381,6 +390,8 @@ struct ftdm_channel {
 	ftdm_channel_state_t state;
 	ftdm_channel_state_t last_state;
 	ftdm_channel_state_t init_state;
+	ftdm_channel_history_entry_t history[10];
+	uint8_t hindex;
 	ftdm_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
 	uint32_t buffer_delay;
@@ -425,6 +436,7 @@ struct ftdm_channel {
 	float txgain;
 	int availability_rate;
 	void *user_private;
+	ftdm_timer_id_t hangup_timer;
 #ifdef FTDM_DEBUG_DTMF
 	ftdm_dtmf_debug_t dtmfdbg;
 #endif

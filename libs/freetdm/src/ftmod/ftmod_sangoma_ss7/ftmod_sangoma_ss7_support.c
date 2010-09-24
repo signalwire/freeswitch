@@ -464,7 +464,7 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
-			SS7_ASSERT;
+			continue;
 		}
 
 		/* lock the channel */
@@ -476,60 +476,60 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 			if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
 				/* this channel is still resetting...do nothing */
 					goto GRS_UNLOCK_ALL;
-				} /* if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
-			} else {
-				/* state change pending */
-				goto GRS_UNLOCK_ALL;
-			}
-		} /* for ( i = circuit; i < (circuit + range + 1); i++) */
+			} /* if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
+		} else {
+			/* state change pending */
+			goto GRS_UNLOCK_ALL;
+		}
+	} /* for ( i = circuit; i < (circuit + range + 1); i++) */
 
-		SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n",
-						sngss7_span->rx_grs.circuit,
-						sngss7_span->rx_grs.range);
+	SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n",
+					sngss7_span->rx_grs.circuit,
+					sngss7_span->rx_grs.range);
 
-		/* check all the circuits in the range to see if they are done resetting */
-		for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+	/* check all the circuits in the range to see if they are done resetting */
+	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
-			/* extract the channel in question */
-			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-				SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
-				SS7_ASSERT;
-			}
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
+			SS7_ASSERT;
+		}
 
-			/* throw the GRP reset flag complete flag */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
+		/* throw the GRP reset flag complete flag */
+		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
 
-			/* move the channel to the down state */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+		/* move the channel to the down state */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
-			/* update the status map if the ckt is in blocked state */
-			if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
-				(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
-				(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
-				(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
-			
-				sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
-			} /* if blocked */
-			
-			/* update the bit and byte counter*/
-			bit ++;
-			if (bit == 8) {
-				byte++;
-				bit = 0;
-			}
-		} /* for ( i = circuit; i < (circuit + range + 1); i++) */
+		/* update the status map if the ckt is in blocked state */
+		if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+			(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
+			(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
+			(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+		
+			sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
+		} /* if blocked */
+		
+		/* update the bit and byte counter*/
+		bit ++;
+		if (bit == 8) {
+			byte++;
+			bit = 0;
+		}
+	} /* for ( i = circuit; i < (circuit + range + 1); i++) */
 
 GRS_UNLOCK_ALL:
-		for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
-			/* extract the channel in question */
-			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
-				SS7_ASSERT;
-			}
-
-			/* unlock the channel */
-			ftdm_mutex_unlock(ftdmchan->mutex);
+	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+			continue;
 		}
+
+		/* unlock the channel */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+	}
 
 	return FTDM_SUCCESS;
 }

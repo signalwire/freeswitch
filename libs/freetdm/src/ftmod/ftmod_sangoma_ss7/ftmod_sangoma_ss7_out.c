@@ -199,7 +199,8 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 						&iam, 
 						0);
 
-	SS7_INFO_CHAN(ftdmchan,"Tx IAM clg = \"%s\", cld = \"%s\"\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\", cld = \"%s\"\n",
+							sngss7_info->circuit->cic,
 							ftdmchan->caller_data.cid_num.digits,
 							ftdmchan->caller_data.dnis.digits);
 	
@@ -250,7 +251,7 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 						&acm, 
 						ADDRCMPLT);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx ACM\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx ACM\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -274,7 +275,7 @@ void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 						&anm, 
 						5);
 
-  SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx ANM\n");
+  SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx ANM\n", sngss7_info->circuit->cic);
 
   SS7_FUNC_TRACE_EXIT (__FUNCTION__);
   return;
@@ -307,7 +308,9 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 						sngss7_info->circuit->id, 
 						&rel);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx REL\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx REL cause=%d \n",
+							sngss7_info->circuit->cic,
+							ftdmchan->caller_data.hangup_cause );
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -330,7 +333,7 @@ void ft_to_sngss7_rlc (ftdm_channel_t * ftdmchan)
 						sngss7_info->circuit->id, 
 						&rlc);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx RLC\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx RLC\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -351,7 +354,7 @@ void ft_to_sngss7_rsc (ftdm_channel_t * ftdmchan)
 						SIT_STA_CIRRESREQ, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx RSC\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx RSC\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -372,7 +375,7 @@ void ft_to_sngss7_rsca (ftdm_channel_t * ftdmchan)
 						SIT_STA_CIRRESRSP, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx RSC-RLC\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx RSC-RLC\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
   return;
@@ -393,7 +396,7 @@ void ft_to_sngss7_blo (ftdm_channel_t * ftdmchan)
 						SIT_STA_CIRBLOREQ, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx BLO\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx BLO\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -414,7 +417,7 @@ void ft_to_sngss7_bla (ftdm_channel_t * ftdmchan)
 						SIT_STA_CIRBLORSP, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx BLA\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx BLA\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -436,7 +439,7 @@ ft_to_sngss7_ubl (ftdm_channel_t * ftdmchan)
 						SIT_STA_CIRUBLREQ, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx UBL\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx UBL\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -457,7 +460,7 @@ void ft_to_sngss7_uba (ftdm_channel_t * ftdmchan)
 						SIT_STA_CIRUBLRSP, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx UBA\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx UBA\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -478,7 +481,7 @@ void ft_to_sngss7_lpa (ftdm_channel_t * ftdmchan)
 						SIT_STA_LOOPBACKACK, 
 						NULL);
 	
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Tx LPA\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx LPA\n", sngss7_info->circuit->cic);
 	
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 return;
@@ -519,7 +522,8 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 						SIT_STA_GRSRSP,
 						&gra);
 	
-	SS7_INFO_CHAN(ftdmchan, "Tx GRA (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx GRA (%d:%d)\n",
+							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->rx_grs.range));
 	
@@ -551,7 +555,8 @@ void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan)
 						SIT_STA_GRSREQ,
 						&grs);
 	
-	SS7_INFO_CHAN(ftdmchan, "Tx GRS (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx GRS (%d:%d)\n",
+							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->tx_grs.range));
 	
@@ -596,7 +601,8 @@ void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan)
 						SIT_STA_CGBRSP,
 						&cgba);
 	
-	SS7_INFO_CHAN(ftdmchan, "Tx CGBA (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx CGBA (%d:%d)\n",
+							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->rx_cgb.range));
 
@@ -644,7 +650,8 @@ void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan)
 						SIT_STA_CGURSP,
 						&cgua);
 	
-	SS7_INFO_CHAN(ftdmchan, "Tx CGUA (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx CGUA (%d:%d)\n",
+							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->rx_cgu.range));
 
@@ -693,7 +700,8 @@ void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan)
 						SIT_STA_CGBREQ,
 						&cgb);
 	
-	SS7_INFO_CHAN(ftdmchan, "Tx CGB (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx CGB (%d:%d)\n",
+							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->tx_cgb.range));
 
@@ -742,7 +750,8 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
 						SIT_STA_CGUREQ,
 						&cgu);
 	
-	SS7_INFO_CHAN(ftdmchan, "Tx CGU (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx CGU (%d:%d)\n",
+							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->tx_cgu.range));
 

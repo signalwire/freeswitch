@@ -1506,6 +1506,10 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 	sngss7_span_data_t	*sngss7_span;
 	int					byte = 0;
 	int					bit = 0;
+	ftdm_sigmsg_t 		sigev;
+
+	memset (&sigev, 0, sizeof (sigev));
+
 
 	if (range > 31) {
 		stream->write_function(stream, "Invalid range value %d", range);
@@ -1530,6 +1534,14 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 
 				/* throw the grp maint. block flag */
 				sngss7_set_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+
+				/* bring the sig status down */
+				sigev.chan_id = ftdmchan->chan_id;
+				sigev.span_id = ftdmchan->span_id;
+				sigev.channel = ftdmchan;
+				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+				sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+				ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 				/* if this is the first channel in the range */
 				if (ftdmchan->physical_chan_id == chan) {
@@ -1575,6 +1587,10 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 	sngss7_span_data_t	*sngss7_span;
 	int					byte = 0;
 	int					bit = 0;
+	ftdm_sigmsg_t 		sigev;
+
+	memset (&sigev, 0, sizeof (sigev));
+
 
 	if (range > 31) {
 		stream->write_function(stream, "Invalid range value %d", range);
@@ -1599,6 +1615,14 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 
 				/* throw the grp maint. block flag */
 				sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+
+				/* bring the sig status up */
+				sigev.chan_id = ftdmchan->chan_id;
+				sigev.span_id = ftdmchan->span_id;
+				sigev.channel = ftdmchan;
+				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+				sigev.sigstatus = FTDM_SIG_STATE_UP;
+				ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 				/* if this is the first channel in the range */
 				if (ftdmchan->physical_chan_id == chan) {

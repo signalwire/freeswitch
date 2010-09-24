@@ -64,7 +64,7 @@ void handle_isup_t35(void *userdata)
     sngss7_set_flag(sngss7_info, FLAG_LOCAL_REL);
 
     /* hang up on timer expiry */
-    ftdmchan->caller_data.hangup_cause = 102;
+    ftdmchan->caller_data.hangup_cause = 28;
 
     /* end the call */
     ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
