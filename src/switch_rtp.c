@@ -2308,6 +2308,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 20000;
 			}
 			
+			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+				pt = 0;
+			}
+
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
 				do_2833(rtp_session);
@@ -2333,7 +2337,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 			
-			if (rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && (rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO))) {
 				return_cng_frame();
 			}
 		}
