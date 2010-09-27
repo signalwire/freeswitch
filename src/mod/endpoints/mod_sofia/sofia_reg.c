@@ -2498,7 +2498,7 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
-		if ((gateway = (sofia_gateway_t *) val) && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
+		if (key && (gateway = (sofia_gateway_t *) val) && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
 			break;
 		} else {
 			gateway = NULL;
