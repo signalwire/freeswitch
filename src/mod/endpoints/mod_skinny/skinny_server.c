@@ -1884,7 +1884,7 @@ switch_status_t skinny_handle_data_message(listener_t *listener, skinny_message_
 	tmp = malloc(request->data.data.data_length + 1);
 	memcpy(tmp, request->data.data.data, request->data.data.data_length);
 	tmp[request->data.data.data_length] = '\0';
-	switch_event_add_body(event, tmp);
+	switch_event_add_body(event, "%s", tmp);
 	switch_safe_free(tmp);
 	switch_event_fire(&event);
 
@@ -1956,7 +1956,7 @@ switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny
 	tmp = malloc(request->data.data.data_length + 1);
 	memcpy(tmp, request->data.data.data, request->data.data.data_length);
 	tmp[request->data.data.data_length] = '\0';
-	switch_event_add_body(event, tmp);
+	switch_event_add_body(event, "%s", tmp);
 	switch_safe_free(tmp);
 	switch_event_fire(&event);
 

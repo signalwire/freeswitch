@@ -902,6 +902,32 @@ switch_status_t send_reset(listener_t *listener, uint32_t reset_type)
 	return skinny_send_reply(listener, message);
 }
 
+switch_status_t send_data(listener_t *listener, uint32_t message_type,
+	uint32_t application_id,
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t transaction_id,
+	uint32_t data_length,
+	const char *data)
+{
+	skinny_message_t *message;
+	switch_assert(data_length == strlen(data));
+	/* data_length should be a multiple of 4 */
+	if ((data_length % 4) != 0) {
+		data_length = (data_length / 4 + 1) * 4;
+	}
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.data)+data_length-1);
+	message->type = message_type;
+	message->length = 4 + sizeof(message->data.data)+data_length-1;
+	message->data.data.application_id = application_id;
+	message->data.data.line_instance = line_instance;
+	message->data.data.call_id = call_id;
+	message->data.data.transaction_id = transaction_id;
+	message->data.data.data_length = data_length;
+	strncpy(message->data.data.data, data, data_length);
+	return skinny_send_reply(listener, message);
+}
+
 switch_status_t send_extended_data(listener_t *listener, uint32_t message_type,
 	uint32_t application_id,
 	uint32_t line_instance,

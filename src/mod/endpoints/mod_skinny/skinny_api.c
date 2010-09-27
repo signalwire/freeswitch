@@ -408,7 +408,7 @@ static switch_status_t skinny_api_cmd_profile_device_send_data(const char *profi
 					*/
 				}
 			}
-			switch_event_add_body(event, body);
+			switch_event_add_body(event, "%s", body);
 			switch_event_fire(&event);
 			stream->write_function(stream, "+OK\n");
 	    } else {
