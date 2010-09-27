@@ -61,6 +61,11 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
+
+ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -752,7 +757,49 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 }
 
 /******************************************************************************/
+ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an incoming GRS */
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_DN);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
 
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an outgoing GRS */
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_SENT);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an incoming RSC */
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_RX);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an outgoing RSC */
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_TX);
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_SENT);
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_TX_RSP);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 
 /******************************************************************************/
 /* For Emacs:

@@ -1136,8 +1136,14 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_flag (sngss7_info, FLAG_CKT_UCIC_UNBLK)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_UCIC_UNBLK flag %s\n", "");;
 
-			/* throw the channel into reset from our side since it is already in reset from the remote side */
-			sngss7_set_flag (sngss7_info, FLAG_RESET_TX);
+			/* remove the UCIC block flag */
+			sngss7_clear_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+
+			/* remove the UCIC unblock flag */
+			sngss7_clear_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK);
+
+			/* throw the channel into reset to sync states */
+			sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* bring the channel into restart again */
 			goto suspend_goto_restart;
