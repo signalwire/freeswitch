@@ -1498,7 +1498,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		/* Update Agents Items */
 		/* Do not remove uuid of the agent if we are a standby agent */
-		sql = switch_mprintf("UPDATE agents SET %q last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
+		sql = switch_mprintf("UPDATE agents SET %s last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
 				, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""),  (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
