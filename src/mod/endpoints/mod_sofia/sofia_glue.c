@@ -3737,6 +3737,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					pass = 0;
 				}
 				
+				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || 
+					switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || !switch_rtp_ready(tech_pvt->rtp_session)) {
+					pass = 0;
+				}
+				
 				if (pass && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
 					switch_core_session_message_t *msg;
