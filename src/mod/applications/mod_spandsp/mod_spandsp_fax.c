@@ -1119,7 +1119,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
     if (pvt->app_mode == FUNCTION_TX) {
         req_counter = 100;
     } else {
-        req_counter = 1;
+        req_counter = 50;
     }
 
 	while (switch_channel_ready(channel)) {
