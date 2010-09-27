@@ -2360,6 +2360,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						if ((other_session = switch_core_session_locate(uuid))) {
 							switch_channel_t *other_channel = switch_core_session_get_channel(other_session);					
 							if ((other_rtp_session = switch_channel_get_private(other_channel, "__rtcp_audio_rtp_session")) && 
+								other_rtp_session->rtcp_sock_output &&
 								switch_test_flag(other_rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 								*other_rtp_session->rtcp_send_msg.body = *rtp_session->rtcp_recv_msg.body;
 
@@ -3440,7 +3441,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		rtp_session->last_write_ts = this_ts;
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
+		if (rtp_session->rtcp_sock_output &&
+			switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
 			rtp_session->rtcp_interval && (rtp_session->stats.outbound.packet_count % rtp_session->rtcp_interval) == 0) {
 			struct switch_rtcp_senderinfo* sr = (struct switch_rtcp_senderinfo*)rtp_session->rtcp_send_msg.body;
 
