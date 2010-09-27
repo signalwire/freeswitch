@@ -1020,8 +1020,8 @@ int ftmod_ss7_mtp3_route_config(int id)
 		cfg.t.cfg.s.snRout.slsRange		= LSN_ANSI_5BIT_SLS_RANGE;	/* max value of SLS for this DPC */
 	}
 	cfg.t.cfg.s.snRout.lsetSel			= 0x1;						/* linkset selection bit in SLS for STP */
-	cfg.t.cfg.s.snRout.multiMsgPrior	= FALSE;					/* TRUE if multiple cong priorities of messages */
-	cfg.t.cfg.s.snRout.rctReq			= TRUE;						/* route set congestion test required or not */
+	cfg.t.cfg.s.snRout.multiMsgPrior	= TRUE;					/* TRUE if multiple cong priorities of messages */
+	cfg.t.cfg.s.snRout.rctReq			= TRUE;					/* route set congestion test required or not */
 	cfg.t.cfg.s.snRout.slsLnk			= FALSE;
 #ifdef LSNV2
 # if (SS7_NTT || defined(TDS_ROLL_UPGRADE_SUPPORT))

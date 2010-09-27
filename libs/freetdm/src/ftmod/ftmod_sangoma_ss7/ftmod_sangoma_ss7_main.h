@@ -361,6 +361,7 @@ typedef struct sngss7_span_data {
 	sngss7_group_data_t		tx_cgb;
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
+	sngss7_group_data_t		ucic;
 	ftdm_queue_t 			*event_queue;
 }sngss7_span_data_t;
 
@@ -566,10 +567,15 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 
+ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan);
+
 ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 
 
 /* in ftmod_sangoma_ss7_timers.c */

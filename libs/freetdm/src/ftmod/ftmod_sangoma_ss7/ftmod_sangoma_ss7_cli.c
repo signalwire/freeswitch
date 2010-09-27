@@ -240,9 +240,7 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		} else if (!strcasecmp(argv[c], "mem")) {
 		/**********************************************************************/
-			/*uint32_t availMem;*/
-
-			/*sng_sta_mem(&availMem);*/
+			sng_isup_reg_info_show();
 		/**********************************************************************/
 		} else if (!strcasecmp(argv[c], "stats")) {
 		/**********************************************************************/

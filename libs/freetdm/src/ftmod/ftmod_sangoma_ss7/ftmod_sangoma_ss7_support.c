@@ -62,10 +62,15 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 
+ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan);
+
 ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -159,8 +164,8 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 		} else {
 			/* keep the odd flag down */
 			odd = 0;
-			/* throw the flag */
-			flag = 1;
+			/* break right away since we don't need to write the digits */
+			break;
 		}
 
 		/* push the digits into the trillium structure */
@@ -261,14 +266,14 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 				upper = (atoi(&tmp[0])) << 4;
 			} else {
 				/* there is no upper ... fill in ST */
-				upper = 0xF;
-				/* throw the odd flag */
-				odd = 1;
+				upper = 0xF0;
+				/* keep the odd flag down */
+				odd = 0;
 				/* throw the end flag */
 				flag = 1;
 			} /* if (tmp != '\0') */
 		} else {
-			/* keep the odd flag down */
+			/* throw the odd flag */
 			odd = 1;
 			/* need to add the ST */
 			lower = 0xF;
@@ -525,7 +530,7 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 	int					bit = 0;
 
 
-	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %s...checking circuits\n", ftdmspan->name);
 
 	/* check all the circuits in the range to see if they are done resetting */
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
@@ -614,7 +619,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
 	int 				i;
 
-	for ( i = sngss7_span->rx_gra.circuit; i < (sngss7_span->rx_gra.circuit + sngss7_span->rx_gra.range + 1); i++) {
+	for (i = sngss7_span->rx_gra.circuit; i < (sngss7_span->rx_gra.circuit + sngss7_span->rx_gra.range + 1); i++) {
 
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -757,6 +762,48 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 }
 
 /******************************************************************************/
+ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t 		*ftdmchan = NULL;
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	int 				i;
+
+	for (i = sngss7_span->ucic.circuit; i < (sngss7_span->ucic.circuit + sngss7_span->ucic.range + 1); i++) {
+
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+			continue;
+		}
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
+
+		/* clear up any pending state changes */
+		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+			ftdm_sangoma_ss7_process_state_change (ftdmchan);
+		}
+
+		/* throw the ckt block flag */
+		sngss7_set_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+
+		/* set the channel to suspended state */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+	}
+
+	/* clear out the ucic data since we're done with it */
+	memset(&sngss7_span->ucic, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
 {
 	/* clear all the flags related to an incoming GRS */
@@ -768,6 +815,29 @@ ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
 }
 
 /******************************************************************************/
+ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info)
+{
+	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+
+	/* clear the rx_grs data fields */
+	memset(&sngss7_span->rx_grs, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info)
+{
+	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+
+	/* clear the rx_grs data fields */
+	memset(&sngss7_span->rx_gra, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+/******************************************************************************/
 ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
 {
 	/* clear all the flags related to an outgoing GRS */
@@ -778,6 +848,20 @@ ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
 
 	return FTDM_SUCCESS;
 }
+
+/******************************************************************************/
+ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info)
+{
+	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+
+	/* clear the rx_grs data fields */
+	memset(&sngss7_span->tx_grs, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 
 /******************************************************************************/
 ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info)
