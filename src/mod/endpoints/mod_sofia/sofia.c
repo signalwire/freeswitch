@@ -3959,7 +3959,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		}
 
-		if (channel && sip && (status == 300 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (channel && sip && (status == 300 || status == 301 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			sip_contact_t *p_contact = sip->sip_contact;
 			int i = 0;
 			char var_name[80];
@@ -4424,7 +4424,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (ss_state == nua_callstate_terminated) {
 
-		if ((status == 300 || status == 302 || status == 305) && session) {
+		if ((status == 300 || status == 301 || status == 302 || status == 305) && session) {
 			channel = switch_core_session_get_channel(session);
 			tech_pvt = switch_core_session_get_private(session);
 
