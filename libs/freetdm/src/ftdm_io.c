@@ -1251,6 +1251,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 			case FTDM_CHANNEL_STATE_RING:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_PROGRESS:				
+			case FTDM_CHANNEL_STATE_IDLE:				
 			case FTDM_CHANNEL_STATE_GET_CALLERID:
 			case FTDM_CHANNEL_STATE_GENRING:
 				ok = 1;
