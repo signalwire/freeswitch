@@ -4932,16 +4932,19 @@ FT_DECLARE(uint32_t) ftdm_running(void)
 FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 {
 	ftdm_span_t *sp;
-	uint32_t sanity = 100;
 
 	time_end();
 
+	/* many freetdm event loops rely on this variable to decide when to stop, do this first */
 	globals.running = 0;	
 
-	ftdm_sched_destroy(&globals.timingsched);
+	/* stop the scheduling thread */
+	ftdm_free_sched_stop();
 
+	/* stop the cpu monitor thread */
 	ftdm_cpu_monitor_stop();
 
+	/* now destroy channels and spans */
 	globals.span_index = 0;
 
 	ftdm_span_close_all();
@@ -4966,18 +4969,12 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	globals.spans = NULL;
 	ftdm_mutex_unlock(globals.span_mutex);
 
+	/* destroy signaling and io modules */
 	ftdm_unload_modules();
 
-	while (ftdm_free_sched_running() && --sanity) {
-		ftdm_log(FTDM_LOG_DEBUG, "Waiting for schedule thread to finish\n");
-		ftdm_sleep(100);
-	}
-
-	if (!sanity) {
-		ftdm_log(FTDM_LOG_CRIT, "schedule thread did not stop running, we may crash on shutdown\n");
-	}
-
+	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);
+	ftdm_sched_destroy(&globals.timingsched);
 	hashtable_destroy(globals.interface_hash);
 	hashtable_destroy(globals.module_hash);	
 	hashtable_destroy(globals.span_hash);
