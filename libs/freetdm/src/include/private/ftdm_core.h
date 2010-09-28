@@ -595,6 +595,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 /* dequeue pending signals and notify the user via the span signal callback */
 FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 
+/*! \brief clear the tone detector state */
+FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
+
+
 /*!
   \brief Assert condition
 */
