@@ -170,8 +170,8 @@ static const char *chanpath = NULL;
 static const char dahdi_ctlpath[] = "/dev/dahdi/ctl";
 static const char dahdi_chanpath[] = "/dev/dahdi/channel";
 
-static const char zt_ctlpath[] = "/dev/ftdm/ctl";
-static const char zt_chanpath[] = "/dev/ftdm/channel";
+static const char zt_ctlpath[] = "/dev/zap/ctl";
+static const char zt_chanpath[] = "/dev/zap/channel";
 
 static ftdm_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
