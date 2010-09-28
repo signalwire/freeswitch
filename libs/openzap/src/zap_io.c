@@ -1017,6 +1017,7 @@ OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel
 			case ZAP_CHANNEL_STATE_RING:
 			case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
 			case ZAP_CHANNEL_STATE_PROGRESS:				
+			case ZAP_CHANNEL_STATE_IDLE:				
 			case ZAP_CHANNEL_STATE_GET_CALLERID:
 			case ZAP_CHANNEL_STATE_GENRING:
 				ok = 1;
