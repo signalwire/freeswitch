@@ -135,7 +135,7 @@ SWITCH_STANDARD_API(nat_map_function)
 	switch_bool_t sticky = SWITCH_FALSE;
 
 	if (!cmd) {
-		goto error;
+		goto usage;
 	}
 
 	if (!switch_nat_is_initialized()) {
@@ -147,9 +147,8 @@ SWITCH_STANDARD_API(nat_map_function)
 	switch_assert(mydata);
 
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-
 	if (argc < 1) {
-		goto error;
+		goto usage;
 	}
 	if (argv[0] && switch_stristr("status", argv[0])) {
 		tmp = switch_nat_status();
@@ -197,6 +196,10 @@ SWITCH_STANDARD_API(nat_map_function)
   error:
 
 	stream->write_function(stream, "false");
+	goto ok;
+
+ usage:
+	stream->write_function(stream, "USAGE: nat_map [status|reinit|republish] | [add|del] <port> [tcp|udp] [sticky]");
 
   ok:
 
