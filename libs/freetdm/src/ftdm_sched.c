@@ -176,6 +176,24 @@ FT_DECLARE(ftdm_bool_t) ftdm_free_sched_running(void)
 	return sched_globals.running;
 }
 
+FT_DECLARE(ftdm_bool_t) ftdm_free_sched_stop(void)
+{
+	/* currently we really dont stop the thread here, we rely on freetdm being shutdown and ftdm_running() to be false 
+	 * so the scheduling thread dies and we just wait for it here */
+	uint32_t sanity = 100;
+	while (ftdm_free_sched_running() && --sanity) {
+		ftdm_log(FTDM_LOG_DEBUG, "Waiting for main schedule thread to finish\n");
+		ftdm_sleep(100);
+	}
+
+	if (!sanity) {
+		ftdm_log(FTDM_LOG_CRIT, "schedule thread did not stop running, we may crash on shutdown\n");
+		return FTDM_FALSE;
+	}
+
+	return FTDM_TRUE;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched, const char *name)
 {
 	ftdm_sched_t *newsched = NULL;
