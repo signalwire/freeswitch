@@ -746,8 +746,8 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			ft_to_sngss7_rsca (ftdmchan);
 
 			/* clear the reset flag  */
-			sngss7_clear_flag (sngss7_info, FLAG_RESET_RX);
-		}
+			clear_rx_rsc_flags(sngss7_info);
+		} /* if (sngss7_test_flag (sngss7_info, FLAG_RESET_RX)) */
 
 		/* check if there was a GRS that needs a GRA */
 		if ((sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX)) &&
@@ -769,32 +769,24 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			}
 
 			/* clear the grp reset flag */
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX);
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_DN);
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
-
+			clear_rx_grs_flags(sngss7_info);
 		}/*  if ( sngss7_test_flag ( sngss7_info, FLAG_GRP_RESET_RX ) ) */
 
 		/* check if we got the reset response */
 		if (sngss7_test_flag(sngss7_info, FLAG_RESET_TX_RSP)) {
 			/* clear the reset flag  */
-			sngss7_clear_flag(sngss7_info, FLAG_RESET_TX_RSP);
-			sngss7_clear_flag(sngss7_info, FLAG_RESET_SENT);
-			sngss7_clear_flag(sngss7_info, FLAG_RESET_TX);
-		}
+			clear_tx_rsc_flags(sngss7_info);
+		} /* if (sngss7_test_flag(sngss7_info, FLAG_RESET_TX_RSP)) */
 
 		if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
 			/* clear the reset flag  */
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX);
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_BASE);
-			sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_SENT);
+			clear_tx_grs_flags(sngss7_info);
 			
 			/* clean out the spans GRA structure */
 			sngss7_span_data_t *span = ftdmchan->span->mod_data;
 			span->rx_gra.circuit = 0;
 			span->rx_gra.range = 0;
-		}
+		} /* if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) */
 
 		/* check if we came from reset (aka we just processed a reset) */
 		if ((ftdmchan->last_state == FTDM_CHANNEL_STATE_RESTART) || 
@@ -825,7 +817,6 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 					} /* if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) */
 				} /* if !blocked */
 			} else {
-			
 				SS7_DEBUG_CHAN(ftdmchan,"Reset flags present (0x%X)\n", sngss7_info->flags);
 			
 				/* there is still another reset pending so go back to reset*/
@@ -1120,14 +1111,10 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 
 			/* remove any reset flags */
-			sngss7_clear_flag (sngss7_info, FLAG_GRP_RESET_TX_RSP);
-			sngss7_clear_flag (sngss7_info, FLAG_GRP_RESET_TX);
-			sngss7_clear_flag (sngss7_info, FLAG_RESET_TX_RSP);
-			sngss7_clear_flag (sngss7_info, FLAG_RESET_TX);
-			sngss7_clear_flag (sngss7_info, FLAG_RESET_SENT);
-			sngss7_clear_flag (sngss7_info, FLAG_GRP_RESET_RX);
-			sngss7_clear_flag (sngss7_info, FLAG_RESET_RX);
-			sngss7_clear_flag (sngss7_info, FLAG_GRP_RESET_BASE);
+			clear_rx_grs_flags(sngss7_info);
+			clear_tx_grs_flags(sngss7_info);
+			clear_rx_rsc_flags(sngss7_info);
+			clear_tx_rsc_flags(sngss7_info);
 			
 			/* bring the channel down */
 			goto suspend_goto_last;
@@ -1136,8 +1123,14 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_flag (sngss7_info, FLAG_CKT_UCIC_UNBLK)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_UCIC_UNBLK flag %s\n", "");;
 
-			/* throw the channel into reset from our side since it is already in reset from the remote side */
-			sngss7_set_flag (sngss7_info, FLAG_RESET_TX);
+			/* remove the UCIC block flag */
+			sngss7_clear_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+
+			/* remove the UCIC unblock flag */
+			sngss7_clear_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK);
+
+			/* throw the channel into reset to sync states */
+			sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* bring the channel into restart again */
 			goto suspend_goto_restart;
