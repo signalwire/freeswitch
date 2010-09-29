@@ -205,7 +205,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
 
-	if ((b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
+	if (!tech_pvt->rm_encoding && (b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
 		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
 	}
 
@@ -354,12 +354,18 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			rate = imp->samples_per_second;
 
 			if (map) {
-				fmtp = switch_event_get_header(map, imp->iananame);
+				char key[128] = "";
+				char *check = NULL;
+				switch_snprintf(key, sizeof(key), "%s:%u", imp->iananame, imp->bits_per_second);
+
+				if ((check = switch_event_get_header(map, key)) || (check = switch_event_get_header(map, imp->iananame))) {
+					fmtp = check;
+				}
 			}
-
-
+			
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
-			if (imp->fmtp) {
+
+			if (fmtp) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, fmtp);
 			}
 		}
@@ -2535,24 +2541,26 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		}
 	}
 
-	if (switch_core_codec_init(&tech_pvt->read_codec,
+	if (switch_core_codec_init_with_bitrate(&tech_pvt->read_codec,
 							   tech_pvt->iananame,
 							   tech_pvt->rm_fmtp,
 							   tech_pvt->rm_rate,
 							   tech_pvt->codec_ms,
 							   1,
+							   tech_pvt->bitrate,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if (switch_core_codec_init(&tech_pvt->write_codec,
+	if (switch_core_codec_init_with_bitrate(&tech_pvt->write_codec,
 							   tech_pvt->iananame,
 							   tech_pvt->rm_fmtp,
 							   tech_pvt->rm_rate,
 							   tech_pvt->codec_ms,
 							   1,
+							   tech_pvt->bitrate,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -2593,9 +2601,9 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples %d bits\n",
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
-					  tech_pvt->read_impl.samples_per_packet);
+					  tech_pvt->read_impl.samples_per_packet, tech_pvt->read_impl.bits_per_second);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
 	tech_pvt->write_codec.agreed_pt = tech_pvt->agreed_pt;
@@ -3685,11 +3693,27 @@ switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, swi
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				if (map->rm_encoding) {
 					char buf[25] = "";
-					switch_snprintf(buf, sizeof(buf), "%d", map->rm_pt);
-					switch_event_add_header_string(*pt, SWITCH_STACK_BOTTOM, map->rm_encoding, buf);
-					
+					char key[128] = "";
+					char *br = NULL;
+
 					if (map->rm_fmtp) {
-						switch_event_add_header_string(*fmtp, SWITCH_STACK_BOTTOM, map->rm_encoding, map->rm_fmtp);
+						if ((br = strstr(map->rm_fmtp, "bitrate="))) {
+							br += 8;
+						}
+					}
+
+					switch_snprintf(buf, sizeof(buf), "%d", map->rm_pt);
+
+					if (br) {
+						switch_snprintf(key, sizeof(key), "%s:%s", map->rm_encoding, br);
+					} else {
+						switch_snprintf(key, sizeof(key), "%s", map->rm_encoding);
+					}
+					
+					switch_event_add_header_string(*pt, SWITCH_STACK_BOTTOM, key, buf);
+
+					if (map->rm_fmtp) {
+						switch_event_add_header_string(*fmtp, SWITCH_STACK_BOTTOM, key, map->rm_fmtp);
 					}
 				}
 			}
@@ -3809,7 +3833,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	sdp_attribute_t *attr;
 	int first = 0, last = 0;
 	int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
-	int codec_ms = 0;
 	int sendonly = 0;
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -4129,8 +4152,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				uint32_t near_rate = 0;
+				uint32_t near_bit_rate = 0;
+				switch_codec_interface_t *codec_interface;
 				const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 				const char *rm_encoding;
+				uint32_t map_bit_rate = 0;
+				int codec_ms = 0;
 
 				if (x++ < skip) {
 					continue;
@@ -4174,31 +4201,38 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					ptime = switch_default_ptime(rm_encoding, map->rm_pt);
 				}
 
-				if (!strcasecmp((char *) rm_encoding, "ilbc")) {
-					char *mode = NULL;
-					if (map->rm_fmtp && (mode = strstr(map->rm_fmtp, "mode=")) && (mode + 5)) {
-						codec_ms = atoi(mode + 5);
+				/* This will try to use codec specific fmtp parser */
+				if (map->rm_fmtp && (codec_interface = switch_loadable_module_get_codec_interface(rm_encoding)) != 0) {
+					switch_codec_fmtp_t codec_fmtp;
+					memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+					codec_fmtp.actual_samples_per_second = map->rm_rate;
+					if (codec_interface->parse_fmtp && codec_interface->parse_fmtp(map->rm_fmtp, &codec_fmtp) == SWITCH_STATUS_SUCCESS) {
+						if (codec_fmtp.bits_per_second) {
+							map_bit_rate = codec_fmtp.bits_per_second;
+						}
+						if (codec_fmtp.microseconds_per_packet) {
+							ptime = (codec_fmtp.microseconds_per_packet / 1000);
+						}
 					}
-					if (!codec_ms) {
-						/* default to 30 when no mode is defined for ilbc ONLY */
-						codec_ms = 30;
-					}
-				} else {
-					codec_ms = ptime;
+					UNPROTECT_INTERFACE(codec_interface);
 				}
 
 
+				if (!codec_ms) {
+					codec_ms = ptime;
+				}
 
 				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d]/[%s:%d:%u:%d]\n",
-									  rm_encoding, map->rm_pt, (int) map->rm_rate, codec_ms,
-									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d:%u]/[%s:%d:%u:%d:%u]\n",
+									  rm_encoding, map->rm_pt, (int) map->rm_rate, codec_ms, map_bit_rate,
+									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate);
 					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
@@ -4211,8 +4245,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
 						} else {
-							if ((codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
+							if ((codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate || (map_bit_rate && map_bit_rate != bit_rate) ) {
 								near_rate = map->rm_rate;
+								if (map_bit_rate) {
+									near_bit_rate = map_bit_rate;
+								} else {
+									near_bit_rate = bit_rate;
+								}
 								near_match = imp;
 								match = 0;
 								continue;
@@ -4225,7 +4264,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 
-				if (!match && near_match) {
+				if (!match && near_match && !map->rm_next) {
 					const switch_codec_implementation_t *search[1];
 					char *prefs[1];
 					char tmp[80];
@@ -4266,6 +4305,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
 					tech_pvt->rm_rate = map->rm_rate;
 					tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
+					tech_pvt->bitrate = mimp->bits_per_second;
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;

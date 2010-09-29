@@ -577,6 +577,7 @@ struct private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
+	uint32_t bitrate;
 	switch_caller_profile_t *caller_profile;
 	uint32_t timestamp_send;
 	switch_rtp_t *rtp_session;

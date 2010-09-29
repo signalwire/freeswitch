@@ -41,6 +41,22 @@ SWITCH_MODULE_DEFINITION(mod_silk, mod_silk_load, NULL, NULL);
 #define MAX_LBRR_DELAY			2
 #define MAX_FRAME_LENGTH		480
 
+/*! \brief Various codec settings */
+struct silk_codec_settings {
+	SKP_int useinbandfec;
+	SKP_int usedtx;
+	SKP_int maxaveragebitrate;
+	SKP_int plpct;
+};
+typedef struct silk_codec_settings silk_codec_settings_t;
+
+static silk_codec_settings_t default_codec_settings = {
+	/*.useinbandfec */ 0,
+	/*.usedtx */ 0,
+	/*.maxaveragebitrate */ 0,
+	/*.plpct */ 10, // 10% for now
+};
+
 struct silk_context {
 	SKP_SILK_SDK_EncControlStruct encoder_object;
 	SKP_SILK_SDK_DecControlStruct decoder_object;
@@ -48,12 +64,105 @@ struct silk_context {
 	void *dec_state;
 };
 
+static switch_status_t switch_silk_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	if (codec_fmtp) {
+		silk_codec_settings_t *codec_settings = NULL;
+
+		if (codec_fmtp->private_info) {
+			codec_settings = codec_fmtp->private_info;
+			memcpy(codec_settings, &default_codec_settings, sizeof(*codec_settings));
+		}
+
+		if (fmtp) {
+			int x, argc;
+			char *argv[10];
+			char *fmtp_dup = strdup(fmtp);
+
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				switch_assert(data);
+				while (*data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					if (codec_settings) {
+						if (!strcasecmp(data, "useinbandfec")) {
+							if (switch_true(arg)) {
+								codec_settings->useinbandfec = 1;
+							}
+						}
+						if (!strcasecmp(data, "usedtx")) {
+							if (switch_true(arg)) {
+								codec_settings->usedtx = 1;
+							}
+						}
+						if (!strcasecmp(data, "axaveragebitrate")) {
+							codec_settings->maxaveragebitrate = atoi(arg);
+							switch(codec_fmtp->actual_samples_per_second) {
+								case 8000:
+									{
+										if(codec_settings->maxaveragebitrate < 6000 || codec_settings->maxaveragebitrate > 20000) {
+											codec_settings->maxaveragebitrate = 20000;
+										}
+										break;
+									}
+								case 12000:
+									{
+										if(codec_settings->maxaveragebitrate < 7000 || codec_settings->maxaveragebitrate > 25000) {
+											codec_settings->maxaveragebitrate = 25000;
+										}
+										break;
+									}
+								case 16000:
+									{
+										if(codec_settings->maxaveragebitrate < 8000 || codec_settings->maxaveragebitrate > 30000) {
+											codec_settings->maxaveragebitrate = 30000;
+										}
+										break;
+									}
+								case 24000:
+									{
+										if(codec_settings->maxaveragebitrate < 12000 || codec_settings->maxaveragebitrate > 40000) {
+											codec_settings->maxaveragebitrate = 40000;
+										}
+										break;
+									}
+
+								default:
+									/* this should never happen but 20000 is common among all rates */
+									codec_settings->maxaveragebitrate = 20000;
+									break;
+							}
+
+						}
+
+					}
+				}
+			}
+			free(fmtp_dup);
+		}
+		//codec_fmtp->bits_per_second = bit_rate;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+
+
+
 static switch_status_t switch_silk_init(switch_codec_t *codec, 
 										switch_codec_flag_t freeswitch_flags, 
 										const switch_codec_settings_t *codec_settings)
 {
 	struct silk_context *context = NULL;
-	SKP_int useinbandfec = 0, usedtx = 0, maxaveragebitrate = 0, plpct =0;
+	switch_codec_fmtp_t codec_fmtp;
+	silk_codec_settings_t silk_codec_settings;
 	SKP_int32 encSizeBytes;
 	SKP_int32 decSizeBytes;
 	int encoding = (freeswitch_flags & SWITCH_CODEC_FLAG_ENCODE);
@@ -62,78 +171,15 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
-	if (codec->fmtp_in) {
-		int x, argc;
-		char *argv[10];
-		argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-		for (x = 0; x < argc; x++) {
-			char *data = argv[x];
-			char *arg;
-			switch_assert(data);
-			while (*data == ' ') {
-				data++;
-			}
-			if ((arg = strchr(data, '='))) {
-				*arg++ = '\0';
-				if (!strcasecmp(data, "useinbandfec")) {
-					if (switch_true(arg)) {
-						useinbandfec = 1;
-						plpct = 10;// 10% for now
-					}
-				}
-				if (!strcasecmp(data, "usedtx")) {
-					if (switch_true(arg)) {
-						usedtx = 1;
-					}
-				}
-				if (!strcasecmp(data, "maxaveragebitrate")) {
-					maxaveragebitrate = atoi(arg);
-					switch(codec->implementation->actual_samples_per_second) {
-					case 8000:
-						{
-							if(maxaveragebitrate < 6000 || maxaveragebitrate > 20000) {
-								maxaveragebitrate = 20000;
-							}
-							break;
-						}
-					case 12000:
-						{
-							if(maxaveragebitrate < 7000 || maxaveragebitrate > 25000) {
-								maxaveragebitrate = 25000;
-							}
-							break;
-						}
-					case 16000:
-						{
-							if(maxaveragebitrate < 8000 || maxaveragebitrate > 30000) {
-								maxaveragebitrate = 30000;
-							}
-							break;
-						}
-					case 24000:
-						{
-							if(maxaveragebitrate < 12000 || maxaveragebitrate > 40000) {
-								maxaveragebitrate = 40000;
-							}
-							break;
-						}
-						
-					default:
-						/* this should never happen but 20000 is common among all rates */
-						maxaveragebitrate = 20000;
-						break;
-					}
-					
-				}
-			}
-		}
-	}
+
+	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+	codec_fmtp.private_info = &silk_codec_settings;
+	switch_silk_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 	
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "useinbandfec=%s; usedtx=%s; maxaveragebitrate=%d",
-										  useinbandfec ? "1" : "0",
-										  usedtx ? "1" : "0",
-										  maxaveragebitrate ? maxaveragebitrate : codec->implementation->bits_per_second);
+										  silk_codec_settings.useinbandfec ? "1" : "0",
+										  silk_codec_settings.usedtx ? "1" : "0",
+										  silk_codec_settings.maxaveragebitrate ? silk_codec_settings.maxaveragebitrate : codec->implementation->bits_per_second);
 
 	if (encoding) {
 		if (SKP_Silk_SDK_Get_Encoder_Size(&encSizeBytes)) {
@@ -148,11 +194,11 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 		
 		context->encoder_object.sampleRate = codec->implementation->actual_samples_per_second;
 		context->encoder_object.packetSize = codec->implementation->samples_per_packet;
-		context->encoder_object.useInBandFEC = useinbandfec;
+		context->encoder_object.useInBandFEC = silk_codec_settings.useinbandfec;
 		context->encoder_object.complexity = 0;
-		context->encoder_object.bitRate = maxaveragebitrate ? maxaveragebitrate : codec->implementation->bits_per_second;
-		context->encoder_object.useDTX = usedtx;
-		context->encoder_object.packetLossPercentage = plpct;;
+		context->encoder_object.bitRate = silk_codec_settings.maxaveragebitrate ? silk_codec_settings.maxaveragebitrate : codec->implementation->bits_per_second;
+		context->encoder_object.useDTX = silk_codec_settings.usedtx;
+		context->encoder_object.packetLossPercentage = silk_codec_settings.plpct;
 	}
 
 	if (decoding) {
@@ -299,6 +345,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "SILK");
+	codec_interface->parse_fmtp = switch_silk_fmtp_parse;
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 117,						/* the IANA code number */

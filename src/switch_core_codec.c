@@ -165,6 +165,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_impl.iananame);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", session->read_impl.actual_samples_per_second);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-bit-rate", "%d", session->read_impl.bits_per_second);
 			if (session->read_impl.actual_samples_per_second != session->read_impl.samples_per_second) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-read-codec-rate", "%d", session->read_impl.samples_per_second);
 			}
@@ -317,6 +318,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", session->write_impl.iananame);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%d", session->write_impl.actual_samples_per_second);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-codec-bit-rate", "%d", session->write_impl.bits_per_second);
 			if (session->write_impl.actual_samples_per_second != session->write_impl.samples_per_second) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Reported-Write-Codec-Rate", "%d",
 										session->write_impl.actual_samples_per_second);
@@ -494,8 +496,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, sw
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, const char *codec_name, const char *fmtp,
-													   uint32_t rate, int ms, int channels, uint32_t flags,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec, const char *codec_name, const char *fmtp,
+													   uint32_t rate, int ms, int channels, uint32_t bitrate, uint32_t flags,
 													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
 	switch_codec_interface_t *codec_interface;
@@ -519,7 +521,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 	/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 	if (!ms) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-			if ((!rate || rate == iptr->samples_per_second) &&
+			if ((!rate || rate == iptr->samples_per_second) && (!bitrate || bitrate == iptr->bits_per_second) &&
 				(20 == (iptr->microseconds_per_packet / 1000)) && (!channels || channels == iptr->number_of_channels)) {
 				implementation = iptr;
 				goto found;
@@ -529,7 +531,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 
 	/* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available */
 	for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-		if ((!rate || rate == iptr->samples_per_second) &&
+		if ((!rate || rate == iptr->samples_per_second) && (!bitrate || bitrate == iptr->bits_per_second) &&
 			(!ms || ms == (iptr->microseconds_per_packet / 1000)) && (!channels || channels == iptr->number_of_channels)) {
 			implementation = iptr;
 			break;

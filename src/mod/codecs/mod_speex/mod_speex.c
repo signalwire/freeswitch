@@ -37,7 +37,46 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load);
 SWITCH_MODULE_DEFINITION(mod_speex, mod_speex_load, NULL, NULL);
 
-static switch_codec_settings_t default_codec_settings = {
+/* nobody has more setting than speex so we will let them set the standard */
+/*! \brief Various codec settings (currently only relevant to speex) */
+struct speex_codec_settings {
+	/*! desired quality */
+	int quality;
+	/*! desired complexity */
+	int complexity;
+	/*! desired enhancement */
+	int enhancement;
+	/*! desired vad level */
+	int vad;
+	/*! desired vbr level */
+	int vbr;
+	/*! desired vbr quality */
+	float vbr_quality;
+	/*! desired abr level */
+	int abr;
+	/*! desired dtx setting */
+	int dtx;
+	/*! desired preprocessor settings */
+	int preproc;
+	/*! preprocessor vad settings */
+	int pp_vad;
+	/*! preprocessor gain control settings */
+	int pp_agc;
+	/*! preprocessor gain level */
+	float pp_agc_level;
+	/*! preprocessor denoise level */
+	int pp_denoise;
+	/*! preprocessor dereverb settings */
+	int pp_dereverb;
+	/*! preprocessor dereverb decay level */
+	float pp_dereverb_decay;
+	/*! preprocessor dereverb level */
+	float pp_dereverb_level;
+};
+
+typedef struct speex_codec_settings speex_codec_settings_t;
+
+static speex_codec_settings_t default_codec_settings = {
 	/*.quality */ 5,
 	/*.complexity */ 5,
 	/*.enhancement */ 1,
@@ -58,6 +97,7 @@ static switch_codec_settings_t default_codec_settings = {
 
 struct speex_context {
 	switch_codec_t *codec;
+	speex_codec_settings_t codec_settings; 
 	unsigned int flags;
 
 	/* Encoder */
@@ -74,6 +114,56 @@ struct speex_context {
 	int decoder_mode;
 };
 
+static switch_status_t switch_speex_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	if (codec_fmtp) {
+		speex_codec_settings_t *codec_settings = NULL;
+		if (codec_fmtp->private_info) {
+			codec_settings = codec_fmtp->private_info;
+			memcpy(codec_settings, &default_codec_settings, sizeof(*codec_settings));
+		}
+
+		if (fmtp) {
+			int x, argc;
+			char *argv[10];
+			char *fmtp_dup = strdup(fmtp);
+
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
+			for (x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				switch_assert(data);
+				while (*data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					/*
+					   if (!strcasecmp(data, "bitrate")) {
+					   bit_rate = atoi(arg);
+					   }
+					 */
+					/*
+					   if (codec_settings) {
+					   if (!strcasecmp(data, "vad")) {
+					   bit_rate = atoi(arg);
+					   }
+					   }
+					 */			
+				}
+			}
+			free(fmtp_dup);
+		}
+		/*codec_fmtp->bits_per_second = bit_rate;*/
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+
 static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct speex_context *context = NULL;
@@ -82,16 +172,18 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
-	if (!codec_settings) {
-		codec_settings = &default_codec_settings;
-	}
-
-	memcpy(&codec->codec_settings, codec_settings, sizeof(codec->codec_settings));
-
 	if (!(encoding || decoding) || ((context = switch_core_alloc(codec->memory_pool, sizeof(*context))) == 0)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
 		const SpeexMode *mode = NULL;
+		switch_codec_fmtp_t codec_fmtp;
+		speex_codec_settings_t codec_settings;
+
+		memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+		codec_fmtp.private_info = &codec_settings;
+		switch_speex_fmtp_parse(codec->fmtp_in, &codec_fmtp);
+
+		memcpy(&context->codec_settings, &codec_settings, sizeof(context->codec_settings));
 
 		context->codec = codec;
 		if (codec->implementation->actual_samples_per_second == 8000) {
@@ -110,41 +202,41 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 			speex_bits_init(&context->encoder_bits);
 			context->encoder_state = speex_encoder_init(mode);
 			speex_encoder_ctl(context->encoder_state, SPEEX_GET_FRAME_SIZE, &context->encoder_frame_size);
-			speex_encoder_ctl(context->encoder_state, SPEEX_SET_COMPLEXITY, &codec->codec_settings.complexity);
-			if (codec->codec_settings.preproc) {
+			speex_encoder_ctl(context->encoder_state, SPEEX_SET_COMPLEXITY, &context->codec_settings.complexity);
+			if (context->codec_settings.preproc) {
 				context->pp = speex_preprocess_state_init(context->encoder_frame_size, codec->implementation->actual_samples_per_second);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_VAD, &codec->codec_settings.pp_vad);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC, &codec->codec_settings.pp_agc);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC_LEVEL, &codec->codec_settings.pp_agc_level);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DENOISE, &codec->codec_settings.pp_denoise);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB, &codec->codec_settings.pp_dereverb);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_DECAY, &codec->codec_settings.pp_dereverb_decay);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_LEVEL, &codec->codec_settings.pp_dereverb_level);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_VAD, &context->codec_settings.pp_vad);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC, &context->codec_settings.pp_agc);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC_LEVEL, &context->codec_settings.pp_agc_level);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DENOISE, &context->codec_settings.pp_denoise);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB, &context->codec_settings.pp_dereverb);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_DECAY, &context->codec_settings.pp_dereverb_decay);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_LEVEL, &context->codec_settings.pp_dereverb_level);
 			}
 
-			if (!codec->codec_settings.abr && !codec->codec_settings.vbr) {
-				speex_encoder_ctl(context->encoder_state, SPEEX_SET_QUALITY, &codec->codec_settings.quality);
-				if (codec->codec_settings.vad) {
-					speex_encoder_ctl(context->encoder_state, SPEEX_SET_VAD, &codec->codec_settings.vad);
+			if (!context->codec_settings.abr && !context->codec_settings.vbr) {
+				speex_encoder_ctl(context->encoder_state, SPEEX_SET_QUALITY, &context->codec_settings.quality);
+				if (context->codec_settings.vad) {
+					speex_encoder_ctl(context->encoder_state, SPEEX_SET_VAD, &context->codec_settings.vad);
 				}
 			}
-			if (codec->codec_settings.vbr) {
-				speex_encoder_ctl(context->encoder_state, SPEEX_SET_VBR, &codec->codec_settings.vbr);
-				speex_encoder_ctl(context->encoder_state, SPEEX_SET_VBR_QUALITY, &codec->codec_settings.vbr_quality);
+			if (context->codec_settings.vbr) {
+				speex_encoder_ctl(context->encoder_state, SPEEX_SET_VBR, &context->codec_settings.vbr);
+				speex_encoder_ctl(context->encoder_state, SPEEX_SET_VBR_QUALITY, &context->codec_settings.vbr_quality);
 			}
-			if (codec->codec_settings.abr) {
-				speex_encoder_ctl(context->encoder_state, SPEEX_SET_ABR, &codec->codec_settings.abr);
+			if (context->codec_settings.abr) {
+				speex_encoder_ctl(context->encoder_state, SPEEX_SET_ABR, &context->codec_settings.abr);
 			}
-			if (codec->codec_settings.dtx) {
-				speex_encoder_ctl(context->encoder_state, SPEEX_SET_DTX, &codec->codec_settings.dtx);
+			if (context->codec_settings.dtx) {
+				speex_encoder_ctl(context->encoder_state, SPEEX_SET_DTX, &context->codec_settings.dtx);
 			}
 		}
 
 		if (decoding) {
 			speex_bits_init(&context->decoder_bits);
 			context->decoder_state = speex_decoder_init(mode);
-			if (codec->codec_settings.enhancement) {
-				speex_decoder_ctl(context->decoder_state, SPEEX_SET_ENH, &codec->codec_settings.enhancement);
+			if (context->codec_settings.enhancement) {
+				speex_decoder_ctl(context->decoder_state, SPEEX_SET_ENH, &context->codec_settings.enhancement);
 			}
 		}
 
@@ -178,7 +270,7 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 
 	if (is_speech) {
 		is_speech = speex_encode_int(context->encoder_state, buf, &context->encoder_bits)
-			|| !context->codec->codec_settings.dtx;
+			|| !context->codec_settings.dtx;
 	} else {
 		speex_bits_pack(&context->encoder_bits, 0, 5);
 	}
@@ -270,6 +362,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "Speex");
+	codec_interface->parse_fmtp = switch_speex_fmtp_parse;
 	for (counta = 1; counta <= 3; counta++) {
 		for (countb = 1; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */

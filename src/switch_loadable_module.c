@@ -183,8 +183,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Adding Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+										  "Adding Codec '%s' (%s) %dhz %dms %dbps\n",
+										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000, impl->bits_per_second);
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -1600,7 +1600,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 	for (x = 0; x < preflen; x++) {
 		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
-		uint32_t interval = 0, rate = 0;
+		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
 		last = name = next = cur = buf;
@@ -1620,6 +1620,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					interval = atoi(cur);
 				} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
 					rate = atoi(cur);
+				} else if (strchr(cur, 'b')) {
+					bit = atoi(cur);
 				}
 			}
 			cur = next;
@@ -1643,6 +1645,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (((!rate && (uint32_t) imp->samples_per_second != 8000) || (rate && (uint32_t) imp->samples_per_second != rate))) {
 						continue;
 					}
+
+					if (bit && (uint32_t) imp->bits_per_second != bit) {
+						continue;
+					}
+
 				}
 
 
@@ -1666,6 +1673,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (rate && (uint32_t) imp->samples_per_second != rate) {
 						continue;
 					}
+
+					if (bit && (uint32_t) imp->bits_per_second != bit) {
+						continue;
+					}
+					
 				}
 
 				array[i++] = imp;
