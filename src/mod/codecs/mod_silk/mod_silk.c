@@ -102,7 +102,7 @@ static switch_status_t switch_silk_fmtp_parse(const char *fmtp, switch_codec_fmt
 								codec_settings->usedtx = 1;
 							}
 						}
-						if (!strcasecmp(data, "axaveragebitrate")) {
+						if (!strcasecmp(data, "maxaveragebitrate")) {
 							codec_settings->maxaveragebitrate = atoi(arg);
 							switch(codec_fmtp->actual_samples_per_second) {
 								case 8000:
@@ -220,7 +220,7 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 
 static switch_status_t switch_silk_destroy(switch_codec_t *codec)
 {
-    codec->private_info = NULL;
+	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
