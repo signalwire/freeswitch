@@ -93,7 +93,7 @@ static int encode_length(uint8_t *buf, int *len, int value)
 
 	if (value < 0x80) {
 		/* 1 octet */
-		buf[(*len)++] = value;
+		buf[(*len)++] = (uint8_t)value;
 		return value;
 	}
 	if (value < 0x4000) {
@@ -106,7 +106,7 @@ static int encode_length(uint8_t *buf, int *len, int value)
 	/* Fragmentation */
 	multiplier = (value < 0x10000) ? (value >> 14) : 4;
 	/* Set the first 2 bits of the octet */
-	buf[(*len)++] = 0xC0 | multiplier;
+	buf[(*len)++] = (uint8_t) (0xC0 | multiplier);
 	return multiplier << 14;
 }
 
@@ -419,10 +419,10 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
 		/* Span is defined as an inconstrained integer, which it dumb. It will only
 		   ever be a small value. Treat it as such. */
 		buf[len++] = 1;
-		buf[len++] = span;
+		buf[len++] = (uint8_t)span;
 		/* The number of entries is defined as a length, but will only ever be a small
 		   value. Treat it as such. */
-		buf[len++] = entries;
+		buf[len++] = (uint8_t)entries;
 		for (m = 0; m < entries; m++) {
 			/* Make an XOR'ed entry the maximum length */
 			limit = (entry + m) & UDPTL_BUF_MASK;

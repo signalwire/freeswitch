@@ -83,7 +83,11 @@ typedef struct nua_ee_data {
   nua_event_data_t ee_data[1];
 } nua_ee_data_t;
 
+#ifndef _MSC_VER
 #define       NONE ((void *)-1)
+#else
+#define       NONE ((void *)(UINT_PTR)-1)
+#endif
 
 typedef struct register_usage nua_registration_t;
 

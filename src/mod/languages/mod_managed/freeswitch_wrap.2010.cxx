@@ -3583,24 +3583,24 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_t38_options_t_remote_ip_get(void * j
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_remote_port_set(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_remote_port_set(void * jarg1, unsigned short jarg2) {
   switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
-  uint32_t arg2 ;
+  uint16_t arg2 ;
   
   arg1 = (switch_t38_options_t *)jarg1; 
-  arg2 = (uint32_t)jarg2; 
+  arg2 = (uint16_t)jarg2; 
   if (arg1) (arg1)->remote_port = arg2;
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_t38_options_t_remote_port_get(void * jarg1) {
-  unsigned long jresult ;
+SWIGEXPORT unsigned short SWIGSTDCALL CSharp_switch_t38_options_t_remote_port_get(void * jarg1) {
+  unsigned short jresult ;
   switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
-  uint32_t result;
+  uint16_t result;
   
   arg1 = (switch_t38_options_t *)jarg1; 
-  result = (uint32_t) ((arg1)->remote_port);
-  jresult = (unsigned long)result; 
+  result = (uint16_t) ((arg1)->remote_port);
+  jresult = result; 
   return jresult;
 }
 
@@ -3634,24 +3634,24 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_t38_options_t_local_ip_get(void * ja
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_local_port_set(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_local_port_set(void * jarg1, unsigned short jarg2) {
   switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
-  uint32_t arg2 ;
+  uint16_t arg2 ;
   
   arg1 = (switch_t38_options_t *)jarg1; 
-  arg2 = (uint32_t)jarg2; 
+  arg2 = (uint16_t)jarg2; 
   if (arg1) (arg1)->local_port = arg2;
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_t38_options_t_local_port_get(void * jarg1) {
-  unsigned long jresult ;
+SWIGEXPORT unsigned short SWIGSTDCALL CSharp_switch_t38_options_t_local_port_get(void * jarg1) {
+  unsigned short jresult ;
   switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
-  uint32_t result;
+  uint16_t result;
   
   arg1 = (switch_t38_options_t *)jarg1; 
-  result = (uint32_t) ((arg1)->local_port);
-  jresult = (unsigned long)result; 
+  result = (uint16_t) ((arg1)->local_port);
+  jresult = result; 
   return jresult;
 }
 

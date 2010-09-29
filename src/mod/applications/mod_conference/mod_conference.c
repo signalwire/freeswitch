@@ -1012,7 +1012,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	uint8_t *file_frame;
 	uint8_t *async_file_frame;
 	int16_t *bptr;
-	int x = 0;
+	uint32_t x = 0;
 	int32_t z = 0;
 	int member_score_sum = 0;
 	int divisor = 0;

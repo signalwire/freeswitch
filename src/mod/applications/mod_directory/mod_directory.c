@@ -393,7 +393,7 @@ static dir_profile_t *load_profile(const char *profile_name)
 		profile_set_config(profile);
 
 		/* Add the params to the event structure */
-		count = switch_event_import_xml(switch_xml_child(x_profile, "param"), "name", "value", &event);
+		count = (int)switch_event_import_xml(switch_xml_child(x_profile, "param"), "name", "value", &event);
 
 		if (switch_xml_config_parse_event(event, count, SWITCH_FALSE, profile->config) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to process configuration\n");
@@ -611,7 +611,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			}
 
 			if (strlen(cbr->digits) < sizeof(cbr->digits) - 2) {
-				int at = strlen(cbr->digits);
+				int at = (int)strlen(cbr->digits);
 				cbr->digits[at++] = dtmf->digit;
 				cbr->digits[at] = '\0';
 			} else {

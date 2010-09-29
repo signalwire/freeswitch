@@ -513,7 +513,6 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			if (match_key(caller_exit_key, *buf)) {
 				cd->abort = 1;
 				return SWITCH_STATUS_FALSE;
-				switch_channel_set_variable(channel, "fifo_caller_exit_key", (char *)buf);
 			}
 			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;

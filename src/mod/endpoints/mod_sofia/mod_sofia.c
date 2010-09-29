@@ -2331,7 +2331,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
 
-		exp_secs = etime - now;
+		exp_secs = (int)(etime - now);
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
@@ -2371,7 +2371,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
 
-		exp_secs = etime - now;
+		exp_secs = (int)(etime - now);
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
 		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
 	}
@@ -2499,7 +2499,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
-			int x = 0;
+			uint32_t x = 0;
 
 			cb.row_process = 0;
 
@@ -2779,7 +2779,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		} else if (!strcasecmp(argv[0], "profile")) {
 			struct cb_helper cb;
 			char *sql = NULL;
-			int x = 0;
+			uint32_t x = 0;
 
 			cb.row_process = 0;
 
@@ -4394,7 +4394,8 @@ static void general_event_handler(switch_event_t *event)
 				switch_mutex_lock(mod_sofia_globals.hash_mutex);
 				if (mod_sofia_globals.profile_hash) {
 					for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-						int rb = 0, x = 0;
+						int rb = 0;
+						uint32_t x = 0;
 						switch_hash_this(hi, &var, NULL, &val);
 						if ((profile = (sofia_profile_t *) val) && profile->auto_restart) {
 							if (!strcmp(profile->sipip, old_ip4)) {

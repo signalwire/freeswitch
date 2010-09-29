@@ -934,7 +934,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (sip->sip_path) {
 			path_val = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_path);
-			path_encoded_len = (strlen(path_val) * 3) + 1;
+			path_encoded_len = (int)(strlen(path_val) * 3) + 1;
 			switch_zmalloc(path_encoded, path_encoded_len);
 			switch_copy_string(path_encoded, ";fs_path=", 10);
 			switch_url_encode(path_val, path_encoded + 9, path_encoded_len - 9);
@@ -947,7 +947,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
 			}
 
-			path_encoded_len = (strlen(my_contact_str) * 3) + 1;
+			path_encoded_len = (int)(strlen(my_contact_str) * 3) + 1;
 
 			switch_zmalloc(path_encoded, path_encoded_len);
 			switch_copy_string(path_encoded, ";fs_path=", 10);
@@ -2126,7 +2126,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	if (auth_acl) {
 		if (!switch_check_network_list_ip(ip, auth_acl)) {
-			int network_ip_is_proxy = 0, x = 0;
+			int network_ip_is_proxy = 0;
+			uint32_t x = 0;
 			char *last_acl = NULL;
 			if (profile->proxy_acl_count == 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by user acl [%s] and no proxy acl present\n", ip, auth_acl);
@@ -2223,7 +2224,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (max_registrations_perext > 0 && (sip && sip->sip_contact && (sip->sip_contact->m_expires == NULL || atol(sip->sip_contact->m_expires) > 0))) {
 		/* if expires is null still process */
 		/* expires == 0 means the phone is going to unregiser, so don't count against max */
-		int count = 0;
+		uint32_t count = 0;
 
 		call_id = sip->sip_call_id->i_id;
 		switch_assert(call_id);

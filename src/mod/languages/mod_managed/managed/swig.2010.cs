@@ -6376,10 +6376,10 @@ class freeswitchPINVOKE {
   public static extern string switch_t38_options_t_remote_ip_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_remote_port_set")]
-  public static extern void switch_t38_options_t_remote_port_set(HandleRef jarg1, uint jarg2);
+  public static extern void switch_t38_options_t_remote_port_set(HandleRef jarg1, ushort jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_remote_port_get")]
-  public static extern uint switch_t38_options_t_remote_port_get(HandleRef jarg1);
+  public static extern ushort switch_t38_options_t_remote_port_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_local_ip_set")]
   public static extern void switch_t38_options_t_local_ip_set(HandleRef jarg1, string jarg2);
@@ -6388,10 +6388,10 @@ class freeswitchPINVOKE {
   public static extern string switch_t38_options_t_local_ip_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_local_port_set")]
-  public static extern void switch_t38_options_t_local_port_set(HandleRef jarg1, uint jarg2);
+  public static extern void switch_t38_options_t_local_port_set(HandleRef jarg1, ushort jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_local_port_get")]
-  public static extern uint switch_t38_options_t_local_port_get(HandleRef jarg1);
+  public static extern ushort switch_t38_options_t_local_port_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_t38_options_t")]
   public static extern IntPtr new_switch_t38_options_t();
@@ -29741,12 +29741,12 @@ public class switch_t38_options_t : IDisposable {
     } 
   }
 
-  public uint remote_port {
+  public ushort remote_port {
     set {
       freeswitchPINVOKE.switch_t38_options_t_remote_port_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_t38_options_t_remote_port_get(swigCPtr);
+      ushort ret = freeswitchPINVOKE.switch_t38_options_t_remote_port_get(swigCPtr);
       return ret;
     } 
   }
@@ -29761,12 +29761,12 @@ public class switch_t38_options_t : IDisposable {
     } 
   }
 
-  public uint local_port {
+  public ushort local_port {
     set {
       freeswitchPINVOKE.switch_t38_options_t_local_port_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_t38_options_t_local_port_get(swigCPtr);
+      ushort ret = freeswitchPINVOKE.switch_t38_options_t_local_port_get(swigCPtr);
       return ret;
     } 
   }

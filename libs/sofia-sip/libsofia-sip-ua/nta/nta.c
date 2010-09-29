@@ -104,8 +104,11 @@ char const nta_version[] = PACKAGE_VERSION;
 static char const __func__[] = "nta";
 #endif
 
+#ifndef _MSC_VER
 #define NONE ((void *)-1)
-
+#else
+#define NONE ((void *)(UINT_PTR)-1)
+#endif
 /* ------------------------------------------------------------------------- */
 
 /** Resolving order */

@@ -1065,7 +1065,7 @@ SWITCH_STANDARD_API(url_encode_function)
 	int len = 0;
 
 	if (!zstr(cmd)) {
-		len = (strlen(cmd) * 3) + 1;
+		len = (int)(strlen(cmd) * 3) + 1;
 		switch_zmalloc(data, len);
 		switch_url_encode(cmd, data, len);
 		reply = data;
@@ -4218,7 +4218,7 @@ SWITCH_STANDARD_API(escape_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	len = strlen(cmd) * 2;
+	len = (int)strlen(cmd) * 2;
 	mycmd = malloc(len);
 
 	stream->write_function(stream, "%s", switch_escape_string(cmd, mycmd, len));

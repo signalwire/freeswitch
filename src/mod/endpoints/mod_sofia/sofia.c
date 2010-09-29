@@ -1268,7 +1268,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 					iterations++;
 
 					if (len + newlen + 10 > sql_len) {
-						int new_mlen = len + newlen + 10 + 10240;
+						switch_size_t new_mlen = len + newlen + 10 + 10240;
 						
 						if (new_mlen < SQLLEN) {
 							sql_len = new_mlen;
