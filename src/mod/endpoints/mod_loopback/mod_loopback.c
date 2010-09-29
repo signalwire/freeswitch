@@ -52,7 +52,8 @@ typedef enum {
 	TFLAG_BRIDGE = (1 << 4),
 	TFLAG_BOWOUT = (1 << 5),
 	TFLAG_BLEG = (1 << 6),
-	TFLAG_APP = (1 << 7)
+	TFLAG_APP = (1 << 7),
+	TFLAG_BOWOUT_USED = (1 << 8)
 } TFLAGS;
 
 struct private_object {
@@ -635,7 +636,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	if (switch_test_flag(frame, SFF_CNG) || switch_test_flag(tech_pvt, TFLAG_CNG) || switch_test_flag(tech_pvt, TFLAG_BOWOUT)) {
+	if (switch_test_flag(frame, SFF_CNG) || switch_test_flag(tech_pvt, TFLAG_CNG) || (switch_test_flag(tech_pvt, TFLAG_BOWOUT) && switch_test_flag(tech_pvt, TFLAG_BOWOUT_USED))) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -661,6 +662,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		if ((!vetoa || switch_true(vetoa)) && (!vetob || switch_true(vetob))) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
 			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+
+			switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT_USED);
+			switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT_USED);
 
 			if (a_uuid && b_uuid) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
