@@ -191,6 +191,8 @@ typedef enum {
 	FTDM_CHANNEL_FEATURE_CALLERID = (1 << 4), /*!< Channel can detect caller id (read-only) */
 	FTDM_CHANNEL_FEATURE_PROGRESS = (1 << 5), /*!< Channel can detect inband progress (read-only) */
 	FTDM_CHANNEL_FEATURE_CALLWAITING = (1 << 6), /*!< Channel will allow call waiting (ie: FXS devices) (read/write) */
+	FTDM_CHANNEL_FEATURE_HWEC = (1<<7), /*!< Channel has a hardware echo canceller */
+	FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE  = (1<<8), /*!< hardware echo canceller is disabled when there are no calls on this channel */
 } ftdm_channel_feature_t;
 
 typedef enum {

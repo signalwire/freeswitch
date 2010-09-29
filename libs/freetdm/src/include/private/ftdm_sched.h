@@ -95,6 +95,9 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_global_init(void);
 /*! \brief Checks if the main scheduling thread is running */
 FT_DECLARE(ftdm_bool_t) ftdm_free_sched_running(void);
 
+/*! \brief Stop the main scheduling thread (if running) */
+FT_DECLARE(ftdm_bool_t) ftdm_free_sched_stop(void);
+
 #ifdef __cplusplus
 } 
 #endif

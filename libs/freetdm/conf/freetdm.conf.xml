@@ -1,3 +1,5 @@
+<!-- Please refer to http://wiki.freeswitch.org/wiki/FreeTDM for further documentation  -->
+
 <configuration name="freetdm.conf" description="FreeTDM Configuration">
   <settings>
     <param name="debug" value="0"/>
@@ -5,6 +7,8 @@
     <!--<param name="enable-analog-option" value="call-swap"/>-->
     <!--<param name="enable-analog-option" value="3-way"/>-->
   </settings>
+
+  <!-- use the <pri_spans> tag for native ISDN support (most likely broken at this point, check sangoma_pri_spans or libpri_spans for alternatives) -->
    <pri_spans>
      <span name="PRI_1">
        <!-- Log Levels: none, alert, crit, err, warning, notice, info, debug -->
@@ -24,9 +28,11 @@
        <param name="context" value="default"/>
      </span>
    </pri_spans>
-  <!-- one entry here per openzap span -->
+
+
+  <!-- Analog spans go here -->
   <analog_spans>
-    <span id="1">
+    <span name="myAnalog">
       <!--<param name="hold-music" value="$${moh_uri}"/>-->
       <!--<param name="enable-analog-option" value="call-swap"/>-->
       <!--<param name="enable-analog-option" value="3-way"/>-->
@@ -42,4 +48,5 @@
       <!--<param name="fail-dial-regex" value="^5"/>-->
     </span>
   </analog_spans>
+
 </configuration>

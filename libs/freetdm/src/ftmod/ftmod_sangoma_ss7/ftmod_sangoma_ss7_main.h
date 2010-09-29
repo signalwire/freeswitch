@@ -79,7 +79,8 @@ typedef enum {
 
 typedef enum {
 	CONFIGURED		= (1 << 0),
-	ACTIVE			= (1 << 1)
+	ACTIVE			= (1 << 1),
+	SNGSS7_PAUSED	= (1 << 7)
 } sng_flag_t;
 
 typedef struct sng_mtp_link {
@@ -335,6 +336,7 @@ typedef struct sngss7_group_data {
 	uint32_t				range;
 	uint8_t					status[255];
 	uint8_t					type;
+	uint8_t					cause;
 }sngss7_group_data_t;
 
 typedef struct sngss7_chan_data {
@@ -353,6 +355,7 @@ typedef struct sngss7_chan_data {
 typedef struct sngss7_span_data {
 	ftdm_sched_t			*sched;
 	sngss7_group_data_t		rx_grs;
+	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		rx_cgb;
 	sngss7_group_data_t		tx_cgb;
@@ -427,6 +430,10 @@ extern int				cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
+/* in ftmod_sangoma_ss7_main.c */
+void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
+
+/* in ftmod_sangoma_ss7_logger.c */
 void handle_sng_log(uint8_t level, char *fmt,...);
 void handle_sng_mtp1_alarm(Pst *pst, L1Mngmt *sta);
 void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta);
@@ -434,6 +441,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta);
 void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta);
 void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta);
 
+/* in ftmod_sangoma_ss7_cfg.c */
 int ft_to_sngss7_cfg_all(void);
 int ftmod_ss7_mtp1_gen_config(void);
 int ftmod_ss7_mtp2_gen_config(void);
@@ -452,6 +460,9 @@ int ftmod_ss7_isup_ckt_config(int id);
 int ftmod_ss7_isup_isap_config(int id);
 int ftmod_ss7_cc_isap_config(int id);
 
+/* in ftmod_sangoma_ss7_cntrl.c */
+int  ft_to_sngss7_activate_all(void);
+
 int ftmod_ss7_inhibit_mtplink(uint32_t id);
 int ftmod_ss7_uninhibit_mtplink(uint32_t id);
 int ftmod_ss7_activate_mtplink(uint32_t id);
@@ -463,11 +474,12 @@ int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
 int ftmod_ss7_lpo_mtplink(uint32_t id);
 int ftmod_ss7_lpr_mtplink(uint32_t id);
 
+/* in ftmod_sangoma_ss7_sta.c */
 int ftmod_ss7_mtplink_sta(uint32_t id, SnMngmt *cfm);
 int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm);
 
-int  ft_to_sngss7_activate_all(void);
 
+/* in ftmod_sangoma_ss7_out.c */
 void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_acm(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_anm(ftdm_channel_t *ftdmchan);
@@ -487,6 +499,7 @@ void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 
+/* in ftmod_sangoma_ss7_in.c */
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
 void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -499,6 +512,7 @@ void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
 
+/* in ftmod_sangoma_ss7_handle.c */
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
 ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType);
 ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -529,6 +543,13 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
+/* in ftmod_sangoma_ss7_xml.c */
+int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
+
+/* in ftmod_sangoma_ss7_cli.c */
+ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
+
+/* in ftmod_sangoma_ss7_support.c */
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
@@ -540,14 +561,19 @@ int check_for_reset(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
 unsigned long get_unique_id(void);
 
-int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
-
-void handle_isup_t35(void *userdata);
-
-ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
-
+ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
+
+ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+
+
+/* in ftmod_sangoma_ss7_timers.c */
+void handle_isup_t35(void *userdata);
 /******************************************************************************/
 
 /* MACROS *********************************************************************/
@@ -678,7 +704,14 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
 
-# define SS7_ASSERT	*(int*)0=0;
+#ifdef SS7_PRODUCTION
+# define SS7_ASSERT \
+	SS7_INFO_CHAN(ftdmchan,"Production Mode, continuing%s\n", "");
+#else
+# define SS7_ASSERT	\
+	SS7_ERROR_CHAN(ftdmchan, "Debugging Mode, ending%s\n", ""); \
+	*(int*)0=0;
+#endif
 /******************************************************************************/
 
 /******************************************************************************/

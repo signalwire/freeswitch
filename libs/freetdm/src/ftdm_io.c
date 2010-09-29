@@ -244,6 +244,39 @@ static __inline__ void ftdm_std_free(void *pool, void *ptr)
 	free(ptr);
 }
 
+static void ftdm_set_echocancel_call_begin(ftdm_channel_t *chan)
+{
+	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
+		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
+			}
+		} else {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
+			}
+		}
+	}
+}
+
+static void ftdm_set_echocancel_call_end(ftdm_channel_t *chan)
+{
+	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
+		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
+			}
+		} else {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
+			}
+		}
+	}
+}
+
+
 FT_DECLARE_DATA ftdm_memory_handler_t g_ftdm_mem_handler = 
 {
 	/*.pool =*/ NULL,
@@ -2009,6 +2042,9 @@ done:
 static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const char *func, int line)
 {
 	ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
+
+	ftdm_set_echocancel_call_end(chan);
+	
 	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
 		if (chan->state == FTDM_CHANNEL_STATE_HANGUP) {
 			/* make user's life easier, and just ignore double hangup requests */
@@ -2174,9 +2210,11 @@ done:
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
-
+	
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
 	ftdm_assert_return(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), FTDM_FAIL, "Call place, but outbound flag not set\n");
+
+	ftdm_set_echocancel_call_begin(ftdmchan);
 
 	ftdm_channel_lock(ftdmchan);
 
@@ -4741,11 +4779,15 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		break;
 
 	case FTDM_SIGEVENT_START:
-		/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
-		 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
-		 * is needed at all?
-		 * */
-		ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+		{
+			ftdm_set_echocancel_call_begin(sigmsg->channel);
+
+			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
+			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
+			* is needed at all?
+			* */
+			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+		}
 		break;
 
 	case FTDM_SIGEVENT_STOP:
@@ -4933,16 +4975,19 @@ FT_DECLARE(uint32_t) ftdm_running(void)
 FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 {
 	ftdm_span_t *sp;
-	uint32_t sanity = 100;
 
 	time_end();
 
+	/* many freetdm event loops rely on this variable to decide when to stop, do this first */
 	globals.running = 0;	
 
-	ftdm_sched_destroy(&globals.timingsched);
+	/* stop the scheduling thread */
+	ftdm_free_sched_stop();
 
+	/* stop the cpu monitor thread */
 	ftdm_cpu_monitor_stop();
 
+	/* now destroy channels and spans */
 	globals.span_index = 0;
 
 	ftdm_span_close_all();
@@ -4967,18 +5012,12 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	globals.spans = NULL;
 	ftdm_mutex_unlock(globals.span_mutex);
 
+	/* destroy signaling and io modules */
 	ftdm_unload_modules();
 
-	while (ftdm_free_sched_running() && --sanity) {
-		ftdm_log(FTDM_LOG_DEBUG, "Waiting for schedule thread to finish\n");
-		ftdm_sleep(100);
-	}
-
-	if (!sanity) {
-		ftdm_log(FTDM_LOG_CRIT, "schedule thread did not stop running, we may crash on shutdown\n");
-	}
-
+	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);
+	ftdm_sched_destroy(&globals.timingsched);
 	hashtable_destroy(globals.interface_hash);
 	hashtable_destroy(globals.module_hash);	
 	hashtable_destroy(globals.span_hash);

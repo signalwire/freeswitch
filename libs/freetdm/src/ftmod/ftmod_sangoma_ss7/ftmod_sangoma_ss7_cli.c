@@ -1156,7 +1156,12 @@ static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int c
 				/* check if there is a pending state change|give it a bit to clear */
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
+					/* check if we need to die */
 					SS7_ASSERT;
+					/* unlock the channel again before we exit */
+					ftdm_mutex_unlock(ftdmchan->mutex);
+					/* move to the next channel */
+					continue;
 				} else {
 					/* throw the ckt block flag */
 					sngss7_set_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
@@ -1217,7 +1222,12 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 				/* check if there is a pending state change|give it a bit to clear */
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
+					/* check if we need to die */
 					SS7_ASSERT;
+					/* unlock the channel again before we exit */
+					ftdm_mutex_unlock(ftdmchan->mutex);
+					/* move to the next channel */
+					continue;
 				} else {
 					/* throw the ckt block flag */
 					sngss7_set_flag(ss7_info, FLAG_CKT_MN_UNBLK_TX);
@@ -1466,7 +1476,12 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 				/* check if there is a pending state change|give it a bit to clear */
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
+					/* check if we need to die */
 					SS7_ASSERT;
+					/* unlock the channel again before we exit */
+					ftdm_mutex_unlock(ftdmchan->mutex);
+					/* move to the next channel */
+					continue;
 				} else {
 					/* throw the grp reset flag */
 					sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
