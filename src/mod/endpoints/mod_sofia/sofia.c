@@ -2312,12 +2312,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
 						}
-					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
-						}
 					} else if (!strcasecmp(var, "t38-passthru")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_T38_PASSTHRU);
@@ -2933,6 +2927,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 						}
+                                        } else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
+                                                if (switch_true(val)) {
+                                                        sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+                                                } else {
+                                                        sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+                                                }
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "auto-restart")) {
