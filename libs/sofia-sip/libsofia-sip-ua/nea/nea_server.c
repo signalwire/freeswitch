@@ -44,7 +44,7 @@
 #ifndef _MSC_VER
 #define NONE ((void *)- 1)
 #else
-#define NONE ((void *)(UINT_PTR)- 1)
+#define NONE ((void *)(INT_PTR)- 1)
 #endif
 
 #define SU_ROOT_MAGIC_T      struct nea_server_s

@@ -84,7 +84,7 @@ typedef enum {
 #ifndef _MSC_VER
 #define SIP_NONE ((void const *)-1L)
 #else
-#define SIP_NONE ((void const *)(UINT_PTR)-1L)
+#define SIP_NONE ((void const *)(INT_PTR)-1L)
 #endif
 
 /** SIP protocol identifier @HIDE */

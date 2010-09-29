@@ -86,7 +86,7 @@ typedef struct nua_ee_data {
 #ifndef _MSC_VER
 #define       NONE ((void *)-1)
 #else
-#define       NONE ((void *)(UINT_PTR)-1)
+#define       NONE ((void *)(INT_PTR)-1)
 #endif
 
 typedef struct register_usage nua_registration_t;
