@@ -3933,6 +3933,23 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
+#if 0
+		if (status == 200 && switch_channel_test_flag(channel, CF_PROXY_MEDIA) && 
+			sip->sip_payload && sip->sip_payload->pl_data && !strcasecmp(tech_pvt->iananame, "PROXY")) {
+			switch_core_session_t *other_session;
+			
+			sofia_glue_proxy_codec(session, sip->sip_payload->pl_data);
+			
+			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_compare(session, other_session)) {
+					sofia_glue_proxy_codec(other_session, sip->sip_payload->pl_data);
+				}
+				switch_core_session_rwunlock(other_session);
+			}
+		}
+#endif
+
+
 		if ((status == 180 || status == 183 || status == 200)) {
 			const char *x_freeswitch_support;
 
@@ -4494,6 +4511,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 	}
 
+
+
   state_process:
 
 	switch ((enum nua_callstate) ss_state) {
@@ -4972,6 +4991,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
 				sofia_set_flag(tech_pvt, TFLAG_SDP);
 				switch_channel_mark_answered(channel);
+
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
@@ -4992,6 +5012,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
 					sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
 					switch_channel_mark_answered(channel);
+
 					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 							goto done;
@@ -5097,6 +5118,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
   done:
+	
 
 	if ((enum nua_callstate) ss_state == nua_callstate_ready && channel && session && tech_pvt) {
 		sofia_glue_tech_simplify(tech_pvt);
@@ -5247,7 +5269,6 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 	return nh;
 
 }
-
 
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
@@ -5821,7 +5842,17 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
 			sip->sip_payload && sip->sip_payload->pl_data) {
-			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf-relay")) {
+			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "media_control+xml")) {
+				switch_core_session_t *other_session;
+				
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					sofia_glue_build_vid_refresh_message(other_session, sip->sip_payload->pl_data);
+					switch_core_session_rwunlock(other_session);
+				} else {
+					sofia_glue_build_vid_refresh_message(session, sip->sip_payload->pl_data);
+				}
+
+			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf-relay")) {
 				/* Try and find signal information in the payload */
 				if ((signal_ptr = switch_stristr("Signal=", sip->sip_payload->pl_data))) {
 					int tmp;

@@ -1013,3 +1013,6 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
 void sofia_glue_global_siptrace(switch_bool_t on);
+void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
+switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
+void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);

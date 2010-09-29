@@ -202,6 +202,13 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *username = tech_pvt->profile->username;
 	const char *fmtp_out = tech_pvt->fmtp_out;
 	const char *fmtp_out_var = switch_channel_get_variable(tech_pvt->channel, "sip_force_audio_fmtp");
+	switch_event_t *map = NULL, *ptmap = NULL;
+	const char *b_sdp = NULL;
+
+	if ((b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
+		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
+	}
+
 
 	if (fmtp_out_var) {
 		fmtp_out = fmtp_out_var;
@@ -330,7 +337,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		int already_did[128] = { 0 };
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-
+			char *fmtp = imp->fmtp;
+			
 			if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 				continue;
 			}
@@ -345,9 +353,14 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 			rate = imp->samples_per_second;
 
+			if (map) {
+				fmtp = switch_event_get_header(map, imp->iananame);
+			}
+
+
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
 			if (imp->fmtp) {
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, fmtp);
 			}
 		}
 	}
@@ -479,38 +492,87 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				int i;
 				int already_did[128] = { 0 };
 
+#if 0				
+				switch_event_t *event;
+				char *buf;
+				int level = SWITCH_LOG_INFO;
+				
+				if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(switch_core_session_get_channel(tech_pvt->session), event);
+					switch_event_serialize(event, &buf, SWITCH_FALSE);
+					switch_assert(buf);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), level, "CHANNEL_DATA:\n%s\n", buf);
+					switch_event_destroy(&event);
+					free(buf);
+				}
+#endif
+		
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+					char *fmtp = NULL;
+					uint32_t ianacode = imp->ianacode;
+#if 0
+					const char *str;
 
+
+
+					if ((str = switch_event_get_header(ptmap, imp->iananame))) {
+						int tmp = atoi(str);
+						if (tmp > 0) {
+							ianacode = tmp;
+						}
+					}
+#endif			
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
 					}
 
-					if (imp->ianacode < 128) {
-						if (already_did[imp->ianacode]) {
+					if (ianacode < 128) {
+						if (already_did[ianacode]) {
 							continue;
 						}
-						already_did[imp->ianacode] = 1;
+						already_did[ianacode] = 1;
 					}
 
 					if (!rate) {
 						rate = imp->samples_per_second;
 					}
-
-					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame,
+					
+					
+					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
 									imp->samples_per_second);
-					if (imp->fmtp) {
-						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
+					
+					if (!zstr(ov_fmtp)) {
+						fmtp = (char *) ov_fmtp;
 					} else {
-						if (pass_fmtp) {
-							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, pass_fmtp);
+					
+						if (map) {
+							fmtp = switch_event_get_header(map, imp->iananame);
 						}
+						
+						if (zstr(fmtp)) fmtp = imp->fmtp;
+
+						if (zstr(fmtp)) fmtp = (char *) pass_fmtp;
+					}
+					
+					if (!zstr(fmtp) && strcasecmp(fmtp, "_blank_")) {
+						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, fmtp);
 					}
 				}
+				
 			}
 		}
 	}
 
+
+	if (map) {
+		switch_event_destroy(&map);
+	}
+	
+	if (ptmap) {
+		switch_event_destroy(&ptmap);
+	}
+	
 	sofia_glue_tech_set_local_sdp(tech_pvt, buf, SWITCH_TRUE);
 }
 
@@ -2514,9 +2576,10 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_assert(tech_pvt->read_codec.implementation);
-
+		
 		if (switch_rtp_change_interval(tech_pvt->rtp_session,
-									   tech_pvt->read_impl.microseconds_per_packet, tech_pvt->read_impl.samples_per_packet) != SWITCH_STATUS_SUCCESS) {
+									   tech_pvt->read_impl.microseconds_per_packet, 
+									   tech_pvt->read_impl.samples_per_packet) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
@@ -2776,6 +2839,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
 						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
+
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+		}
 	}
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->local_sdp_audio_port);
@@ -2827,6 +2894,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
 						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
+
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+		}
 
 	} else {
 		timer_name = tech_pvt->profile->timer_name;
@@ -3018,13 +3089,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		sofia_glue_check_video_codecs(tech_pvt);
 		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding && tech_pvt->remote_sdp_video_port) {
-
+			
 			/******************************************************************************************/
 			if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 				//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 				//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 				char *remote_host = switch_rtp_get_remote_host(tech_pvt->video_rtp_session);
 				switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->video_rtp_session);
+				
 
 				if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_video_ip) && remote_port == tech_pvt->remote_sdp_video_port) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Video params are unchanged for %s.\n",
@@ -3042,8 +3114,12 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 								  "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n", switch_channel_get_name(tech_pvt->channel),
 								  tech_pvt->local_sdp_audio_ip, tech_pvt->local_sdp_video_port, tech_pvt->remote_sdp_video_ip,
 								  tech_pvt->remote_sdp_video_port, tech_pvt->video_agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
-			}
 
+				if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+					switch_rtp_set_default_payload(tech_pvt->video_rtp_session, tech_pvt->video_agreed_pt);
+				}
+			}
+			
 			switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->local_sdp_video_port);
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
@@ -3070,6 +3146,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}
+
 				}
 				goto video_up;
 			}
@@ -3095,6 +3172,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 								  tech_pvt->remote_sdp_video_ip,
 								  tech_pvt->remote_sdp_video_port, tech_pvt->video_agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
 
+				if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+					switch_rtp_set_default_payload(tech_pvt->video_rtp_session, tech_pvt->video_agreed_pt);
+				}
 			} else {
 				timer_name = tech_pvt->profile->timer_name;
 
@@ -3144,6 +3224,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 							  tech_pvt->remote_sdp_video_ip,
 							  tech_pvt->remote_sdp_video_port, tech_pvt->video_agreed_pt,
 							  0, switch_rtp_ready(tech_pvt->video_rtp_session) ? "SUCCESS" : err);
+
+
+			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				switch_rtp_set_default_payload(tech_pvt->video_rtp_session, tech_pvt->video_agreed_pt);
+			}
 
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
 				const char *ssrc;
@@ -3572,6 +3657,115 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 	switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 
 	return t38_options;
+}
+
+
+switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt)
+{
+	sdp_media_t *m;
+	sdp_parser_t *parser = NULL;
+	sdp_session_t *sdp;
+
+	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(sdp = sdp_session(parser))) {
+		sdp_parser_free(parser);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_event_create(&(*fmtp), SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_create(&(*pt), SWITCH_EVENT_REQUEST_PARAMS);
+
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		if (m->m_proto == sdp_proto_rtp) {
+			sdp_rtpmap_t *map;
+			
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				if (map->rm_encoding) {
+					char buf[25] = "";
+					switch_snprintf(buf, sizeof(buf), "%d", map->rm_pt);
+					switch_event_add_header_string(*pt, SWITCH_STACK_BOTTOM, map->rm_encoding, buf);
+					
+					if (map->rm_fmtp) {
+						switch_event_add_header_string(*fmtp, SWITCH_STACK_BOTTOM, map->rm_encoding, map->rm_fmtp);
+					}
+				}
+			}
+		}
+	}
+	
+	sdp_parser_free(parser);
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
+
+void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
+{
+	sdp_media_t *m;
+	sdp_parser_t *parser = NULL;
+	sdp_session_t *sdp;
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	sdp_attribute_t *attr;
+	int ptime = 0, dptime = 0, dmaxptime = 0, maxptime = 0;
+
+	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+		return;
+	}
+
+	if (!(sdp = sdp_session(parser))) {
+		sdp_parser_free(parser);
+		return;
+	}
+
+	switch_assert(tech_pvt != NULL);
+
+
+	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+		if (zstr(attr->a_name)) {
+			continue;
+		}
+
+		if (!strcasecmp(attr->a_name, "ptime")) {
+			dptime = atoi(attr->a_value);
+		} else if (!strcasecmp(attr->a_name, "maxptime")) {
+			dmaxptime = atoi(attr->a_value);
+		}
+	}
+
+
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+
+		ptime = dptime;
+		maxptime = dmaxptime;
+
+		if (m->m_proto == sdp_proto_rtp) {
+			sdp_rtpmap_t *map;
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+					ptime = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
+					maxptime = atoi(attr->a_value);		
+				}
+			}
+
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, map->rm_encoding);
+				tech_pvt->rm_rate = map->rm_rate;
+				tech_pvt->codec_ms = ptime;
+				sofia_glue_tech_set_codec(tech_pvt, 0);
+				break;
+			}
+
+			break;
+		}
+	}
+
+	sdp_parser_free(parser);
+
 }
 
 switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *session, const char *r_sdp)
@@ -5583,6 +5777,23 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		switch_core_session_rwunlock(other_session);
 	}
 }
+
+
+void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl)
+{
+	switch_core_session_message_t *msg;
+	msg = switch_core_session_alloc(session, sizeof(*msg));
+	MESSAGE_STAMP_FFL(msg);
+	msg->message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+	if (pl) {
+		msg->string_arg = switch_core_session_strdup(session, pl);
+	}
+	msg->from = __FILE__;
+
+	switch_core_session_queue_message(session, msg);
+}
+
+
 
 
 

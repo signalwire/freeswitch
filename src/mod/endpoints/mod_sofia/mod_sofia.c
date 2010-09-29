@@ -1482,12 +1482,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
-			const char *pl =
-				"<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
-				" <media_control>\r\n"
-				"  <vc_primitive>\r\n"
-				"   <to_encoder>\r\n"
-				"    <picture_fast_update>\r\n" "    </picture_fast_update>\r\n" "   </to_encoder>\r\n" "  </vc_primitive>\r\n" " </media_control>\r\n";
+			const char *pl = "<media_control><vc_primitive><to_encoder><picture_fast_update/></to_encoder></vc_primitive></media_control>";
+
+			if (!zstr(msg->string_arg)) {
+				pl = msg->string_arg;
+			}
 
 			nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 
@@ -2104,6 +2103,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		status = sofia_answer_channel(session);
+		if (switch_channel_test_flag(tech_pvt->channel, CF_VIDEO)) {
+			sofia_glue_build_vid_refresh_message(session, NULL);
+		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{

@@ -239,6 +239,7 @@ struct switch_rtp {
 #endif
 
 	switch_time_t send_time;
+	switch_byte_t auto_adj_used;
 };
 
 struct switch_rtcp_senderinfo {
@@ -1623,6 +1624,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate, switch_port_t remote_port)
 {
 	const char *err = NULL;
+
+	if (!rtp_session->ms_per_packet) {
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP);
 
@@ -2531,13 +2536,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						switch_channel_set_variable(channel, "remote_media_port", adj_port);
 						switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
 					}
-
+					rtp_session->auto_adj_used = 1;
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), 0, SWITCH_FALSE, &err);
 					switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Correct ip/port confirmed.\n");
 				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				rtp_session->auto_adj_used = 0;
 			}
 		}
 
@@ -2875,6 +2881,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	READ_DEC(rtp_session);
 
 	return ret;
+}
+
+
+SWITCH_DECLARE(switch_byte_t) switch_rtp_check_auto_adj(switch_rtp_t *rtp_session)
+{
+	return rtp_session->auto_adj_used;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session)
