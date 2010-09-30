@@ -692,7 +692,7 @@ typedef gid_t                     switch_gid_t;
 	 typedef ino_t switch_ino_t;
 	 typedef dev_t switch_dev_t;
 #endif
-	 typedef off_t switch_off_t;
+	 typedef off64_t switch_off_t;
 
 /**
  * Structure for referencing file information
