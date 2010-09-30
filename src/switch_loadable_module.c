@@ -183,8 +183,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Adding Codec '%s' (%s) %dhz %dms %dbps\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000, impl->bits_per_second);
+										  "Adding Codec %s %d %s %dhz %dms %dbps\n",
+										  impl->iananame, impl->ianacode,
+										  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000, impl->bits_per_second);
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -515,8 +516,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Deleting Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+										  "Deleting Codec %s %d %s %dhz %dms\n",
+										  impl->iananame, impl->ianacode,
+										  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
 						switch_core_session_hupall_matching_var("read_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
 						switch_core_session_hupall_matching_var("write_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
 						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {

@@ -4148,8 +4148,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				uint32_t near_rate = 0;
-				uint32_t near_bit_rate = 0;
-				switch_codec_interface_t *codec_interface;
 				const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 				const char *rm_encoding;
 				uint32_t map_bit_rate = 0;
@@ -4197,22 +4195,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					ptime = switch_default_ptime(rm_encoding, map->rm_pt);
 				}
 
-				/* This will try to use codec specific fmtp parser */
-				if (map->rm_fmtp && (codec_interface = switch_loadable_module_get_codec_interface(rm_encoding)) != 0) {
-					switch_codec_fmtp_t codec_fmtp;
-					memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
-					codec_fmtp.actual_samples_per_second = map->rm_rate;
-					if (codec_interface->parse_fmtp && codec_interface->parse_fmtp(map->rm_fmtp, &codec_fmtp) == SWITCH_STATUS_SUCCESS) {
-						if (codec_fmtp.bits_per_second) {
-							map_bit_rate = codec_fmtp.bits_per_second;
-						}
-						if (codec_fmtp.microseconds_per_packet) {
-							ptime = (codec_fmtp.microseconds_per_packet / 1000);
-						}
-					}
-					UNPROTECT_INTERFACE(codec_interface);
-				}
-
+				map_bit_rate = switch_known_bitrate(map->rm_pt);
 
 				if (!codec_ms) {
 					codec_ms = ptime;
@@ -4235,19 +4218,19 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
+					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate) {
+						/* nevermind */
+						match = 0;
+					}
+					
 					if (match) {
 						if (scrooge) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
 						} else {
-							if ((codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate || (map_bit_rate && map_bit_rate != bit_rate) ) {
+							if ((codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
-								if (map_bit_rate) {
-									near_bit_rate = map_bit_rate;
-								} else {
-									near_bit_rate = bit_rate;
-								}
 								near_match = imp;
 								match = 0;
 								continue;
@@ -4260,7 +4243,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 
-				if (!match && near_match && !map->rm_next) {
+				if (!match && near_match) {
 					const switch_codec_implementation_t *search[1];
 					char *prefs[1];
 					char tmp[80];

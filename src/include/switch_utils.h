@@ -177,6 +177,23 @@ static inline switch_bool_t switch_is_digit_string(const char *s)
 	return SWITCH_TRUE;
 }
 
+
+static inline uint32_t switch_known_bitrate(switch_payload_t payload)
+{
+	switch(payload) {
+	case 0: /* PCMU */ return 64000;
+	case 3: /* GSM */ return 13200;
+	case 4: /* G723 */ return 6300;
+	case 7: /* LPC */ return 2400;
+	case 8: /* PCMA */ return 64000;
+	case 9: /* G722 */ return 64000;
+	case 18: /* G729 */ return 8000;
+	default: break;
+	}
+
+	return 0;
+}
+
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len);
 
 
