@@ -872,32 +872,30 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))
-		&& !zstr(tech_pvt->profile->extrtpip)) {
-		use_ip = tech_pvt->profile->extrtpip;
-	}
+	/* Check if NAT is detected  */
+	if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+		/* Yes, map the port through switch_nat */
+		switch_nat_add_mapping(tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
+		switch_nat_add_mapping(tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP, &rtcp_port, SWITCH_FALSE);
 
-	if (use_ip) {
-		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port,
-										  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
-			return SWITCH_STATUS_FALSE;
-		} else {
-			if (lookup_rtpip == use_ip) {
-				/* sofia_glue_ext_address_lookup didn't return any error, but the return IP is the same as the original one, 
-				   which means no lookup was necessary. Check if NAT is detected  */
-				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-					/* Yes, map the port through switch_nat */
-					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
-					switch_nat_add_mapping(tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP, &rtcp_port, SWITCH_FALSE);
-				} else {
-					/* No NAT detected */
-					use_ip = tech_pvt->rtpip;
-				}
+		/* Find an IP address to use */
+		if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))
+			&& !zstr(tech_pvt->profile->extrtpip)) {
+			use_ip = tech_pvt->profile->extrtpip;
+		}
+
+		if (use_ip) {
+			if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port,
+											  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+				/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
+				return SWITCH_STATUS_FALSE;
 			} else {
 				/* Address properly resolved, use it as external ip */
 				use_ip = lookup_rtpip;
 			}
+		} else {
+			/* No external ip found, use the profile's rtp ip */
+			use_ip = tech_pvt->rtpip;
 		}
 	} else {
 		/* No NAT traversal required, use the profile's rtp ip */
@@ -941,31 +939,29 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 
 	sdp_port = tech_pvt->local_sdp_video_port;
 
-	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_video_ip"))
-		&& !zstr(tech_pvt->profile->extrtpip)) {
-		use_ip = tech_pvt->profile->extrtpip;
-	}
+	/* Check if NAT is detected  */
+	if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
+		/* Yes, map the port through switch_nat */
+		switch_nat_add_mapping(tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
 
-	if (use_ip) {
-		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port,
-										  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
-			return SWITCH_STATUS_FALSE;
-		} else {
-			if (lookup_rtpip == use_ip) {
-				/* sofia_glue_ext_address_lookup didn't return any error, but the return IP is the same as the original one, 
-				   which means no lookup was necessary. Check if NAT is detected  */
-				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-					/* Yes, map the port through switch_nat */
-					switch_nat_add_mapping(tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
-				} else {
-					/* No NAT detected */
-					use_ip = tech_pvt->rtpip;
-				}
+		/* Find an IP address to use */
+		if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_video_ip"))
+			&& !zstr(tech_pvt->profile->extrtpip)) {
+			use_ip = tech_pvt->profile->extrtpip;
+		}
+
+		if (use_ip) {
+			if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port,
+											  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+				/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
+				return SWITCH_STATUS_FALSE;
 			} else {
 				/* Address properly resolved, use it as external ip */
 				use_ip = lookup_rtpip;
 			}
+		} else {
+			/* No external ip found, use the profile's rtp ip */
+			use_ip = tech_pvt->rtpip;
 		}
 	} else {
 		/* No NAT traversal required, use the profile's rtp ip */
