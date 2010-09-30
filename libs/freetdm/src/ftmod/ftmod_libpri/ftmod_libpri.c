@@ -1087,9 +1087,16 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 						got_d = 1;
 						x++;
 						break;
+					} else {
+					    ftdm_log(FTDM_LOG_ERROR, "failed to open d-channel #%d %d:%d\n", x, span->channels[i]->span_id, span->channels[i]->chan_id);
 					}
 				}
 			}
+		}
+
+		if (!got_d) {
+			ftdm_log(FTDM_LOG_ERROR, "Failed to get a D-channel in span %d\n", span->span_id);
+			break;
 		}
 		
 		
@@ -1149,7 +1156,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		ftdm_sleep(5000);
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", isdn_data->spri.span->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", span->span_id);
 
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 	ftdm_clear_flag(isdn_data, FTMOD_LIBPRI_RUNNING);

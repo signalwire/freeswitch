@@ -1793,7 +1793,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	ftdm_channel_t *best_rated = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 	int best_rate = 0;
-	int may_be_available = 0;
 
 	*ftdmchan = NULL;
 
@@ -1828,40 +1827,55 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 
 	ftdm_mutex_lock(check->mutex);
 
+	/* The following if's and gotos replace a big if (this || this || this || this) else { nothing; } */
+
+	/* if it is not a voice channel, nothing else to check to open it */
+	if (!FTDM_IS_VOICE_CHANNEL(check)) {
+		goto openchan;
+	}
+
+	/* if it's an FXS device with a call active and has callwaiting enabled, we allow to open it twice */
+	if (check->type == FTDM_CHAN_TYPE_FXS 
+	    && check->token_count == 1 
+	    && ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING)) {
+		goto openchan;
+	}
+
+	/* if channel is available, time to open it */
+	if (chan_is_avail(check)) {
+		goto openchan;
+	}
+
+	/* not available, but still might be available ... */
 	calculate_best_rate(check, &best_rated, &best_rate);
 	if (best_rated) {
-		may_be_available = 1;
+		goto openchan;
 	}
 
-	/* the channel is only allowed to be open if not in use, or, for FXS devices with a call with call waiting enabled */
-	if (
-	    (check->type == FTDM_CHAN_TYPE_FXS 
-	    && check->token_count == 1 
-	    && ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING))
-	    ||
-	    chan_is_avail(check)
-	    ||
-	    (check->type == FTDM_CHAN_TYPE_DQ921 && ftdm_test_flag(check, FTDM_CHANNEL_CONFIGURED) && ftdm_test_flag(check, FTDM_CHANNEL_READY))
-	    ||
-	    may_be_available) {
-		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
-			status = check->fio->open(check);
-			if (status == FTDM_SUCCESS) {
-				ftdm_set_flag(check, FTDM_CHANNEL_OPEN);
-			}
-		} else {
-			status = FTDM_SUCCESS;
+	/* channel is unavailable, do not open the channel */
+	goto unlockchan;
+
+openchan:
+	if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
+		status = check->fio->open(check);
+		if (status == FTDM_SUCCESS) {
+			ftdm_set_flag(check, FTDM_CHANNEL_OPEN);
 		}
-		ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
-		ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
-		*ftdmchan = check;
+	} else {
+		status = FTDM_SUCCESS;
 	}
+	ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
+	ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
+	*ftdmchan = check;
 
+unlockchan:
 	ftdm_mutex_unlock(check->mutex);
 
 done:
-
 	ftdm_mutex_unlock(globals.mutex);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to open channel %d:%d\n", span_id, chan_id);
+	}
 
 	return status;
 }
