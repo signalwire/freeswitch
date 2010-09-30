@@ -421,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_stat(switch_finfo_t *finfo, const ch
 	apr_status_t status;
 	apr_finfo_t aprinfo;
 	if (sizeof(*finfo) != sizeof(aprinfo)) {
-		fprintf(stderr, "Error:structure file mismatch switch_finfo_t:%u apr_finfo_t:%u\n", sizeof(*finfo), sizeof(aprinfo));
+		fprintf(stderr, "Error:structure file mismatch switch_finfo_t:%zd apr_finfo_t:%zd\n", sizeof(*finfo), sizeof(aprinfo));
 		return SWITCH_STATUS_MEMERR;
 	}
 	status = apr_stat(&aprinfo, fname, wanted, pool);
