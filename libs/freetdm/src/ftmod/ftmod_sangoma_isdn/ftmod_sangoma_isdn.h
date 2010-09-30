@@ -55,6 +55,7 @@
 #define NUM_BRI_CHANNELS_PER_SPAN	2
 #define SNGISDN_EVENT_QUEUE_SIZE	100
 #define SNGISDN_EVENT_POLL_RATE		100
+#define SNGISDN_NUM_LOCAL_NUMBERS	8
 
 /* TODO: rename all *_cc_* to *_an_*  */
 
@@ -161,7 +162,7 @@ typedef struct sngisdn_chan_data {
 
 /* Span specific data */
 typedef struct sngisdn_span_data {
-	ftdm_span_t	*ftdm_span;
+	ftdm_span_t		*ftdm_span;
 	uint8_t			link_id;
 	uint8_t 		switchtype;
 	uint8_t			signalling;			/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
@@ -175,7 +176,9 @@ typedef struct sngisdn_span_data {
 	uint8_t			setup_arb;
 	uint8_t			facility;
 	int8_t			facility_timeout;
-	ftdm_sched_t	*sched;
+	uint8_t			num_local_numbers;
+	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
+	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
 } sngisdn_span_data_t;
 
