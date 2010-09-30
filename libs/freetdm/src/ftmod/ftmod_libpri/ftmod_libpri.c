@@ -1133,7 +1133,9 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		}
 
 		ftdm_log(FTDM_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span->span_id);
-		isdn_data->spri.dchan->state = FTDM_CHANNEL_STATE_DOWN;
+		if (isdn_data->spri.dchan) {
+			isdn_data->spri.dchan->state = FTDM_CHANNEL_STATE_DOWN;
+		}
 
 		if (!down) {
 			ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);

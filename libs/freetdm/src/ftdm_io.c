@@ -1841,6 +1841,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	    ||
 	    chan_is_avail(check)
 	    ||
+	    (check->type == FTDM_CHAN_TYPE_DQ921 && ftdm_test_flag(check, FTDM_CHANNEL_CONFIGURED) && ftdm_test_flag(check, FTDM_CHANNEL_READY))
+	    ||
 	    may_be_available) {
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
 			status = check->fio->open(check);
