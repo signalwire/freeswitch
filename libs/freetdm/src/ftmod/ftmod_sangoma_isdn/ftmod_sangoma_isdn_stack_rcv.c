@@ -706,7 +706,7 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 			ftdm_span_t *ftdmspan;
 			sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[status->t.usta.suId];
 			if (!signal_data) {
-				ftdm_log(FTDM_LOG_INFO, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
+				ftdm_log(FTDM_LOG_INFO, "Received q931 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
 				return;
 			}
 			ftdmspan = signal_data->ftdm_span;

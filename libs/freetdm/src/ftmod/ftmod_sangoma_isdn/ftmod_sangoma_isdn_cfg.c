@@ -36,8 +36,22 @@
 
 ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span);
 ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span);
+ftdm_status_t add_local_number(const char* val, ftdm_span_t *span);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
+
+ftdm_status_t add_local_number(const char* val, ftdm_span_t *span)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+
+	if (signal_data->num_local_numbers >= SNGISDN_NUM_LOCAL_NUMBERS) {
+		ftdm_log(FTDM_LOG_ERROR, "%s: Maximum number of local-numbers exceeded (max:%d)\n", span->name, SNGISDN_NUM_LOCAL_NUMBERS);
+		return FTDM_FAIL;
+	}
+	
+	signal_data->local_numbers[signal_data->num_local_numbers++] = ftdm_strdup(val);
+	return FTDM_SUCCESS;
+}
 
 ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 {
@@ -253,6 +267,10 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			ftdm_span_set_bearer_capability(val, &span->default_caller_data.bearer_capability);
 		} else if (!strcasecmp(var, "outbound-bearer_layer1")) {
 			ftdm_span_set_bearer_layer1(val, &span->default_caller_data.bearer_layer1);
+		} else if (!strcasecmp(var, "local-number")) {			
+			if (add_local_number(val, span) != FTDM_SUCCESS) {
+				return FTDM_FAIL;
+			}
 		} else if (!strcasecmp(var, "facility-timeout")) {
 			signal_data->facility_timeout = atoi(val);
 			if (signal_data->facility_timeout < 0) {
