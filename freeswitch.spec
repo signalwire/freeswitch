@@ -727,7 +727,7 @@ fi
 %{prefix}/mod/mod_amrwb.so*
 %{prefix}/mod/mod_avmd.so*
 %{prefix}/mod/mod_bv.so*
-%{prefix}/mod/mod_callcenter*
+%{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_cdr_csv.so*
 %{prefix}/mod/mod_celt.so*
 %{prefix}/mod/mod_cluechoo.so*
@@ -762,6 +762,7 @@ fi
 %{prefix}/mod/mod_loopback.so*
 %{prefix}/mod/mod_memcache.so*
 %{prefix}/mod/mod_native_file.so*
+%{prefix}/mod/mod_nibblebill.so*
 %{prefix}/mod/mod_pocketsphinx.so*
 %{prefix}/mod/mod_portaudio.so*
 %{prefix}/mod/mod_portaudio_stream.so*
@@ -925,6 +926,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Thu Sep 30 2010 - michal.bielicki@seventhsignal.de
+- added mod_nibblebill to standard modules
 * Sun Sep 26 2010 - michal.bielicki@seventhsignal.de
 - added portaudio_stream module
 - some more formating work
