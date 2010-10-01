@@ -7025,6 +7025,7 @@ SWIGINTERN PyObject *_wrap_CoreSession_read(PyObject *SWIGUNUSEDPARM(self), PyOb
   char *arg4 = (char *) 0 ;
   int arg5 ;
   char *arg6 = (char *) 0 ;
+  int arg7 = (int) 0 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -7040,14 +7041,17 @@ SWIGINTERN PyObject *_wrap_CoreSession_read(PyObject *SWIGUNUSEDPARM(self), PyOb
   int res6 ;
   char *buf6 = 0 ;
   int alloc6 = 0 ;
+  int val7 ;
+  int ecode7 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
   PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOO:CoreSession_read",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOO|O:CoreSession_read",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_read" "', argument " "1"" of type '" "CoreSession *""'"); 
@@ -7078,7 +7082,14 @@ SWIGINTERN PyObject *_wrap_CoreSession_read(PyObject *SWIGUNUSEDPARM(self), PyOb
     SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "CoreSession_read" "', argument " "6"" of type '" "char const *""'");
   }
   arg6 = reinterpret_cast< char * >(buf6);
-  result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6);
+  if (obj6) {
+    ecode7 = SWIG_AsVal_int(obj6, &val7);
+    if (!SWIG_IsOK(ecode7)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "CoreSession_read" "', argument " "7"" of type '" "int""'");
+    } 
+    arg7 = static_cast< int >(val7);
+  }
+  result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6,arg7);
   resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
@@ -7102,6 +7113,7 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
   char *arg10 = (char *) NULL ;
+  int arg11 = (int) 0 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -7128,6 +7140,8 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   int res10 ;
   char *buf10 = 0 ;
   int alloc10 = 0 ;
+  int val11 ;
+  int ecode11 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -7138,8 +7152,9 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   PyObject * obj7 = 0 ;
   PyObject * obj8 = 0 ;
   PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOO|O:CoreSession_playAndGetDigits",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOO|OO:CoreSession_playAndGetDigits",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_playAndGetDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
@@ -7192,7 +7207,14 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
     }
     arg10 = reinterpret_cast< char * >(buf10);
   }
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10);
+  if (obj10) {
+    ecode11 = SWIG_AsVal_int(obj10, &val11);
+    if (!SWIG_IsOK(ecode11)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "CoreSession_playAndGetDigits" "', argument " "11"" of type '" "int""'");
+    } 
+    arg11 = static_cast< int >(val11);
+  }
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11);
   resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
