@@ -700,7 +700,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
 								  "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 								  "sip_subscriptions.accept,sip_subscriptions.profile_name"
-								  ",'%q','%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'%q','%q' "
+								  ",'%q','%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'%q','%q',sip_subscriptions.version "
 								  "from sip_subscriptions "
 								  "left join sip_presence on "
 								  "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
@@ -742,6 +742,15 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_presence_sub_callback, &helper);
+
+
+			sql = switch_mprintf("update sip_subscriptions set version=version+1 where event='dialog' and sub_to_user='%q' "
+								 "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
+								 "and (profile_name = '%q' or presence_hosts != sub_to_host)",
+								 euser, host, host, profile->name);
+
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+
 
 			if (mod_sofia_globals.debug_presence > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_SQL (%s)\n",
@@ -1193,7 +1202,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	int kill_handle = 0;
 	char expires_str[10] = "";
 	char status_line[256] = "";
-
+	char *version = "0";
+	
 	//int i;
 	
 	//for(i = 0; i < argc; i++) {
@@ -1213,6 +1223,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	if (argc > 20) {
 		dialog_status = argv[20];
 		dialog_rpid = argv[21];
+		version = argv[22];
 	}
 
 	in = helper->event && helper->event->event_id == SWITCH_EVENT_PRESENCE_IN;
@@ -1317,8 +1328,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		}
 
 		if (is_dialog) {
-			char *version = switch_event_get_header(helper->event, "event_count");
-			if (!version) {
+			if (zstr(version)) {
 				version = "0";
 			}
 
