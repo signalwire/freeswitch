@@ -43,7 +43,7 @@
 	<macro name="directory_result_count">
 		<input pattern="^0$" break_on_match="true">
 			<match>
-				<action function="play-file" data="directory/dir-no_match_entry.wav"/>
+				<action function="play-file" data="directory/dir-no_matching_results.wav"/>
 			</match>
 		</input>
 		<input pattern="^(.*)$">
