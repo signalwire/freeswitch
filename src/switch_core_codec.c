@@ -450,6 +450,28 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(switc
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_name, const char *fmtp, uint32_t rate, switch_codec_fmtp_t *codec_fmtp)
+{
+	switch_codec_interface_t *codec_interface;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (zstr(codec_name) || zstr(fmtp) || !codec_fmtp) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	memset(codec_fmtp, 0, sizeof(*codec_fmtp));
+	
+	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name))) {
+		if (codec_interface->parse_fmtp) {
+			codec_fmtp->actual_samples_per_second = rate;
+			status = codec_interface->parse_fmtp(fmtp, codec_fmtp);
+		}
+
+		UNPROTECT_INTERFACE(codec_interface);
+	}
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec)
 {

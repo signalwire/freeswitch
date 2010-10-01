@@ -4152,6 +4152,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				const char *rm_encoding;
 				uint32_t map_bit_rate = 0;
 				int codec_ms = 0;
+				switch_codec_fmtp_t codec_fmtp = { 0 };
 
 				if (x++ < skip) {
 					continue;
@@ -4197,9 +4198,18 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 				map_bit_rate = switch_known_bitrate(map->rm_pt);
 
-				if (!codec_ms) {
-					codec_ms = ptime;
+				if (!zstr(map->rm_fmtp)) {
+					if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
+						if (codec_fmtp.bits_per_second) {
+							map_bit_rate = codec_fmtp.bits_per_second;
+						}
+						if (codec_fmtp.microseconds_per_packet) {
+							ptime = (codec_fmtp.microseconds_per_packet / 1000);
+						}
+					}
 				}
+				
+				codec_ms = ptime;
 
 				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
