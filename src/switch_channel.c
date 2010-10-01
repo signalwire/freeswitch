@@ -847,29 +847,109 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel, const char *varname, const char *value, switch_bool_t var_check)
-{
-	const char *exports;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
-		
-	if ((status = switch_channel_set_variable_var_check(channel, varname, value, var_check)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, switch_channel_t *peer_channel, 
+												   switch_event_t *var_event, const char *export_varname)
+{
+
+	const char *export_vars = switch_channel_get_variable(channel, export_varname);
+	char *cptmp = switch_core_session_strdup(channel->session, export_vars);
+	int argc;
+	char *argv[256];
+
+	if (zstr(export_vars)) return;
+
+
+	if (var_event) {
+		switch_event_del_header(var_event, export_varname);
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, export_varname, export_vars);
+	}
+	
+	if (peer_channel) {
+		switch_channel_set_variable(peer_channel, export_varname, export_vars);
 	}
 
-	if (varname && value) {
-		if (exports) {
-			switch_channel_set_variable_printf(channel, SWITCH_EXPORT_VARS_VARIABLE, "%s,%s", exports, varname);
-		} else {
-			switch_channel_set_variable(channel, SWITCH_EXPORT_VARS_VARIABLE, varname);
+	if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		int x;
+		
+		for (x = 0; x < argc; x++) {
+			const char *vval;
+			if ((vval = switch_channel_get_variable(channel, argv[x]))) {
+				char *vvar = argv[x];
+				if (!strncasecmp(vvar, "nolocal:", 8)) {
+					vvar += 8;
+				}
+				if (var_event) {
+					switch_event_del_header(var_event, vvar);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_DEBUG, 
+									  "%s EXPORTING[%s] [%s]=[%s] to event\n", 
+									  switch_channel_get_name(channel), 
+									  export_varname,
+									  vvar, vval);
+				}
+				if (peer_channel) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_DEBUG, 
+									  "%s EXPORTING[%s] [%s]=[%s] to %s\n", 
+									  switch_channel_get_name(channel), 
+									  export_varname,
+									  vvar, vval, switch_channel_get_name(peer_channel));
+					switch_channel_set_variable(peer_channel, vvar, vval);
+				}
+			}
 		}
 	}
 
-	return status;
+
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_channel_t *channel, 
+																		 const char *varname, const char *val, 
+																		 const char *export_varname, switch_bool_t var_check)
+{
+	char *var_name = NULL;
+	const char *exports;
+	char *var, *new_exports, *new_exports_d = NULL;
+	int local = 1;
+
+	exports = switch_channel_get_variable(channel, export_varname);
+
+	var = switch_core_session_strdup(channel->session, varname);
+
+	if (var) {
+		if (!strncasecmp(var, "nolocal:", 8)) {
+			var_name = var + 8;
+			local = 0;
+		} else {
+			var_name = var;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_DEBUG, "EXPORT (%s) %s[%s]=[%s]\n", 
+					  export_varname, local ? "" : "(REMOTE ONLY) ",
+					  var_name ? var_name : "", val ? val : "UNDEF");
+
+	
+	switch_channel_set_variable_var_check(channel, var, val, var_check);
+
+	if (var && val) {
+		if (exports) {
+			new_exports_d = switch_mprintf("%s,%s", exports, var);
+			new_exports = new_exports_d;
+		} else {
+			new_exports = var;
+		}
+
+		switch_channel_set_variable(channel, export_varname, new_exports);
+
+		switch_safe_free(new_exports_d);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, 
+																	  const char *export_varname, const char *fmt, ...)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *data = NULL;
@@ -886,7 +966,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	status = switch_channel_export_variable(channel, varname, data);
+	status = switch_channel_export_variable(channel, varname, export_varname, data);
 	
 	free(data);
 	
@@ -902,6 +982,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
+
 		switch_event_del_header(channel->variables, varname);
 		if (!zstr(value)) {
 			int ok = 1;
@@ -3016,7 +3097,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 		new_len = (strlen(prof[x]) * 3) + 1;
 		if (encode_len < new_len) {
 			char *tmp;
-
+			
 			encode_len = new_len;
 
 			if (!(tmp = realloc(encode_buf, encode_len))) {

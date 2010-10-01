@@ -1328,7 +1328,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	int var_block_count = 0;
 	char *e = NULL;
 	switch_event_t *var_event = NULL;
-	const char *export_vars = NULL;
 
 	switch_core_new_memory_pool(&pool);
 
@@ -1395,33 +1394,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ent_originate_aleg_uuid", switch_core_session_get_uuid(session));
-	
-	/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
-	if (channel && (export_vars = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE))) {
-		char *cptmp = switch_core_session_strdup(session, export_vars);
-		int argc;
-		char *argv[256];
 
-		switch_event_del_header(var_event, SWITCH_EXPORT_VARS_VARIABLE);
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, SWITCH_EXPORT_VARS_VARIABLE, export_vars);
-
-		if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			int x;
-
-			for (x = 0; x < argc; x++) {
-				const char *vval;
-				if ((vval = switch_channel_get_variable(channel, argv[x]))) {
-					char *vvar = argv[x];
-					if (!strncasecmp(vvar, "nolocal:", 8)) {
-						vvar += 8;
-					}
-					switch_event_del_header(var_event, vvar);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
-				}
-			}
-		}
+	if (channel) {
+		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 	}
-
+			
 	if (vars) {					/* Parse parameters specified from the dialstring */
 		char *var_array[1024] = { 0 };
 		int var_count = 0;
@@ -1756,7 +1733,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *cancel_key = NULL;
 	const char *holding = NULL;
 	const char *soft_holding = NULL;
-	const char *export_vars = NULL;
 	early_state_t early_state = { 0 };
 	int read_packet = 0;
 	
@@ -1945,27 +1921,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
-	/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
-	if (caller_channel && (export_vars = switch_channel_get_variable(caller_channel, SWITCH_EXPORT_VARS_VARIABLE))) {
-		char *cptmp = switch_core_session_strdup(session, export_vars);
-		int argc;
-		char *argv[256];
-
-		if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			int x;
-
-			for (x = 0; x < argc; x++) {
-				const char *vval;
-				if ((vval = switch_channel_get_variable(caller_channel, argv[x]))) {
-					char *vvar = argv[x];
-					if (!strncasecmp(vvar, "nolocal:", 8)) {
-						vvar += 8;
-					}
-					switch_event_del_header(var_event, vvar);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
-				}
-			}
-		}
+	if (caller_channel) {
+		switch_channel_process_export(caller_channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 	}
 
 	if (vars) {					/* Parse parameters specified from the dialstring */
