@@ -2,13 +2,13 @@
 	<macro name="directory_intro">
 		<input pattern="^(last_name)" break_on_match="false">
 			<match>
-				<action function="play-file" data="directory/dir-enter-person.wav"/>
+				<action function="play-file" data="directory/dir-enter_person.wav"/>
 				<action function="play-file" data="directory/dir-last_name.wav"/>
 			</match>
 		</input>
 		<input pattern="^(first_name)" break_on_match="false">
 			<match>
-                <action function="play-file" data="directory/dir-enter-person.wav"/>
+                <action function="play-file" data="directory/dir-enter_person.wav"/>
                 <action function="play-file" data="directory/dir-first_name.wav"/>
 			</match>
 		</input>
@@ -33,7 +33,7 @@
 	<macro name="directory_min_search_digits">
 		<input pattern="^(.*)$">
 			<match>
-				<action function="play-file" data="directory/dir-specify_mininum_first.wav"/>
+				<action function="play-file" data="directory/dir-specify_mininum.wav"/>
 				<action function="say" data="$1" method="pronounced" type="items"/>
 				<action function="play-file" data="directory/dir-letters_of_person_name.wav"/>
 			</match>
@@ -57,7 +57,7 @@
 	<macro name="directory_result_count_too_large">
 		<input pattern="^(.*)$">
 			<match>
-				<action function="play-file" data="directory/dir-to_many_result.wav"/>
+				<action function="play-file" data="directory/dir-too_many_result.wav"/>
 			</match>
 		</input>
 
@@ -66,7 +66,7 @@
 	<macro name="directory_result_last">
 		<input pattern="^(.*)$">
 			<match>
-				<action function="play-file" data="directory/dir-no_more_result.wav"/>
+				<action function="play-file" data="directory/dir-no_more_results.wav"/>
 			</match>
 		</input>
 
@@ -102,7 +102,7 @@
 				<action function="play-file" data="directory/dir-for_prev.wav"/>
 				<action function="play-file" data="directory/dir-press.wav"/>
 				<action function="say" data="$3" method="pronounced" type="name_spelled"/>
-				<action function="play-file" data="directory/dir-to_make_new_search.wav"/>
+				<action function="play-file" data="directory/dir-start_new_search.wav"/>
 				<action function="play-file" data="directory/dir-press.wav"/>
 				<action function="say" data="$4" method="pronounced" type="name_spelled"/>
 
