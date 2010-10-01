@@ -220,6 +220,7 @@ typedef enum {
 	PFLAG_T38_PASSTHRU,
 	PFLAG_CID_IN_1XX,
 	PFLAG_IN_DIALOG_CHAT,
+	PFLAG_DEL_SUBS_ON_REG,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

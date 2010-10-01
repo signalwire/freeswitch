@@ -820,9 +820,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	switch_event_t *auth_params = NULL;
 	int r = 0;
 	long reg_count = 0;
-	int delete_subs = 1;
+	int delete_subs;
 	const char *agent = "unknown";
 		
+	delete_subs = sofia_test_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -841,10 +842,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (sip->sip_user_agent) {
 		agent = sip->sip_user_agent->g_string;
-
-		if (switch_stristr("snom", agent)) {
-			delete_subs = 0;
-		}
 	}
 
 	if (from) {
