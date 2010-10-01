@@ -233,7 +233,17 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			}
 		}
 
-		dest = switch_core_session_sprintf(session, "sleep:1000,valet_park:%s %s", lot_name, ext);
+		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
+			tmp = switch_channel_get_variable(channel, "hold_music");
+		}
+		if (tmp)
+			music = tmp;
+
+		if (!strcasecmp(music, "silence")) {
+			music = "silence_stream://-1";
+		}
+
+		dest = switch_core_session_sprintf(session, "set:valet_hold_music=%s,sleep:1000,valet_park:%s %s", music, lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
 
 		if (is_auto) {
@@ -266,12 +276,6 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 
-		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
-			tmp = switch_channel_get_variable(channel, "hold_music");
-		}
-		if (tmp)
-			music = tmp;
-
 		switch_core_hash_insert(lot->hash, ext, switch_core_session_get_uuid(session));
 
 		args.input_callback = valet_on_dtmf;
@@ -280,9 +284,6 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 		switch_mutex_unlock(lot->mutex);
 
-		if (!strcasecmp(music, "silence")) {
-			music = "silence_stream://-1";
-		}
 		
 		while(switch_channel_ready(channel)) {
 			switch_status_t pstatus = switch_ivr_play_file(session, NULL, music, &args);
