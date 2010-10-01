@@ -73,8 +73,6 @@ int main(int argc, char *argv[])
 	
 	ftdm_global_set_default_logger(FTDM_LOG_LEVEL_DEBUG);
 
-	ftdm_cpu_monitor_disable();
-
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		fprintf(stderr, "Error loading FreeTDM\n");
 		exit(-1);

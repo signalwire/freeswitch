@@ -570,42 +570,23 @@ struct switch_directory_handle {
 	void *private_info;
 };
 
-
 /* nobody has more setting than speex so we will let them set the standard */
 /*! \brief Various codec settings (currently only relevant to speex) */
 struct switch_codec_settings {
-	/*! desired quality */
-	int quality;
-	/*! desired complexity */
-	int complexity;
-	/*! desired enhancement */
-	int enhancement;
-	/*! desired vad level */
-	int vad;
-	/*! desired vbr level */
-	int vbr;
-	/*! desired vbr quality */
-	float vbr_quality;
-	/*! desired abr level */
-	int abr;
-	/*! desired dtx setting */
-	int dtx;
-	/*! desired preprocessor settings */
-	int preproc;
-	/*! preprocessor vad settings */
-	int pp_vad;
-	/*! preprocessor gain control settings */
-	int pp_agc;
-	/*! preprocessor gain level */
-	float pp_agc_level;
-	/*! preprocessor denoise level */
-	int pp_denoise;
-	/*! preprocessor dereverb settings */
-	int pp_dereverb;
-	/*! preprocessor dereverb decay level */
-	float pp_dereverb_decay;
-	/*! preprocessor dereverb level */
-	float pp_dereverb_level;
+	int unused;
+};
+
+/*! an abstract handle of a fmtp parsed by codec */
+struct switch_codec_fmtp {
+	/*! actual samples transferred per second for those who are not moron g722 RFC writers */
+	uint32_t actual_samples_per_second;
+	/*! bits transferred per second */
+	int bits_per_second;
+	/*! number of microseconds of media in one packet (ptime * 1000) */
+	int microseconds_per_packet;
+	/*! private data for the codec module to store handle specific info */
+	void *private_info;
+
 };
 
 /*! an abstract handle to a codec module */
@@ -618,8 +599,6 @@ struct switch_codec {
 	char *fmtp_in;
 	/*! fmtp line for local sdp */
 	char *fmtp_out;
-	/*! codec settings for this handle */
-	switch_codec_settings_t codec_settings;
 	/*! flags to modify behaviour */
 	uint32_t flags;
 	/*! the handle's memory pool */
@@ -678,6 +657,8 @@ struct switch_codec_interface {
 	const char *interface_name;
 	/*! a list of codec implementations related to the codec */
 	switch_codec_implementation_t *implementations;
+	/*! function to decode a codec fmtp parameters */
+	switch_core_codec_fmtp_parse_func_t parse_fmtp;
 	uint32_t codec_id;
 	switch_thread_rwlock_t *rwlock;
 	int refs;

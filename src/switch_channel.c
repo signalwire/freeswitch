@@ -1291,19 +1291,24 @@ SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, 
 SWITCH_DECLARE(void) switch_channel_set_app_flag_key(const char *key, switch_channel_t *channel, uint32_t flags)
 {
 	uint32_t *flagp = NULL;
-	
+	switch_byte_t new = 0;
+
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->flag_mutex);
-	
-	if (channel->app_flag_hash) {
-		flagp = switch_core_hash_find(channel->app_flag_hash, key);
-	} else {
+
+	if (!channel->app_flag_hash) {
 		switch_core_hash_init(&channel->app_flag_hash, switch_core_session_get_pool(channel->session));
+		new++;
+	}
+	
+	if (new || !(flagp = switch_core_hash_find(channel->app_flag_hash, key))) {
 		flagp = switch_core_session_alloc(channel->session, sizeof(uint32_t));
 		switch_core_hash_insert(channel->app_flag_hash, key, flagp);
 	}
 
-	if (flagp) *flagp |= flags;
+	switch_assert(flagp);
+	*flagp |= flags;
+
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
@@ -1829,6 +1834,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	if (impl.iananame) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", impl.iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", impl.actual_samples_per_second);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Bit-Rate", "%d", impl.bits_per_second);
 	}
 
 	switch_core_session_get_write_impl(channel->session, &impl);
@@ -1836,6 +1842,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	if (impl.iananame) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", impl.iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", impl.actual_samples_per_second);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Bit-Rate", "%d", impl.bits_per_second);
 	}
 
 	/* Index Caller's Profile */

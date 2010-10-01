@@ -212,7 +212,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		status = switch_ivr_read(collect->session,
 								 len,
 								 len,
-								 collect->file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL);
+								 collect->file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
 		
 		
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_TOO_SMALL) {
@@ -2595,6 +2595,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								if ((inner_var_count =
 									 switch_separate_string(var_array[x], '=',
 														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+
+									/* this is stupid but necessary: if the value begins with ^^ take the very next char as a delim, 
+									   increment the string to start the next char after that and replace every instance of the delim with a , */
+									
+									if (*inner_var_array[1] == '^' && *(inner_var_array[1] + 1) == '^') {
+										char *iv;
+										char d = 0;
+										inner_var_array[1] += 2;
+										d = *inner_var_array[1]++;
+
+										if (d) {
+											for(iv = inner_var_array[1]; iv && *iv; iv++) {
+												if (*iv == d) *iv = ',';
+											}
+										}
+									}
 									
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "local variable string %d = [%s=%s]\n", 
 													  x, inner_var_array[0], inner_var_array[1]);

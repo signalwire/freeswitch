@@ -50,6 +50,17 @@ static int ftmod_ss7_enable_mtpLinkSet(int lnkSetId);
 
 int ftmod_ss7_inhibit_mtplink(uint32_t id);
 int ftmod_ss7_uninhibit_mtplink(uint32_t id);
+
+int ftmod_ss7_activate_mtplink(uint32_t id);
+int ftmod_ss7_deactivate_mtplink(uint32_t id);
+int ftmod_ss7_deactivate2_mtplink(uint32_t id);
+
+int ftmod_ss7_activate_mtplinkSet(uint32_t id);
+int ftmod_ss7_deactivate_mtplinkSet(uint32_t id);
+int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
+
+int ftmod_ss7_lpo_mtplink(uint32_t id);
+int ftmod_ss7_lpr_mtplink(uint32_t id);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -64,7 +75,7 @@ int ft_to_sngss7_activate_all(void)
 
 			if (ftmod_ss7_enable_isap(x)) {	
 				SS7_CRITICAL("ISAP %d Enable: NOT OK\n", x);
-				SS7_ASSERT;
+				return 1;
 			} else {
 				SS7_INFO("ISAP %d Enable: OK\n", x);
 			}
@@ -83,7 +94,7 @@ int ft_to_sngss7_activate_all(void)
 
 			if (ftmod_ss7_enable_nsap(x)) {	
 				SS7_CRITICAL("NSAP %d Enable: NOT OK\n", x);
-				SS7_ASSERT;
+				return 1;
 			} else {
 				SS7_INFO("NSAP %d Enable: OK\n", x);
 			}
@@ -102,7 +113,7 @@ int ft_to_sngss7_activate_all(void)
 
 			if (ftmod_ss7_enable_mtpLinkSet(x)) {	
 				SS7_CRITICAL("LinkSet \"%s\" Enable: NOT OK\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
-				SS7_ASSERT;
+				return 1;
 			} else {
 				SS7_INFO("LinkSet \"%s\" Enable: OK\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
 			}
@@ -270,6 +281,248 @@ int ftmod_ss7_uninhibit_mtplink(uint32_t id)
 
 	return (sng_cntrl_mtp3(&pst, &cntrl));
 }
+
+/******************************************************************************/
+int ftmod_ss7_activate_mtplink(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STDLSAP;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLink[id].id;
+
+	cntrl.t.cntrl.action		= AENA;		/* Activate */
+	cntrl.t.cntrl.subAction		= SAELMNT;	/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_deactivate_mtplink(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STDLSAP;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLink[id].id;
+
+	cntrl.t.cntrl.action		= ADISIMM;	/* Deactivate */
+	cntrl.t.cntrl.subAction		= SAELMNT;	/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_deactivate2_mtplink(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STDLSAP;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLink[id].id;
+
+	cntrl.t.cntrl.action		= ADISIMM_L2;	/* Deactivate...layer 2 only */
+	cntrl.t.cntrl.subAction		= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_activate_mtplinkSet(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STLNKSET;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].id;
+
+	cntrl.t.cntrl.action		= AACTLNKSET;	/* Activate */
+	cntrl.t.cntrl.subAction		= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_deactivate_mtplinkSet(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STLNKSET;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].id;
+
+	cntrl.t.cntrl.action		= ADEACTLNKSET;	/* Activate */
+	cntrl.t.cntrl.subAction		= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STLNKSET;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].id;
+
+	cntrl.t.cntrl.action		= ADEACTLNKSET_L2;	/* Activate */
+	cntrl.t.cntrl.subAction		= SAELMNT;			/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_lpo_mtplink(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STDLSAP;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLink[id].id;
+
+	cntrl.t.cntrl.action		= ACTION_LPO;	/* Activate */
+	cntrl.t.cntrl.subAction		= SAELMNT;			/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_lpr_mtplink(uint32_t id)
+{
+	SnMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SnMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTSN;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STDLSAP;
+	cntrl.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLink[id].id;
+
+	cntrl.t.cntrl.action		= ACTION_LPR;	/* Activate */
+	cntrl.t.cntrl.subAction		= SAELMNT;			/* specificed element */
+
+	return (sng_cntrl_mtp3(&pst, &cntrl));
+}
+
+/******************************************************************************/
 
 /******************************************************************************/
 /* For Emacs:

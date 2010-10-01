@@ -255,7 +255,8 @@ typedef enum {
 	SCF_USE_CLOCK_RT = (1 << 10),
 	SCF_VERBOSE_EVENTS = (1 << 11),
 	SCF_USE_WIN32_MONOTONIC = (1 << 12),
-	SCF_AUTO_SCHEMAS = (1 << 13)
+	SCF_AUTO_SCHEMAS = (1 << 13),
+	SCF_MINIMAL = (1 << 14)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -479,9 +480,16 @@ typedef struct {
 	switch_size_t flush_packet_count;
 } switch_rtp_numbers_t;
 
+
+typedef struct {
+	uint32_t packet_count;
+	uint32_t octet_count;
+} switch_rtcp_numbers_t;
+
 typedef struct {
 	switch_rtp_numbers_t inbound;
 	switch_rtp_numbers_t outbound;
+	switch_rtcp_numbers_t rtcp;
 } switch_rtp_stats_t;
 
 typedef enum {
@@ -762,9 +770,9 @@ typedef struct {
 	const char *T38FaxUdpEC;
 	const char *T38VendorInfo;
 	const char *remote_ip;
-	uint32_t remote_port;
+	uint16_t remote_port;
 	const char *local_ip;
-	uint32_t local_port;
+	uint16_t local_port;
 } switch_t38_options_t;
 
 /*!
@@ -1580,6 +1588,7 @@ typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
+typedef struct switch_codec_fmtp switch_codec_fmtp_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 
 typedef struct switch_io_routines switch_io_routines_t;
@@ -1638,6 +1647,7 @@ typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *code
 															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
+typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
 
 

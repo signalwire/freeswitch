@@ -62,7 +62,8 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 			}
 			break;
 		case FTDM_TRUNK_E1:
-			if (!strcasecmp(switch_name, "euroisdn") || strcasecmp(switch_name, "etsi")) {
+			if (!strcasecmp(switch_name, "euroisdn") ||
+				!strcasecmp(switch_name, "etsi")) {
 				signal_data->switchtype = SNGISDN_SWITCH_EUROISDN;
 			} else if (!strcasecmp(switch_name, "qsig")) {
 				signal_data->switchtype = SNGISDN_SWITCH_QSIG;
@@ -116,6 +117,8 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 
 	signal_data->span_id = dchan_data->num_spans;
 	dchan_data->spans[signal_data->span_id] = signal_data;
+
+	g_sngisdn_data.spans[signal_data->link_id] = signal_data;
 	
 	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id);
 
@@ -163,6 +166,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->overlap_dial = SNGISDN_OPT_DEFAULT;
 	signal_data->setup_arb = SNGISDN_OPT_DEFAULT;
 
+	signal_data->link_id = span->span_id;
 	span->default_caller_data.bearer_capability = IN_ITC_SPEECH;
 
 	/* Cannot set default bearer_layer1 yet, as we do not know the switchtype */
@@ -249,11 +253,16 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			ftdm_span_set_bearer_capability(val, &span->default_caller_data.bearer_capability);
 		} else if (!strcasecmp(var, "outbound-bearer_layer1")) {
 			ftdm_span_set_bearer_layer1(val, &span->default_caller_data.bearer_layer1);
+		} else if (!strcasecmp(var, "facility-timeout")) {
+			signal_data->facility_timeout = atoi(val);
+			if (signal_data->facility_timeout < 0) {
+				signal_data->facility_timeout = 0;
+			}
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
 	}
-	signal_data->link_id = span->span_id;
+	
 	if (signal_data->switchtype == SNGISDN_SWITCH_INVALID) {
 		ftdm_log(FTDM_LOG_ERROR, "%s: switchtype not specified", span->name);
 		return FTDM_FAIL;

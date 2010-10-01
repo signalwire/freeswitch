@@ -71,6 +71,8 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
+ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -80,6 +82,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  	*ftdmchan = NULL;
+	char				nadi[2];
+
+	memset(nadi, '\0', sizeof(nadi));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -88,21 +93,13 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
 	if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM (glare detected on circuit)\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx IAM (glare)\n", sngss7_info->circuit->cic);
 	} else {
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IAM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx IAM\n", sngss7_info->circuit->cic);
 	}
 
 	/* check if the circuit has a remote block */
@@ -210,7 +207,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			}
 
 			/* add any special variables for the dialplan */
-			/*ftdm_channel_add_var(ftdmchan, "ss7_stuff", "s");*/
+			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
+			ftdm_channel_add_var(ftdmchan, "ss7_nadi", nadi);
 
 			/* set the state of the channel to collecting...the rest is done by the chan monitor */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
@@ -281,21 +279,13 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	}
 
 	switch (evntType) {
 	/**************************************************************************/
 	case (ADDRCMPLT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx ACM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ACM\n", sngss7_info->circuit->cic);
 		switch (ftdmchan->state) {
 		/**********************************************************************/
 		case FTDM_CHANNEL_STATE_DIALING:
@@ -316,115 +306,115 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		} /* switch (ftdmchan->state) */
 	/**************************************************************************/
 	case (MODIFY):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx MODIFY\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx MODIFY\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (MODCMPLT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx MODIFY-COMPLETE\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx MODIFY-COMPLETE\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (MODREJ):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx MODIFY-REJECT\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx MODIFY-REJECT\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (PROGRESS):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CPG\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CPG\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (FRWDTRSFR):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx FOT\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx FOT\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (INFORMATION):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx INF\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx INF\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (INFORMATREQ):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx INR\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx INR\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (SUBSADDR):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx SAM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SAM\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (EXIT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx EXIT\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx EXIT\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (NETRESMGT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx NRM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx NRM\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (IDENTREQ):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IDR\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx IDR\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (IDENTRSP):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx IRS\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx IRS\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (MALCLLPRNT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx MALICIOUS CALL\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx MALICIOUS CALL\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (CHARGE):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CRG\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CRG\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (TRFFCHGE):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CRG-TARIFF\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CRG-TARIFF\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (CHARGEACK):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CRG-ACK\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CRG-ACK\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (CALLOFFMSG):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CALL-OFFER\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CALL-OFFER\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (LOOPPRVNT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LOP\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LOP\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (TECT_TIMEOUT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx ECT-Timeout\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ECT-Timeout\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (RINGSEND):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx RINGING-SEND\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RINGING-SEND\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (CALLCLEAR):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CALL-LINE Clear\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CALL-LINE Clear\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (PRERELEASE):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx PRI\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx PRI\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (APPTRANSPORT):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx APM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx APM\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (OPERATOR):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx OPERATOR\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx OPERATOR\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (METPULSE):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx METERING-PULSE\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx METERING-PULSE\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (CLGPTCLR):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CALLING_PARTY_CLEAR\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CALLING_PARTY_CLEAR\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	case (SUBDIRNUM):
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx SUB-DIR\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SUB-DIR\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	default:
-	   	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Unknown Msg\n");
+	   	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Unknown Msg\n", sngss7_info->circuit->cic);
 		break;
 	/**************************************************************************/
 	}
@@ -451,17 +441,8 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
 
 	/* check whether the ftdm channel is in a state to accept a call */
 	switch (ftdmchan->state) {
@@ -469,7 +450,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case FTDM_CHANNEL_STATE_PROGRESS:
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx ANM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM\n", sngss7_info->circuit->cic);
 
 		/* go to UP */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
@@ -478,7 +459,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_DIALING:
 
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CON\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CON\n", sngss7_info->circuit->cic);
 
 		/* go to UP */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
@@ -487,7 +468,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	default:	/* incorrect state...reset the CIC */
 
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx ANM/CON\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON\n", sngss7_info->circuit->cic);
 
 		/* throw the TX reset flag */
 		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
@@ -521,18 +502,12 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx REL\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx REL cause=%d\n",
+							sngss7_info->circuit->cic, 
+							siRelEvnt->causeDgn.causeVal.val);
 
 	/* check whether the ftdm channel is in a state to release a call */
 	switch (ftdmchan->state) {
@@ -610,18 +585,10 @@ ftdm_status_t handle_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx RLC\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RLC\n", sngss7_info->circuit->cic);
 
 	/* check whether the ftdm channel is in a state to accept a call */
 	switch (ftdmchan->state) {
@@ -669,18 +636,10 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx DATA IND\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx DATA IND\n", sngss7_info->circuit->cic);
 
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
@@ -704,18 +663,10 @@ ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx FAC\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx FAC\n", sngss7_info->circuit->cic);
 
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
@@ -739,18 +690,10 @@ ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx FAC-CON\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx FAC-CON\n", sngss7_info->circuit->cic);
 
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
@@ -774,18 +717,10 @@ ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
-
-	SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx USER-USER msg\n");
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx USER-USER msg\n", sngss7_info->circuit->cic);
 
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
@@ -812,217 +747,217 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	switch (evntType) {
 	/**************************************************************************/
 	case SIT_STA_REATTEMPT:		 /* reattempt indication */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Reattempt indication\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Reattempt indication\n", sngss7_info->circuit->cic);
 		handle_reattempt(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_ERRORIND:		  /* error indication */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Error indication\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Error indication\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONTCHK:		   /* continuity check */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx COT start\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx COT start\n", sngss7_info->circuit->cic);
 		handle_cot_start(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONTREP:		   /* continuity report */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx COT report\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx COT report\n", sngss7_info->circuit->cic);
 		handle_cot(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_STPCONTIN:		 /* stop continuity */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx COT stop\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx COT stop\n", sngss7_info->circuit->cic);
 		handle_cot_stop(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGQRYRSP:		  /* circuit grp query response from far end forwarded to upper layer by ISUP */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CQM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CQM\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONFUSION:		 /* confusion */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CFN\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CFN\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LOOPBACKACK:	   /* loop-back acknowledge */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LPA\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LPA\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRSRVREQ:		/* circuit reservation request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Ckt Resveration req\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Ckt Resveration req\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRSRVACK:		/* circuit reservation acknowledgement */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Ckt Res ack\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Ckt Res ack\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRBLOREQ:		 /* circuit blocking request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx BLO\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx BLO\n", sngss7_info->circuit->cic);
 		handle_blo_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRBLORSP:		 /* circuit blocking response   */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx BLA\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx BLA\n", sngss7_info->circuit->cic);
 		handle_blo_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRUBLREQ:		 /* circuit unblocking request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx UBL\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UBL\n", sngss7_info->circuit->cic);
 		handle_ubl_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRUBLRSP:		 /* circuit unblocking response */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx UBA\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UBA\n", sngss7_info->circuit->cic);
 		handle_ubl_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRESREQ:		 /* circuit reset request - RSC */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx RSC\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RSC\n", sngss7_info->circuit->cic);
 		handle_rsc_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCRES:		 /* reset initiated locally by the software */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Local RSC\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local RSC\n", sngss7_info->circuit->cic);
 		handle_local_rsc_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRESRSP:		 /* circuit reset response */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx RSC-RLC\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RSC-RLC\n", sngss7_info->circuit->cic);
 		handle_rsc_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBREQ:			/* CGB request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGB\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CGB\n", sngss7_info->circuit->cic);
+		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGUREQ:			/* CGU request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGU\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CGU\n", sngss7_info->circuit->cic);
+		handle_cgu_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGQRYREQ:		  /* circuit group query request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CQM\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CQM\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBRSP:			/* mntc. oriented CGB response */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx mntc CGB\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx mntc CGB\n", sngss7_info->circuit->cic);
+		/*handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGURSP:			/* mntc. oriented CGU response */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx mntc CGU\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx mntc CGU\n", sngss7_info->circuit->cic);
+		/*SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSREQ:			/* circuit group reset request */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx GRS\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx GRS\n", sngss7_info->circuit->cic);
 		handle_grs_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRUNEQPD:		 /* circuit unequipped indication */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx UCIC\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
 		handle_ucic(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSRSP:			/* circuit group reset response */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx GRA\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx GRA\n", sngss7_info->circuit->cic);
 		handle_grs_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_PAUSEIND:		  /* pause indication */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx SUS\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SUS\n", sngss7_info->circuit->cic);
 		handle_pause(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_RESUMEIND:		 /* resume indication */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx RES\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RES\n", sngss7_info->circuit->cic);
 		handle_resume(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_USRPARTA:		  /* user part available */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx UPA\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UPA\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_RMTUSRUNAV:		/* remote user not available */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Remote User not Available\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Remote User not Available\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG0:		  /* congestion indication level 0 */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Congestion L0\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L0\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG1:		  /* congestion indication level 1 */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Congestion L1\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L1\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG2:		  /* congestion indication level 2 */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Congestion L2\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L2\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG3:		  /* congestion indication level 3 */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Congestion L3\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L3\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPSTPCONG:		/* stop congestion indication level 0 */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Stop Congestion\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Stop Congestion\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break; 
 	/**************************************************************************/
 	case SIT_STA_CIRLOCALBLOIND:	/* Mngmt local blocking */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Local BLO\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local BLO\n", sngss7_info->circuit->cic);
 		handle_local_blk(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCALUBLIND:	/* Mngmt local unblocking */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Local UBL\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local UBL\n", sngss7_info->circuit->cic);
 		handle_local_ubl(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_OVERLOAD:		  /* Overload */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Overload\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Overload\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCGBREQ:		  /* when LM requests ckt grp blocking */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LM CGB\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM CGB\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCGUREQ:		  /* when LM requests ckt grp unblocking */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LM CGU\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM CGU\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMGRSREQ:		  /* when LM requests ckt grp reset */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LM RSC\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM RSC\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBINFOIND:		/* circuit grp blking ind , no resp req */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx CGB no resp req\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		/*SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CGB no resp req\n", sngss7_info->circuit->cic);*/
+/*		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCQMINFOREQ:	  /* when LM requests ckt grp query */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx LM CQM\n");
-		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM CQM\n", sngss7_info->circuit->cic);
+// 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCGRS:		 /* group reset initiated locally by the software */
-		SS7_MSG_TRACE(ftdmchan, sngss7_info, "Rx Local GRS\n");
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local GRS\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
@@ -1051,16 +986,8 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
 		/* the glare flag is already up so it was caught ... do nothing */
@@ -1100,8 +1027,11 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 	int				 infId;
 	int				 i;
 	
-	/* extract the affect infId from the circuit structure */
+	/* extract the affected infId from the circuit structure */
 	infId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
+
+	/* set the interface to paused */
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg.isupIntf[infId], SNGSS7_PAUSED);
 	
 	/* go through all the circuits now and find any other circuits on this infId */
 	i = 1;
@@ -1121,21 +1051,11 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 			/* lock the channel */
 			ftdm_mutex_lock(ftdmchan->mutex);
 	
-			/* check if there is a pending state change, give it a bit to clear */
-			if (check_for_state_change(ftdmchan)) {
-				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-				ftdm_mutex_unlock(ftdmchan->mutex);
-				i++;
-				SS7_ASSERT;
-			};
-	
 			/* check if the circuit is fully started */
 			if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_IN_THREAD)) {
+				SS7_DEBUG_CHAN(ftdmchan, "Rx PAUSE%s\n", "");
 				/* set the pause flag on the channel */
 				sngss7_set_flag(sngss7_info, FLAG_INFID_PAUSED);
-	
-				/* set the statet o SUSPENDED to bring the sig status down */ 
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 			}
 	
 			/* unlock the channel again before we exit */
@@ -1165,6 +1085,9 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 	/* extract the affect infId from the circuit structure */
 	infId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
 
+	/* set the interface to resumed */
+	sngss7_clear_flag(&g_ftdm_sngss7_data.cfg.isupIntf[infId], SNGSS7_PAUSED);
+
 	/* go through all the circuits now and find any other circuits on this infId */
 	i = 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[i].id != 0) {
@@ -1183,24 +1106,15 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 			/* lock the channel */
 			ftdm_mutex_lock(ftdmchan->mutex);
 
-			/* check if there is a pending state change, give it a bit to clear */
-			if (check_for_state_change(ftdmchan)) {
-				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-				ftdm_mutex_unlock(ftdmchan->mutex);
-				i++;
-				SS7_ASSERT;
-			};
-
 			/* only resume if we are paused */
 			if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+				SS7_DEBUG_CHAN(ftdmchan, "Rx RESUME%s\n", "");
+
 				/* set the resume flag on the channel */
 				sngss7_set_flag(sngss7_info, FLAG_INFID_RESUME);
 
 				/* clear the paused flag */
 				sngss7_clear_flag(sngss7_info, FLAG_INFID_PAUSED);
-
-				/* set the statet to SUSPENDED to bring the sig status up */ 
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 			}
 			
 			/* unlock the channel again before we exit */
@@ -1232,16 +1146,8 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* open the channel if it is not open */
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
@@ -1290,16 +1196,8 @@ ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* tell the core to stop looping the channel */
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
@@ -1351,16 +1249,8 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* check if the circuit is already blocked or not */
 	if (sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {
@@ -1395,16 +1285,8 @@ ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* KONRAD FIX ME */
 
@@ -1430,16 +1312,8 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* check if the channel is blocked */
 	if (!(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX))) {
@@ -1477,16 +1351,8 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* KONRAD FIX ME */
 
@@ -1512,16 +1378,8 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* throw the reset flag */
 	sngss7_set_flag(sngss7_info, FLAG_RESET_RX);
@@ -1565,16 +1423,8 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* throw the reset flag */
 	sngss7_set_flag(sngss7_info, FLAG_RESET_RX);
@@ -1618,16 +1468,8 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	switch (ftdmchan->state) {
 	/**********************************************************************/
@@ -1694,7 +1536,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_span_data_t	*sngss7_span = NULL; 
 	int					range;
-	int 				x;
+
 
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
@@ -1711,57 +1553,12 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* loop over the cics starting from circuit until range+1 */
-	for (x = circuit; x < (circuit + range + 1); x++) {
-		/* grab the circuit in question */
-		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
-			break;
-		}
-	
-		/* now that we have the right channel...put a lock on it so no-one else can use it */
-		ftdm_mutex_lock(ftdmchan->mutex);
-	
-		/* check if there is a pending state change, give it a bit to clear */
-		if (check_for_state_change(ftdmchan)) {
-			SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-			ftdm_mutex_unlock(ftdmchan->mutex);
-			SS7_ASSERT;
-		};
+	/* fill in the span structure for this circuit */
+	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span->rx_grs.circuit = circuit; 
+	sngss7_span->rx_grs.range = range;
 
-		/* fill in the span structure for this circuit */
-		sngss7_span = ftdmchan->span->mod_data;
-		sngss7_span->rx_grs.circuit = circuit; 
-		sngss7_span->rx_grs.range = range;
-
-		SS7_INFO_CHAN(ftdmchan, "Rx GRS (%d:%d)\n", 
-								g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, 
-								(g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic + range));
-
-		/* flag the channel as having received a reset */
-		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX);
-
-		switch (ftdmchan->state) {
-		/**************************************************************************/
-		case FTDM_CHANNEL_STATE_RESTART:
-
-			/* go to idle so that we can redo the restart state*/
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
-
-			break;
-		/**************************************************************************/
-		default:
-
-			/* set the state of the channel to restart...the rest is done by the chan monitor */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-			break;
-		/**************************************************************************/
-		}
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-	}
+	/* the reset will be started in the main thread by "check_if_rx_grs_started" */
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
@@ -1772,10 +1569,16 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	ftdm_channel_t	  *ftdmchan = NULL;
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL; 
 	int					range;
-	int 				x;
+
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
 
 	/* extract the range value from the event structure */
 	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
@@ -1786,77 +1589,20 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		return FTDM_FAIL;
 	}
 
-	/* go through all the circuits in the range */
-	for ( x = circuit; x < (circuit + range + 1); x++) {
+	/* fill in the span structure for this circuit */
+	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span->rx_gra.circuit = circuit; 
+	sngss7_span->rx_gra.range = range;
 
-		/* grab the circuit in question */
-		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-			break;
-		}
+	/* check if there is a cause value in the GRA */
+	if ((siStaEvnt != NULL) &&
+		(siStaEvnt->causeDgn.eh.pres == PRSNT_NODEF) &&
+		(siStaEvnt->causeDgn.causeVal.pres == PRSNT_NODEF)) {
 
-		/* now that we have the right channel...put a lock on it so no-one else can use it */
-		ftdm_mutex_lock(ftdmchan->mutex);
+		sngss7_span->rx_gra.cause = siStaEvnt->causeDgn.causeVal.val;
+	}
 
-		/* check if there is a pending state change, give it a bit to clear */
-		if (check_for_state_change(ftdmchan)) {
-			SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-			ftdm_mutex_unlock(ftdmchan->mutex);
-			SS7_ASSERT;
-		};
-		
-		SS7_INFO_CHAN(ftdmchan, "Rx GRA (%d:%d)\n", 
-								g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, 
-								(g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic + range));
-
-		switch (ftdmchan->state) {
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_RESTART:
-			
-			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-
-			/* go to DOWN */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-
-			break;
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_DOWN:
-
-			/* do nothing, just drop the message */
-			SS7_DEBUG("Receveived GRA in down state, dropping\n");
-
-			break;
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_TERMINATING:
-		case FTDM_CHANNEL_STATE_HANGUP:
-		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
-			
-			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-
-			break;
-		/**********************************************************************/
-		default:
-			/* ITU Q764-2.9.5.1.c -> release the circuit */
-			if ((siStaEvnt != NULL) &&
-				(siStaEvnt->causeDgn.eh.pres ==PRSNT_NODEF) &&
-				(siStaEvnt->causeDgn.causeVal.pres == PRSNT_NODEF)) {
-				ftdmchan->caller_data.hangup_cause = siStaEvnt->causeDgn.causeVal.val;
-			} else {
-				ftdmchan->caller_data.hangup_cause = 98;	/* Message not compatiable with call state */
-			}
-
-			/* go to terminating to hang up the call */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-			break;
-		/**********************************************************************/
-		}
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-	} /* for (( x = 0; x < (circuit + range); x++) */
+	/* the reset will be started in the main thread by "check_if_rx_gra_started" */
 	
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
@@ -1877,16 +1623,8 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* check if the circuit is already blocked or not */
 	if (sngss7_test_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX)) {
@@ -1921,16 +1659,8 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		SS7_ASSERT;
-	};
 
 	/* check if the circuit is already blocked or not */
 	if (sngss7_test_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX)) {
@@ -1965,16 +1695,8 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 		return FTDM_FAIL;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
+	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* check if there is a pending state change, give it a bit to clear */
-	if (check_for_state_change(ftdmchan)) {
-		SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-	   	SS7_ASSERT;
-	};
 
 	/* throw the ckt block flag */
 	sngss7_set_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
@@ -1989,6 +1711,277 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	return FTDM_SUCCESS;
 }
 
+/******************************************************************************/
+ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	int					range;
+	uint8_t				status[255];
+	int					blockType = 0;
+	int					byte = 0;
+	int					bit = 0;
+	int 				x;
+	ftdm_sigmsg_t 		sigev;
+
+	memset(&sigev, 0, sizeof (sigev));
+	memset(&status[0], '\0', sizeof(status));
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* grab the span info */
+	sngss7_span = ftdmchan->span->mod_data;
+
+	/* figure out what type of block needs to be applied */
+	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
+		blockType = siStaEvnt->cgsmti.typeInd.val;
+	} else {
+		SS7_ERROR("Received CGB with no circuit group supervision value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}	
+
+	/* pull out the range value */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
+		range = siStaEvnt->rangStat.range.val;
+	} else {
+		SS7_ERROR("Received CGB with no range value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* pull out the status field */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.status.pres == PRSNT_NODEF)) {
+		for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+			status[x] = siStaEvnt->rangStat.status.val[x];
+		}
+	} else {
+		SS7_ERROR("Received CGB with no status value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* save the circuit, range and status */
+	sngss7_span->rx_cgb.circuit = circuit;
+	sngss7_span->rx_cgb.range = range;
+	sngss7_span->rx_cgb.type = blockType;
+	for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+		sngss7_span->rx_cgb.status[x] = status[x];
+	}
+
+	/* loop over the cics starting from circuit until range+1 */
+	for (x = circuit; x < (circuit + range + 1); x++) {
+		/* confirm this is a voice channel */
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
+
+		/* grab the circuit in question */
+		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
+			break;
+		}
+	
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+#if 0
+		SS7_ERROR("KONRAD -> circuit=%d, byte=%d, bit=%d, status[byte]=%d, math=%d\n",
+					x,
+					byte,
+					bit,
+					status[byte],
+					(status[byte] & (1 << bit)));
+#endif
+		if (status[byte] & (1 << bit)) {
+			switch (blockType) {
+			/**********************************************************************/
+			case 0:	/* maintenance oriented */
+				sngss7_set_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 1: /* hardware failure oriented */
+				sngss7_set_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 2: /* reserved for national use */
+				break;
+			/**********************************************************************/
+			default:
+				break;
+			/**********************************************************************/
+			} /* switch (blockType) */
+		}
+
+		sigev.chan_id = ftdmchan->chan_id;
+		sigev.span_id = ftdmchan->span_id;
+		sigev.channel = ftdmchan;
+
+		/* bring the sig status down */
+		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+		sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+		ftdm_span_send_signal(ftdmchan->span, &sigev);
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+		/* update the bit and byte counter*/
+		bit ++;
+		if (bit == 8) {
+			byte++;
+			bit = 0;
+		}
+
+	} /* for (x = circuit; x < (circuit + range + 1); x++) */
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	ft_to_sngss7_cgba(ftdmchan);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	int					range;
+	uint8_t				status[255];
+	int					blockType = 0;
+	int					byte = 0;
+	int					bit = 0;
+	int 				x;
+	ftdm_sigmsg_t 		sigev;
+
+	memset(&sigev, 0, sizeof (sigev));
+	memset(&status[0], '\0', sizeof(status));
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* grab the span info */
+	sngss7_span = ftdmchan->span->mod_data;
+
+	/* figure out what type of block needs to be applied */
+	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
+		blockType = siStaEvnt->cgsmti.typeInd.val;
+	} else {
+		SS7_ERROR("Received CGU with no circuit group supervision value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}	
+
+	/* pull out the range value */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.range.pres == PRSNT_NODEF)) {
+		range = siStaEvnt->rangStat.range.val;
+	} else {
+		SS7_ERROR("Received CGU with no range value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* pull out the status field */
+	if ((siStaEvnt->rangStat.eh.pres == PRSNT_NODEF) && (siStaEvnt->rangStat.status.pres == PRSNT_NODEF)) {
+		for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+			status[x] = siStaEvnt->rangStat.status.val[x];
+		}
+	} else {
+		SS7_ERROR("Received CGU with no status value on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* save the circuit, range and status */
+	sngss7_span->rx_cgu.circuit = circuit;
+	sngss7_span->rx_cgu.range = range;
+	sngss7_span->rx_cgu.type = blockType;
+	for (x = 0; x < siStaEvnt->rangStat.status.len; x++) {
+		sngss7_span->rx_cgu.status[x] = status[x];
+	}
+
+	/* loop over the cics starting from circuit until range+1 */
+	for (x = circuit; x < (circuit + range + 1); x++) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
+		/* grab the circuit in question */
+		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
+			break;
+		}
+	
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		if (status[byte] & (1 << bit)) {
+			switch (blockType) {
+			/**********************************************************************/
+			case 0:	/* maintenance oriented */
+				sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 1: /* hardware failure oriented */
+				sngss7_clear_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+				break;
+			/**********************************************************************/
+			case 2: /* reserved for national use */
+				break;
+			/**********************************************************************/
+			default:
+				break;
+			/**********************************************************************/
+			} /* switch (blockType) */
+		} /* if (status[byte] & (1 << bit)) */
+
+		sigev.chan_id = ftdmchan->chan_id;
+		sigev.span_id = ftdmchan->span_id;
+		sigev.channel = ftdmchan;
+
+		/* bring the sig status down */
+		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+		sigev.sigstatus = FTDM_SIG_STATE_UP;
+		ftdm_span_send_signal(ftdmchan->span, &sigev);
+	
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+		/* update the bit and byte counter*/
+		bit ++;
+		if (bit == 8) {
+			byte++;
+			bit = 0;
+		}
+
+	} /* for (x = circuit; x < (circuit + range + 1); x++) */
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	ft_to_sngss7_cgua(ftdmchan);
+
+	return FTDM_SUCCESS;
+}
 
 /******************************************************************************/
 /* For Emacs:

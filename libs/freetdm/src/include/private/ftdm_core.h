@@ -356,6 +356,15 @@ typedef struct {
 } ftdm_dtmf_debug_t;
 #endif
 
+typedef struct {
+	const char *file;
+	const char *func;
+	int line;
+	ftdm_channel_state_t state;
+	ftdm_channel_state_t last_state;
+	ftdm_time_t time;
+} ftdm_channel_history_entry_t;
+
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
 struct ftdm_channel {
@@ -381,6 +390,8 @@ struct ftdm_channel {
 	ftdm_channel_state_t state;
 	ftdm_channel_state_t last_state;
 	ftdm_channel_state_t init_state;
+	ftdm_channel_history_entry_t history[10];
+	uint8_t hindex;
 	ftdm_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
 	uint32_t buffer_delay;
@@ -425,6 +436,7 @@ struct ftdm_channel {
 	float txgain;
 	int availability_rate;
 	void *user_private;
+	ftdm_timer_id_t hangup_timer;
 #ifdef FTDM_DEBUG_DTMF
 	ftdm_dtmf_debug_t dtmfdbg;
 #endif
@@ -583,6 +595,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 /* dequeue pending signals and notify the user via the span signal callback */
 FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 
+/*! \brief clear the tone detector state */
+FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
+
+
 /*!
   \brief Assert condition
 */
@@ -618,6 +634,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 #define ftdm_log_chan_ex(fchan, file, func, line, level, format, ...) ftdm_log(file, func, line, level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan(fchan, level, format, ...) ftdm_log(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan_msg(fchan, level, msg) ftdm_log(level, "[s%dc%d][%d:%d] " msg, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id)
+
+#define ftdm_span_lock(span) ftdm_mutex_lock(span->mutex)
+#define ftdm_span_unlock(span) ftdm_mutex_unlock(span->mutex)
 
 FT_DECLARE_DATA extern const char *FTDM_LEVEL_NAMES[9];
 

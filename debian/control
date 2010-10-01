@@ -1,10 +1,11 @@
 Source: freeswitch
 Section: comm
 Priority: extra
-Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
-Build-Depends: debhelper (>= 5), fakeroot, wget, automake (>=1.9), autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev, python, libx11-dev, uuid-dev
+Maintainer: FreeSWITCH developers <freeswitch-dev@lists.freeswitch.org>
+Uploaders: Michal Bielicki <michal.bielicki@voiceworks.pl>, Gabriel Gunderson <gabe@gundy.org>, William King <quentusrex@gmail.com>, Mathieu Parent <sathieu@debian.org>
+Build-Depends: debhelper (>= 5), fakeroot, wget, automake (>=1.9), autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev
 Homepage: http://freeswitch.org/
-Standards-Version: 3.8.4
+Standards-Version: 3.9.1
 Vcs-Svn: http://svn.freeswitch.org/svn/freeswitch/trunk/
 Vcs-Browser: http://fisheye.freeswitch.org/browse/FreeSWITCH
 
@@ -85,6 +86,18 @@ Description: Lua engine for FreeSWITCH
  to control the callflow.
  .
  This package contains the mod_lua language module.
+
+Package: freeswitch-python
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Python engine for FreeSWITCH
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to a
+ soft-switch.  It can be used as a simple switching engine, a PBX, a media
+ gateway or a media server to host IVR applications using simple scripts or XML
+ to control the callflow.
+ .
+ This package contains the mod_python language module.
 
 Package: freeswitch-codec-passthru-g7231
 Architecture: any

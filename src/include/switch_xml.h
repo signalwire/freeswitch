@@ -331,6 +331,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(_In_ uint8_t reload, _Out_ con
 ///\return SWITCH_STATUS_SUCCESS if successful
 SWITCH_DECLARE(switch_status_t) switch_xml_init(_In_ switch_memory_pool_t *pool, _Out_ const char **err);
 
+SWITCH_DECLARE(switch_status_t) switch_xml_reload(const char **err);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void);
 

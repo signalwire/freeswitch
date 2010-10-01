@@ -106,6 +106,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
 #define FREESWITCH_SUPPORT "update_display"
 
+#include <switch_stun.h>
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sdp.h>
@@ -199,6 +200,7 @@ typedef enum {
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_AUTOFLUSH,
 	PFLAG_NAT_OPTIONS_PING,
+	PFLAG_ALL_REG_OPTIONS_PING,
 	PFLAG_AUTOFIX_TIMING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER,
@@ -218,6 +220,7 @@ typedef enum {
 	PFLAG_T38_PASSTHRU,
 	PFLAG_CID_IN_1XX,
 	PFLAG_IN_DIALOG_CHAT,
+	PFLAG_DEL_SUBS_ON_REG,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -275,6 +278,7 @@ typedef enum {
 	TFLAG_RECOVERING,
 	TFLAG_RECOVERING_BRIDGE,
 	TFLAG_T38_PASSTHRU,
+	TFLAG_RECOVERED,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -574,6 +578,7 @@ struct private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
+	uint32_t bitrate;
 	switch_caller_profile_t *caller_profile;
 	uint32_t timestamp_send;
 	switch_rtp_t *rtp_session;
@@ -939,6 +944,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 const char *sofia_glue_strip_proto(const char *uri);
 switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
+void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *stream, int up);
 void sofia_glue_del_every_gateway(sofia_profile_t *profile);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip);
@@ -1008,3 +1014,7 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
+void sofia_glue_global_siptrace(switch_bool_t on);
+void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
+switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
+void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);

@@ -977,7 +977,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
  */
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 {
-	uint32_t i, event_id = 0;
+	uint32_t i, event_id = ZAP_OOB_INVALID;
 	zt_event_t zt_event_id = 0;
 
 	for(i = 1; i <= span->chan_count; i++) {
@@ -1025,6 +1025,8 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 						event_id = ZAP_OOB_OFFHOOK;
 					} else if (span->channels[i]->type == ZAP_CHAN_TYPE_FXO) {
 						event_id = ZAP_OOB_RING_START;
+					} else {
+						event_id = ZAP_OOB_NOOP;
 					}
 				}
 				break;

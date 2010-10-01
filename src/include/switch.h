@@ -91,7 +91,10 @@
 #include <Ws2tcpip.h>
 #pragma warning(pop)
 #else
+/* work around for warnings in vs 2010 */
+#pragma warning (disable:6386)
 #include <Ws2tcpip.h>
+#pragma warning (default:6386)
 #endif
 #else
 #include <strings.h>

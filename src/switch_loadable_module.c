@@ -183,8 +183,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Adding Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+										  "Adding Codec %s %d %s %dhz %dms %dbps\n",
+										  impl->iananame, impl->ianacode,
+										  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000, impl->bits_per_second);
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -515,8 +516,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Deleting Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+										  "Deleting Codec %s %d %s %dhz %dms\n",
+										  impl->iananame, impl->ianacode,
+										  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
 						switch_core_session_hupall_matching_var("read_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
 						switch_core_session_hupall_matching_var("write_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
 						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
@@ -1218,7 +1220,7 @@ static void switch_loadable_module_path_init()
 }
 #endif
 
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autoload)
 {
 
 	apr_finfo_t finfo = { 0 };
@@ -1268,6 +1270,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
+	if (!autoload) return SWITCH_STATUS_SUCCESS;
+
 	switch_loadable_module_load_module("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, &err);
 	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_FALSE, &err);
 
@@ -1277,6 +1281,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *path = switch_xml_attr_soft(ld, "path");
 				const char *critical = switch_xml_attr_soft(ld, "critical");
 				const char *sglobal = switch_xml_attr_soft(ld, "global");
 				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
@@ -1285,7 +1290,10 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				}
 				global = switch_true(sglobal);
 				
-				if (switch_loadable_module_load_module_ex((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_FALSE) {
+				if (path && zstr(path)) {
+					path = SWITCH_GLOBAL_dirs.mod_dir;
+				}
+				if (switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_FALSE) {
 					if (critical && switch_true(critical)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
 						abort();
@@ -1307,13 +1315,18 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *path = switch_xml_attr_soft(ld, "path");
 				const char *sglobal = switch_xml_attr_soft(ld, "global");
 				if (zstr(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
 				global = switch_true(sglobal);
-				switch_loadable_module_load_module_ex((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, global, &err);
+
+				if (path && zstr(path)) {
+					path = SWITCH_GLOBAL_dirs.mod_dir;
+				}
+				switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err);
 				count++;
 			}
 		}
@@ -1546,13 +1559,16 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	for (hi = switch_hash_first(NULL, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		codec_interface = (switch_codec_interface_t *) val;
-		/* Look for a 20ms implementation because it's the safest choice */
+		
+		/* Look for the default ptime of the codec because it's the safest choice */
 		for (imp = codec_interface->implementations; imp; imp = imp->next) {
+			uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+
 			if (lock && imp->microseconds_per_packet != lock) {
 				continue;
 			}
 
-			if (imp->microseconds_per_packet / 1000 == 20) {
+			if (imp->microseconds_per_packet / 1000 == (int)default_ptime) {
 				array[i++] = imp;
 				goto found;
 			}
@@ -1586,7 +1602,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 	for (x = 0; x < preflen; x++) {
 		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
-		uint32_t interval = 0, rate = 0;
+		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
 		last = name = next = cur = buf;
@@ -1606,21 +1622,24 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					interval = atoi(cur);
 				} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
 					rate = atoi(cur);
+				} else if (strchr(cur, 'b')) {
+					bit = atoi(cur);
 				}
 			}
 			cur = next;
 		}
 
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
-			/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
+			/* If no specific codec interval is requested opt for the default above all else because lots of stuff assumes it */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
-
+				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 					if (lock && imp->microseconds_per_packet != lock) {
 						continue;
 					}
-
-					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != 20) ||
+					
+					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != default_ptime) ||
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
 						continue;
 					}
@@ -1628,6 +1647,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (((!rate && (uint32_t) imp->samples_per_second != 8000) || (rate && (uint32_t) imp->samples_per_second != rate))) {
 						continue;
 					}
+
+					if (bit && (uint32_t) imp->bits_per_second != bit) {
+						continue;
+					}
+
 				}
 
 
@@ -1636,7 +1660,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 			}
 
-			/* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available */
+			/* Either looking for a specific interval or there was no interval specified and there wasn't one at the default ptime available */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 
@@ -1651,6 +1675,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (rate && (uint32_t) imp->samples_per_second != rate) {
 						continue;
 					}
+
+					if (bit && (uint32_t) imp->bits_per_second != bit) {
+						continue;
+					}
+					
 				}
 
 				array[i++] = imp;

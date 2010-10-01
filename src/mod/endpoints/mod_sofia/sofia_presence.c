@@ -1442,7 +1442,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number");
 				}
 
-				if (!op) {
+				if (zstr(op)) {
 					op = switch_event_get_header(helper->event, "Caller-Destination-Number");
 				}
 
@@ -1452,7 +1452,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 				if (!strcmp(astate, "early")) {
 					if (zstr(op)) {
-						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, status);
+						switch_snprintf(status_line, sizeof(status_line), "%sing", what);
 					} else {
 						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
 					}
@@ -1983,12 +1983,20 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			is_nat = NULL;
 		}
 
+		if (zstr(contact_host)) {
+			is_nat = "No contact host";
+		}
+
 		if (is_nat) {
 			contact_host = network_ip;
 			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
 			port = NULL;
 		}
 
+		if (zstr(contact_host)) {
+			nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());
+			return;
+		}
 
 		if (port) {
 			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
@@ -2043,7 +2051,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			from_host = "n/a";
 		}
 
-		exp_delta = profile->force_subscription_expires ? profile->force_subscription_expires : (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
+		if ((exp_delta = sip->sip_expires ? sip->sip_expires->ex_delta : 3600)) {
+			if (profile->force_subscription_expires) {
+				exp_delta = profile->force_subscription_expires;
+			}
+		}
 
 		if (exp_delta) {
 			exp_abs = (long) switch_epoch_time_now(NULL) + exp_delta;

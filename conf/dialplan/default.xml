@@ -240,7 +240,7 @@
     <!-- 
 	 dial the extension (1000-1019) for 30 seconds and go to voicemail if the 
 	 call fails (continue_on_fail=true), otherwise hang up after a successful
-	 bridge (hangup_after-bridge=true) 
+	 bridge (hangup_after_bridge=true) 
     -->
     <extension name="Local_Extension">
       <condition field="destination_number" expression="^(10[01][0-9])$">
@@ -250,6 +250,7 @@
 	<action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
 	<action application="bind_meta_app" data="2 b s record_session::$${recordings_dir}/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
 	<action application="bind_meta_app" data="3 b s execute_extension::cf XML features"/>
+	<action application="bind_meta_app" data="4 b s execute_extension::att_xfer XML features"/>
 	<action application="set" data="ringback=${us-ring}"/>
 	<action application="set" data="transfer_ringback=$${hold_music}"/>
 	<action application="set" data="call_timeout=30"/>
@@ -262,7 +263,7 @@
 	<action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
 	<!--<action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
 	<action application="hash" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
-	<action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
+	<action application="bridge" data="{sip_invite_domain=$${domain}}user/${dialed_extension}@${domain_name}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="bridge" data="loopback/app=voicemail:default ${domain_name} ${dialed_extension}"/>

@@ -239,6 +239,7 @@ struct switch_rtp {
 #endif
 
 	switch_time_t send_time;
+	switch_byte_t auto_adj_used;
 };
 
 struct switch_rtcp_senderinfo {
@@ -661,6 +662,10 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
+
+	if (!global_init) {
+		return;
+	}
 
 	switch_mutex_lock(port_lock);
 
@@ -1619,6 +1624,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate, switch_port_t remote_port)
 {
 	const char *err = NULL;
+
+	if (!rtp_session->ms_per_packet) {
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP);
 
@@ -2191,6 +2200,9 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 				rtp_session->rtcp_fresh_frame = 1;
 
+				rtp_session->stats.rtcp.packet_count += sr->pc;
+				rtp_session->stats.rtcp.octet_count += sr->oc;
+
 				/* sender report */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,"Received a SR with %d report blocks, " \
 								  "length in words = %d, " \
@@ -2301,6 +2313,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 20000;
 			}
 			
+			if ((io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
+				pt = 0;
+			}
+
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
 				do_2833(rtp_session);
@@ -2326,7 +2342,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 			
-			if (rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && (rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO))) {
 				return_cng_frame();
 			}
 		}
@@ -2349,6 +2365,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						if ((other_session = switch_core_session_locate(uuid))) {
 							switch_channel_t *other_channel = switch_core_session_get_channel(other_session);					
 							if ((other_rtp_session = switch_channel_get_private(other_channel, "__rtcp_audio_rtp_session")) && 
+								other_rtp_session->rtcp_sock_output &&
 								switch_test_flag(other_rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 								*other_rtp_session->rtcp_send_msg.body = *rtp_session->rtcp_recv_msg.body;
 
@@ -2519,13 +2536,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						switch_channel_set_variable(channel, "remote_media_port", adj_port);
 						switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
 					}
-
+					rtp_session->auto_adj_used = 1;
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), 0, SWITCH_FALSE, &err);
 					switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Correct ip/port confirmed.\n");
 				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				rtp_session->auto_adj_used = 0;
 			}
 		}
 
@@ -2863,6 +2881,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	READ_DEC(rtp_session);
 
 	return ret;
+}
+
+
+SWITCH_DECLARE(switch_byte_t) switch_rtp_check_auto_adj(switch_rtp_t *rtp_session)
+{
+	return rtp_session->auto_adj_used;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session)
@@ -3429,7 +3453,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		rtp_session->last_write_ts = this_ts;
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
+		if (rtp_session->rtcp_sock_output &&
+			switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
 			rtp_session->rtcp_interval && (rtp_session->stats.outbound.packet_count % rtp_session->rtcp_interval) == 0) {
 			struct switch_rtcp_senderinfo* sr = (struct switch_rtcp_senderinfo*)rtp_session->rtcp_send_msg.body;
 

@@ -74,6 +74,8 @@ static struct {
 	char header[50];
 	char *prepend_string;
 	char *spool;
+	switch_thread_cond_t *cond;
+	switch_mutex_t *cond_mutex;    
 } globals;
 
 struct pvt_s {
@@ -118,27 +120,34 @@ static struct {
     int thread_running;
 } t38_state_list;
 
+
+
+static void wake_thread(int force)
+{
+	if (force) {
+        switch_thread_cond_signal(globals.cond);
+		return;
+	}
+
+	if (switch_mutex_trylock(globals.cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(globals.cond);
+		switch_mutex_unlock(globals.cond_mutex);
+	}
+}
+
 static int add_pvt(pvt_t *pvt)
 {
     int r = 0;
-    uint32_t sanity = 50;
-
-    switch_mutex_lock(t38_state_list.mutex);
-    if (!t38_state_list.thread_running) {
-
-        launch_timer_thread();
-
-        while(--sanity && !t38_state_list.thread_running) {
-            switch_yield(10000);
-        }
-    }
-    switch_mutex_unlock(t38_state_list.mutex);
     
     if (t38_state_list.thread_running) {
         switch_mutex_lock(t38_state_list.mutex);
         pvt->next = t38_state_list.head;
         t38_state_list.head = pvt;
         switch_mutex_unlock(t38_state_list.mutex);
+        r = 1;
+        wake_thread(0);
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error launching thread\n");
     }
 
     return r;
@@ -151,9 +160,9 @@ static int del_pvt(pvt_t *del_pvt)
     pvt_t *p, *l = NULL;
     int r = 0;
 
-    if (!t38_state_list.thread_running) goto end;
-    
+
     switch_mutex_lock(t38_state_list.mutex);
+
     for (p = t38_state_list.head; p; p = p->next) {
         if (p == del_pvt) {
             if (l) {
@@ -163,34 +172,38 @@ static int del_pvt(pvt_t *del_pvt)
             }
             p->next = NULL;
             r = 1;
-            goto end;
+            break;
         }
 
         l = p;
     }
 
- end:
-
     switch_mutex_unlock(t38_state_list.mutex);
 
-    return r;
+    wake_thread(0);
 
+    return r;
 }
 
 static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *obj)
 {
     switch_timer_t timer = { 0 };
     pvt_t *pvt;
-    int samples = 240;
-    int ms = 30;
+    int samples = 160;
+    int ms = 20;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "timer thread started.\n");
+    switch_mutex_lock(t38_state_list.mutex);
+    t38_state_list.thread_running = 1;
+    switch_mutex_unlock(t38_state_list.mutex);
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX timer thread started.\n");
 
 	if (switch_core_timer_init(&timer, "soft", ms, samples, NULL) != SWITCH_STATUS_SUCCESS) {
-        return NULL;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "timer init failed.\n");
+        goto end;
     }
 
-    t38_state_list.thread_running = 1;
+    switch_mutex_lock(globals.cond_mutex);
 
     while(t38_state_list.thread_running) {
 
@@ -198,7 +211,9 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
         if (!t38_state_list.head) {
             switch_mutex_unlock(t38_state_list.mutex);
-            goto end;
+			switch_thread_cond_wait(globals.cond, globals.cond_mutex);
+            switch_core_timer_sync(&timer);
+            continue;
         }
 
         for (pvt = t38_state_list.head; pvt; pvt = pvt->next) {
@@ -211,13 +226,20 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
         switch_core_timer_next(&timer);
     }
+
+    switch_mutex_unlock(globals.cond_mutex);
     
  end:
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "timer thread ended.\n");
-
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX timer thread ended.\n");
+    
+    switch_mutex_lock(t38_state_list.mutex);
     t38_state_list.thread_running = 0;
-    switch_core_timer_destroy(&timer);
+    switch_mutex_unlock(t38_state_list.mutex);
+
+    if (timer.timer_interface) {
+        switch_core_timer_destroy(&timer);
+    }
     
     return NULL;
 }
@@ -468,49 +490,61 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 		break;
 	case T38_MODE:
-		if (pvt->t38_state == NULL) {
-			pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
-		}
-		if (pvt->t38_state == NULL) {
-			return SWITCH_STATUS_FALSE;
-		}
-		if (pvt->udptl_state == NULL) {
-            pvt->udptl_state = (udptl_state_t *) switch_core_session_alloc(pvt->session, sizeof(udptl_state_t));
-        }
-		if (pvt->udptl_state == NULL) {
-    		t38_terminal_free(pvt->t38_state);
-            pvt->t38_state = NULL;
-			return SWITCH_STATUS_FALSE;
-		}
+        {
+            switch_core_session_message_t msg = { 0 };
 
-        /* add to timer thread processing */
-        add_pvt(pvt);
+            if (pvt->t38_state == NULL) {
+                pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
+            }
+            if (pvt->t38_state == NULL) {
+                return SWITCH_STATUS_FALSE;
+            }
+            if (pvt->udptl_state == NULL) {
+                pvt->udptl_state = (udptl_state_t *) switch_core_session_alloc(pvt->session, sizeof(udptl_state_t));
+            }
+            if (pvt->udptl_state == NULL) {
+                t38_terminal_free(pvt->t38_state);
+                pvt->t38_state = NULL;
+                return SWITCH_STATUS_FALSE;
+            }
+
+            t38 = pvt->t38_state;
+            t30 = t38_terminal_get_t30_state(t38);
+
+            memset(t38, 0, sizeof(t38_terminal_state_t));
+
+            if (t38_terminal_init(t38, pvt->caller, t38_tx_packet_handler, pvt) == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
+                return SWITCH_STATUS_FALSE;
+            }
+
+            pvt->t38_core = t38_terminal_get_t38_core_state(pvt->t38_state);
+
+            if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, 3, 3, 
+                           (udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
+                return SWITCH_STATUS_FALSE;
+            }
+
+            msg.from = __FILE__;
+            msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
+            switch_core_session_receive_message(pvt->session, &msg);
         
-		t38 = pvt->t38_state;
-		t30 = t38_terminal_get_t30_state(t38);
+            /* add to timer thread processing */
+            if (!add_pvt(pvt)) {
+                if (channel) {
+                    switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+                }
+            }
+        
+            span_log_set_message_handler(&t38->logging, spanfax_log_message);
+            span_log_set_message_handler(&t30->logging, spanfax_log_message);
 
-		memset(t38, 0, sizeof(t38_terminal_state_t));
-
-		if (t38_terminal_init(t38, pvt->caller, t38_tx_packet_handler, pvt) == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
-			return SWITCH_STATUS_FALSE;
-		}
-
-        pvt->t38_core = t38_terminal_get_t38_core_state(pvt->t38_state);
-
-        if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, 3, 3, 
-                       (udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
-			return SWITCH_STATUS_FALSE;
-		}
-
-		span_log_set_message_handler(&t38->logging, spanfax_log_message);
-		span_log_set_message_handler(&t30->logging, spanfax_log_message);
-
-		if (pvt->verbose) {
-			span_log_set_level(&t38->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-			span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-		}
+            if (pvt->verbose) {
+                span_log_set_level(&t38->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+                span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+            }
+        }
 		break;
  case T38_GATEWAY_MODE:
 	 if (pvt->t38_gateway_state == NULL) {
@@ -757,9 +791,9 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
         t38_options->T38FaxRateManagement = "transferredTCF";
         t38_options->T38FaxMaxBuffer = 2000;
         t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
-        if (strcasecmp(t38_options->T38FaxUdpEC, "t38UDPRedundancy") == 0
-            ||
-            strcasecmp(t38_options->T38FaxUdpEC, "t38UDPFEC") == 0) {
+        if (!zstr(t38_options->T38FaxUdpEC) &&
+            (strcasecmp(t38_options->T38FaxUdpEC, "t38UDPRedundancy") == 0 ||
+             strcasecmp(t38_options->T38FaxUdpEC, "t38UDPFEC") == 0)) {
             t38_options->T38FaxUdpEC = "t38UDPRedundancy";
         } else {
             t38_options->T38FaxUdpEC = NULL;
@@ -816,6 +850,12 @@ static t38_mode_t request_t38(pvt_t *pvt)
         insist = switch_true(v);
     } else {
         insist = globals.enable_t38_insist;
+    }
+
+    if ((t38_options = switch_channel_get_private(channel, "t38_options"))) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+                          "%s already has T.38 data\n", switch_channel_get_name(channel));
+        enabled = 0;
     }
 
     if (enabled) {
@@ -960,6 +1000,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	switch_frame_t write_frame = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	int16_t *buf = NULL;
+    uint32_t req_counter = 0;
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1075,10 +1116,11 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 	switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
 
-
-    /* If you have the means, I highly recommend picking one up. ...*/
-    request_t38(pvt);
-
+    if (pvt->app_mode == FUNCTION_TX) {
+        req_counter = 100;
+    } else {
+        req_counter = 50;
+    }
 
 	while (switch_channel_ready(channel)) {
 		int tx = 0;
@@ -1122,6 +1164,13 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
             break;
         case T38_MODE_UNKNOWN:
             {
+                if (req_counter) {
+                    if (!--req_counter) {
+                        /* If you have the means, I highly recommend picking one up. ...*/
+                        request_t38(pvt);
+                    }
+                }
+                
                 if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     if (negotiate_t38(pvt) == T38_MODE_NEGOTIATED) {
                         /* is is safe to call this again, it was already called above in AUDIO_MODE */
@@ -1145,8 +1194,6 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
                     //switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "READ %d udptl bytes\n", read_frame->packetlen);
                     
                     udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen);
-
-
                 }
             }
             continue;
@@ -1282,6 +1329,8 @@ void mod_spandsp_fax_event_handler(switch_event_t *event)
 
 void mod_spandsp_fax_load(switch_memory_pool_t *pool)
 {
+    uint32_t sanity = 200;
+
 	memset(&globals, 0, sizeof(globals));
     memset(&t38_state_list, 0, sizeof(t38_state_list));
 
@@ -1289,6 +1338,9 @@ void mod_spandsp_fax_load(switch_memory_pool_t *pool)
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&t38_state_list.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+
+	switch_mutex_init(&globals.cond_mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_thread_cond_create(&globals.cond, globals.pool);
     
     globals.enable_t38 = 1;
 	globals.total_sessions = 0;
@@ -1301,10 +1353,22 @@ void mod_spandsp_fax_load(switch_memory_pool_t *pool)
 	strncpy(globals.header, "SpanDSP Fax Header", sizeof(globals.header) - 1);
 
 	load_configuration(0);
+
+
+    launch_timer_thread();
+
+    while(--sanity && !t38_state_list.thread_running) {
+        switch_yield(20000);
+    }
 }
 
 void mod_spandsp_fax_shutdown(void)
 {
+    switch_status_t tstatus = SWITCH_STATUS_SUCCESS;
+
+    t38_state_list.thread_running = 0;
+    wake_thread(1);
+    switch_thread_join(&tstatus, t38_state_list.thread);
 	memset(&globals, 0, sizeof(globals));
 }
 
@@ -1659,8 +1723,8 @@ static switch_status_t t38_gateway_on_reset(switch_core_session_t *session)
     
     switch_channel_clear_flag(channel, CF_REDIRECT);
 
-    if (switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
-        switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
+    if (switch_channel_test_app_flag_key("T38", channel, CF_APP_TAGGED)) {
+        switch_channel_clear_app_flag_key("T38", channel, CF_APP_TAGGED);
         switch_channel_set_state(channel, CS_CONSUME_MEDIA);
     } else {
         switch_channel_set_state(channel, CS_SOFT_EXECUTE);
@@ -1697,6 +1761,9 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
         switch_channel_set_variable(channel, "t38_peer", switch_core_session_get_uuid(other_session));
         switch_channel_set_variable(other_channel, "t38_peer", switch_core_session_get_uuid(session));
 
+        switch_channel_set_variable(peer ? other_channel : channel, "t38_gateway_format", "audio");
+        switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "udptl");
+
 
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n", 
                           switch_channel_get_name(peer ? channel : other_channel),
@@ -1709,8 +1776,8 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
         switch_channel_add_state_handler(channel, &t38_gateway_state_handlers);
         switch_channel_add_state_handler(other_channel, &t38_gateway_state_handlers);
 
-        switch_channel_set_app_flag(peer ? channel : other_channel, CF_APP_TAGGED);
-        switch_channel_clear_app_flag(peer ? other_channel : channel, CF_APP_TAGGED);   
+        switch_channel_set_app_flag_key("T38", peer ? channel : other_channel, CF_APP_TAGGED);
+        switch_channel_clear_app_flag_key("T38", peer ? other_channel : channel, CF_APP_TAGGED);   
         
         switch_channel_set_flag(channel, CF_REDIRECT);
         switch_channel_set_state(channel, CS_RESET);

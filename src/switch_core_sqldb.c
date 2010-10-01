@@ -34,8 +34,7 @@
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-
-#define SQLLEN 32768
+//*#define DEBUG_SQL 1
 
 static struct {
 	switch_cache_db_handle_t *event_db;
@@ -43,11 +42,15 @@ static struct {
 	switch_memory_pool_t *memory_pool;
 	switch_event_node_t *event_node;
 	switch_thread_t *thread;
+	switch_thread_t *db_thread;
 	int thread_running;
+	int db_thread_running;
 	switch_bool_t manage;
 	switch_mutex_t *io_mutex;
 	switch_mutex_t *dbh_mutex;
 	switch_hash_t *dbh_hash;
+	switch_thread_cond_t *cond;
+	switch_mutex_t *cond_mutex;
 } sql_manager;
 
 
@@ -346,7 +349,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 			{
 
 				if (!switch_odbc_available()) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! OBDC NOT AVAILABLE!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! ODBC NOT AVAILABLE!\n");
 					goto end;
 				}
 
@@ -464,6 +467,19 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	return status;
 }
 
+static void wake_thread(int force)
+{
+	if (force) {
+		switch_thread_cond_signal(sql_manager.cond);
+		return;
+	}
+
+	if (switch_mutex_trylock(sql_manager.cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(sql_manager.cond);
+		switch_mutex_unlock(sql_manager.cond_mutex);
+	}
+}
+
 /**
    OMFG you cruel bastards.  Who chooses 64k as a max buffer len for a sql statement, have you ever heard of transactions?
 **/
@@ -539,7 +555,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 	switch (dbh->type) {
 	default:
 		{
-			status = switch_cache_db_execute_sql_chunked(dbh, (char *) sql, SQLLEN, err);
+			status = switch_cache_db_execute_sql_chunked(dbh, (char *) sql, 32768, err);
 		}
 		break;
 	}
@@ -846,29 +862,39 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 }
 
 
+static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *thread, void *obj)
+{
+	int sec = 0;
 
+	sql_manager.db_thread_running = 1;
+
+	while (sql_manager.db_thread_running == 1) {
+		if (++sec == SQL_CACHE_TIMEOUT) {
+			sql_close(switch_epoch_time_now(NULL));		
+			wake_thread(1);
+			sec = 0;
+		}
+		switch_yield(1000);
+	}
+
+
+	return NULL;
+}
 
 static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, void *obj)
 {
-	void *pop;
-	uint32_t itterations = 0;
-	uint8_t trans = 0, nothing_in_queue = 0;
-	uint32_t target = 100000;
-	switch_size_t len = 0, sql_len = SQLLEN;
-	char *sqlbuf = (char *) malloc(sql_len);
+	void *pop = NULL;
+	uint32_t iterations = 0;
+	uint8_t trans = 0;
+	uint32_t target = 20000;
+	switch_size_t len = 0, sql_len = runtime.sql_buffer_len;
+	char *tmp, *sqlbuf = (char *) malloc(sql_len);
 	char *sql = NULL;
 	switch_size_t newlen;
 	int lc = 0;
-	uint32_t loops = 0, sec = 0;
-	uint32_t l1 = 1000;
 	uint32_t sanity = 120;
-	int item_remained = 0;
 
 	switch_assert(sqlbuf);
-
-	if (!sql_manager.manage) {
-		l1 = 10;
-	}
 
 	while (!sql_manager.event_db) {
 		if (switch_core_db_handle(&sql_manager.event_db) == SWITCH_STATUS_SUCCESS && sql_manager.event_db)
@@ -883,82 +909,90 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		return NULL;
 	}
 
-
 	sql_manager.thread_running = 1;
 
+	switch_mutex_lock(sql_manager.cond_mutex);
+
 	while (sql_manager.thread_running == 1) {
-		if (++loops == l1) {
-			if (++sec == SQL_CACHE_TIMEOUT) {
-				sql_close(switch_epoch_time_now(NULL));
-				sec = 0;
-			}
-			loops = 0;
-		}
-
-		if (!sql_manager.manage) {
-			switch_yield(100000);
-			continue;
-		}
-
-		//printf("SIZE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
-
-		if (item_remained || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
+		if (sql || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
 			switch_queue_trypop(sql_manager.sql_queue[1], &pop) == SWITCH_STATUS_SUCCESS) {
 
-			if (item_remained) {
-				item_remained = 0;
-			} else {
-				sql = (char *) pop;
-			}
-			
+			if (!sql) sql = (char *) pop;
+
 			if (sql) {
 				newlen = strlen(sql) + 2;
 
-				if (itterations == 0) {
+				if (iterations == 0) {
 					trans = 1;
 				}
 
-				/* ignore abnormally large strings sql strings as potential buffer overflow */
-				if (newlen < SQLLEN) {
-					itterations++;
+				if (len + newlen > sql_len) {
+					int new_mlen = len + newlen + 10240;
 					
-					if (len + newlen < sql_len) {
-						sprintf(sqlbuf + len, "%s;\n", sql);
-						len += newlen;
+					if (new_mlen < runtime.max_sql_buffer_len) {
+						sql_len = new_mlen;
+#ifdef DEBUG_SQL
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+										  "REALLOC %ld %d %d\n", (long int)sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
+										  switch_queue_size(sql_manager.sql_queue[1]));
+#endif
+						if (!(tmp = realloc(sqlbuf, sql_len))) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
+							abort();
+							break;
+						}
+						sqlbuf = tmp;
 					} else {
-						item_remained = 1;
+#ifdef DEBUG_SQL
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+										  "SAVE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
+#endif
+						goto skip;
 					}
 				}
-				
-				if (!item_remained) {
-					free(sql);
-				}
+
+				iterations++;				
+				sprintf(sqlbuf + len, "%s;\n", sql);
+				len += newlen;
+				free(sql);
+				sql = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "SQL thread ending\n");
 				break;
 			}
-		} else {
-			nothing_in_queue = 1;
 		}
 
-
-		if ((item_remained || (trans && ((itterations == target) || (nothing_in_queue && ++lc >= 500)))) &&
-			(sql_manager.event_db->native_handle.core_db_dbh)) {
+	skip:
+		
+		lc = sql ? 1 : 0 + switch_queue_size(sql_manager.sql_queue[0]) + switch_queue_size(sql_manager.sql_queue[1]);
+		
+		if (trans && iterations && (iterations > target || !lc)) {
+#ifdef DEBUG_SQL
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+							  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), iterations);
+#endif
 			if (switch_cache_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
-			itterations = 0;
+#ifdef DEBUG_SQL
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DONE\n");
+#endif
+			iterations = 0;
 			trans = 0;
-			nothing_in_queue = 0;
 			len = 0;
 			*sqlbuf = '\0';
 			lc = 0;
+			switch_yield(400000);
 		}
 
-		if (nothing_in_queue) {
-			switch_cond_next();
+		lc = sql ? 1 : 0 + switch_queue_size(sql_manager.sql_queue[0]) + switch_queue_size(sql_manager.sql_queue[1]);
+		
+		if (!lc) {
+			switch_thread_cond_wait(sql_manager.cond, sql_manager.cond_mutex);
 		}
 	}
+
+	switch_mutex_unlock(sql_manager.cond_mutex);
 
 	while (switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
@@ -1108,11 +1142,13 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CODEC:
 		new_sql() =
 			switch_mprintf
-			("update channels set read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q' and hostname='%q'",
+			("update channels set read_codec='%q',read_rate='%q',read_bit_rate='%q',write_codec='%q',write_rate='%q',write_bit_rate='%q' where uuid='%q' and hostname='%q'",
 			 switch_event_get_header_nil(event, "channel-read-codec-name"),
 			 switch_event_get_header_nil(event, "channel-read-codec-rate"),
+			 switch_event_get_header_nil(event, "channel-read-codec-bit-rate"),
 			 switch_event_get_header_nil(event, "channel-write-codec-name"),
 			 switch_event_get_header_nil(event, "channel-write-codec-rate"),
+			 switch_event_get_header_nil(event, "channel-write-codec-bit-rate"),
 			 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 		break;
 	case SWITCH_EVENT_CHANNEL_HOLD:
@@ -1389,6 +1425,7 @@ static void core_event_handler(switch_event_t *event)
 				switch_queue_push(sql_manager.sql_queue[0], sql[i]);
 			}
 			sql[i] = NULL;
+			wake_thread(1);
 		}
 	}
 }
@@ -1436,8 +1473,10 @@ static char create_channels_sql[] =
 	"   context VARCHAR(128),\n"
 	"   read_codec  VARCHAR(128),\n"
 	"   read_rate  VARCHAR(32),\n"
+	"   read_bit_rate  VARCHAR(32),\n"
 	"   write_codec  VARCHAR(128),\n"
 	"   write_rate  VARCHAR(32),\n"
+	"   write_bit_rate  VARCHAR(32),\n"
 	"   secure VARCHAR(32),\n"
 	"   hostname VARCHAR(256),\n"
 	"   presence_id VARCHAR(4096),\n"
@@ -1505,12 +1544,16 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 {
 	switch_threadattr_t *thd_attr;
 	switch_cache_db_handle_t *dbh;
+	uint32_t sanity = 400;
 
 	sql_manager.memory_pool = pool;
 	sql_manager.manage = manage;
 
 	switch_mutex_init(&sql_manager.dbh_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
 	switch_mutex_init(&sql_manager.io_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
+	switch_mutex_init(&sql_manager.cond_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
+
+	switch_thread_cond_create(&sql_manager.cond, sql_manager.memory_pool);
 
 	switch_core_hash_init(&sql_manager.dbh_hash, sql_manager.memory_pool);
 
@@ -1574,7 +1617,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		{
 			char *err;
-			switch_cache_db_test_reactive(dbh, "select call_uuid from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
@@ -1636,9 +1679,12 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 	switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&sql_manager.thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
+	if (sql_manager.manage) {
+		switch_thread_create(&sql_manager.thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
+	}
+	switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
 
-	while (!sql_manager.thread_running) {
+	while (sql_manager.manage && !sql_manager.thread_running && --sanity) {
 		switch_yield(10000);
 	}
 
@@ -1659,10 +1705,17 @@ void switch_core_sqldb_stop(void)
 			switch_queue_push(sql_manager.sql_queue[0], NULL);
 			switch_queue_push(sql_manager.sql_queue[1], NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
+			wake_thread(1);
 		}
 
 		sql_manager.thread_running = -1;
 		switch_thread_join(&st, sql_manager.thread);
+	}
+
+
+	if (sql_manager.thread && sql_manager.db_thread_running) {
+		sql_manager.db_thread_running = -1;
+		switch_thread_join(&st, sql_manager.db_thread);
 	}
 
 	switch_cache_db_flush_handles();

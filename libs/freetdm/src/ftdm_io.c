@@ -50,6 +50,7 @@
 #endif
 #include "ftdm_cpu_monitor.h"
 
+#define FORCE_HANGUP_TIMER 3000
 #define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
 #define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
 #define FTDM_READ_TRACE_INDEX 0
@@ -85,6 +86,7 @@ FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void)
 }
 
 typedef struct {
+	uint8_t 	enabled;
 	uint8_t         running;
 	uint8_t         alarm;
 	uint32_t        interval;
@@ -102,6 +104,7 @@ static struct {
 	ftdm_mutex_t *mutex;
 	ftdm_mutex_t *span_mutex;
 	ftdm_mutex_t *group_mutex;
+	ftdm_sched_t *timingsched;
 	uint32_t span_index;
 	uint32_t group_index;
 	uint32_t running;
@@ -109,8 +112,6 @@ static struct {
 	ftdm_group_t *groups;
 	cpu_monitor_t cpu_monitor;
 } globals;
-
-static uint8_t ftdm_cpu_monitor_disabled = 0;
 
 enum ftdm_enum_cpu_alarm_action_flags
 {
@@ -242,6 +243,39 @@ static __inline__ void ftdm_std_free(void *pool, void *ptr)
 	ftdm_assert_return(ptr != NULL, , "Attempted to free null pointer");
 	free(ptr);
 }
+
+static void ftdm_set_echocancel_call_begin(ftdm_channel_t *chan)
+{
+	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
+		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
+			}
+		} else {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
+			}
+		}
+	}
+}
+
+static void ftdm_set_echocancel_call_end(ftdm_channel_t *chan)
+{
+	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
+		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
+			}
+		} else {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
+			}
+		}
+	}
+}
+
 
 FT_DECLARE_DATA ftdm_memory_handler_t g_ftdm_mem_handler = 
 {
@@ -463,6 +497,7 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 			status = FTDM_FAIL;
 		}
 		ftdm_safe_free(span->type);
+		ftdm_safe_free(span->name);
 		ftdm_safe_free(span->dtmf_hangup);
 	}
 
@@ -536,7 +571,7 @@ static void ftdm_span_add(ftdm_span_t *span)
 	} else {
 		globals.spans = span;
 	}
-	hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_NONE);
+	hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_FREE_VALUE);
 	ftdm_mutex_unlock(globals.span_mutex);
 }
 
@@ -1249,6 +1284,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 			case FTDM_CHANNEL_STATE_RING:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_PROGRESS:				
+			case FTDM_CHANNEL_STATE_IDLE:				
 			case FTDM_CHANNEL_STATE_GET_CALLERID:
 			case FTDM_CHANNEL_STATE_GENRING:
 				ok = 1;
@@ -1290,6 +1326,16 @@ end:
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		ftdmchan->last_state = ftdmchan->state; 
 		ftdmchan->state = state;
+		ftdmchan->history[ftdmchan->hindex].file = file;
+		ftdmchan->history[ftdmchan->hindex].func = func;
+		ftdmchan->history[ftdmchan->hindex].line = line;
+		ftdmchan->history[ftdmchan->hindex].state = ftdmchan->state;
+		ftdmchan->history[ftdmchan->hindex].last_state = ftdmchan->last_state;
+		ftdmchan->history[ftdmchan->hindex].time = ftdm_current_time_in_ms();
+		ftdmchan->hindex++;
+		if (ftdmchan->hindex == ftdm_array_len(ftdmchan->history)) {
+			ftdmchan->hindex = 0;
+		}
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 
 		ftdm_mutex_lock(ftdmchan->span->mutex);
@@ -1747,7 +1793,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 	ftdm_channel_t *best_rated = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 	int best_rate = 0;
-	int may_be_available = 0;
 
 	*ftdmchan = NULL;
 
@@ -1782,38 +1827,55 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, 
 
 	ftdm_mutex_lock(check->mutex);
 
+	/* The following if's and gotos replace a big if (this || this || this || this) else { nothing; } */
+
+	/* if it is not a voice channel, nothing else to check to open it */
+	if (!FTDM_IS_VOICE_CHANNEL(check)) {
+		goto openchan;
+	}
+
+	/* if it's an FXS device with a call active and has callwaiting enabled, we allow to open it twice */
+	if (check->type == FTDM_CHAN_TYPE_FXS 
+	    && check->token_count == 1 
+	    && ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING)) {
+		goto openchan;
+	}
+
+	/* if channel is available, time to open it */
+	if (chan_is_avail(check)) {
+		goto openchan;
+	}
+
+	/* not available, but still might be available ... */
 	calculate_best_rate(check, &best_rated, &best_rate);
 	if (best_rated) {
-		may_be_available = 1;
+		goto openchan;
 	}
 
-	/* the channel is only allowed to be open if not in use, or, for FXS devices with a call with call waiting enabled */
-	if (
-	    (check->type == FTDM_CHAN_TYPE_FXS 
-	    && check->token_count == 1 
-	    && ftdm_channel_test_feature(check, FTDM_CHANNEL_FEATURE_CALLWAITING))
-	    ||
-	    chan_is_avail(check)
-	    ||
-	    may_be_available) {
-		if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
-			status = check->fio->open(check);
-			if (status == FTDM_SUCCESS) {
-				ftdm_set_flag(check, FTDM_CHANNEL_OPEN);
-			}
-		} else {
-			status = FTDM_SUCCESS;
+	/* channel is unavailable, do not open the channel */
+	goto unlockchan;
+
+openchan:
+	if (!ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
+		status = check->fio->open(check);
+		if (status == FTDM_SUCCESS) {
+			ftdm_set_flag(check, FTDM_CHANNEL_OPEN);
 		}
-		ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
-		ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
-		*ftdmchan = check;
+	} else {
+		status = FTDM_SUCCESS;
 	}
+	ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
+	ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
+	*ftdmchan = check;
 
+unlockchan:
 	ftdm_mutex_unlock(check->mutex);
 
 done:
-
 	ftdm_mutex_unlock(globals.mutex);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to open channel %d:%d\n", span_id, chan_id);
+	}
 
 	return status;
 }
@@ -1996,10 +2058,16 @@ done:
 static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const char *func, int line)
 {
 	ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
+
+	ftdm_set_echocancel_call_end(chan);
+	
 	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
 		if (chan->state == FTDM_CHANNEL_STATE_HANGUP) {
 			/* make user's life easier, and just ignore double hangup requests */
 			return FTDM_SUCCESS;
+		}
+		if (chan->hangup_timer) {
+			ftdm_sched_cancel_timer(globals.timingsched, chan->hangup_timer);
 		}
 		ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
@@ -2158,9 +2226,11 @@ done:
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
-
+	
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
 	ftdm_assert_return(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), FTDM_FAIL, "Call place, but outbound flag not set\n");
+
+	ftdm_set_echocancel_call_begin(ftdmchan);
 
 	ftdm_channel_lock(ftdmchan);
 
@@ -2282,6 +2352,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	close_dtmf_debug(ftdmchan);
 #endif
 	ftdm_channel_clear_vars(ftdmchan);
+	if (ftdmchan->hangup_timer) {
+		ftdm_sched_cancel_timer(globals.timingsched, ftdmchan->hangup_timer);
+	}
 
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
@@ -3524,16 +3597,56 @@ done:
 	return var;
 }
 
-FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan)
+static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
 {
-	ftdm_hash_iterator_t *iter = NULL;
+	int allocated = 0;
+	if (iter) {
+		if (iter->type != type) {
+			ftdm_log(FTDM_LOG_ERROR, "Cannot switch iterator types\n");
+			return NULL;
+		}
+		allocated = iter->allocated;
+		memset(iter, 0, sizeof(*iter));
+		iter->type = type;
+		iter->allocated = allocated;
+		return iter;
+	}
 
+	iter = ftdm_calloc(1, sizeof(*iter));
+	if (!iter) {
+		return NULL;
+	}
+	iter->type = type;
+	iter->allocated = 1;
+	return iter;
+}
+
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter)
+{
+	ftdm_hash_iterator_t *hashiter = NULL;
 	ftdm_channel_lock(ftdmchan);
-
-	iter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
-
+	hashiter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
 	ftdm_channel_unlock(ftdmchan);
 
+
+	if (hashiter == NULL) {
+		return NULL;
+	}
+	
+	if (!(iter = get_iterator(FTDM_ITERATOR_VARS, iter))) {
+		return NULL;
+	}
+	iter->pvt.hashiter = hashiter;
+	return iter;
+}
+
+FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
+{
+	if (!(iter = get_iterator(FTDM_ITERATOR_CHANS, iter))) {
+		return NULL;
+	}
+	iter->pvt.chaniter.index = 1;
+	iter->pvt.chaniter.span = span;
 	return iter;
 }
 
@@ -3545,11 +3658,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, co
 	*var_name = NULL;
 	*var_val = NULL;
 
-	if (!iter) {
-		return FTDM_FAIL;
-	}
+	ftdm_assert_return(iter && (iter->type == FTDM_ITERATOR_VARS) && iter->pvt.hashiter, FTDM_FAIL, "Cannot get variable from invalid iterator!\n");
 
-	hashtable_this(iter, &key, NULL, &val);
+	hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
 
 	*var_name = key;
 	*var_val = val;
@@ -3559,15 +3670,174 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, co
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter)
 {
-	if (!iter) {
-		return NULL;
+	ftdm_assert_return(iter && iter->type, NULL, "Invalid iterator\n");
+
+	switch (iter->type) {
+	case FTDM_ITERATOR_VARS:
+		if (!iter->pvt.hashiter) {
+			return NULL;
+		}
+		iter->pvt.hashiter = hashtable_next(iter->pvt.hashiter);
+		if (!iter->pvt.hashiter) {
+			return NULL;
+		}
+		return iter;
+	case FTDM_ITERATOR_CHANS:
+		ftdm_assert_return(iter->pvt.chaniter.index, NULL, "channel iterator index cannot be zero!\n");
+		if (iter->pvt.chaniter.index == iter->pvt.chaniter.span->chan_count) {
+			return NULL;
+		}
+		iter->pvt.chaniter.index++;
+		return iter;
+	default:
+		break;
 	}
-	return hashtable_next(iter);
+
+	ftdm_assert_return(0, NULL, "Unknown iterator type\n");
+	return NULL;
+}
+
+FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter)
+{
+	const void *key = NULL;
+	void *val = NULL;
+
+	ftdm_assert_return(iter && iter->type, NULL, "Invalid iterator\n");
+
+	switch (iter->type) {
+	case FTDM_ITERATOR_VARS:
+		hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
+		/* I decided to return the key instead of the value since the value can be retrieved using the key */
+		return (void *)key;
+	case FTDM_ITERATOR_CHANS:
+		ftdm_assert_return(iter->pvt.chaniter.index, NULL, "channel iterator index cannot be zero!\n");
+		ftdm_assert_return(iter->pvt.chaniter.index <= iter->pvt.chaniter.span->chan_count, NULL, "channel iterator index bigger than span chan count!\n");
+		return iter->pvt.chaniter.span->channels[iter->pvt.chaniter.index];
+	default:
+		break;
+	}
+
+	ftdm_assert_return(0, NULL, "Unknown iterator type\n");
+	return NULL;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter)
+{
+	/* it's valid to pass a NULL iterator, do not return failure  */
+	if (!iter) {
+		return FTDM_SUCCESS;
+	}
+
+	if (!iter->allocated) {
+		memset(iter, 0, sizeof(*iter));
+		return FTDM_SUCCESS;
+	}
+
+	ftdm_assert_return(iter->type, FTDM_FAIL, "Cannot free invalid iterator\n");
+	ftdm_safe_free(iter);
+
+	return FTDM_SUCCESS;
 }
 
 static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
+
+static void print_channels_by_state(ftdm_stream_handle_t *stream, ftdm_channel_state_t state, int not, int *count)
+{
+	ftdm_hash_iterator_t *i = NULL;
+	ftdm_span_t *span;
+	ftdm_channel_t *fchan = NULL;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *curr = NULL;
+	const void *key = NULL;
+	void *val = NULL;
+
+	*count = 0;
+
+	ftdm_mutex_lock(globals.mutex);
+
+	for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
+		hashtable_this(i, &key, NULL, &val);
+		if (!key || !val) {
+			break;
+		}
+		span = val;
+		citer = ftdm_span_get_chan_iterator(span, NULL);
+		if (!citer) {
+			continue;
+		}
+		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
+			fchan = ftdm_iterator_current(curr);
+			if (not && (fchan->state != state)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n", 
+						fchan->span_id, fchan->chan_id, 
+						fchan->physical_span_id, fchan->physical_chan_id, ftdm_channel_state2str(fchan->state));
+				(*count)++;
+			} else if (!not && (fchan->state == state)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n", 
+						fchan->span_id, fchan->chan_id, 
+						fchan->physical_span_id, fchan->physical_chan_id, ftdm_channel_state2str(fchan->state));
+				(*count)++;
+			}
+		}
+		ftdm_iterator_free(citer);
+	}
+
+	ftdm_mutex_unlock(globals.mutex);
+}
+
+static char *handle_core_command(const char *cmd)
+{
+	char *mycmd = NULL;
+	int argc = 0;
+	int count = 0;
+	int not = 0;
+	char *argv[10] = { 0 };
+	char *state = NULL;
+	ftdm_channel_state_t i = FTDM_CHANNEL_STATE_INVALID;
+	ftdm_stream_handle_t stream = { 0 };
+
+	FTDM_STANDARD_STREAM(stream);
+
+	if (cmd) {
+		mycmd = ftdm_strdup(cmd);
+		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	} else {
+		stream.write_function(&stream, "invalid core command\n");
+		goto done;
+	}
+
+	if (!strcasecmp(argv[0], "state")) {
+		if (argc < 2) {
+			stream.write_function(&stream, "core state command requires an argument\n");
+			goto done;
+		}
+		state = argv[1];
+		if (argv[1][0] == '!') {
+			not = 1;
+			state++;
+		}
+		for (i = FTDM_CHANNEL_STATE_DOWN; i < FTDM_CHANNEL_STATE_INVALID; i++) {
+			if (!strcasecmp(state, ftdm_channel_state2str(i))) {
+				break;
+			}
+		}
+		if (i == FTDM_CHANNEL_STATE_INVALID) {
+			stream.write_function(&stream, "invalid state %s\n", state);
+			goto done;
+		}
+		print_channels_by_state(&stream, i, not, &count);
+		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "not in state" : "in state", ftdm_channel_state2str(i), count);
+	} else {
+		stream.write_function(&stream, "invalid core command %s\n", argv[0]);
+	}
+
+done:
+	ftdm_safe_free(mycmd);
+
+	return stream.data;
+}
 
 FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 {
@@ -3583,6 +3853,10 @@ FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 	}
 
 	type = dup;
+
+	if (!strcasecmp(type, "core")) {
+		return handle_core_command(cmd);
+	}
 	
 	ftdm_mutex_lock(globals.mutex);
 	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
@@ -3884,7 +4158,14 @@ static ftdm_status_t load_config(void)
 				ftdm_log(FTDM_LOG_ERROR, "unknown span variable '%s'\n", var);
 			}
 		} else if (!strncasecmp(cfg.category, "general", 7)) {
-			if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
+			if (!strncasecmp(var, "cpu_monitor", sizeof("cpu_monitor")-1)) {
+				if (!strncasecmp(val, "yes", 3)) {
+					globals.cpu_monitor.enabled = 1;
+					if (!globals.cpu_monitor.alarm_action_flags) {
+						globals.cpu_monitor.alarm_action_flags |= FTDM_CPU_ALARM_ACTION_WARN;
+					}
+				}
+			} else if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
 				if (atoi(val) > 0) {
 					globals.cpu_monitor.interval = atoi(val);
 				} else {
@@ -3961,27 +4242,6 @@ static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)
 	ftdm_config_close_file(&cfg);	
 
 	return FTDM_SUCCESS;
-}
-
-FT_DECLARE(char *) ftdm_build_dso_path(const char *name, char *path, ftdm_size_t len)
-{
-#ifdef WIN32
-    const char *ext = ".dll";
-    //const char *EXT = ".DLL";
-#define FTDM_MOD_DIR "." //todo
-#elif defined (MACOSX) || defined (DARWIN)
-    const char *ext = ".dylib";
-    //const char *EXT = ".DYLIB";
-#else
-    const char *ext = ".so";
-    //const char *EXT = ".SO";
-#endif
-	if (*name == *FTDM_PATH_SEPARATOR) {
-		snprintf(path, len, "%s%s", name, ext);
-	} else {
-		snprintf(path, len, "%s%s%s%s", FTDM_MOD_DIR, FTDM_PATH_SEPARATOR, name, ext);
-	}
-	return path;	
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_global_add_io_interface(ftdm_io_interface_t *interface1)
@@ -4499,6 +4759,21 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
+
+static void execute_safety_hangup(void *data)
+{
+	ftdm_channel_t *fchan = data;
+	ftdm_channel_lock(fchan);
+	fchan->hangup_timer = 0;
+	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
+		call_hangup(fchan, __FILE__, __FUNCTION__, __LINE__);
+	} else {
+		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
+	}
+	ftdm_channel_unlock(fchan);
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	if (sigmsg->channel) {
@@ -4520,17 +4795,26 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		break;
 
 	case FTDM_SIGEVENT_START:
-		/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
-		 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
-		 * is needed at all?
-		 * */
-		ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+		{
+			ftdm_set_echocancel_call_begin(sigmsg->channel);
+
+			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
+			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
+			* is needed at all?
+			* */
+			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+		}
 		break;
 
 	case FTDM_SIGEVENT_STOP:
 		if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_USER_HANGUP)) {
 			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user already requested hangup\n");
 			goto done;
+		}
+		if (sigmsg->channel->state == FTDM_CHANNEL_STATE_TERMINATING) {
+			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Scheduling safety hangup timer\n");
+			/* if the user does not move us to hangup in 2 seconds, we will do it ourselves */
+			ftdm_sched_timer(globals.timingsched, "safety-hangup", FORCE_HANGUP_TIMER, execute_safety_hangup, sigmsg->channel, &sigmsg->channel->hangup_timer);
 		}
 		break;
 
@@ -4630,12 +4914,6 @@ static void ftdm_cpu_monitor_stop(void)
 	ftdm_interrupt_destroy(&globals.cpu_monitor.interrupt);
 }
 
-FT_DECLARE(void) ftdm_cpu_monitor_disable(void)
-{
-	ftdm_cpu_monitor_disabled = 1;
-}
-
-
 FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 {
 	memset(&globals, 0, sizeof(globals));
@@ -4653,6 +4931,14 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 	ftdm_mutex_create(&globals.span_mutex);
 	ftdm_mutex_create(&globals.group_mutex);
 	ftdm_sched_global_init();
+	if (ftdm_sched_create(&globals.timingsched, "freetdm-master") != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to create master timing schedule context\n");
+		return FTDM_FAIL;
+	}
+	if (ftdm_sched_free_run(globals.timingsched) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to run master timing schedule context\n");
+		return FTDM_FAIL;
+	}
 	globals.running = 1;
 	return FTDM_SUCCESS;
 }
@@ -4669,8 +4955,9 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 
 	ftdm_log(FTDM_LOG_NOTICE, "Modules configured: %d \n", modcount);
 
+	globals.cpu_monitor.enabled = 0;
 	globals.cpu_monitor.interval = 1000;
-	globals.cpu_monitor.alarm_action_flags = FTDM_CPU_ALARM_ACTION_WARN | FTDM_CPU_ALARM_ACTION_REJECT;
+	globals.cpu_monitor.alarm_action_flags = 0;
 	globals.cpu_monitor.set_alarm_threshold = 80;
 	globals.cpu_monitor.reset_alarm_threshold = 70;
 
@@ -4680,7 +4967,12 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 		return FTDM_FAIL;
 	}
 
-	if (!ftdm_cpu_monitor_disabled) {
+	if (globals.cpu_monitor.enabled) {
+		ftdm_log(FTDM_LOG_INFO, "CPU Monitor is running interval:%d lo-thres:%d hi-thres:%d\n", 
+					globals.cpu_monitor.interval, 
+					globals.cpu_monitor.set_alarm_threshold, 
+					globals.cpu_monitor.reset_alarm_threshold);
+
 		if (ftdm_cpu_monitor_start() != FTDM_SUCCESS) {
 			return FTDM_FAIL;
 		}
@@ -4699,14 +4991,19 @@ FT_DECLARE(uint32_t) ftdm_running(void)
 FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 {
 	ftdm_span_t *sp;
-	uint32_t sanity = 100;
 
 	time_end();
 
+	/* many freetdm event loops rely on this variable to decide when to stop, do this first */
 	globals.running = 0;	
 
+	/* stop the scheduling thread */
+	ftdm_free_sched_stop();
+
+	/* stop the cpu monitor thread */
 	ftdm_cpu_monitor_stop();
 
+	/* now destroy channels and spans */
 	globals.span_index = 0;
 
 	ftdm_span_close_all();
@@ -4731,24 +5028,20 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	globals.spans = NULL;
 	ftdm_mutex_unlock(globals.span_mutex);
 
+	/* destroy signaling and io modules */
 	ftdm_unload_modules();
 
-	while (ftdm_free_sched_running() && --sanity) {
-		ftdm_log(FTDM_LOG_DEBUG, "Waiting for schedule thread to finish\n");
-		ftdm_sleep(100);
-	}
-
-	if (!sanity) {
-		ftdm_log(FTDM_LOG_CRIT, "schedule thread did not stop running, we may crash on shutdown\n");
-	}
-
+	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);
+	ftdm_sched_destroy(&globals.timingsched);
 	hashtable_destroy(globals.interface_hash);
-	hashtable_destroy(globals.module_hash);
+	hashtable_destroy(globals.module_hash);	
 	hashtable_destroy(globals.span_hash);
+	hashtable_destroy(globals.group_hash);
 	ftdm_mutex_unlock(globals.mutex);
 	ftdm_mutex_destroy(&globals.mutex);
 	ftdm_mutex_destroy(&globals.span_mutex);
+	ftdm_mutex_destroy(&globals.group_mutex);
 
 	memset(&globals, 0, sizeof(globals));
 	return FTDM_SUCCESS;
@@ -5069,6 +5362,42 @@ FT_DECLARE(char *) ftdm_strndup(const char *str, ftdm_size_t inlen)
 	memcpy(new, str, len-1);
 	new[len-1] = 0;
 	return new;
+}
+
+FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
+{
+	char func[255];
+	char line[255];
+	char states[255];
+	uint8_t i = 0;
+
+	ftdm_stream_handle_t stream = { 0 };
+	FTDM_STANDARD_STREAM(stream);
+	if (!fchan->history[0].file) {
+		stream.write_function(&stream, "-- No state history --\n");
+		return stream.data;
+	}
+
+	stream.write_function(&stream, "%-30.30s %-30.30s %s", "-- States --", "-- Function --", "-- Location --\n");
+
+	for (i = fchan->hindex; i < ftdm_array_len(fchan->history); i++) {
+		if (!fchan->history[i].file) {
+			break;
+		}
+		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
+		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
+		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
+		stream.write_function(&stream, "%-30.30s %-30.30s %s\n", states, func, line);
+	}
+
+	for (i = 0; i < fchan->hindex; i++) {
+		snprintf(states, sizeof(states), "%-5.15s => %-5.15s", ftdm_channel_state2str(fchan->history[i].last_state), ftdm_channel_state2str(fchan->history[i].state));
+		snprintf(func, sizeof(func), "[%s]", fchan->history[i].func);
+		snprintf(line, sizeof(func), "[%s:%d]", fchan->history[i].file, fchan->history[i].line);
+		stream.write_function(&stream, "%-30.30s %-30.30s %s\n", states, func, line);
+	}
+
+	return stream.data;
 }
 
 

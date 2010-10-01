@@ -386,7 +386,7 @@ typedef struct ftdm_conf_parameter {
 } ftdm_conf_parameter_t;
 
 /*! \brief Opaque general purpose iterator */
-typedef void ftdm_iterator_t;
+typedef struct ftdm_iterator ftdm_iterator_t;
 
 /*! \brief Channel commands that can be executed through ftdm_channel_command() */
 typedef enum {
@@ -666,9 +666,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signa
 
 /*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
 FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signaling_status_t *status);
-
-/*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
-FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
 /*! 
  * \brief Set user private data in the channel
@@ -1032,14 +1029,30 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const c
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name);
 
 /*! \brief Get an iterator to iterate over the channel variables
- *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
-FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan);
+ *  \param ftdmchan The channel structure containing the variables
+ *  \param iter Optional iterator. You can reuse an old iterator (not previously freed) to avoid the extra allocation of a new iterator.
+ *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. 
+ *        This iterator is completely non-thread safe, if you are adding variables or removing variables while iterating 
+ *        results are unpredictable
+ */
+FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter);
+
+/*! \brief Get iterator current value (depends on the iterator type)
+ *  \note Channel iterators return a pointer to ftdm_channel_t
+ *        Variable iterators return a pointer to the variable name (not the variable value)
+ */
+FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter);
 
 /*! \brief Get variable name and value for the current iterator position */
 FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
 
 /*! \brief Advance iterator */
 FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
+
+/*! \brief Free iterator 
+ *  \note You must free an iterator after using it unless you plan to reuse it
+ */
+FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter);
 
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
@@ -1144,6 +1157,12 @@ FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span);
 /*! \brief Get the span name */
 FT_DECLARE(const char *) ftdm_span_get_name(const ftdm_span_t *span);
 
+/*! \brief Get iterator for the span channels
+ *  \param span The span containing the channels
+ *  \param iter Optional iterator. You can reuse an old iterator (not previously freed) to avoid the extra allocation of a new iterator.
+ */
+FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter);
+
 /*! 
  * \brief Execute a text command. The text command output will be returned and must be free'd 
  *
@@ -1153,16 +1172,6 @@ FT_DECLARE(const char *) ftdm_span_get_name(const ftdm_span_t *span);
  * \retval FTDM_FAIL failure 
  */
 FT_DECLARE(char *) ftdm_api_execute(const char *cmd);
-
-/*! 
- * \brief Disables CPU monitoring
- *
- * \note CPU monitoring is enabled by default. This means a thread will be launched at startup (ftdm_global_init)
- *       with the sole purpose of monitoring system-wide CPU usage. If the CPU usage raises above a defined
- *       threshold, no new calls will be accepted (neither incoming or outgoing)
- *
- */
-FT_DECLARE(void) ftdm_cpu_monitor_disable(void);
 
 /*! 
  * \brief Create a configuration node
@@ -1255,7 +1264,13 @@ FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *channe
 /*! \brief For display debugging purposes you can display this string which describes the last channel internal state */
 FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *channel);
 
-/*! \brief For display debugging purposes you can display this string which describes the last channel internal state */
+/*! \brief For display debugging purposes you can display this string which describes the history of the channel 
+ *  \param channel The channel to get the history from
+ *  \return History string for the channel. You must free the string with ftdm_free
+ */
+FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *channel);
+
+/*! \brief Initialize channel state for an outgoing call */
 FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *ftdmchan);
 
 /*! \brief Initialize the library */
@@ -1278,6 +1293,12 @@ FT_DECLARE(void) ftdm_global_set_logger(ftdm_logger_t logger);
 
 /*! \brief Set the default logger level */
 FT_DECLARE(void) ftdm_global_set_default_logger(int level);
+
+/*! \brief Set the directory to look for modules */
+FT_DECLARE(void) ftdm_global_set_mod_directory(const char *path);
+
+/*! \brief Set the directory to look for configs */
+FT_DECLARE(void) ftdm_global_set_config_directory(const char *path);
 
 /*! \brief Check if the FTDM library is initialized and running */
 FT_DECLARE(ftdm_bool_t) ftdm_running(void);

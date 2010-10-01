@@ -395,6 +395,8 @@
       <prompt phrase="Congratulations, you pressed star. This does not mean you ARE a star. It simply means that you can press buttons and probably have fingers." filename="ivr-congratulations_you_pressed_star.wav"/>
       <prompt phrase="All of our engineers are busy assisting other sales guys with demonstrating how cool the CudaTel is. Please stay on the line and your call will be answered in the order it was received." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
       <prompt phrase="" filename="ivr-.wav"/>
+      <prompt phrase="You are already muted." filename="conf-you_are_already_muted.wav"/>
+      <prompt phrase="You are now bi-directionally muted." filename="conf-you_are_now_bidirectionally_muted.wav"/>
 
     </ivr>
     <misc>

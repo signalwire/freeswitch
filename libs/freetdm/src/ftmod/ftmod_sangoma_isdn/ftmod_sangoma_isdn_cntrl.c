@@ -35,7 +35,6 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-
 void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status);
 
 void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
@@ -53,21 +52,19 @@ void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status
 	return;
 }
 
+void sngisdn_set_span_sig_status(ftdm_span_t *span, ftdm_signaling_status_t status)
+{
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
 
 
-void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t status)
-{	
-	unsigned i;
-	/* TODO: use channel iterator once it is implemented */
-
-	for (i=1;i<=ftdmspan->chan_count;i++) {
-		sngisdn_set_chan_sig_status(ftdmspan->channels[i], status);
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+		sngisdn_set_chan_sig_status(((ftdm_channel_t*)ftdm_iterator_current(curr)), status);
 	}
+	ftdm_iterator_free(chaniter);
 	return;
 }
-
-
-
 
 
 /* For Emacs:

@@ -824,7 +824,8 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 			if (!cc->noexit
 				&& (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key
 					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key
-					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key)) {
+					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key
+					|| dtmf->digit == *cc->profile->email_key || dtmf->digit == *cc->profile->forward_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -1421,6 +1422,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
+		const char *vm_announce_cid = NULL;
 
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
 
@@ -1428,7 +1430,13 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(session, &msg);
-
+		
+		if (!zstr(cbt->cid_number) && (vm_announce_cid = switch_channel_get_variable(channel, "vm_announce_cid"))) {
+			switch_ivr_play_file(session, NULL, vm_announce_cid, NULL);
+			switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
+			switch_ivr_say(session, cbt->cid_number, NULL, "name_spelled", "pronounced", NULL, NULL);
+		}
+		
 		args.input_callback = cancel_on_dtmf;
 		
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->listen_file_key, profile->save_file_key,
@@ -1523,7 +1531,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				vm_cc[0] = '\0';
 
 				TRY_CODE(switch_ivr_read
-						 (session, 0, sizeof(vm_cc), macro_buf, NULL, vm_cc, sizeof(vm_cc), profile->digit_timeout, profile->terminator_key));
+						 (session, 0, sizeof(vm_cc), macro_buf, NULL, vm_cc, sizeof(vm_cc), profile->digit_timeout, profile->terminator_key, 0));
 
 				cmd = switch_core_session_sprintf(session, "%s@%s %s %s '%s'", vm_cc, cbt->domain, new_file_path, cbt->cid_number, cbt->cid_name);
 
@@ -1987,7 +1995,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_xml_t xx_user, xx_domain, xx_domain_root;
 
 					switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", VM_ENTER_PASS_MACRO, profile->terminator_key);
-					TRY_CODE(switch_ivr_read(session, 0, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key));
+					TRY_CODE(switch_ivr_read(session, 0, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key, 0));
 					sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
 					vm_execute_sql(profile, sql, profile->mutex);
 					switch_safe_free(file_path);
@@ -2686,21 +2694,27 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
-	} else {
-		domain = user;
-	}
 
-	if ((profile_name = strchr(domain, '@'))) {
-		*profile_name++ = '\0';
-	} else {
-		profile_name = domain;
+		if ((profile_name = strchr(domain, '@'))) {
+			*profile_name++ = '\0';
+		} else {
+			profile_name = domain;
+		}
 	}
 
 	if (switch_stristr("group=", user)) {
 		user += 6;
 		isgroup++;
-	} else if (user == domain) {
+	} else if (switch_stristr("domain=", user)) {
+		user += 7;
+		domain = user;
+		profile_name = domain;
 		isall++;
+	}
+
+	if (zstr(domain)) {
+		domain = switch_core_get_variable("domain");
+		profile_name = domain;
 	}
 
 	if (!(user && domain)) {
@@ -2746,6 +2760,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);
 			status = SWITCH_STATUS_FALSE;
 			switch_event_destroy(&my_params);
+			profile_rwunlock(profile);
 			goto end;
 		}
 
@@ -3164,7 +3179,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_event_destroy(&vars);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s@%s %s",
+				char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
 														vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
 
 				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
@@ -3670,7 +3685,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	const char *fmt = "%a, %e %b %Y %T %z";
 	char heard[80];
 	char title_b4[128] = "";
-	char title_aft[128 * 3] = "";
+	char title_aft[128 * 3 + 1] = "";
 
 	if (argc > 0) {
 		l_created = switch_time_make(atol(argv[0]), 0);
@@ -3961,7 +3976,7 @@ static void do_web(vm_profile_t *profile, const char *user_in, const char *domai
 	}
 }
 
-#define VM_INJECT_USAGE "[group=]<box> <sound_file> [<cid_num>] [<cid_name>]"
+#define VM_INJECT_USAGE "[group=<group>[@domain]|domain=<domain>|<box>[@<domain>]] <sound_file> [<cid_num>] [<cid_name>]"
 SWITCH_STANDARD_API(voicemail_inject_api_function)
 {
 	if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {

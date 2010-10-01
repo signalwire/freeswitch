@@ -369,7 +369,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *audio_file,
 														   const char *bad_input_audio_file,
 														   const char *var_name, char *digit_buffer, uint32_t digit_buffer_length,
-														   const char *digits_regex);
+														   const char *digits_regex,
+														   uint32_t digit_timeout);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
@@ -804,7 +805,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t max_digits,
 												const char *prompt_audio_file,
 												const char *var_name,
-												char *digit_buffer, switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators);
+												char *digit_buffer, 
+												switch_size_t digit_buffer_length, 
+												uint32_t timeout, 
+												const char *valid_terminators,
+												uint32_t digit_timeout);
+
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_block_dtmf_session(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_unblock_dtmf_session(switch_core_session_t *session);

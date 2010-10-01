@@ -36,7 +36,10 @@
 #define closesocket(x) close(x)
 #include <fcntl.h>
 #else
+#pragma warning (disable:6386)
+/* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
+#pragma warning (default:6386)
 #endif
 
 

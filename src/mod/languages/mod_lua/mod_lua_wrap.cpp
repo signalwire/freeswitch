@@ -5175,15 +5175,17 @@ static int _wrap_CoreSession_read(lua_State* L) {
   char *arg4 = (char *) 0 ;
   int arg5 ;
   char *arg6 = (char *) 0 ;
+  int arg7 = (int) 0 ;
   char *result = 0 ;
   
-  SWIG_check_num_args("read",6,6)
+  SWIG_check_num_args("read",6,7)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read",1,"CoreSession *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("read",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("read",3,"int");
   if(!lua_isstring(L,4)) SWIG_fail_arg("read",4,"char const *");
   if(!lua_isnumber(L,5)) SWIG_fail_arg("read",5,"int");
   if(!lua_isstring(L,6)) SWIG_fail_arg("read",6,"char const *");
+  if(lua_gettop(L)>=7 && !lua_isnumber(L,7)) SWIG_fail_arg("read",7,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_read",1,SWIGTYPE_p_CoreSession);
@@ -5194,7 +5196,10 @@ static int _wrap_CoreSession_read(lua_State* L) {
   arg4 = (char *)lua_tostring(L, 4);
   arg5 = (int)lua_tonumber(L, 5);
   arg6 = (char *)lua_tostring(L, 6);
-  result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6);
+  if(lua_gettop(L)>=7){
+    arg7 = (int)lua_tonumber(L, 7);
+  }
+  result = (char *)(arg1)->read(arg2,arg3,(char const *)arg4,arg5,(char const *)arg6,arg7);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
@@ -5219,9 +5224,10 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
   char *arg10 = (char *) NULL ;
+  int arg11 = (int) 0 ;
   char *result = 0 ;
   
-  SWIG_check_num_args("playAndGetDigits",9,10)
+  SWIG_check_num_args("playAndGetDigits",9,11)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("playAndGetDigits",1,"CoreSession *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("playAndGetDigits",2,"int");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("playAndGetDigits",3,"int");
@@ -5232,6 +5238,7 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   if(!lua_isstring(L,8)) SWIG_fail_arg("playAndGetDigits",8,"char *");
   if(!lua_isstring(L,9)) SWIG_fail_arg("playAndGetDigits",9,"char *");
   if(lua_gettop(L)>=10 && !lua_isstring(L,10)) SWIG_fail_arg("playAndGetDigits",10,"char const *");
+  if(lua_gettop(L)>=11 && !lua_isnumber(L,11)) SWIG_fail_arg("playAndGetDigits",11,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_playAndGetDigits",1,SWIGTYPE_p_CoreSession);
@@ -5248,7 +5255,10 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   if(lua_gettop(L)>=10){
     arg10 = (char *)lua_tostring(L, 10);
   }
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10);
+  if(lua_gettop(L)>=11){
+    arg11 = (int)lua_tonumber(L, 11);
+  }
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
@@ -7191,17 +7201,28 @@ static int _wrap_Dbh_query(lua_State* L) {
   SWIGLUA_FN arg3 ;
   bool result;
   
-  SWIG_check_num_args("query",3,3)
+  {
+    SWIGLUA_FN default_swiglua_fn = {
+      0 
+    };
+    arg3 = default_swiglua_fn;
+  }
+  SWIG_check_num_args("query",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("query",1,"LUA::Dbh *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("query",2,"char *");
-  if(!lua_isfunction(L,3)) SWIG_fail_arg("query",3,"SWIGLUA_FN");
+  if(lua_gettop(L)>=3 && !lua_isfunction(L,3)) SWIG_fail_arg("query",3,"SWIGLUA_FN");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
     SWIG_fail_ptr("Dbh_query",1,SWIGTYPE_p_LUA__Dbh);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  (&arg3)->L=L; (&arg3)->idx=3; 
+  if(lua_gettop(L)>=3){
+    {
+      (&arg3)->L = L;
+      (&arg3)->idx = 3;
+    }
+  }
   result = (bool)(arg1)->query(arg2,arg3);
   SWIG_arg=0;
   lua_pushboolean(L,(int)(result==true)); SWIG_arg++;

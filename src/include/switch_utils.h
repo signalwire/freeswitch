@@ -139,6 +139,9 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 #define switch_is_valid_rate(_tmp) (_tmp == 8000 || _tmp == 12000 || _tmp == 16000 || _tmp == 24000 || _tmp == 32000 || _tmp == 11025 || _tmp == 22050 || _tmp == 44100 || _tmp == 48000)
 
 
+#ifdef _MSC_VER
+#pragma warning(disable:6011)
+#endif
 static inline int switch_string_has_escaped_data(const char *in)
 {
 	const char *i = strchr(in, '\\');
@@ -153,6 +156,9 @@ static inline int switch_string_has_escaped_data(const char *in)
 
 	return 0;
 }
+#ifdef _MSC_VER
+#pragma warning(default:6011)
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen);
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
@@ -169,6 +175,23 @@ static inline switch_bool_t switch_is_digit_string(const char *s)
 	}
 
 	return SWITCH_TRUE;
+}
+
+
+static inline uint32_t switch_known_bitrate(switch_payload_t payload)
+{
+	switch(payload) {
+	case 0: /* PCMU */ return 64000;
+	case 3: /* GSM */ return 13200;
+	case 4: /* G723 */ return 6300;
+	case 7: /* LPC */ return 2400;
+	case 8: /* PCMA */ return 64000;
+	case 9: /* G722 */ return 64000;
+	case 18: /* G729 */ return 8000;
+	default: break;
+	}
+
+	return 0;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len);
@@ -353,7 +376,16 @@ switch_mutex_unlock(obj->flag_mutex);
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
 
-	 static inline char *switch_sanitize_number(char *number)
+static inline uint32_t switch_default_ptime(const char *name, uint32_t number)
+{
+	if (!strcasecmp(name, "G723")) {
+		return 30;
+	}
+
+	return 20;
+}
+
+static inline char *switch_sanitize_number(char *number)
 {
 	char *p = number, *q;
 	char warp[] = "/:";
@@ -455,6 +487,9 @@ static inline char *switch_safe_strdup(const char *it)
 }
 
 
+#ifdef _MSC_VER
+#pragma warning(disable:6011)
+#endif
 static inline char *switch_lc_strdup(const char *it)
 {
 	char *dup;
@@ -487,6 +522,9 @@ static inline char *switch_uc_strdup(const char *it)
 
 	return NULL;
 }
+#ifdef _MSC_VER
+#pragma warning(default:6011)
+#endif
 
 
 /*!
@@ -680,7 +718,15 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 
 SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst);
 
+SWITCH_DECLARE(const char *) switch_dow_int2str(int val);
+SWITCH_DECLARE(int) switch_dow_str2int(const char *exp);
+SWITCH_DECLARE(int) switch_dow_cmp(const char *exp, int val);
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val);
+SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val);
+
+SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts);
+SWITCH_DECLARE(void) switch_split_date(const char *exp, int *year, int *month, int *day);
+SWITCH_DECLARE(void) switch_split_time(const char *exp, int *hour, int *min, int *sec);
 
 /*!
   \brief Split a user@domain string as user and domain

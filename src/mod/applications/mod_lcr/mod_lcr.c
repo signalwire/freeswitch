@@ -167,7 +167,7 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 	switch_channel_t *channel = NULL;
 	
 	if (!zstr(cid)) {
-		len = strlen(cid);
+		len = (uint32_t)strlen(cid);
 	} else {
 		goto done;
 	}
@@ -506,7 +506,7 @@ static char *expand_digits(switch_memory_pool_t *pool, char *digits, switch_bool
 	int digit_len;
 	SWITCH_STANDARD_STREAM(dig_stream);
 
-	digit_len = strlen(digits);
+	digit_len = (int)strlen(digits);
 	digits_copy = switch_core_strdup(pool, digits);
 	
 	for (n = digit_len; n > 0; n--) {
@@ -1571,7 +1571,6 @@ SWITCH_STANDARD_APP(lcr_app_function)
 				switch_channel_set_variable(channel, vbuf, cur_route->carrier_name);
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_codec_%d", cnt);
 				switch_channel_set_variable(channel, vbuf, cur_route->codec);
-				cnt++;
 				if (cur_route->next) {
 					if (routes.profile->enable_sip_redir) {
 						dig_stream.write_function(&dig_stream, "%s,", cur_route->dialstring);

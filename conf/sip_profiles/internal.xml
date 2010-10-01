@@ -116,7 +116,7 @@
     <!-- used to share presence info across sofia profiles -->
     <!-- Name of the db to use for this profile -->
     <!--<param name="dbname" value="share_presence"/>-->
-    <!--<param name="presence-hosts" value="$${domain}"/>-->
+    <param name="presence-hosts" value="$${domain},$${local_ip_v4}"/>
     <!-- ************************************************* -->
     
     <!-- This setting is for AAL2 bitpacking on G726 -->
@@ -225,6 +225,8 @@
     <param name="force-subscription-domain" value="$${domain}"/>
     <!--all inbound reg will stored in the db using this domain -->
     <param name="force-register-db-domain" value="$${domain}"/>
+
+    <!--<param name="delete-subs-on-register" value="false"/>-->
 
     <!-- enable rtcp on every channel also can be done per leg basis with rtcp_audio_interval_msec variable set to passthru to pass it across a call-->
     <!--<param name="rtcp-audio-interval-msec" value="5000"/>-->

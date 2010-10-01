@@ -191,6 +191,8 @@ typedef enum {
 	FTDM_CHANNEL_FEATURE_CALLERID = (1 << 4), /*!< Channel can detect caller id (read-only) */
 	FTDM_CHANNEL_FEATURE_PROGRESS = (1 << 5), /*!< Channel can detect inband progress (read-only) */
 	FTDM_CHANNEL_FEATURE_CALLWAITING = (1 << 6), /*!< Channel will allow call waiting (ie: FXS devices) (read/write) */
+	FTDM_CHANNEL_FEATURE_HWEC = (1<<7), /*!< Channel has a hardware echo canceller */
+	FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE  = (1<<8), /*!< hardware echo canceller is disabled when there are no calls on this channel */
 } ftdm_channel_feature_t;
 
 typedef enum {
@@ -322,8 +324,14 @@ struct ftdm_conf_node {
 	/* first node child */
 	struct ftdm_conf_node *child;
 
+	/* last node child */
+	struct ftdm_conf_node *last;
+
 	/* next node sibling */
 	struct ftdm_conf_node *next;
+
+	/* prev node sibling */
+	struct ftdm_conf_node *prev;
 
 	/* my parent if any */
 	struct ftdm_conf_node *parent;
@@ -365,6 +373,23 @@ typedef struct ftdm_fsk_modulator ftdm_fsk_modulator_t;
 typedef ftdm_status_t (*ftdm_span_start_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_span_stop_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_channel_sig_read_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
+
+typedef enum {
+	FTDM_ITERATOR_VARS = 1,
+	FTDM_ITERATOR_CHANS, 
+} ftdm_iterator_type_t;
+
+struct ftdm_iterator {
+	ftdm_iterator_type_t type;
+	unsigned int allocated:1;
+	union {
+		struct {
+			uint32_t index;
+			const ftdm_span_t *span;
+		} chaniter;
+		ftdm_hash_iterator_t *hashiter;
+	} pvt;
+};
 
 #ifdef __cplusplus
 }

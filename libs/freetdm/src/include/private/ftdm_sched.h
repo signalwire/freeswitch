@@ -44,8 +44,8 @@ extern "C" {
 #define FTDM_MICROSECONDS_PER_SECOND 1000000
 
 typedef struct ftdm_sched ftdm_sched_t;
-typedef struct ftdm_timer ftdm_timer_t;
 typedef void (*ftdm_sched_callback_t)(void *data);
+typedef uint64_t ftdm_timer_id_t;
 
 /*! \brief Create a new scheduling context */
 FT_DECLARE(ftdm_status_t) ftdm_sched_create(ftdm_sched_t **sched, const char *name);
@@ -62,18 +62,22 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched);
  * \param name Timer name, typically unique but is not required to be unique, any null terminated string is fine (required)
  * \param callback The callback to call upon timer expiration (required)
  * \param data Optional data to pass to the callback
- * \param timer The timer that was created, it can be NULL if you dont care, 
- *        but you need this if you want to be able to cancel the timer with ftdm_sched_cancel_timer
+ * \param timer Timer id pointer to store the id of the newly created timer. It can be null
+ *              if you do not need to know the id, but you need this if you want to be able 
+ *              to cancel the timer with ftdm_sched_cancel_timer
  */
 FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name, 
-		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_t **timer);
+		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_id_t *timer);
 
 /*! 
  * \brief Cancel the timer
+ *        Note that there is a race between cancelling and triggering a timer.
+ *        By the time you call this function the timer may be about to be triggered.
+ *        This is specially true with timers in free run schedule.
  * \param sched The scheduling context (required)
  * \param timer The timer to cancel (required)
  */
-FT_DECLARE(ftdm_status_t) ftdm_sched_cancel_timer(ftdm_sched_t *sched, ftdm_timer_t **timer);
+FT_DECLARE(ftdm_status_t) ftdm_sched_cancel_timer(ftdm_sched_t *sched, ftdm_timer_id_t timer);
 
 /*! \brief Destroy the context and all of the scheduled timers in it */
 FT_DECLARE(ftdm_status_t) ftdm_sched_destroy(ftdm_sched_t **sched);
@@ -90,6 +94,9 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_global_init(void);
 
 /*! \brief Checks if the main scheduling thread is running */
 FT_DECLARE(ftdm_bool_t) ftdm_free_sched_running(void);
+
+/*! \brief Stop the main scheduling thread (if running) */
+FT_DECLARE(ftdm_bool_t) ftdm_free_sched_stop(void);
 
 #ifdef __cplusplus
 } 

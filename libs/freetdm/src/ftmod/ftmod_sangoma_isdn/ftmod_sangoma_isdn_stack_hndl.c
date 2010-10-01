@@ -78,14 +78,13 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 			
 			sngisdn_info->suInstId = get_unique_suInstId(suId);
-			sngisdn_info->spInstId = spInstId;		
+			sngisdn_info->spInstId = spInstId;
 
 			/* If this is a glared call that was previously saved, we moved
 			all the info to the current call, so clear the glared saved data */
-
 			if (sngisdn_info->glare.spInstId == spInstId) {
 				clear_call_glare_data(sngisdn_info);
-			}
+			}			
 
 			ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
 			g_sngisdn_data.ccs[suId].active_suInstIds[sngisdn_info->suInstId] = sngisdn_info;
@@ -105,7 +104,15 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 				break;
-			} 
+			}
+
+#if 0
+			/* Export ftdmchan variables here if we need to */
+			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
+			ftdm_channel_add_var(ftdmchan, "isdn_crap", "morecrap");
+			ftdm_channel_add_var(ftdmchan, "isdn_stuff", "s");
+			ftdm_channel_add_var(ftdmchan, "isdn_d", "asdsadasdasdsad");
+#endif
 			/* Fill in call information */
 			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
 			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
@@ -124,14 +131,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				}
 
 				
-				if (conEvnt->facilityStr.eh.pres) {
+				if (signal_data->facility == SNGISDN_OPT_TRUE && conEvnt->facilityStr.eh.pres) {
 					/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 					uint16_t ret_val;
-					uint8_t facility_str[255];
 					char retrieved_str[255];
-					memcpy(facility_str, (uint8_t*)&conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
-
-					ret_val = sng_isdn_retrieve_facility_caller_name(facility_str, conEvnt->facilityStr.facilityStr.len, retrieved_str);
+					
+					ret_val = sng_isdn_retrieve_facility_caller_name(conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len, retrieved_str);
 					/*
 						return values for "sng_isdn_retrieve_facility_information_following":
 						If there will be no information following, or fails to decode IE, returns -1
@@ -142,6 +147,11 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 					if (ret_val == 1) {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Expecting Caller name in FACILITY\n");
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_GET_CALLERID);
+						/* Launch timer in case we never get a FACILITY msg */
+						if (signal_data->facility_timeout) {
+							ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout, 
+									sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+						}
 						break;
 					} else if (ret_val == 0) {
 						strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
@@ -263,6 +273,9 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 				/* This is the only valid state we should get a CONNECT ACK on */
 				/* do nothing */
 				break;
+			case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+				/* We just hung up an incoming call right after we sent a CONNECT so ignore this message */
+				break;
 			default:
 				ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Processing CONNECT/CONNECT ACK in an invalid state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
 				
@@ -289,6 +302,8 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
 
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
@@ -302,19 +317,49 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 															suId, suInstId, spInstId, ces);
 	
 	switch(evntType) {
+		case MI_PROGRESS:
+			if (signal_data->switchtype == SNGISDN_SWITCH_NI2 &&
+						 cnStEvnt->causeDgn[0].eh.pres && cnStEvnt->causeDgn[0].causeVal.pres) {
+
+				switch(cnStEvnt->causeDgn[0].causeVal.val) {
+					case 17:	/* User Busy */
+					case 18:	/* No User responding */
+					case 19:	/* User alerting, no answer */
+					case 21:	/* Call rejected, the called party does not with to accept this call */
+					case 27:	/* Destination out of order */
+					case 31:	/* Normal, unspecified */
+					case 34:	/* Circuit/Channel congestion */
+					case 41:	/* Temporary failure */
+					case 42:	/* Switching equipment is experiencing a period of high traffic */
+					case 47:	/* Resource unavailable */
+					case 58:	/* Bearer Capability not available */
+					case 63:	/* Service or option not available */
+					case 65:	/* Bearer Cap not implemented, not supported */
+					case 79:	/* Service or option not implemented, unspecified */
+						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Cause requires disconnect (cause:%d)\n", cnStEvnt->causeDgn[0].causeVal.val);
+						ftdmchan->caller_data.hangup_cause = cnStEvnt->causeDgn[0].causeVal.val;
+						
+						sngisdn_set_flag(sngisdn_info, FLAG_SEND_DISC);
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+						goto sngisdn_process_cnst_ind_end;
+				}
+			}
+			/* fall-through */
 		case MI_ALERTING:
 		case MI_CALLPROC:
-		case MI_PROGRESS:
+		
 			switch(ftdmchan->state) {
-				case FTDM_CHANNEL_STATE_DIALING:
-					if (evntType == MI_PROGRESS) {
+				case FTDM_CHANNEL_STATE_DIALING:					
+					if (evntType == MI_PROGRESS ||
+						(cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL)) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 					} else {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 					}
 					break;
 				case FTDM_CHANNEL_STATE_PROGRESS:
-					if (evntType == MI_PROGRESS) {
+					if (evntType == MI_PROGRESS ||
+						(cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL)) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 					}
 					break;
@@ -371,6 +416,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 			break;
 	}
 
+sngisdn_process_cnst_ind_end:
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 	return;
 }
@@ -638,12 +684,14 @@ void sngisdn_process_flc_ind (sngisdn_event_data_t *sngisdn_event)
 void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 {
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
 
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
 	FacEvnt *facEvnt = &sngisdn_event->event.facEvnt;
 
@@ -653,15 +701,30 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 		case FTDM_CHANNEL_STATE_GET_CALLERID:
 			/* Update the caller ID Name */
 			if (facEvnt->facElmt.facStr.pres) {
-				uint8_t facility_str[255];
-				memcpy(facility_str, (uint8_t*)&facEvnt->facElmt.facStr.val, facEvnt->facElmt.facStr.len);
 				char retrieved_str[255];
-				if (sng_isdn_retrieve_facility_caller_name(facility_str, facEvnt->facElmt.facStr.len, retrieved_str) != FTDM_SUCCESS) {
+				
+				/* return values for "sng_isdn_retrieve_facility_information_following":
+				If there will be no information following, or fails to decode IE, returns -1
+				If there will be no information following, but current FACILITY IE contains a caller name, returns 0
+				If there will be information following, returns 1
+				*/
+				
+				if (sng_isdn_retrieve_facility_caller_name(&facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len, retrieved_str) == 0) {
+					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
+				} else {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
+				}
+				if (signal_data->facility_timeout) {
+					/* Cancel facility timeout */
+					ftdm_sched_cancel_timer(signal_data->sched, sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
 				}
 			}
 
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+			break;
+		case FTDM_CHANNEL_STATE_RING:
+			/* We received the caller ID Name in FACILITY, but its too late, facility-timeout already occurred */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "FACILITY received, but we already proceeded with call\n");
 			break;
 		default:
 			/* We do not support other FACILITY types for now, so do nothing */
@@ -794,6 +857,14 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 					break;
 			case 3:
 				switch (ftdmchan->state) {
+					case FTDM_CHANNEL_STATE_PROGRESS:
+						/* T310 timer has expired */
+						ftdmchan->caller_data.hangup_cause = staEvnt->causeDgn[0].causeVal.val;
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T310 Timer expired, hanging up call\n");
+						sngisdn_set_flag(sngisdn_info, FLAG_SEND_DISC);
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+
+						break;
 					case FTDM_CHANNEL_STATE_UP:
 						/* Remote side is still waiting for our CONNECT message */
 						if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
@@ -821,6 +892,22 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 						break;
 				}
 				break;
+			case 9: /* Remote switch is in "Incoming call proceeding" state */
+				switch (ftdmchan->state) {
+					case FTDM_CHANNEL_STATE_PROGRESS:
+					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
+					case FTDM_CHANNEL_STATE_GET_CALLERID:
+						/* Do nothing */
+						break;
+					case FTDM_CHANNEL_STATE_UP:
+						/* Remote switch missed our CONNECT message, re-send */
+						ftdm_sched_timer(((sngisdn_span_data_t*)ftdmchan->span->signal_data)->sched, "delayed_connect", 1, sngisdn_delayed_connect, (void*) sngisdn_info, NULL);
+						break;
+					default:
+						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
+						break;
+				}
+				break;
 			case 10: /* Remote switch is in active state */
 				switch (ftdmchan->state) {
 					case FTDM_CHANNEL_STATE_UP:
@@ -830,17 +917,6 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 					case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 						/* We sent a disconnect message, but remote side missed it ? */
 						ftdm_sched_timer(((sngisdn_span_data_t*)ftdmchan->span->signal_data)->sched, "delayed_disconnect", 1, sngisdn_delayed_disconnect, (void*) sngisdn_info, NULL);
-						break;
-					default:
-						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
-						break;
-				}
-				break;
-			case 9:
-				switch (ftdmchan->state) {
-					case FTDM_CHANNEL_STATE_PROGRESS:
-					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
-						/* Do nothing */
 						break;
 					default:
 						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));

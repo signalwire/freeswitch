@@ -2039,6 +2039,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	return r;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_reload(const char **err)
+{
+	switch_xml_t xml_root;
+	
+	if ((xml_root = switch_xml_open_root(1, err))) {
+		switch_xml_free(xml_root);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_GENERR;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
 {
 	switch_xml_t xml;
@@ -2640,6 +2652,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 
 SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 
+	const char *xdt = switch_xml_attr(xcond, "date-time");
 	const char *xyear = switch_xml_attr(xcond, "year");
 	const char *xyday = switch_xml_attr(xcond, "yday");
 	const char *xmon = switch_xml_attr(xcond, "mon");
@@ -2650,12 +2663,22 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 	const char *xhour = switch_xml_attr(xcond, "hour");
 	const char *xminute = switch_xml_attr(xcond, "minute");
 	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
+	const char *xtod = switch_xml_attr(xcond, "time-of-day");
 
 	switch_time_t ts = switch_micro_time_now();
 	int time_match = -1;
 	switch_time_exp_t tm;
 
 	switch_time_exp_lt(&tm, ts);
+
+	if (time_match && xdt) {
+		char tmpdate[80];
+		switch_size_t retsize;
+		switch_strftime(tmpdate, &retsize, sizeof(tmpdate), "%Y-%m-%d %H:%M:%S", &tm);
+		time_match = switch_fulldate_cmp(xdt, &ts);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+				"XML DateTime Check: date time[%s] =~ %s (%s)\n", tmpdate, xdt, time_match ? "PASS" : "FAIL");
+	}
 
 	if (time_match && xyear) {
 		int test = tm.tm_year + 1900;
@@ -2710,9 +2733,9 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 
 	if (time_match && xwday) {
 		int test = tm.tm_wday + 1;
-		time_match = switch_number_cmp(xwday, test);
+		time_match = switch_dow_cmp(xwday, test);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: day of week[%d] =~ %s (%s)\n", test, xwday, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: day of week[%s] =~ %s (%s)\n", switch_dow_int2str(test), xwday, time_match ? "PASS" : "FAIL");
 	}
 	if (time_match && xhour) {
 		int test = tm.tm_hour;
@@ -2733,6 +2756,15 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 		time_match = switch_number_cmp(xminday, test);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
 				"XML DateTime Check: minute of day[%d] =~ %s (%s)\n", test, xminday, time_match ? "PASS" : "FAIL");
+	}
+
+	if (time_match && xtod) {
+		int test = (tm.tm_hour * 60 * 60) + (tm.tm_min * 60) + tm.tm_sec;
+		char tmpdate[10];
+		switch_snprintf(tmpdate, 6, "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+		time_match = switch_tod_cmp(xtod, test);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+				"XML DateTime Check: time of day[%s] =~ %s (%s)\n", tmpdate, xtod, time_match ? "PASS" : "FAIL");
 	}
 
 	return time_match;

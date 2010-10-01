@@ -46,6 +46,8 @@ typedef struct sng_timeslot
 	int	 gap;
 	int	 hole;
 }sng_timeslot_t;
+
+int cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -343,11 +345,11 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "apc")) {
 			mtpLinkSet.apc = atoi(parm->val);
-			SS7_DEBUG("\tFoundmtpLinkSet->apc = %d\n", mtpLinkSet.apc);
+			SS7_DEBUG("\tFound mtpLinkSet->apc = %d\n", mtpLinkSet.apc);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "minActive")) {
 			mtpLinkSet.minActive = atoi(parm->val);
-			SS7_DEBUG("\tFoundmtpLinkSet->minActive = %d\n", mtpLinkSet.minActive);
+			SS7_DEBUG("\tFound mtpLinkSet->minActive = %d\n", mtpLinkSet.minActive);
 		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
@@ -385,8 +387,6 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 	if (count < 1 || count > 15 ) {
 		SS7_ERROR("Invalid number of mtp_links found (%d)\n", count);
 		return FTDM_FAIL;
-	} else {
-		mtpLinkSet.numLinks = count;
 	}
 
 	/* now we need to see if this linkset exists already or not and grab an Id */
@@ -418,8 +418,7 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 		mtpLink[i].mtp3.apc			= mtpLinkSet.apc;
 		mtpLink[i].mtp3.linkSetId	= mtpLinkSet.id;
 
-		/* fill in the mtplink structure */
-		mtpLinkSet.links[count] = ftmod_ss7_fill_in_mtpLink(&mtpLink[i]);
+		ftmod_ss7_fill_in_mtpLink(&mtpLink[i]);
 
 		/* increment the links counter */
 		count++;
@@ -427,6 +426,10 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 		/* increment the index value */
 		i++;
 	}
+
+	mtpLinkSet.linkType		= mtpLink[0].mtp3.linkType;
+	mtpLinkSet.switchType	= mtpLink[0].mtp3.switchType;
+	mtpLinkSet.ssf			= mtpLink[0].mtp3.ssf;
 
 	ftmod_ss7_fill_in_mtpLinkSet(&mtpLinkSet);
 
@@ -497,27 +500,27 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 			if (!strcasecmp(parm->val, "itu92")) {
 				mtpLink->mtp2.linkType = LSD_SW_ITU92;
 				mtpLink->mtp3.linkType = LSN_SW_ITU;
-				SS7_DEBUG("\tFoundmtpLink->linkType = \"ITU92\"\n");
+				SS7_DEBUG("\tFound mtpLink->linkType = \"ITU92\"\n");
 			} else if (!strcasecmp(parm->val, "itu88")) {
 				mtpLink->mtp2.linkType = LSD_SW_ITU88;
 				mtpLink->mtp3.linkType = LSN_SW_ITU;
-				SS7_DEBUG("\tFoundmtpLink->linkType = \"ITU88\"\n");
+				SS7_DEBUG("\tFound mtpLink->linkType = \"ITU88\"\n");
 			} else if (!strcasecmp(parm->val, "ansi96")) {
 				mtpLink->mtp2.linkType = LSD_SW_ANSI92;
 				mtpLink->mtp3.linkType = LSN_SW_ANS96;
-				SS7_DEBUG("\tFoundmtpLink->linkType = \"ANSI96\"\n");
+				SS7_DEBUG("\tFound mtpLink->linkType = \"ANSI96\"\n");
 			} else if (!strcasecmp(parm->val, "ansi92")) {
 				mtpLink->mtp2.linkType = LSD_SW_ANSI92;
 				mtpLink->mtp3.linkType = LSN_SW_ANS;
-				SS7_DEBUG("\tFoundmtpLink->linkType = \"ANSI92\"\n");
+				SS7_DEBUG("\tFound mtpLink->linkType = \"ANSI92\"\n");
 			} else if (!strcasecmp(parm->val, "ansi88")) {
 				mtpLink->mtp2.linkType = LSD_SW_ANSI88;
 				mtpLink->mtp3.linkType = LSN_SW_ANS;
-				SS7_DEBUG("\tFoundmtpLink->linkType = \"ANSI88\"\n");
+				SS7_DEBUG("\tFound mtpLink->linkType = \"ANSI88\"\n");
 			} else if (!strcasecmp(parm->val, "etsi")) {
 				mtpLink->mtp2.linkType = LSD_SW_ITU92;
 				mtpLink->mtp3.linkType = LSN_SW_ITU;
-				SS7_DEBUG("\tFoundmtpLink->linkType = \"ETSI\"\n");
+				SS7_DEBUG("\tFound mtpLink->linkType = \"ETSI\"\n");
 			} else {
 				SS7_ERROR("\tFound an invalid linktype of \"%s\"!\n", parm->val);
 				return FTDM_FAIL;
@@ -526,31 +529,40 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 		} else if (!strcasecmp(parm->var, "switchType")) {
 			if (!strcasecmp(parm->val, "itu97")) {
 				mtpLink->mtp3.switchType = LSI_SW_ITU97;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"ITU97\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ITU97\"\n");
 			} else if (!strcasecmp(parm->val, "itu88")) {
 				mtpLink->mtp3.switchType = LSI_SW_ITU;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"ITU88\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ITU88\"\n");
 			} else if (!strcasecmp(parm->val, "itu92")) {
 				mtpLink->mtp3.switchType = LSI_SW_ITU;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"ITU92\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ITU92\"\n");
 			} else if (!strcasecmp(parm->val, "itu00")) {
 				mtpLink->mtp3.switchType = LSI_SW_ITU2000;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"ITU00\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ITU00\"\n");
 			} else if (!strcasecmp(parm->val, "ETSIV2")) {
 				mtpLink->mtp3.switchType = LSI_SW_ETSI;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"ETSIV2\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ETSIV2\"\n");
 			} else if (!strcasecmp(parm->val, "ETSIV3")) {
 				mtpLink->mtp3.switchType = LSI_SW_ETSIV3;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"ETSIV3\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ETSIV3\"\n");
 			} else if (!strcasecmp(parm->val, "UK")) {
 				mtpLink->mtp3.switchType = LSI_SW_UK;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"UK\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"UK\"\n");
 			} else if (!strcasecmp(parm->val, "RUSSIA")) {
 				mtpLink->mtp3.switchType = LSI_SW_RUSSIA;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"RUSSIA\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"RUSSIA\"\n");
 			} else if (!strcasecmp(parm->val, "INDIA")) {
 				mtpLink->mtp3.switchType = LSI_SW_INDIA;
-				SS7_DEBUG("\tFoundmtpLink->switchType = \"INDIA\"\n");
+				SS7_DEBUG("\tFound mtpLink->switchType = \"INDIA\"\n");
+			} else if (!strcasecmp(parm->val, "ansi88")) {
+				mtpLink->mtp3.switchType = LSI_SW_ANS88;
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ANSI88\"\n");
+			} else if (!strcasecmp(parm->val, "ansi92")) {
+				mtpLink->mtp3.switchType = LSI_SW_ANS92;
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ANSI92\"\n");
+			} else if (!strcasecmp(parm->val, "ansi95")) {
+				mtpLink->mtp3.switchType = LSI_SW_ANS95;
+				SS7_DEBUG("\tFound mtpLink->switchType = \"ANSI95\"\n");
 			} else {
 				SS7_ERROR("\tFound an invalid linktype of \"%s\"!\n", parm->val);
 				return FTDM_FAIL;
@@ -568,7 +580,7 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "slc")) {
 			mtpLink->mtp3.slc = atoi(parm->val);
-			SS7_DEBUG("\tFoundmtpLink->slc = \"%d\"\n",mtpLink->mtp3.slc);
+			SS7_DEBUG("\tFound mtpLink->slc = \"%d\"\n",mtpLink->mtp3.slc);
 		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
@@ -649,14 +661,17 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 				/* check if the name matches */
 				if (!strcasecmp((char *)g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, parm->val)) {
 
-					/* grab the mtpLink id value first*/
-					int id = g_ftdm_sngss7_data.cfg.mtpLinkSet[x].links[0];
-
 					/* now, harvest the required infomormation from the global structure */
-					mtpRoute.linkType		= g_ftdm_sngss7_data.cfg.mtpLink[id].mtp3.linkType;
-					mtpRoute.switchType		= g_ftdm_sngss7_data.cfg.mtpLink[id].mtp3.switchType;
-					mtpRoute.ssf			= g_ftdm_sngss7_data.cfg.mtpLink[id].mtp3.ssf;
-					mtpRoute.cmbLinkSetId	= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id;
+					mtpRoute.linkType		= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].linkType;
+					mtpRoute.switchType		= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].switchType;
+					mtpRoute.ssf			= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].ssf;
+					mtpRoute.linkSetId		= g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id;
+					cmbLinkSetId++;
+					mtpRoute.cmbLinkSetId	= cmbLinkSetId;
+
+					/* update the linkset with the new cmbLinkSet value */
+					g_ftdm_sngss7_data.cfg.mtpLinkSet[x].numLinks++;
+					g_ftdm_sngss7_data.cfg.mtpLinkSet[x].links[g_ftdm_sngss7_data.cfg.mtpLinkSet[x].numLinks-1] = mtpRoute.cmbLinkSetId;
 					break;
 				}
 				x++;
@@ -692,9 +707,11 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 		parm = parm + 1;
 	}
 
+	ftmod_ss7_fill_in_nsap(&mtpRoute);
+
 	ftmod_ss7_fill_in_mtp3_route(&mtpRoute);
 
-	ftmod_ss7_fill_in_nsap(&mtpRoute);
+
 
 	return FTDM_SUCCESS;
 }
@@ -738,7 +755,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	int						num_parms = isup_interface->n_parameters;
 	int						i;
 	int						linkSetId;
-	int						linkId;
 
 	memset(&sng_isup, 0x0, sizeof(sng_isup));
 	memset(&sng_isap, 0x0, sizeof(sng_isap));
@@ -772,36 +788,25 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 
 				/* check if the name matches */
 				if (!strcasecmp((char *)g_ftdm_sngss7_data.cfg.mtpRoute[x].name, parm->val)) {
-
 					/* now, harvest the required information from the global structure */
 					sng_isup.mtpRouteId		= g_ftdm_sngss7_data.cfg.mtpRoute[x].id;
 					sng_isup.dpc			= g_ftdm_sngss7_data.cfg.mtpRoute[x].dpc;
 					sng_isup.switchType	 	= g_ftdm_sngss7_data.cfg.mtpRoute[x].switchType;
 					sng_isap.switchType		= g_ftdm_sngss7_data.cfg.mtpRoute[x].switchType;
 
-					/* find the nwID from the nsap */
-					int y = 1;
-					while (g_ftdm_sngss7_data.cfg.nsap[y].id != 0) {
-
-						if ((g_ftdm_sngss7_data.cfg.nsap[y].linkType == g_ftdm_sngss7_data.cfg.mtpRoute[x].linkType) &&
-							(g_ftdm_sngss7_data.cfg.nsap[y].switchType == g_ftdm_sngss7_data.cfg.mtpRoute[x].switchType) &&
-							(g_ftdm_sngss7_data.cfg.nsap[y].ssf == g_ftdm_sngss7_data.cfg.mtpRoute[x].ssf)) {
-
+					/* find the NSAP corresponding to this switchType and SSF */
+					int z = 1;
+					while (g_ftdm_sngss7_data.cfg.nsap[z].id != 0) {
+						if ((g_ftdm_sngss7_data.cfg.nsap[z].linkType == g_ftdm_sngss7_data.cfg.mtpRoute[x].linkType) &&
+							(g_ftdm_sngss7_data.cfg.nsap[z].switchType == g_ftdm_sngss7_data.cfg.mtpRoute[x].switchType) &&
+							(g_ftdm_sngss7_data.cfg.nsap[z].ssf == g_ftdm_sngss7_data.cfg.mtpRoute[x].ssf)) {
+								sng_isup.nwId 	= g_ftdm_sngss7_data.cfg.nsap[z].nwId;
 							/* we have a match so break out of this loop */
 							break;
 						}
 						/* move on to the next one */
-						y++;
-					} /* while (g_ftdm_sngss7_data.cfg.mtp3_isup[y].id != 0) */
-
-					/* check how we exited the last while loop */
-					if (g_ftdm_sngss7_data.cfg.nsap[y].id == 0) {
-						SS7_ERROR("\tFailed to find the nwID for = \"%s\"!\n", parm->val);
-						return FTDM_FAIL;
-					} else {
-						sng_isup.nwId = g_ftdm_sngss7_data.cfg.nsap[y].nwId;
+						z++;
 					}
-
 					break;
 				}
 				x++;
@@ -846,10 +851,15 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	}
 
 	/* trickle down the SPC to all sub entities */
-	linkSetId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].cmbLinkSetId;
-	for (i = 0; i < g_ftdm_sngss7_data.cfg.mtpLinkSet[linkSetId].numLinks; i ++) {
-		linkId = g_ftdm_sngss7_data.cfg.mtpLinkSet[linkSetId].links[i];
-		g_ftdm_sngss7_data.cfg.mtpLink[linkId].mtp3.spc = g_ftdm_sngss7_data.cfg.spc;
+	linkSetId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].linkSetId;
+
+	i = 1;
+	while (g_ftdm_sngss7_data.cfg.mtpLink[i].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.mtpLink[i].mtp3.linkSetId == linkSetId) {
+			g_ftdm_sngss7_data.cfg.mtpLink[i].mtp3.spc = g_ftdm_sngss7_data.cfg.spc;
+		}
+
+		i++;
 	}
 
 	ftmod_ss7_fill_in_isap(&sng_isap);
@@ -857,8 +867,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	sng_isup.isap = sng_isap.id;
 
 	ftmod_ss7_fill_in_isup_interface(&sng_isup);
-
-	g_ftdm_sngss7_data.cfg.isap[sng_isap.id].spId = sng_isup.id;
 
 	return FTDM_SUCCESS;
 }
@@ -957,7 +965,7 @@ static int ftmod_ss7_fill_in_mtpLink(sng_mtp_link_t *mtpLink)
 	if ( mtpLink->mtp2.t7 != 0 ) {
 		g_ftdm_sngss7_data.cfg.mtpLink[i].mtp2.t7		= mtpLink->mtp2.t7;
 	}else {
-		g_ftdm_sngss7_data.cfg.mtpLink[i].mtp2.t7		= 20;
+		g_ftdm_sngss7_data.cfg.mtpLink[i].mtp2.t7		= 40;
 	}
 
 	if (mtpLink->mtp3.t1 != 0) {
@@ -1057,21 +1065,19 @@ static int ftmod_ss7_fill_in_mtpLink(sng_mtp_link_t *mtpLink)
 /******************************************************************************/
 static int ftmod_ss7_fill_in_mtpLinkSet(sng_link_set_t *mtpLinkSet)
 {
-	int	count;
 	int	i = mtpLinkSet->id;
 
 	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpLinkSet[i].name, (char *)mtpLinkSet->name);
 
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].id			= mtpLinkSet->id;
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].apc		= mtpLinkSet->apc;
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].linkType	= g_ftdm_sngss7_data.cfg.mtpLink[1].mtp3.linkType; /* KONRAD FIX ME */
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].linkType	= mtpLinkSet->linkType;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].switchType	= mtpLinkSet->switchType;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].ssf		= mtpLinkSet->ssf;
+
+	/* these values are filled in as we find routes and start allocating cmbLinkSetIds */
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].minActive	= mtpLinkSet->minActive;
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].numLinks	= mtpLinkSet->numLinks;
-
-	for (count = 0; count < mtpLinkSet->numLinks; count++) {
-		g_ftdm_sngss7_data.cfg.mtpLinkSet[i].links[count]	= mtpLinkSet->links[count];
-	}
-
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].numLinks	= 0;
 	return 0;
 }
 
@@ -1083,8 +1089,7 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	/* go through all the existing routes and see if we find a match */
 	i = 1;
 	while (g_ftdm_sngss7_data.cfg.mtpRoute[i].id != 0) {
-			if (g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc == mtp3_route->dpc) {
-
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpRoute[i].name, mtp3_route->name)) {
 			/* we have a match so break out of this loop */
 			break;
 		}
@@ -1106,8 +1111,10 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc			= mtp3_route->dpc;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].linkType		= mtp3_route->linkType;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].switchType	= mtp3_route->switchType;
-	g_ftdm_sngss7_data.cfg.mtpRoute[i].cmbLinkSetId	= 1; /* mtp3_route->cmbLinkSetId;*/
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].cmbLinkSetId	= mtp3_route->cmbLinkSetId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].isSTP		= mtp3_route->isSTP;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].nwId			= mtp3_route->nwId;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].linkSetId	= mtp3_route->linkSetId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= mtp3_route->ssf;
 	if (mtp3_route->t6 != 0) {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t6		= mtp3_route->t6;
@@ -1159,6 +1166,11 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	} else {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t25	   = 100;
 	}
+	if (mtp3_route->t26 != 0) {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].t26		= mtp3_route->t26;
+	} else {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].t26	   = 100;
+	}
 
 	return 0;
 }
@@ -1184,15 +1196,17 @@ static int ftmod_ss7_fill_in_nsap(sng_route_t *mtp3_route)
 
 	if (g_ftdm_sngss7_data.cfg.nsap[i].id == 0) {
 		g_ftdm_sngss7_data.cfg.nsap[i].id = i;
+		 mtp3_route->nwId = i;
 		SS7_DEBUG("found new mtp3_isup interface, id is = %d\n", g_ftdm_sngss7_data.cfg.nsap[i].id);
 	} else {
 		g_ftdm_sngss7_data.cfg.nsap[i].id = i;
+		 mtp3_route->nwId = i;
 		SS7_DEBUG("found existing mtp3_isup interface, id is = %d\n", g_ftdm_sngss7_data.cfg.nsap[i].id);
 	}
 	
 	g_ftdm_sngss7_data.cfg.nsap[i].spId			= g_ftdm_sngss7_data.cfg.nsap[i].id;
 	g_ftdm_sngss7_data.cfg.nsap[i].suId			= g_ftdm_sngss7_data.cfg.nsap[i].id;
-	g_ftdm_sngss7_data.cfg.nsap[i].nwId			= g_ftdm_sngss7_data.cfg.nsap[i].id;
+	g_ftdm_sngss7_data.cfg.nsap[i].nwId			= mtp3_route->nwId;
 	g_ftdm_sngss7_data.cfg.nsap[i].linkType		= mtp3_route->linkType;
 	g_ftdm_sngss7_data.cfg.nsap[i].switchType	= mtp3_route->switchType;
 	g_ftdm_sngss7_data.cfg.nsap[i].ssf			= mtp3_route->ssf;
@@ -1208,7 +1222,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	/* go through all the existing interfaces and see if we find a match */
 	i = 1;
 	while (g_ftdm_sngss7_data.cfg.isupIntf[i].id != 0) {
-		if (g_ftdm_sngss7_data.cfg.isupIntf[i].nwId == sng_isup->nwId) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.isupIntf[i].name, sng_isup->name)) {
 
 			/* we have a match so break out of this loop */
 			break;
@@ -1381,7 +1395,8 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 	}
 
 	g_ftdm_sngss7_data.cfg.isap[i].id 			= sng_isap->id;
-	g_ftdm_sngss7_data.cfg.isap[i].suId			= 1; /*KONRAD FIX ME */
+	g_ftdm_sngss7_data.cfg.isap[i].suId			= sng_isap->id;
+	g_ftdm_sngss7_data.cfg.isap[i].spId			= sng_isap->id;
 	g_ftdm_sngss7_data.cfg.isap[i].switchType	= sng_isap->switchType;
 	g_ftdm_sngss7_data.cfg.isap[i].ssf			= sng_isap->ssf;
 
@@ -1458,7 +1473,7 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 	if (sng_isap->tex != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].tex		= sng_isap->tex;
 	} else {
-		g_ftdm_sngss7_data.cfg.isap[i].tex		= 10;
+		g_ftdm_sngss7_data.cfg.isap[i].tex		= 1000;
 	}
 	if (sng_isap->tcrm != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].tcrm		= sng_isap->tcrm;
@@ -1499,7 +1514,9 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 		SS7_DEBUG("found existing mtp3 self route\n");
 		return FTDM_SUCCESS;
 	} else {
-		SS7_ERROR("found new mtp3 self route but it does not much the route already configured\n");
+		SS7_ERROR("found new mtp3 self route but it does not match the route already configured (dpc=%d:spc=%d)\n",
+					g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc,
+					spc);
 		return FTDM_FAIL;
 	}
 
@@ -1583,11 +1600,10 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 				g_ftdm_sngss7_data.cfg.isupCkt[x].chan			= count;
 				if (timeslot.siglink) {
 					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SIG;
-				} else if (timeslot.hole) {
-					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= HOLE;
 				} else {
-					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= VOICE;
+					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= HOLE;
 				}
+
 				if (timeslot.channel) {
 					g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= cicbase;
 					cicbase++;
@@ -1608,6 +1624,10 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 				g_ftdm_sngss7_data.cfg.isupCkt[x].obj			= ss7_info;
 
 			} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].id == 0) */
+
+			/* increment the span channel count */
+			count++;
+
 		} else { /* if ((timeslot.siglink) || (timeslot.gap)) */
 			/* find the ftdm the channel structure for this channel*/
 			i = 1;

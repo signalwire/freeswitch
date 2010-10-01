@@ -327,13 +327,13 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public string read(int min_digits, int max_digits, string prompt_audio_file, int timeout, string valid_terminators) {
-    string ret = freeswitchPINVOKE.CoreSession_read(swigCPtr, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators);
+  public string read(int min_digits, int max_digits, string prompt_audio_file, int timeout, string valid_terminators, int digit_timeout) {
+    string ret = freeswitchPINVOKE.CoreSession_read(swigCPtr, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators, digit_timeout);
     return ret;
   }
 
-  public string PlayAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, string terminators, string audio_files, string bad_input_audio_files, string digits_regex, string var_name) {
-    string ret = freeswitchPINVOKE.CoreSession_PlayAndGetDigits(swigCPtr, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name);
+  public string PlayAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, string terminators, string audio_files, string bad_input_audio_files, string digits_regex, string var_name, int digit_timeout) {
+    string ret = freeswitchPINVOKE.CoreSession_PlayAndGetDigits(swigCPtr, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name, digit_timeout);
     return ret;
   }
 
@@ -1673,8 +1673,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_codec_init(switch_codec codec, string codec_name, string fmtp, uint rate, int ms, int channels, uint flags, switch_codec_settings codec_settings, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_codec_init(switch_codec.getCPtr(codec), codec_name, fmtp, rate, ms, channels, flags, switch_codec_settings.getCPtr(codec_settings), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_core_codec_init_with_bitrate(switch_codec codec, string codec_name, string fmtp, uint rate, int ms, int channels, uint bitrate, uint flags, switch_codec_settings codec_settings, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_codec_init_with_bitrate(switch_codec.getCPtr(codec), codec_name, fmtp, rate, ms, channels, bitrate, flags, switch_codec_settings.getCPtr(codec_settings), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
@@ -2078,14 +2078,14 @@ public class freeswitch {
     return ret;
   }
 
-  public static SWIGTYPE_p_switch_loadable_module_interface switch_loadable_module_create_module_interface(SWIGTYPE_p_apr_pool_t pool, string name) {
+  public static switch_loadable_module_interface switch_loadable_module_create_module_interface(SWIGTYPE_p_apr_pool_t pool, string name) {
     IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_create_module_interface(SWIGTYPE_p_apr_pool_t.getCPtr(pool), name);
-    SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+    switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
     return ret;
   }
 
-  public static SWIGTYPE_p_void switch_loadable_module_create_interface(SWIGTYPE_p_switch_loadable_module_interface mod, switch_module_interface_name_t iname) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_create_interface(SWIGTYPE_p_switch_loadable_module_interface.getCPtr(mod), (int)iname);
+  public static SWIGTYPE_p_void switch_loadable_module_create_interface(switch_loadable_module_interface mod, switch_module_interface_name_t iname) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_create_interface(switch_loadable_module_interface.getCPtr(mod), (int)iname);
     SWIGTYPE_p_void ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_void(cPtr, false);
     return ret;
   }
@@ -2306,6 +2306,163 @@ public class freeswitch {
 
   public static switch_bool_t switch_core_session_in_thread(SWIGTYPE_p_switch_core_session session) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_session_in_thread(SWIGTYPE_p_switch_core_session.getCPtr(session));
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_init((int)autoload);
+    return ret;
+  }
+
+  public static void switch_loadable_module_shutdown() {
+    freeswitchPINVOKE.switch_loadable_module_shutdown();
+  }
+
+  public static switch_endpoint_interface switch_loadable_module_get_endpoint_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_endpoint_interface(name);
+    switch_endpoint_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_endpoint_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_codec_interface switch_loadable_module_get_codec_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_codec_interface(name);
+    switch_codec_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_codec_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_dialplan_interface switch_loadable_module_get_dialplan_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_dialplan_interface(name);
+    switch_dialplan_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_dialplan_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_enumerate_available(string dir_path, SWIGTYPE_p_f_p_void_p_q_const__char__int callback, SWIGTYPE_p_void user_data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_enumerate_available(dir_path, SWIGTYPE_p_f_p_void_p_q_const__char__int.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data));
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_enumerate_loaded(SWIGTYPE_p_f_p_void_p_q_const__char__int callback, SWIGTYPE_p_void user_data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_enumerate_loaded(SWIGTYPE_p_f_p_void_p_q_const__char__int.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data));
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_build_dynamic(string filename, SWIGTYPE_p_f_p_p_switch_loadable_module_interface_p_apr_pool_t__switch_status_t switch_module_load, SWIGTYPE_p_f_void__switch_status_t switch_module_runtime, SWIGTYPE_p_f_void__switch_status_t switch_module_shutdown, switch_bool_t runtime) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_build_dynamic(filename, SWIGTYPE_p_f_p_p_switch_loadable_module_interface_p_apr_pool_t__switch_status_t.getCPtr(switch_module_load), SWIGTYPE_p_f_void__switch_status_t.getCPtr(switch_module_runtime), SWIGTYPE_p_f_void__switch_status_t.getCPtr(switch_module_shutdown), (int)runtime);
+    return ret;
+  }
+
+  public static switch_timer_interface switch_loadable_module_get_timer_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_timer_interface(name);
+    switch_timer_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_timer_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_application_interface switch_loadable_module_get_application_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_application_interface(name);
+    switch_application_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_application_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_api_interface switch_loadable_module_get_api_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_api_interface(name);
+    switch_api_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_api_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_file_interface switch_loadable_module_get_file_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_file_interface(name);
+    switch_file_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_file_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_speech_interface switch_loadable_module_get_speech_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_speech_interface(name);
+    switch_speech_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_speech_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_asr_interface switch_loadable_module_get_asr_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_asr_interface(name);
+    switch_asr_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_asr_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_directory_interface switch_loadable_module_get_directory_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_directory_interface(name);
+    switch_directory_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_directory_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_chat_interface switch_loadable_module_get_chat_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_chat_interface(name);
+    switch_chat_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_chat_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_say_interface switch_loadable_module_get_say_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_say_interface(name);
+    switch_say_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_say_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_management_interface switch_loadable_module_get_management_interface(string relative_oid) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_management_interface(relative_oid);
+    switch_management_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_management_interface(cPtr, false);
+    return ret;
+  }
+
+  public static switch_limit_interface switch_loadable_module_get_limit_interface(string name) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_get_limit_interface(name);
+    switch_limit_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_limit_interface(cPtr, false);
+    return ret;
+  }
+
+  public static int switch_loadable_module_get_codecs(SWIGTYPE_p_p_switch_codec_implementation array, int arraylen) {
+    int ret = freeswitchPINVOKE.switch_loadable_module_get_codecs(SWIGTYPE_p_p_switch_codec_implementation.getCPtr(array), arraylen);
+    return ret;
+  }
+
+  public static int switch_loadable_module_get_codecs_sorted(SWIGTYPE_p_p_switch_codec_implementation array, int arraylen, ref string prefs, int preflen) {
+    int ret = freeswitchPINVOKE.switch_loadable_module_get_codecs_sorted(SWIGTYPE_p_p_switch_codec_implementation.getCPtr(array), arraylen, ref prefs, preflen);
+    return ret;
+  }
+
+  public static switch_status_t switch_api_execute(string cmd, string arg, SWIGTYPE_p_switch_core_session session, switch_stream_handle stream) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_api_execute(cmd, arg, SWIGTYPE_p_switch_core_session.getCPtr(session), switch_stream_handle.getCPtr(stream));
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_load_module(string dir, string fname, switch_bool_t runtime, ref string err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_load_module(dir, fname, (int)runtime, ref err);
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_exists(string mod) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_exists(mod);
+    return ret;
+  }
+
+  public static switch_status_t switch_loadable_module_unload_module(string dir, string fname, switch_bool_t force, ref string err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_unload_module(dir, fname, (int)force, ref err);
+    return ret;
+  }
+
+  public static uint switch_core_codec_next_id() {
+    uint ret = freeswitchPINVOKE.switch_core_codec_next_id();
+    return ret;
+  }
+
+  public static int switch_check_interval(uint rate, uint ptime) {
+    int ret = freeswitchPINVOKE.switch_check_interval(rate, ptime);
+    return ret;
+  }
+
+  public static void switch_core_codec_add_implementation(SWIGTYPE_p_apr_pool_t pool, switch_codec_interface codec_interface, switch_codec_type_t codec_type, byte ianacode, string iananame, string fmtp, uint samples_per_second, uint actual_samples_per_second, int bits_per_second, int microseconds_per_packet, uint samples_per_packet, uint decoded_bytes_per_packet, uint encoded_bytes_per_packet, byte number_of_channels, int codec_frames_per_packet, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t init, SWIGTYPE_p_f_p_switch_codec_p_switch_codec_p_void_unsigned_long_unsigned_long_p_void_p_unsigned_long_p_unsigned_long_p_unsigned_int__switch_status_t encode, SWIGTYPE_p_f_p_switch_codec_p_switch_codec_p_void_unsigned_long_unsigned_long_p_void_p_unsigned_long_p_unsigned_long_p_unsigned_int__switch_status_t decode, SWIGTYPE_p_f_p_switch_codec__switch_status_t destroy) {
+    freeswitchPINVOKE.switch_core_codec_add_implementation(SWIGTYPE_p_apr_pool_t.getCPtr(pool), switch_codec_interface.getCPtr(codec_interface), (int)codec_type, ianacode, iananame, fmtp, samples_per_second, actual_samples_per_second, bits_per_second, microseconds_per_packet, samples_per_packet, decoded_bytes_per_packet, encoded_bytes_per_packet, number_of_channels, codec_frames_per_packet, SWIGTYPE_p_f_p_switch_codec_unsigned_long_p_q_const__switch_codec_settings__switch_status_t.getCPtr(init), SWIGTYPE_p_f_p_switch_codec_p_switch_codec_p_void_unsigned_long_unsigned_long_p_void_p_unsigned_long_p_unsigned_long_p_unsigned_int__switch_status_t.getCPtr(encode), SWIGTYPE_p_f_p_switch_codec_p_switch_codec_p_void_unsigned_long_unsigned_long_p_void_p_unsigned_long_p_unsigned_long_p_unsigned_int__switch_status_t.getCPtr(decode), SWIGTYPE_p_f_p_switch_codec__switch_status_t.getCPtr(destroy));
+  }
+
+  public static switch_bool_t switch_core_codec_ready(switch_codec codec) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_codec_ready(switch_codec.getCPtr(codec));
     return ret;
   }
 
@@ -2568,6 +2725,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static uint switch_default_ptime(string name, uint number) {
+    uint ret = freeswitchPINVOKE.switch_default_ptime(name, number);
+    return ret;
+  }
+
   public static string switch_sanitize_number(string number) {
     string ret = freeswitchPINVOKE.switch_sanitize_number(number);
     return ret;
@@ -2771,9 +2933,42 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_dow_int2str(int val) {
+    string ret = freeswitchPINVOKE.switch_dow_int2str(val);
+    return ret;
+  }
+
+  public static int switch_dow_str2int(string exp) {
+    int ret = freeswitchPINVOKE.switch_dow_str2int(exp);
+    return ret;
+  }
+
+  public static int switch_dow_cmp(string exp, int val) {
+    int ret = freeswitchPINVOKE.switch_dow_cmp(exp, val);
+    return ret;
+  }
+
   public static int switch_number_cmp(string exp, int val) {
     int ret = freeswitchPINVOKE.switch_number_cmp(exp, val);
     return ret;
+  }
+
+  public static int switch_tod_cmp(string exp, int val) {
+    int ret = freeswitchPINVOKE.switch_tod_cmp(exp, val);
+    return ret;
+  }
+
+  public static int switch_fulldate_cmp(string exp, SWIGTYPE_p_switch_time_t ts) {
+    int ret = freeswitchPINVOKE.switch_fulldate_cmp(exp, SWIGTYPE_p_switch_time_t.getCPtr(ts));
+    return ret;
+  }
+
+  public static void switch_split_date(string exp, SWIGTYPE_p_int year, SWIGTYPE_p_int month, SWIGTYPE_p_int day) {
+    freeswitchPINVOKE.switch_split_date(exp, SWIGTYPE_p_int.getCPtr(year), SWIGTYPE_p_int.getCPtr(month), SWIGTYPE_p_int.getCPtr(day));
+  }
+
+  public static void switch_split_time(string exp, SWIGTYPE_p_int hour, SWIGTYPE_p_int min, SWIGTYPE_p_int sec) {
+    freeswitchPINVOKE.switch_split_time(exp, SWIGTYPE_p_int.getCPtr(hour), SWIGTYPE_p_int.getCPtr(min), SWIGTYPE_p_int.getCPtr(sec));
   }
 
   public static int switch_split_user_domain(string arg0, ref string user, ref string domain) {
@@ -2944,6 +3139,16 @@ public class freeswitch {
 
   public static switch_caller_profile switch_channel_get_originatee_caller_profile(SWIGTYPE_p_switch_channel channel) {
     IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_originatee_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
+    return ret;
+  }
+
+  public static void switch_channel_set_origination_caller_profile(SWIGTYPE_p_switch_channel channel, switch_caller_profile caller_profile) {
+    freeswitchPINVOKE.switch_channel_set_origination_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_profile.getCPtr(caller_profile));
+  }
+
+  public static switch_caller_profile switch_channel_get_origination_caller_profile(SWIGTYPE_p_switch_channel channel) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_origination_caller_profile(SWIGTYPE_p_switch_channel.getCPtr(channel));
     switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
     return ret;
   }
@@ -3819,8 +4024,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_play_and_get_digits(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, uint max_tries, uint timeout, string valid_terminators, string audio_file, string bad_input_audio_file, string var_name, string digit_buffer, uint digit_buffer_length, string digits_regex) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_play_and_get_digits(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, max_tries, timeout, valid_terminators, audio_file, bad_input_audio_file, var_name, digit_buffer, digit_buffer_length, digits_regex);
+  public static switch_status_t switch_play_and_get_digits(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, uint max_tries, uint timeout, string valid_terminators, string audio_file, string bad_input_audio_file, string var_name, string digit_buffer, uint digit_buffer_length, string digits_regex, uint digit_timeout) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_play_and_get_digits(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, max_tries, timeout, valid_terminators, audio_file, bad_input_audio_file, var_name, digit_buffer, digit_buffer_length, digits_regex, digit_timeout);
     return ret;
   }
 
@@ -4049,8 +4254,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_read(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, string prompt_audio_file, string var_name, string digit_buffer, SWIGTYPE_p_switch_size_t digit_buffer_length, uint timeout, string valid_terminators) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_read(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, SWIGTYPE_p_switch_size_t.getCPtr(digit_buffer_length), timeout, valid_terminators);
+  public static switch_status_t switch_ivr_read(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, string prompt_audio_file, string var_name, string digit_buffer, SWIGTYPE_p_switch_size_t digit_buffer_length, uint timeout, string valid_terminators, uint digit_timeout) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_read(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, SWIGTYPE_p_switch_size_t.getCPtr(digit_buffer_length), timeout, valid_terminators, digit_timeout);
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
@@ -4400,6 +4605,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static byte switch_rtp_check_auto_adj(SWIGTYPE_p_switch_rtp rtp_session) {
+    byte ret = freeswitchPINVOKE.switch_rtp_check_auto_adj(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+    return ret;
+  }
+
   public static switch_status_t switch_log_init(SWIGTYPE_p_apr_pool_t pool, switch_bool_t colorize) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_log_init(SWIGTYPE_p_apr_pool_t.getCPtr(pool), (int)colorize);
     return ret;
@@ -4592,6 +4802,11 @@ public class freeswitch {
 
   public static switch_status_t switch_xml_init(SWIGTYPE_p_apr_pool_t pool, ref string err) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_init(SWIGTYPE_p_apr_pool_t.getCPtr(pool), ref err);
+    return ret;
+  }
+
+  public static switch_status_t switch_xml_reload(ref string err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_reload(ref err);
     return ret;
   }
 
@@ -5958,6 +6173,24 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_numbers_t")]
   public static extern void delete_switch_rtp_numbers_t(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_packet_count_set")]
+  public static extern void switch_rtcp_numbers_t_packet_count_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_packet_count_get")]
+  public static extern uint switch_rtcp_numbers_t_packet_count_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_octet_count_set")]
+  public static extern void switch_rtcp_numbers_t_octet_count_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_numbers_t_octet_count_get")]
+  public static extern uint switch_rtcp_numbers_t_octet_count_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtcp_numbers_t")]
+  public static extern IntPtr new_switch_rtcp_numbers_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtcp_numbers_t")]
+  public static extern void delete_switch_rtcp_numbers_t(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_inbound_set")]
   public static extern void switch_rtp_stats_t_inbound_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -5969,6 +6202,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_outbound_get")]
   public static extern IntPtr switch_rtp_stats_t_outbound_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_rtcp_set")]
+  public static extern void switch_rtp_stats_t_rtcp_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_rtcp_get")]
+  public static extern IntPtr switch_rtp_stats_t_rtcp_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtp_stats_t")]
   public static extern IntPtr new_switch_rtp_stats_t();
@@ -6142,10 +6381,10 @@ class freeswitchPINVOKE {
   public static extern string switch_t38_options_t_remote_ip_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_remote_port_set")]
-  public static extern void switch_t38_options_t_remote_port_set(HandleRef jarg1, uint jarg2);
+  public static extern void switch_t38_options_t_remote_port_set(HandleRef jarg1, ushort jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_remote_port_get")]
-  public static extern uint switch_t38_options_t_remote_port_get(HandleRef jarg1);
+  public static extern ushort switch_t38_options_t_remote_port_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_local_ip_set")]
   public static extern void switch_t38_options_t_local_ip_set(HandleRef jarg1, string jarg2);
@@ -6154,10 +6393,10 @@ class freeswitchPINVOKE {
   public static extern string switch_t38_options_t_local_ip_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_local_port_set")]
-  public static extern void switch_t38_options_t_local_port_set(HandleRef jarg1, uint jarg2);
+  public static extern void switch_t38_options_t_local_port_set(HandleRef jarg1, ushort jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_local_port_get")]
-  public static extern uint switch_t38_options_t_local_port_get(HandleRef jarg1);
+  public static extern ushort switch_t38_options_t_local_port_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_t38_options_t")]
   public static extern IntPtr new_switch_t38_options_t();
@@ -7170,8 +7409,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_timer_destroy")]
   public static extern int switch_core_timer_destroy(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_init")]
-  public static extern int switch_core_codec_init(HandleRef jarg1, string jarg2, string jarg3, uint jarg4, int jarg5, int jarg6, uint jarg7, HandleRef jarg8, HandleRef jarg9);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_init_with_bitrate")]
+  public static extern int switch_core_codec_init_with_bitrate(HandleRef jarg1, string jarg2, string jarg3, uint jarg4, int jarg5, int jarg6, uint jarg7, uint jarg8, HandleRef jarg9, HandleRef jarg10);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_copy")]
   public static extern int switch_core_codec_copy(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -7710,6 +7949,207 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_in_thread")]
   public static extern int switch_core_session_in_thread(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
+  public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_get")]
+  public static extern string switch_loadable_module_interface_module_name_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_endpoint_interface_set")]
+  public static extern void switch_loadable_module_interface_endpoint_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_endpoint_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_endpoint_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_timer_interface_set")]
+  public static extern void switch_loadable_module_interface_timer_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_timer_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_timer_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_dialplan_interface_set")]
+  public static extern void switch_loadable_module_interface_dialplan_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_dialplan_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_dialplan_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_codec_interface_set")]
+  public static extern void switch_loadable_module_interface_codec_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_codec_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_codec_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_application_interface_set")]
+  public static extern void switch_loadable_module_interface_application_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_application_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_application_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_api_interface_set")]
+  public static extern void switch_loadable_module_interface_api_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_api_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_api_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_file_interface_set")]
+  public static extern void switch_loadable_module_interface_file_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_file_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_file_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_speech_interface_set")]
+  public static extern void switch_loadable_module_interface_speech_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_speech_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_speech_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_directory_interface_set")]
+  public static extern void switch_loadable_module_interface_directory_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_directory_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_directory_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_chat_interface_set")]
+  public static extern void switch_loadable_module_interface_chat_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_chat_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_chat_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_say_interface_set")]
+  public static extern void switch_loadable_module_interface_say_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_say_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_say_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_asr_interface_set")]
+  public static extern void switch_loadable_module_interface_asr_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_asr_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_asr_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_management_interface_set")]
+  public static extern void switch_loadable_module_interface_management_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_management_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_management_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_limit_interface_set")]
+  public static extern void switch_loadable_module_interface_limit_interface_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_limit_interface_get")]
+  public static extern IntPtr switch_loadable_module_interface_limit_interface_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_rwlock_set")]
+  public static extern void switch_loadable_module_interface_rwlock_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_rwlock_get")]
+  public static extern IntPtr switch_loadable_module_interface_rwlock_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_refs_set")]
+  public static extern void switch_loadable_module_interface_refs_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_refs_get")]
+  public static extern int switch_loadable_module_interface_refs_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_pool_set")]
+  public static extern void switch_loadable_module_interface_pool_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_pool_get")]
+  public static extern IntPtr switch_loadable_module_interface_pool_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_loadable_module_interface")]
+  public static extern IntPtr new_switch_loadable_module_interface();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_loadable_module_interface")]
+  public static extern void delete_switch_loadable_module_interface(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_init")]
+  public static extern int switch_loadable_module_init(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_shutdown")]
+  public static extern void switch_loadable_module_shutdown();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_endpoint_interface")]
+  public static extern IntPtr switch_loadable_module_get_endpoint_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_codec_interface")]
+  public static extern IntPtr switch_loadable_module_get_codec_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_dialplan_interface")]
+  public static extern IntPtr switch_loadable_module_get_dialplan_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_enumerate_available")]
+  public static extern int switch_loadable_module_enumerate_available(string jarg1, HandleRef jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_enumerate_loaded")]
+  public static extern int switch_loadable_module_enumerate_loaded(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_build_dynamic")]
+  public static extern int switch_loadable_module_build_dynamic(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, int jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_timer_interface")]
+  public static extern IntPtr switch_loadable_module_get_timer_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_application_interface")]
+  public static extern IntPtr switch_loadable_module_get_application_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_api_interface")]
+  public static extern IntPtr switch_loadable_module_get_api_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_file_interface")]
+  public static extern IntPtr switch_loadable_module_get_file_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_speech_interface")]
+  public static extern IntPtr switch_loadable_module_get_speech_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_asr_interface")]
+  public static extern IntPtr switch_loadable_module_get_asr_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_directory_interface")]
+  public static extern IntPtr switch_loadable_module_get_directory_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_chat_interface")]
+  public static extern IntPtr switch_loadable_module_get_chat_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_say_interface")]
+  public static extern IntPtr switch_loadable_module_get_say_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_management_interface")]
+  public static extern IntPtr switch_loadable_module_get_management_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_limit_interface")]
+  public static extern IntPtr switch_loadable_module_get_limit_interface(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_codecs")]
+  public static extern int switch_loadable_module_get_codecs(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_codecs_sorted")]
+  public static extern int switch_loadable_module_get_codecs_sorted(HandleRef jarg1, int jarg2, ref string jarg3, int jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_api_execute")]
+  public static extern int switch_api_execute(string jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_load_module")]
+  public static extern int switch_loadable_module_load_module(string jarg1, string jarg2, int jarg3, ref string jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_exists")]
+  public static extern int switch_loadable_module_exists(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_unload_module")]
+  public static extern int switch_loadable_module_unload_module(string jarg1, string jarg2, int jarg3, ref string jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_next_id")]
+  public static extern uint switch_core_codec_next_id();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_check_interval")]
+  public static extern int switch_check_interval(uint jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_add_implementation")]
+  public static extern void switch_core_codec_add_implementation(HandleRef jarg1, HandleRef jarg2, int jarg3, byte jarg4, string jarg5, string jarg6, uint jarg7, uint jarg8, int jarg9, int jarg10, uint jarg11, uint jarg12, uint jarg13, byte jarg14, int jarg15, HandleRef jarg16, HandleRef jarg17, HandleRef jarg18, HandleRef jarg19);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_ready")]
+  public static extern int switch_core_codec_ready(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CMD_CHUNK_LEN_get")]
   public static extern int SWITCH_CMD_CHUNK_LEN_get();
 
@@ -7872,6 +8312,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_char_to_rfc2833")]
   public static extern byte switch_char_to_rfc2833(char jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_default_ptime")]
+  public static extern uint switch_default_ptime(string jarg1, uint jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_sanitize_number")]
   public static extern string switch_sanitize_number(string jarg1);
 
@@ -7992,8 +8435,29 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_network_list_validate_ip_token")]
   public static extern int switch_network_list_validate_ip_token(HandleRef jarg1, uint jarg2, ref string jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_dow_int2str")]
+  public static extern string switch_dow_int2str(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_dow_str2int")]
+  public static extern int switch_dow_str2int(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_dow_cmp")]
+  public static extern int switch_dow_cmp(string jarg1, int jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_number_cmp")]
   public static extern int switch_number_cmp(string jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_tod_cmp")]
+  public static extern int switch_tod_cmp(string jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_fulldate_cmp")]
+  public static extern int switch_fulldate_cmp(string jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_split_date")]
+  public static extern void switch_split_date(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_split_time")]
+  public static extern void switch_split_time(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_split_user_domain")]
   public static extern int switch_split_user_domain(string jarg1, ref string jarg2, ref string jarg3);
@@ -8159,6 +8623,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_originatee_caller_profile_get")]
   public static extern IntPtr switch_caller_profile_originatee_caller_profile_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_origination_caller_profile_set")]
+  public static extern void switch_caller_profile_origination_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_origination_caller_profile_get")]
+  public static extern IntPtr switch_caller_profile_origination_caller_profile_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_hunt_caller_profile_set")]
   public static extern void switch_caller_profile_hunt_caller_profile_set(HandleRef jarg1, HandleRef jarg2);
@@ -9921,107 +10391,47 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_directory_handle")]
   public static extern void delete_switch_directory_handle(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_quality_set")]
-  public static extern void switch_codec_settings_quality_set(HandleRef jarg1, int jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_unused_set")]
+  public static extern void switch_codec_settings_unused_set(HandleRef jarg1, int jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_quality_get")]
-  public static extern int switch_codec_settings_quality_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_complexity_set")]
-  public static extern void switch_codec_settings_complexity_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_complexity_get")]
-  public static extern int switch_codec_settings_complexity_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_enhancement_set")]
-  public static extern void switch_codec_settings_enhancement_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_enhancement_get")]
-  public static extern int switch_codec_settings_enhancement_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_vad_set")]
-  public static extern void switch_codec_settings_vad_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_vad_get")]
-  public static extern int switch_codec_settings_vad_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_vbr_set")]
-  public static extern void switch_codec_settings_vbr_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_vbr_get")]
-  public static extern int switch_codec_settings_vbr_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_vbr_quality_set")]
-  public static extern void switch_codec_settings_vbr_quality_set(HandleRef jarg1, float jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_vbr_quality_get")]
-  public static extern float switch_codec_settings_vbr_quality_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_abr_set")]
-  public static extern void switch_codec_settings_abr_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_abr_get")]
-  public static extern int switch_codec_settings_abr_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_dtx_set")]
-  public static extern void switch_codec_settings_dtx_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_dtx_get")]
-  public static extern int switch_codec_settings_dtx_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_preproc_set")]
-  public static extern void switch_codec_settings_preproc_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_preproc_get")]
-  public static extern int switch_codec_settings_preproc_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_vad_set")]
-  public static extern void switch_codec_settings_pp_vad_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_vad_get")]
-  public static extern int switch_codec_settings_pp_vad_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_agc_set")]
-  public static extern void switch_codec_settings_pp_agc_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_agc_get")]
-  public static extern int switch_codec_settings_pp_agc_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_agc_level_set")]
-  public static extern void switch_codec_settings_pp_agc_level_set(HandleRef jarg1, float jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_agc_level_get")]
-  public static extern float switch_codec_settings_pp_agc_level_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_denoise_set")]
-  public static extern void switch_codec_settings_pp_denoise_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_denoise_get")]
-  public static extern int switch_codec_settings_pp_denoise_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_dereverb_set")]
-  public static extern void switch_codec_settings_pp_dereverb_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_dereverb_get")]
-  public static extern int switch_codec_settings_pp_dereverb_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_dereverb_decay_set")]
-  public static extern void switch_codec_settings_pp_dereverb_decay_set(HandleRef jarg1, float jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_dereverb_decay_get")]
-  public static extern float switch_codec_settings_pp_dereverb_decay_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_dereverb_level_set")]
-  public static extern void switch_codec_settings_pp_dereverb_level_set(HandleRef jarg1, float jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_pp_dereverb_level_get")]
-  public static extern float switch_codec_settings_pp_dereverb_level_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_settings_unused_get")]
+  public static extern int switch_codec_settings_unused_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_codec_settings")]
   public static extern IntPtr new_switch_codec_settings();
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_codec_settings")]
   public static extern void delete_switch_codec_settings(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_actual_samples_per_second_set")]
+  public static extern void switch_codec_fmtp_actual_samples_per_second_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_actual_samples_per_second_get")]
+  public static extern uint switch_codec_fmtp_actual_samples_per_second_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_bits_per_second_set")]
+  public static extern void switch_codec_fmtp_bits_per_second_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_bits_per_second_get")]
+  public static extern int switch_codec_fmtp_bits_per_second_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_microseconds_per_packet_set")]
+  public static extern void switch_codec_fmtp_microseconds_per_packet_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_microseconds_per_packet_get")]
+  public static extern int switch_codec_fmtp_microseconds_per_packet_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_private_info_set")]
+  public static extern void switch_codec_fmtp_private_info_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_private_info_get")]
+  public static extern IntPtr switch_codec_fmtp_private_info_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_codec_fmtp")]
+  public static extern IntPtr new_switch_codec_fmtp();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_codec_fmtp")]
+  public static extern void delete_switch_codec_fmtp(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_codec_interface_set")]
   public static extern void switch_codec_codec_interface_set(HandleRef jarg1, HandleRef jarg2);
@@ -10046,12 +10456,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_fmtp_out_get")]
   public static extern string switch_codec_fmtp_out_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_codec_settings_set")]
-  public static extern void switch_codec_codec_settings_set(HandleRef jarg1, HandleRef jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_codec_settings_get")]
-  public static extern IntPtr switch_codec_codec_settings_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_flags_set")]
   public static extern void switch_codec_flags_set(HandleRef jarg1, uint jarg2);
@@ -10232,6 +10636,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_interface_implementations_get")]
   public static extern IntPtr switch_codec_interface_implementations_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_interface_parse_fmtp_set")]
+  public static extern void switch_codec_interface_parse_fmtp_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_interface_parse_fmtp_get")]
+  public static extern IntPtr switch_codec_interface_parse_fmtp_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_interface_codec_id_set")]
   public static extern void switch_codec_interface_codec_id_set(HandleRef jarg1, uint jarg2);
@@ -10541,6 +10951,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_originatee_caller_profile")]
   public static extern IntPtr switch_channel_get_originatee_caller_profile(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_origination_caller_profile")]
+  public static extern void switch_channel_set_origination_caller_profile(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_origination_caller_profile")]
+  public static extern IntPtr switch_channel_get_origination_caller_profile(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_uuid")]
   public static extern string switch_channel_get_uuid(HandleRef jarg1);
@@ -11344,7 +11760,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_record_file(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4, uint jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_play_and_get_digits")]
-  public static extern int switch_play_and_get_digits(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, uint jarg11, string jarg12);
+  public static extern int switch_play_and_get_digits(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, uint jarg11, string jarg12, uint jarg13);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_speak_text_handle")]
   public static extern int switch_ivr_speak_text_handle(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, string jarg5, HandleRef jarg6);
@@ -11482,7 +11898,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_wait_for_answer(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_read")]
-  public static extern int switch_ivr_read(HandleRef jarg1, uint jarg2, uint jarg3, string jarg4, string jarg5, string jarg6, HandleRef jarg7, uint jarg8, string jarg9);
+  public static extern int switch_ivr_read(HandleRef jarg1, uint jarg2, uint jarg3, string jarg4, string jarg5, string jarg6, HandleRef jarg7, uint jarg8, string jarg9, uint jarg10);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_block_dtmf_session")]
   public static extern int switch_ivr_block_dtmf_session(HandleRef jarg1);
@@ -11754,6 +12170,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_stats")]
   public static extern IntPtr switch_rtp_get_stats(HandleRef jarg1, HandleRef jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_check_auto_adj")]
+  public static extern byte switch_rtp_check_auto_adj(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_log_node_t_data_set")]
   public static extern void switch_log_node_t_data_set(HandleRef jarg1, string jarg2);
 
@@ -11999,6 +12418,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_init")]
   public static extern int switch_xml_init(HandleRef jarg1, ref string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_reload")]
+  public static extern int switch_xml_reload(ref string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_destroy")]
   public static extern int switch_xml_destroy();
@@ -12886,10 +13308,10 @@ class freeswitchPINVOKE {
   public static extern int CoreSession_Transfer(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_read")]
-  public static extern string CoreSession_read(HandleRef jarg1, int jarg2, int jarg3, string jarg4, int jarg5, string jarg6);
+  public static extern string CoreSession_read(HandleRef jarg1, int jarg2, int jarg3, string jarg4, int jarg5, string jarg6, int jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_PlayAndGetDigits")]
-  public static extern string CoreSession_PlayAndGetDigits(HandleRef jarg1, int jarg2, int jarg3, int jarg4, int jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10);
+  public static extern string CoreSession_PlayAndGetDigits(HandleRef jarg1, int jarg2, int jarg3, int jarg4, int jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, int jarg11);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_StreamFile")]
   public static extern int CoreSession_StreamFile(HandleRef jarg1, string jarg2, int jarg3);
@@ -13589,6 +14011,36 @@ public class SWIGTYPE_p_f_p_q_const__char_p_q_const__char__switch_status_t {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_f_p_q_const__char_p_q_const__char__switch_status_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -15527,6 +15979,36 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class SWIGTYPE_p_f_p_void_p_q_const__char__int {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_void_p_q_const__char__int(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_void_p_q_const__char__int() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_void_p_q_const__char__int obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class SWIGTYPE_p_f_p_void__void {
   private HandleRef swigCPtr;
 
@@ -15989,6 +16471,36 @@ public class SWIGTYPE_p_p_switch_channel {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_p_switch_channel obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_p_switch_codec_implementation {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_p_switch_codec_implementation(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_p_switch_codec_implementation() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_p_switch_codec_implementation obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -17207,36 +17719,6 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
-public class SWIGTYPE_p_switch_loadable_module_interface {
-  private HandleRef swigCPtr;
-
-  internal SWIGTYPE_p_switch_loadable_module_interface(IntPtr cPtr, bool futureUse) {
-    swigCPtr = new HandleRef(this, cPtr);
-  }
-
-  protected SWIGTYPE_p_switch_loadable_module_interface() {
-    swigCPtr = new HandleRef(null, IntPtr.Zero);
-  }
-
-  internal static HandleRef getCPtr(SWIGTYPE_p_switch_loadable_module_interface obj) {
-    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
-  }
-}
-
-}
-/* ----------------------------------------------------------------------------
- * This file was automatically generated by SWIG (http://www.swig.org).
- * Version 2.0.0
- *
- * Do not make changes to this file unless you know what you are doing--modify
- * the SWIG interface file instead.
- * ----------------------------------------------------------------------------- */
-
-namespace FreeSWITCH.Native {
-
-using System;
-using System.Runtime.InteropServices;
-
 public class SWIGTYPE_p_switch_media_bug {
   private HandleRef swigCPtr;
 
@@ -18021,13 +18503,13 @@ public class switch_api_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_api_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_api_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_api_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -18203,13 +18685,13 @@ public class switch_application_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_application_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_application_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_application_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -18701,13 +19183,13 @@ public class switch_asr_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_asr_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_asr_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -20106,6 +20588,17 @@ public class switch_caller_profile : IDisposable {
     } 
   }
 
+  public switch_caller_profile origination_caller_profile {
+    set {
+      freeswitchPINVOKE.switch_caller_profile_origination_caller_profile_set(swigCPtr, switch_caller_profile.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_caller_profile_origination_caller_profile_get(swigCPtr);
+      switch_caller_profile ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_profile(cPtr, false);
+      return ret;
+    } 
+  }
+
   public switch_caller_profile hunt_caller_profile {
     set {
       freeswitchPINVOKE.switch_caller_profile_hunt_caller_profile_set(swigCPtr, switch_caller_profile.getCPtr(value));
@@ -20691,13 +21184,13 @@ public class switch_chat_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_chat_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_chat_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_chat_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -20804,17 +21297,6 @@ public class switch_codec : IDisposable {
     } 
   }
 
-  public switch_codec_settings codec_settings {
-    set {
-      freeswitchPINVOKE.switch_codec_codec_settings_set(swigCPtr, switch_codec_settings.getCPtr(value));
-    } 
-    get {
-      IntPtr cPtr = freeswitchPINVOKE.switch_codec_codec_settings_get(swigCPtr);
-      switch_codec_settings ret = (cPtr == IntPtr.Zero) ? null : new switch_codec_settings(cPtr, false);
-      return ret;
-    } 
-  }
-
   public uint flags {
     set {
       freeswitchPINVOKE.switch_codec_flags_set(swigCPtr, value);
@@ -20905,6 +21387,96 @@ namespace FreeSWITCH.Native {
   SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
   SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7),
   SWITCH_CODEC_FLAG_READY = (1 << 8)
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_codec_fmtp : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_codec_fmtp(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_codec_fmtp obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_codec_fmtp() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_codec_fmtp(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint actual_samples_per_second {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_actual_samples_per_second_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_codec_fmtp_actual_samples_per_second_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int bits_per_second {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_bits_per_second_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_codec_fmtp_bits_per_second_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int microseconds_per_packet {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_microseconds_per_packet_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_codec_fmtp_microseconds_per_packet_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_void private_info {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_private_info_set(swigCPtr, SWIGTYPE_p_void.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_codec_fmtp_private_info_get(swigCPtr);
+      SWIGTYPE_p_void ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_void(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_codec_fmtp() : this(freeswitchPINVOKE.new_switch_codec_fmtp(), true) {
+  }
+
 }
 
 }
@@ -21226,6 +21798,17 @@ public class switch_codec_interface : IDisposable {
     } 
   }
 
+  public SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t parse_fmtp {
+    set {
+      freeswitchPINVOKE.switch_codec_interface_parse_fmtp_set(swigCPtr, SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_codec_interface_parse_fmtp_get(swigCPtr);
+      SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_q_const__char_p_switch_codec_fmtp__switch_status_t(cPtr, false);
+      return ret;
+    } 
+  }
+
   public uint codec_id {
     set {
       freeswitchPINVOKE.switch_codec_interface_codec_id_set(swigCPtr, value);
@@ -21268,13 +21851,13 @@ public class switch_codec_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_codec_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_codec_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_codec_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -21339,162 +21922,12 @@ public class switch_codec_settings : IDisposable {
     }
   }
 
-  public int quality {
+  public int unused {
     set {
-      freeswitchPINVOKE.switch_codec_settings_quality_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_codec_settings_unused_set(swigCPtr, value);
     } 
     get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_quality_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int complexity {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_complexity_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_complexity_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int enhancement {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_enhancement_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_enhancement_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int vad {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_vad_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_vad_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int vbr {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_vbr_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_vbr_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public float vbr_quality {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_vbr_quality_set(swigCPtr, value);
-    } 
-    get {
-      float ret = freeswitchPINVOKE.switch_codec_settings_vbr_quality_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int abr {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_abr_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_abr_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int dtx {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_dtx_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_dtx_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int preproc {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_preproc_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_preproc_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int pp_vad {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_vad_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_pp_vad_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int pp_agc {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_agc_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_pp_agc_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public float pp_agc_level {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_agc_level_set(swigCPtr, value);
-    } 
-    get {
-      float ret = freeswitchPINVOKE.switch_codec_settings_pp_agc_level_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int pp_denoise {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_denoise_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_pp_denoise_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int pp_dereverb {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_dereverb_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_settings_pp_dereverb_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public float pp_dereverb_decay {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_dereverb_decay_set(swigCPtr, value);
-    } 
-    get {
-      float ret = freeswitchPINVOKE.switch_codec_settings_pp_dereverb_decay_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public float pp_dereverb_level {
-    set {
-      freeswitchPINVOKE.switch_codec_settings_pp_dereverb_level_set(swigCPtr, value);
-    } 
-    get {
-      float ret = freeswitchPINVOKE.switch_codec_settings_pp_dereverb_level_get(swigCPtr);
+      int ret = freeswitchPINVOKE.switch_codec_settings_unused_get(swigCPtr);
       return ret;
     } 
   }
@@ -21849,7 +22282,8 @@ namespace FreeSWITCH.Native {
   SCF_USE_CLOCK_RT = (1 << 10),
   SCF_VERBOSE_EVENTS = (1 << 11),
   SCF_USE_WIN32_MONOTONIC = (1 << 12),
-  SCF_AUTO_SCHEMAS = (1 << 13)
+  SCF_AUTO_SCHEMAS = (1 << 13),
+  SCF_MINIMAL = (1 << 14)
 }
 
 }
@@ -22477,13 +22911,13 @@ public class switch_dialplan_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_dialplan_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_dialplan_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_dialplan_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -22931,13 +23365,13 @@ public class switch_directory_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_directory_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_directory_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_directory_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -23180,13 +23614,13 @@ public class switch_endpoint_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_endpoint_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_endpoint_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_endpoint_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -24253,13 +24687,13 @@ public class switch_file_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_file_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_file_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_file_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -26101,13 +26535,13 @@ public class switch_limit_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_limit_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_limit_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_limit_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -26226,6 +26660,251 @@ public class switch_loadable_module_function_table_t : IDisposable {
   }
 
   public switch_loadable_module_function_table_t() : this(freeswitchPINVOKE.new_switch_loadable_module_function_table_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_loadable_module_interface : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_loadable_module_interface(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_loadable_module_interface obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_loadable_module_interface() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_loadable_module_interface(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public string module_name {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_module_name_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_loadable_module_interface_module_name_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_endpoint_interface endpoint_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_endpoint_interface_set(swigCPtr, switch_endpoint_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_endpoint_interface_get(swigCPtr);
+      switch_endpoint_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_endpoint_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_timer_interface timer_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_timer_interface_set(swigCPtr, switch_timer_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_timer_interface_get(swigCPtr);
+      switch_timer_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_timer_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_dialplan_interface dialplan_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_dialplan_interface_set(swigCPtr, switch_dialplan_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_dialplan_interface_get(swigCPtr);
+      switch_dialplan_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_dialplan_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_codec_interface codec_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_codec_interface_set(swigCPtr, switch_codec_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_codec_interface_get(swigCPtr);
+      switch_codec_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_codec_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_application_interface application_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_application_interface_set(swigCPtr, switch_application_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_application_interface_get(swigCPtr);
+      switch_application_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_application_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_api_interface api_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_api_interface_set(swigCPtr, switch_api_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_api_interface_get(swigCPtr);
+      switch_api_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_api_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_file_interface file_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_file_interface_set(swigCPtr, switch_file_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_file_interface_get(swigCPtr);
+      switch_file_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_file_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_speech_interface speech_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_speech_interface_set(swigCPtr, switch_speech_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_speech_interface_get(swigCPtr);
+      switch_speech_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_speech_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_directory_interface directory_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_directory_interface_set(swigCPtr, switch_directory_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_directory_interface_get(swigCPtr);
+      switch_directory_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_directory_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_chat_interface chat_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_chat_interface_set(swigCPtr, switch_chat_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_chat_interface_get(swigCPtr);
+      switch_chat_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_chat_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_say_interface say_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_say_interface_set(swigCPtr, switch_say_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_say_interface_get(swigCPtr);
+      switch_say_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_say_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_asr_interface asr_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_asr_interface_set(swigCPtr, switch_asr_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_asr_interface_get(swigCPtr);
+      switch_asr_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_asr_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_management_interface management_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_management_interface_set(swigCPtr, switch_management_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_management_interface_get(swigCPtr);
+      switch_management_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_management_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_limit_interface limit_interface {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_limit_interface_set(swigCPtr, switch_limit_interface.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_limit_interface_get(swigCPtr);
+      switch_limit_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_limit_interface(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_thread_rwlock_t rwlock {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_rwlock_set(swigCPtr, SWIGTYPE_p_switch_thread_rwlock_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_rwlock_get(swigCPtr);
+      SWIGTYPE_p_switch_thread_rwlock_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_thread_rwlock_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public int refs {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_refs_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_loadable_module_interface_refs_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_apr_pool_t pool {
+    set {
+      freeswitchPINVOKE.switch_loadable_module_interface_pool_set(swigCPtr, SWIGTYPE_p_apr_pool_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_loadable_module_interface_pool_get(swigCPtr);
+      SWIGTYPE_p_apr_pool_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_apr_pool_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_loadable_module_interface() : this(freeswitchPINVOKE.new_switch_loadable_module_interface(), true) {
   }
 
 }
@@ -26518,13 +27197,13 @@ public class switch_management_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_management_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_management_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_management_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -26803,6 +27482,75 @@ public class switch_rtcp_hdr_t : IDisposable {
   }
 
   public switch_rtcp_hdr_t() : this(freeswitchPINVOKE.new_switch_rtcp_hdr_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.0
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_rtcp_numbers_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_rtcp_numbers_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_rtcp_numbers_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_rtcp_numbers_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if (swigCPtr.Handle != IntPtr.Zero) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          freeswitchPINVOKE.delete_switch_rtcp_numbers_t(swigCPtr);
+        }
+        swigCPtr = new HandleRef(null, IntPtr.Zero);
+      }
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint packet_count {
+    set {
+      freeswitchPINVOKE.switch_rtcp_numbers_t_packet_count_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_numbers_t_packet_count_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint octet_count {
+    set {
+      freeswitchPINVOKE.switch_rtcp_numbers_t_octet_count_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtcp_numbers_t_octet_count_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_rtcp_numbers_t() : this(freeswitchPINVOKE.new_switch_rtcp_numbers_t(), true) {
   }
 
 }
@@ -27388,6 +28136,17 @@ public class switch_rtp_stats_t : IDisposable {
     } 
   }
 
+  public switch_rtcp_numbers_t rtcp {
+    set {
+      freeswitchPINVOKE.switch_rtp_stats_t_rtcp_set(swigCPtr, switch_rtcp_numbers_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_rtcp_get(swigCPtr);
+      switch_rtcp_numbers_t ret = (cPtr == IntPtr.Zero) ? null : new switch_rtcp_numbers_t(cPtr, false);
+      return ret;
+    } 
+  }
+
   public switch_rtp_stats_t() : this(freeswitchPINVOKE.new_switch_rtp_stats_t(), true) {
   }
 
@@ -27586,13 +28345,13 @@ public class switch_say_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_say_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_say_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_say_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -28273,13 +29032,13 @@ public class switch_speech_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_speech_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_speech_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_speech_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }
@@ -28900,12 +29659,12 @@ public class switch_t38_options_t : IDisposable {
     } 
   }
 
-  public uint remote_port {
+  public ushort remote_port {
     set {
       freeswitchPINVOKE.switch_t38_options_t_remote_port_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_t38_options_t_remote_port_get(swigCPtr);
+      ushort ret = freeswitchPINVOKE.switch_t38_options_t_remote_port_get(swigCPtr);
       return ret;
     } 
   }
@@ -28920,12 +29679,12 @@ public class switch_t38_options_t : IDisposable {
     } 
   }
 
-  public uint local_port {
+  public ushort local_port {
     set {
       freeswitchPINVOKE.switch_t38_options_t_local_port_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_t38_options_t_local_port_get(swigCPtr);
+      ushort ret = freeswitchPINVOKE.switch_t38_options_t_local_port_get(swigCPtr);
       return ret;
     } 
   }
@@ -29286,13 +30045,13 @@ public class switch_timer_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_switch_loadable_module_interface parent {
+  public switch_loadable_module_interface parent {
     set {
-      freeswitchPINVOKE.switch_timer_interface_parent_set(swigCPtr, SWIGTYPE_p_switch_loadable_module_interface.getCPtr(value));
+      freeswitchPINVOKE.switch_timer_interface_parent_set(swigCPtr, switch_loadable_module_interface.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_timer_interface_parent_get(swigCPtr);
-      SWIGTYPE_p_switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_loadable_module_interface(cPtr, false);
+      switch_loadable_module_interface ret = (cPtr == IntPtr.Zero) ? null : new switch_loadable_module_interface(cPtr, false);
       return ret;
     } 
   }

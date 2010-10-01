@@ -73,8 +73,10 @@ void __inline__ clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 										sngisdn_info->glare.suInstId, sngisdn_info->glare.spInstId,
 										sngisdn_info->suInstId, sngisdn_info->spInstId);
 
-	ftdm_mutex_lock(g_sngisdn_data.ccs[sngisdn_info->glare.suId].mutex);
-	g_sngisdn_data.ccs[sngisdn_info->glare.suId].active_spInstIds[sngisdn_info->glare.spInstId]=NULL;
+	ftdm_mutex_lock(g_sngisdn_data.ccs[sngisdn_info->glare.suId].mutex);	
+	if (sngisdn_info->glare.spInstId != sngisdn_info->spInstId) {
+		g_sngisdn_data.ccs[sngisdn_info->glare.suId].active_spInstIds[sngisdn_info->glare.spInstId]=NULL;
+	}
 	g_sngisdn_data.ccs[sngisdn_info->glare.suId].active_suInstIds[sngisdn_info->glare.suInstId]=NULL;
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[sngisdn_info->glare.suId].mutex);
 
@@ -132,16 +134,22 @@ ftdm_status_t __inline__ get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInst
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail)
+ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
 {
-	unsigned i;
-	if (ftdmspan->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmspan->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+	
+	if (span->trunk_type == FTDM_TRUNK_BRI ||
+		span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
 
-		for(i=1; i<=ftdmspan->chan_count; i++) {
-			ftdm_log_chan(ftdmspan->channels[i], FTDM_LOG_DEBUG, "Setting availability rate to:%d\n", avail);
-			ftdmspan->channels[i]->availability_rate = avail;
+		ftdm_iterator_t *chaniter = NULL;
+		ftdm_iterator_t *curr = NULL;
+
+
+		chaniter = ftdm_span_get_chan_iterator(span, NULL);
+		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+			ftdm_log_chan(((ftdm_channel_t*)ftdm_iterator_current(curr)), FTDM_LOG_DEBUG, "Setting availability rate to:%d\n", avail);
+			((ftdm_channel_t*)ftdm_iterator_current(curr))->availability_rate = avail;
 		}
+		ftdm_iterator_free(chaniter);
 	}
 	return FTDM_SUCCESS;
 }
@@ -427,6 +435,24 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info)
 	return;
 }
 
+void sngisdn_facility_timeout(void* p_sngisdn_info)
+{
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
+	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;	
+
+	ftdm_mutex_lock(ftdmchan->mutex);
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_GET_CALLERID) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Facility timeout reached proceeding with call (suId:%d suInstId:%u spInstId:%u)\n",
+					  signal_data->cc_id, sngisdn_info->spInstId, sngisdn_info->suInstId);
+		
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+	}
+	
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return;
+}
+
 ftdm_status_t sngisdn_check_free_ids(void)
 {
 	unsigned i;
@@ -532,6 +558,77 @@ ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_user(uint8_t layer1_pro
 		return FTDM_USER_LAYER1_PROT_ULAW;
 	}
 	return FTDM_USER_LAYER1_PROT_ULAW;
+}
+
+void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span)
+{
+	L1Mngmt sts;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
+
+	memset(&sts, 0, sizeof(sts));
+	sng_isdn_phy_stats(signal_data->link_id , &sts);
+
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "   Span:%s", span->name);
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "   Performance Counters");
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "RX Packets:\t%u\tTX Packets:\t%u\tEvents:%u\n", sts.t.sts.rx_packets, sts.t.sts.tx_packets, sts.t.sts.rx_events);
+	stream->write_function(stream, "RX Bytes:\t%u\tTX Bytes:\t%u\n\n", sts.t.sts.rx_bytes, sts.t.sts.tx_bytes);
+	stream->write_function(stream, "TX Queue:\t%u/%u\tRX Queue:\t%u/%u\tEvents Queue:\t%u/%u\n",
+							sts.t.sts.num_frames_in_tx_queue,sts.t.sts.tx_queue_len,
+							sts.t.sts.num_frames_in_rx_queue, sts.t.sts.rx_queue_len,
+							sts.t.sts.rx_events_in_queue, sts.t.sts.event_queue_len);
+	
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "   Errors");
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "RX Errors:\t%u\tTX Errors:\t%u\n", sts.t.sts.rx_errors, sts.t.sts.tx_errors);
+	stream->write_function(stream, "RX Dropped:\t%u\tTX Dropped:\t%u\tEvents Dropped:\t%u\n", sts.t.sts.rx_dropped, sts.t.sts.tx_dropped,sts.t.sts.rx_events_dropped);
+
+
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "   RX Errors Details");
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "CRC:\t\t%u\tFrame:\t\t%u\tOverruns:\t%u\n", sts.t.sts.rx_crc_errors, sts.t.sts.rx_frame_errors, sts.t.sts.rx_over_errors);
+	stream->write_function(stream, "Fifo:\t\t%u\tAborts:\t\t%u\tMissed:\t\t%u\n", sts.t.sts.rx_fifo_errors, sts.t.sts.rx_hdlc_abort_counter, sts.t.sts.rx_missed_errors);
+	stream->write_function(stream, "Length:\t\t%u\n", sts.t.sts.rx_length_errors);
+
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "   TX Errors Details");
+	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
+	stream->write_function(stream, "Aborted:\t%u\tFifo:\t\t%u\tCarrier:\t%u\n", sts.t.sts.tx_aborted_errors, sts.t.sts.tx_fifo_errors, sts.t.sts.tx_carrier_errors);
+	return;
+}
+
+
+void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span)
+{
+	ftdm_signaling_status_t sigstatus;
+	ftdm_alarm_flag_t alarmbits;
+	ftdm_channel_t *fchan;
+	alarmbits = FTDM_ALARM_NONE;
+	fchan = ftdm_span_get_channel(span, 1);
+	if (fchan) {
+		ftdm_channel_get_alarms(fchan, &alarmbits);
+	}
+			
+	ftdm_span_get_sig_status(span, &sigstatus);
+	stream->write_function(stream, "span:%s physical:%s signalling:%s\n",
+										span->name, alarmbits ? "ALARMED" : "OK",
+										ftdm_signaling_status2str(sigstatus));
+	return;
+}
+
+void sngisdn_print_spans(ftdm_stream_handle_t *stream)
+{
+	int i;	
+	for(i=1;i<=MAX_L1_LINKS;i++) {		
+		if (g_sngisdn_data.spans[i]) {
+			sngisdn_print_span(stream, g_sngisdn_data.spans[i]->ftdm_span);
+		}
+	}
+	return;
 }
 
 /* For Emacs:

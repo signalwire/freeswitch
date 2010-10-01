@@ -299,7 +299,12 @@ enum {
    (h))
 
 /** No header. */
+
+#ifndef _MSC_VER
 #define MSG_HEADER_NONE ((msg_header_t *)-1)
+#else
+#define MSG_HEADER_NONE ((msg_header_t *)(INT_PTR)-1)
+#endif
 
 SOFIA_END_DECLS
 

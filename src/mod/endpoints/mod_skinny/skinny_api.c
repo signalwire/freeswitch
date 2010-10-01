@@ -366,6 +366,62 @@ static switch_status_t skinny_api_cmd_profile_device_send_reset_message(const ch
     return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_api_cmd_profile_device_send_data(const char *profile_name, const char *device_name, const char *message_type, char *params, const char *body, switch_stream_handle_t *stream)
+{
+    skinny_profile_t *profile;
+
+    if ((profile = skinny_find_profile(profile_name))) {
+	    listener_t *listener = NULL;
+	    skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
+	    if(listener) {
+			switch_event_t *event = NULL;
+			char *argv[64] = { 0 };
+			int argc = 0;
+			int x = 0;
+			/* skinny::user_to_device event */
+			skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_USER_TO_DEVICE);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Message-Id-String", "%s", message_type);
+			argc = switch_separate_string(params, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *var_name, *var_value = NULL;
+				var_name = argv[x];
+				if (var_name && (var_value = strchr(var_name, '='))) {
+					*var_value++ = '\0';
+				}
+				if (zstr(var_name)) {
+					stream->write_function(stream, "-ERR No variable specified\n");
+				} else {
+					char *tmp = switch_mprintf("Skinny-UserToDevice-%s", var_name);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, tmp, "%s", var_value);
+					switch_safe_free(tmp);
+					/*
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Application-Id", "%d", request->data.extended_data.application_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Line-Instance", "%d", request->data.extended_data.line_instance);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Call-Id", "%d", request->data.extended_data.call_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Transaction-Id", "%d", request->data.extended_data.transaction_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Data-Length", "%d", request->data.extended_data.data_length);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Sequence-Flag", "%d", request->data.extended_data.sequence_flag);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Display-Priority", "%d", request->data.extended_data.display_priority);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Conference-Id", "%d", request->data.extended_data.conference_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-App-Instance-Id", "%d", request->data.extended_data.app_instance_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-UserToDevice-Routing-Id", "%d", request->data.extended_data.routing_id);
+					*/
+				}
+			}
+			switch_event_add_body(event, "%s", body);
+			switch_event_fire(&event);
+			stream->write_function(stream, "+OK\n");
+	    } else {
+		    stream->write_function(stream, "Listener not found!\n");
+	    }
+    } else {
+	    stream->write_function(stream, "Profile not found!\n");
+    }
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t skinny_api_cmd_profile_set(const char *profile_name, const char *name, const char *value, switch_stream_handle_t *stream)
 {
     skinny_profile_t *profile;
@@ -403,6 +459,7 @@ SWITCH_STANDARD_API(skinny_function)
 	    "skinny profile <profile_name> device <device_name> send SetLampMessage <stimulus> <instance> <lamp_mode>\n"
 	    "skinny profile <profile_name> device <device_name> send SetSpeakerModeMessage <speaker_mode>\n"
 	    "skinny profile <profile_name> device <device_name> send CallStateMessage <call_state> <line_instance> <call_id>\n"
+	    "skinny profile <profile_name> device <device_name> send <UserToDeviceDataMessage|UserToDeviceDataVersion1Message> [ <param>=<value>;... ] <data>\n"
 	    "skinny profile <profile_name> set <name> <value>\n"
 	    "--------------------------------------------------------------------------------\n";
     if (session) {
@@ -465,6 +522,16 @@ SWITCH_STANDARD_API(skinny_function)
 				    status = skinny_api_cmd_profile_device_send_reset_message(argv[1], argv[3], argv[6], stream);
 			    }
 			    break;
+			case USER_TO_DEVICE_DATA_MESSAGE:
+			case USER_TO_DEVICE_DATA_VERSION1_MESSAGE:
+			    if(argc == 8) {
+					/* <UserToDeviceDataMessage|UserToDeviceDataVersion1Message> [ <param>=<value>;... ] <data> */
+					status = skinny_api_cmd_profile_device_send_data(argv[1], argv[3], argv[5], argv[6], argv[7], stream);
+			    } else if(argc == 7) {
+					/* <UserToDeviceDataMessage|UserToDeviceDataVersion1Message> <data> */
+					status = skinny_api_cmd_profile_device_send_data(argv[1], argv[3], argv[5], "", argv[6], stream);
+				}
+			    break;
 		    default:
 			    stream->write_function(stream, "Unhandled message %s\n", argv[5]);
 	    }
@@ -495,6 +562,8 @@ switch_status_t skinny_api_register(switch_loadable_module_interface_t **module_
     switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetLampMessage ::skinny::list_stimuli ::skinny::list_stimulus_instances ::skinny::list_stimulus_modes");
     switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetSpeakerModeMessage ::skinny::list_speaker_modes");
     switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send CallStateMessage ::skinny::list_call_states ::skinny::list_line_instances ::skinny::list_call_ids");
+    switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send UserToDeviceDataMessage");
+    switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send UserToDeviceDataVersion1Message");
     switch_console_set_complete("add skinny profile ::skinny::list_profiles set ::skinny::list_settings");
 
     switch_console_add_complete_func("::skinny::list_profiles", skinny_api_list_profiles);

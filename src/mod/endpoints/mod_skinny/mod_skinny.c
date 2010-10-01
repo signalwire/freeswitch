@@ -1343,19 +1343,6 @@ static switch_status_t kill_listener(listener_t *listener, void *pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t kill_expired_listener(listener_t *listener, void *pvt)
-{
-	switch_event_t *event = NULL;
-
-	if(listener->expire_time < switch_epoch_time_now(NULL)) {
-		/* skinny::expire event */
-		skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_EXPIRE);
-		switch_event_fire(&event);
-		return kill_listener(listener, pvt);
-	}
-	return SWITCH_STATUS_SUCCESS;
-}
-
 switch_status_t keepalive_listener(listener_t *listener, void *pvt)
 {
 	skinny_profile_t *profile;
@@ -1414,6 +1401,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				case SWITCH_STATUS_TIMEOUT:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Communication Time Out with %s:%d.\n",
 						listener->remote_ip, listener->remote_port);
+
+					if(listener->expire_time < switch_epoch_time_now(NULL)) {
+						switch_event_t *event = NULL;
+						/* skinny::expire event */
+						skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_EXPIRE);
+						switch_event_fire(&event);
+					}
 					break;
 				default: 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Communication Error with %s:%d.\n",
@@ -1917,9 +1911,57 @@ static switch_status_t load_skinny_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void skinny_heartbeat_event_handler(switch_event_t *event)
+static void skinny_user_to_device_event_handler(switch_event_t *event)
 {
-	walk_listeners(kill_expired_listener, NULL);
+	char *profile_name = switch_event_get_header_nil(event, "Skinny-Profile-Name");
+	skinny_profile_t *profile;
+
+	if ((profile = skinny_find_profile(profile_name))) {
+		char *device_name = switch_event_get_header_nil(event, "Skinny-Device-Name");
+		uint32_t device_instance = atoi(switch_event_get_header_nil(event, "Skinny-Station-Instance"));
+		listener_t *listener = NULL;
+		skinny_profile_find_listener_by_device_name_and_instance(profile, device_name, device_instance, &listener);
+		if(listener) {
+			uint32_t message_type = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Message-Id"));
+			uint32_t application_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Application-Id"));
+			uint32_t line_instance = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Line-Instance"));
+			uint32_t call_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Call-Id"));
+			uint32_t transaction_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Transaction-Id"));
+			uint32_t data_length = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Data-Length"));
+			uint32_t sequence_flag = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Sequence-Flag"));
+			uint32_t display_priority = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Display-Priority"));
+			uint32_t conference_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Conference-Id"));
+			uint32_t app_instance_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-App-Instance-Id"));
+			uint32_t routing_id = atoi(switch_event_get_header_nil(event, "Skinny-UserToDevice-Routing-Id"));
+			char *data = switch_event_get_body(event);
+			if (message_type == 0) {
+				message_type = skinny_str2message_type(switch_event_get_header_nil(event, "Skinny-UserToDevice-Message-Id-String"));
+			}
+			switch(message_type) {
+				case USER_TO_DEVICE_DATA_MESSAGE:
+					data_length = strlen(data); /* we ignore data_length sent */
+					send_data(listener, message_type,
+						application_id, line_instance, call_id, transaction_id, data_length,
+						data);
+				case USER_TO_DEVICE_DATA_VERSION1_MESSAGE:
+					data_length = strlen(data); /* we ignore data_length sent */
+					send_extended_data(listener, message_type,
+						application_id, line_instance, call_id, transaction_id, data_length,
+						sequence_flag, display_priority, conference_id, app_instance_id, routing_id,
+						data);
+					break;
+				default:
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						"Incorrect message type %s (%d).\n", skinny_message_type2str(message_type), message_type);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"Device %s:%d in profile '%s' not found.\n", device_name, device_instance, profile_name);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+			"Profile '%s' not found.\n", profile_name);
+	}
 }
 
 static void skinny_call_state_event_handler(switch_event_t *event)
@@ -2129,10 +2171,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 	/* bind to events */
-	if ((switch_event_bind_removable(modname, SWITCH_EVENT_HEARTBEAT, NULL, skinny_heartbeat_event_handler, NULL, &globals.heartbeat_node) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our heartbeat handler!\n");
-		/* Not such severe to prevent loading */
-	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_CALL_STATE, skinny_call_state_event_handler, NULL, &globals.call_state_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our call_state handler!\n");
 		return SWITCH_STATUS_TERM;
@@ -2143,6 +2181,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	}
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_TRAP, NULL, skinny_trap_event_handler, NULL, &globals.trap_node) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't bind our trap handler!\n");
+		/* Not such severe to prevent loading */
+	}
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_USER_TO_DEVICE, skinny_user_to_device_event_handler, NULL, &globals.user_to_device_node) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our user_to_device handler!\n");
 		/* Not such severe to prevent loading */
 	}
 
@@ -2165,6 +2207,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	}
 	if (switch_event_reserve_subclass(SKINNY_EVENT_CALL_STATE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_CALL_STATE);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(SKINNY_EVENT_USER_TO_DEVICE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_USER_TO_DEVICE);
+		return SWITCH_STATUS_TERM;
+	}
+	if (switch_event_reserve_subclass(SKINNY_EVENT_DEVICE_TO_USER) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", SKINNY_EVENT_DEVICE_TO_USER);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -2205,7 +2255,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	skinny_api_unregister();
 	
 	/* release events */
-	switch_event_unbind(&globals.heartbeat_node);
+	switch_event_unbind(&globals.user_to_device_node);
 	switch_event_unbind(&globals.call_state_node);
 	switch_event_unbind(&globals.message_waiting_node);
 	switch_event_unbind(&globals.trap_node);
@@ -2214,6 +2264,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 	switch_event_free_subclass(SKINNY_EVENT_EXPIRE);
 	switch_event_free_subclass(SKINNY_EVENT_ALARM);
 	switch_event_free_subclass(SKINNY_EVENT_CALL_STATE);
+	switch_event_free_subclass(SKINNY_EVENT_USER_TO_DEVICE);
+	switch_event_free_subclass(SKINNY_EVENT_DEVICE_TO_USER);
 
 	switch_mutex_lock(mutex);
 

@@ -58,7 +58,11 @@ SOFIA_BEGIN_DECLS
 #define HTTP_DEFAULT_SERV "80"
 
 /** HTTP protocol identifier */
+#ifndef _MSC_VER
 #define HTTP_PROTOCOL_TAG   ((void *)0x48545450)	/* 'HTTP' */
+#else
+#define HTTP_PROTOCOL_TAG   ((void *)(UINT_PTR)0x48545450)	/* 'HTTP' */
+#endif
 
 /** HTTP parser flags */
 enum {

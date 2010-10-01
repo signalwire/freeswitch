@@ -170,8 +170,8 @@ static const char *chanpath = NULL;
 static const char dahdi_ctlpath[] = "/dev/dahdi/ctl";
 static const char dahdi_chanpath[] = "/dev/dahdi/channel";
 
-static const char zt_ctlpath[] = "/dev/ftdm/ctl";
-static const char zt_chanpath[] = "/dev/ftdm/channel";
+static const char zt_ctlpath[] = "/dev/zap/ctl";
+static const char zt_chanpath[] = "/dev/zap/channel";
 
 static ftdm_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
@@ -974,7 +974,7 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
  */
 FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 {
-	uint32_t i, event_id = 0;
+	uint32_t i, event_id = FTDM_OOB_INVALID;
 	zt_event_t zt_event_id = 0;
 
 	for(i = 1; i <= span->chan_count; i++) {
@@ -1022,6 +1022,8 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 						event_id = FTDM_OOB_OFFHOOK;
 					} else if (span->channels[i]->type == FTDM_CHAN_TYPE_FXO) {
 						event_id = FTDM_OOB_RING_START;
+					} else {
+						event_id = FTDM_OOB_NOOP;
 					}
 				}
 				break;
