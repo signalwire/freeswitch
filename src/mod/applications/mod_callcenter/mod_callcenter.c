@@ -1275,6 +1275,9 @@ static switch_status_t load_config(void)
 			}
 		}
 	}
+	if (!globals.dbname) {
+		globals.dbname = strdup(CC_SQLITE_DB_NAME);
+	}
 
 	/* Loading queue into memory struct */
 	if ((x_queues = switch_xml_child(cfg, "queues"))) {
@@ -2682,8 +2685,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
-
-	globals.dbname = CC_SQLITE_DB_NAME;
 
 	switch_core_hash_init(&globals.queue_hash, globals.pool);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
