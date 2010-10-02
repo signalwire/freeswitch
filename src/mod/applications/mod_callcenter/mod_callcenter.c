@@ -402,6 +402,7 @@ static struct {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
+	char *dbname;
 	int32_t threads;
 	int32_t running;
 	switch_mutex_t *mutex;
@@ -506,7 +507,7 @@ switch_cache_db_handle_t *cc_get_db_handle(void)
 			dbh = NULL;
 		return dbh;
 	} else {
-		options.core_db_options.db_path = CC_SQLITE_DB_NAME;
+		options.core_db_options.db_path = globals.dbname;
 		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
 			dbh = NULL;
 		return dbh;
@@ -1258,6 +1259,8 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcasecmp(var, "dbname")) {
+				globals.dbname = strdup(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
 				globals.odbc_dsn = strdup(val);
 
@@ -2680,6 +2683,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
+	globals.dbname = CC_SQLITE_DB_NAME;
+
 	switch_core_hash_init(&globals.queue_hash, globals.pool);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
@@ -2773,6 +2778,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 	}
 
 	switch_safe_free(globals.odbc_dsn);
+	switch_safe_free(globals.dbname);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;

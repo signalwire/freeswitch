@@ -1,6 +1,7 @@
 <configuration name="callcenter.conf" description="CallCenter">
   <settings>
     <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+    <!--<param name="dbname" value="/dev/shm/callcenter.db"/>-->
   </settings>
 
   <queues>
