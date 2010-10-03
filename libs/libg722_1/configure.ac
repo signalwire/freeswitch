@@ -190,7 +190,7 @@ AC_CHECK_HEADERS([audiofile.h])
 
 AC_LANG([C])
 
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)
