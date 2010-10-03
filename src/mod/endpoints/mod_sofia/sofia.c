@@ -2223,6 +2223,35 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 		goto done;
 	}
 
+	if ((settings = switch_xml_child(cfg, "global_settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if (!strcasecmp(var, "log-level")) {
+				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "tracelevel")) {
+				mod_sofia_globals.tracelevel = switch_log_str2level(val);
+			} else if (!strcasecmp(var, "debug-presence")) {
+				mod_sofia_globals.debug_presence = atoi(val);
+			} else if (!strcasecmp(var, "debug-sla")) {
+				mod_sofia_globals.debug_sla = atoi(val);
+			} else if (!strcasecmp(var, "auto-restart")) {
+				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
+				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
+					/* old behaviour */
+                                	mod_sofia_globals.rewrite_multicasted_fs_path = 1;
+				} else if (!strcasecmp(val, "original_server_host")) {
+                                	mod_sofia_globals.rewrite_multicasted_fs_path = 2;
+				} else if (!strcasecmp(val, "original_hostname")) {
+                                	mod_sofia_globals.rewrite_multicasted_fs_path = 3;
+				} else {
+					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
+				}
+			}
+		}
+	}
+
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
@@ -2257,8 +2286,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "shutdown-on-fail")) {
 						profile->shutdown_type = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "tracelevel")) {
-						mod_sofia_globals.tracelevel = switch_log_str2level(val);
 					} else if (!strcasecmp(var, "pass-callee-id")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
@@ -2817,6 +2844,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "tracelevel")) {
+				mod_sofia_globals.tracelevel = switch_log_str2level(val);
 			} else if (!strcasecmp(var, "debug-presence")) {
 				mod_sofia_globals.debug_presence = atoi(val);
 			} else if (!strcasecmp(var, "debug-sla")) {
