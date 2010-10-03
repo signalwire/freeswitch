@@ -2471,7 +2471,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_clear_pflag(profile, PFLAG_STUN_AUTO_DISABLE);
 						}
 					} else if (!strcasecmp(var, "apply-nat-acl")) {
-						if (profile->acl_count < SOFIA_MAX_ACL) {
+						if (profile->nat_acl_count < SOFIA_MAX_ACL) {
 							if (!profile->extsipip && switch_check_network_list_ip(profile->sipip, val)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not adding acl %s because it's the local network\n", val);
 							} else {
@@ -3472,7 +3472,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "apply-nat-acl")) {
-						if (profile->acl_count < SOFIA_MAX_ACL) {
+						if (profile->nat_acl_count < SOFIA_MAX_ACL) {
 							if (!profile->extsipip && profile->sipip && switch_check_network_list_ip(profile->sipip, val)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not adding acl %s because it's the local network\n", val);
 							} else {
