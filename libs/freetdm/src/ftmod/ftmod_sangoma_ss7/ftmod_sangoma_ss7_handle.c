@@ -209,7 +209,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			/* add any special variables for the dialplan */
 			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
-			ftdm_channel_add_var(ftdmchan, "ss7_nadi", nadi);
+			ftdm_channel_add_var(ftdmchan, "ss7_clg_nadi", nadi);
+
+			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
+			ftdm_channel_add_var(ftdmchan, "ss7_cld_nadi", nadi);
 
 			/* set the state of the channel to collecting...the rest is done by the chan monitor */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
