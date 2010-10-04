@@ -356,6 +356,12 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 			check_if_rx_grs_processed(ftdmspan);
 		} /* if (sngss7_span->rx_grs.range > 0) */
 
+		/* check if there is a UCIC to be processed on the span */
+		if (sngss7_span->ucic.range > 0) {
+			/* process the span wide UCIC */
+			process_span_ucic(ftdmspan);
+		} /* if (sngss7_span->ucic.range > 0) */
+
 		/* check each channel on the span to see if there is an un-procressed SUS/RES flag */
 		check_for_res_sus_flag(ftdmspan);
 	} /* master while loop */
@@ -592,6 +598,8 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		} else {
 			/* inbound call so we need to send out ACM */
 			ft_to_sngss7_acm (ftdmchan);
+
+			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 		}
 
 		break;
@@ -763,9 +771,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				ft_to_sngss7_gra(ftdmchan);
 
 				/* clean out the spans GRS structure */
-				sngss7_span_data_t *span = ftdmchan->span->mod_data;
-				span->rx_grs.circuit = 0;
-				span->rx_grs.range = 0;
+				clear_rx_grs_data(sngss7_info);
 			}
 
 			/* clear the grp reset flag */
@@ -783,9 +789,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			clear_tx_grs_flags(sngss7_info);
 			
 			/* clean out the spans GRA structure */
-			sngss7_span_data_t *span = ftdmchan->span->mod_data;
-			span->rx_gra.circuit = 0;
-			span->rx_gra.range = 0;
+			clear_rx_gra_data(sngss7_info);
 		} /* if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) */
 
 		/* check if we came from reset (aka we just processed a reset) */
@@ -877,6 +881,11 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 				/* set the unblk flag */
 				sngss7_set_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK);
+
+				/* clear the block flag */
+				sngss7_clear_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+
+				/* process the flag */
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 
 				/* break out of the processing for now */
@@ -1112,7 +1121,9 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* remove any reset flags */
 			clear_rx_grs_flags(sngss7_info);
+			clear_rx_grs_data(sngss7_info);
 			clear_tx_grs_flags(sngss7_info);
+			clear_tx_grs_data(sngss7_info);
 			clear_rx_rsc_flags(sngss7_info);
 			clear_tx_rsc_flags(sngss7_info);
 			
@@ -1321,7 +1332,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 			sngss7_clear_flag(sngss7_info, FLAG_INFID_PAUSED);
 			sngss7_set_flag(sngss7_info, FLAG_INFID_RESUME);
 		}
-#if 0
+#if 1
 		/* throw the grp reset flag */
 		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
 		if (x == 1) {
