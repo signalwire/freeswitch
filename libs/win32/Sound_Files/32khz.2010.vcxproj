@@ -68,65 +68,65 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PostBuildEvent>
       <Command>
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
-		</Command>
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PostBuildEvent>
       <Command>
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
-		</Command>
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PostBuildEvent>
       <Command>
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
-		</Command>
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PostBuildEvent>
       <Command>
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
-			xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
-		</Command>
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\voicemail\32000\*.*" "$(OutDir)sounds\en\us\callie\voicemail\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ivr\32000\*.*" "$(OutDir)sounds\en\us\callie\ivr\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\conference\32000\*.*" "$(OutDir)sounds\en\us\callie\conference\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\time\32000\*.*" "$(OutDir)sounds\en\us\callie\time\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\digits\32000\*.*" "$(OutDir)sounds\en\us\callie\digits\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\misc\32000\*.*" "$(OutDir)sounds\en\us\callie\misc\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\currency\32000\*.*" "$(OutDir)sounds\en\us\callie\currency\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\32000\*.*" "$(OutDir)sounds\en\us\callie\phonetic-ascii\32000" /C /D /Y /S /I
+xcopy "$(SolutionDir)libs\sounds\en\us\callie\directory\32000\*.*" "$(OutDir)sounds\en\us\callie\directory\32000" /C /D /Y /S /I
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
