@@ -928,6 +928,7 @@ sofia_transport_t sofia_glue_str2transport(const char *str);
 
 const char *sofia_glue_transport2str(const sofia_transport_t tp);
 char *sofia_glue_find_parameter(const char *str, const char *param);
+char *sofia_glue_find_parameter_value(switch_core_session_t *session, const char *str, const char *param);
 char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport);
 char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport);
 char *sofia_glue_strip_uri(const char *str);

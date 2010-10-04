@@ -990,6 +990,34 @@ sofia_transport_t sofia_glue_str2transport(const char *str)
 	return SOFIA_TRANSPORT_UNKNOWN;
 }
 
+char *sofia_glue_find_parameter_value(switch_core_session_t *session, const char *str, const char *param)
+{
+	const char *param_ptr;
+	char *param_value;
+	char *tmp;
+	switch_size_t param_len;
+
+	if (zstr(str) || zstr(param) || !session) return NULL;
+
+	if (end_of(param) != '=') {
+		param = switch_core_session_sprintf(session, "%s=", param);
+		if (zstr(param)) return NULL;
+	}
+
+	param_len = strlen(param);
+	param_ptr = sofia_glue_find_parameter(str, param);
+
+	if (zstr(param_ptr)) return NULL;
+
+	param_value = switch_core_session_strdup(session, param_ptr + param_len);
+
+	if (zstr(param_value)) return NULL;
+
+	if ((tmp = strchr(param_value, ';'))) *tmp = '\0';
+
+	return param_value;
+}
+
 char *sofia_glue_find_parameter(const char *str, const char *param)
 {
 	char *ptr = NULL;
