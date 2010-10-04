@@ -833,6 +833,7 @@ typedef enum {
 	SWITCH_STATUS_NOUNLOAD,
 	SWITCH_STATUS_IGNORE,
 	SWITCH_STATUS_TOO_SMALL,
+	SWITCH_STATUS_FOUND,
 	SWITCH_STATUS_NOT_INITALIZED
 } switch_status_t;
 
@@ -1684,12 +1685,27 @@ typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session
 															 switch_input_type_t input_type, void *buf, unsigned int buflen);
 typedef switch_status_t (*switch_read_frame_callback_function_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 typedef struct switch_say_interface switch_say_interface_t;
+
+struct switch_ivr_dmachine;
+typedef struct switch_ivr_dmachine switch_ivr_dmachine_t;
+
+struct switch_ivr_dmachine_match {
+	switch_ivr_dmachine_t *dmachine;
+	const char *match_digits;
+	int32_t match_key;
+	void *user_data;
+};
+
+typedef struct switch_ivr_dmachine_match switch_ivr_dmachine_match_t;
+typedef switch_status_t (*switch_ivr_dmachine_callback_t) (switch_ivr_dmachine_match_t *match);
+
 typedef struct {
 	switch_input_callback_function_t input_callback;
 	void *buf;
 	uint32_t buflen;
 	switch_read_frame_callback_function_t read_frame_callback;
 	void *user_data;
+	switch_ivr_dmachine_t *dmachine;
 } switch_input_args_t;
 
 typedef struct {
