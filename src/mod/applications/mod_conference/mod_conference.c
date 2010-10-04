@@ -1330,6 +1330,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_mutex_unlock(omember->audio_out_mutex);
 
 				if (!ok) {
+					switch_mutex_unlock(conference->mutex);
 					goto end;
 				}
 			}
