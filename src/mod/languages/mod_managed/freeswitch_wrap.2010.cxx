@@ -1331,6 +1331,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_EXPORT_VARS_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_BRIDGE_EXPORT_VARS_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("bridge_export_vars");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_R_SDP_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -4066,7 +4076,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_API_VERSION_get() {
   int jresult ;
   int result;
   
-  result = (int)(4);
+  result = (int)(5);
   jresult = result; 
   return jresult;
 }
@@ -7918,6 +7928,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_copy(void * jarg1, void * ja
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_parse_fmtp(char * jarg1, char * jarg2, unsigned long jarg3, void * jarg4) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  uint32_t arg3 ;
+  switch_codec_fmtp_t *arg4 = (switch_codec_fmtp_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (uint32_t)jarg3; 
+  arg4 = (switch_codec_fmtp_t *)jarg4; 
+  result = (switch_status_t)switch_core_codec_parse_fmtp((char const *)arg1,(char const *)arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_codec_reset(void * jarg1) {
   int jresult ;
   switch_codec_t *arg1 = (switch_codec_t *) 0 ;
@@ -11525,6 +11553,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_digit_string(char * jarg1) {
   arg1 = (char *)jarg1; 
   result = (switch_bool_t)switch_is_digit_string((char const *)arg1);
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_known_bitrate(unsigned char jarg1) {
+  unsigned long jresult ;
+  switch_payload_t arg1 ;
+  uint32_t result;
+  
+  arg1 = (switch_payload_t)jarg1; 
+  result = (uint32_t)switch_known_bitrate(arg1);
+  jresult = (unsigned long)result; 
   return jresult;
 }
 
@@ -22347,36 +22387,54 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_variable_partner(void * 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_export_variable_var_check(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_export_variable_var_check(void * jarg1, char * jarg2, char * jarg3, char * jarg4, int jarg5) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  switch_bool_t arg4 ;
+  char *arg4 = (char *) 0 ;
+  switch_bool_t arg5 ;
   switch_status_t result;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  arg4 = (switch_bool_t)jarg4; 
-  result = (switch_status_t)switch_channel_export_variable_var_check(arg1,(char const *)arg2,(char const *)arg3,arg4);
+  arg4 = (char *)jarg4; 
+  arg5 = (switch_bool_t)jarg5; 
+  result = (switch_status_t)switch_channel_export_variable_var_check(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5);
   jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_export_variable_printf(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_process_export(void * jarg1, void * jarg2, void * jarg3, char * jarg4) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_channel_t *arg2 = (switch_channel_t *) 0 ;
+  switch_event_t *arg3 = (switch_event_t *) 0 ;
+  char *arg4 = (char *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_channel_t *)jarg2; 
+  arg3 = (switch_event_t *)jarg3; 
+  arg4 = (char *)jarg4; 
+  switch_channel_process_export(arg1,arg2,arg3,(char const *)arg4);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_export_variable_printf(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  void *arg4 = 0 ;
+  char *arg4 = (char *) 0 ;
+  void *arg5 = 0 ;
   switch_status_t result;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (switch_status_t)switch_channel_export_variable_printf(arg1,(char const *)arg2,(char const *)arg3,arg4);
+  arg4 = (char *)jarg4; 
+  result = (switch_status_t)switch_channel_export_variable_printf(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5);
   jresult = result; 
   return jresult;
 }

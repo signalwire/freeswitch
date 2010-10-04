@@ -1683,6 +1683,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_codec_parse_fmtp(string codec_name, string fmtp, uint rate, switch_codec_fmtp codec_fmtp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_codec_parse_fmtp(codec_name, fmtp, rate, switch_codec_fmtp.getCPtr(codec_fmtp));
+    return ret;
+  }
+
   public static switch_status_t switch_core_codec_reset(switch_codec codec) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_codec_reset(switch_codec.getCPtr(codec));
     return ret;
@@ -2645,6 +2650,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static uint switch_known_bitrate(byte payload) {
+    uint ret = freeswitchPINVOKE.switch_known_bitrate(payload);
+    return ret;
+  }
+
   public static SWIGTYPE_p_switch_size_t switch_fd_read_line(int fd, string buf, SWIGTYPE_p_switch_size_t len) {
     SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_fd_read_line(fd, buf, SWIGTYPE_p_switch_size_t.getCPtr(len)), true);
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -3188,13 +3198,17 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel channel, string varname, string value, switch_bool_t var_check) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, value, (int)var_check);
+  public static switch_status_t switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel channel, string varname, string val, string export_varname, switch_bool_t var_check) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, val, export_varname, (int)var_check);
     return ret;
   }
 
-  public static switch_status_t switch_channel_export_variable_printf(SWIGTYPE_p_switch_channel channel, string varname, string fmt) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_export_variable_printf(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, fmt);
+  public static void switch_channel_process_export(SWIGTYPE_p_switch_channel channel, SWIGTYPE_p_switch_channel peer_channel, switch_event var_event, string export_varname) {
+    freeswitchPINVOKE.switch_channel_process_export(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_switch_channel.getCPtr(peer_channel), switch_event.getCPtr(var_event), export_varname);
+  }
+
+  public static switch_status_t switch_channel_export_variable_printf(SWIGTYPE_p_switch_channel channel, string varname, string export_varname, string fmt) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_export_variable_printf(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, export_varname, fmt);
     return ret;
   }
 
@@ -5206,6 +5220,7 @@ public class freeswitch {
   public static readonly string SWITCH_ENDPOINT_DISPOSITION_VARIABLE = freeswitchPINVOKE.SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get();
   public static readonly string SWITCH_HOLD_MUSIC_VARIABLE = freeswitchPINVOKE.SWITCH_HOLD_MUSIC_VARIABLE_get();
   public static readonly string SWITCH_EXPORT_VARS_VARIABLE = freeswitchPINVOKE.SWITCH_EXPORT_VARS_VARIABLE_get();
+  public static readonly string SWITCH_BRIDGE_EXPORT_VARS_VARIABLE = freeswitchPINVOKE.SWITCH_BRIDGE_EXPORT_VARS_VARIABLE_get();
   public static readonly string SWITCH_R_SDP_VARIABLE = freeswitchPINVOKE.SWITCH_R_SDP_VARIABLE_get();
   public static readonly string SWITCH_L_SDP_VARIABLE = freeswitchPINVOKE.SWITCH_L_SDP_VARIABLE_get();
   public static readonly string SWITCH_B_SDP_VARIABLE = freeswitchPINVOKE.SWITCH_B_SDP_VARIABLE_get();
@@ -5794,6 +5809,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_EXPORT_VARS_VARIABLE_get")]
   public static extern string SWITCH_EXPORT_VARS_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_BRIDGE_EXPORT_VARS_VARIABLE_get")]
+  public static extern string SWITCH_BRIDGE_EXPORT_VARS_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_R_SDP_VARIABLE_get")]
   public static extern string SWITCH_R_SDP_VARIABLE_get();
@@ -7415,6 +7433,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_copy")]
   public static extern int switch_core_codec_copy(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_parse_fmtp")]
+  public static extern int switch_core_codec_parse_fmtp(string jarg1, string jarg2, uint jarg3, HandleRef jarg4);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_codec_reset")]
   public static extern int switch_core_codec_reset(HandleRef jarg1);
 
@@ -8266,6 +8287,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_is_digit_string")]
   public static extern int switch_is_digit_string(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_known_bitrate")]
+  public static extern uint switch_known_bitrate(byte jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_fd_read_line")]
   public static extern IntPtr switch_fd_read_line(int jarg1, string jarg2, HandleRef jarg3);
@@ -10980,10 +11004,13 @@ class freeswitchPINVOKE {
   public static extern string switch_channel_get_variable_partner(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_export_variable_var_check")]
-  public static extern int switch_channel_export_variable_var_check(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
+  public static extern int switch_channel_export_variable_var_check(HandleRef jarg1, string jarg2, string jarg3, string jarg4, int jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_process_export")]
+  public static extern void switch_channel_process_export(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_export_variable_printf")]
-  public static extern int switch_channel_export_variable_printf(HandleRef jarg1, string jarg2, string jarg3);
+  public static extern int switch_channel_export_variable_printf(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_variable_dup")]
   public static extern string switch_channel_get_variable_dup(HandleRef jarg1, string jarg2, int jarg3);
