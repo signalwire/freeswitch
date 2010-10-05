@@ -869,7 +869,7 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	/* check if the user filled in a nadi value by looking at flag */
 	if (!flag_cld_nadi) {
 		/* default the nadi value to national */
-		sng_isup.clg_nadi = 0x03;
+		sng_isup.cld_nadi = 0x03;
 	}
 
 	if (!flag_clg_nadi) {
