@@ -65,9 +65,6 @@ unsigned long long g_next_session_id = 0;
 /* hash of sessions (I think a linked list suits better here, but FS does not have the data type) */
 static switch_hash_t *g_sessions_hash = NULL;
 
-/* global memory pool provided by FS */
-static switch_memory_pool_t *g_pool = NULL;
-
 typedef struct vocallo_codec_s {
 	int codec_id; /* vocallo codec ID */
 	int iana; /* IANA code to register in FS */
@@ -893,8 +890,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	if (sangoma_parse_config()) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	g_pool = pool;
 
 	g_init_cfg.log = sangoma_logger;
 	g_init_cfg.create_rtp = sangoma_create_rtp;
