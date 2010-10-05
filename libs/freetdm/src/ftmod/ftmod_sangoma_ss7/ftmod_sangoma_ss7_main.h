@@ -206,6 +206,8 @@ typedef struct sng_isup_intf {
 	uint32_t		mtpRouteId;
 	uint32_t		ssf;
 	uint32_t		isap;
+	uint32_t		clg_nadi;
+	uint32_t		cld_nadi;
 	uint16_t		t4;
 	uint32_t		t10;
 	uint32_t		t11;

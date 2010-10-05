@@ -755,6 +755,8 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	int						num_parms = isup_interface->n_parameters;
 	int						i;
 	int						linkSetId;
+	int						flag_cld_nadi = 0;
+	int						flag_clg_nadi = 0;
 
 	memset(&sng_isup, 0x0, sizeof(sng_isup));
 	memset(&sng_isap, 0x0, sizeof(sng_isap));
@@ -840,6 +842,20 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 			SS7_DEBUG("\tFound license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("\tFound signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "clg_nadi")) {
+		/**********************************************************************/
+			/* throw the flag so that we know we got this optional parameter */
+			flag_clg_nadi = 1;
+			sng_isup.clg_nadi = atoi(parm->val);
+			SS7_DEBUG("\tFound default CLG_NADI value = %d\n", sng_isup.clg_nadi);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "cld_nadi")) {
+		/**********************************************************************/
+			/* throw the flag so that we know we got this optional parameter */
+			flag_cld_nadi = 1;
+			sng_isup.cld_nadi = atoi(parm->val);
+			SS7_DEBUG("\tFound default CLD_NADI value = %d\n", sng_isup.cld_nadi);
+		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
 			return FTDM_FAIL;
@@ -848,6 +864,17 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 
 		/* move to the next parameter */
 		parm = parm + 1;
+	}
+
+	/* check if the user filled in a nadi value by looking at flag */
+	if (!flag_cld_nadi) {
+		/* default the nadi value to national */
+		sng_isup.cld_nadi = 0x03;
+	}
+
+	if (!flag_clg_nadi) {
+		/* default the nadi value to national */
+		sng_isup.clg_nadi = 0x03;
 	}
 
 	/* trickle down the SPC to all sub entities */
@@ -1249,6 +1276,8 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	g_ftdm_sngss7_data.cfg.isupIntf[i].switchType	= sng_isup->switchType;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].ssf			= sng_isup->ssf;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].isap			= sng_isup->isap;
+	g_ftdm_sngss7_data.cfg.isupIntf[i].cld_nadi		= sng_isup->cld_nadi;
+	g_ftdm_sngss7_data.cfg.isupIntf[i].clg_nadi		= sng_isup->clg_nadi;
 
 	if (sng_isup->t4 != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= sng_isup->t4;
