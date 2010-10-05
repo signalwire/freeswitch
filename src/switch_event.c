@@ -274,7 +274,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
-	EVENT_DISPATCH_QUEUE_RUNNING[my_id] = 1;
+	EVENT_DISPATCH_QUEUE_RUNNING[my_id] = 0;
 	THREAD_COUNT--;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 

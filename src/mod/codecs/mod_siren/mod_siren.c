@@ -47,6 +47,40 @@ struct siren_context {
 	g722_1_encode_state_t encoder_object;
 };
 
+static switch_status_t switch_siren_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	if (codec_fmtp) {
+		int bit_rate = 0;
+		memset(codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+		if (fmtp) {
+			int x, argc;
+			char *argv[10];
+			char *fmtp_dup = strdup(fmtp);
+
+			switch_assert(fmtp_dup);
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				switch_assert(data);
+				while (*data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					if (!strcasecmp(data, "bitrate")) {
+						bit_rate = atoi(arg);
+					}
+				}
+			}
+			free(fmtp_dup);
+		}
+		codec_fmtp->bits_per_second = bit_rate;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 static switch_status_t switch_siren_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct siren_context *context = NULL;
@@ -56,26 +90,6 @@ static switch_status_t switch_siren_init(switch_codec_t *codec, switch_codec_fla
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (codec->fmtp_in) {
-		int x, argc;
-		char *argv[10];
-		argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-		for (x = 0; x < argc; x++) {
-			char *data = argv[x];
-			char *arg;
-			switch_assert(data);
-			while (*data == ' ') {
-				data++;
-			}
-			if ((arg = strchr(data, '='))) {
-				*arg++ = '\0';
-				if (!strcasecmp(data, "bitrate")) {
-					bit_rate = atoi(arg);
-				}
-			}
-		}
 	}
 
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "bitrate=%d", bit_rate);
@@ -145,6 +159,28 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_siren_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "Polycom(R) G722.1/G722.1C");
+	codec_interface->parse_fmtp = switch_siren_fmtp_parse;
+
+	spf = 320, bpf = 640;
+	for (count = 3; count > 0; count--) {
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,    /* enumeration defining the type of the codec */
+				107,   /* the IANA code number */
+				"G7221",       /* the IANA code name */
+				"bitrate=24000",       /* default fmtp to send (can be overridden by the init function) */
+				16000, /* samples transferred per second */
+				16000, /* actual samples transferred per second */
+				24000, /* bits transferred per second */
+				mpf * count,   /* number of microseconds per frame */
+				spf * count,   /* number of samples per frame */
+				bpf * count,   /* number of bytes per frame decompressed */
+				0,     /* number of bytes per frame compressed */
+				1,     /* number of channels represented */
+				1,     /* number of frames per network packet */
+				switch_siren_init,     /* function to initialize a codec handle using this implementation */
+				switch_siren_encode,   /* function to encode raw data into encoded data */
+				switch_siren_decode,   /* function to decode encoded data into raw data */
+				switch_siren_destroy); /* deinitalize a codec handle using this implementation */
+	}
 
 	spf = 320, bpf = 640;
 	for (count = 3; count > 0; count--) {

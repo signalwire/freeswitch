@@ -226,6 +226,8 @@
     <!--all inbound reg will stored in the db using this domain -->
     <param name="force-register-db-domain" value="$${domain}"/>
 
+    <!--<param name="delete-subs-on-register" value="false"/>-->
+
     <!-- enable rtcp on every channel also can be done per leg basis with rtcp_audio_interval_msec variable set to passthru to pass it across a call-->
     <!--<param name="rtcp-audio-interval-msec" value="5000"/>-->
     <!--<param name="rtcp-video-interval-msec" value="5000"/>-->

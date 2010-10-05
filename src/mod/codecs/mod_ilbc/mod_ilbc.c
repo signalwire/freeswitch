@@ -40,6 +40,27 @@ struct ilbc_context {
 	ilbc_decode_state_t decoder_object;
 };
 
+static switch_status_t switch_ilbc_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	if (codec_fmtp) {
+		char *mode = NULL;
+		int codec_ms = 0;
+
+		memset(codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+
+		if (fmtp && (mode = strstr(fmtp, "mode=")) && (mode + 5)) {
+			codec_ms = atoi(mode + 5);
+		}
+		if (!codec_ms) {
+			/* default to 30 when no mode is defined for ilbc ONLY */
+			codec_ms = 30;
+		}
+		codec_fmtp->microseconds_per_packet = (codec_ms * 1000);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct ilbc_context *context;
@@ -49,26 +70,6 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (codec->fmtp_in) {
-		int x, argc;
-		char *argv[10];
-		argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-		for (x = 0; x < argc; x++) {
-			char *data = argv[x];
-			char *arg;
-			switch_assert(data);
-			while (*data == ' ') {
-				data++;
-			}
-			if ((arg = strchr(data, '='))) {
-				*arg++ = '\0';
-				if (!strcasecmp(data, "mode")) {
-					mode = atoi(arg);
-				}
-			}
-		}
 	}
 
 	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "mode=%d", mode);
@@ -136,6 +137,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "iLBC");
+	codec_interface->parse_fmtp = switch_ilbc_fmtp_parse;
 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 98,	/* the IANA code number */

@@ -513,6 +513,9 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 	char *encode_buf = NULL;	/* used for url encoding of variables to make sure unsafe things stay out of the serialized copy */
 	int clen = 0;
 
+	if (!event || !event->headers)
+		return ESL_FAIL;
+
 	*str = NULL;
 
 	dlen = blocksize * 2;

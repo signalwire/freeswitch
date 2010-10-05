@@ -909,48 +909,42 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 SWITCH_STANDARD_APP(export_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *exports;
-	char *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL, *var_name = NULL;
-	int local = 1;
+	char *var, *val = NULL;
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
-		exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
 		var = switch_core_session_strdup(session, data);
-		if (var) {
-			val = strchr(var, '=');
-			if (!strncasecmp(var, "nolocal:", 8)) {
-				var_name = var + 8;
-				local = 0;
-			} else {
-				var_name = var;
-			}
-		}
 
-		if (val) {
+		if ((val = strchr(var, '='))) {
 			*val++ = '\0';
 			if (zstr(val)) {
 				val = NULL;
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXPORT %s[%s]=[%s]\n", local ? "" : "(REMOTE ONLY) ",
-						  var_name ? var_name : "", val ? val : "UNDEF");
-		switch_channel_set_variable(channel, var, val);
+		switch_channel_export_variable(channel, var, val, SWITCH_EXPORT_VARS_VARIABLE);
+	}
+}
 
-		if (var && val) {
-			if (exports) {
-				new_exports_d = switch_mprintf("%s,%s", exports, var);
-				new_exports = new_exports_d;
-			} else {
-				new_exports = var;
+SWITCH_STANDARD_APP(bridge_export_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *var, *val = NULL;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No variable name specified.\n");
+	} else {
+		var = switch_core_session_strdup(session, data);
+
+		if ((val = strchr(var, '='))) {
+			*val++ = '\0';
+			if (zstr(val)) {
+				val = NULL;
 			}
-
-			switch_channel_set_variable(channel, SWITCH_EXPORT_VARS_VARIABLE, new_exports);
-
-			switch_safe_free(new_exports_d);
 		}
+
+		switch_channel_export_variable(channel, var, val, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
 	}
 }
 
@@ -1712,10 +1706,11 @@ SWITCH_STANDARD_APP(att_xfer_function)
 SWITCH_STANDARD_APP(read_function)
 {
 	char *mydata;
-	char *argv[6] = { 0 };
+	char *argv[7] = { 0 };
 	int argc;
 	int32_t min_digits = 0;
 	int32_t max_digits = 0;
+	uint32_t digit_timeout = 0;
 	int timeout = 1000;
 	char digit_buffer[128] = "";
 	const char *prompt_audio_file = NULL;
@@ -1751,6 +1746,13 @@ SWITCH_STANDARD_APP(read_function)
 		valid_terminators = argv[5];
 	}
 
+	if (argc > 6) {
+		digit_timeout = atoi(argv[6]);
+		if (digit_timeout < 0) {
+			digit_timeout = 0;
+		}
+	}
+
 	if (min_digits <= 1) {
 		min_digits = 1;
 	}
@@ -1767,17 +1769,19 @@ SWITCH_STANDARD_APP(read_function)
 		valid_terminators = "#";
 	}
 
-	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, sizeof(digit_buffer), timeout, valid_terminators);
+	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, sizeof(digit_buffer), timeout, valid_terminators, 
+					digit_timeout);
 }
 
 SWITCH_STANDARD_APP(play_and_get_digits_function)
 {
 	char *mydata;
-	char *argv[9] = { 0 };
+	char *argv[10] = { 0 };
 	int argc;
 	int32_t min_digits = 0;
 	int32_t max_digits = 0;
 	int32_t max_tries = 0;
+	uint32_t digit_timeout = 0;
 	int timeout = 1000;
 	char digit_buffer[128] = "";
 	const char *prompt_audio_file = NULL;
@@ -1827,6 +1831,14 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 		digits_regex = argv[8];
 	}
 
+	if (argc > 9) {
+		digit_timeout = atoi(argv[9]);
+		if (digit_timeout < 0) {
+			digit_timeout = 0;
+		}
+	}
+
+
 	if (min_digits <= 1) {
 		min_digits = 1;
 	}
@@ -1844,7 +1856,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	}
 
 	switch_play_and_get_digits(session, min_digits, max_digits, max_tries, timeout, valid_terminators,
-							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex);
+							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex, digit_timeout);
 }
 
 #define SAY_SYNTAX "<module_name> <say_type> <say_method> [<say_gender>] <text>"
@@ -3299,6 +3311,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "sound_test", "Analyze Audio", "Analyze Audio", sound_test_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "bridge_export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, bridge_export_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set_global", "Set a global variable", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>",
@@ -3367,9 +3381,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel",
 				   endless_playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "att_xfer", "Attended Transfer", "Attended Transfer", att_xfer_function, "<channel_url>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, "<min> <max> <file> <var_name> <timeout> <terminators>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, 
+				   "<min> <max> <file> <var_name> <timeout> <terminators> <digit_timeout>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "play_and_get_digits", "Play and get Digits", "Play and get Digits",
-				   play_and_get_digits_function, "<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp>", SAF_NONE);
+				   play_and_get_digits_function, 
+				   "<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp> [<digit_timeout>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,

@@ -785,7 +785,7 @@ int dig_addr(struct dig *dig,
 	char const *tport2 = NULL;
 	sres_record_t **answers1 = NULL, **answers2 = NULL;
 	unsigned count1 = 0, count2 = 0, tcount = 0;
-	int type1 = 0, type2 = 0, family1 = 0, family2 = 0;
+	uint16_t type1 = 0, type2 = 0, family1 = 0, family2 = 0;
 
 	if (dig->ip6 > dig->ip4) {
 		type1 = sres_type_aaaa, family1 = AF_INET6;

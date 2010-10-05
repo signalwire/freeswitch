@@ -28,11 +28,11 @@ AC_ARG_WITH(libgnutls-prefix,
   no_libgnutls=""
   if test "$LIBGNUTLS_CONFIG" != "no"; then
     LIBGNUTLS_CFLAGS=`$LIBGNUTLS_CONFIG $libgnutls_config_args --cflags`
-    LIBGNUTLS_LIBS="`$LIBGNUTLS_CONFIG $libgnutls_config_args --libs` -lpthread"
+    LIBGNUTLS_LIBS="`$LIBGNUTLS_CONFIG $libgnutls_config_args --libs` -lpthread  -lgcrypt"
     libgnutls_config_version=`$LIBGNUTLS_CONFIG $libgnutls_config_args --version`
   elif test "$PKG_CONFIG" != "no"; then
     LIBGNUTLS_CFLAGS=`$PKG_CONFIG --cflags gnutls`
-    LIBGNUTLS_LIBS="`$PKG_CONFIG --libs gnutls` -lpthread"
+    LIBGNUTLS_LIBS="`$PKG_CONFIG --libs gnutls` -lpthread -lgcrypt"
     libgnutls_config_version=`$PKG_CONFIG --modversion gnutls`
   else
     no_libgnutls=yes

@@ -1,0 +1,1 @@
+s(n)=A_1cos(\omega_0+\phi_1)+A_2cos(2\omega_0+\phi_2)+...+A_Lcos(L\omega_0+\phi_L)

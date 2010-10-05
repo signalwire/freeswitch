@@ -79,7 +79,11 @@
 #endif
 
 #ifndef NONE
+#ifndef _MSC_VER
 #define NONE ((void *)-1)
+#else
+#define NONE ((void *)(INT_PTR)-1)
+#endif
 #endif
 
 SOFIA_BEGIN_DECLS

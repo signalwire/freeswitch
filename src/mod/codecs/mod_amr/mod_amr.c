@@ -98,11 +98,8 @@ typedef enum {
 	AMR_DTX_ENABLED
 } amr_dtx_t;
 
-struct amr_context {
-	void *encoder_state;
-	void *decoder_state;
-	switch_byte_t enc_modes;
-	switch_byte_t enc_mode;
+/*! \brief Various codec settings */
+struct amr_codec_settings {
 	int dtx_mode;
 	uint32_t change_period;
 	switch_byte_t max_ptime;
@@ -110,12 +107,112 @@ struct amr_context {
 	switch_byte_t channels;
 	switch_byte_t flags;
 };
+typedef struct amr_codec_settings amr_codec_settings_t;
+
+static amr_codec_settings_t default_codec_settings = {
+	/*.dtx_mode */ AMR_DTX_ENABLED,
+	/*.change_period */ 0,
+	/*.max_ptime */ 0,
+	/*.ptime */ 0,
+	/*.channels */ 0,
+	/*.flags */ 0,
+};
+
+
+struct amr_context {
+	void *encoder_state;
+	void *decoder_state;
+	switch_byte_t enc_modes;
+	switch_byte_t enc_mode;
+};
 
 #define AMR_DEFAULT_BITRATE AMR_BITRATE_1220
 
 static struct {
 	switch_byte_t default_bitrate;
 } globals;
+
+static switch_status_t switch_amr_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	if (codec_fmtp) {
+		amr_codec_settings_t *codec_settings = NULL;
+		if (codec_fmtp->private_info) {
+			codec_settings = codec_fmtp->private_info;
+			memcpy(codec_settings, &default_codec_settings, sizeof(*codec_settings));
+		}
+
+		if (fmtp) {
+			int x, argc;
+			char *argv[10];
+			char *fmtp_dup = strdup(fmtp);
+
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string((char *) fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				switch_assert(data);
+				while (*data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					/*
+					   if (!strcasecmp(data, "bitrate")) {
+					   bit_rate = atoi(arg);
+					   }
+					 */
+					if (codec_settings) {
+						if (!strcasecmp(data, "octet-align")) {
+							if (atoi(arg)) {
+								switch_set_flag(codec_settings, AMR_OPT_OCTET_ALIGN);
+							}
+						} else if (!strcasecmp(data, "mode-change-neighbor")) {
+							if (atoi(arg)) {
+								switch_set_flag(codec_settings, AMR_OPT_MODE_CHANGE_NEIGHBOR);
+							}
+						} else if (!strcasecmp(data, "crc")) {
+							if (atoi(arg)) {
+								switch_set_flag(codec_settings, AMR_OPT_CRC);
+							}
+						} else if (!strcasecmp(data, "robust-sorting")) {
+							if (atoi(arg)) {
+								switch_set_flag(codec_settings, AMR_OPT_ROBUST_SORTING);
+							}
+						} else if (!strcasecmp(data, "interveaving")) {
+							if (atoi(arg)) {
+								switch_set_flag(codec_settings, AMR_OPT_INTERLEAVING);
+							}
+						} else if (!strcasecmp(data, "mode-change-period")) {
+							codec_settings->change_period = atoi(arg);
+						} else if (!strcasecmp(data, "ptime")) {
+							codec_settings->ptime = (switch_byte_t) atoi(arg);
+						} else if (!strcasecmp(data, "channels")) {
+							codec_settings->channels = (switch_byte_t) atoi(arg);
+						} else if (!strcasecmp(data, "maxptime")) {
+							codec_settings->max_ptime = (switch_byte_t) atoi(arg);
+						} else if (!strcasecmp(data, "mode-set")) {
+							int y, m_argc;
+							char *m_argv[7];
+							m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+							for (y = 0; y < m_argc; y++) {
+								codec_settings->enc_modes |= (1 << atoi(m_argv[y]));
+							}
+						} else if (!strcasecmp(data, "dtx")) {
+							codec_settings->dtx_mode = (atoi(arg)) ? AMR_DTX_ENABLED : AMR_DTX_DISABLED;
+						}
+					}
+
+				}
+			}
+			free(fmtp_dup);
+		}
+		//codec_fmtp->bits_per_second = bit_rate;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
 
 #endif
 
@@ -128,7 +225,10 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 	}
 	return SWITCH_STATUS_SUCCESS;
 #else
+
 	struct amr_context *context = NULL;
+	switch_codec_fmtp_t codec_fmtp;
+	amr_codec_settings_t amr_codec_settings;
 	int encoding, decoding;
 	int x, i, argc;
 	char *argv[10];
@@ -141,58 +241,9 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		return SWITCH_STATUS_FALSE;
 	} else {
 
-		context->dtx_mode = AMR_DTX_ENABLED;
-		if (codec->fmtp_in) {
-			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-			for (x = 0; x < argc; x++) {
-				char *data = argv[x];
-				char *arg;
-				while (*data && *data == ' ') {
-					data++;
-				}
-				if ((arg = strchr(data, '='))) {
-					*arg++ = '\0';
-					if (!strcasecmp(data, "octet-align")) {
-						if (atoi(arg)) {
-							switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
-						}
-					} else if (!strcasecmp(data, "mode-change-neighbor")) {
-						if (atoi(arg)) {
-							switch_set_flag(context, AMR_OPT_MODE_CHANGE_NEIGHBOR);
-						}
-					} else if (!strcasecmp(data, "crc")) {
-						if (atoi(arg)) {
-							switch_set_flag(context, AMR_OPT_CRC);
-						}
-					} else if (!strcasecmp(data, "robust-sorting")) {
-						if (atoi(arg)) {
-							switch_set_flag(context, AMR_OPT_ROBUST_SORTING);
-						}
-					} else if (!strcasecmp(data, "interveaving")) {
-						if (atoi(arg)) {
-							switch_set_flag(context, AMR_OPT_INTERLEAVING);
-						}
-					} else if (!strcasecmp(data, "mode-change-period")) {
-						context->change_period = atoi(arg);
-					} else if (!strcasecmp(data, "ptime")) {
-						context->ptime = (switch_byte_t) atoi(arg);
-					} else if (!strcasecmp(data, "channels")) {
-						context->channels = (switch_byte_t) atoi(arg);
-					} else if (!strcasecmp(data, "maxptime")) {
-						context->max_ptime = (switch_byte_t) atoi(arg);
-					} else if (!strcasecmp(data, "mode-set")) {
-						int y, m_argc;
-						char *m_argv[7];
-						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
-						for (y = 0; y < m_argc; y++) {
-							context->enc_modes |= (1 << atoi(m_argv[y]));
-						}
-					} else if (!strcasecmp(data, "dtx")) {
-						context->dtx_mode = (atoi(arg)) ? AMR_DTX_ENABLED : AMR_DTX_DISABLED;
-					}
-				}
-			}
-		}
+		memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+		codec_fmtp.private_info = &amr_codec_settings;
+		switch_amr_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 
 		if (context->enc_modes) {
 			for (i = 7; i > -1; i++) {
@@ -321,6 +372,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
+#ifndef AMR_PASSTHROUGH
+	codec_interface->parse_fmtp = switch_amr_fmtp_parse;
+#endif 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 96,	/* the IANA code number */
 										 "AMR",	/* the IANA code name */

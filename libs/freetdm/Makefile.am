@@ -312,7 +312,7 @@ ftmod_r2_la_LIBADD  = $(MYLIB)
 endif
 
 dox doxygen:
-	cd docs && doxygen $(FT_SRCDIR)/docs/Doxygen.conf
+	doxygen $(FT_SRCDIR)/docs/Doxygen.conf
 
 mod_freetdm/mod_freetdm.$(DYNAMIC_LIB_EXTEN): $(MYLIB) mod_freetdm/mod_freetdm.c
 	cd mod_freetdm && make

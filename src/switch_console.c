@@ -493,7 +493,7 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 			
 			argc = switch_separate_string(list, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 
-			for (i = 0; i < argc; i++) {
+			for (i = 0; (int)i < argc; i++) {
 				if (!cur || !strncmp(argv[i], cur, strlen(cur))) {
 					r_argv[0] = argv[i];
 					comp_callback(h, 1, r_argv, r_cols);

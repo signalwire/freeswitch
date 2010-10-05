@@ -904,6 +904,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_expr/Makefile
 		src/mod/applications/mod_fax/Makefile
 		src/mod/applications/mod_spandsp/Makefile
+		src/mod/applications/mod_osp/Makefile
 		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_hash/Makefile
 		src/mod/endpoints/mod_portaudio/Makefile
@@ -998,6 +999,7 @@ AC_CONFIG_SUBDIRS([libs/spandsp])
 AC_CONFIG_SUBDIRS([libs/broadvoice])
 AC_CONFIG_SUBDIRS([libs/libg722_1])
 AC_CONFIG_SUBDIRS([libs/silk])
+AC_CONFIG_SUBDIRS([libs/libcodec2])
 
 case $host in
    *-openbsd*)

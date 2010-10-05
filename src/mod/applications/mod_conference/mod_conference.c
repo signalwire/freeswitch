@@ -1012,7 +1012,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	uint8_t *file_frame;
 	uint8_t *async_file_frame;
 	int16_t *bptr;
-	int x = 0;
+	uint32_t x = 0;
 	int32_t z = 0;
 	int member_score_sum = 0;
 	int divisor = 0;
@@ -1330,6 +1330,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_mutex_unlock(omember->audio_out_mutex);
 
 				if (!ok) {
+					switch_mutex_unlock(conference->mutex);
 					goto end;
 				}
 			}
@@ -1913,6 +1914,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	uint32_t hangover = 40, hangunder = 15, hangover_hits = 0, hangunder_hits = 0, energy_level = 0, diff_level = 400;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_t *session = member->session;
+	int check_floor_change;
+
 	switch_assert(member != NULL);
 
 	switch_clear_flag_locked(member, MFLAG_TALKING);
@@ -1925,6 +1928,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	   and mux it with any audio from other channels. */
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_channel_ready(channel)) {
+		check_floor_change = 0;
 
 		if (switch_channel_ready(channel) && switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
 			switch_yield(100000);
@@ -2082,25 +2086,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				}
 
 				if (diff >= diff_level || ++hangunder_hits >= hangunder) { 
-
-                    switch_mutex_lock(member->conference->member_mutex);
-                    if ((!member->conference->floor_holder ||
-                        !switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
-                        ((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) &&
-                        (!switch_test_flag(member->conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
-
-                        if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
-                            switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-                            conference_add_event_member_data(member, event);
-                            switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d",
-                                                    member->conference->floor_holder ? member->conference->floor_holder->id : 0);
-                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->conference->floor_holder ? member->id : 0);
-                            switch_event_fire(&event);
-                        }
-                        member->conference->floor_holder = member;
-                    }
-                    switch_mutex_unlock(member->conference->member_mutex);
+					check_floor_change = 1;
 
 					hangover_hits = hangunder_hits = 0;
 					member->last_talking = switch_epoch_time_now(NULL);
@@ -2190,6 +2176,28 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	  do_continue:
 
 		switch_mutex_unlock(member->read_mutex);
+
+		if (check_floor_change) {
+			switch_mutex_lock(member->conference->member_mutex);
+			if ((!member->conference->floor_holder ||
+				 !switch_test_flag(member->conference->floor_holder, MFLAG_TALKING) ||
+				 ((member->score_iir > SCORE_IIR_SPEAKING_MAX) && (member->conference->floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) &&
+				(!switch_test_flag(member->conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
+
+				if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
+					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+					conference_add_event_member_data(member, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d",
+											member->conference->floor_holder ? member->conference->floor_holder->id : 0);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->conference->floor_holder ? member->id : 0);
+					switch_event_fire(&event);
+				}
+				member->conference->floor_holder = member;
+			}
+			switch_mutex_unlock(member->conference->member_mutex);
+		}
+
 	}
 
 
@@ -3733,7 +3741,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 
 static switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
 {
-	switch_size_t dlen = strlen(value) * 3;
+	switch_size_t dlen = strlen(value) * 3 + 1;
 	char *data;
 	switch_xml_t x_tag;
 

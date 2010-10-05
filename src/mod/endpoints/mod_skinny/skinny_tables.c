@@ -55,10 +55,14 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"SoftKeyEventMessage", SOFT_KEY_EVENT_MESSAGE},
     {"UnregisterMessage", UNREGISTER_MESSAGE},
     {"SoftKeyTemplateReqMessage", SOFT_KEY_TEMPLATE_REQ_MESSAGE},
-    {"ServiceUrlStatReqMessage", SERVICE_URL_STAT_REQ_MESSAGE},
-    {"FeatureStatReqMessage", FEATURE_STAT_REQ_MESSAGE},
     {"HeadsetStatusMessage", HEADSET_STATUS_MESSAGE},
     {"RegisterAvailableLinesMessage", REGISTER_AVAILABLE_LINES_MESSAGE},
+    {"DeviceToUserDataMessage", DEVICE_TO_USER_DATA_MESSAGE},
+    {"DeviceToUserDataResponseMessage", DEVICE_TO_USER_DATA_RESPONSE_MESSAGE},
+    {"ServiceUrlStatReqMessage", SERVICE_URL_STAT_REQ_MESSAGE},
+    {"FeatureStatReqMessage", FEATURE_STAT_REQ_MESSAGE},
+    {"DeviceToUserDataVersion1Message", DEVICE_TO_USER_DATA_VERSION1_MESSAGE},
+    {"DeviceToUserDataResponseVersion1Message", DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE},
     {"RegisterAckMessage", REGISTER_ACK_MESSAGE},
     {"StartToneMessage", START_TONE_MESSAGE},
     {"StopToneMessage", STOP_TONE_MESSAGE},
@@ -90,9 +94,11 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"UnregisterAckMessage", UNREGISTER_ACK_MESSAGE},
     {"BackSpaceReqMessage", BACK_SPACE_REQ_MESSAGE},
     {"DialedNumberMessage", DIALED_NUMBER_MESSAGE},
+    {"UserToDeviceDataMessage", USER_TO_DEVICE_DATA_MESSAGE},
     {"FeatureResMessage", FEATURE_STAT_RES_MESSAGE},
     {"DisplayPriNotifyMessage", DISPLAY_PRI_NOTIFY_MESSAGE},
     {"ServiceUrlStatMessage", SERVICE_URL_STAT_RES_MESSAGE},
+    {"UserToDeviceDataVersion1Message", USER_TO_DEVICE_DATA_VERSION1_MESSAGE},
     {NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")

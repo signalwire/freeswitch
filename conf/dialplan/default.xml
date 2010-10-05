@@ -240,7 +240,7 @@
     <!-- 
 	 dial the extension (1000-1019) for 30 seconds and go to voicemail if the 
 	 call fails (continue_on_fail=true), otherwise hang up after a successful
-	 bridge (hangup_after-bridge=true) 
+	 bridge (hangup_after_bridge=true) 
     -->
     <extension name="Local_Extension">
       <condition field="destination_number" expression="^(10[01][0-9])$">

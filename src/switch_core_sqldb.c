@@ -911,10 +911,9 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 	sql_manager.thread_running = 1;
 
+	switch_mutex_lock(sql_manager.cond_mutex);
+
 	while (sql_manager.thread_running == 1) {
-
-		switch_mutex_lock(sql_manager.cond_mutex);
-
 		if (sql || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
 			switch_queue_trypop(sql_manager.sql_queue[1], &pop) == SWITCH_STATUS_SUCCESS) {
 
@@ -992,6 +991,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 			switch_thread_cond_wait(sql_manager.cond, sql_manager.cond_mutex);
 		}
 	}
+
+	switch_mutex_unlock(sql_manager.cond_mutex);
 
 	while (switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
@@ -1141,11 +1142,13 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CODEC:
 		new_sql() =
 			switch_mprintf
-			("update channels set read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q' and hostname='%q'",
+			("update channels set read_codec='%q',read_rate='%q',read_bit_rate='%q',write_codec='%q',write_rate='%q',write_bit_rate='%q' where uuid='%q' and hostname='%q'",
 			 switch_event_get_header_nil(event, "channel-read-codec-name"),
 			 switch_event_get_header_nil(event, "channel-read-codec-rate"),
+			 switch_event_get_header_nil(event, "channel-read-codec-bit-rate"),
 			 switch_event_get_header_nil(event, "channel-write-codec-name"),
 			 switch_event_get_header_nil(event, "channel-write-codec-rate"),
+			 switch_event_get_header_nil(event, "channel-write-codec-bit-rate"),
 			 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
 		break;
 	case SWITCH_EVENT_CHANNEL_HOLD:
@@ -1470,8 +1473,10 @@ static char create_channels_sql[] =
 	"   context VARCHAR(128),\n"
 	"   read_codec  VARCHAR(128),\n"
 	"   read_rate  VARCHAR(32),\n"
+	"   read_bit_rate  VARCHAR(32),\n"
 	"   write_codec  VARCHAR(128),\n"
 	"   write_rate  VARCHAR(32),\n"
+	"   write_bit_rate  VARCHAR(32),\n"
 	"   secure VARCHAR(32),\n"
 	"   hostname VARCHAR(256),\n"
 	"   presence_id VARCHAR(4096),\n"
@@ -1539,6 +1544,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 {
 	switch_threadattr_t *thd_attr;
 	switch_cache_db_handle_t *dbh;
+	uint32_t sanity = 400;
 
 	sql_manager.memory_pool = pool;
 	sql_manager.manage = manage;
@@ -1611,7 +1617,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		{
 			char *err;
-			switch_cache_db_test_reactive(dbh, "select call_uuid from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
@@ -1678,7 +1684,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	}
 	switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
 
-	while (!sql_manager.thread_running) {
+	while (sql_manager.manage && !sql_manager.thread_running && --sanity) {
 		switch_yield(10000);
 	}
 

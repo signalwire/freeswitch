@@ -852,7 +852,8 @@ static void do_config(switch_bool_t reload)
 				const char *username = switch_xml_attr(x_list, "username");
 				const char *password = switch_xml_attr(x_list, "password");
 				const char *szinterval = switch_xml_attr(x_list, "interval");
-				int port = 0,  interval = 0;
+				uint16_t port = 0;
+				int	interval = 0;
 				limit_remote_t *remote;
 				switch_threadattr_t *thd_attr = NULL;
 				
@@ -866,7 +867,7 @@ static void do_config(switch_bool_t reload)
 				}
 
 				if (!zstr(szport)) {
-					port = atoi(szport);
+					port = (uint16_t)atoi(szport);
 				}
 				
 				if (!zstr(szinterval)) {
@@ -949,7 +950,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 	/* Kill remote connections, destroy needs a wrlock so we unlock after finding a pointer */
 	while(remote_clean) {
 		void *val;	
-		const void *key;
+		const void *key = NULL;
 		switch_ssize_t keylen;
 		limit_remote_t *item = NULL;
 		

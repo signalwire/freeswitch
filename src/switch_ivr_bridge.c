@@ -963,6 +963,12 @@ static const switch_state_handler_table_t signal_bridge_state_handlers = {
 	/*.on_hibernate */ signal_bridge_on_hibernate
 };
 
+static void check_bridge_export(switch_channel_t *channel, switch_channel_t *peer_channel)
+{
+	switch_channel_process_export(peer_channel, channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
+	switch_channel_process_export(channel, peer_channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
@@ -978,6 +984,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_channel_hangup(peer_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		return SWITCH_STATUS_FALSE;
 	}
+
+	check_bridge_export(caller_channel, peer_channel);
 
 	switch_channel_set_flag_recursive(caller_channel, CF_SIGNAL_BRIDGE_TTL);
 	switch_channel_set_flag_recursive(peer_channel, CF_SIGNAL_BRIDGE_TTL);
@@ -1054,7 +1062,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		return switch_ivr_signal_bridge(session, peer_session);
 	}
 
-
+	check_bridge_export(caller_channel, peer_channel);
+	
 	switch_channel_set_flag_recursive(caller_channel, CF_MEDIA_BRIDGE_TTL);
 	switch_channel_set_flag_recursive(peer_channel, CF_MEDIA_BRIDGE_TTL);
 

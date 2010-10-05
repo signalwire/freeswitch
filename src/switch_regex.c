@@ -215,7 +215,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 	if (match_count > 0) {
 		*partial = 0;
 		return SWITCH_STATUS_SUCCESS;
-	} else if (match_count == PCRE_ERROR_PARTIAL) {
+	} else if (match_count == PCRE_ERROR_PARTIAL || match_count == PCRE_ERROR_BADPARTIAL) {
 		/* yes it is already set, but the code is clearer this way */
 		*partial = 1;
 		return SWITCH_STATUS_SUCCESS;

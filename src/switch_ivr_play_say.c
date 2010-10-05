@@ -493,7 +493,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	}
 
-	if ((p = switch_channel_get_variable(channel, "RECORD_APPEND")) && switch_true(p)) {
+	if (switch_test_flag(fh, SWITCH_FILE_WRITE_APPEND) || ((p = switch_channel_get_variable(channel, "RECORD_APPEND")) && switch_true(p))) {
 		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}
 
@@ -613,18 +613,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			break;
 		}
 
-		if (args && (args->input_callback || args->buf || args->buflen)) {
+		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
-				if (!args->input_callback && !args->buf) {
+				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
-				if (args->input_callback) {
+
+				if (args->dmachine) {
+					char ds[2] = {dtmf.digit, '\0'};
+					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
 					*((char *) args->buf) = dtmf.digit;
@@ -651,8 +657,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			break;
 		}
 
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
 		if (args && (args->read_frame_callback)) {
-			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+			if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
@@ -810,16 +822,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			break;
 		}
 
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
 
 		if (args && (args->read_frame_callback)) {
-			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+			if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
 
 		switch_ivr_parse_all_events(session);
 
-		if (args && (args->input_callback || args->buf || args->buflen)) {
+		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -831,7 +848,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
-				if (args->input_callback) {
+
+				if (args->dmachine) {
+					char ds[2] = {dtmf.digit, '\0'};
+					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
 					*((char *) args->buf) = dtmf.digit;
@@ -841,7 +864,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 			if (args->input_callback) {
 				switch_event_t *event;
-
+				
 				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
 					switch_event_destroy(&event);
@@ -1224,7 +1247,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			switch_ivr_parse_all_events(session);
 
-			if (args && (args->input_callback || args->buf || args->buflen)) {
+			if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
 				/*
 				   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 				   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -1236,7 +1259,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						break;
 					}
 					switch_channel_dequeue_dtmf(channel, &dtmf);
-					if (args->input_callback) {
+
+					if (args->dmachine) {
+						char ds[2] = {dtmf.digit, '\0'};
+						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+							break;
+						}
+					} else if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
 						*((char *) args->buf) = dtmf.digit;
@@ -1405,10 +1434,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						break;
 					}
 
+					if (args && args->dmachine) {
+						if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+							break;
+						}
+					}
+
 					if (args && (args->read_frame_callback)) {
 						int ok = 1;
 						switch_set_flag(fh, SWITCH_FILE_CALLBACK);
-						if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+						if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
 							ok = 0;
 						}
 						switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
@@ -1645,7 +1680,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t max_digits,
 												const char *prompt_audio_file,
 												const char *var_name,
-												char *digit_buffer, switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators)
+												char *digit_buffer, 
+												switch_size_t digit_buffer_length, 
+												uint32_t timeout, 
+												const char *valid_terminators,
+												uint32_t digit_timeout)
+
 {
 	switch_channel_t *channel;
 	switch_input_args_t args = { 0 };
@@ -1696,7 +1736,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	if ((min_digits && len < min_digits) || len < max_digits) {
 		args.buf = digit_buffer + len;
 		args.buflen = (uint32_t) (digit_buffer_length - len);
-		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0], timeout, 0, 0);
+		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0], 
+												 len ? digit_timeout : timeout, digit_timeout, 0);
 	}
 
 
@@ -1745,7 +1786,10 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *prompt_audio_file,
 														   const char *bad_input_audio_file,
 														   const char *var_name,
-														   char *digit_buffer, uint32_t digit_buffer_length, const char *digits_regex)
+														   char *digit_buffer, 
+														   uint32_t digit_buffer_length, 
+														   const char *digits_regex,
+														   uint32_t digit_timeout)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1755,7 +1799,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		memset(digit_buffer, 0, digit_buffer_length);
 		switch_channel_flush_dtmf(channel);
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name,
-								 digit_buffer, digit_buffer_length, timeout, valid_terminators);
+								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -1910,7 +1954,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			switch_event_destroy(&event);
 		}
 
-		if (args && (args->input_callback || args->buf || args->buflen)) {
+		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
 			/* dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			 * if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
@@ -1924,7 +1968,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 					status = SWITCH_STATUS_BREAK;
 				} else {
 					switch_channel_dequeue_dtmf(channel, &dtmf);
-					if (args->input_callback) {
+
+					if (args->dmachine) {
+						char ds[2] = {dtmf.digit, '\0'};
+						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+							break;
+						}
+					} else if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
 						*((char *) args->buf) = dtmf.digit;
@@ -1963,9 +2013,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 					break;
 				}
 
+				if (args && args->dmachine) {
+					if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+						goto done;
+					}
+				}
+
 				if (args && (args->read_frame_callback)) {
-					if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
-						break;
+					if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
+						goto done;
 					}
 				}
 			}
@@ -2029,14 +2085,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				break;
 			}
 
+			if (args && args->dmachine) {
+				if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+					goto done;
+				}
+			}
+
 			if (args && (args->read_frame_callback)) {
-				if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
-					break;
+				if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
+					goto done;
 				}
 			}
 		}
 
 	}
+
+ done:
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done speaking text\n");
 	flags = 0;

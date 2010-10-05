@@ -271,13 +271,12 @@ int main(int argc, char *argv[])
 	switch_size_t pid_len, old_pid_len;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
-	int bf = 0;
+	int nf = 0;					/* TRUE if we are running in nofork mode */
 	char *runas_user = NULL;
 	char *runas_group = NULL;
 #else
 	int win32_service = 0;
 #endif
-	int nf = 0;					/* TRUE if we are running in nofork mode */
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
 	int i, x;
@@ -329,7 +328,6 @@ int main(int argc, char *argv[])
 		"\t-monotonic-clock       -- use monotonic clock as timer source\n"
 #else
 		"\t-nf                    -- no forking\n"
-		"\t-bf                    -- block until fully started, then fork\n"
 		"\t-u [user]              -- specify user to switch to\n" "\t-g [group]             -- specify group to switch to\n"
 #endif
 		"\t-help                  -- this message\n" "\t-version               -- print the version and exit\n"
@@ -464,11 +462,6 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-bf")) {
-			bf++;
-			known_opt++;
-		}
-
 		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
 			fprintf(stdout, "Sangoma Media Gateway Version: %s\n", SWITCH_VERSION_FULL);
 			return 0;
@@ -531,14 +524,8 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-nc")) {
-			if (!nf) {
-				nc++;
-				known_opt++;
-			} else {
-				/* The flags -nc and -nf are mutually exclusive. Ignoring -nc. */
-				nc = 0;
-				known_opt++;
-			}
+			nc++;
+			known_opt++;
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-c")) {
@@ -715,7 +702,7 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 		FreeConsole();
 #else
-		if (!nf && !bf) {
+		if (!nf) {
 			daemonize();
 		}
 #endif
@@ -829,12 +816,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Cannot Initialize [%s]\n", err);
 		return 255;
 	}
-
-#ifndef WIN32
-	if(bf) {
-		daemonize();
-	}
-#endif
 
 	switch_core_runtime_loop(nc);
 

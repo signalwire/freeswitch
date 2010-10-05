@@ -447,7 +447,7 @@ if test "$TARGET_EXEEXT" = ".exe"; then
     OS_WIN=0
     OS_OS2=1
     TARGET_CFLAGS="$TARGET_CFLAGS -DOS_OS2=1"
-    if test "$ac_compiler_gnu" == "yes" ; then
+    if test "$ac_compiler_gnu" = "yes" ; then
       TARGET_CFLAGS="$TARGET_CFLAGS -Zomf -Zexe -Zmap"
       BUILD_CFLAGS="$BUILD_CFLAGS -Zomf -Zexe"
     fi

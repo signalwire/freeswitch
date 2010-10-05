@@ -23,6 +23,13 @@
 		to listen for HTTP requests on the same IP/port that you specify here.
 		<param name="soapserver" value="http://192.168.1.100:8080"/>
 		-->
+
+		<!--
+		RTP IP to use
+		By default, this module asks FreeSWITCH for the local ip address. However if you want to use a specific
+		IP address you can set it here.
+		<param name="rtpip" value="192.168.1.1"/>
+		-->
 	</settings>
 
 </configuration>

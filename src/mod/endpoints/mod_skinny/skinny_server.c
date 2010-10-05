@@ -1864,6 +1864,33 @@ switch_status_t skinny_handle_register_available_lines_message(listener_t *liste
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_data_message(listener_t *listener, skinny_message_t *request)
+{
+	switch_event_t *event = NULL;
+	char *tmp = NULL;
+	skinny_check_data_length(request, sizeof(request->data.data));
+	skinny_check_data_length(request, sizeof(request->data.data) + request->data.data.data_length - 1);
+
+	/* skinny::device_to_user event */
+	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_DEVICE_TO_USER);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Message-Id", "%d", request->type);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Message-Id-String", "%s", skinny_message_type2str(request->type));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Application-Id", "%d", request->data.data.application_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Line-Instance", "%d", request->data.data.line_instance);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Call-Id", "%d", request->data.data.call_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Transaction-Id", "%d", request->data.data.transaction_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Data-Length", "%d", request->data.data.data_length);
+	/* Ensure that the body is null-terminated */
+	tmp = malloc(request->data.data.data_length + 1);
+	memcpy(tmp, request->data.data.data, request->data.data.data_length);
+	tmp[request->data.data.data_length] = '\0';
+	switch_event_add_body(event, "%s", tmp);
+	switch_safe_free(tmp);
+	switch_event_fire(&event);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_service_url_stat_request(listener_t *listener, skinny_message_t *request)
 {
 	skinny_message_t *message;
@@ -1900,6 +1927,38 @@ switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_
 	memcpy(&message->data.feature_res, button, sizeof(struct feature_stat_res_message));
 
 	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny_message_t *request)
+{
+	switch_event_t *event = NULL;
+	char *tmp = NULL;
+	skinny_check_data_length(request, sizeof(request->data.extended_data));
+	skinny_check_data_length(request, sizeof(request->data.extended_data)+request->data.extended_data.data_length-1);
+
+	/* skinny::device_to_user event */
+	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_DEVICE_TO_USER);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Message-Id", "%d", request->type);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Message-Id-String", "%s", skinny_message_type2str(request->type));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Application-Id", "%d", request->data.extended_data.application_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Line-Instance", "%d", request->data.extended_data.line_instance);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Call-Id", "%d", request->data.extended_data.call_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Transaction-Id", "%d", request->data.extended_data.transaction_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Data-Length", "%d", request->data.extended_data.data_length);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Sequence-Flag", "%d", request->data.extended_data.sequence_flag);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Display-Priority", "%d", request->data.extended_data.display_priority);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Conference-Id", "%d", request->data.extended_data.conference_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-App-Instance-Id", "%d", request->data.extended_data.app_instance_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Routing-Id", "%d", request->data.extended_data.routing_id);
+	/* Ensure that the body is null-terminated */
+	tmp = malloc(request->data.data.data_length + 1);
+	memcpy(tmp, request->data.data.data, request->data.data.data_length);
+	tmp[request->data.data.data_length] = '\0';
+	switch_event_add_body(event, "%s", tmp);
+	switch_safe_free(tmp);
+	switch_event_fire(&event);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1961,10 +2020,18 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_headset_status_message(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:
 			return skinny_handle_register_available_lines_message(listener, request);
+		case DEVICE_TO_USER_DATA_MESSAGE:
+			return skinny_handle_data_message(listener, request);
+		case DEVICE_TO_USER_DATA_RESPONSE_MESSAGE:
+			return skinny_handle_data_message(listener, request);
 		case SERVICE_URL_STAT_REQ_MESSAGE:
 			return skinny_handle_service_url_stat_request(listener, request);
 		case FEATURE_STAT_REQ_MESSAGE:
 			return skinny_handle_feature_stat_request(listener, request);
+		case DEVICE_TO_USER_DATA_VERSION1_MESSAGE:
+			return skinny_handle_extended_data_message(listener, request);
+		case DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE:
+			return skinny_handle_extended_data_message(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Unhandled request %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);

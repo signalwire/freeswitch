@@ -1100,7 +1100,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct holder *holder = (struct holder *) pArg;
 	char title_b4[128] = "";
-	char title_aft[128 * 3] = "";
+	char title_aft[128 * 3 + 1] = "";
 	char *mp3, *m3u;
 
 	/*

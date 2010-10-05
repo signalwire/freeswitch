@@ -156,6 +156,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
+#define SWITCH_BRIDGE_EXPORT_VARS_VARIABLE "bridge_export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
 #define SWITCH_L_SDP_VARIABLE "switch_l_sdp"
 #define SWITCH_B_SDP_VARIABLE "switch_m_sdp"
@@ -770,9 +771,9 @@ typedef struct {
 	const char *T38FaxUdpEC;
 	const char *T38VendorInfo;
 	const char *remote_ip;
-	uint32_t remote_port;
+	uint16_t remote_port;
 	const char *local_ip;
-	uint32_t local_port;
+	uint16_t local_port;
 } switch_t38_options_t;
 
 /*!
@@ -832,6 +833,7 @@ typedef enum {
 	SWITCH_STATUS_NOUNLOAD,
 	SWITCH_STATUS_IGNORE,
 	SWITCH_STATUS_TOO_SMALL,
+	SWITCH_STATUS_FOUND,
 	SWITCH_STATUS_NOT_INITALIZED
 } switch_status_t;
 
@@ -1588,6 +1590,7 @@ typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
+typedef struct switch_codec_fmtp switch_codec_fmtp_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 
 typedef struct switch_io_routines switch_io_routines_t;
@@ -1646,6 +1649,7 @@ typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *code
 															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
+typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
 
 
@@ -1681,12 +1685,27 @@ typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session
 															 switch_input_type_t input_type, void *buf, unsigned int buflen);
 typedef switch_status_t (*switch_read_frame_callback_function_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 typedef struct switch_say_interface switch_say_interface_t;
+
+struct switch_ivr_dmachine;
+typedef struct switch_ivr_dmachine switch_ivr_dmachine_t;
+
+struct switch_ivr_dmachine_match {
+	switch_ivr_dmachine_t *dmachine;
+	const char *match_digits;
+	int32_t match_key;
+	void *user_data;
+};
+
+typedef struct switch_ivr_dmachine_match switch_ivr_dmachine_match_t;
+typedef switch_status_t (*switch_ivr_dmachine_callback_t) (switch_ivr_dmachine_match_t *match);
+
 typedef struct {
 	switch_input_callback_function_t input_callback;
 	void *buf;
 	uint32_t buflen;
 	switch_read_frame_callback_function_t read_frame_callback;
 	void *user_data;
+	switch_ivr_dmachine_t *dmachine;
 } switch_input_args_t;
 
 typedef struct {
@@ -1714,7 +1733,7 @@ struct switch_network_list;
 typedef struct switch_network_list switch_network_list_t;
 
 
-#define SWITCH_API_VERSION 4
+#define SWITCH_API_VERSION 5
 #define SWITCH_MODULE_LOAD_ARGS (switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 #define SWITCH_MODULE_RUNTIME_ARGS (void)
 #define SWITCH_MODULE_SHUTDOWN_ARGS (void)
