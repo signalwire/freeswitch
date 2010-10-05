@@ -71,8 +71,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t
 	switch_byte_t my_pool = !!pool;
 	switch_ivr_dmachine_t *dmachine;
 
-	if (digit_timeout_ms < 1 || input_timeout_ms < 1) return SWITCH_STATUS_FALSE;
-	
 	if (!pool) {
 		switch_core_new_memory_pool(&pool);
 	}
@@ -229,9 +227,13 @@ static switch_bool_t switch_ivr_dmachine_check_timeout(switch_ivr_dmachine_t *dm
 {
 	switch_time_t now = switch_time_now();
 	uint32_t timeout = dmachine->cur_digit_len ? dmachine->digit_timeout_ms : dmachine->input_timeout_ms;
-	
-	if ((uint32_t)((now - dmachine->last_digit_time) / 1000) > timeout) {
-		return SWITCH_TRUE;
+
+	if (!dmachine->last_digit_time) dmachine->last_digit_time = now;
+
+	if (timeout) {
+		if ((uint32_t)((now - dmachine->last_digit_time) / 1000) > timeout) {
+			return SWITCH_TRUE;
+		}
 	}
 
 	return SWITCH_FALSE;
@@ -253,7 +255,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
 	switch_status_t r;
 	
-	if (!dmachine->last_digit_time) {
+	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
 	} else if (dmachine->cur_digit_len > dmachine->max_digit_len) {
 		r = SWITCH_STATUS_FALSE;
