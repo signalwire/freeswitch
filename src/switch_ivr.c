@@ -224,7 +224,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		switch_ivr_parse_all_events(session);
 
 
-		if (args && (args->input_callback || args->buf || args->buflen)) {
+		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
 			switch_dtmf_t dtmf;
 
 			/*
@@ -237,7 +237,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
-				if (args->input_callback) {
+
+				if (args->dmachine) {
+					char ds[2] = {dtmf.digit, '\0'};
+					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
 					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
@@ -947,8 +953,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 			break;
 		}
 
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
 		if (read_frame && args && (args->read_frame_callback)) {
-			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+			if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}

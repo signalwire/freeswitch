@@ -507,19 +507,19 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			args.buflen = sizeof(buf);
 
 			if (switch_ivr_play_file(session, NULL, cd->list[cd->index], &args) != SWITCH_STATUS_SUCCESS) {
-				return SWITCH_STATUS_FALSE;
+				return SWITCH_STATUS_BREAK;
 			}
 
 			if (match_key(caller_exit_key, *buf)) {
 				cd->abort = 1;
-				return SWITCH_STATUS_FALSE;
+				return SWITCH_STATUS_BREAK;
 			}
 			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;
 		}
 	} else if (cd->orbit_timeout && switch_epoch_time_now(NULL) >= cd->orbit_timeout) {
 		cd->do_orbit = 1;
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_BREAK;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -540,7 +540,7 @@ static switch_status_t consumer_read_frame_callback(switch_core_session_t *sessi
 	}
 
 	if (total) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_BREAK;
 	}
 
 	return SWITCH_STATUS_SUCCESS;

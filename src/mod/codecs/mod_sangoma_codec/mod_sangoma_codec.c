@@ -199,6 +199,8 @@ static int sangoma_create_rtp_port(void *usr_priv, uint32_t host_ip, uint32_t *p
 
 static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_req_leg, sngtc_codec_reply_leg_t* codec_reply_leg, void **rtp_fd)
 {
+	switch_status_t status;
+	switch_memory_pool_t *sesspool = NULL;
 	switch_rtp_t *rtp_session = NULL;
 	char codec_ip[255];
 	switch_rtp_flag_t flags = 0;
@@ -208,6 +210,18 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	char local_ip[255];
 	switch_port_t rtp_port;
 	struct sangoma_transcoding_session *sess = usr_priv;
+
+	/*
+	 * We *MUST* use a new pool
+	 * Do not use the session pool since the session may go away while the RTP socket should linger around 
+	 * until sangoma_transcode decides to kill it (possibly because the same RTP session is used for a different call) 
+	 * also do not use the module pool otherwise memory would keep growing because switch_rtp_destroy does not
+	 * free the memory used (is assumed it'll be freed when the pool is destroyed)
+	 */
+	status = switch_core_new_memory_pool(&sesspool);
+	if (status != SWITCH_STATUS_SUCCESS) {
+		return -1;
+	}
 	
 	rtp_port = (switch_port_t)(long)*rtp_fd;
 
@@ -222,20 +236,20 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 					  local_ip, rtp_port, codec_ip, codec_reply_leg->codec_udp_port, iana, 
 					  codec_req_leg->ms*1000, sess->sessid);
 
-	/* create the RTP socket, dont use the session pool since the session may go away while the RTP socket should linger around 
-	 * until sangoma_transcode decides to kill it (possibly because the same RTP session is used for a different call) */
+	/* create the RTP socket */
 	rtp_session = switch_rtp_new(local_ip, rtp_port, 
 			codec_ip, codec_reply_leg->codec_udp_port, 
 			iana,
 			sess->impl->samples_per_packet,
 			codec_req_leg->ms * 1000, /* microseconds per packet */
-			flags, NULL, &err, g_pool);
+			flags, NULL, &err, sesspool);
 
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create switch rtp session: %s\n", err);
+		switch_core_destroy_memory_pool(&sesspool);
 		return -1;
 	}
-
+	switch_rtp_set_private(rtp_session, sesspool);
 	*rtp_fd = rtp_session;
 
 	return 0;
@@ -243,8 +257,11 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 
 static int sangoma_destroy_rtp(void *usr_priv, void *fd)
 {
+	switch_memory_pool_t *sesspool;
 	switch_rtp_t *rtp = fd;
+	sesspool = switch_rtp_get_private(rtp);
 	switch_rtp_destroy(&rtp);
+	switch_core_destroy_memory_pool(&sesspool);
 	return 0;
 }
 
@@ -406,6 +423,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	sess->encoder.tx++;
 
 	/* do the reading */
+	memset(&encoded_frame, 0, sizeof(encoded_frame));
 	for ( ; ; ) {
 		sres = switch_rtp_zerocopy_read_frame(sess->encoder.rxrtp, &encoded_frame, SWITCH_IO_FLAG_NOBLOCK);
 		if (sres == SWITCH_STATUS_GENERR) {
@@ -525,6 +543,7 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	sess->decoder.tx++;
 
 	/* do the reading */
+	memset(&ulaw_frame, 0, sizeof(ulaw_frame));
 	for ( ; ; ) {
 		sres = switch_rtp_zerocopy_read_frame(sess->decoder.rxrtp, &ulaw_frame, SWITCH_IO_FLAG_NOBLOCK);
 		if (sres == SWITCH_STATUS_GENERR) {
