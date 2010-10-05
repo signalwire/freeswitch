@@ -87,6 +87,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t
 }
 
 
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_digit_timeout_ms(switch_ivr_dmachine_t *dmachine, uint32_t digit_timeout_ms)
+{
+	dmachine->digit_timeout_ms = digit_timeout_ms;
+}
+
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_input_timeout_ms(switch_ivr_dmachine_t *dmachine, uint32_t input_timeout_ms)
+{
+	dmachine->input_timeout_ms = input_timeout_ms;
+}
+
 SWITCH_DECLARE(void) switch_ivr_dmachine_destroy(switch_ivr_dmachine_t **dmachine)
 {
 	switch_memory_pool_t *pool;
