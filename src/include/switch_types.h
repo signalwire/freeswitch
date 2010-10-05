@@ -123,6 +123,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_CURRENT_APPLICATION_DATA_VARIABLE "current_application_data"
 #define SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE "current_application_response"
+#define SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE "passthru_ptime_mismatch"
 #define SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE "enable_heartbeat_events"
 #define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
@@ -1055,6 +1056,7 @@ typedef enum {
 	CF_EARLY_HANGUP,
 	CF_MEDIA_SET,
 	CF_CONSUME_ON_ORIGINATE,
+	CF_PASSTHRU_PTIME_MISMATCH,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

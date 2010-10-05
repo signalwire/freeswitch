@@ -2559,6 +2559,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_core_session_execute_application(channel->session, app, arg);
 		}
 
+		if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
+		}
+
 		/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
 		   a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
 		 */
@@ -2684,6 +2688,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		&& (other_session = switch_core_session_locate(uuid))) {
 		switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
 		switch_core_session_rwunlock(other_session);
+	}
+
+	if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+		switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 	}
 
 	if ((var = switch_channel_get_variable(channel, SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE))) {
