@@ -156,7 +156,12 @@ typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef __int16 int16_t;
 typedef __int8 int8_t;
+#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
+#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+#endif /* _MSC_VER */
+#else /* __WINDOWS__ */
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
 #include <stdio.h>
