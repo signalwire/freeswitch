@@ -1326,7 +1326,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				}
 			}
 
-			if (fail) {
+			if (profile->watchdog_enabled && fail) {
 				int arg = 1;
 				switch_session_ctl_t command = SCSC_SHUTDOWN_NOW;
 
@@ -2327,9 +2327,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
 						}
-					} else if (!strcasecmp(var, "watchdog_step_timeout")) {
+					} else if (!strcasecmp(var, "watchdog-enabled")) {
+						profile->watchdog_enabled = switch_true(val);
+					} else if (!strcasecmp(var, "watchdog-step-timeout")) {
 						profile->step_timeout = (unsigned long) atol(val);
-					} else if (!strcasecmp(var, "watchdog_event_timeout")) {
+					} else if (!strcasecmp(var, "watchdog-event-timeout")) {
 						profile->event_timeout = (unsigned long) atol(val);
 					} else if (!strcasecmp(var, "in-dialog-chat")) {
 						if (switch_true(val)) {
@@ -3011,9 +3013,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						}
-					} else if (!strcasecmp(var, "watchdog_step_timeout")) {
+					} else if (!strcasecmp(var, "watchdog-enabled")) {
+						profile->watchdog_enabled = switch_true(val);
+					} else if (!strcasecmp(var, "watchdog-step-timeout")) {
 						profile->step_timeout = atoi(val);
-					} else if (!strcasecmp(var, "watchdog_event_timeout")) {
+					} else if (!strcasecmp(var, "watchdog-event-timeout")) {
 						profile->event_timeout = atoi(val);
 
 					} else if (!strcasecmp(var, "in-dialog-chat")) {

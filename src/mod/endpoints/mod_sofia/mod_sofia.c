@@ -3174,6 +3174,17 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
+	if (!strcasecmp(argv[1], "watchdog")) {
+		if (argc > 2) {
+			int value = switch_true(argv[2]);
+			profile->watchdog_enabled = value;
+			stream->write_function(stream, "%s sip debugging on %s", value ? "Enabled" : "Disabled", profile->name);
+		} else {
+			stream->write_function(stream, "Usage: sofia profile <name> watchdog <on/off>\n");
+		}
+		goto done;
+	}
+
 
 	if (!strcasecmp(argv[1], "gwlist")) {
 		int up = 1;
@@ -3510,12 +3521,14 @@ SWITCH_STANDARD_API(sofia_function)
 		"[register|unregister] [<gateway name>|all]|"
 		"killgw <gateway name>|"
 		"[stun-auto-disable|stun-enabled] [true|false]]|"
-		"siptrace [on|off]\n"
+		"siptrace <on|off>|"
+		"watchdog <on|off>\n"
 		"sofia status|xmlstatus profile <name> [ reg <contact str> ] | [ pres <pres str> ] | [ user <user@domain> ]\n"
 		"sofia status|xmlstatus gateway <name>\n"
 		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
 		"sofia tracelevel <console|alert|crit|err|warning|notice|info|debug>\n"
-		"sofa global siptrace [on|off]\n"
+		"sofia global siptrace <on|off>|"
+		"watchdog <on|off>\n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (session) {
@@ -3572,21 +3585,30 @@ SWITCH_STANDARD_API(sofia_function)
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
 	} else if (!strcasecmp(argv[0], "global")) {
-		int on = -1;
+		int ston = -1;
+		int wdon = -1;
 
 		if (argc > 1) {
 			if (!strcasecmp(argv[1], "siptrace")) {
 				if (argc > 2) {
-					on = switch_true(argv[2]);
+					ston = switch_true(argv[2]);
+				}
+			}
+			if (!strcasecmp(argv[1], "watchdog")) {
+				if (argc > 2) {
+					wdon = switch_true(argv[2]);
 				}
 			}
 		}
 
-		if (on != -1) {
-			sofia_glue_global_siptrace(on);
-			stream->write_function(stream, "+OK Global siptrace %s", on ? "on" : "off");
+		if (ston != -1) {
+			sofia_glue_global_siptrace(ston);
+			stream->write_function(stream, "+OK Global siptrace %s", ston ? "on" : "off");
+		} else if (wdon != -1) {
+			sofia_glue_global_watchdog(wdon);
+			stream->write_function(stream, "+OK Global watchdog %s", wdon ? "on" : "off");
 		} else {
-			stream->write_function(stream, "-ERR Usage: siptrace on|off");
+			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|watchdog <on|off>");
 		}
 		
 		goto done;
@@ -4668,6 +4690,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
 
 	switch_console_set_complete("add sofia global siptrace ::[on:off");
+	switch_console_set_complete("add sofia global watchdog ::[on:off");
 
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
@@ -4683,6 +4706,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace on");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace off");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog on");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog off");
 
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist up");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles gwlist down");

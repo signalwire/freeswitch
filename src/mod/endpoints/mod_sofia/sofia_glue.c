@@ -4752,6 +4752,26 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 
 }
 
+void sofia_glue_global_watchdog(switch_bool_t on)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	sofia_profile_t *pptr;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	if (mod_sofia_globals.profile_hash) {
+		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			if ((pptr = (sofia_profile_t *) val)) {
+				pptr->watchdog_enabled = (on ? 1 : 0);
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+}
+
 void sofia_glue_del_profile(sofia_profile_t *profile)
 {
 	sofia_gateway_t *gp;
