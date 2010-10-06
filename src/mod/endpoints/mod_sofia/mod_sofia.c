@@ -242,14 +242,15 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-char *generate_pai_str(switch_core_session_t *session)
+char *generate_pai_str(private_object_t *tech_pvt)
 {
-	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_core_session_t *session = tech_pvt->session;
 	const char *callee_name = NULL, *callee_number = NULL;
 	const char *var, *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
 
-	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) ||
+
+	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID) || !sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) ||
 		((var = switch_channel_get_variable(tech_pvt->channel, "sip_cid_in_1xx")) && switch_false(var))) {
 		return NULL;
 	}
@@ -521,7 +522,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-					char *cid = generate_pai_str(session);
+					char *cid = generate_pai_str(tech_pvt);
 
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause),
 								TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
@@ -703,9 +704,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 		char *cid = NULL;
 
-		if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID)) {
-			cid = generate_pai_str(session);
-		}
+
+		cid = generate_pai_str(tech_pvt);
+
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
 			/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
@@ -1968,7 +1969,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else if (code == 484 && msg->numeric_arg) {
 				const char *to = switch_channel_get_variable(channel, "sip_to_uri");
 				const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
-				char *cid = generate_pai_str(session);
+				char *cid = generate_pai_str(tech_pvt);
 				char *to_uri = NULL;
 
 				if (to) {
@@ -2066,7 +2067,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 				char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 				const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
-				char *cid = generate_pai_str(session);
+				char *cid = generate_pai_str(tech_pvt);
 
 				switch (ring_ready_val) {
 
@@ -2187,9 +2188,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
 					char *cid = NULL;
 
-					if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID)) {
-						cid = generate_pai_str(session);
-					}
+					cid = generate_pai_str(tech_pvt);
+					
 
 					if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 						tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
