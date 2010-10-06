@@ -249,12 +249,13 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	const char *var, *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
 
+	printf("WTF %s %d\n", tech_pvt->profile->name, sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID));
 
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID) || !sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) ||
 		((var = switch_channel_get_variable(tech_pvt->channel, "sip_cid_in_1xx")) && switch_false(var))) {
 		return NULL;
 	}
-
+	printf("BOOL FUCKEDUP\n");
 
 	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
