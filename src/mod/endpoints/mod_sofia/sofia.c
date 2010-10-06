@@ -1310,32 +1310,39 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 		}
 
 		if (++loops >= 1000) {
-			uint32_t diff = 0, fail = 0;
+
 			
-			if (profile->step_timeout) {
-				diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
-				if (diff > profile->step_timeout) {
-					fail = 1;
+
+			if (profile->watchdog_enabled) {
+				uint32_t event_diff = 0, step_diff = 0, event_fail = 0, step_fail = 0;
+				
+				if (profile->step_timeout) {
+					step_diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
+
+					if (step_diff > profile->step_timeout) {
+						step_fail = 1;
+					}
+				}
+
+				if (profile->event_timeout) {
+					event_diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
+
+					if (event_diff > profile->event_timeout) {
+						event_fail = 1;
+					}
+				}
+
+				if (step_fail && profile->event_timeout && !event_fail) {
+					step_fail = 0;
+				}
+
+				if (event_fail || step_fail) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED!\n"
+									  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
+					switch_yield(2000);
+					abort();
 				}
 			}
-
-			if (profile->event_timeout) {
-				diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
-				if (diff > profile->event_timeout) {
-					fail = 1;
-				}
-			}
-
-			if (profile->watchdog_enabled && fail) {
-				int arg = 1;
-				switch_session_ctl_t command = SCSC_SHUTDOWN_NOW;
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED!\n"
-								  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
-				switch_yield(2000);
-				switch_core_session_ctl(command, &arg);
-			}
-
 
 			if (++ireg_loops >= IREG_SECONDS) {
 				time_t now = switch_epoch_time_now(NULL);
