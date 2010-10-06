@@ -447,25 +447,31 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		*encoded_data_len = encoded_frame.datalen;
 	}
 
-	/* update encoding stats */
-	sess->encoder.rx++;
-
-	now_time = switch_micro_time_now();
-	if (!sess->encoder.last_rx_time) {
-		sess->encoder.last_rx_time = now_time;
-	} else {
-		difftime = now_time - sess->encoder.last_rx_time;
-		sess->encoder.avgrxus = sess->encoder.avgrxus ? ((sess->encoder.avgrxus + difftime)/2) : difftime;
-		sess->encoder.last_rx_time  = now_time;
-	}
-
-	/* check sequence and bump lost rx packets count if needed */
-	if (sess->encoder.lastrxseqno >= 0) {
-		if (encoded_frame.seq > (sess->encoder.lastrxseqno + 2) ) {
-			sess->encoder.rxlost += encoded_frame.seq - sess->encoder.lastrxseqno - 1;
+	/* update encoding stats if we received a frame */
+	if (*encoded_data_len) {
+		if (*encoded_data_len != codec->implementation->encoded_bytes_per_packet) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Returning odd encoded frame of %d bytes intead of %d bytes\n", *encoded_data_len, codec->implementation->encoded_bytes_per_packet);
 		}
+		sess->encoder.rx++;
+		now_time = switch_micro_time_now();
+		if (!sess->encoder.last_rx_time) {
+			sess->encoder.last_rx_time = now_time;
+		} else {
+			difftime = now_time - sess->encoder.last_rx_time;
+			sess->encoder.avgrxus = sess->encoder.avgrxus ? ((sess->encoder.avgrxus + difftime)/2) : difftime;
+			sess->encoder.last_rx_time  = now_time;
+		}
+
+		/* check sequence and bump lost rx packets count if needed */
+		if (sess->encoder.lastrxseqno >= 0) {
+			if (encoded_frame.seq > (sess->encoder.lastrxseqno + 2) ) {
+				sess->encoder.rxlost += encoded_frame.seq - sess->encoder.lastrxseqno - 1;
+			}
+		}
+		sess->encoder.lastrxseqno = encoded_frame.seq;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output from sangoma encoder\n");
 	}
-	sess->encoder.lastrxseqno = encoded_frame.seq;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -570,25 +576,34 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 		*decoded_data_len = i * 2;
 	}
 
-	/* update decoding stats */
-	sess->decoder.rx++;
-
-	now_time = switch_micro_time_now();
-	if (!sess->decoder.last_rx_time) {
-		sess->decoder.last_rx_time = now_time;
-	} else {
-		difftime = now_time - sess->decoder.last_rx_time;
-		sess->decoder.avgrxus = sess->decoder.avgrxus ? ((sess->decoder.avgrxus + difftime)/2) : difftime;
-		sess->decoder.last_rx_time = now_time;
-	}
-
-	/* check sequence and bump lost rx packets count if needed */
-	if (sess->decoder.lastrxseqno >= 0) {
-		if (ulaw_frame.seq > (sess->decoder.lastrxseqno + 2) ) {
-			sess->decoder.rxlost += ulaw_frame.seq - sess->decoder.lastrxseqno - 1;
+	if (*decoded_data_len) {
+		if (*decoded_data_len != codec->implementation->decoded_bytes_per_packet) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Returning odd decoded frame of %d bytes intead of %d bytes\n", *decoded_data_len, codec->implementation->decoded_bytes_per_packet);
 		}
+		/* update decoding stats */
+		sess->decoder.rx++;
+
+		now_time = switch_micro_time_now();
+		if (!sess->decoder.last_rx_time) {
+			sess->decoder.last_rx_time = now_time;
+		} else {
+			difftime = now_time - sess->decoder.last_rx_time;
+			sess->decoder.avgrxus = sess->decoder.avgrxus ? ((sess->decoder.avgrxus + difftime)/2) : difftime;
+			sess->decoder.last_rx_time = now_time;
+		}
+
+		/* check sequence and bump lost rx packets count if needed */
+		if (sess->decoder.lastrxseqno >= 0) {
+			if (ulaw_frame.seq > (sess->decoder.lastrxseqno + 2) ) {
+				sess->decoder.rxlost += ulaw_frame.seq - sess->decoder.lastrxseqno - 1;
+			}
+		}
+		sess->decoder.lastrxseqno = ulaw_frame.seq;
+	} else {
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output from sangoma decoder, returning silent frame of %d bytes\n", *decoded_data_len);
+		memset(dbuf_linear, 0, *decoded_data_len);
 	}
-	sess->decoder.lastrxseqno = ulaw_frame.seq;
 
 	return SWITCH_STATUS_SUCCESS;
 }
