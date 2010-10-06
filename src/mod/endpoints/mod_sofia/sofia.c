@@ -731,6 +731,7 @@ void sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
+	profile->last_sip_event = switch_time_now();
 
 	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be 
 	  freed whenever the request is done */
@@ -1309,6 +1310,33 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 		}
 
 		if (++loops >= 1000) {
+			uint32_t diff = 0, fail = 0;
+			
+			if (profile->step_timeout) {
+				diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
+				if (diff > profile->step_timeout) {
+					fail = 1;
+				}
+			}
+
+			if (profile->event_timeout) {
+				diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
+				if (diff > profile->event_timeout) {
+					fail = 1;
+				}
+			}
+
+			if (fail) {
+				int arg = 1;
+				switch_session_ctl_t command = SCSC_SHUTDOWN_NOW;
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED!\n"
+								  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
+				switch_yield(2000);
+				switch_core_session_ctl(command, &arg);
+			}
+
+
 			if (++ireg_loops >= IREG_SECONDS) {
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
@@ -1548,6 +1576,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING) && sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
 		su_root_step(profile->s_root, 1000);
+		profile->last_root_step = switch_time_now();
 	}
 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
@@ -2298,6 +2327,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
 						}
+					} else if (!strcasecmp(var, "watchdog_step_timeout")) {
+						profile->step_timeout = (unsigned long) atol(val);
+					} else if (!strcasecmp(var, "watchdog_event_timeout")) {
+						profile->event_timeout = (unsigned long) atol(val);
 					} else if (!strcasecmp(var, "in-dialog-chat")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
@@ -2978,6 +3011,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						}
+					} else if (!strcasecmp(var, "watchdog_step_timeout")) {
+						profile->step_timeout = atoi(val);
+					} else if (!strcasecmp(var, "watchdog_event_timeout")) {
+						profile->event_timeout = atoi(val);
+
 					} else if (!strcasecmp(var, "in-dialog-chat")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);

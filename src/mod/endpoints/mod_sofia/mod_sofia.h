@@ -562,6 +562,10 @@ struct sofia_profile {
 	char *contact_user;
 	char *local_network;
 	uint32_t trans_timeout;
+	switch_time_t last_sip_event;
+	switch_time_t last_root_step;
+	uint32_t step_timeout;
+	uint32_t event_timeout;
 };
 
 struct private_object {
