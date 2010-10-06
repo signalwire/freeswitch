@@ -742,8 +742,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_presence_sub_callback, &helper);
-
-
+			switch_safe_free(sql);
+			
 			sql = switch_mprintf("update sip_subscriptions set version=version+1 where event='dialog' and sub_to_user='%q' "
 								 "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
 								 "and (profile_name = '%q' or presence_hosts != sub_to_host)",
@@ -756,8 +756,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_SQL (%s)\n",
 								  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
 			}
-
-			switch_safe_free(sql);
 
 			if (!zstr((char *) helper.stream.data)) {
 				char *this_sql = (char *) helper.stream.data;
