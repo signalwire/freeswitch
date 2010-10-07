@@ -571,22 +571,22 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				switch_safe_free(sql);
 
 
-				sql = switch_mprintf("select sip_registrations.sip_user, sip_registrations.orig_hostname, sip_registrations.status, "
+				sql = switch_mprintf("select sip_registrations.sip_user, sip_registrations.sip_host, sip_registrations.status, "
 									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction, "
 									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host, sip_presence.status,sip_presence.rpid,sip_presence.open_closed,"
 									 "'%q','%q' "
 
 									 "from sip_registrations left join sip_dialogs on "
 									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
-									 "and (sip_dialogs.sip_from_host = sip_registrations.orig_hostname or "
+									 "and (sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
 									 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 
 									 
 									 "left join sip_presence on "
-									 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_hostname=sip_presence.sip_host and "
+									 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
 									 "sip_registrations.profile_name=sip_presence.profile_name) "
 									 "where sip_registrations.sip_user='%q' and "
-									 "(sip_registrations.orig_hostname='%q' or sip_registrations.sip_host='%q' "
+									 "(sip_registrations.orig_server_host='%q' or sip_registrations.sip_host='%q' "
 									 "or sip_registrations.presence_hosts like '%%%q%%')",
 									 dh.status, dh.rpid, probe_euser, probe_host, probe_host, probe_host);
 				switch_assert(sql);
