@@ -3213,7 +3213,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 
 #define VM_DESC "voicemail"
-#define VM_USAGE "[check|auth] <profile_name> <domain_name> [<id>]"
+#define VM_USAGE "[check] [auth] <profile_name> <domain_name> [<id>]"
 
 SWITCH_STANDARD_APP(voicemail_function)
 {
