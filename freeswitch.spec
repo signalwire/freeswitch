@@ -54,7 +54,7 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:		http://files.freeswitch.org/downloads/libs/celt-0.7.0.tar.gz
+Source1:		http://files.freeswitch.org/downloads/libs/celt-0.7.1.tar.gz
 Source2:		http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
 Source3:		http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:		http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
