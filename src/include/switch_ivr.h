@@ -557,6 +557,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const cha
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags);
+SWITCH_DECLARE(void) switch_ivr_broadcast_in_thread(switch_core_session_t *session, const char *app, int flags);
 
 /*!
   \brief Transfer variables from one session to another 

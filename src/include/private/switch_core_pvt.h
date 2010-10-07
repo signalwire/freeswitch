@@ -167,6 +167,7 @@ struct switch_core_session {
 	uint32_t track_id;
 	switch_log_level_t loglevel;
 	uint32_t soft_lock;
+	switch_ivr_dmachine_t *dmachine;
 };
 
 struct switch_media_bug {

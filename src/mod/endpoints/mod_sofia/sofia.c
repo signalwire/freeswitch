@@ -5077,7 +5077,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 
 		if (channel) {
-			if (sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+			if (sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA) && !sofia_test_flag(tech_pvt, TFLAG_ANS)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
 				sofia_set_flag(tech_pvt, TFLAG_SDP);
 				switch_channel_mark_answered(channel);

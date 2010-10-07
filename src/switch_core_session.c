@@ -38,6 +38,16 @@
 
 struct switch_session_manager session_manager;
 
+SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine)
+{
+	session->dmachine = dmachine;
+}
+
+SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session)
+{
+	return session->dmachine;
+}
+
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec)
 {
 	session->soft_lock = sec;
@@ -1093,6 +1103,10 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_buffer_destroy(&(*session)->raw_write_buffer);
 	switch_ivr_clear_speech_cache(*session);
 	switch_channel_uninit((*session)->channel);
+
+	if ((*session)->dmachine) {
+		switch_ivr_dmachine_destroy(&(*session)->dmachine);
+	}
 
 	pool = (*session)->pool;
 	//#ifndef NDEBUG

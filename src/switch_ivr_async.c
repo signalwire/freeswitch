@@ -150,10 +150,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 	}
 	
 	if (binding->is_regex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "binding regex: %s key: %.4d callback: %p data: %p\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding regex: %s key: %.4d callback: %p data: %p\n", 
 						  digits, key, (void *)(intptr_t) callback, user_data);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "binding digits: %4s key: %.4d callback: %p data: %p\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding digits: %4s key: %.4d callback: %p data: %p\n", 
 						  digits, key, (void *)(intptr_t) callback, user_data);
 	}
 
@@ -264,27 +264,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	switch_bool_t is_timeout = switch_ivr_dmachine_check_timeout(dmachine);
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
 	switch_status_t r;
-	
+	int exec = 0;
+
 	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
 	} else if (dmachine->cur_digit_len > dmachine->max_digit_len) {
 		r = SWITCH_STATUS_FALSE;
 	} else if (is_match == DM_MATCH_EXACT || (is_match == DM_MATCH_BOTH && is_timeout)) {
 		r = SWITCH_STATUS_FOUND;
-
+		
 		dmachine->match.match_digits = dmachine->last_matching_digits;
 		dmachine->match.match_key = dmachine->last_matching_binding->key;
 		dmachine->match.user_data = dmachine->last_matching_binding->user_data;
-
-		if (dmachine->last_matching_binding->callback) {
-			dmachine->last_matching_binding->callback(&dmachine->match);
-		}
-
+		
 		if (match_p) {
 			*match_p = &dmachine->match;
 		}
 
 		dmachine->is_match = 1;
+		exec = 1;
 	} else if (is_timeout) {
 		r = SWITCH_STATUS_TIMEOUT;
 	} else if (dmachine->cur_digit_len == dmachine->max_digit_len) {
@@ -295,6 +293,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	
 	if (r != SWITCH_STATUS_SUCCESS) {
 		switch_ivr_dmachine_clear(dmachine);
+	}
+
+	if (exec && dmachine->last_matching_binding->callback) {
+		dmachine->last_matching_binding->callback(&dmachine->match);
 	}
 
 	return r;
@@ -2501,7 +2503,7 @@ static void *SWITCH_THREAD_FUNC bcast_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 
 }
-static void broadcast_in_thread(switch_core_session_t *session, const char *app, int flags)
+SWITCH_DECLARE(void) switch_ivr_broadcast_in_thread(switch_core_session_t *session, const char *app, int flags)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -2606,7 +2608,7 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 								  switch_channel_get_name(channel), dtmf->digit, md->sr[direction].map[dval].app);
 
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-					broadcast_in_thread(session, md->sr[direction].map[dval].app, flags | SMF_REBRIDGE);
+					switch_ivr_broadcast_in_thread(session, md->sr[direction].map[dval].app, flags | SMF_REBRIDGE);
 				} else {
 					switch_ivr_broadcast(switch_core_session_get_uuid(session), md->sr[direction].map[dval].app, flags);
 				}
