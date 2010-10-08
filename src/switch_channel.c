@@ -2907,14 +2907,15 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '('))) {
+				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
+					if (*vval == '(') br = 1;
 					e = vval - 1;
 					*vval++ = '\0';
 					while (*e == ' ') {
 						*e-- = '\0';
 					}
 					e = vval;
-					br = 1;
+
 					while (e && *e) {
 						if (*e == '(') {
 							br++;
