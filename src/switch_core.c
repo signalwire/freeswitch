@@ -1425,8 +1425,6 @@ static void switch_load_core_config(const char *file)
 
 	switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
 	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
-	
-
 
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_xml_t settings, param;
