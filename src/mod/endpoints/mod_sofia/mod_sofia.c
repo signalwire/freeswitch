@@ -3531,10 +3531,6 @@ SWITCH_STANDARD_API(sofia_function)
 		"watchdog <on|off>\n"
 		"--------------------------------------------------------------------------------\n";
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
