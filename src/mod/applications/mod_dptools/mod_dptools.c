@@ -108,9 +108,21 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 	switch_core_session_t *session = (switch_core_session_t *) match->user_data;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char str[DMACHINE_MAX_DIGIT_LEN + 2];
+	switch_event_t *event;
+	switch_status_t status;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
 					  switch_channel_get_name(channel), match->match_digits);
+
+	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
+
+		if ((status = switch_core_session_queue_event(session, &event)) != SWITCH_STATUS_SUCCESS) {
+			switch_event_destroy(&event);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+							  switch_core_session_get_name(session));
+		}
+	}
 
 	/* send it back around flagged to skip the dmachine */
 	switch_snprintf(str, sizeof(str), "!%s", match->match_digits);
@@ -139,6 +151,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
 		if (exec) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 2 ? "non-blocking" : "blocking");
