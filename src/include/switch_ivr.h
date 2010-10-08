@@ -846,24 +846,31 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid);
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p, 
-																switch_memory_pool_t *pool,
-																uint32_t digit_timeout, uint32_t input_timeout);
+														   const char *name,
+														   switch_memory_pool_t *pool,
+														   uint32_t digit_timeout, uint32_t input_timeout,
+														   switch_ivr_dmachine_callback_t match_callback,
+                                                           switch_ivr_dmachine_callback_t nonmatch_callback,
+														   void *user_data);
 
 SWITCH_DECLARE(void) switch_ivr_dmachine_destroy(switch_ivr_dmachine_t **dmachine);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *dmachine, 
-															  const char *digits, 
-															  int32_t key,
-															  switch_ivr_dmachine_callback_t callback,
-															  void *user_data);
+														 const char *realm,
+														 const char *digits, 
+														 int32_t key,
+														 switch_ivr_dmachine_callback_t callback,
+														 void *user_data);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *dmachine, const char *digits, switch_ivr_dmachine_match_t **match);
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_match_t **match_p);
 SWITCH_DECLARE(switch_ivr_dmachine_match_t *) switch_ivr_dmachine_get_match(switch_ivr_dmachine_t *dmachine);
+SWITCH_DECLARE(const char *) switch_ivr_dmachine_get_failed_digits(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_digit_timeout_ms(switch_ivr_dmachine_t *dmachine, uint32_t digit_timeout_ms);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_input_timeout_ms(switch_ivr_dmachine_t *dmachine, uint32_t input_timeout_ms);
-
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear_realm(switch_ivr_dmachine_t *dmachine, const char *realm);
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_realm(switch_ivr_dmachine_t *dmachine, const char *realm);
 
 /** @} */
 

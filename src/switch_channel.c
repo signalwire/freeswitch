@@ -400,7 +400,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string)
 {
 	char *p;
-	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0), 0};
 	int sent = 0, dur;
 	char *string;
 	int i, argc;
@@ -408,6 +408,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 
 	if (zstr(dtmf_string)) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (*dtmf_string == '!') {
+		dtmf_string++;
+		dtmf.flags = DTMF_FLAG_SKIP_PROCESS;
 	}
 
 	string = switch_core_session_strdup(channel->session, dtmf_string);

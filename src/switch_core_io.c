@@ -1176,15 +1176,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 		new_dtmf.duration = switch_core_default_dtmf_duration(0);
 	}
 
-	if (session->dmachine && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
-		char str[2] = { dtmf->digit, '\0' };
-		switch_ivr_dmachine_feed(session->dmachine, str, NULL);
-		fed = 1;
-	}
+	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
+		if (session->dmachine && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+			char str[2] = { dtmf->digit, '\0' };
+			switch_ivr_dmachine_feed(session->dmachine, str, NULL);
+			fed = 1;
+		}
 
-	for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
-		if ((status = ptr->recv_dtmf(session, &new_dtmf, SWITCH_DTMF_RECV)) != SWITCH_STATUS_SUCCESS) {
-			return status;
+		for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
+			if ((status = ptr->recv_dtmf(session, &new_dtmf, SWITCH_DTMF_RECV)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
 		}
 	}
 
