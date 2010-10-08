@@ -2317,7 +2317,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 								  const char *caller_id_name, 
 								  const char *caller_id_number, 
 								  const char *forwarded_by, 
-								  switch_bool_t copy, const char *use_uuid)
+								  switch_bool_t copy, const char *use_uuid, switch_core_session_t *session)
 {
 	char *file_path = NULL, *dir_path = NULL;
 	const char *myid = switch_xml_attr(x_user, "id");
@@ -2342,6 +2342,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
+	int del_file = 0;
+	char *id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2634,13 +2636,34 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		}
 
 		if (!insert_db) {
-			if (unlink(file_path) != 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
+			del_file = 1;
+		}
+	}
+
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		const char *vm_cc;
+
+		if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
+			char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
+													vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
+			
+			if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
 			}
 		}
 	}
 
+
   failed:
+
+	if (del_file && file_path) {
+		if (unlink(file_path) != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
+		}
+	}
 
 	switch_event_destroy(&local_event);
 
@@ -2785,7 +2808,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 									status =
 										deliver_vm(profile, ux, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by,
-												   SWITCH_TRUE, session ? switch_core_session_get_uuid(session) : NULL);
+												   SWITCH_TRUE, session ? switch_core_session_get_uuid(session) : NULL, NULL);
 									switch_event_destroy(&my_params);
 								}
 								continue;
@@ -2794,7 +2817,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE, 
-												session ? switch_core_session_get_uuid(session) : NULL);
+												session ? switch_core_session_get_uuid(session) : NULL, NULL);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -2817,7 +2840,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
-												session ? switch_core_session_get_uuid(session) : NULL);
+												session ? switch_core_session_get_uuid(session) : NULL, NULL);
 							switch_event_destroy(&my_params);
 						}
 					}
@@ -2831,7 +2854,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 									my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
-									session ? switch_core_session_get_uuid(session) : NULL);
+									session ? switch_core_session_get_uuid(session) : NULL, NULL);
 				switch_event_destroy(&my_params);
 			} else {
 				status = SWITCH_STATUS_FALSE;
@@ -2889,7 +2912,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	const char *caller_id_number = NULL;
 	switch_xml_t x_user = NULL, x_params = NULL, x_param = NULL;
 	switch_event_t *vars = NULL;
-	const char *vm_cc = NULL, *vtmp, *vm_ext = NULL;
+	const char *vtmp, *vm_ext = NULL;
 	int disk_quota = 0;
 	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
 	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
@@ -3175,20 +3198,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_channel_get_variables(channel, &vars);
 		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars,
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE,
-							session ? switch_core_session_get_uuid(session) : NULL);
+							session ? switch_core_session_get_uuid(session) : NULL, session);
 		switch_event_destroy(&vars);
-		if (status == SWITCH_STATUS_SUCCESS) {
-			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-				char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
-														vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
-
-				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
-				}
-			}
-		} else {
+		if (status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to deliver message\n");
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 		}
