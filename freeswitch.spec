@@ -65,7 +65,7 @@ Source8:		http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
 Source9:		http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
 Source10:		http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source11:		http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Prefix:         %{prefix}
+Prefix:         	%{prefix}
 
 
 ######################################################################################################################
@@ -115,6 +115,8 @@ Requires: openldap
 Requires: db4
 Requires: gdbm
 Requires: zlib
+Requires: libtiff
+Requires: python
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -342,7 +344,8 @@ ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 #						Codecs
 #
 ######################################################################################################################
-CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
+CODECS_MODULES="codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc codecs/mod_mp4 \
+                codec/mod_silk codecs/mod_siren codecs/mod_theora"
 ######################################################################################################################
 #
 #					Dialplan Modules
