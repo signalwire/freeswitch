@@ -1292,7 +1292,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (framelen > FILE_STARTSAMPLES) {
 					framelen = FILE_STARTSAMPLES;
 				}
-				memset(abuf, 0, framelen);
+				memset(abuf, 255, framelen);
 				olen = ilen;
 				do_speed = 0;
 			} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
@@ -1305,7 +1305,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 
 				if (bread < framelen) {
-					memset(abuf + bread, 0, framelen - bread);
+					memset(abuf + bread, 255, framelen - bread);
 				}
 
 				olen = asis ? framelen : ilen;
@@ -1320,7 +1320,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 
 				if (bread < framelen) {
-					memset(abuf + bread, 0, framelen - bread);
+					memset(abuf + bread, 255, framelen - bread);
 				}
 
 				olen = asis ? framelen : ilen;
@@ -1408,10 +1408,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				last_speed = fh->speed;
 				continue;
 			}
-
+			
 			if (olen < llen) {
 				uint8_t *dp = (uint8_t *) write_frame.data;
-				memset(dp + (int) olen, 0, (int) (llen - olen));
+				memset(dp + (int) olen, 255, (int) (llen - olen));
 				olen = llen;
 			}
 
@@ -1476,7 +1476,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 #endif
 #endif
-			if (fh->vol) {
+			if (!asis && fh->vol) {
 				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
 			}
 
