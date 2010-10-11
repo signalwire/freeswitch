@@ -2343,8 +2343,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
 	int del_file = 0;
-	char *id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 
+	
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
 		params = local_event;
@@ -2646,7 +2646,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 		if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
 			char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
-													vm_cc, file_path, caller_id_number, caller_id_name, id, domain_name, read_flags);
+													vm_cc, file_path, caller_id_number, caller_id_name, myid, domain_name, read_flags);
 			
 			if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
