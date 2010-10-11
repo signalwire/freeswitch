@@ -842,7 +842,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
-				if (!args->input_callback && !args->buf) {
+				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					done = 1;
 					break;
@@ -1253,7 +1253,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 				 */
 				if (switch_channel_has_dtmf(channel)) {
-					if (!args->input_callback && !args->buf) {
+					if (!args->input_callback && !args->buf && !args->dmachine) {
 						status = SWITCH_STATUS_BREAK;
 						done = 1;
 						break;
@@ -1959,7 +1959,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			 * if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
-				if (!args->input_callback && !args->buf) {
+				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					done = 1;
 					break;
