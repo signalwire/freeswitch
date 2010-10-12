@@ -476,8 +476,18 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 			break;
 		}
 
-		if (encoded_frame.payload != codec->implementation->ianacode
-		    && encoded_frame.payload != IANACODE_CN) {
+		if (encoded_frame.payload == IANACODE_CN) {
+			/* confort noise is treated as silence by us */
+			continue;
+		}
+
+		if (encoded_frame.datalen != codec->implementation->encoded_bytes_per_packet) {
+			/* seen when silence suppression is enabled */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring encoded frame of %d bytes intead of %d bytes\n", encoded_frame.datalen, codec->implementation->encoded_bytes_per_packet);
+			continue;
+		}
+
+		if (encoded_frame.payload != codec->implementation->ianacode) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting %d\n",
 					encoded_frame.payload, codec->implementation->ianacode);
 			break;
@@ -657,12 +667,17 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 			break;
 		}
 
-		if (ulaw_frame.payload != IANA_ULAW
-		    && ulaw_frame.payload != IANACODE_CN) {
+		if (ulaw_frame.payload == IANACODE_CN) {
+			/* confort noise is treated as silence by us */
+			continue;
+		}
+
+		if (ulaw_frame.payload != IANA_ULAW) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma decoder RTP session, expecting %d\n",
 					ulaw_frame.payload, IANA_ULAW);
 			break;
 		}
+
 
 		if (sess->decoder.queue_windex == sess->decoder.queue_rindex) {
 			if (sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen) {
