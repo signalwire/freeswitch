@@ -137,6 +137,7 @@ struct codec_data {
 	/* avg Rx time */
 	switch_time_t avgrxus;
 	switch_time_t last_rx_time;
+	switch_time_t last_func_call_time;
 
 	/* RTP queue. The bigger the queue, the bigger the possible delay */
 	struct sangoma_rtp_payload rtp_queue[SANGOMA_RTP_QUEUE_SIZE];
@@ -386,7 +387,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	switch_frame_t encoded_frame;
 	switch_status_t sres;
 	switch_time_t now_time, difftime;
-	switch_time_t prevread_time, afterread_time;
+	switch_time_t func_start_time, func_end_time;
 	unsigned char ebuf_ulaw[decoded_data_len / 2];
 	short *dbuf_linear;
 	int i = 0;
@@ -394,7 +395,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	struct sangoma_transcoding_session *sess = codec->private_info;
 
 	if (sess->encoder.debug_timing) {
-		prevread_time =  switch_micro_time_now();
+		func_start_time =  switch_micro_time_now();
 	}
 
 	/* start assuming we will not encode anything */
@@ -416,13 +417,10 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		switch_mutex_unlock(g_sessions_lock);
 	}
 
-	if (sess->encoder.debug_timing) {
-		now_time = switch_micro_time_now();
-		if (sess->encoder.last_rx_time) {
-			difftime = now_time - sess->encoder.last_rx_time;
-			if (difftime > 25000 || difftime < 15000) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%ldus since last read on encoding session %lu.\n", (long)difftime, sess->sessid);
-			}
+	if (sess->encoder.debug_timing && sess->encoder.last_func_call_time) {
+		difftime = func_start_time - sess->encoder.last_func_call_time;
+		if (difftime > 25000 || difftime < 15000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%ldus since last read on encoding session %lu\n", (long)difftime, sess->sessid);
 		}
 	}
 
@@ -551,11 +549,12 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	}
 
 	if (sess->encoder.debug_timing) {
-		afterread_time =  switch_micro_time_now();
-		difftime = afterread_time - prevread_time;
+		func_end_time = switch_micro_time_now();
+		difftime = func_end_time - func_start_time;
 		if (difftime > 5000) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%ldus to execute encoding function in session %lu.\n", (long)difftime, sess->sessid);
 		}
+		sess->encoder.last_func_call_time = func_end_time;
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -576,14 +575,14 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	switch_frame_t ulaw_frame;
 	switch_status_t sres;
 	switch_time_t now_time, difftime;
-	switch_time_t prevread_time, afterread_time;
+	switch_time_t func_start_time, func_end_time;
 	short *dbuf_linear;
 	int i = 0;
 	int res = 0;
 	struct sangoma_transcoding_session *sess = codec->private_info;
 
 	if (sess->decoder.debug_timing) {
-		prevread_time =  switch_micro_time_now();
+		func_start_time =  switch_micro_time_now();
 	}
 
 	dbuf_linear = decoded_data;
@@ -613,13 +612,10 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 		switch_mutex_unlock(g_sessions_lock);
 	}
 
-	if (sess->decoder.debug_timing) {
-		now_time = switch_micro_time_now();
-		if (sess->decoder.last_rx_time) {
-			difftime = now_time - sess->decoder.last_rx_time;
-			if (difftime > 25000 || difftime < 15000) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%ldms since last read on decoding session %lu.\n", (long)difftime, sess->sessid);
-			}
+	if (sess->decoder.debug_timing && sess->decoder.last_func_call_time) {
+		difftime = func_start_time - sess->decoder.last_func_call_time;
+		if (difftime > 25000 || difftime < 15000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%ldms since last read on decoding session %lu.\n", (long)difftime, sess->sessid);
 		}
 	}
 
@@ -743,11 +739,12 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	}
 
 	if (sess->decoder.debug_timing) {
-		afterread_time =  switch_micro_time_now();
-		difftime = afterread_time - prevread_time;
+		func_end_time = switch_micro_time_now();
+		difftime = func_end_time - func_start_time;
 		if (difftime > 5000) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%ldus to execute decoding function in session %lu.\n", (long)difftime, sess->sessid);
 		}
+		sess->decoder.last_func_call_time = func_end_time;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
