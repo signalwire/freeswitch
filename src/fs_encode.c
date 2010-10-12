@@ -224,8 +224,8 @@ end:
 	return r;
 usage:
 	printf("Usage: %s [options] input output\n\n", argv[0]);
-	printf("The output must end in the format, eg: myfile.SPEEX\n");
-	printf("\t\t -l module[,module]\t Load additional modules (coma-separated)\n");
+	printf("The output must end in the format, e.g., myfile.SPEEX\n");
+	printf("\t\t -l module[,module]\t Load additional modules (comma-separated)\n");
 	printf("\t\t -f format\t\t fmtp to pass to the codec\n");
 	printf("\t\t -p ptime\t\t ptime to use while encoding\n");
 	printf("\t\t -r rate\t\t sampling rate\n");
