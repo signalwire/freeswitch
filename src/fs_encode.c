@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
 	char buf[1024];
 	switch_size_t len = sizeof(buf)/2;
 	switch_memory_pool_t *pool;
+	int bitrate = 0;
 	
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
@@ -89,6 +90,9 @@ int main(int argc, char *argv[])
 					break;
 				case 'r':
 					rate = atoi(argv[++i]);
+					break;
+				case 'b':
+					bitrate = atoi(argv[++i]);
 					break;
 				case 'v':
 					verbose = SWITCH_TRUE;
@@ -116,7 +120,6 @@ int main(int argc, char *argv[])
 	
 	if (switch_core_init(SCF_MINIMAL, verbose, &err) != SWITCH_STATUS_SUCCESS) {
 		printf("Cannot init core [%s]\n", err);
-		r = 1;
 		goto end;
 	}
 	
@@ -125,20 +128,17 @@ int main(int argc, char *argv[])
 	for (i = 0; i < extra_modules_count; i++) {
 		if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) extra_modules[i], SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 			printf("Cannot init %s [%s]\n", extra_modules[i], err);
-			r = 1;
 			goto end;
 		}
 	}
 	
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_sndfile", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		printf("Cannot init mod_sndfile [%s]\n", err);
-		r = 1;
 		goto end;
 	}
 	
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_native_file", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		printf("Cannot init mod_native_file [%s]\n", err);
-		r = 1;
 		goto end;
 	}
 	
@@ -148,7 +148,6 @@ int main(int argc, char *argv[])
 	}
 	if (switch_core_file_open(&fh_input, input, channels, rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't open %s\n", input);
-		r = 1;
 		goto end;
 	}
 	
@@ -158,7 +157,6 @@ int main(int argc, char *argv[])
 	}
 	if (switch_core_file_open(&fh_output, output, channels, rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_NATIVE, NULL) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't open %s\n", output);
-		r = 1;
 		goto end;	
 	}
 
@@ -167,7 +165,7 @@ int main(int argc, char *argv[])
 		goto end;
 	}
 	
-	if (switch_core_codec_init(&codec, format, fmtp, rate, ptime, channels, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_codec_init_with_bitrate(&codec, format, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", format, rate, ptime);
 		goto end;
 	}
@@ -213,10 +211,11 @@ usage:
 	printf("Usage: %s [options] input output\n\n", argv[0]);
 	printf("The output must end in the format, eg: myfile.SPEEX\n");
 	printf("\t\t -l module[,module]\t Load additional modules (coma-separated)\n");
-	printf("\t\t -f format\t fmtp to pass to the codec\n");
-	printf("\t\t -p ptime\t ptime to use while encoding\n");
-	printf("\t\t -r rate\t sampling rate\n");
-	printf("\t\t -v\t verbose\n");
+	printf("\t\t -f format\t\t fmtp to pass to the codec\n");
+	printf("\t\t -p ptime\t\t ptime to use while encoding\n");
+	printf("\t\t -r rate\t\t sampling rate\n");
+	printf("\t\t -b bitrate\t\t codec bitrate (if supported)\n");
+	printf("\t\t -v\t\t\t verbose\n");
 	return 1;
 }
 
