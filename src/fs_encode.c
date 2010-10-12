@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 	format++;
 	
 	if (switch_core_init(SCF_MINIMAL, verbose, &err) != SWITCH_STATUS_SUCCESS) {
-		printf("Cannot init core [%s]\n", err);
+		fprintf(stderr, "Cannot init core [%s]\n", err);
 		goto end;
 	}
 	
@@ -128,24 +128,24 @@ int main(int argc, char *argv[])
 	
 	for (i = 0; i < extra_modules_count; i++) {
 		if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) extra_modules[i], SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-			printf("Cannot init %s [%s]\n", extra_modules[i], err);
+			fprintf(stderr, "Cannot init %s [%s]\n", extra_modules[i], err);
 			goto end;
 		}
 	}
 	
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_sndfile", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		printf("Cannot init mod_sndfile [%s]\n", err);
+		fprintf(stderr, "Cannot init mod_sndfile [%s]\n", err);
 		goto end;
 	}
 	
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_native_file", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		printf("Cannot init mod_native_file [%s]\n", err);
+		fprintf(stderr, "Cannot init mod_native_file [%s]\n", err);
 		goto end;
 	}
 	
 	switch_core_new_memory_pool(&pool);
 	if (verbose) {
-		fprintf(stderr, "Opening file %s\n", input);	
+		fprintf(stderr, "Opening file %s\n", input);
 	}
 	if (switch_core_file_open(&fh_input, input, channels, rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't open %s\n", input);
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 	switch_assert(sizeof(buf) >= len * 2);
 
 	if (verbose) {
-		printf("Frame size is %d\n", blocksize);	
+		fprintf(stderr, "Frame size is %d\n", blocksize);	
 	}
 	
 	while (switch_core_file_read(&fh_input, buf, &len) == SWITCH_STATUS_SUCCESS) {
