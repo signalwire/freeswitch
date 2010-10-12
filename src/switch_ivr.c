@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
-				if (!args->input_callback && !args->buf) {
+				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					break;
 				}
@@ -269,6 +269,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
+		}
+
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 		}
 
 		if (sval && write_frame.datalen) {
@@ -923,12 +929,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 
 		if (switch_channel_has_dtmf(channel)) {
-			if (!args->input_callback && !args->buf) {
+			if (!args->input_callback && !args->buf && !args->dmachine) {
 				status = SWITCH_STATUS_BREAK;
 				break;
 			}
 			switch_channel_dequeue_dtmf(channel, &dtmf);
-			status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+
+			if (args->dmachine) {
+				char ds[2] = {dtmf.digit, '\0'};
+				if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			} else if (args->input_callback) {
+				status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+			}
+
 			if (digit_timeout) {
 				digit_started = switch_micro_time_now();
 			}

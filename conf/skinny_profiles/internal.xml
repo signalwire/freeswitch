@@ -16,7 +16,7 @@
   <soft-key-set-sets>
     <soft-key-set-set name="default">
       <soft-key-set name="KeySetOnHook" value="SoftkeyNewcall,SoftkeyRedial"/>
-      <soft-key-set name="KeySetOffHook" value=",SoftkeyNewcall,SoftkeyEndcall"/>
+      <soft-key-set name="KeySetOffHook" value=",SoftkeyRedial,SoftkeyEndcall"/>
       <soft-key-set name="KeySetDigitsAfterDialingFirstDigit" value="SoftkeyBackspace,,SoftkeyEndcall"/>
       <soft-key-set name="KeySetConnected" value="SoftkeyEndcall,SoftkeyHold,SoftkeyNewcall,SoftkeyTransfer"/>
       <soft-key-set name="KeySetRingIn" value="SoftkeyAnswer,SoftkeyEndcall,SoftkeyNewcall"/>

@@ -2580,7 +2580,10 @@ static void conference_loop_output(conference_member_t *member)
 					if (member->fnode) {
 						member_add_file_data(member, write_frame.data, write_frame.datalen);
 					}
-					switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+					if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						break;
+					}
 				}
 			}
 
@@ -2590,7 +2593,10 @@ static void conference_loop_output(conference_member_t *member)
 			write_frame.samples = samples;
 			memset(write_frame.data, 255, write_frame.datalen);
 			member_add_file_data(member, write_frame.data, write_frame.datalen);
-			switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				break;
+			}
 		} else if (!switch_test_flag(member->conference, CFLAG_WASTE_BANDWIDTH)) {
 			if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
 				if (member->conference->comfort_noise_level) {
@@ -2603,7 +2609,10 @@ static void conference_loop_output(conference_member_t *member)
 				write_frame.samples = samples;
 				write_frame.timestamp = timer.samplecount;
 
-				switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+				if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					break;
+				}
 			}
 		}
 

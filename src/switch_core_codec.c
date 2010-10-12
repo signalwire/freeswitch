@@ -137,9 +137,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 				memset(&session->read_impl, 0, sizeof(session->read_impl));
 			}
 			old->next = NULL;
+
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Restore previous codec %s:%d.\n",
 							  switch_channel_get_name(session->channel),
-							  session->read_codec->implementation->iananame, session->read_codec->implementation->ianacode);
+							  session->read_impl.iananame ? session->read_impl.iananame : "N/A", session->read_impl.ianacode);
+			
 
 		} else if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
