@@ -1425,9 +1425,12 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		}
 
 		if (tech_pvt->adv_sdp_audio_ip && !strncmp("c=IN IP", p, 7)) {
-			strncpy(q, p, 9);
-			p += 9;
-			q += 9;
+			strncpy(q, p, 7);
+			p += 7;
+			q += 7;
+			strncpy(q, strchr(tech_pvt->adv_sdp_audio_ip, ':') ? "6 " : "4 ", 2);
+			p +=2;
+			q +=2;			
 			strncpy(q, tech_pvt->adv_sdp_audio_ip, strlen(tech_pvt->adv_sdp_audio_ip));
 			q += strlen(tech_pvt->adv_sdp_audio_ip);
 
