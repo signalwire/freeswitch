@@ -267,7 +267,7 @@ src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 ##
 ## Applications
 ##
-bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav
+bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode
 
 ##
 ## fs_cli ()
@@ -280,6 +280,14 @@ if HAVE_LIBEDIT
 fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
 fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
 endif
+
+##
+## fs_encode
+##
+fs_encode_SOURCES = src/fs_encode.c
+fs_encode_CFLAGS = $(AM_CFLAGS)
+fs_encode_lDFlAGS = $(AM_LDFLAGS) $(CORE_LIBS)
+fs_encode_LDADD = libfreeswitch.la
 
 ##
 ## tone2wav ()
