@@ -1471,10 +1471,12 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		}
 	}
 
-	if (!is_nat && sip && sip->sip_via && sip->sip_via->v_port &&
-		atoi(sip->sip_via->v_port) == 5060 && network_port != 5060 ) {
-		is_nat = "via port";
-	}
+	/* FS-2773: This causes issues with Cisco phones.
+	 * if (!is_nat && sip && sip->sip_via && sip->sip_via->v_port &&
+	 *	atoi(sip->sip_via->v_port) == 5060 && network_port != 5060 ) {
+	 *	is_nat = "via port";
+	 * }
+	 */
 
 	if (!is_nat && profile->nat_acl_count) {
 		uint32_t x = 0;
