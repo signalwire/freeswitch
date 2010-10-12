@@ -62,6 +62,10 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 {
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_status_t r;
+	
+	if (!sql_manager.manage) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!zstr(runtime.odbc_dsn)) {
 		options.odbc_options.dsn = runtime.odbc_dsn;

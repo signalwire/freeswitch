@@ -64,10 +64,11 @@ int main(int argc, char *argv[])
 	int rate = 8000;
 	switch_file_handle_t fh_input = { 0 }, fh_output = { 0 };
 	switch_codec_t codec = { 0 };
-	char buf[1024];
+	char buf[2048];
 	switch_size_t len = sizeof(buf)/2;
 	switch_memory_pool_t *pool;
 	int bitrate = 0;
+	int blocksize;
 	
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
@@ -169,9 +170,16 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", format, rate, ptime);
 		goto end;
 	}
+
+	blocksize = len = (rate*ptime)/1000;
+	switch_assert(sizeof(buf) >= len * 2);
+
+	if (verbose) {
+		printf("Frame size is %d\n", blocksize);	
+	}
 	
 	while (switch_core_file_read(&fh_input, buf, &len) == SWITCH_STATUS_SUCCESS) {
-		char encode_buf[1024];
+		char encode_buf[2048];
 		uint32_t encoded_len = sizeof(buf);
 		uint32_t encoded_rate = rate;
 		unsigned int flags = 0;
@@ -182,17 +190,24 @@ int main(int argc, char *argv[])
 		}
 		
 		len = encoded_len;
+
 		if (switch_core_file_write(&fh_output, encode_buf, &len) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Write error\n");
 			goto end;
 		}
 		
-		len = sizeof(buf)/2;
+		if (len != encoded_len) {
+			printf("Short write: wrote %"SWITCH_SIZE_T_FMT"/%d bytes\n", len, encoded_len);
+		}
+		
+		len = blocksize;
 	}
 	
 	r = 0;
 
 end:
+	
+	switch_core_codec_destroy(&codec);
 	
 	if (fh_input.file_interface) {
 		switch_core_file_close(&fh_input);		
