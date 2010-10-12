@@ -827,10 +827,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 
 	if (flags && strchr(flags, 'r')) {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug);
+										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug);
+										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -1166,7 +1166,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		if (switch_core_media_bug_add(tsession, "eavesdrop", uuid,
 									  eavesdrop_callback, ep, 0,
-									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_READ_PING | SMBF_THREAD_LOCK,
+									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | 
+									  SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE,
 									  &bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot attach bug\n");
 			goto end;
@@ -1622,7 +1623,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	time_t to = 0;
-	switch_media_bug_flag_t flags = 0;
+	switch_media_bug_flag_t flags = SMBF_NO_PAUSE;
 	switch_codec_implementation_t read_impl = { 0 };
 	pp_cb_t *cb;
 	int update = 0;
@@ -1885,7 +1886,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_audio(switch_core_session_t *
 	switch_status_t status;
 	switch_session_audio_t *pvt;
 	switch_codec_implementation_t read_impl = { 0 };
-	int existing = 0, c_read = 0, c_write = 0, flags = 0;
+	int existing = 0, c_read = 0, c_write = 0, flags = SMBF_NO_PAUSE;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -2035,7 +2036,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 	}
 
 	if ((status = switch_core_media_bug_add(session, "inband_dtmf", NULL,
-											inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+											inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -2236,7 +2237,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 
 	if ((status = switch_core_media_bug_add(session, "inband_dtmf_generate", NULL,
 											inband_dtmf_generate_callback, pvt, 0,
-											pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+											SMBF_NO_PAUSE | pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE , &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -2539,6 +2540,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 			bflags |= SMBF_WRITE_REPLACE;
 		}
 	}
+
+	bflags |= SMBF_NO_PAUSE;
 
 	if (cont->bug_running) {
 		status = SWITCH_STATUS_SUCCESS;
@@ -3192,7 +3195,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	}
 
 	if ((status = switch_core_media_bug_add(session, "detect_speech", key,
-											speech_callback, sth, 0, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
+											speech_callback, sth, 0, SMBF_READ_STREAM | SMBF_NO_PAUSE, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
 		return status;
 	}

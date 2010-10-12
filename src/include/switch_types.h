@@ -1266,7 +1266,8 @@ typedef enum {
 	SMBF_STEREO = (1 << 5),
 	SMBF_ANSWER_REQ = (1 << 6),
 	SMBF_THREAD_LOCK = (1 << 7),
-	SMBF_PRUNE = (1 << 8)
+	SMBF_PRUNE = (1 << 8),
+	SMBF_NO_PAUSE = (1 << 9)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
