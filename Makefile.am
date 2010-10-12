@@ -282,11 +282,11 @@ fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
 endif
 
 ##
-## fs_encode
+## fs_encode ()
 ##
 fs_encode_SOURCES = src/fs_encode.c
 fs_encode_CFLAGS = $(AM_CFLAGS)
-fs_encode_lDFlAGS = $(AM_LDFLAGS) $(CORE_LIBS)
+fs_encode_LDFLAGS = $(AM_LDFLAGS) $(CORE_LIBS)
 fs_encode_LDADD = libfreeswitch.la
 
 ##
