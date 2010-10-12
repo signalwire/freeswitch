@@ -195,8 +195,14 @@ int main(int argc, char *argv[])
 	r = 0;
 
 end:
-	switch_core_file_close(&fh_input);
-	switch_core_file_close(&fh_output);
+	
+	if (fh_input.file_interface) {
+		switch_core_file_close(&fh_input);		
+	}
+
+	if (fh_output.file_interface) {
+		switch_core_file_close(&fh_output);		
+	}
 
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
