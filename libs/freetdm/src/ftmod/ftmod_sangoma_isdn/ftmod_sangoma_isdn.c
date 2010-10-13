@@ -726,7 +726,7 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
-{
+{	
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
 	if (sng_isdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
@@ -747,9 +747,11 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
-{
+{	
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
+	unsigned i;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
 	ftdm_log(FTDM_LOG_INFO, "Stopping span %s\n", span->name);
 	
 	/* throw the STOP_THREAD flag to signal monitor thread stop */
@@ -772,8 +774,13 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 	}
 	ftdm_iterator_free(chaniter);
 
-	ftdm_sched_destroy(&((sngisdn_span_data_t*)span->signal_data)->sched);
-	ftdm_queue_destroy(&((sngisdn_span_data_t*)span->signal_data)->event_queue);
+	ftdm_sched_destroy(&signal_data->sched);
+	ftdm_queue_destroy(&signal_data->event_queue);
+	for (i = 0 ; i < signal_data->num_local_numbers ; i++) {
+		if (signal_data->local_numbers[i] != NULL) {
+			ftdm_safe_free(signal_data->local_numbers[i]);
+		}
+	}
 	ftdm_safe_free(span->signal_data);
 
 	ftdm_log(FTDM_LOG_DEBUG, "Finished stopping span %s\n", span->name);

@@ -424,11 +424,15 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;	
 
 	ftdm_mutex_lock(ftdmchan->mutex);
-	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
+	if (ftdmchan->caller_data.hangup_cause == IN_CCNORTTODEST || ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending delayed DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n",
 									signal_data->cc_id, sngisdn_info->glare.spInstId, sngisdn_info->glare.suInstId);
 
  		sngisdn_snd_disconnect(ftdmchan);
+		if (ftdmchan->caller_data.hangup_cause == IN_CCNORTTODEST) {
+			ftdm_channel_t *close_chan = ftdmchan;
+			ftdm_channel_close(&close_chan);
+		}
 	}
 
 	ftdm_mutex_unlock(ftdmchan->mutex);

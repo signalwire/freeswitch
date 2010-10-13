@@ -47,6 +47,23 @@ typedef struct sng_timeslot
 	int	 hole;
 }sng_timeslot_t;
 
+typedef struct sng_isupCkt
+{
+	ftdm_span_t		*span;
+	uint32_t		cicbase;
+	uint32_t		typeCntrl;
+	char			ch_map[MAX_CIC_MAP_LENGTH];
+	uint32_t		isupInf;
+	uint32_t		t3;
+	uint32_t		t12;
+	uint32_t		t13;
+	uint32_t		t14;
+	uint32_t		t15;
+	uint32_t		t16;
+	uint32_t		t17;
+	uint32_t		tval;
+} sng_isupCkt_t;
+
 int cmbLinkSetId;
 /******************************************************************************/
 
@@ -77,7 +94,7 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap);
 
 static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, int ssf);
 
-static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, int isup_id, ftdm_span_t *span);
+static int ftmod_ss7_fill_in_circuits(sng_isupCkt_t *isupCkt);
 static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot);
 
 /******************************************************************************/
@@ -91,9 +108,10 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 	const char			*val = NULL;
 	ftdm_conf_node_t	*ptr = NULL;
 	sng_route_t			self_route;
-	char				ch_map[MAX_CIC_MAP_LENGTH];
-	int					typeCntrl = 0;
-	int					cicbase = 0;
+	sng_isupCkt_t		isupCkt;
+
+	/* clean out the isup ckt */
+	memset(&isupCkt, 0x0, sizeof(sng_isupCkt_t));
 
 	/* clean out the self route */
 	memset(&self_route, 0x0, sizeof(sng_route_t));
@@ -124,24 +142,24 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 
 		if (!strcasecmp(var, "ch_map")) {
 		/**********************************************************************/
-			strcpy(ch_map, val);
-			SS7_DEBUG("\tFound channel map \"%s\"\n", ch_map);
+			strcpy(isupCkt.ch_map, val);
+			SS7_DEBUG("\tFound channel map \"%s\"\n", isupCkt.ch_map);
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "typeCntrl")) {
 			if (!strcasecmp(val, "bothway")) {
-				typeCntrl = BOTHWAY;
+				isupCkt.typeCntrl = BOTHWAY;
 				SS7_DEBUG("\tFound control type \"bothway\"\n");
 			} else if (!strcasecmp(val, "incoming")) {
-				typeCntrl = INCOMING;
+				isupCkt.typeCntrl = INCOMING;
 				SS7_DEBUG("\tFound control type \"incoming\"\n");
 			} else if (!strcasecmp(val, "outgoing")) {
-				typeCntrl = OUTGOING;
+				isupCkt.typeCntrl = OUTGOING;
 				SS7_DEBUG("\tFound control type \"outgoing\"\n");
 			} else if (!strcasecmp(val, "controlled")) {
-				typeCntrl = CONTROLLED;
+				isupCkt.typeCntrl = CONTROLLED;
 				SS7_DEBUG("\tFound control type \"controlled\"\n");
 			} else if (!strcasecmp(val, "controlling")) {
-				typeCntrl = CONTROLLING;
+				isupCkt.typeCntrl = CONTROLLING;
 				SS7_DEBUG("\tFound control type \"controlling\"\n");
 			} else {
 				SS7_ERROR("Found invalid circuit control type \"%s\"!", val);
@@ -149,8 +167,8 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 			}
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "cicbase")) {
-			cicbase = atoi(val);
-			SS7_DEBUG("\tFound cicbase = %d\n", cicbase);
+			isupCkt.cicbase = atoi(val);
+			SS7_DEBUG("\tFound cicbase = %d\n", isupCkt.cicbase);
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "dialplan")) {
 			/* do i give a shit about this??? */
@@ -169,7 +187,41 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 				/* move on to the next one */
 				x++;
 			}
-			SS7_DEBUG("\tFound isup_interface = %s\n",g_ftdm_sngss7_data.cfg.isupIntf[x].name );
+
+			isupCkt.isupInf = x;
+			SS7_DEBUG("\tFound isup_interface = %s\n",g_ftdm_sngss7_data.cfg.isupIntf[x].name);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t3")) {
+			isupCkt.t3 = atoi(val);
+			SS7_DEBUG("\tFound isup t3 = \"%d\"\n", isupCkt.t3);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t12")) {
+			isupCkt.t12 = atoi(val);
+			SS7_DEBUG("\tFound isup t12 = \"%d\"\n", isupCkt.t12);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t13")) {
+			isupCkt.t13 = atoi(val);
+			SS7_DEBUG("\tFound isup t13 = \"%d\"\n", isupCkt.t13);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t14")) {
+			isupCkt.t14 = atoi(val);
+			SS7_DEBUG("\tFound isup t14 = \"%d\"\n", isupCkt.t14);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t15")) {
+			isupCkt.t15 = atoi(val);
+			SS7_DEBUG("\tFound isup t15 = \"%d\"\n", isupCkt.t15);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t16")) {
+			isupCkt.t16 = atoi(val);
+			SS7_DEBUG("\tFound isup t16 = \"%d\"\n", isupCkt.t16);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.t17")) {
+			isupCkt.t17 = atoi(val);
+			SS7_DEBUG("\tFound isup t17 = \"%d\"\n", isupCkt.t17);
+		/**********************************************************************/
+		} else if (!strcasecmp(var, "isup.tval")) {
+			isupCkt.tval = atoi(val);
+			SS7_DEBUG("\tFound isup tval = \"%d\"\n", isupCkt.tval);
 		/**********************************************************************/
 		} else {
 			SS7_ERROR("Unknown parameter found =\"%s\"...ignoring it!\n", var);
@@ -192,10 +244,11 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 
 	}
 
+	/* fill the pointer to span into isupCkt */
+	isupCkt.span = span;
 
 	/* setup the circuits structure */
-	if(ftmod_ss7_fill_in_circuits(ch_map, cicbase, typeCntrl, 
-								  g_ftdm_sngss7_data.cfg.isupIntf[x].id, span)) {
+	if(ftmod_ss7_fill_in_circuits(&isupCkt)) {
 		SS7_ERROR("Failed to fill in circuits structure!\n");
 		goto ftmod_ss7_parse_xml_error;
 	}
@@ -582,6 +635,130 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 			mtpLink->mtp3.slc = atoi(parm->val);
 			SS7_DEBUG("\tFound mtpLink->slc = \"%d\"\n",mtpLink->mtp3.slc);
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t1")) {
+			mtpLink->mtp2.t1 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t1 = \"%d\"\n",mtpLink->mtp2.t1);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t2")) {
+			mtpLink->mtp2.t2 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t2 = \"%d\"\n",mtpLink->mtp2.t2);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t3")) {
+			mtpLink->mtp2.t3 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t3 = \"%d\"\n",mtpLink->mtp2.t3);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t4n")) {
+			mtpLink->mtp2.t4n = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t4n = \"%d\"\n",mtpLink->mtp2.t4n);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t4e")) {
+			mtpLink->mtp2.t4e = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t4e = \"%d\"\n",mtpLink->mtp2.t4e);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t5")) {
+			mtpLink->mtp2.t5 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t5 = \"%d\"\n",mtpLink->mtp2.t5);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t6")) {
+			mtpLink->mtp2.t6 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t6 = \"%d\"\n",mtpLink->mtp2.t6);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp2.t7")) {
+			mtpLink->mtp2.t7 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp2 t7 = \"%d\"\n",mtpLink->mtp2.t7);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t1")) {
+			mtpLink->mtp3.t1 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t1 = \"%d\"\n",mtpLink->mtp3.t1);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t2")) {
+			mtpLink->mtp3.t2 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t2 = \"%d\"\n",mtpLink->mtp3.t2);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t3")) {
+			mtpLink->mtp3.t3 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t3 = \"%d\"\n",mtpLink->mtp3.t3);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t4")) {
+			mtpLink->mtp3.t4 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t4 = \"%d\"\n",mtpLink->mtp3.t4);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t5")) {
+			mtpLink->mtp3.t5 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t5 = \"%d\"\n",mtpLink->mtp3.t5);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t7")) {
+			mtpLink->mtp3.t7 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t7 = \"%d\"\n",mtpLink->mtp3.t7);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t12")) {
+			mtpLink->mtp3.t12 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t12 = \"%d\"\n",mtpLink->mtp3.t12);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t13")) {
+			mtpLink->mtp3.t13 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t13 = \"%d\"\n",mtpLink->mtp3.t13);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t14")) {
+			mtpLink->mtp3.t14 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t14 = \"%d\"\n",mtpLink->mtp3.t14);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t17")) {
+			mtpLink->mtp3.t17 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t17 = \"%d\"\n",mtpLink->mtp3.t17);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t22")) {
+			mtpLink->mtp3.t22 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t22 = \"%d\"\n",mtpLink->mtp3.t22);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t23")) {
+			mtpLink->mtp3.t23 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t23 = \"%d\"\n",mtpLink->mtp3.t23);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t24")) {
+			mtpLink->mtp3.t24 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t24 = \"%d\"\n",mtpLink->mtp3.t24);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t31")) {
+			mtpLink->mtp3.t31 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t31 = \"%d\"\n",mtpLink->mtp3.t31);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t32")) {
+			mtpLink->mtp3.t32 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t32 = \"%d\"\n",mtpLink->mtp3.t32);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t33")) {
+			mtpLink->mtp3.t33 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t33 = \"%d\"\n",mtpLink->mtp3.t33);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t34")) {
+			mtpLink->mtp3.t34 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t34 = \"%d\"\n",mtpLink->mtp3.t34);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t35")) {
+			mtpLink->mtp3.t35 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t35 = \"%d\"\n",mtpLink->mtp3.t35);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t36")) {
+			mtpLink->mtp3.t36 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t36 = \"%d\"\n",mtpLink->mtp3.t36);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t37")) {
+			mtpLink->mtp3.t37 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t37 = \"%d\"\n",mtpLink->mtp3.t37);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.tcraft")) {
+			mtpLink->mtp3.tcraft = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 tcraft = \"%d\"\n",mtpLink->mtp3.tcraft);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.tflc")) {
+			mtpLink->mtp3.tflc = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 tflc = \"%d\"\n",mtpLink->mtp3.tflc);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.tbnd")) {
+			mtpLink->mtp3.tbnd = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 tbnd = \"%d\"\n",mtpLink->mtp3.tbnd);
+		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
 			return FTDM_FAIL;
@@ -697,6 +874,50 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 			   return FTDM_FAIL;
 			}
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t6")) {
+			mtpRoute.t6 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t6 = \"%d\"\n",mtpRoute.t6);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t8")) {
+			mtpRoute.t8 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t8 = \"%d\"\n",mtpRoute.t8);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t10")) {
+			mtpRoute.t10 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t10 = \"%d\"\n",mtpRoute.t10);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t11")) {
+			mtpRoute.t11 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t11 = \"%d\"\n",mtpRoute.t11);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t15")) {
+			mtpRoute.t15 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t15 = \"%d\"\n",mtpRoute.t15);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t16")) {
+			mtpRoute.t16 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t16 = \"%d\"\n",mtpRoute.t16);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t18")) {
+			mtpRoute.t18 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t18 = \"%d\"\n",mtpRoute.t18);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t19")) {
+			mtpRoute.t19 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t19 = \"%d\"\n",mtpRoute.t19);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t21")) {
+			mtpRoute.t21 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t21 = \"%d\"\n",mtpRoute.t21);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t25")) {
+			mtpRoute.t25 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t25 = \"%d\"\n",mtpRoute.t25);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "mtp3.t26")) {
+			mtpRoute.t26 = atoi(parm->val);
+			SS7_DEBUG("\tFound mtp3 t26 = \"%d\"\n",mtpRoute.t26);
+		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
 			return FTDM_FAIL;
@@ -755,6 +976,8 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	int						num_parms = isup_interface->n_parameters;
 	int						i;
 	int						linkSetId;
+	int						flag_cld_nadi = 0;
+	int						flag_clg_nadi = 0;
 
 	memset(&sng_isup, 0x0, sizeof(sng_isup));
 	memset(&sng_isap, 0x0, sizeof(sng_isap));
@@ -840,6 +1063,192 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 			SS7_DEBUG("\tFound license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("\tFound signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t1")) {
+			sng_isap.t1 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t1 = \"%d\"\n",sng_isap.t1);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t2")) {
+			sng_isap.t2 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t2 = \"%d\"\n",sng_isap.t2);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t4")) {
+			sng_isup.t4 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t4 = \"%d\"\n",sng_isup.t4);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t5")) {
+			sng_isap.t5 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t5 = \"%d\"\n",sng_isap.t5);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t6")) {
+			sng_isap.t6 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t6 = \"%d\"\n",sng_isap.t6);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t7")) {
+			sng_isap.t7 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t7 = \"%d\"\n",sng_isap.t7);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t8")) {
+			sng_isap.t8 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t8 = \"%d\"\n",sng_isap.t8);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t9")) {
+			sng_isap.t9 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t9 = \"%d\"\n",sng_isap.t9);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t10")) {
+			sng_isup.t10 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t10 = \"%d\"\n",sng_isup.t10);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t11")) {
+			sng_isup.t11 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t11 = \"%d\"\n",sng_isup.t11);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t18")) {
+			sng_isup.t18 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t18 = \"%d\"\n",sng_isup.t18);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t19")) {
+			sng_isup.t19 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t19 = \"%d\"\n",sng_isup.t19);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t20")) {
+			sng_isup.t20 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t20 = \"%d\"\n",sng_isup.t20);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t21")) {
+			sng_isup.t21 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t21 = \"%d\"\n",sng_isup.t21);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t22")) {
+			sng_isup.t22 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t22 = \"%d\"\n",sng_isup.t22);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t23")) {
+			sng_isup.t23 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t23 = \"%d\"\n",sng_isup.t23);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t24")) {
+			sng_isup.t24 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t24 = \"%d\"\n",sng_isup.t24);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t25")) {
+			sng_isup.t25 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t25 = \"%d\"\n",sng_isup.t25);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t26")) {
+			sng_isup.t26 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t26 = \"%d\"\n",sng_isup.t26);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t28")) {
+			sng_isup.t28 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t28 = \"%d\"\n",sng_isup.t28);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t29")) {
+			sng_isup.t29 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t29 = \"%d\"\n",sng_isup.t29);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t30")) {
+			sng_isup.t30 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t30 = \"%d\"\n",sng_isup.t30);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t31")) {
+			sng_isap.t31 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t31 = \"%d\"\n",sng_isap.t31);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t32")) {
+			sng_isup.t32 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t32 = \"%d\"\n",sng_isup.t32);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t33")) {
+			sng_isap.t33 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t33 = \"%d\"\n",sng_isap.t33);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t34")) {
+			sng_isap.t34 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t34 = \"%d\"\n",sng_isap.t34);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t35")) {
+			sng_isup.t35 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t35 = \"%d\"\n",sng_isup.t35);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t36")) {
+			sng_isap.t36 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t36 = \"%d\"\n",sng_isap.t36);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t37")) {
+			sng_isup.t37 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t37 = \"%d\"\n",sng_isup.t37);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t38")) {
+			sng_isup.t38 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t38 = \"%d\"\n",sng_isup.t38);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t39")) {
+			sng_isup.t39 = atoi(parm->val);
+			SS7_DEBUG("\tFound isup t39 = \"%d\"\n",sng_isup.t39);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tccr")) {
+			sng_isap.tccr = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tccr = \"%d\"\n",sng_isap.tccr);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tccrt")) {
+			sng_isap.tccrt = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tccrt = \"%d\"\n",sng_isap.tccrt);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tex")) {
+			sng_isap.tex = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tex = \"%d\"\n",sng_isap.tex);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tect")) {
+			sng_isap.tect = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tect = \"%d\"\n",sng_isap.tect);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tcrm")) {
+			sng_isap.tcrm = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tcrm = \"%d\"\n",sng_isap.tcrm);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tcra")) {
+			sng_isap.tcra = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tcra = \"%d\"\n",sng_isap.tcra);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tfgr")) {
+			sng_isup.tfgr = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tfgr = \"%d\"\n",sng_isup.tfgr);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.trelrsp")) {
+			sng_isap.trelrsp = atoi(parm->val);
+			SS7_DEBUG("\tFound isup trelrsp = \"%d\"\n",sng_isap.trelrsp);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tfnlrelrsp")) {
+			sng_isap.tfnlrelrsp = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tfnlrelrsp = \"%d\"\n",sng_isap.tfnlrelrsp);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tfnlrelrsp")) {
+			sng_isap.tfnlrelrsp = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tfnlrelrsp = \"%d\"\n",sng_isap.tfnlrelrsp);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tpause")) {
+			sng_isup.tpause = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tpause = \"%d\"\n",sng_isup.tpause);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.tstaenq")) {
+			sng_isup.tstaenq = atoi(parm->val);
+			SS7_DEBUG("\tFound isup tstaenq = \"%d\"\n",sng_isup.tstaenq);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "clg_nadi")) {
+		/**********************************************************************/
+			/* throw the flag so that we know we got this optional parameter */
+			flag_clg_nadi = 1;
+			sng_isup.clg_nadi = atoi(parm->val);
+			SS7_DEBUG("\tFound default CLG_NADI value = %d\n", sng_isup.clg_nadi);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "cld_nadi")) {
+		/**********************************************************************/
+			/* throw the flag so that we know we got this optional parameter */
+			flag_cld_nadi = 1;
+			sng_isup.cld_nadi = atoi(parm->val);
+			SS7_DEBUG("\tFound default CLD_NADI value = %d\n", sng_isup.cld_nadi);
+		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
 			return FTDM_FAIL;
@@ -848,6 +1257,17 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 
 		/* move to the next parameter */
 		parm = parm + 1;
+	}
+
+	/* check if the user filled in a nadi value by looking at flag */
+	if (!flag_cld_nadi) {
+		/* default the nadi value to national */
+		sng_isup.cld_nadi = 0x03;
+	}
+
+	if (!flag_clg_nadi) {
+		/* default the nadi value to national */
+		sng_isup.clg_nadi = 0x03;
 	}
 
 	/* trickle down the SPC to all sub entities */
@@ -1249,6 +1669,8 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	g_ftdm_sngss7_data.cfg.isupIntf[i].switchType	= sng_isup->switchType;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].ssf			= sng_isup->ssf;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].isap			= sng_isup->isap;
+	g_ftdm_sngss7_data.cfg.isupIntf[i].cld_nadi		= sng_isup->cld_nadi;
+	g_ftdm_sngss7_data.cfg.isupIntf[i].clg_nadi		= sng_isup->clg_nadi;
 
 	if (sng_isup->t4 != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= sng_isup->t4;
@@ -1544,7 +1966,7 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 }
 
 /******************************************************************************/
-static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, int isup_id, ftdm_span_t *span)
+static int ftmod_ss7_fill_in_circuits(sng_isupCkt_t *isupCkt)
 {
 	sngss7_chan_data_t	*ss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -1555,10 +1977,10 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 
 	count = 1;
 
-	while (ch_map[0] != '\0') {
+	while (isupCkt->ch_map[0] != '\0') {
 
 		 /* pull out the next timeslot */
-		if (ftmod_ss7_next_timeslot(ch_map, &timeslot)) {
+		if (ftmod_ss7_next_timeslot(isupCkt->ch_map, &timeslot)) {
 			SS7_ERROR("Failed to parse the channel map!\n");
 			return FTDM_FAIL;
 		}
@@ -1568,10 +1990,10 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 			x = 1;
 			while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 				if ((g_ftdm_sngss7_data.cfg.isupCkt[x].chan == count) &&
-					(g_ftdm_sngss7_data.cfg.isupCkt[x].span == span->channels[1]->physical_span_id)) {
+					(g_ftdm_sngss7_data.cfg.isupCkt[x].span == isupCkt->span->channels[1]->physical_span_id)) {
 
 					SS7_DEVEL_DEBUG("Circuit for span=%d, chan=%d is already exists...id=%d\n",
-								span->channels[1]->physical_span_id,
+								isupCkt->span->channels[1]->physical_span_id,
 								count,
 								x);
 
@@ -1585,7 +2007,7 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 			/* check why we exited the while loop */
 			if (g_ftdm_sngss7_data.cfg.isupCkt[x].id == 0) {
 				SS7_DEVEL_DEBUG("Circuit for span=%d, chan=%d is new...id=%d\n",
-				span->channels[1]->physical_span_id,
+				isupCkt->span->channels[1]->physical_span_id,
 				count,
 				x);
 
@@ -1596,7 +2018,7 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 
 				/* circuit is new so fill in the needed information */
 				g_ftdm_sngss7_data.cfg.isupCkt[x].id		  	= x;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].span			= span->channels[1]->physical_span_id;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].span			= isupCkt->span->channels[1]->physical_span_id;
 				g_ftdm_sngss7_data.cfg.isupCkt[x].chan			= count;
 				if (timeslot.siglink) {
 					g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SIG;
@@ -1605,22 +2027,14 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 				}
 
 				if (timeslot.channel) {
-					g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= cicbase;
-					cicbase++;
+					g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= isupCkt->cicbase;
+					isupCkt->cicbase++;
 				} else {
 					g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= 0;
 				}
-				g_ftdm_sngss7_data.cfg.isupCkt[x].infId	   		= isup_id;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].typeCntrl   	= typeCntrl;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t12			= 300;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t13			= 3000;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t14			= 300;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t15			= 3000;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t16			= 300;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t17			= 3000;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].tval			= 10;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].ssf			= g_ftdm_sngss7_data.cfg.isupIntf[isup_id].ssf;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].infId	   		= isupCkt->isupInf;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].typeCntrl   	= isupCkt->typeCntrl;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].ssf			= g_ftdm_sngss7_data.cfg.isupIntf[isupCkt->isupInf].ssf;
 				g_ftdm_sngss7_data.cfg.isupCkt[x].obj			= ss7_info;
 
 			} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].id == 0) */
@@ -1631,26 +2045,26 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 		} else { /* if ((timeslot.siglink) || (timeslot.gap)) */
 			/* find the ftdm the channel structure for this channel*/
 			i = 1;
-			while (span->channels[i] != NULL) {
-				if (span->channels[i]->physical_chan_id == timeslot.channel) {
+			while (isupCkt->span->channels[i] != NULL) {
+				if (isupCkt->span->channels[i]->physical_chan_id == timeslot.channel) {
 					break;
 				}
 				i++;
 			} /* while (span->channels[i] != NULL) */
 
-			if (span->channels[i] == NULL) {
+			if (isupCkt->span->channels[i] == NULL) {
 				/* we weren't able to find the channel in the ftdm channels */
 				SS7_ERROR("Unable to find the requested channel %d in the FreeTDM channels!\n", timeslot.channel);
 				return FTDM_FAIL;
 			} else {
-				ftdmchan = span->channels[i];
+				ftdmchan = isupCkt->span->channels[i];
 			}
 
 			/* try to find a match for the physical span and chan */
 			x = 1;
 			while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
-				if ((g_ftdm_sngss7_data.cfg.isupCkt[x].chan == ftdmchan->physical_chan_id) 
-					&& (g_ftdm_sngss7_data.cfg.isupCkt[x].span == ftdmchan->physical_span_id)) {
+				if ((g_ftdm_sngss7_data.cfg.isupCkt[x].chan == ftdmchan->physical_chan_id) && 
+					(g_ftdm_sngss7_data.cfg.isupCkt[x].span == ftdmchan->physical_span_id)) {
 
 					/* we have a match so this circuit already exists in the structure */
 					break;
@@ -1673,33 +2087,65 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 				ftdmchan->call_data = ss7_info;
 
 				/* prepare the timer structures */
-				ss7_info->t35.sched			= ((sngss7_span_data_t *)span->mod_data)->sched;
+				ss7_info->t35.sched			= ((sngss7_span_data_t *)isupCkt->span->mod_data)->sched;
 				ss7_info->t35.counter		= 1;
-				ss7_info->t35.beat			= g_ftdm_sngss7_data.cfg.isupIntf[isup_id].t35*100; /* beat is in ms, t35 is in 100ms */
+				ss7_info->t35.beat			= g_ftdm_sngss7_data.cfg.isupIntf[isupCkt->isupInf].t35*100; /* beat is in ms, t35 is in 100ms */
 				ss7_info->t35.callback		= handle_isup_t35;
 				ss7_info->t35.sngss7_info	= ss7_info;
 
 				/* circuit is new so fill in the needed information */
-				g_ftdm_sngss7_data.cfg.isupCkt[x].id		  = x;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].id		= x;
 				g_ftdm_sngss7_data.cfg.isupCkt[x].span		= ftdmchan->physical_span_id;
 				g_ftdm_sngss7_data.cfg.isupCkt[x].chan		= ftdmchan->physical_chan_id;
 				g_ftdm_sngss7_data.cfg.isupCkt[x].type		= VOICE;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= cicbase;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].infId		= isup_id;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].typeCntrl	= typeCntrl;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t3		= 1200;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t12		= 300;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t13		= 3000;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t14		= 300;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t15		= 3000;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t16		= 300;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= 3000;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].tval		= 10;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= isupCkt->cicbase;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].infId		= isupCkt->isupInf;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].typeCntrl	= isupCkt->typeCntrl;
+				if (isupCkt->t3 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t3	= 1200;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t3	= isupCkt->t3;
+				}
+				if (isupCkt->t12 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t12	= 300;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t12	= isupCkt->t12;
+				}
+				if (isupCkt->t13 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t13	= 3000;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t13	= isupCkt->t13;
+				}
+				if (isupCkt->t14 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t14	= 300;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t14	= isupCkt->t14;
+				}
+				if (isupCkt->t15 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t15	= 3000;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t15	= isupCkt->t15;
+				}
+				if (isupCkt->t16 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t16	= 300;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t16	= isupCkt->t16;
+				}
+				if (isupCkt->t17 == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t17	= 3000;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].t17	= isupCkt->t17;
+				}
+				if (isupCkt->tval == 0) {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].tval	= 10;
+				} else {
+					g_ftdm_sngss7_data.cfg.isupCkt[x].tval	= isupCkt->tval;
+				}
 				g_ftdm_sngss7_data.cfg.isupCkt[x].obj		= ss7_info;
-				g_ftdm_sngss7_data.cfg.isupCkt[x].ssf		= g_ftdm_sngss7_data.cfg.isupIntf[isup_id].ssf;
+				g_ftdm_sngss7_data.cfg.isupCkt[x].ssf		= g_ftdm_sngss7_data.cfg.isupIntf[isupCkt->isupInf].ssf;
 
 				/* increment the cicbase */
-				cicbase++;
+				isupCkt->cicbase++;
 			} else { /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].id == 0) */
 				SS7_DEBUG("Circuit for span=%d, chan=%d is new...id=%d\n",
 									ftdmchan->physical_span_id,
@@ -1745,12 +2191,12 @@ static int ftmod_ss7_fill_in_circuits(char *ch_map, int cicbase, int typeCntrl, 
 /******************************************************************************/
 static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot)
 {
-	int			 i;
-	int			 x;
-	int			 lower;
-	int			 upper;
-	char			tmp[5]; /*KONRAD FIX ME*/
-	char			new_ch_map[MAX_CIC_LENGTH];
+	int			i;
+	int			x;
+	int			lower;
+	int			upper;
+	char		tmp[5]; /*KONRAD FIX ME*/
+	char		new_ch_map[MAX_CIC_LENGTH];
 
 	memset(&tmp[0], '\0', sizeof(tmp));
 	memset(&new_ch_map[0], '\0', sizeof(new_ch_map));
