@@ -5000,7 +5000,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 					const char *var = switch_xml_attr_soft(param, "app_name");
 					const char *val = switch_xml_attr_soft(param, "app_data");
 					/* skip announcement type apps */
-					if (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones" || strcasecmp(var, "say"))) {
+					if (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones") && strcasecmp(var, "say")) {
 						switch_caller_extension_add_application(session, extension, var, val);
 					}
 				}
