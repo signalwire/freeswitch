@@ -4999,7 +4999,10 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 				for (param = switch_xml_child(x_extension, "application"); param; param = param->next) {
 					const char *var = switch_xml_attr_soft(param, "app_name");
 					const char *val = switch_xml_attr_soft(param, "app_data");
-					switch_caller_extension_add_application(session, extension, var, val);
+					/* skip announcement type apps */
+					if (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones" || strcasecmp(var, "say"))) {
+						switch_caller_extension_add_application(session, extension, var, val);
+					}
 				}
 			}
 

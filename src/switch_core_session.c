@@ -1437,7 +1437,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 			}
 		}
 	}
-
+	
 	if ((callflow = switch_xml_child(xml, "callflow"))) {
 		if ((tag2 = switch_xml_child(callflow, "caller_profile"))) {
 			switch_caller_profile_t *caller_profile;
@@ -1528,6 +1528,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 
 		}
 
+
+		switch_channel_set_flag(channel, CF_RECOVERED);
 	}
 
 

@@ -698,20 +698,21 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_clear_flag(conference, CFLAG_WAIT_MOD);
 		}
 
+		channel = switch_core_session_get_channel(member->session);
+		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
+		
 		if (conference->count > 1) {
 			if (conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
-			if (conference->enter_sound) {
+			if (conference->enter_sound && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
+											switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
 				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
 									 switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
 			}
 		}
 
-		channel = switch_core_session_get_channel(member->session);
-		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
-		
 
 		call_list = (call_list_t *) switch_channel_get_private(channel, "_conference_autocall_list_");
 
@@ -720,7 +721,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->iteration);
 			conference_member_say(member, saymsg, 0);
 		} else {
-			if (zstr(conference->special_announce)) {
+			if (zstr(conference->special_announce) && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
+													   switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
 				/* announce the total number of members in the conference */
 				if (conference->count >= conference->announce_count && conference->announce_count > 1) {
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
@@ -750,7 +752,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_set_flag(conference, CFLAG_ENFORCE_MIN);
 		}
 
-		if (test_eflag(conference, EFLAG_ADD_MEMBER) &&
+		if (test_eflag(conference, EFLAG_ADD_MEMBER) && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
+														 switch_true(switch_channel_get_variable(channel, "conference_silent_entry"))) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
@@ -2408,7 +2411,8 @@ static void conference_loop_output(conference_member_t *member)
 			const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
 			int to = 60;
 
-			if (ann) {
+			if (ann && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
+						switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
 				member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
 			}
 
@@ -5657,7 +5661,8 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 		}
 
-		if (conference->special_announce) {
+		if (conference->special_announce && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
+											 switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
 			conference_local_play_file(conference, session, conference->special_announce, CONF_DEFAULT_LEADIN, NULL, 0);
 		}
 

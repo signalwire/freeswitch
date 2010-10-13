@@ -156,9 +156,13 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
 
+	if (switch_channel_get_variable(session->channel, "recovered") && !switch_channel_test_flag(session->channel, CF_RECOVERED)) {
+		switch_channel_set_flag(session->channel, CF_RECOVERED);
+	}
+
   top:
 	switch_channel_clear_flag(session->channel, CF_RESET);
-
+	
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return;
