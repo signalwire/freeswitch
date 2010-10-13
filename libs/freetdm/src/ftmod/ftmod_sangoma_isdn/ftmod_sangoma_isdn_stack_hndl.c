@@ -42,7 +42,6 @@ extern ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Displ
 /* Remote side transmit a SETUP */
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
@@ -53,6 +52,8 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	ConEvnt *conEvnt = &sngisdn_event->event.conEvnt;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	
@@ -241,8 +242,6 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 /* Remote side transmit a CONNECT or CONNECT ACK */
 void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -250,6 +249,8 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+
 	/* Function does not require any info from conStEvnt struct for now */
 	/* CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt; */	
 				
@@ -313,8 +314,6 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -327,6 +326,8 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 
@@ -445,8 +446,6 @@ sngisdn_process_cnst_ind_end:
 
 void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -454,6 +453,8 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
 	DiscEvnt *discEvnt = &sngisdn_event->event.discEvnt;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing DISCONNECT (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 
@@ -502,7 +503,6 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -510,6 +510,8 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
 	RelEvnt *relEvnt = &sngisdn_event->event.relEvnt;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing RELEASE/RELEASE COMPLETE (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
@@ -597,13 +599,14 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_dat_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);	
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
 
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);	
 
 	/* Function does not require any info from infoEvnt struct for now */
 	/* InfoEvnt *infoEvnt = &sngisdn_event->event.infoEvnt; */
@@ -615,13 +618,14 @@ void sngisdn_process_dat_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_sshl_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
 
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* SsHlEvnt *ssHlEvnt = &sngisdn_event->event.ssHlEvnt; */
@@ -633,14 +637,15 @@ void sngisdn_process_sshl_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_sshl_cfm (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
-	
+
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* SsHlEvnt *ssHlEvnt = &sngisdn_event->event.ssHlEvnt; */
 
@@ -651,13 +656,14 @@ void sngisdn_process_sshl_cfm (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_rmrt_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
 
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* RmRtEvnt *rmRtEvnt = &sngisdn_event->event.rmRtEvnt; */
@@ -669,7 +675,6 @@ void sngisdn_process_rmrt_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_rmrt_cfm (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -677,6 +682,8 @@ void sngisdn_process_rmrt_cfm (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* RmRtEvnt *rmRtEvnt = &sngisdn_event->event.rmRtEvnt; */
 	
@@ -687,13 +694,14 @@ void sngisdn_process_rmrt_cfm (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_flc_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
 
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/* StaEvnt *staEvnt = &sngisdn_event->event.staEvnt; */
@@ -705,8 +713,6 @@ void sngisdn_process_flc_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -716,6 +722,8 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
 	FacEvnt *facEvnt = &sngisdn_event->event.facEvnt;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing FACILITY IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 
@@ -758,8 +766,6 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-	
 	int16_t suId = sngisdn_event->suId;
 	uint32_t suInstId = sngisdn_event->suInstId;
 	uint32_t spInstId = sngisdn_event->spInstId;
@@ -770,6 +776,8 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 	
 	uint8_t call_state = 0;
 
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+	
 	if (staEvnt->callSte.eh.pres && staEvnt->callSte.callGlblSte.pres) {
 		call_state = staEvnt->callSte.callGlblSte.val;
 	}
@@ -983,10 +991,11 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_srv_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/*Srv *srvEvnt = &sngisdn_event->event.srvEvnt;*/
@@ -998,10 +1007,11 @@ void sngisdn_process_srv_ind (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_srv_cfm (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/*Srv *srvEvnt = &sngisdn_event->event.srvEvnt;*/
@@ -1013,11 +1023,12 @@ void sngisdn_process_srv_cfm (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 	uint8_t evntType = sngisdn_event->evntType;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/*Rst *rstEvnt = &sngisdn_event->event.rstEvnt;*/
@@ -1030,11 +1041,12 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 
 void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	int16_t suId = sngisdn_event->suId;
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 	uint8_t evntType = sngisdn_event->evntType;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* Function does not require any info from ssHlEvnt struct for now */
 	/*Rst *rstEvnt = &sngisdn_event->event.rstEvnt;*/

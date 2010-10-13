@@ -38,8 +38,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <ctype.h>
 
 #include "private/ftdm_core.h"
