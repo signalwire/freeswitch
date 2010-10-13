@@ -1515,9 +1515,9 @@ SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_i
 
 	if (sa) {
 #if defined(NTDDI_VERSION)
-			switch_inet_ntop6((unsigned char*)sa, buf, len);
+			switch_inet_ntop6((unsigned char*)sa->sin6_addr, buf, len);
 #else
-		inet_ntop(AF_INET6, sa, buf, len);
+		inet_ntop(AF_INET6, &(sa->sin6_addr), buf, len);
 #endif
 	}
 
