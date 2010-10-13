@@ -400,7 +400,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_t *channel, const char *dtmf_string)
 {
 	char *p;
-	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0), 0};
 	int sent = 0, dur;
 	char *string;
 	int i, argc;
@@ -408,6 +408,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 
 	if (zstr(dtmf_string)) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (*dtmf_string == '!') {
+		dtmf_string++;
+		dtmf.flags = DTMF_FLAG_SKIP_PROCESS;
 	}
 
 	string = switch_core_session_strdup(channel->session, dtmf_string);
@@ -2559,6 +2564,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_core_session_execute_application(channel->session, app, arg);
 		}
 
+		if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
+		}
+
 		/* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
 		   a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
 		 */
@@ -2684,6 +2693,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		&& (other_session = switch_core_session_locate(uuid))) {
 		switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
 		switch_core_session_rwunlock(other_session);
+	}
+
+	if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+		switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 	}
 
 	if ((var = switch_channel_get_variable(channel, SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE))) {
@@ -2894,14 +2907,15 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '('))) {
+				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
+					if (*vval == '(') br = 1;
 					e = vval - 1;
 					*vval++ = '\0';
 					while (*e == ' ') {
 						*e-- = '\0';
 					}
 					e = vval;
-					br = 1;
+
 					while (e && *e) {
 						if (*e == '(') {
 							br++;

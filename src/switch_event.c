@@ -1644,14 +1644,15 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '('))) {
+				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
+					if (*vval == '(') br = 1;
 					e = vval - 1;
 					*vval++ = '\0';
 					while (*e == ' ') {
 						*e-- = '\0';
 					}
 					e = vval;
-					br = 1;
+
 					while (e && *e) {
 						if (*e == '(') {
 							br++;

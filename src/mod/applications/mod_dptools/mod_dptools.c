@@ -95,6 +95,176 @@ SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 	return extension;
 }
 
+struct action_binding {
+	char *realm;
+	char *input;
+	char *string;
+	char *value;
+	switch_core_session_t *session;
+};
+
+static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t *match)
+{
+	switch_core_session_t *session = (switch_core_session_t *) match->user_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char str[DMACHINE_MAX_DIGIT_LEN + 2];
+	switch_event_t *event;
+	switch_status_t status;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
+					  switch_channel_get_name(channel), match->match_digits);
+
+	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
+
+		if ((status = switch_core_session_queue_event(session, &event)) != SWITCH_STATUS_SUCCESS) {
+			switch_event_destroy(&event);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+							  switch_core_session_get_name(session));
+		}
+	}
+
+	/* send it back around flagged to skip the dmachine */
+	switch_snprintf(str, sizeof(str), "!%s", match->match_digits);
+	
+	switch_channel_queue_dtmf_string(channel, str);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
+{
+	struct action_binding *act = (struct action_binding *) match->user_data;
+	switch_event_t *event;
+	switch_status_t status;
+	int exec = 0;
+	char *string = act->string;
+	switch_channel_t *channel = switch_core_session_get_channel(act->session);
+
+	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s]\n", 
+						  switch_channel_get_name(channel), act->string, act->value);
+
+		if (!strncasecmp(string, "exec:", 5)) {
+			string += 5;
+			exec = 1;
+		}
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
+
+		if (exec) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 2 ? "non-blocking" : "blocking");
+		} 
+
+		if ((status = switch_core_session_queue_event(act->session, &event)) != SWITCH_STATUS_SUCCESS) {
+			switch_event_destroy(&event);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+							  switch_core_session_get_name(act->session));
+		}
+	}
+
+	if (exec) {
+		char *cmd = switch_core_session_sprintf(act->session, "%s::%s", string, act->value);
+		switch_ivr_broadcast_in_thread(act->session, cmd, SMF_ECHO_ALEG|SMF_HOLD_BLEG);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define CLEAR_DIGIT_ACTION_USAGE "<realm>|all"
+SWITCH_STANDARD_APP(clear_digit_action_function)
+{
+	//switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_ivr_dmachine_t *dmachine;
+	char *realm = (char *) data;
+
+	if ((dmachine = switch_core_session_get_dmachine(session))) {
+		if (zstr(realm) || !strcasecmp(realm, "all")) {
+			switch_core_session_set_dmachine(session, NULL);
+			switch_ivr_dmachine_destroy(&dmachine);
+		} else {
+			switch_ivr_dmachine_clear_realm(dmachine, realm);
+		}
+	}
+}
+
+#define DIGIT_ACTION_SET_REALM_USAGE "<realm>"
+SWITCH_STANDARD_APP(digit_action_set_realm_function)
+{
+	switch_ivr_dmachine_t *dmachine;
+	char *realm = (char *) data;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", DIGIT_ACTION_SET_REALM_USAGE);
+		return;
+	}
+	
+	if ((dmachine = switch_core_session_get_dmachine(session))) {
+		switch_ivr_dmachine_set_realm(dmachine, realm);
+	}
+
+}
+
+#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>"
+SWITCH_STANDARD_APP(bind_digit_action_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_ivr_dmachine_t *dmachine;
+	char *mydata;
+	int argc = 0;
+	char *argv[4] = { 0 };
+	struct action_binding *act;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
+		return;
+	}
+
+	mydata = switch_core_session_strdup(session, data);
+
+	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
+		return;
+	}
+
+	
+	if (!(dmachine = switch_core_session_get_dmachine(session))) {
+		uint32_t digit_timeout = 1500;
+		uint32_t input_timeout = 0;
+		const char *var;
+		uint32_t tmp;
+
+		if ((var = switch_channel_get_variable(channel, "bind_digit_digit_timeout"))) {
+			tmp = (uint32_t) atol(var);
+			if (tmp < 0) tmp = 0;
+			digit_timeout = tmp;
+		}
+		
+		if ((var = switch_channel_get_variable(channel, "bind_digit_input_timeout"))) {
+			tmp = (uint32_t) atol(var);
+			if (tmp < 0) tmp = 0;
+			input_timeout = tmp;
+		}
+		
+		switch_ivr_dmachine_create(&dmachine, "DPTOOLS", NULL, digit_timeout, input_timeout, NULL, digit_nomatch_action_callback, session);
+		switch_core_session_set_dmachine(session, dmachine);
+	}
+
+	
+	act = switch_core_session_alloc(session, sizeof(*act));
+	act->realm = argv[0];
+	act->input = argv[1];
+	act->string = argv[2];
+	act->value = argv[3];
+	act->session = session;
+	
+	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
+}
+
+
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
@@ -3277,6 +3447,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
+
+	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action", 
+				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "clear_digit_action", "clear all digit bindings", "", 
+				   clear_digit_action_function, CLEAR_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "digit_action_set_realm", "change binding realm", "", 
+				   digit_action_set_realm_function, DIGIT_ACTION_SET_REALM_USAGE, SAF_SUPPORT_NOMEDIA);
+	
+
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
 				   SAF_SUPPORT_NOMEDIA);
 

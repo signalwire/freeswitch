@@ -123,6 +123,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_CURRENT_APPLICATION_DATA_VARIABLE "current_application_data"
 #define SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE "current_application_response"
+#define SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE "passthru_ptime_mismatch"
 #define SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE "enable_heartbeat_events"
 #define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
@@ -189,9 +190,14 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DTMF_LOG_LEN 1000
 typedef uint8_t switch_byte_t;
 
+typedef enum {
+	DTMF_FLAG_SKIP_PROCESS = (1 << 0)
+} dtmf_flag_t;
+
 typedef struct {
 	char digit;
 	uint32_t duration;
+	int32_t flags;
 } switch_dtmf_t;
 
 typedef enum {
@@ -1055,6 +1061,8 @@ typedef enum {
 	CF_EARLY_HANGUP,
 	CF_MEDIA_SET,
 	CF_CONSUME_ON_ORIGINATE,
+	CF_PASSTHRU_PTIME_MISMATCH,
+	CF_BRIDGE_NOWRITE,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
@@ -1686,6 +1694,13 @@ typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session
 typedef switch_status_t (*switch_read_frame_callback_function_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 typedef struct switch_say_interface switch_say_interface_t;
 
+#define DMACHINE_MAX_DIGIT_LEN 512
+
+typedef enum {
+	DM_MATCH_POSITIVE,
+	DM_MATCH_NEGATIVE
+} dm_match_type_t;
+
 struct switch_ivr_dmachine;
 typedef struct switch_ivr_dmachine switch_ivr_dmachine_t;
 
@@ -1693,6 +1708,7 @@ struct switch_ivr_dmachine_match {
 	switch_ivr_dmachine_t *dmachine;
 	const char *match_digits;
 	int32_t match_key;
+	dm_match_type_t type;
 	void *user_data;
 };
 

@@ -1280,6 +1280,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_session_init(runtime.memory_pool);
 	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
 	switch_core_hash_init(&runtime.mime_types, runtime.memory_pool);
+	switch_core_hash_init_case(&runtime.ptimes, runtime.memory_pool, SWITCH_FALSE);
 	load_mime_types();
 	runtime.flags |= flags;
 	runtime.sps_total = 30;
@@ -1411,12 +1412,55 @@ static void handle_SIGHUP(int sig)
 }
 
 
+SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number)
+{
+	uint32_t *p;
+
+	if ((p = switch_core_hash_find(runtime.ptimes, name))) {
+		return *p;
+	}
+
+	return 20;
+}
+
+static uint32_t d_30 = 30;
+
 static void switch_load_core_config(const char *file)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 
+	switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
+	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
+
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_xml_t settings, param;
+
+		if ((settings = switch_xml_child(cfg, "default-ptimes"))) {
+			for (param = switch_xml_child(settings, "codec"); param; param = param->next) {
+				const char *var = switch_xml_attr_soft(param, "name");
+				const char *val = switch_xml_attr_soft(param, "ptime");
+				
+				if (!zstr(var) && !zstr(val)) {
+					uint32_t *p;
+					uint32_t v = (unsigned long) atol(val);
+
+					if (!strcasecmp(var, "G723") || !strcasecmp(var, "iLBC")) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, defaults cannot be changed\n", var);
+						continue;
+					}
+					
+					if (v < 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, invalid ptime\n", var);
+						continue;
+					}
+
+					p = switch_core_alloc(runtime.memory_pool, sizeof(*p));
+					*p = v;
+					switch_core_hash_insert(runtime.ptimes, var, p);
+				}
+
+			}
+		}
 
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -1993,6 +2037,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
 
 	switch_event_destroy(&runtime.global_vars);
+	switch_core_hash_destroy(&runtime.ptimes);
 	switch_core_hash_destroy(&runtime.mime_types);
 
 	if (IP_LIST.hash) {

@@ -765,6 +765,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
  fail:
 	
 	handle->connected = 0;
+	esl_disconnect(handle);
 
 	return ESL_FAIL;
 }
