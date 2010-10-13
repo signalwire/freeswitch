@@ -40,6 +40,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
 SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
 
+typedef enum {
+	CONF_SILENT_REQ = (1 << 0),
+	CONF_SILENT_DONE = (1 << 1)
+} conf_app_flag_t;
+
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
 static char *cf_pin_url_param_name = "X-ConfPin=";
@@ -706,8 +711,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
-			if (conference->enter_sound && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
-											switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
+
+			if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
 				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
 									 switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
 			}
@@ -721,8 +726,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_snprintf(saymsg, sizeof(saymsg), "Auto Calling %d parties", call_list->iteration);
 			conference_member_say(member, saymsg, 0);
 		} else {
-			if (zstr(conference->special_announce) && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
-													   switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
+
+			if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
 				/* announce the total number of members in the conference */
 				if (conference->count >= conference->announce_count && conference->announce_count > 1) {
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
@@ -752,14 +757,14 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_set_flag(conference, CFLAG_ENFORCE_MIN);
 		}
 
-		if (test_eflag(conference, EFLAG_ADD_MEMBER) && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
-														 switch_true(switch_channel_get_variable(channel, "conference_silent_entry"))) &&
+		if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
 			switch_event_fire(&event);
 		}
 
+		switch_channel_clear_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
 	}
 	unlock_member(member);
 	switch_mutex_unlock(member->audio_out_mutex);
@@ -2411,8 +2416,7 @@ static void conference_loop_output(conference_member_t *member)
 			const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
 			int to = 60;
 
-			if (ann && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
-						switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
+			if (ann && !switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
 				member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
 			}
 
@@ -5333,7 +5337,6 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 
 }
 
-
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 SWITCH_STANDARD_APP(conference_function)
 {
@@ -5358,7 +5361,10 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_event_t *params = NULL;
 	int locked = 0;
 
-
+	if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_DONE) &&
+		(switch_channel_test_flag(channel, CF_RECOVERED) || switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
+		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
+	}
 
 	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
@@ -5661,8 +5667,7 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 		}
 
-		if (conference->special_announce && (!switch_channel_test_flag(channel, CF_RECOVERED) || 
-											 switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
+		if (conference->special_announce && !switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
 			conference_local_play_file(conference, session, conference->special_announce, CONF_DEFAULT_LEADIN, NULL, 0);
 		}
 
