@@ -223,11 +223,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 	}
 	
 	if (binding->is_regex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: binding realm: %s regex: %s key: %.4d callback: %p data: %p\n", 
-						  dmachine->name, realm, digits, key, (void *)(intptr_t) callback, user_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
+						  dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: binding realm %s digits: %4s key: %.4d callback: %p data: %p\n", 
-						  dmachine->name, realm, digits, key, (void *)(intptr_t) callback, user_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
+						  dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -244,60 +244,61 @@ typedef enum {
 static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachine, switch_bool_t is_timeout)
 {
 	dm_match_t best = DM_MATCH_NONE;
-	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL;
-	int exact_count = 0, partial_count = 0, both_count = 0;
+	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL, *partial_bp = NULL, *both_bp = NULL, *r_bp = NULL;
 	
-
 	if (!dmachine->cur_digit_len || !dmachine->realm) goto end;
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
-
 		if (bp->is_regex) {
 			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
 
 			if (r_status == SWITCH_STATUS_SUCCESS) {
 				if (is_timeout) {
 					best = DM_MATCH_EXACT;
-					exact_count++;
 					exact_bp = bp;
 					break;
 				}
 
 				best = DM_MATCH_PARTIAL;
-				partial_count++;
-				continue;
 			}
 		} else {
+
 			if (!exact_bp && !strcmp(bp->digits, dmachine->digits)) {
-				exact_bp = bp;				
 				best = DM_MATCH_EXACT;
-				exact_count++;
-				continue;
+				exact_bp = bp;
 			}
 
-			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
-				if (best == DM_MATCH_EXACT) {
-					if (is_timeout) {
-						best = DM_MATCH_EXACT;
-						exact_count++;
-						exact_bp = bp;
-					} else {
-						best = DM_MATCH_BOTH;
-						both_count++;
-					}
+			if (!(both_bp && partial_bp) && !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
+				if (exact_bp) {
+					best = DM_MATCH_BOTH;
+					both_bp = bp;
 				} else {
 					best = DM_MATCH_PARTIAL;
-					partial_count++;
+					partial_bp = bp;
 				}
-				break;
 			}
+
+			if (both_bp && exact_bp && partial_bp) break;
 		}
 	}
 	
  end:
+
+	if (is_timeout) {
+		if (both_bp) {
+			r_bp = both_bp;
+		} else if (partial_bp) {
+			r_bp = partial_bp;
+		}
+	} 
+
+	if (best == DM_MATCH_EXACT && exact_bp) {
+		r_bp = exact_bp;
+	}
 	
-	if (!both_count && exact_bp) {
-		dmachine->last_matching_binding = exact_bp;
+	
+	if (r_bp) {
+		dmachine->last_matching_binding = r_bp;
 		switch_set_string(dmachine->last_matching_digits, dmachine->digits);
 		best = DM_MATCH_EXACT;
 	}
@@ -343,7 +344,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	switch_bool_t is_timeout = switch_ivr_dmachine_check_timeout(dmachine);
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
 	switch_status_t r;
-
+	int clear = 0;
+	
 	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
 	} else if (dmachine->cur_digit_len > dmachine->max_digit_len) {
@@ -362,7 +364,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		dmachine->is_match = 1;
 
 		dmachine->match.type = DM_MATCH_POSITIVE;
-
+		
 		if (dmachine->last_matching_binding->callback) {
 			dmachine->last_matching_binding->callback(&dmachine->match);
 		}
@@ -371,10 +373,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 			dmachine->match.user_data = dmachine->user_data;
 			dmachine->match_callback(&dmachine->match);
 		}
-		
+		clear++;
 	} else if (is_timeout) {
 		r = SWITCH_STATUS_TIMEOUT;
-	} else if (dmachine->cur_digit_len == dmachine->max_digit_len) {
+	} else if (is_match == DM_MATCH_NONE && dmachine->cur_digit_len == dmachine->max_digit_len) {
 		r = SWITCH_STATUS_NOTFOUND;
 	} else {
 		r = SWITCH_STATUS_SUCCESS;
@@ -390,9 +392,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 			dmachine->match.user_data = dmachine->user_data;
 			dmachine->nonmatch_callback(&dmachine->match);
 		}
+		
+		clear++;
 	}
 	
-	if (r != SWITCH_STATUS_SUCCESS) {
+	if (clear) {
 		switch_ivr_dmachine_clear(dmachine);
 	}
 
@@ -414,6 +418,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear(switch_ivr_dmachine_t *dmachine)
 {
+
 	memset(dmachine->digits, 0, sizeof(dmachine->digits));
 	dmachine->cur_digit_len = 0;
 	dmachine->last_digit_time = 0;
