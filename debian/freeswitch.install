@@ -100,7 +100,6 @@ opt/freeswitch/conf/sip_profiles/internal-ipv6.xml
 opt/freeswitch/conf/sip_profiles/internal.xml
 opt/freeswitch/conf/skinny_profiles/internal.xml
 opt/freeswitch/conf/tetris.ttml
-opt/freeswitch/conf/tones.conf
 opt/freeswitch/conf/vars.xml
 opt/freeswitch/conf/voicemail.tpl
 opt/freeswitch/conf/web-vm.tpl
@@ -158,7 +157,6 @@ opt/freeswitch/mod/mod_skypopen.so*
 opt/freeswitch/mod/mod_sndfile.so*
 opt/freeswitch/mod/mod_snom.so*
 opt/freeswitch/mod/mod_sofia.so*
-opt/freeswitch/mod/mod_soundtouch.so*
 opt/freeswitch/mod/mod_spandsp.sp*
 opt/freeswitch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_spy.so*
