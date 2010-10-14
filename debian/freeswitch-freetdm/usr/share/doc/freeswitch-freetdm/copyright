@@ -1,0 +1,51 @@
+This package was debianized by Michal Bielicki 
+<michal.bielicki@voiceworks.pl> on Now 25, 2007.
+
+The current Debian maintainer is Nicholas Amorim <nicholas@montrealconsultoria.com.br>
+
+The source was downloaded from http://www.freewitch.org/
+
+Upstream authors:
+Anthony Minessale II <anthmct@yahoo.com>
+Portions created by the Initial Developer are Copyright (C) 2006-2009
+the Initial Developer. All Rights Reserved.
+
+The PRIMARY AUTHORS are (and/or have been):
+
+ Anthony Minessale II <anthmct@yahoo.com> - Primary developer of all core components
+ 	and many of the included modules.  Much of freeswitch is based on his work.
+ 
+ Michael Jerris <mike@jerris.com> - Windows porter and responsible for the 
+  windows\msvc build system.
+
+And here is an inevitably incomplete list of MUCH-APPRECIATED CONTRIBUTORS --
+people who have submitted patches, reported bugs, and generally made Freeswitch
+that much better:
+
+ Brian K. West - For countless hours of work on BSD and Mac support, finding countless bugs, and moral support.  Xcode project files.
+ Joshua Colp - For his help making mod_exosip possible (which we are now getting rid of but oh well), 
+               and for just being a swell guy! (until he backstabbed us, c'est la vie)
+ Michal "cypromis" Bielicki (michal.bielicki  AT voiceworks.pl) - Solaris porting, and autotools enhancements, debian, rpm and solaris packaging.
+ James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
+ Johny Kadarisman <jkr888@gmail.com>
+ Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
+ Stefan Knoblich - Various patches and support.  Thanks.
+ Justin Unger - <justinunger at gmail dot com> Lots of help with patches and SIP testing. Thanks! 
+ Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org> 
+ Ken Rice - <krice AT suspicious.org> - xmlcdr, sofia improvements, load testing.
+ Neal Horman <neal at wanlink dot com> - conference improvements, switch_ivr menu additions and other tweaks.
+ Johny Kadarisman <jkr888 at gmail.com> - mod_python fixups.
+ Michael Murdock <mike at mmurdock dot org> - testing, documentation, bug finding and usability enhancements.
+ Matt Klein <mklein@nmedia.net>
+ Jonas Gauffin <jonas at gauffin dot org> - Bugfixes and additions in mod_spidermonkey_odbc
+ Damjan Jovanovic <moctodliamgtavojtodnajmad backwards> - mod_java
+ 
+A big THANK YOU goes to:
+
+Justin Cassidy - Build related cleanups and automatic build setup.
+Bret McDanel - Javascript Documentation, constant feedback and input, many other things I am sure I am forgetting.
+
+You are free to distribute this software under the terms of
+the MPL Mozilla Public License. On Debian systems, the complete
+text of the GNU General Public License can be found in the file
+'/usr/share/common-licenses/MPL'.
