@@ -123,6 +123,19 @@ Description: pass through AMR codec support for FreeSWITCH
  .
  This package contains the mod_amr codec module.
 
+Package: freeswitch-codec-passthru-amrwb
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: pass through AMRWB codec support for FreeSWITCH
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to a
+ soft-switch.  It can be used as a simple switching engine, a PBX, a media
+ gateway or a media server to host IVR applications using simple scripts or XML
+ to control the callflow.
+ .
+ This package contains the mod_amrwb codec module.
+
+
 Package: freeswitch-codec-passthru-g729
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
@@ -229,3 +242,8 @@ Description: Russian language files for FreeSWITCH
  .
  This package contains the mod_say_ru module and available language
  configuration files.
+
+Package: freeswitch-freetdm
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: FreeTDM is a signaling and board API abstraction used mainly by the FreeSWITCH project to place calls in TDM and analog telephony circuits. The library was previously named "OpenZAP". Sangoma has worked along with the FreeSWITCH developers in this library so Sangoma's customers can also use it to do custom development. The library is still under heavy development but the overall API does not change often. The intention of the library is to present a consistent API for different telephony signaling stacks and board I/O APIs.  FreeTDM can either be used as a standalone API or along with FreeSWITCH as an endpoint (mod_freetdm). If you want to use it as a part of FreeSWITCH remember following the FreeSWITCH configuration section.

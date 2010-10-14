@@ -1,3 +1,8 @@
+freeswitch (1.0.7-1headgit1) maverick; urgency=low
+  * upgrade: Added mod_amrwb
+  * upgrade version to 1.0.7 ... 1.0.6 was last realease
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Wed, 13 Oct 2010 22:58:48 -0200
 freeswitch (1.0.6-1ubuntu1) maverick; urgency=low
 
   [ Gabriel Gunderson ]
