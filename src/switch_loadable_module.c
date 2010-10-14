@@ -1547,12 +1547,91 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
 	return switch_core_hash_find_locked(loadable_modules.management_hash, relative_oid, loadable_modules.mutex);
 }
 
+#ifdef DEBUG_CODEC_SORTING
+static void do_print(const switch_codec_implementation_t **array, int arraylen)
+{
+	int i;
+
+	for(i = 0; i < arraylen; i++) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+						  "DEBUG %d %s:%d %d\n", i, array[i]->iananame, array[i]->ianacode, array[i]->microseconds_per_packet / 1000);
+	}
+
+}
+#endif
+
+/* helper only -- bounds checking enforced by caller */
+static void do_swap(const switch_codec_implementation_t **array, int a, int b)
+{
+	const switch_codec_implementation_t *tmp = array[b];
+	array[b] = array[a];
+	array[a] = tmp;
+}
+
+static void switch_loadable_module_sort_codecs(const switch_codec_implementation_t **array, int arraylen)
+{
+	int i = 0, sorted_ptime = 0;
+
+#ifdef DEBUG_CODEC_SORTING
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "--BEFORE\n");
+	do_print(array, arraylen);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "--BEFORE\n");
+#endif
+
+	for (i = 0; i < arraylen; i++) {
+		int this_ptime = array[i]->microseconds_per_packet / 1000;
+
+		if (!sorted_ptime) {
+			sorted_ptime = this_ptime;
+#ifdef DEBUG_CODEC_SORTING
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sorted1 = %d\n", sorted_ptime);
+#endif
+		}
+
+		if (this_ptime != sorted_ptime) {
+			int j;
+			int swapped = 0;
+
+#ifdef DEBUG_CODEC_SORTING
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d != %d\n", this_ptime, sorted_ptime);
+#endif
+			for(j = i; j < arraylen; j++) {
+				int check_ptime = array[j]->microseconds_per_packet / 1000;
+
+				if (check_ptime == sorted_ptime) {
+#ifdef DEBUG_CODEC_SORTING
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "swap %d %d ptime %d\n", i, j, check_ptime);
+#endif
+					do_swap(array, i, j);
+					swapped = 1;
+					break;
+				}
+			}
+
+			if (!swapped) {
+				sorted_ptime = this_ptime;
+#ifdef DEBUG_CODEC_SORTING
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sorted2 = %d\n", sorted_ptime);
+#endif
+			}
+		}
+	}
+
+#ifdef DEBUG_CODEC_SORTING
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "--AFTER\n");
+	do_print(array, arraylen);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "--AFTER\n");
+#endif
+
+}
+
+
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_implementation_t **array, int arraylen)
 {
 	switch_hash_index_t *hi;
 	void *val;
 	switch_codec_interface_t *codec_interface;
-	int i = 0, lock = 0;
+	int i = 0;
 	const switch_codec_implementation_t *imp;
 
 	switch_mutex_lock(loadable_modules.mutex);
@@ -1564,10 +1643,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 		for (imp = codec_interface->implementations; imp; imp = imp->next) {
 			uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
 
-			if (lock && imp->microseconds_per_packet != lock) {
-				continue;
-			}
-
 			if (imp->microseconds_per_packet / 1000 == (int)default_ptime) {
 				array[i++] = imp;
 				goto found;
@@ -1578,9 +1653,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 	  found:
 
-		if (!lock && i > 0)
-			lock = array[i - 1]->microseconds_per_packet;
-
 		if (i > arraylen) {
 			break;
 		}
@@ -1588,13 +1660,15 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 	switch_mutex_unlock(loadable_modules.mutex);
 
+	switch_loadable_module_sort_codecs(array, i);
+
 	return i;
 
 }
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen)
 {
-	int x, i = 0, lock = 0;
+	int x, i = 0;
 	switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *imp;
 
@@ -1635,9 +1709,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
 				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-					if (lock && imp->microseconds_per_packet != lock) {
-						continue;
-					}
 					
 					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != default_ptime) ||
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
@@ -1664,10 +1735,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 
-					if (lock && imp->microseconds_per_packet != lock) {
-						continue;
-					}
-
 					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
 						continue;
 					}
@@ -1689,10 +1756,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 		  found:
 
-			if (!lock && i > 0) {
-				lock = array[i - 1]->microseconds_per_packet;
-			}
-
 			UNPROTECT_INTERFACE(codec_interface);
 
 			if (i > arraylen) {
@@ -1704,6 +1767,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 	switch_mutex_unlock(loadable_modules.mutex);
 
+	switch_loadable_module_sort_codecs(array, i);
 
 	return i;
 }

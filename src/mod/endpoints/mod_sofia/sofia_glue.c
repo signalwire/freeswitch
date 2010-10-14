@@ -185,6 +185,158 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 
 }
 
+static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen, 
+					   switch_port_t port,
+					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map)
+{
+	int i = 0;
+	int rate;
+	int already_did[128] = { 0 };
+	int ptime = 0, noptime = 0;
+	
+	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
+					port, (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
+				
+	
+
+	for (i = 0; i < tech_pvt->num_codecs; i++) {
+		const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+	
+		if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
+			continue;
+		}
+
+		if (!noptime) {
+			if (!cur_ptime) {
+				if (ptime) {
+					if (ptime != imp->microseconds_per_packet / 1000) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "Codec %s payload %d added to sdp wanting ptime %d but it's already %d (%s:%d:%d), disabling ptime.\n", 
+										  imp->iananame,
+										  tech_pvt->ianacodes[i],
+										  imp->microseconds_per_packet / 1000,
+										  ptime,
+										  tech_pvt->codecs[0]->iananame,
+										  tech_pvt->codecs[0]->ianacode,
+										  ptime);
+						ptime = 0;
+						noptime = 1;
+					}
+				} else {
+					ptime = imp->microseconds_per_packet / 1000;
+				}
+			} else {
+				if ((imp->microseconds_per_packet / 1000) != cur_ptime) {
+					continue;
+				}
+			}
+		}
+
+		if (tech_pvt->ianacodes[i] < 128) {
+			if (already_did[tech_pvt->ianacodes[i]]) {
+				continue;
+			}
+
+			already_did[tech_pvt->ianacodes[i]] = 1;
+		}
+
+		
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", tech_pvt->ianacodes[i]);
+	}
+
+	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", tech_pvt->te);
+	}
+		
+	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && cng_type && use_cng) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", cng_type);
+	}
+		
+	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "\n");
+
+
+	memset(already_did, 0, sizeof(already_did));
+		
+	for (i = 0; i < tech_pvt->num_codecs; i++) {
+		const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+		char *fmtp = imp->fmtp;
+			
+		if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
+			continue;
+		}
+
+		if (!noptime) {
+			if (!cur_ptime) {
+				if (!ptime) {
+					ptime = imp->microseconds_per_packet / 1000;
+				}
+			} else {
+				if ((imp->microseconds_per_packet / 1000) != cur_ptime) {
+					continue;
+				}
+			}
+		}
+		
+		if (tech_pvt->ianacodes[i] < 128) {
+			if (already_did[tech_pvt->ianacodes[i]]) {
+				continue;
+			}
+			
+			already_did[tech_pvt->ianacodes[i]] = 1;
+		}
+
+		
+		rate = imp->samples_per_second;
+
+		if (map) {
+			char key[128] = "";
+			char *check = NULL;
+			switch_snprintf(key, sizeof(key), "%s:%u", imp->iananame, imp->bits_per_second);
+
+			if ((check = switch_event_get_header(map, key)) || (check = switch_event_get_header(map, imp->iananame))) {
+				fmtp = check;
+			}
+		}
+		
+		if (tech_pvt->ianacodes[i] > 95) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate);
+		}
+
+		if (fmtp) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->ianacodes[i], fmtp);
+		}
+	}
+
+
+	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
+	}
+
+	if (!cng_type) {
+		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/8000\n", cng_type);
+		//} else {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=silenceSupp:off - - - -\n");
+	}
+
+	if (append_audio) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "%s%s", append_audio, end_of(append_audio) == '\n' ? "" : "\n");
+	}
+
+	if (!cur_ptime) {
+		cur_ptime = ptime;
+	}
+	
+	if (!noptime && cur_ptime) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ptime:%d\n", cur_ptime);
+	}
+
+	if (sr) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\n", sr);
+	}
+
+}
+
+
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force)
 {
 	char buf[2048];
@@ -204,6 +356,23 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *fmtp_out_var = switch_channel_get_variable(tech_pvt->channel, "sip_force_audio_fmtp");
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
+
+
+	if (!tech_pvt->payload_space) {
+		int i;
+
+		tech_pvt->payload_space = 98;
+
+		for (i = 0; i < tech_pvt->num_codecs; i++) {
+			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+
+			tech_pvt->ianacodes[i] = imp->ianacode;
+			
+			if (tech_pvt->ianacodes[i] > 64) {
+				tech_pvt->ianacodes[i] = tech_pvt->payload_space++;
+			}
+		}
+	}
 
 	if (!tech_pvt->rm_encoding && (b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
 		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
@@ -278,155 +447,100 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 					"o=%s %010u %010u IN %s %s\n"
 					"s=%s\n"
 					"c=IN %s %s\n" "t=0 0\n"
-					"%sm=audio %d RTP/%sAVP",
-					username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip, srbuf, port, (!zstr(tech_pvt->local_crypto_key)
-																														&& sofia_test_flag(tech_pvt,
-																																		   TFLAG_SECURE)) ?
-					"S" : "");
+					"%s",
+					username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip, srbuf);
 
 	if (tech_pvt->rm_encoding) {
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=audio %d RTP/%sAVP", 
+						port, (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
+
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
-	} else if (tech_pvt->num_codecs) {
-		int i;
-		int already_did[128] = { 0 };
-		for (i = 0; i < tech_pvt->num_codecs; i++) {
-			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 
-			if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
-				continue;
-			}
-
-			if (imp->ianacode < 128) {
-				if (already_did[imp->ianacode]) {
-					continue;
-				}
-
-				already_did[imp->ianacode] = 1;
-			}
-
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
-			if (!ptime) {
-				ptime = imp->microseconds_per_packet / 1000;
-			}
+		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 		}
-	}
+		
+		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
+		}
+		
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
 
-	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
-	}
-
-	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
-	}
-
-	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
-
-
-	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->agreed_pt, tech_pvt->rm_encoding, rate);
 		if (fmtp_out) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->agreed_pt, fmtp_out);
 		}
+
 		if (tech_pvt->read_codec.implementation && !ptime) {
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_packet / 1000;
 		}
 
+		
+		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
+		}
+		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
+			if (!tech_pvt->rm_encoding) {
+				tech_pvt->cng_pt = 0;
+			}
+		} else {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=silenceSupp:off - - - -\n");
+		}
+
+		if (append_audio) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s", append_audio, end_of(append_audio) == '\n' ? "" : "\n");
+		}
+
+		if (ptime) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
+		}
+
+		if (sr) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=%s\n", sr);
+		}
+		
+
 	} else if (tech_pvt->num_codecs) {
 		int i;
-		int already_did[128] = { 0 };
-		for (i = 0; i < tech_pvt->num_codecs; i++) {
-			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-			char *fmtp = imp->fmtp;
-			
-			if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
-				continue;
-			}
+		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
 
-			if (imp->ianacode < 128) {
-				if (already_did[imp->ianacode]) {
-					continue;
-				}
 
-				already_did[imp->ianacode] = 1;
-			}
+		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
+			cng_type = tech_pvt->cng_pt;
 
-			rate = imp->samples_per_second;
-
-			if (map) {
-				char key[128] = "";
-				char *check = NULL;
-				switch_snprintf(key, sizeof(key), "%s:%u", imp->iananame, imp->bits_per_second);
-
-				if ((check = switch_event_get_header(map, key)) || (check = switch_event_get_header(map, imp->iananame))) {
-					fmtp = check;
-				}
-			}
-			
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
-
-			if (fmtp) {
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, fmtp);
+			if (!tech_pvt->rm_encoding) {
+				tech_pvt->cng_pt = 0;
 			}
 		}
-	}
 
-	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
-	}
-	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
-		if (!tech_pvt->rm_encoding) {
-			tech_pvt->cng_pt = 0;
-		}
-	} else {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=silenceSupp:off - - - -\n");
-	}
+		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
+			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map);
+		} else {
 
-	if (append_audio) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s%s", append_audio, end_of(append_audio) == '\n' ? "" : "\n");
-	}
-
-	if (ptime) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
-	}
-
-	if (sr) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=%s\n", sr);
-	}
-
-	if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
-		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
-#if 0
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=audio %d RTP/AVP", port);
-
-		if (tech_pvt->rm_encoding) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
-		} else if (tech_pvt->num_codecs) {
-			int i;
-			int already_did[128] = { 0 };
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-
+				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 					continue;
 				}
-
-				if (imp->ianacode < 128) {
-					if (already_did[imp->ianacode]) {
-						continue;
-					}
-
-					already_did[imp->ianacode] = 1;
+				
+				this_ptime = imp->microseconds_per_packet / 1000;
+				
+				if (cur_ptime != this_ptime) {
+					cur_ptime = this_ptime;
+					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map);
 				}
-
-				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
+				
 			}
 		}
 
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\na=crypto:%s\n", tech_pvt->local_crypto_key);
-#endif
+	}
+	
+	if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
@@ -451,14 +565,14 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 						continue;
 					}
 
-					if (imp->ianacode < 128) {
-						if (already_did[imp->ianacode]) {
+					if (tech_pvt->ianacodes[i] < 128) {
+						if (already_did[tech_pvt->ianacodes[i]]) {
 							continue;
 						}
-						already_did[imp->ianacode] = 1;
+						already_did[tech_pvt->ianacodes[i]] = 1;
 					}
 
-					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
+					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->ianacodes[i]);
 					if (!ptime) {
 						ptime = imp->microseconds_per_packet / 1000;
 					}
@@ -498,37 +612,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				int i;
 				int already_did[128] = { 0 };
 
-#if 0				
-				switch_event_t *event;
-				char *buf;
-				int level = SWITCH_LOG_INFO;
-				
-				if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_event_set_data(switch_core_session_get_channel(tech_pvt->session), event);
-					switch_event_serialize(event, &buf, SWITCH_FALSE);
-					switch_assert(buf);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), level, "CHANNEL_DATA:\n%s\n", buf);
-					switch_event_destroy(&event);
-					free(buf);
-				}
-#endif
-		
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					char *fmtp = NULL;
-					uint32_t ianacode = imp->ianacode;
-#if 0
-					const char *str;
+					uint32_t ianacode = tech_pvt->ianacodes[i];
 
-
-
-					if ((str = switch_event_get_header(ptmap, imp->iananame))) {
-						int tmp = atoi(str);
-						if (tmp > 0) {
-							ianacode = tmp;
-						}
-					}
-#endif			
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
 					}
@@ -562,7 +650,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 					}
 					
 					if (!zstr(fmtp) && strcasecmp(fmtp, "_blank_")) {
-						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, fmtp);
+						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", ianacode, fmtp);
 					}
 				}
 				
@@ -578,7 +666,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	if (ptmap) {
 		switch_event_destroy(&ptmap);
 	}
-	
+
 	sofia_glue_tech_set_local_sdp(tech_pvt, buf, SWITCH_TRUE);
 }
 
@@ -4219,28 +4307,38 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					last = tech_pvt->num_codecs;
 				}
 
-				if (maxptime && (!ptime || ptime > maxptime)) {
-					ptime = maxptime;
+				codec_ms = ptime;
+
+				if (maxptime && (!codec_ms || codec_ms > maxptime)) {
+					codec_ms = maxptime;
 				}
 
-				if (!ptime) {
-					ptime = switch_default_ptime(rm_encoding, map->rm_pt);
+				if (!codec_ms) {
+					codec_ms = switch_default_ptime(rm_encoding, map->rm_pt);
 				}
 
 				map_bit_rate = switch_known_bitrate(map->rm_pt);
-
-				if (!zstr(map->rm_fmtp)) {
+				
+				if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
+					codec_ms = 30;
+				}
+				
+				if (zstr(map->rm_fmtp)) {
+					if (!strcasecmp(map->rm_encoding, "ilbc")) {
+						codec_ms = 30;
+					}
+				} else {
 					if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
 						if (codec_fmtp.bits_per_second) {
 							map_bit_rate = codec_fmtp.bits_per_second;
 						}
 						if (codec_fmtp.microseconds_per_packet) {
-							ptime = (codec_fmtp.microseconds_per_packet / 1000);
+							codec_ms = (codec_fmtp.microseconds_per_packet / 1000);
 						}
 					}
 				}
 				
-				codec_ms = ptime;
+				
 
 				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
@@ -4251,7 +4349,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d:%u]/[%s:%d:%u:%d:%u]\n",
-									  rm_encoding, map->rm_pt, (int) map->rm_rate, codec_ms, map_bit_rate,
+									  rm_encoding, map->rm_pt, (int) map->rm_rate, ptime, map_bit_rate,
 									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate);
 					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
@@ -4270,7 +4368,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
 						} else {
-							if ((codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
+							if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
 								near_match = imp;
 								match = 0;
@@ -4337,7 +4435,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 
 				if (match) {
-					if (sofia_glue_tech_set_codec(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_glue_tech_set_codec(tech_pvt, 1) == SWITCH_STATUS_SUCCESS) {
+						got_audio = 1;
+					} else {
 						match = 0;
 					}
 				}

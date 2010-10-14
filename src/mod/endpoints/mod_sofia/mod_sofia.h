@@ -705,6 +705,8 @@ struct private_object {
 	char *user_via;
 	char *redirected;
 	sofia_cid_type_t cid_type;
+	switch_payload_t payload_space;
+	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
 };
 
 struct callback_t {

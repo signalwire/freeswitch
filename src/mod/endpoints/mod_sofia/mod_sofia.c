@@ -1031,13 +1031,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 									if (codec_ms != tech_pvt->codec_ms) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-														  "We were told to use ptime %d but what they meant to say was %d\n"
-														  "This issue has so far been identified to happen on the following broken platforms/devices:\n"
-														  "Linksys/Sipura aka Cisco\n"
-														  "ShoreTel\n"
-														  "Sonus/L3\n"
-														  "We will try to fix it but some of the devices on this list are so broken,\n"
-														  "who knows what will happen..\n", (int) tech_pvt->codec_ms, (int) codec_ms);
+														  "Asynchronous PTIME not supported, changing our end from %d to %d\n",
+														  (int) tech_pvt->codec_ms,
+														  (int) codec_ms
+														  );
 
 										switch_channel_set_variable_printf(channel, "sip_h_X-Broken-PTIME", "Adv=%d;Sent=%d",
 																		   (int) tech_pvt->codec_ms, (int) codec_ms);
