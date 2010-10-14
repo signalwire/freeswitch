@@ -1066,9 +1066,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_core_session_message_t msg = { 0 };
 		char cid_buf[1024] = "";
 		switch_caller_profile_t *cp = NULL;
+		uint32_t sanity = 600;
 
 		if (!switch_channel_media_ready(channel)) {
 			goto end;
+		}
+
+		while(switch_channel_state_change_pending(tchannel)) {
+			switch_yield(10000);
+			if (!--sanity) break;
 		}
 
 		if (!switch_channel_media_ready(tchannel)) {
