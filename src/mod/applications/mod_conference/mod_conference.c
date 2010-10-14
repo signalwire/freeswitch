@@ -97,29 +97,6 @@ static struct {
 	switch_event_node_t *node;
 } globals;
 
-typedef enum {
-	CALLER_CONTROL_MUTE,
-	CALLER_CONTROL_MUTE_ON,
-	CALLER_CONTROL_MUTE_OFF,
-	CALLER_CONTROL_DEAF_MUTE,
-	CALLER_CONTROL_ENERGY_UP,
-	CALLER_CONTROL_ENERGY_EQU_CONF,
-	CALLER_CONTROL_ENERGY_DN,
-	CALLER_CONTROL_VOL_TALK_UP,
-	CALLER_CONTROL_VOL_TALK_ZERO,
-	CALLER_CONTROL_VOL_TALK_DN,
-	CALLER_CONTROL_VOL_LISTEN_UP,
-	CALLER_CONTROL_VOL_LISTEN_ZERO,
-	CALLER_CONTROL_VOL_LISTEN_DN,
-	CALLER_CONTROL_HANGUP,
-	CALLER_CONTROL_MENU,
-	CALLER_CONTROL_DIAL,
-	CALLER_CONTROL_EVENT,
-	CALLER_CONTROL_LOCK,
-	CALLER_CONTROL_TRANSFER,
-	CALLER_CONTROL_EXEC_APP
-} caller_control_t;
-
 /* forward declaration for conference_obj and caller_control */
 struct conference_member;
 typedef struct conference_member conference_member_t;
@@ -133,15 +110,7 @@ typedef struct call_list call_list_t;
 
 struct caller_control_actions;
 
-typedef struct caller_control_fn_table {
-	char *key;
-	char *digits;
-	caller_control_t action;
-	void (*handler) (conference_member_t *, struct caller_control_actions *);
-} caller_control_fn_table_t;
-
 typedef struct caller_control_actions {
-	caller_control_fn_table_t *fndesc;
 	char *binded_dtmf;
 	void *data;
 } caller_control_action_t;
@@ -271,12 +240,12 @@ typedef struct conference_obj {
 	uint32_t max_members;
 	char *maxmember_sound;
 	uint32_t announce_count;
-	switch_ivr_digit_stream_parser_t *dtmf_parser;
 	char *pin;
 	char *pin_sound;
 	char *bad_pin_sound;
 	char *profile_name;
 	char *domain;
+	char *caller_controls;
 	uint32_t flags;
 	member_flag_t mflags;
 	switch_call_cause_t bridge_hangup_cause;
@@ -362,8 +331,6 @@ struct conference_member {
 	uint32_t resample_out_len;
 	conference_file_node_t *fnode;
 	conference_relationship_t *relationships;
-	switch_ivr_digit_stream_parser_t *dtmf_parser;
-	switch_ivr_digit_stream_t *digit_stream;
 	switch_speech_handle_t lsh;
 	switch_speech_handle_t *sh;
 	uint32_t verbose_events;
@@ -371,6 +338,7 @@ struct conference_member {
 	uint32_t avg_itt;
 	uint32_t avg_tally;	
 	struct conference_member *next;
+	switch_ivr_dmachine_t *dmachine;
 };
 
 /* Record Node */
@@ -414,6 +382,7 @@ static void conference_send_all_dtmf(conference_member_t *member, conference_obj
 static switch_status_t conference_say(conference_obj_t *conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 static conference_obj_t *conference_find(char *name);
+static void member_bind_controls(conference_member_t *member, const char *controls);
 
 SWITCH_STANDARD_API(conf_api_main);
 
@@ -656,6 +625,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	char msg[512];				/* conference count announcement */
 	call_list_t *call_list = NULL;
 	switch_channel_t *channel;
+	const char *controls = NULL;
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
@@ -765,6 +735,24 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 
 		switch_channel_clear_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
+
+
+		switch_ivr_dmachine_create(&member->dmachine, "mod_conference", NULL, 500, 0, NULL, NULL, NULL);
+
+		controls = switch_channel_get_variable(channel, "conference_controls");
+
+		if (zstr(controls)) {
+			controls = conference->caller_controls;
+		}
+
+		if (zstr(controls)) {
+			controls = "default";
+		}
+
+		if (strcasecmp(controls, "none")) {
+			member_bind_controls(member, controls);
+		}
+		
 	}
 	unlock_member(member);
 	switch_mutex_unlock(member->audio_out_mutex);
@@ -794,6 +782,8 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	member->fnode = NULL;
 	member->sh = NULL;
 	unlock_member(member);
+
+	switch_ivr_dmachine_destroy(&member->dmachine);
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
@@ -1462,8 +1452,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_thread_rwlock_unlock(conference->rwlock);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock OFF\n");
 
-		switch_ivr_digit_stream_parser_destroy(conference->dtmf_parser);
-
 		if (conference->sh) {
 			switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 			switch_core_speech_close(&conference->lsh, &flags);
@@ -1693,6 +1681,7 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t *member, cal
 
 	switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 	conference_member_say(member, msg, 0);
+
 }
 
 static void conference_loop_fn_volume_talk_dn(conference_member_t *member, caller_control_action_t *action)
@@ -2307,29 +2296,6 @@ static void launch_conference_loop_input(conference_member_t *member, switch_mem
 	switch_thread_create(&thread, thd_attr, conference_loop_input, member, pool);
 }
 
-static caller_control_fn_table_t ccfntbl[] = {
-	{"mute", "0", CALLER_CONTROL_MUTE, conference_loop_fn_mute_toggle},
-	{"mute on", NULL, CALLER_CONTROL_MUTE_ON, conference_loop_fn_mute_on},
-	{"mute off", NULL, CALLER_CONTROL_MUTE_OFF, conference_loop_fn_mute_off},
-	{"deaf mute", "*", CALLER_CONTROL_DEAF_MUTE, conference_loop_fn_deafmute_toggle},
-	{"energy up", "9", CALLER_CONTROL_ENERGY_UP, conference_loop_fn_energy_up},
-	{"energy equ", "8", CALLER_CONTROL_ENERGY_EQU_CONF, conference_loop_fn_energy_equ_conf},
-	{"energy dn", "7", CALLER_CONTROL_ENERGY_DN, conference_loop_fn_energy_dn},
-	{"vol talk up", "3", CALLER_CONTROL_VOL_TALK_UP, conference_loop_fn_volume_talk_up},
-	{"vol talk zero", "2", CALLER_CONTROL_VOL_TALK_ZERO, conference_loop_fn_volume_talk_zero},
-	{"vol talk dn", "1", CALLER_CONTROL_VOL_TALK_DN, conference_loop_fn_volume_talk_dn},
-	{"vol listen up", "6", CALLER_CONTROL_VOL_LISTEN_UP, conference_loop_fn_volume_listen_up},
-	{"vol listen zero", "5", CALLER_CONTROL_VOL_LISTEN_ZERO, conference_loop_fn_volume_listen_zero},
-	{"vol listen dn", "4", CALLER_CONTROL_VOL_LISTEN_DN, conference_loop_fn_volume_listen_dn},
-	{"hangup", "#", CALLER_CONTROL_HANGUP, conference_loop_fn_hangup},
-	{"event", NULL, CALLER_CONTROL_EVENT, conference_loop_fn_event},
-	{"lock", NULL, CALLER_CONTROL_LOCK, conference_loop_fn_lock_toggle},
-	{"transfer", NULL, CALLER_CONTROL_TRANSFER, conference_loop_fn_transfer},
-	{"execute_application", NULL, CALLER_CONTROL_EXEC_APP, conference_loop_fn_exec_app}
-};
-
-#define CCFNTBL_QTY (sizeof(ccfntbl)/sizeof(ccfntbl[0]))
-
 /* marshall frames from the conference (or file or tts output) to the call leg */
 /* NB. this starts the input thread after some initial setup for the call leg */
 static void conference_loop_output(conference_member_t *member)
@@ -2400,13 +2366,6 @@ static void conference_loop_output(conference_member_t *member)
 		/* Start the input thread */
 		launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
 
-		/* build a digit stream object */
-		if (member->conference->dtmf_parser != NULL
-			&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR,
-							  "Danger Will Robinson, there is no digit parser stream object\n");
-		}
-
 		if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
 			const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
 			const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
@@ -2457,9 +2416,7 @@ static void conference_loop_output(conference_member_t *member)
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
 		   && switch_channel_ready(channel)) {
 		char dtmf[128] = "";
-		char *digit;
 		switch_event_t *event;
-		caller_control_action_t *caller_action = NULL;
 		int use_timer = 0;
 		switch_buffer_t *use_buffer = NULL;
 		uint32_t mux_used = 0;
@@ -2513,39 +2470,12 @@ static void conference_loop_output(conference_member_t *member)
 
 			if (switch_test_flag(member, MFLAG_DIST_DTMF)) {
 				conference_send_all_dtmf(member, member->conference, dtmf);
-			} else {
-				if (member->conference->dtmf_parser != NULL) {
-					for (digit = dtmf; *digit && caller_action == NULL; digit++) {
-						caller_action = (caller_control_action_t *)
-							switch_ivr_digit_stream_parser_feed(member->conference->dtmf_parser, member->digit_stream, *digit);
-					}
-				}
+			} else if (member->dmachine) {
+				switch_ivr_dmachine_feed(member->dmachine, dtmf, NULL);
 			}
-			/* otherwise, clock the parser so that it can handle digit timeout detection */
-		} else if (member->conference->dtmf_parser != NULL) {
-			caller_action = (caller_control_action_t *) switch_ivr_digit_stream_parser_feed(member->conference->dtmf_parser, member->digit_stream, '\0');
+		} else if (member->dmachine) {
+			switch_ivr_dmachine_ping(member->dmachine, NULL);
 		}
-
-		/* if a caller action has been detected, handle it */
-		if (caller_action != NULL && caller_action->fndesc != NULL && caller_action->fndesc->handler != NULL) {
-			char *param = NULL;
-
-			if (caller_action->fndesc->action != CALLER_CONTROL_MENU) {
-				param = caller_action->data;
-			}
-#ifdef INTENSE_DEBUG
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session),
-							  SWITCH_LOG_INFO,
-							  "executing caller control '%s' param '%s' on call '%u, %s\n",
-							  caller_action->fndesc->key, param ? param : "none", member->id, switch_channel_get_name(channel));
-#endif
-
-			caller_action->fndesc->handler(member, caller_action);
-
-			/* set up for next pass */
-			caller_action = NULL;
-		}
-
 
 		use_buffer = NULL;
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
@@ -2655,10 +2585,6 @@ static void conference_loop_output(conference_member_t *member)
 
 	}							/* Rinse ... Repeat */
 
-
-	if (member->digit_stream != NULL) {
-		switch_ivr_digit_stream_destroy(&member->digit_stream);
-	}
 
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	switch_core_timer_destroy(&timer);
@@ -4375,17 +4301,15 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 					if ((profiles = switch_xml_child(cfg, "profiles"))) {
 						xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
 					}
-
-					xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
+					
+					/* Create the conference object. */
+					new_conference = conference_new(conf_name, xml_cfg, pool);
 
 					/* Release the config registry handle */
 					if (cxml) {
 						switch_xml_free(cxml);
 						cxml = NULL;
 					}
-
-					/* Create the conference object. */
-					new_conference = conference_new(conf_name, xml_cfg, pool);
 
 					if (!new_conference) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -5455,8 +5379,6 @@ SWITCH_STANDARD_APP(conference_function)
 		xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
 	}
 
-	xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
-
 	/* if this is a bridging call, and it's not a duplicate, build a */
 	/* conference object, and skip pin handling, and locked checking */
 
@@ -5788,9 +5710,6 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
 	switch_buffer_destroy(&member.mux_buffer);
-	if (conference && member.dtmf_parser != conference->dtmf_parser) {
-		switch_ivr_digit_stream_parser_destroy(member.dtmf_parser);
-	}
 
 	if (conference) {
 		switch_mutex_lock(conference->mutex);
@@ -5937,88 +5856,6 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 	switch_safe_free(stream.data);
 
 	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t conf_default_controls(conference_obj_t *conference)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	uint32_t i;
-	caller_control_action_t *action;
-
-	switch_assert(conference != NULL);
-
-	for (i = 0, status = SWITCH_STATUS_SUCCESS; status == SWITCH_STATUS_SUCCESS && i < CCFNTBL_QTY; i++) {
-		if (!zstr(ccfntbl[i].digits)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-							  "Installing default caller control action '%s' bound to '%s'.\n", ccfntbl[i].key, ccfntbl[i].digits);
-			action = (caller_control_action_t *) switch_core_alloc(conference->pool, sizeof(caller_control_action_t));
-			if (action != NULL) {
-				action->fndesc = &ccfntbl[i];
-				action->data = NULL;
-				status = switch_ivr_digit_stream_parser_set_event(conference->dtmf_parser, ccfntbl[i].digits, action);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "unable to alloc memory for caller control binding '%s' to '%s'\n", ccfntbl[i].key, ccfntbl[i].digits);
-				status = SWITCH_STATUS_MEMERR;
-			}
-		}
-	}
-
-	return status;
-}
-
-static switch_status_t conference_new_install_caller_controls_custom(conference_obj_t *conference, switch_xml_t xml_controls, switch_xml_t xml_menus)
-{
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_xml_t xml_kvp;
-
-	switch_assert(conference != NULL);
-
-	if (!xml_controls) {
-		return status;
-	}
-
-	/* parse the controls tree for caller control digit strings */
-	for (xml_kvp = switch_xml_child(xml_controls, "control"); xml_kvp; xml_kvp = xml_kvp->next) {
-		char *key = (char *) switch_xml_attr(xml_kvp, "action");
-		char *val = (char *) switch_xml_attr(xml_kvp, "digits");
-		char *data = (char *) switch_xml_attr_soft(xml_kvp, "data");
-
-		if (!zstr(key) && !zstr(val)) {
-			uint32_t i;
-
-			/* scan through all of the valid actions, and if found, */
-			/* set the new caller control action digit string, then */
-			/* stop scanning the table, and go to the next xml kvp. */
-			for (i = 0, status = SWITCH_STATUS_NOOP; i < CCFNTBL_QTY && status == SWITCH_STATUS_NOOP; i++) {
-
-				if (strcasecmp(ccfntbl[i].key, key) == 0) {
-
-					caller_control_action_t *action;
-
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Installing caller control action '%s' bound to '%s'.\n", key, val);
-					action = (caller_control_action_t *) switch_core_alloc(conference->pool, sizeof(caller_control_action_t));
-					if (action != NULL) {
-						action->fndesc = &ccfntbl[i];
-						action->data = (void *) switch_core_strdup(conference->pool, data);
-						action->binded_dtmf = switch_core_strdup(conference->pool, val);
-						status = switch_ivr_digit_stream_parser_set_event(conference->dtmf_parser, val, action);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-										  "unable to alloc memory for caller control binding '%s' to '%s'\n", ccfntbl[i].key, ccfntbl[i].digits);
-						status = SWITCH_STATUS_MEMERR;
-					}
-				}
-			}
-			if (status == SWITCH_STATUS_NOOP) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid caller control action name '%s'.\n", key);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid caller control config entry pair action = '%s' digits = '%s'\n", key, val);
-		}
-	}
-
-	return status;
 }
 
 static conference_obj_t *conference_find(char *name)
@@ -6263,7 +6100,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	conference->comfort_noise_level = comfort_noise_level;
 	conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
-
+	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
+	
 
 	if (!zstr(perpetual_sound)) {
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
@@ -6387,7 +6225,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	}
 	conference->rate = rate;
 	conference->interval = interval;
-	conference->dtmf_parser = NULL;
 
 	conference->eflags = 0xFFFFFFFF;
 	if (!zstr(suppress_events)) {
@@ -6403,27 +6240,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
 	if (!zstr(verbose_events) && switch_true(verbose_events)) {
 		conference->verbose_events = 1;
-	}
-
-	/* caller control configuration chores */
-	if (switch_ivr_digit_stream_parser_new(conference->pool, &conference->dtmf_parser) == SWITCH_STATUS_SUCCESS) {
-
-		/* if no controls, or default controls specified, install default */
-		if (caller_controls == NULL || *caller_controls == '\0' || strcasecmp(caller_controls, "default") == 0) {
-			status = conf_default_controls(conference);
-		} else if (strcasecmp(caller_controls, "none") != 0) {
-			/* try to build caller control if the group has been specified and != "none" */
-			switch_xml_t xml_controls = switch_xml_find_child(cfg.controls, "group", "name", caller_controls);
-			status = conference_new_install_caller_controls_custom(conference, xml_controls, NULL);
-
-			if (status != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to install caller controls group '%s'\n", caller_controls);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No caller controls installed.\n");
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate caller control digit parser.\n");
 	}
 
 	/* Activate the conference mutex for exclusivity */
@@ -6539,6 +6355,131 @@ static void send_presence(switch_event_types_t id)
 		cxml = NULL;
 	}
 }
+
+typedef void (*conf_key_callback_t) (conference_member_t *, struct caller_control_actions *);
+
+typedef struct {
+	conference_member_t *member;
+	caller_control_action_t action;
+	conf_key_callback_t handler;
+} key_binding_t;
+
+
+static switch_status_t dmachine_dispatcher(switch_ivr_dmachine_match_t *match)
+{
+	key_binding_t *binding = match->user_data;
+
+	if (!binding) return SWITCH_STATUS_FALSE;
+
+	binding->handler(binding->member, &binding->action);
+	switch_set_flag_locked(binding->member, MFLAG_FLUSH_BUFFER);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void do_binding(conference_member_t *member, conf_key_callback_t handler, const char *digits, void *data)
+{
+	key_binding_t *binding;
+
+	binding = switch_core_alloc(member->pool, sizeof(*binding));
+	binding->member = member;
+
+	binding->action.binded_dtmf = switch_core_strdup(member->pool, digits);
+
+	if (data) {
+		binding->action.data = switch_core_strdup(member->pool, (char *)data);
+	}
+
+	binding->handler = handler;
+	switch_ivr_dmachine_bind(member->dmachine, "conf", digits, 0, dmachine_dispatcher, binding);
+	
+}
+
+struct _mapping {
+	const char *name;
+	conf_key_callback_t handler;
+};
+
+static struct _mapping control_mappings[] = {
+    {"mute", conference_loop_fn_mute_toggle},
+    {"mute on", conference_loop_fn_mute_on},
+    {"mute off", conference_loop_fn_mute_off},
+    {"deaf mute", conference_loop_fn_deafmute_toggle},
+    {"energy up", conference_loop_fn_energy_up},
+    {"energy equ", conference_loop_fn_energy_equ_conf},
+    {"energy dn", conference_loop_fn_energy_dn},
+    {"vol talk up", conference_loop_fn_volume_talk_up},
+    {"vol talk zero", conference_loop_fn_volume_talk_zero},
+    {"vol talk dn", conference_loop_fn_volume_talk_dn},
+    {"vol listen up", conference_loop_fn_volume_listen_up},
+    {"vol listen zero", conference_loop_fn_volume_listen_zero},
+    {"vol listen dn", conference_loop_fn_volume_listen_dn},
+    {"hangup", conference_loop_fn_hangup},
+    {"event", conference_loop_fn_event},
+    {"lock", conference_loop_fn_lock_toggle},
+    {"transfer", conference_loop_fn_transfer},
+    {"execute_application", conference_loop_fn_exec_app}
+};
+#define MAPPING_LEN (sizeof(control_mappings)/sizeof(control_mappings[0]))
+
+static void member_bind_controls(conference_member_t *member, const char *controls)
+{
+	switch_xml_t cxml, cfg, xgroups, xcontrol;
+	switch_event_t *params;
+	int i;
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Name", member->conference->name);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-controls");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Controls", controls);
+
+	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
+		goto end;
+	}
+
+	if (!(xgroups = switch_xml_child(cfg, "caller-controls"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find caller-controls in %s\n", global_cf_name);
+		goto end;
+	}
+
+	if (!(xgroups = switch_xml_find_child(xgroups, "group", "name", controls))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find caller-controls in %s\n", global_cf_name);
+		goto end;
+	}
+
+
+	for (xcontrol = switch_xml_child(xgroups, "control"); xcontrol; xcontrol = xcontrol->next) {
+        const char *key = switch_xml_attr(xcontrol, "action");
+        const char *digits = switch_xml_attr(xcontrol, "digits");
+        const char *data = switch_xml_attr_soft(xcontrol, "data");
+
+		if (zstr(key) || zstr(digits)) continue;
+
+		for(i = 0; i < MAPPING_LEN; i++) {
+			if (!strcasecmp(key, control_mappings[i].name)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s binding '%s' to '%s'\n", 
+								  switch_core_session_get_name(member->session), digits, key);
+
+				do_binding(member, control_mappings[i].handler, digits, (void *) data);
+			}
+		}
+	}
+
+ end:
+
+	/* Release the config registry handle */
+	if (cxml) {
+		switch_xml_free(cxml);
+		cxml = NULL;
+	}
+	
+	if (params) switch_event_destroy(&params);
+	
+}
+
+
+
 
 /* Called by FreeSWITCH when the module loads */
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
