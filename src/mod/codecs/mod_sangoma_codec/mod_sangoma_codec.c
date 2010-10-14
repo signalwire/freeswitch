@@ -898,37 +898,40 @@ SWITCH_STANDARD_API(sangoma_function)
 
 		if (sess->encoder.rxrtp) {
 			stats = switch_rtp_get_stats(sess->encoder.rxrtp, NULL);
-			stream->write_function(stream, "=== Encoder ===\n");
+			stream->write_function(stream, "=== %s Encoder ===\n", sess->impl->iananame);
 
-			stream->write_function(stream, "Remote address: %s:%d\n\n", switch_rtp_get_remote_host(sess->encoder.rxrtp), switch_rtp_get_remote_port(sess->encoder.rxrtp));
+			stream->write_function(stream, "Tx ULAW from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->encoder.reply.a.host_ip), sess->encoder.reply.a.host_udp_port,
+					SNGTC_NIPV4(sess->encoder.reply.a.codec_ip), sess->encoder.reply.a.codec_udp_port);
+			stream->write_function(stream, "Rx %s at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", sess->impl->iananame, SNGTC_NIPV4(sess->encoder.reply.b.host_ip), sess->encoder.reply.b.host_udp_port,
+					SNGTC_NIPV4(sess->encoder.reply.b.codec_ip), sess->encoder.reply.b.codec_udp_port);
 
-			stream->write_function(stream, "-- Encoder Inbound Stats --\n");
+
+			stream->write_function(stream, "-- Inbound Stats --\n");
 			stream->write_function(stream, "Rx Discarded: %lu\n", sess->encoder.rxdiscarded);
 			sangoma_print_stats(stream, &stats->inbound);
 			
 
 			stats = switch_rtp_get_stats(sess->encoder.txrtp, NULL);
-			stream->write_function(stream, "-- Encoder Outbound Stats --\n");
+			stream->write_function(stream, "-- Outbound Stats --\n");
 			sangoma_print_stats(stream, &stats->outbound);
-		} else {
-			stream->write_function(stream, "\n=== No Encoder ===\n\n");
 		}
 
 		if (sess->decoder.rxrtp) {
 			stats = switch_rtp_get_stats(sess->decoder.rxrtp, NULL);
 
-			stream->write_function(stream, "=== Decoder ===\n");
-			stream->write_function(stream, "Remote address: %s:%d\n\n", switch_rtp_get_remote_host(sess->decoder.rxrtp), switch_rtp_get_remote_port(sess->decoder.rxrtp));
+			stream->write_function(stream, "=== %s Decoder ===\n", sess->impl->iananame);
+			stream->write_function(stream, "Tx %s from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n\n", sess->impl->iananame, SNGTC_NIPV4(sess->decoder.reply.a.host_ip), sess->decoder.reply.a.host_udp_port,
+					SNGTC_NIPV4(sess->decoder.reply.a.codec_ip), sess->decoder.reply.a.codec_udp_port);
+			stream->write_function(stream, "Rx ULAW at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->decoder.reply.b.host_ip), sess->decoder.reply.b.host_udp_port,
+					SNGTC_NIPV4(sess->decoder.reply.b.codec_ip), sess->decoder.reply.b.codec_udp_port);
 
-			stream->write_function(stream, "-- Decoder Inbound Stats --\n");
+			stream->write_function(stream, "-- Inbound Stats --\n");
 			stream->write_function(stream, "Rx Discarded: %lu\n", sess->decoder.rxdiscarded);
 			sangoma_print_stats(stream, &stats->inbound);
 
 			stats = switch_rtp_get_stats(sess->decoder.txrtp, NULL);
-			stream->write_function(stream, "-- Decoder Outbound Stats --\n");
+			stream->write_function(stream, "-- Outbound Stats --\n");
 			sangoma_print_stats(stream, &stats->outbound);
-		} else {
-			stream->write_function(stream, "\n=== No Decoder ===\n\n");
 		}
 	} else if (!strcasecmp(argv[0], "debug")) {
 		struct sangoma_transcoding_session *sess;
