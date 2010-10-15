@@ -188,7 +188,7 @@ build-stamp:  config.status
 
 	touch $@
 
-clean: .pc/applied-patches
+clean:  # .pc/applied-patches
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 
