@@ -682,7 +682,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
 
-			if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
+			if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ) && !zstr(conference->enter_sound)) {
 				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
 									 switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
 			}
@@ -2867,6 +2867,10 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	int say = 0;
 
 	switch_assert(conference != NULL);
+
+	if (zstr(file)) {
+		return SWITCH_STATUS_NOTFOUND;
+	}
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
