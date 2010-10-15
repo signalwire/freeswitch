@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Platform specific variables -->
+<?if $(var.Platform) = x64 ?>
+<?define Win64 = "yes" ?>
+<?define ProductName = "FreeSWITCH (64 bit)" ?>
+<?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+<?else ?>
+<?define Win64 = "no" ?>
+<?define ProductName = "FreeSWITCH" ?>
+<?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?endif ?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="b004a325-1272-47e5-a415-a74e9fc99865" Name="$(var.ProductName)" Language="1033" Version="1.0.0.0" Manufacturer="FreeSWITCH" UpgradeCode="3af7020b-1348-45e8-a0cf-80909d4eb421">
+		<Package InstallerVersion="200" Compressed="yes" />
+
+		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="$(var.PlatformProgramFilesFolder)">
+				<Directory Id="INSTALLLOCATION" Name="FreeSWITCH">
+          <Directory Id="MODLOCATION" Name="mod">
+          </Directory>
+          <Directory Id="CONFLOCATION" Name="conf">
+          </Directory>
+          <Directory Id="SOUNDLOCATION" Name="sounds">
+          </Directory>
+					<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+					<!-- <Component Id="ProductComponent" Guid="6f1498a7-d029-430b-b9d9-fe12e17bdbab"> -->
+						<!-- TODO: Insert files, registry keys, and other resources here. -->
+					<!-- </Component> -->
+				</Directory>
+			</Directory>
+		</Directory>
+
+		<Feature Id="ProductFeature" Title="FreeSWITCH Core" Level="1">
+			<!-- TODO: Remove the comments around this ComponentRef element and the Component above in order to add resources to this installer. -->
+			<!-- <ComponentRef Id="ProductComponent" /> -->
+			
+			<!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
+			<ComponentGroupRef Id="Product.Generated" />
+		</Feature>
+    <Feature Id="ProductFeatureConf" Title="FreeSWITCH Configuration Sample" Level="1">
+      <ComponentGroupRef Id="FreeSWITCHConfFiles" />
+    </Feature>
+    <Feature Id="ProductFeatureSounds" Title="FreeSWITCH Sounds 8Khz" Level="1">
+      <ComponentGroupRef Id="FreeSWITCHSoundFiles8" />
+    </Feature>
+    <UIRef Id="WixUI_Mondo" />
+  </Product>
+</Wix>
