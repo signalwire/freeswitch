@@ -1,4 +1,4 @@
-freeswitch (1.0.head-git.master,20101014.1-1) unstable; urgency=low
+freeswitch (1.0.head~git.master.20101014.1-1) unstable; urgency=low
 
   * replaced mod_openzap with mod_freetdm
   * added mod_theora

@@ -173,7 +173,7 @@ config.status: configure
 	for i in $(MODULES); do echo $$i >> modules.conf; done
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
-configure: bootstrap.sh .pc/applied-patches
+configure: bootstrap.sh # .pc/applied-patches
 	   dh_testdir
 	   test -e /usr/share/misc/config.sub && cp -f /usr/share/misc/config.sub build/config/config.sub
 	   test -e /usr/share/misc/config.guess && cp -f /usr/share/misc/config.guess build/config/config.guess
