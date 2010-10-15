@@ -2667,6 +2667,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
+		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
 
 	if (switch_core_codec_init_with_bitrate(&tech_pvt->write_codec,
@@ -2679,6 +2680,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
+		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
@@ -4320,12 +4322,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				map_bit_rate = switch_known_bitrate(map->rm_pt);
 				
 				if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
-					codec_ms = 30;
+					ptime = codec_ms = 30;
 				}
 				
 				if (zstr(map->rm_fmtp)) {
 					if (!strcasecmp(map->rm_encoding, "ilbc")) {
-						codec_ms = 30;
+						ptime = codec_ms = 30;
 					}
 				} else {
 					if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
