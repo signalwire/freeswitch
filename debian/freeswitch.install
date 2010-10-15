@@ -156,7 +156,7 @@ opt/freeswitch/mod/mod_skypopen.so*
 opt/freeswitch/mod/mod_sndfile.so*
 opt/freeswitch/mod/mod_snom.so*
 opt/freeswitch/mod/mod_sofia.so*
-opt/freeswitch/mod/mod_spandsp.sp*
+opt/freeswitch/mod/mod_spandsp.so*
 opt/freeswitch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_spy.so*
 opt/freeswitch/mod/mod_syslog.so*
