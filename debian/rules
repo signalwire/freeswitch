@@ -7,7 +7,7 @@ export DEB_DH_INSTALL_SOURCEDIR=debian/tmp
 export PASSTHRU_CODEC_MODULES=codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb
 # Modules listed by those built by default, then those that are added in this package
 export APPLICATION_MODULES_AE= applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
- applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory \
+ applications/mod_commands applications/mod_conference applciations/mod_curl applications/mod_db applications/mod_directory \
  applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
  applications/mod_esf applications/mod_expr 
 export APPLICATION_MODULES_FM= applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
