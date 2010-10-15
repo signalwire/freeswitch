@@ -2893,6 +2893,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	char *read_flags = NORMAL_FLAG_STRING;
 	int priority = 3;
 	int email_attach = 1;
+	char *operator_ext = NULL;
 	char buf[2];
 	char key_buf[80];
 	char *greet_path = NULL;
@@ -2973,6 +2974,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						vm_enabled = !switch_false(val);
 					} else if (!strcasecmp(var, "vm-message-ext")) {
 						vm_ext = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-operator-extension")) {
+						operator_ext = switch_core_session_strdup(session, val);
 					}
 				}
 			}
@@ -3089,12 +3092,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		  greet_key_press:
 			if (switch_stristr(buf, profile->login_keys)) {
 				voicemail_check_main(session, profile, domain_name, id, 0);
-			} else if (!zstr(profile->operator_ext) && !zstr(profile->operator_key) && !strcasecmp(buf, profile->operator_key) ) {
+			} else if ((!zstr(profile->operator_ext) || !zstr(operator_ext)) && !zstr(profile->operator_key) && !strcasecmp(buf, profile->operator_key) ) {
 				int argc;
 				char *argv[4];
 				char *mycmd;
 
-				if (!zstr(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext))) {
+				if ((!zstr(operator_ext) && (mycmd = switch_core_session_strdup(session, operator_ext))) ||
+				    (!zstr(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext)))) {
 					argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 					if (argc >= 1 && argc <= 4) {
 						switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
