@@ -1,3 +1,13 @@
+freeswitch (1.0.head~git.master.20101015.1-1) unstable; urgency=low
+
+  * reintroduced mod_flite
+  * disabled the patching stuff introduced by Julien ... needs an overwork
+  * reintroduced mod_tts_commandline
+  * cleaned up rules file and module make rules
+  * more trivial changes and updates :)
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fr, 15 Oct 2010 13:14:02 +0200
+
 freeswitch (1.0.head~git.master.20101014.1-1) unstable; urgency=low
 
   * replaced mod_openzap with mod_freetdm
@@ -9,7 +19,7 @@ freeswitch (1.0.head~git.master.20101014.1-1) unstable; urgency=low
   * added patches from Julien Duqene (FS-369)
   * Various trivial changes and updates :)
 
- -- Michal Bielicki <michal.bielicki@seventhsignal.de> Fr, 14 Oct 2010 05:05:02 +0200
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fr, 15 Oct 2010 05:05:02 +0200
 
 freeswitch (1.0.head~git.master.20100601.2-1) unstable; urgency=low
 
