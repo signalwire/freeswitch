@@ -58,6 +58,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testsangomaboost", "msvc\te
 		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_sangoma_isdn", "src\ftmod\ftmod_sangoma_isdn\ftmod_sangoma_isdn.2008.vcproj", "{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -123,7 +128,6 @@ Global
 		{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}.Release|Win32.ActiveCfg = Release|Win32
 		{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}.Release|x64.ActiveCfg = Release|x64
 		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Debug|Win32.Build.0 = Debug|Win32
 		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Debug|x64.ActiveCfg = Debug|x64
 		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Debug|x64.Build.0 = Debug|x64
 		{D021EF2A-460D-4827-A0F7-41FDECF46F1B}.Release|Win32.ActiveCfg = Release|Win32
@@ -146,6 +150,12 @@ Global
 		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Release|Win32.Build.0 = Release|Win32
 		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Release|x64.ActiveCfg = Release|x64
 		{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}.Release|x64.Build.0 = Release|x64
+		{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}.Debug|Win32.Build.0 = Debug|Win32
+		{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}.Debug|x64.ActiveCfg = Debug|Win32
+		{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}.Release|Win32.ActiveCfg = Release|Win32
+		{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}.Release|Win32.Build.0 = Release|Win32
+		{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
