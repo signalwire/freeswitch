@@ -6,7 +6,7 @@
 	ProjectGUID="{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}"
 	RootNamespace="ftmod_sangoma_isdn"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="0"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			>
 			<Tool
@@ -41,7 +41,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\libsng_isdn\include&quot;;&quot;C:\Program Files\libsng_isdn\include\sng_isdn&quot;;../../include;&quot;C:\Program Files\Sangoma\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -60,11 +61,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsng_isdn.lib freetdm.lib"
+				AdditionalDependencies="freetdm.lib libsng_isdn.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;C:\Documents and Settings\arnaldo\Desktop\smg_freeswitch.win32\libs\freetdm\Debug&quot;;&quot;C:\Program Files\libsng_isdn\lib&quot;;&quot;$(OutDir)&quot;;&quot;C:\Program Files\Sangoma\api\lib\x86&quot;"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;C:\Program Files\libsng_isdn\lib&quot;;&quot;C:\Program Files\Sangoma\api\lib\x86&quot;"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -91,9 +94,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
-			ConfigurationType="1"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -112,8 +116,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;"
-				RuntimeLibrary="2"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"

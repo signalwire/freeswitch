@@ -70,6 +70,7 @@ extern "C" {
 #define FT_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
 #define FT_DECLARE_DATA				__declspec(dllimport)
 #endif
+#define FT_DECLARE_INLINE(type)		type
 #define EX_DECLARE_DATA				__declspec(dllexport)
 #else
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
@@ -81,6 +82,7 @@ extern "C" {
 #define FT_DECLARE_NONSTD(type)	type
 #define FT_DECLARE_DATA
 #endif
+#define FT_DECLARE_INLINE(type)		type __inline__
 #define EX_DECLARE_DATA
 #endif
 

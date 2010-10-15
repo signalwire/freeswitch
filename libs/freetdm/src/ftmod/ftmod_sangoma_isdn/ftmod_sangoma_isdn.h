@@ -267,8 +267,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 
 /* Support functions */
 uint32_t get_unique_suInstId(uint8_t cc_id);
-void clear_call_data(sngisdn_chan_data_t *sngisdn_info);
-void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+FT_DECLARE_INLINE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info);
+FT_DECLARE_INLINE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
 
 
 void stack_hdr_init(Header *hdr);
