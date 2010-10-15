@@ -25,7 +25,7 @@ export ENDPOINTS_MODULES= endpoints/mod_dingaling endpoints/mod_portaudio endpoi
 		../../libs/freetdm/mod_freetdm endpoints/mod_skypopen endpoints/mod_skinny 
 export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
 export FORMATS_MODULES= formats/mod_file_string formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
-                 formats/mod_shout formats/mod_sndfile formats/mod_tone_stream 
+		formats/mod_shout formats/mod_sndfile formats/mod_tone_stream 
 export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
 export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
@@ -56,113 +56,113 @@ ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 endif
 
 .pc/applied-patches:
-       @echo
-       @echo \ \ Sorry, currently this package cannot be built directly from upstream
-       @echo \ \ source git/tarball: patches are needed for policy compliance, and the
-       @echo \ \ "new 3.0 (quilt) source format requires patches to be already applied."
-       @echo
-       @echo \ \ Please first convert this tree by running:
-       @echo -e \\t./debian/rules upstream-convert
-       @echo
-       @echo \ \ Note that this will insert an entry in debian/changelog, rename the
-       @echo \ \ current directory to the version number there, create a .orig.tar.bz2
-       @echo \ \ archive and apply all the patches in debian/patches/series.
-       @echo
-       @echo \ \ Using git-buildpackage is not recommended for now.
-       @echo
-       @exit 1
+	@echo
+	@echo \ \ Sorry, currently this package cannot be built directly from upstream
+	@echo \ \ source git/tarball: patches are needed for policy compliance, and the
+	@echo \ \ "new 3.0 (quilt) source format requires patches to be already applied."
+	@echo
+	@echo \ \ Please first convert this tree by running:
+	@echo -e \\t./debian/rules upstream-convert
+	@echo
+	@echo \ \ Note that this will insert an entry in debian/changelog, rename the
+	@echo \ \ current directory to the version number there, create a .orig.tar.bz2
+	@echo \ \ archive and apply all the patches in debian/patches/series.
+	@echo
+	@echo \ \ Using git-buildpackage is not recommended for now.
+	@echo
+	@exit 1
 
 upstream-convert:
-       @dh_testdir
-       @test -s .pc/applied-patches && \
-               echo "Aborted: patches are already applied." && \
-               exit 1 || exit 0
-       # update (or not) version number in debian/changelog
-       @set -e ; \
-               echo Checking version number ; \
-               v1="$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: //')" ; \
-               v2="$${v1}" ; \
-               echo "  Current version: $${v1}" ; \
-               if [ "$$(which git)" = "" -o ! -d .git ] ; then \
-                       echo Git not available. Keeping current version number. ; \
-                       exit 0 ; \
-               fi ; \
-               if [ "$$(which debchange)" = "" ] ; then \
-                       echo debchange not available. Keeping current version number. ; \
-                       exit 0 ; \
-               fi ; \
-               if echo -n "$${v1}" | grep -q '~git\.[a-z0-9]\+\.20[0-9]\{6\}\.[0-9]\+-[^-]\+$$' ; then \
-                       maj1="$$(echo -n "$${v1}" | sed -e 's/^\([^.]\+\)\..*$$/\1/')" ; \
-                       min1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.\([^.]\+\)\..*$$/\1/')" ; \
-                       mic1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.\([a-zA-Z0-9]\+\).*$$/\1/')" ; \
-                       b1="$$(echo -n "$${v1}" | sed -e 's/^.*~git\.\([a-z0-9]\+\)\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
-                       d1="$$(echo -n "$${v1}" | sed -e 's/^.*\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
-                       n1="$$(echo -n "$${v1}" | sed -e 's/^.*\.20[0-9]\{6\}\.\([0-9]\+\)-[^-]\+$$/\1/')" ; \
-                       maj2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MAJOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
-                       min2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MINOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
-                       mic2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MICRO/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
-                       b2="$$(git branch | sed -e '/^[^*]/ d' -e 's/* \(.*\)/\1/')" ; \
-                       d2="$$(TZ=UTC git log --date=local -1 --format='%ai' | sed -e 's/^\(....\).\(..\).\(..\).*$$/\1\2\3/')" ; \
-                       n2="$$(TZ=UTC git log --date=local --format=oneline --since="$${d2::4}-$${d2:4:2}-$${d2:6:2} 00:00" | wc -l)" ; \
-                       if [ "$${b2}" != "$$(echo "$${b2}" | tr -dc a-z0-9)" ] ; then \
-                               echo Invalid branch name "'$${b2}'". Aborted. ; \
-                               exit 1; \
-                       fi ; \
-                       if [ "$${b1}.$${d1}.$${n1}" != "$${b2}.$${d2}.$${n2}" \
-                               -o "$${maj1}.$${min1}.$${mic1}" != "$${maj2}.$${min2}.$${mic2}" ] ; then \
-                               v2="$$(echo -n "$${maj2}.$${min2}.$${mic2}")" ; \
-                               v2="$${v2}$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.[^.]\+\(.*\)~git\..*$$/\1/')" ; \
-                               v2="$${v2}~git.$${b2}.$${d2}.$${n2}-1" ; \
-                               echo "      New version: $${v2}" ; \
-                               echo Updating debian/changelog with new version number ; \
-                               debchange -v "$${v2}" "New upstream release" ; \
-                       else \
-                               echo Version number already correct, no change. ; \
-                       fi ; \
-               else \
-                       echo 'Not a ~git. version number. Keeping current version number.' ; \
-               fi
-       # rename (or not) current directory to match packagename-version.number
-       @set -e ; \
-               echo Checking directory name ; \
-               d1="$$(basename "$$(cd . && echo "$$PWD")")" ; \
-               d2="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
-               d2="$${d2}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
-               if [ "$${d1}" != "$${d2}" ] ; then \
-                       if [ -e "../$${d2}" ] ; then \
-                               test . -ef "../$${d2}" && exit 0 ; \
-                               echo Aborted: directory "../$${d2}" already exists. ; \
-                               exit 1 ; \
-                       fi ; \
-                       echo Renaming current directory to "$${d2}" ; \
-                       mv ../$${d1} ../$${d2} ; \
-               fi
-       # create .orig.tar.bz2
-       @set -e ; \
-               n="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
-               d="$${n}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
-               n="$${n}_$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/').orig.tar.bz2" ; \
-               echo "Creating source archive $${n}" ; \
-               cd .. && tar cjf "$${n}" --exclude='.git*' "$${d}"
-       # apply patches
-       @set -e ; \
-               echo "Applying patches in debian/patches/series" ; \
-               QUILT_PATCHES=debian/patches ; \
-               export QUILT_PATCHES ; \
-               while quilt next ; do \
-                       quilt push -v ; \
-                       quilt refresh ; \
-               done
-       # remind user to change dir
-       @echo Done.
-       @echo
-       @if [ "$(CURDIR)" != "$$PWD" ] ; then \
-               echo \ \ You should now tell your shell to update its current working directory: ; \
-               echo -e \\t'cd $$(pwd)' ; \
-               echo \ \ or ; \
-               echo -e "\\tcd $$PWD" ; \
-               echo ; \
-       fi
+	@dh_testdir
+	@test -s .pc/applied-patches && \
+		echo "Aborted: patches are already applied." && \
+		exit 1 || exit 0
+	   # update (or not) version number in debian/changelog
+	   @set -e ; \
+			   echo Checking version number ; \
+			   v1="$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: //')" ; \
+			   v2="$${v1}" ; \
+			   echo "  Current version: $${v1}" ; \
+			   if [ "$$(which git)" = "" -o ! -d .git ] ; then \
+					   echo Git not available. Keeping current version number. ; \
+					   exit 0 ; \
+			   fi ; \
+			   if [ "$$(which debchange)" = "" ] ; then \
+					   echo debchange not available. Keeping current version number. ; \
+					   exit 0 ; \
+			   fi ; \
+			   if echo -n "$${v1}" | grep -q '~git\.[a-z0-9]\+\.20[0-9]\{6\}\.[0-9]\+-[^-]\+$$' ; then \
+					   maj1="$$(echo -n "$${v1}" | sed -e 's/^\([^.]\+\)\..*$$/\1/')" ; \
+					   min1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.\([^.]\+\)\..*$$/\1/')" ; \
+					   mic1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.\([a-zA-Z0-9]\+\).*$$/\1/')" ; \
+					   b1="$$(echo -n "$${v1}" | sed -e 's/^.*~git\.\([a-z0-9]\+\)\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
+					   d1="$$(echo -n "$${v1}" | sed -e 's/^.*\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
+					   n1="$$(echo -n "$${v1}" | sed -e 's/^.*\.20[0-9]\{6\}\.\([0-9]\+\)-[^-]\+$$/\1/')" ; \
+					   maj2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MAJOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+					   min2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MINOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+					   mic2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MICRO/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+					   b2="$$(git branch | sed -e '/^[^*]/ d' -e 's/* \(.*\)/\1/')" ; \
+					   d2="$$(TZ=UTC git log --date=local -1 --format='%ai' | sed -e 's/^\(....\).\(..\).\(..\).*$$/\1\2\3/')" ; \
+					   n2="$$(TZ=UTC git log --date=local --format=oneline --since="$${d2::4}-$${d2:4:2}-$${d2:6:2} 00:00" | wc -l)" ; \
+					   if [ "$${b2}" != "$$(echo "$${b2}" | tr -dc a-z0-9)" ] ; then \
+							   echo Invalid branch name "'$${b2}'". Aborted. ; \
+							   exit 1; \
+					   fi ; \
+					   if [ "$${b1}.$${d1}.$${n1}" != "$${b2}.$${d2}.$${n2}" \
+							   -o "$${maj1}.$${min1}.$${mic1}" != "$${maj2}.$${min2}.$${mic2}" ] ; then \
+							   v2="$$(echo -n "$${maj2}.$${min2}.$${mic2}")" ; \
+							   v2="$${v2}$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.[^.]\+\(.*\)~git\..*$$/\1/')" ; \
+							   v2="$${v2}~git.$${b2}.$${d2}.$${n2}-1" ; \
+							   echo "	  New version: $${v2}" ; \
+							   echo Updating debian/changelog with new version number ; \
+							   debchange -v "$${v2}" "New upstream release" ; \
+					   else \
+							   echo Version number already correct, no change. ; \
+					   fi ; \
+			   else \
+					   echo 'Not a ~git. version number. Keeping current version number.' ; \
+			   fi
+	   # rename (or not) current directory to match packagename-version.number
+	   @set -e ; \
+			   echo Checking directory name ; \
+			   d1="$$(basename "$$(cd . && echo "$$PWD")")" ; \
+			   d2="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
+			   d2="$${d2}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
+			   if [ "$${d1}" != "$${d2}" ] ; then \
+					   if [ -e "../$${d2}" ] ; then \
+							   test . -ef "../$${d2}" && exit 0 ; \
+							   echo Aborted: directory "../$${d2}" already exists. ; \
+							   exit 1 ; \
+					   fi ; \
+					   echo Renaming current directory to "$${d2}" ; \
+					   mv ../$${d1} ../$${d2} ; \
+			   fi
+	   # create .orig.tar.bz2
+	   @set -e ; \
+			   n="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
+			   d="$${n}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
+			   n="$${n}_$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/').orig.tar.bz2" ; \
+			   echo "Creating source archive $${n}" ; \
+			   cd .. && tar cjf "$${n}" --exclude='.git*' "$${d}"
+	   # apply patches
+	   @set -e ; \
+			   echo "Applying patches in debian/patches/series" ; \
+			   QUILT_PATCHES=debian/patches ; \
+			   export QUILT_PATCHES ; \
+			   while quilt next ; do \
+					   quilt push -v ; \
+					   quilt refresh ; \
+			   done
+	   # remind user to change dir
+	   @echo Done.
+	   @echo
+	   @if [ "$(CURDIR)" != "$$PWD" ] ; then \
+			   echo \ \ You should now tell your shell to update its current working directory: ; \
+			   echo -e \\t'cd $$(pwd)' ; \
+			   echo \ \ or ; \
+			   echo -e "\\tcd $$PWD" ; \
+			   echo ; \
+	   fi
 
 
 config.status: configure
@@ -174,10 +174,10 @@ config.status: configure
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
 configure: bootstrap.sh .pc/applied-patches
-       dh_testdir
-       test -e /usr/share/misc/config.sub && cp -f /usr/share/misc/config.sub build/config/config.sub
-       test -e /usr/share/misc/config.guess && cp -f /usr/share/misc/config.guess build/config/config.guess
-       AUTOCONF=${AUTOCONF} ./bootstrap.sh
+	   dh_testdir
+	   test -e /usr/share/misc/config.sub && cp -f /usr/share/misc/config.sub build/config/config.sub
+	   test -e /usr/share/misc/config.guess && cp -f /usr/share/misc/config.guess build/config/config.guess
+	   AUTOCONF=${AUTOCONF} ./bootstrap.sh
 
 
 build: build-stamp
