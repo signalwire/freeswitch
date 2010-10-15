@@ -366,6 +366,29 @@ static switch_status_t switch_sangoma_init_ilbc(switch_codec_t *codec, switch_co
 	return switch_sangoma_init(codec, flags, codec_settings);
 }
 
+
+static void flush_rtp(switch_rtp_t *rtp)
+{
+	switch_status_t sres;
+	switch_frame_t read_frame;
+	int flushed = 0;
+	int sanity = 1000;
+	while (sanity--) {
+		sres = switch_rtp_zerocopy_read_frame(rtp, &read_frame, SWITCH_IO_FLAG_NOBLOCK);
+		if (sres == SWITCH_STATUS_GENERR) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read on Sangoma encoder RTP session while flushing: %d\n", sres);
+			return;
+		}
+		if (!read_frame.datalen) {
+			break;
+		}
+		flushed++;
+	}
+	if (!sanity) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Insanely big UDP queue!\n");
+	}
+}
+
 #define SAFE_INDEX_INC(array, index) \
 		(index)++; \
 		if ((index) == switch_arraylen((array))) { \
@@ -415,6 +438,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		sess->encoder.txrtp = sess->encoder.reply.tx_fd;
 		sess->encoder.rxrtp = sess->encoder.reply.rx_fd;
 		switch_mutex_unlock(g_sessions_lock);
+		flush_rtp(sess->encoder.rxrtp);
 	}
 
 	if (sess->encoder.debug_timing && sess->encoder.last_func_call_time) {
@@ -452,7 +476,6 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	sess->encoder.tx++;
 
 	/* do the reading */
-	memset(&encoded_frame, 0, sizeof(encoded_frame));
 	for ( ; ; ) {
 #if 0
 		prevread_time = switch_micro_time_now();
@@ -610,6 +633,7 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 		sess->decoder.txrtp = sess->decoder.reply.tx_fd;
 		sess->decoder.rxrtp = sess->decoder.reply.rx_fd;
 		switch_mutex_unlock(g_sessions_lock);
+		flush_rtp(sess->decoder.rxrtp);
 	}
 
 	if (sess->decoder.debug_timing && sess->decoder.last_func_call_time) {
@@ -641,7 +665,6 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	sess->decoder.tx++;
 
 	/* do the reading */
-	memset(&ulaw_frame, 0, sizeof(ulaw_frame));
 	for ( ; ; ) {
 #if 0
 		prevread_time = switch_micro_time_now();
