@@ -4,7 +4,6 @@ opt/freeswitch/bin/fs_encode
 opt/freeswitch/bin/fs_ivrd
 opt/freeswitch/bin/fsxs
 opt/freeswitch/bin/gentls_cert
-opt/freeswitch/bin/scripts
 opt/freeswitch/conf/autoload_configs/acl.conf.xml
 opt/freeswitch/conf/autoload_configs/alsa.conf.xml
 opt/freeswitch/conf/autoload_configs/callcenter.conf.xml
