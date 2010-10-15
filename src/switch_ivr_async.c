@@ -72,6 +72,21 @@ struct switch_ivr_dmachine {
 	void *user_data;
 };
 
+
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback)
+{
+
+	dmachine->match_callback = match_callback;
+
+}
+
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_nonmatch_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t nonmatch_callback)
+{
+
+	dmachine->nonmatch_callback = nonmatch_callback;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p, 
 														   const char *name,
 														   switch_memory_pool_t *pool,
@@ -366,12 +381,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		dmachine->match.type = DM_MATCH_POSITIVE;
 		
 		if (dmachine->last_matching_binding->callback) {
-			dmachine->last_matching_binding->callback(&dmachine->match);
+			if (dmachine->last_matching_binding->callback(&dmachine->match) == SWITCH_STATUS_CONTINUE) {
+				r = SWITCH_STATUS_SUCCESS;
+			}
 		}
 
 		if (dmachine->match_callback) {
 			dmachine->match.user_data = dmachine->user_data;
-			dmachine->match_callback(&dmachine->match);
+			if (dmachine->match_callback(&dmachine->match) == SWITCH_STATUS_CONTINUE) {
+				r = SWITCH_STATUS_SUCCESS;
+			}
 		}
 		clear++;
 	} else if (is_timeout) {
@@ -390,7 +409,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		
 		if (dmachine->nonmatch_callback) {
 			dmachine->match.user_data = dmachine->user_data;
-			dmachine->nonmatch_callback(&dmachine->match);
+			if (dmachine->nonmatch_callback(&dmachine->match) == SWITCH_STATUS_CONTINUE) {
+				r = SWITCH_STATUS_SUCCESS;
+			}
 		}
 		
 		clear++;
