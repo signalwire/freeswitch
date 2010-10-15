@@ -112,7 +112,8 @@ struct caller_control_actions;
 
 typedef struct caller_control_actions {
 	char *binded_dtmf;
-	void *data;
+	char *data;
+	char *expanded_data;
 } caller_control_action_t;
 
 typedef struct caller_control_menu_info {
@@ -1790,7 +1791,7 @@ static void conference_loop_fn_event(conference_member_t *member, caller_control
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Key", action->binded_dtmf);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Data", action->data);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Data", action->expanded_data);
 		switch_event_fire(&event);
 	}
 }
@@ -1809,12 +1810,12 @@ static void conference_loop_fn_transfer(conference_member_t *member, caller_cont
 	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Dialplan", action->data);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Dialplan", action->expanded_data);
 		switch_event_fire(&event);
 	}
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 
-	if ((mydata = switch_core_session_strdup(member->session, action->data))) {
+	if ((mydata = switch_core_session_strdup(member->session, action->expanded_data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			if (argc > 0) {
 				exten = argv[0];
@@ -1827,7 +1828,7 @@ static void conference_loop_fn_transfer(conference_member_t *member, caller_cont
 			}
 
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty transfer string [%s]\n", (char *) action->data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty transfer string [%s]\n", (char *) action->expanded_data);
 			goto done;
 		}
 	} else {
@@ -1853,14 +1854,16 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 	switch_event_t *event = NULL;
 	switch_channel_t *channel = NULL;
 
+	if (!action->expanded_data) return;
+
 	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "execute_app");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", action->data);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", action->expanded_data);
 		switch_event_fire(&event);
 	}
 
-	if ((mydata = switch_core_session_strdup(member->session, action->data))) {
+	if ((mydata = switch_core_session_strdup(member->session, action->expanded_data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			if (argc > 0) {
 				app = argv[0];
@@ -1870,7 +1873,8 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 			}
 
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", (char *) action->data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", 
+							  (char *) action->expanded_data);
 			goto done;
 		}
 	} else {
@@ -1882,6 +1886,7 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Unable to find application.\n");
 		goto done;
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Execute app: %s, %s\n", app, arg);
 
 	channel = switch_core_session_get_channel(member->session);
@@ -1892,6 +1897,7 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 	switch_core_session_set_read_codec(member->session, &member->read_codec);
 	switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
   done:
+
 	return;
 }
 
@@ -6372,16 +6378,30 @@ typedef struct {
 static switch_status_t dmachine_dispatcher(switch_ivr_dmachine_match_t *match)
 {
 	key_binding_t *binding = match->user_data;
+	switch_channel_t *channel;
 
 	if (!binding) return SWITCH_STATUS_FALSE;
 
+	channel = switch_core_session_get_channel(binding->member->session);
+	switch_channel_set_variable(channel, "conference_last_matching_digits", match->match_digits);
+
+	if (binding->action.data) {
+		binding->action.expanded_data = switch_channel_expand_variables(channel, binding->action.data);
+	}
+
 	binding->handler(binding->member, &binding->action);
+
+	if (binding->action.expanded_data != binding->action.data) {
+		free(binding->action.expanded_data);
+		binding->action.expanded_data = NULL;
+	}
+
 	switch_set_flag_locked(binding->member, MFLAG_FLUSH_BUFFER);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void do_binding(conference_member_t *member, conf_key_callback_t handler, const char *digits, void *data)
+static void do_binding(conference_member_t *member, conf_key_callback_t handler, const char *digits, const char *data)
 {
 	key_binding_t *binding;
 
@@ -6391,7 +6411,7 @@ static void do_binding(conference_member_t *member, conf_key_callback_t handler,
 	binding->action.binded_dtmf = switch_core_strdup(member->pool, digits);
 
 	if (data) {
-		binding->action.data = switch_core_strdup(member->pool, (char *)data);
+		binding->action.data = switch_core_strdup(member->pool, data);
 	}
 
 	binding->handler = handler;
@@ -6465,7 +6485,7 @@ static void member_bind_controls(conference_member_t *member, const char *contro
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s binding '%s' to '%s'\n", 
 								  switch_core_session_get_name(member->session), digits, key);
 
-				do_binding(member, control_mappings[i].handler, digits, (void *) data);
+				do_binding(member, control_mappings[i].handler, digits, data);
 			}
 		}
 	}
