@@ -164,7 +164,6 @@ opt/freeswitch/mod/mod_syslog.so*
 opt/freeswitch/mod/mod_theora.so*
 opt/freeswitch/mod/mod_tone_stream.so*
 opt/freeswitch/mod/mod_tts_commandline.so*
-opt/freeswitch/mod/mod_unimrcp.so*
 opt/freeswitch/mod/mod_valet_parking.so*
 opt/freeswitch/mod/mod_vmd.so*
 opt/freeswitch/mod/mod_voicemail.so*

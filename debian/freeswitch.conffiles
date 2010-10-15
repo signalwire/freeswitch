@@ -92,7 +92,6 @@
 /opt/freeswitch/conf/sip_profiles/internal.xml
 /opt/freeswitch/conf/skinny_profiles/internal.xml
 /opt/freeswitch/conf/tetris.ttml
-/opt/freeswitch/conf/tones.conf
 /opt/freeswitch/conf/vars.xml
 /opt/freeswitch/conf/voicemail.tpl
 /opt/freeswitch/conf/web-vm.tpl

@@ -19,13 +19,12 @@ export APPLICATION_MODULES_NY= applications/mod_nibblebill applications/mod_redi
 		applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail 
 
 export APPLICATIONS_MODULES= $(APPLICATION_MODULES_AE) $(APPLICATION_MODULES_FM) $(APPLICATION_MODULES_NY) $(APPLICATION_MODULES_VZ) 
-export ASR_TTS_MODULES= asr_tts/mod_pocketsphinx asr_tts/mod_unimrcp 
+export ASR_TTS_MODULES= asr_tts/mod_pocketsphinx 
 export CODECS_MODULES= codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc codecs/mod_mp4v \
 	codecs/mod_silk codecs/mod_siren codecs/mod_theora 
 export DIALPLANS_MODULES= dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml 
-export ENDPOINTS_MODULES= endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia \
-		 endpoints/mod_loopback ../../libs/freetdm/mod_freetdm endpoints/mod_skypopen \
-			 endpoints/mod_skinny 
+export ENDPOINTS_MODULES= endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_loopback  \
+		../../libs/freetdm/mod_freetdm endpoints/mod_skypopen endpoints/mod_skinny 
 export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
 export FORMATS_MODULES= formats/mod_file_string formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
                  formats/mod_shout formats/mod_sndfile formats/mod_tone_stream 
@@ -33,7 +32,7 @@ export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
 export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
 export XML_INT_MODULES=xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr
-export MYMODULES=$(PASSTHRU_CODEC_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(ENDPOINTS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(XML_INT_MODULES)
+export MYMODULES= $(ENDPOINTS_MODULES) $(PASSTHRU_CODEC_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(XML_INT_MODULES)
 export MODULES=$(MYMODULES)
 
 ifndef AUTOCONF
