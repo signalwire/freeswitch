@@ -1,5 +1,5 @@
 #!/bin/sh
-# postrm script for openfire
+# postrm script for freeswitch
 #
 # see: dh_installdeb(1)
 

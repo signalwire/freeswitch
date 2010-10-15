@@ -1,12 +1,42 @@
-freeswitch (1.0.7-1headgit1) maverick; urgency=low
-  * upgrade: Added mod_amrwb
-  * switched from openzap to freetdm
-  * added codec2 theora and other codecs
-  * mod:soundtouch does not build since soundtouch lib is broken on debian
-  * mod_flite does not build (requires massive memory for flite to build)
-  * upgrade version to 1.0.7 ... 1.0.6 was last realease
+freeswitch (1.0.head-git.master,20101014.1-1) unstable; urgency=low
 
- -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Wed, 13 Oct 2010 22:58:48 -0200
+  * replaced mod_openzap with mod_freetdm
+  * added mod_theora
+  * added mod_codec2
+  * added mod_amrwb
+  * added mod_portaudio_stream
+  * cleaned up rules file and module make rules
+  * added patches from Julien Duqene (FS-369)
+  * Various trivial changes and updates :)
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de> Fr, 14 Oct 2010 05:05:02 +0200
+
+freeswitch (1.0.head~git.master.20100601.2-1) unstable; urgency=low
+
+  * Various trivial changes and updates.
+  * Change upstream package version numbering scheme for unreleased versions:
+    new format is major.minor.micro~git.branch.date.commits-1
+  * Change source format to 3.0 (quilt).
+  * Upgrade debhelper compatibility to version 7.
+  * Update maintainer data and copyright file; now includes the full text
+    of the MPL since it is not (yet?) available in /usr/share/common-licenses/
+
+  * Build and install mod_file_string.so (FSBUILD-247)
+  * Work around build failure caused by clean rules for openzap.
+
+  * Remove several libraries from explicit dependencies, there were no special
+    version requirements and they should be picked up by dh_shlibdeps.
+  * Add dh_makeshlibs and make dh_shlibsdeps work again.
+  * Move openssl to Suggests: as it is not a required package to install or
+    run freeswitch.
+
+  * Add upstream-convert rule to apply patches, generate orig tarball
+    and set package version.
+  * Add check to ensure debian patches are applied before attempting build.
+  * Fix clean rule to avoid unwanted tree change before building orig.tar
+    archives with git-buildpackage.
+
+ -- Julien Plissonneau Duquene <exp-end-2010-06-88a41947@aqiii.org>  Tue, 01 Jun 2010 09:53:44 -0400
 
 freeswitch (1.0.6-1ubuntu1) maverick; urgency=low
 

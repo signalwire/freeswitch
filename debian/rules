@@ -1,6 +1,4 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
-# This file is public domain software, originally written by Joey Hess. 
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
@@ -57,6 +55,116 @@ ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	FEATURES += --disable-optimization
 endif
 
+.pc/applied-patches:
+       @echo
+       @echo \ \ Sorry, currently this package cannot be built directly from upstream
+       @echo \ \ source git/tarball: patches are needed for policy compliance, and the
+       @echo \ \ "new 3.0 (quilt) source format requires patches to be already applied."
+       @echo
+       @echo \ \ Please first convert this tree by running:
+       @echo -e \\t./debian/rules upstream-convert
+       @echo
+       @echo \ \ Note that this will insert an entry in debian/changelog, rename the
+       @echo \ \ current directory to the version number there, create a .orig.tar.bz2
+       @echo \ \ archive and apply all the patches in debian/patches/series.
+       @echo
+       @echo \ \ Using git-buildpackage is not recommended for now.
+       @echo
+       @exit 1
+
+upstream-convert:
+       @dh_testdir
+       @test -s .pc/applied-patches && \
+               echo "Aborted: patches are already applied." && \
+               exit 1 || exit 0
+       # update (or not) version number in debian/changelog
+       @set -e ; \
+               echo Checking version number ; \
+               v1="$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: //')" ; \
+               v2="$${v1}" ; \
+               echo "  Current version: $${v1}" ; \
+               if [ "$$(which git)" = "" -o ! -d .git ] ; then \
+                       echo Git not available. Keeping current version number. ; \
+                       exit 0 ; \
+               fi ; \
+               if [ "$$(which debchange)" = "" ] ; then \
+                       echo debchange not available. Keeping current version number. ; \
+                       exit 0 ; \
+               fi ; \
+               if echo -n "$${v1}" | grep -q '~git\.[a-z0-9]\+\.20[0-9]\{6\}\.[0-9]\+-[^-]\+$$' ; then \
+                       maj1="$$(echo -n "$${v1}" | sed -e 's/^\([^.]\+\)\..*$$/\1/')" ; \
+                       min1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.\([^.]\+\)\..*$$/\1/')" ; \
+                       mic1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.\([a-zA-Z0-9]\+\).*$$/\1/')" ; \
+                       b1="$$(echo -n "$${v1}" | sed -e 's/^.*~git\.\([a-z0-9]\+\)\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
+                       d1="$$(echo -n "$${v1}" | sed -e 's/^.*\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
+                       n1="$$(echo -n "$${v1}" | sed -e 's/^.*\.20[0-9]\{6\}\.\([0-9]\+\)-[^-]\+$$/\1/')" ; \
+                       maj2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MAJOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+                       min2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MINOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+                       mic2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MICRO/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+                       b2="$$(git branch | sed -e '/^[^*]/ d' -e 's/* \(.*\)/\1/')" ; \
+                       d2="$$(TZ=UTC git log --date=local -1 --format='%ai' | sed -e 's/^\(....\).\(..\).\(..\).*$$/\1\2\3/')" ; \
+                       n2="$$(TZ=UTC git log --date=local --format=oneline --since="$${d2::4}-$${d2:4:2}-$${d2:6:2} 00:00" | wc -l)" ; \
+                       if [ "$${b2}" != "$$(echo "$${b2}" | tr -dc a-z0-9)" ] ; then \
+                               echo Invalid branch name "'$${b2}'". Aborted. ; \
+                               exit 1; \
+                       fi ; \
+                       if [ "$${b1}.$${d1}.$${n1}" != "$${b2}.$${d2}.$${n2}" \
+                               -o "$${maj1}.$${min1}.$${mic1}" != "$${maj2}.$${min2}.$${mic2}" ] ; then \
+                               v2="$$(echo -n "$${maj2}.$${min2}.$${mic2}")" ; \
+                               v2="$${v2}$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.[^.]\+\(.*\)~git\..*$$/\1/')" ; \
+                               v2="$${v2}~git.$${b2}.$${d2}.$${n2}-1" ; \
+                               echo "      New version: $${v2}" ; \
+                               echo Updating debian/changelog with new version number ; \
+                               debchange -v "$${v2}" "New upstream release" ; \
+                       else \
+                               echo Version number already correct, no change. ; \
+                       fi ; \
+               else \
+                       echo 'Not a ~git. version number. Keeping current version number.' ; \
+               fi
+       # rename (or not) current directory to match packagename-version.number
+       @set -e ; \
+               echo Checking directory name ; \
+               d1="$$(basename "$$(cd . && echo "$$PWD")")" ; \
+               d2="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
+               d2="$${d2}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
+               if [ "$${d1}" != "$${d2}" ] ; then \
+                       if [ -e "../$${d2}" ] ; then \
+                               test . -ef "../$${d2}" && exit 0 ; \
+                               echo Aborted: directory "../$${d2}" already exists. ; \
+                               exit 1 ; \
+                       fi ; \
+                       echo Renaming current directory to "$${d2}" ; \
+                       mv ../$${d1} ../$${d2} ; \
+               fi
+       # create .orig.tar.bz2
+       @set -e ; \
+               n="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
+               d="$${n}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
+               n="$${n}_$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/').orig.tar.bz2" ; \
+               echo "Creating source archive $${n}" ; \
+               cd .. && tar cjf "$${n}" --exclude='.git*' "$${d}"
+       # apply patches
+       @set -e ; \
+               echo "Applying patches in debian/patches/series" ; \
+               QUILT_PATCHES=debian/patches ; \
+               export QUILT_PATCHES ; \
+               while quilt next ; do \
+                       quilt push -v ; \
+                       quilt refresh ; \
+               done
+       # remind user to change dir
+       @echo Done.
+       @echo
+       @if [ "$(CURDIR)" != "$$PWD" ] ; then \
+               echo \ \ You should now tell your shell to update its current working directory: ; \
+               echo -e \\t'cd $$(pwd)' ; \
+               echo \ \ or ; \
+               echo -e "\\tcd $$PWD" ; \
+               echo ; \
+       fi
+
+
 config.status: configure
 	dh_testdir
 	rm -f modules.conf
@@ -65,15 +173,12 @@ config.status: configure
 	for i in $(MODULES); do echo $$i >> modules.conf; done
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
-configure:
-	if test ! -f Makefile.in ;  then \
-	    if test -f ./bootstrap.sh ; then \
-		AUTOCONF=${AUTOCONF} ./bootstrap.sh ; \
-	    else \
-		echo "No Makefile.in and no known way to bootstrap." ; \
-		exit 1; \
-	    fi; \
-	fi;
+configure: bootstrap.sh .pc/applied-patches
+       dh_testdir
+       test -e /usr/share/misc/config.sub && cp -f /usr/share/misc/config.sub build/config/config.sub
+       test -e /usr/share/misc/config.guess && cp -f /usr/share/misc/config.guess build/config/config.guess
+       AUTOCONF=${AUTOCONF} ./bootstrap.sh
+
 
 build: build-stamp
 build-stamp:  config.status
@@ -83,19 +188,13 @@ build-stamp:  config.status
 
 	touch $@
 
-clean:
+clean: .pc/applied-patches
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 
 
 	-$(MAKE) update-clean
-ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-	cp -f /usr/share/misc/config.sub build/config/config.sub
-endif
-ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-	cp -f /usr/share/misc/config.guess build/config/config.guess
-endif
-	rm -f config.status
+	rm -f configure config.status
 	rm -f */*/config.status
 	rm -f */*/*/config.status
 	dh_clean
@@ -103,8 +202,8 @@ endif
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
-	dh_installdirs -A --sourcedir=debian/tmp
+	dh_prep
+	dh_installdirs -A
 
 	VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
@@ -123,11 +222,12 @@ binary-arch: build install
 	cp debian/monit/freeswitch.monitrc debian/freeswitch/etc/monit/freeswitch.monitrc
 	dh_install --sourcedir=debian/tmp
 	dh_link
-	dh_strip --dbg-package=freeswitch
+	dh_strip --dbg-package=freeswitch-dbg
 	dh_compress
 	dh_fixperms --exclude /opt/freeswitch/conf
+	dh_makeshlibs
+	dh_shlibdeps
 	dh_installdeb
-	dh_shlibdeps --exclude=/opt/freeswitch
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb

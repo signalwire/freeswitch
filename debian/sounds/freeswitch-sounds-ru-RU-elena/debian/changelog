@@ -1,3 +1,12 @@
+freeswitch-sounds-ru-ru-elena (1.0.head-git.master,20101014.1-1) unstable; urgency=low
+
+  * Change upstream package version numbering scheme for unreleased versions:
+    new format is major.minor.micro~git.branch.date.commits-1
+  * Change source format to 3.0 (quilt).
+  * Upgrade debhelper compatibility to version 7.
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de> Fr, 14 Oct 2010 05:05:02 +0200
+
 freeswitch-sounds-ru-ru-elena (1.0.12-0ubuntu3) jaunty; urgency=low
 
   * Fixed: Empty binary package bug caused by the second ru folder being
