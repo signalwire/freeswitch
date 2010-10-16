@@ -358,7 +358,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 {
 	switch_bool_t is_timeout = switch_ivr_dmachine_check_timeout(dmachine);
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
-	switch_status_t r;
+	switch_status_t r, s;
 	int clear = 0;
 	
 	if (zstr(dmachine->digits) && !is_timeout) {
@@ -381,17 +381,37 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		dmachine->match.type = DM_MATCH_POSITIVE;
 		
 		if (dmachine->last_matching_binding->callback) {
-			if (dmachine->last_matching_binding->callback(&dmachine->match) == SWITCH_STATUS_CONTINUE) {
+			s = dmachine->last_matching_binding->callback(&dmachine->match);
+
+			switch(s) {
+			case SWITCH_STATUS_CONTINUE:
 				r = SWITCH_STATUS_SUCCESS;
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				break;
+			default:
+				r = SWITCH_STATUS_NOTFOUND;
+				break;
 			}
 		}
 
 		if (dmachine->match_callback) {
 			dmachine->match.user_data = dmachine->user_data;
-			if (dmachine->match_callback(&dmachine->match) == SWITCH_STATUS_CONTINUE) {
+			s = dmachine->match_callback(&dmachine->match);
+
+			switch(s) {
+			case SWITCH_STATUS_CONTINUE:
 				r = SWITCH_STATUS_SUCCESS;
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				break;
+			default:
+				r = SWITCH_STATUS_NOTFOUND;
+				break;
 			}
+
 		}
+
 		clear++;
 	} else if (is_timeout) {
 		r = SWITCH_STATUS_TIMEOUT;
@@ -409,9 +429,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		
 		if (dmachine->nonmatch_callback) {
 			dmachine->match.user_data = dmachine->user_data;
-			if (dmachine->nonmatch_callback(&dmachine->match) == SWITCH_STATUS_CONTINUE) {
+			s = dmachine->nonmatch_callback(&dmachine->match);
+
+			switch(s) {
+			case SWITCH_STATUS_CONTINUE:
 				r = SWITCH_STATUS_SUCCESS;
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				break;
+			default:
+				r = SWITCH_STATUS_NOTFOUND;
+				break;
 			}
+
 		}
 		
 		clear++;
