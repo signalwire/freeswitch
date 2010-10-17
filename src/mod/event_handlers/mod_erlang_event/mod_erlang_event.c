@@ -1041,7 +1041,7 @@ static int read_cookie_from_file(char *filename) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie file %s : %d.\n", filename, errno);
 		}
 
-		cookie[MAXATOMLEN+1] = '\0';
+		cookie[MAXATOMLEN] = '\0';
 
 		/* replace any end of line characters with a null */
 		if ((end = strchr(cookie, '\n'))) {
