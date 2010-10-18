@@ -112,7 +112,7 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Cfm on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Cfm on unconfigured dchan\n");
 
-	if (get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
+	if (get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -156,7 +156,7 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Cnst Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Cnst Ind on unconfigured dchan\n");
 
-	if (get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
+	if (get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -206,8 +206,8 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 
 	ftdm_assert(spInstId != 0, "Received DISCONNECT with invalid id");
 
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -240,8 +240,8 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		/* It seems that Trillium has a bug where they sometimes send release twice on a call, so do not crash on these for now */
@@ -274,8 +274,8 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 	
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -307,8 +307,8 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -341,8 +341,8 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -374,8 +374,8 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -408,8 +408,8 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -442,8 +442,8 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-			 !(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+			 !(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -476,8 +476,8 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
@@ -510,8 +510,8 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
-	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
-		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
+	if (!(spInstId && get_ftdmchan_by_spInstId((int8_t) suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
+		!(suInstId && get_ftdmchan_by_suInstId((int8_t) suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
 		ftdm_assert(0, "Inconsistent call states\n");
