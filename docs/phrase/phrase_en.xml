@@ -437,7 +437,7 @@
 	  <prompt phrase="Andrew Thompson" filename="misc-Andrew_Thompson.wav"/>
 	  <prompt phrase="Graham Saathoff" filename="misc-Graham_Saathoff.wav"/>
 	  <prompt phrase="Nicholaus Belluni" filename="misc-Nicholaus_Belluni.wav"/>
-	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav">
+	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
