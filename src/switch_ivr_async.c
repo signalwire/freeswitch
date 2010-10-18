@@ -281,6 +281,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 			if (!exact_bp && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
+				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
 			}
 
 			if (!(both_bp && partial_bp) && !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
@@ -382,7 +383,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		
 		if (dmachine->last_matching_binding->callback) {
 			s = dmachine->last_matching_binding->callback(&dmachine->match);
-
+			
 			switch(s) {
 			case SWITCH_STATUS_CONTINUE:
 				r = SWITCH_STATUS_SUCCESS;
@@ -390,7 +391,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 			case SWITCH_STATUS_SUCCESS:
 				break;
 			default:
-				r = SWITCH_STATUS_NOTFOUND;
+				r = SWITCH_STATUS_BREAK;
 				break;
 			}
 		}
@@ -406,7 +407,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 			case SWITCH_STATUS_SUCCESS:
 				break;
 			default:
-				r = SWITCH_STATUS_NOTFOUND;
+				r = SWITCH_STATUS_BREAK;
 				break;
 			}
 
@@ -421,7 +422,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		r = SWITCH_STATUS_SUCCESS;
 	}
 	
-	if (r != SWITCH_STATUS_FOUND && r != SWITCH_STATUS_SUCCESS) {
+	if (r != SWITCH_STATUS_FOUND && r != SWITCH_STATUS_SUCCESS && r != SWITCH_STATUS_BREAK) {
 		switch_set_string(dmachine->last_failed_digits, dmachine->digits);
 		dmachine->match.match_digits = dmachine->last_failed_digits;
 		
@@ -438,7 +439,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 			case SWITCH_STATUS_SUCCESS:
 				break;
 			default:
-				r = SWITCH_STATUS_NOTFOUND;
+				r = SWITCH_STATUS_BREAK;
 				break;
 			}
 
