@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\libsng_isdn\include&quot;;&quot;C:\Program Files\libsng_isdn\include\sng_isdn&quot;;../../include;&quot;C:\Program Files\Sangoma\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;FREETDM_EXPORTS;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"

@@ -266,16 +266,16 @@ extern ftdm_sngisdn_data_t	g_sngisdn_data;
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
 
 /* Support functions */
-uint32_t get_unique_suInstId(uint8_t cc_id);
+FT_DECLARE_INLINE(uint32_t) get_unique_suInstId(uint8_t cc_id);
 FT_DECLARE_INLINE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info);
 FT_DECLARE_INLINE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
 
 
 void stack_hdr_init(Header *hdr);
 void stack_pst_init(Pst *pst);
-ftdm_status_t get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
-ftdm_status_t get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
-ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
+FT_DECLARE_INLINE(ftdm_status_t) sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
 
 /* Outbound Call Control functions */
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);

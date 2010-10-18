@@ -1010,7 +1010,7 @@ static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_isdn_io_init)
 	return FTDM_SUCCESS;
 }
 
-ftdm_module_t ftdm_module =
+EX_DECLARE_DATA ftdm_module_t ftdm_module =
 {
 	"sangoma_isdn",	               /* char name[256]; */
 	ftdm_sangoma_isdn_io_init,     /* fio_io_load_t */
