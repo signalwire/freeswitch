@@ -308,7 +308,8 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	sng_isup_inf_t		*isup_intf =  &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
 	SiCnStEvnt acm;
 	
 	memset (&acm, 0x0, sizeof (acm));
@@ -337,7 +338,18 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.echoCtrlDevInd.val	= 0x1;	/* ec device present */
 	acm.bckCallInd.sccpMethInd.pres		= PRSNT_NODEF;
 	acm.bckCallInd.sccpMethInd.val		= SCCPMTH_NOIND;
-	
+
+	/* fill in any optional parameters */
+	if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) {
+		acm.optBckCalInd.eh.pres				= PRSNT_NODEF;
+		acm.optBckCalInd.inbndInfoInd.pres		= PRSNT_NODEF;
+		acm.optBckCalInd.inbndInfoInd.val		= sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA);
+		acm.optBckCalInd.caFwdMayOcc.pres		= PRSNT_DEF;
+		acm.optBckCalInd.simpleSegmInd.pres		= PRSNT_DEF;
+		acm.optBckCalInd.mlppUserInd.pres		= PRSNT_DEF;
+		acm.optBckCalInd.usrNetIneractInd.pres	= PRSNT_DEF;
+	} /* if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) */
+
 	/* send the ACM request to LibSngSS7 */
 	sng_cc_con_status  (1,
 						sngss7_info->suInstId,

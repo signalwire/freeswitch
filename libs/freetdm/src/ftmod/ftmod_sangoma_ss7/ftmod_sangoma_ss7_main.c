@@ -1480,7 +1480,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 
 	sngss7_id = 0;
 
-	cmbLinkSetId = 1;
+	cmbLinkSetId = 0;
 
 	/* initalize the global gen_config flag */
 	g_ftdm_sngss7_data.gen_config = 0;

@@ -86,6 +86,10 @@ typedef enum {
 } sng_flag_t;
 
 typedef enum {
+	SNGSS7_ACM_OBCI_BITA	= (1 << 0)	/* in-band indication */
+} sng_intf_options_t;
+
+typedef enum {
 	SNG_CALLED			= 1,
 	SNG_CALLING			= 2
 } sng_addr_type_t;
@@ -205,6 +209,7 @@ typedef struct sng_route {
 typedef struct sng_isup_intf {
 	uint32_t		id;
 	char			name[MAX_NAME_LEN];
+	uint32_t		options;
 	uint32_t		flags;
 	uint32_t		spc;
 	uint32_t		dpc;
@@ -720,6 +725,11 @@ void handle_isup_t35(void *userdata);
 #define sngss7_test_flag(obj, flag)  ((obj)->flags & flag)
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
+
+#define sngss7_test_options(obj, option) ((obj)->options & option)
+#define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))
+#define sngss7_set_options(obj, option)   ((obj)->options |= (option))
+
 
 #ifdef SS7_PRODUCTION
 # define SS7_ASSERT \

@@ -50,27 +50,41 @@ int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm);
 int ftmod_ss7_mtplink_sta(uint32_t id, SnMngmt *cfm)
 {
 	SnMngmt	sta;
+	Pst		pst;
 
 	memset(&sta, 0x0, sizeof(sta));
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
 
 	sta.hdr.elmId.elmnt 		= STDLSAP;
 	sta.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLink[id].id;
 
-	return(sng_sta_mtp3(&sta, cfm));
+	return(sng_sta_mtp3(&pst, &sta, cfm));
 }
 
 /******************************************************************************/
 int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm)
 {
 	SnMngmt	sta;
+	Pst		pst;
 
 	memset(&sta, 0x0, sizeof(sta));
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSN;
 
 	sta.hdr.elmId.elmnt 		= STLNKSET;
 	sta.hdr.elmId.elmntInst1	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].id;
 	sta.hdr.elmId.elmntInst2	= g_ftdm_sngss7_data.cfg.mtpLinkSet[id].links[0];
 
-	return(sng_sta_mtp3(&sta, cfm));
+	return(sng_sta_mtp3(&pst, &sta, cfm));
 }
 /******************************************************************************/
 
