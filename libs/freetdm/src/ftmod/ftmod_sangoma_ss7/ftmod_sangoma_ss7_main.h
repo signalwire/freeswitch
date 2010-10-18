@@ -58,6 +58,8 @@
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
 
+#define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
+
 typedef enum {
 	SNGSS7_CON_IND_EVENT = 0,
 	SNGSS7_CON_CFM_EVENT,
@@ -82,6 +84,15 @@ typedef enum {
 	ACTIVE			= (1 << 1),
 	SNGSS7_PAUSED	= (1 << 7)
 } sng_flag_t;
+
+typedef enum {
+	SNGSS7_ACM_OBCI_BITA	= (1 << 0)	/* in-band indication */
+} sng_intf_options_t;
+
+typedef enum {
+	SNG_CALLED			= 1,
+	SNG_CALLING			= 2
+} sng_addr_type_t;
 
 typedef struct sng_mtp_link {
 	char			name[MAX_NAME_LEN];
@@ -198,6 +209,7 @@ typedef struct sng_route {
 typedef struct sng_isup_intf {
 	uint32_t		id;
 	char			name[MAX_NAME_LEN];
+	uint32_t		options;
 	uint32_t		flags;
 	uint32_t		spc;
 	uint32_t		dpc;
@@ -579,6 +591,8 @@ ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
 
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
@@ -711,6 +725,11 @@ void handle_isup_t35(void *userdata);
 #define sngss7_test_flag(obj, flag)  ((obj)->flags & flag)
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
+
+#define sngss7_test_options(obj, option) ((obj)->options & option)
+#define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))
+#define sngss7_set_options(obj, option)   ((obj)->options |= (option))
+
 
 #ifdef SS7_PRODUCTION
 # define SS7_ASSERT \
