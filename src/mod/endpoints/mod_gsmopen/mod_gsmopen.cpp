@@ -1209,7 +1209,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 	private_t *tech_pvt = NULL;
-	if ((*new_session = switch_core_session_request(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;
 		char *rdest;
