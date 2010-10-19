@@ -728,7 +728,12 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 			sync_sla(profile, euser, host, SWITCH_TRUE, SWITCH_TRUE);
 		}
-
+		
+		if (!strcmp(proto, "dp")) {
+			sql = switch_mprintf("update sip_presence set rpid='%q',status='%q' where sip_user='%q' and sip_host='%q'",
+								 rpid, status, euser, host);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		}
 
 		sql = switch_mprintf("select status,rpid from sip_dialogs where sip_from_user='%q' and sip_from_host='%q'", euser, host);
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
