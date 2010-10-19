@@ -1511,7 +1511,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		}
 
 
-		if (!is_dialog) {
+		if (!is_dialog && (zstr(astate) || strcasecmp(astate, "hangup"))) {
 			switch_set_string(status_line, status);
 
 			if (in) {
