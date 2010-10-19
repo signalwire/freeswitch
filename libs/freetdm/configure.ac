@@ -205,6 +205,18 @@ if test "${have_sng_isdn}" = "yes"; then
 	fi
 fi
 
+if test "${have_sng_ss7}" = "yes"; then
+	if test "${build}" == "${host}"
+	then
+		case "${host}" in
+		x86_64-*)
+		# X86_64 machines need additional flags when compiling against libsng_isdn
+		CFLAGS="$CFLAGS -DBIT_64 -DALIGN_64BIT"
+		;;
+		esac
+	fi
+fi
+
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
 AC_CONFIG_FILES([Makefile
