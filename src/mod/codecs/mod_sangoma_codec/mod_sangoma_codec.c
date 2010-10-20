@@ -410,7 +410,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	switch_frame_t encoded_frame;
 	switch_status_t sres = SWITCH_STATUS_FALSE;
 	switch_time_t now_time = 0, difftime = 0;
-	switch_time_t func_start_time, func_end_time;
+	switch_time_t func_start_time = 0, func_end_time = 0;
 	unsigned char ebuf_ulaw[decoded_data_len / 2];
 	short *dbuf_linear;
 	int i = 0;
