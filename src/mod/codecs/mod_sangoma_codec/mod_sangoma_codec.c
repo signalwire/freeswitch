@@ -408,8 +408,8 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 	 * whether the buffer passed in by the core (encoded_data) will be big enough */
 	switch_frame_t ulaw_frame;
 	switch_frame_t encoded_frame;
-	switch_status_t sres;
-	switch_time_t now_time, difftime;
+	switch_status_t sres = SWITCH_STATUS_FALSE;
+	switch_time_t now_time = 0, difftime = 0;
 	switch_time_t func_start_time, func_end_time;
 	unsigned char ebuf_ulaw[decoded_data_len / 2];
 	short *dbuf_linear;
@@ -596,7 +596,7 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	 * whether the buffer passed in by the core will be enough */
 	switch_frame_t encoded_frame;
 	switch_frame_t ulaw_frame;
-	switch_status_t sres = 0;
+	switch_status_t sres = SWITCH_STATUS_FALSE;
 	switch_time_t now_time = 0, difftime = 0;
 	switch_time_t func_start_time = 0, func_end_time = 0;
 	short *dbuf_linear;
