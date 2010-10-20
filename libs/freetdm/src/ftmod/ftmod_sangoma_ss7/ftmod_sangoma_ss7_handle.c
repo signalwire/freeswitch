@@ -51,6 +51,8 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
 ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
@@ -298,8 +300,21 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/* need to grab the sp instance id */ 
 			sngss7_info->spInstId = spInstId;
 
-			/* go to PROGRESS */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+			if ((siCnStEvnt->optBckCalInd.eh.pres) && 
+				(siCnStEvnt->optBckCalInd.inbndInfoInd.pres)) {
+
+				if (siCnStEvnt->optBckCalInd.inbndInfoInd.val) {
+					/* go to PROGRESS_MEDIA */
+					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+				} else {
+					/* go to PROGRESS */
+					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+				} /* if (inband) */
+			} else {
+				/* go to PROGRESS_MEDIA */
+				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+			}
+			
 		break;
 		/**********************************************************************/
 		default:	/* incorrect state...reset the CIC */
@@ -725,6 +740,60 @@ ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx USER-USER msg\n", sngss7_info->circuit->cic);
+
+	/* unlock the channel */
+	ftdm_mutex_unlock(ftdmchan->mutex);
+
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	
+	sngss7_chan_data_t  *sngss7_info ;
+	ftdm_channel_t	  *ftdmchan;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* lock the channel */
+	ftdm_mutex_lock(ftdmchan->mutex);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Call-Suspend msg\n", sngss7_info->circuit->cic);
+
+	/* unlock the channel */
+	ftdm_mutex_unlock(ftdmchan->mutex);
+
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	
+	sngss7_chan_data_t  *sngss7_info ;
+	ftdm_channel_t	  *ftdmchan;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* lock the channel */
+	ftdm_mutex_lock(ftdmchan->mutex);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Call-Resume msg\n", sngss7_info->circuit->cic);
 
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
