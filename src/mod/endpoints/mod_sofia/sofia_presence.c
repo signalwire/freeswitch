@@ -619,15 +619,15 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					/* find ones with presence_id defined that are not registred */
 					sql = switch_mprintf("select sip_from_user, sip_from_host, 'Registered', '', '', "
 										 "uuid, state, direction, "
-										 "sip_to_user, sip_to_host, '','','',"
-										 "'%q','%q',presence_id "
+										 "sip_to_user, sip_to_host,"
+										 "'%q','%q',presence_id, '','','' "
 										 
 										 "from sip_dialogs "
 										 
 										 "where (presence_id='%q@%q' or "
-										 "(sip_from_user='%q' and sip_from_host='%q'))",
-
-										 dh.status, dh.rpid, probe_euser, probe_host,  probe_euser, probe_host);
+										 "(sip_from_user='%q' and (sip_from_host='%q' || sip_to_host='%q')))",
+										 
+										 dh.status, dh.rpid, probe_euser, probe_host,  probe_euser, probe_host, probe_host);
 
 					if (mod_sofia_globals.debug_presence > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s START_PRESENCE_PROBE_SQL\n", profile->name);
@@ -2332,24 +2332,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				su_free(profile->home, full_call_info);
 
 			}
-
+			
 		} else {
-			if (!strcasecmp(event, "dialog")) {
-				switch_event_t *pevent;
-				if (switch_event_create(&pevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "login", profile->url);
-					//switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
-					switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
-					switch_event_add_header(pevent, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
-					switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
-					switch_event_fire(&pevent);
-				}
-			} else if (!strcasecmp(event, "line-seize")) {
+			if (!strcasecmp(event, "line-seize")) {
 				char *full_call_info = NULL;
 				char *p;
 
@@ -2437,6 +2422,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
 				switch_event_fire(&sevent);
 			}
 		}
