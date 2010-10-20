@@ -596,9 +596,9 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	 * whether the buffer passed in by the core will be enough */
 	switch_frame_t encoded_frame;
 	switch_frame_t ulaw_frame;
-	switch_status_t sres;
-	switch_time_t now_time, difftime;
-	switch_time_t func_start_time, func_end_time;
+	switch_status_t sres = 0;
+	switch_time_t now_time = 0, difftime = 0;
+	switch_time_t func_start_time = 0, func_end_time = 0;
 	short *dbuf_linear;
 	int i = 0;
 	int res = 0;
