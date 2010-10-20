@@ -2334,7 +2334,38 @@ typedef struct {
 	switch_media_bug_t *bug;
 	switch_core_session_t *session;
 	int bug_running;
+	int detect_fax;
 } switch_tone_container_t;
+
+static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_tone_container_t *cont = switch_channel_get_private(channel, "_tone_detect_");
+	switch_event_t *event;
+	int i;
+
+	if (!cont || !cont->detect_fax || dtmf->digit != 'f') {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	i = cont->detect_fax;
+
+	if (cont->list[i].callback) {
+		cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
+	} else if (cont->list[i].app) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+			switch_core_session_queue_private_event(cont->session, &event, SWITCH_FALSE);
+		}
+	}
+		
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 
 static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -2467,6 +2498,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 			cont->list[i].up = 0;
 		}
 		switch_core_media_bug_remove(session, &cont->bug);
+		if (cont->detect_fax) {
+			cont->detect_fax = 0;
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 	return SWITCH_STATUS_FALSE;
@@ -2481,7 +2515,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	switch_status_t status;
 	switch_tone_container_t *cont = switch_channel_get_private(channel, "_tone_detect_");
 	char *p, *next;
-	int i = 0, ok = 0;
+	int i = 0, ok = 0, detect_fax = 0;
 	switch_media_bug_flag_t bflags = 0;
 	const char *var;
 	switch_codec_implementation_t read_impl = { 0 };
@@ -2534,6 +2568,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 			ok++;
 			cont->list[cont->index].map.freqs[i++] = this;
 		}
+		if (!strncasecmp(p, "1100", 4)) {
+			detect_fax = cont->index;
+		}
+
 		if (next) {
 			p = next + 1;
 		}
@@ -2544,6 +2582,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid tone spec!\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	cont->detect_fax = detect_fax;
 
 	cont->list[cont->index].key = switch_core_session_strdup(session, key);
 
@@ -2612,6 +2652,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s bug already running\n", switch_channel_get_name(channel));
 	} else {
 		cont->bug_running = 1;
+		if (cont->detect_fax) {
+			switch_core_event_hook_add_send_dtmf(session, tone_on_dtmf);
+			switch_core_event_hook_add_recv_dtmf(session, tone_on_dtmf);
+		}
+
 		if ((status = switch_core_media_bug_add(session, "tone_detect", key,
 												tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
 			cont->bug_running = 0;
