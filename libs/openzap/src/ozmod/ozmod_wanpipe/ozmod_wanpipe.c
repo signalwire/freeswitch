@@ -1120,6 +1120,10 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 					//zap_log(ZAP_LOG_WARNING, "%d:%d queue hardware dtmf %s %s\n", zchan->span_id, zchan->chan_id, tmp_dtmf, 
 							//tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT ? "on" : "off");
+		    if (tmp_dtmf[0] == 'f') {
+			    zap_log(ZAP_LOG_DEBUG, "Ignoring fax DTMF event\n");
+			    break;
+		    }
                     if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
 						zap_set_flag_locked(zchan, ZAP_CHANNEL_MUTE);
 					}
