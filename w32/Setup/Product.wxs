@@ -29,7 +29,7 @@
 					<!-- <Component Id="ProductComponent" Guid="6f1498a7-d029-430b-b9d9-fe12e17bdbab"> -->
 						<!-- TODO: Insert files, registry keys, and other resources here. -->
 					<!-- </Component> -->
-					<?if $(var.Platform) != x86 ?>
+					<?if $(var.Platform) != x64 ?>
 						<Merge Id="CrtFiles_x86"
 						SourceFile="$(env.CommonProgramFiles)\Merge Modules\Microsoft_VC100_CRT_x86.msm"
 						DiskId="1"
@@ -51,7 +51,7 @@
 			
 			<!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
 			<ComponentGroupRef Id="Product.Generated" />
-			<?if $(var.Platform) != x86 ?>
+			<?if $(var.Platform) != x64 ?>
 			  <MergeRef Id="CrtFiles_x86"/>
 			<?endif ?>
 			<?if $(var.Platform) = x64 ?>
