@@ -70,7 +70,10 @@ typedef enum {
 	SNGSS7_FAC_IND_EVENT,
 	SNGSS7_FAC_CFM_EVENT,
 	SNGSS7_UMSG_IND_EVENT,
-	SNGSS7_STA_IND_EVENT
+	SNGSS7_STA_IND_EVENT,
+	SNGSS7_SUSP_IND_EVENT,
+	SNGSS7_RESM_IND_EVENT,
+	SNGSS7_SSP_STA_CFM_EVENT
 } sng_event_type_t;
 
 typedef enum {
@@ -86,7 +89,8 @@ typedef enum {
 } sng_flag_t;
 
 typedef enum {
-	SNGSS7_ACM_OBCI_BITA	= (1 << 0)	/* in-band indication */
+	SNGSS7_LPA_FOR_COT		= (1 << 0),	/* send LPA when COT arrives */
+	SNGSS7_ACM_OBCI_BITA	= (1 << 10)	/* in-band indication */
 } sng_intf_options_t;
 
 typedef enum {
@@ -397,6 +401,8 @@ typedef struct sngss7_event_data
 		SiInfoEvnt	siInfoEvnt;
 		SiFacEvnt	siFacEvnt;
 		SiStaEvnt	siStaEvnt;
+		SiSuspEvnt	siSuspEvnt;
+		SiResmEvnt	siResmEvnt;
 	} event;
 } sngss7_event_data_t;
 
@@ -526,6 +532,9 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
+void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+void sngss7_ssp_sta_cfm(uint32_t infId);
 
 /* in ftmod_sangoma_ss7_handle.c */
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -537,6 +546,8 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
 ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
