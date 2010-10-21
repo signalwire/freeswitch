@@ -2428,6 +2428,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						if (tmp > 0) {
 							profile->force_subscription_expires = tmp;
 						}
+					} else if (!strcasecmp(var, "force-publish-expires")) {
+						int tmp = atoi(val);
+						if (tmp > 0) {
+							profile->force_publish_expires = tmp;
+						}
 					} else if (!strcasecmp(var, "inbound-late-negotiation")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
@@ -3103,6 +3108,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						int tmp = atoi(val);
 						if (tmp > 0) {
 							profile->force_subscription_expires = tmp;
+						}
+					} else if (!strcasecmp(var, "force-publish-expires")) {
+						int tmp = atoi(val);
+						if (tmp > 0) {
+							profile->force_publish_expires = tmp;
 						}
 					} else if (!strcasecmp(var, "send-message-query-on-register")) {
 						if (switch_true(val)) {
