@@ -79,6 +79,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			
 			sngisdn_info->suInstId = get_unique_suInstId(suId);
 			sngisdn_info->spInstId = spInstId;
+			
 
 			if (conEvnt->cdPtyNmb.eh.pres && signal_data->num_local_numbers) {
 				uint8_t local_number_matched = 0;
@@ -128,14 +129,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 #if 0
 			/* Export ftdmchan variables here if we need to */
 			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
-			ftdm_channel_add_var(ftdmchan, "isdn_crap", "morecrap");
-			ftdm_channel_add_var(ftdmchan, "isdn_stuff", "s");
-			ftdm_channel_add_var(ftdmchan, "isdn_d", "asdsadasdasdsad");
 #endif
 			/* Fill in call information */
 			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
 			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
 			cpy_calling_name_from_stack(&ftdmchan->caller_data, &conEvnt->display);
+			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
 				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
