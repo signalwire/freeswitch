@@ -76,6 +76,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
 	const char			*clg_nadi = NULL;
 	const char			*cld_nadi = NULL;
+	const char			*clg_subAddr = NULL;
+	const char			*cld_subAddr = NULL;
+	char 				subAddrIE[MAX_SIZEOF_SUBADDR_IE];
 	SiConEvnt 			iam;
 	
 	sngss7_info->suInstId 	= get_unique_id ();
@@ -186,7 +189,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	/* check if the user would like a custom NADI value for the calling Pty Num */
 	clg_nadi = ftdm_channel_get_var(ftdmchan, "ss7_clg_nadi");
 	if ((clg_nadi != NULL) && (*clg_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied NADI value \"%s\"\n", clg_nadi);
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
 		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
 	} else {
 		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].clg_nadi;
@@ -195,13 +198,92 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 
 	cld_nadi = ftdm_channel_get_var(ftdmchan, "ss7_cld_nadi");
 	if ((cld_nadi != NULL) && (*cld_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied NADI value \"%s\"\n", cld_nadi);
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
 		iam.cdPtyNum.natAddrInd.val	= atoi(cld_nadi);
 	} else {
 		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].cld_nadi;
 		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", iam.cdPtyNum.natAddrInd.val);
-
 	}
+
+	/* check if the user would like us to send a clg_sub-address */
+	clg_subAddr = ftdm_channel_get_var(ftdmchan, "ss7_clg_subaddr");
+	if ((clg_subAddr != NULL) && (*clg_subAddr)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling Sub-Address value \"%s\"\n", clg_subAddr);
+		
+		/* clean out the subAddrIE */
+		memset(subAddrIE, 0x0, sizeof(subAddrIE));
+
+		/* check the first character in the sub-address to see what type of encoding to use */
+		switch (clg_subAddr[0]) {
+		case '0':						/* NSAP */
+			encode_subAddrIE_nsap(&clg_subAddr[1], subAddrIE, SNG_CALLING);
+			break;
+		case '1':						/* national variant */
+			encode_subAddrIE_nat(&clg_subAddr[1], subAddrIE, SNG_CALLING);
+			break;
+		default:
+			SS7_ERROR_CHAN(ftdmchan,"Invalid Calling Sub-Address encoding requested: %c\n", clg_subAddr[0]);
+			break;
+		} /* switch (cld_subAddr[0]) */
+
+
+		/* if subaddIE is still empty don't copy it in */
+		if (subAddrIE[0] != '0') {
+			/* check if the clg_subAddr has already been added */
+			if (iam.accTrnspt.eh.pres == PRSNT_NODEF) {
+				/* append the subAddrIE */
+				memcpy(&iam.accTrnspt.infoElmts.val[iam.accTrnspt.infoElmts.len], subAddrIE, (subAddrIE[1] + 2));
+				iam.accTrnspt.infoElmts.len		= iam.accTrnspt.infoElmts.len +subAddrIE[1] + 2;
+			} else {
+				/* fill in from the beginning */
+				iam.accTrnspt.eh.pres			= PRSNT_NODEF;
+				iam.accTrnspt.infoElmts.pres	= PRSNT_NODEF;
+				memcpy(iam.accTrnspt.infoElmts.val, subAddrIE, (subAddrIE[1] + 2));
+				iam.accTrnspt.infoElmts.len		= subAddrIE[1] + 2;
+			} /* if (iam.accTrnspt.eh.pres */
+		} /* if (subAddrIE[0] != '0') */
+	}
+
+	/* check if the user would like us to send a cld_sub-address */
+	cld_subAddr = ftdm_channel_get_var(ftdmchan, "ss7_cld_subaddr");
+	if ((cld_subAddr != NULL) && (*cld_subAddr)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called Sub-Address value \"%s\"\n", cld_subAddr);
+		
+		/* clean out the subAddrIE */
+		memset(subAddrIE, 0x0, sizeof(subAddrIE));
+
+		/* check the first character in the sub-address to see what type of encoding to use */
+		switch (cld_subAddr[0]) {
+		case '0':						/* NSAP */
+			encode_subAddrIE_nsap(&cld_subAddr[1], subAddrIE, SNG_CALLED);
+			break;
+		case '1':						/* national variant */
+			encode_subAddrIE_nat(&cld_subAddr[1], subAddrIE, SNG_CALLED);
+			break;
+		default:
+			SS7_ERROR_CHAN(ftdmchan,"Invalid Called Sub-Address encoding requested: %c\n", cld_subAddr[0]);
+			break;
+		} /* switch (cld_subAddr[0]) */
+
+		/* if subaddIE is still empty don't copy it in */
+		if (subAddrIE[0] != '0') {
+			/* check if the cld_subAddr has already been added */
+			if (iam.accTrnspt.eh.pres == PRSNT_NODEF) {
+				/* append the subAddrIE */
+				memcpy(&iam.accTrnspt.infoElmts.val[iam.accTrnspt.infoElmts.len], subAddrIE, (subAddrIE[1] + 2));
+				iam.accTrnspt.infoElmts.len		= iam.accTrnspt.infoElmts.len +subAddrIE[1] + 2;
+			} else {
+				/* fill in from the beginning */
+				iam.accTrnspt.eh.pres			= PRSNT_NODEF;
+				iam.accTrnspt.infoElmts.pres	= PRSNT_NODEF;
+				memcpy(iam.accTrnspt.infoElmts.val, subAddrIE, (subAddrIE[1] + 2));
+				iam.accTrnspt.infoElmts.len		= subAddrIE[1] + 2;
+			} /* if (iam.accTrnspt.eh.pres */
+		} /* if (subAddrIE[0] != '0') */
+	} /* if ((cld_subAddr != NULL) && (*cld_subAddr)) */
+
+
+
 
 	sng_cc_con_request (sngss7_info->spId,
 						sngss7_info->suInstId,
@@ -226,7 +308,8 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	sng_isup_inf_t		*isup_intf =  &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
 	SiCnStEvnt acm;
 	
 	memset (&acm, 0x0, sizeof (acm));
@@ -255,7 +338,18 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.echoCtrlDevInd.val	= 0x1;	/* ec device present */
 	acm.bckCallInd.sccpMethInd.pres		= PRSNT_NODEF;
 	acm.bckCallInd.sccpMethInd.val		= SCCPMTH_NOIND;
-	
+
+	/* fill in any optional parameters */
+	if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) {
+		acm.optBckCalInd.eh.pres				= PRSNT_NODEF;
+		acm.optBckCalInd.inbndInfoInd.pres		= PRSNT_NODEF;
+		acm.optBckCalInd.inbndInfoInd.val		= sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA);
+		acm.optBckCalInd.caFwdMayOcc.pres		= PRSNT_DEF;
+		acm.optBckCalInd.simpleSegmInd.pres		= PRSNT_DEF;
+		acm.optBckCalInd.mlppUserInd.pres		= PRSNT_DEF;
+		acm.optBckCalInd.usrNetIneractInd.pres	= PRSNT_DEF;
+	} /* if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) */
+
 	/* send the ACM request to LibSngSS7 */
 	sng_cc_con_status  (1,
 						sngss7_info->suInstId,

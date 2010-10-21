@@ -1249,6 +1249,30 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 			sng_isup.cld_nadi = atoi(parm->val);
 			SS7_DEBUG("\tFound default CLD_NADI value = %d\n", sng_isup.cld_nadi);
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "obci_bita")) {
+		/**********************************************************************/
+			if (*parm->val == '1') {
+				sngss7_set_options(&sng_isup, SNGSS7_ACM_OBCI_BITA);
+				SS7_DEBUG("\tFound Optional Backwards Indicator: Bit A (early media) enable option\n");
+			} else if (*parm->val == '0') {
+				sngss7_clear_options(&sng_isup, SNGSS7_ACM_OBCI_BITA);
+				SS7_DEBUG("\tFound Optional Backwards Indicator: Bit A (early media) disable option\n");
+			} else {
+				SS7_DEBUG("\tInvalid value for \"obci_bita\" option\n");
+			}
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "lpa_on_cot")) {
+		/**********************************************************************/
+			if (*parm->val == '1') {
+				sngss7_set_options(&sng_isup, SNGSS7_LPA_FOR_COT);
+				SS7_DEBUG("\tFound Tx LPA on COT enable option\n");
+			} else if (*parm->val == '0') {
+				sngss7_clear_options(&sng_isup, SNGSS7_LPA_FOR_COT);
+				SS7_DEBUG("\tFound Tx LPA on COT disable option\n");
+			} else {
+				SS7_DEBUG("\tInvalid value for \"lpa_on_cot\" option\n");
+			}
+		/**********************************************************************/
 		} else {
 			SS7_ERROR("\tFound an invalid parameter \"%s\"!\n", parm->val);
 			return FTDM_FAIL;
@@ -1671,7 +1695,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	g_ftdm_sngss7_data.cfg.isupIntf[i].isap			= sng_isup->isap;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].cld_nadi		= sng_isup->cld_nadi;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].clg_nadi		= sng_isup->clg_nadi;
-
+	g_ftdm_sngss7_data.cfg.isupIntf[i].options		= sng_isup->options;
 	if (sng_isup->t4 != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= sng_isup->t4;
 	} else {

@@ -616,8 +616,8 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "Sangoma SS7 CLI usuage:\n\n");
 
 	stream->write_function(stream, "Ftmod_sangoma_ss7 general control:\n");
-	stream->write_function(stream, "ftdm ss7 set ftace X Y\n");
-	stream->write_function(stream, "ftdm ss7 set mtace X Y\n");
+	stream->write_function(stream, "ftdm ss7 set ftrace X Y\n");
+	stream->write_function(stream, "ftdm ss7 set mtrace X Y\n");
 	stream->write_function(stream, "\n");
 	stream->write_function(stream, "Ftmod_sangoma_ss7 information:\n");
 	stream->write_function(stream, "ftdm ss7 show status link X\n");
@@ -1064,7 +1064,7 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 					/* grab the signaling_status */
 					ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
 	
-					stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%s|state=%s|",
+					stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%4s|state=%s|",
 													ckt->span,
 													ckt->chan,
 													ckt->cic,
@@ -1281,13 +1281,17 @@ static ftdm_status_t handle_status_link(ftdm_stream_handle_t *stream, char *name
 						(sta.t.ssta.s.snDLSAP.remBlkd) ? "Y":"N",
 						(sta.t.ssta.s.snDLSAP.locInhbt) ? "Y":"N",
 						(sta.t.ssta.s.snDLSAP.rmtInhbt) ? "Y":"N");
-			break;
+
+			goto success;
 		}
 		
 		/* move to the next link */
 		x++;
 	} /* while (id != 0) */
 
+	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
+
+success:
 	return FTDM_SUCCESS;
 }
 
@@ -1313,13 +1317,17 @@ static ftdm_status_t handle_status_linkset(ftdm_stream_handle_t *stream, char *n
 						name,
 						DECODE_LSN_LINKSET_STATUS(sta.t.ssta.s.snLnkSet.state),
 						sta.t.ssta.s.snLnkSet.nmbActLnks);
-			break;
+			
+			goto success;
 		}
  
 		/* move to the next linkset */
 		x++;
 	} /* while (id != 0) */
 
+	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
+
+success:
 	return FTDM_SUCCESS;
 }
 
@@ -1342,13 +1350,16 @@ static ftdm_status_t handle_set_inhibit(ftdm_stream_handle_t *stream, char *name
 			/* print the new status of the link */
 			handle_status_link(stream, &name[0]);
 
-			break;
+			goto success;
 		}
  
 		/* move to the next linkset */
 		x++;
 	} /* while (id != 0) */
 
+	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
+
+success:
 	return FTDM_SUCCESS;
 }
 
@@ -1371,13 +1382,16 @@ static ftdm_status_t handle_set_uninhibit(ftdm_stream_handle_t *stream, char *na
 			/* print the new status of the link */
 			handle_status_link(stream, &name[0]);
 
-			break;
+			goto success;
 		}
  
 		/* move to the next linkset */
 		x++;
 	} /* while (id != 0) */
 
+	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
+
+success:
 	return FTDM_SUCCESS;
 }
 
@@ -1440,6 +1454,10 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 		/* go the next circuit */
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+
+	/* print the status of channels */
+	handle_show_status(stream, span, chan, verbose);
+	
 	
 
 	return FTDM_SUCCESS;
@@ -1505,6 +1523,24 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
 	
+	x=1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
+			sngss7_span = ftdmchan->span->mod_data;
+
+			if ((ftdmchan->physical_span_id == span) && 
+				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
+
+				handle_show_status(stream, span, chan, verbose);
+			}
+		} /* if ( cic == voice) */
+
+		/* go the next circuit */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
 
 	return FTDM_SUCCESS;
 }
@@ -1585,6 +1621,25 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 
 	/* send the circuit group block */
 	ft_to_sngss7_cgb(main_chan);
+
+	x=1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
+			sngss7_span = ftdmchan->span->mod_data;
+
+			if ((ftdmchan->physical_span_id == span) && 
+				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
+
+				handle_show_status(stream, span, chan, verbose);
+			}
+		} /* if ( cic == voice) */
+
+		/* go the next circuit */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
 	
 
 	return FTDM_SUCCESS;
@@ -1666,6 +1721,25 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 
 	/* send the circuit group block */
 	ft_to_sngss7_cgu(main_chan);
+
+	x=1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
+			sngss7_span = ftdmchan->span->mod_data;
+
+			if ((ftdmchan->physical_span_id == span) && 
+				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
+
+				handle_show_status(stream, span, chan, verbose);
+			}
+		} /* if ( cic == voice) */
+
+		/* go the next circuit */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
 	
 
 	return FTDM_SUCCESS;

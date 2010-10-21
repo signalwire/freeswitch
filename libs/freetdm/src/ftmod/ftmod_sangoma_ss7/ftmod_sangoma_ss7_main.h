@@ -58,6 +58,8 @@
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
 
+#define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
+
 typedef enum {
 	SNGSS7_CON_IND_EVENT = 0,
 	SNGSS7_CON_CFM_EVENT,
@@ -68,7 +70,10 @@ typedef enum {
 	SNGSS7_FAC_IND_EVENT,
 	SNGSS7_FAC_CFM_EVENT,
 	SNGSS7_UMSG_IND_EVENT,
-	SNGSS7_STA_IND_EVENT
+	SNGSS7_STA_IND_EVENT,
+	SNGSS7_SUSP_IND_EVENT,
+	SNGSS7_RESM_IND_EVENT,
+	SNGSS7_SSP_STA_CFM_EVENT
 } sng_event_type_t;
 
 typedef enum {
@@ -82,6 +87,16 @@ typedef enum {
 	ACTIVE			= (1 << 1),
 	SNGSS7_PAUSED	= (1 << 7)
 } sng_flag_t;
+
+typedef enum {
+	SNGSS7_LPA_FOR_COT		= (1 << 0),	/* send LPA when COT arrives */
+	SNGSS7_ACM_OBCI_BITA	= (1 << 10)	/* in-band indication */
+} sng_intf_options_t;
+
+typedef enum {
+	SNG_CALLED			= 1,
+	SNG_CALLING			= 2
+} sng_addr_type_t;
 
 typedef struct sng_mtp_link {
 	char			name[MAX_NAME_LEN];
@@ -198,6 +213,7 @@ typedef struct sng_route {
 typedef struct sng_isup_intf {
 	uint32_t		id;
 	char			name[MAX_NAME_LEN];
+	uint32_t		options;
 	uint32_t		flags;
 	uint32_t		spc;
 	uint32_t		dpc;
@@ -385,6 +401,8 @@ typedef struct sngss7_event_data
 		SiInfoEvnt	siInfoEvnt;
 		SiFacEvnt	siFacEvnt;
 		SiStaEvnt	siStaEvnt;
+		SiSuspEvnt	siSuspEvnt;
+		SiResmEvnt	siResmEvnt;
 	} event;
 } sngss7_event_data_t;
 
@@ -514,6 +532,9 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
+void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+void sngss7_ssp_sta_cfm(uint32_t infId);
 
 /* in ftmod_sangoma_ss7_handle.c */
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -525,6 +546,8 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
 ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
@@ -579,6 +602,8 @@ ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
 
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
@@ -711,6 +736,11 @@ void handle_isup_t35(void *userdata);
 #define sngss7_test_flag(obj, flag)  ((obj)->flags & flag)
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
+
+#define sngss7_test_options(obj, option) ((obj)->options & option)
+#define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))
+#define sngss7_set_options(obj, option)   ((obj)->options |= (option))
+
 
 #ifdef SS7_PRODUCTION
 # define SS7_ASSERT \
