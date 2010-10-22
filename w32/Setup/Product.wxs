@@ -43,7 +43,22 @@
 					<?endif ?>
 				</Directory>
 			</Directory>
+			<Directory Id="ProgramMenuFolder">
+				<Directory Id="ApplicationProgramsFolder" Name="FreeSWITCH"/>
+			</Directory>
 		</Directory>
+
+		<DirectoryRef Id="ApplicationProgramsFolder">
+			<Component Id="ApplicationShortcut" Guid="B554D1D1-C8C6-4d46-A3E7-4BA836EF929B">
+				<Shortcut Id="ApplicationStartMenuShortcut"
+							 Name="FreeSWITCH"
+							 Description="FreeSWITCH Telephony SoftSwitch"
+							 Target="[INSTALLLOCATION]FreeSwitchConsole.exe"
+							 WorkingDirectory="INSTALLLOCATION"/>
+				<RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+				<RegistryValue Root="HKCU" Key="Software\Microsoft\FreeSWITCH" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+			</Component>
+		</DirectoryRef>
 
 		<Feature Id="ProductFeature" Title="FreeSWITCH Core" Level="1">
 			<!-- TODO: Remove the comments around this ComponentRef element and the Component above in order to add resources to this installer. -->
@@ -57,7 +72,8 @@
 			<?if $(var.Platform) = x64 ?>
 			  <MergeRef Id="CrtFiles_x64"/>
 			<?endif ?>
-    </Feature>
+			<ComponentRef Id="ApplicationShortcut" />
+		</Feature>
     <Feature Id="ProductFeatureConf" Title="FreeSWITCH Configuration Sample" Level="1">
       <ComponentGroupRef Id="FreeSWITCHConfFiles" />
     </Feature>
