@@ -61,6 +61,7 @@ struct resub_helper {
 	sofia_profile_t *profile;
 	switch_event_t *event;
 	int rowcount;
+	int noreg;
 };
 
 struct presence_helper {
@@ -615,6 +616,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 
 				if (!h.rowcount) {
+					h.noreg++;
 					switch_safe_free(sql);
 					/* find ones with presence_id defined that are not registred */
 					sql = switch_mprintf("select sip_from_user, sip_from_host, 'Registered', '', '', "
@@ -1036,7 +1038,6 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			if ((p = strchr(free_me, '@'))) *p = '\0';
 			user = free_me;
 		}
-
 	}
 
 	if (zstr(proto)) {
@@ -1053,6 +1054,9 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", user, host);
 
+		if (h->noreg) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Force-Direction", "inbound");
+		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
@@ -1373,6 +1377,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	if (helper->event) {
 		switch_stream_handle_t stream = { 0 };
 		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "presence-call-direction"));
+		const char *force_direction = switch_str_nil(switch_event_get_header(helper->event, "force-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
@@ -1394,6 +1399,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		if (is_dialog) {
 			SWITCH_STANDARD_STREAM(stream);
+		}
+		
+		if (!zstr(force_direction)) {
+			direction = force_direction;
 		}
 
 		if (!strcasecmp(direction, "outbound")) {
