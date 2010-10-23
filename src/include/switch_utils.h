@@ -322,7 +322,7 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
   \param key the key to test
   \return TRUE or FALSE
  */
-#define is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119 || key == 70)
+#define is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119 || key == 70 || key == 102)
 
 #define end_of(_s) *(*_s == '\0' ? _s : _s + strlen(_s) - 1)
 #define end_of_p(_s) (*_s == '\0' ? _s : _s + strlen(_s) - 1)

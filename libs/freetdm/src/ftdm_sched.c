@@ -55,7 +55,7 @@ struct ftdm_sched {
 struct ftdm_timer {
 	char name[80];
 	ftdm_timer_id_t id;
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
 	struct timeval time;
 #endif
 	void *usrdata;
@@ -234,7 +234,7 @@ failed:
 FT_DECLARE(ftdm_status_t) ftdm_sched_run(ftdm_sched_t *sched)
 {
 	ftdm_status_t status = FTDM_FAIL;
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
 	ftdm_timer_t *runtimer;
 	ftdm_timer_t *timer;
 	ftdm_sched_callback_t callback;
@@ -315,7 +315,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_id_t *timerid)
 {
 	ftdm_status_t status = FTDM_FAIL;
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
 	struct timeval now;
 	int rc = 0;
 	ftdm_timer_t *newtimer;
@@ -396,7 +396,7 @@ done:
 FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *sched, int32_t *timeto)
 {
 	ftdm_status_t status = FTDM_FAIL;
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
 	int res = -1;
 	int ms = 0;
 	struct timeval currtime;

@@ -850,7 +850,7 @@ cc_status_t cc_agent_del(const char *agent)
 	return result;
 }
 
-cc_agent_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, size_t ret_result_size)
+cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, size_t ret_result_size)
 {
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;

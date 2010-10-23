@@ -426,6 +426,7 @@
 	  <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
 	  <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
 	  <prompt phrase="Please enter the first few letters of the person's first or last name" filename="dir-enter_person_first_or_last.wav"/>
+	  <prompt phrase="There are no calls waiting in this queue." filename="ivr-no_calls_waiting_in_queue.wav"/>
 	  <prompt phrase="Brian West" filename="misc-Brian_West.wav"/>
 	  <prompt phrase="Anthony Minessale" filename="misc-Anthony_Minessale.wav"/>
 	  <prompt phrase="Michael Jerris" filename="misc-Michael_Jerris.wav"/>
@@ -437,7 +438,7 @@
 	  <prompt phrase="Andrew Thompson" filename="misc-Andrew_Thompson.wav"/>
 	  <prompt phrase="Graham Saathoff" filename="misc-Graham_Saathoff.wav"/>
 	  <prompt phrase="Nicholaus Belluni" filename="misc-Nicholaus_Belluni.wav"/>
-	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav">
+	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>

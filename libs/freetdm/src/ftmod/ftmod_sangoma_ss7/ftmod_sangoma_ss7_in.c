@@ -52,7 +52,9 @@ void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiIn
 void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
-
+void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
+void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+void sngss7_ssp_sta_cfm(uint32_t infId);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -442,7 +444,127 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 }
 
 /******************************************************************************/
+void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_event_data_t	*sngss7_event = NULL;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+
+	/* initalize the sngss7_event */
+	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
+	if (sngss7_event == NULL) {
+		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
+
+	/* fill in the sngss7_event struct */
+	sngss7_event->spInstId	= spInstId;
+	sngss7_event->suInstId	= suInstId;
+	sngss7_event->circuit	= circuit;
+	sngss7_event->event_id	= SNGSS7_SUSP_IND_EVENT;
+	if (siSuspEvnt != NULL) {
+		memcpy(&sngss7_event->event.siSuspEvnt, siSuspEvnt, sizeof(*siSuspEvnt));
+	}
+
+	/* enqueue this event */
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+
+}
+
+/******************************************************************************/
+void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_event_data_t	*sngss7_event = NULL;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+
+	/* initalize the sngss7_event */
+	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
+	if (sngss7_event == NULL) {
+		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
+
+	/* fill in the sngss7_event struct */
+	sngss7_event->spInstId	= spInstId;
+	sngss7_event->suInstId	= suInstId;
+	sngss7_event->circuit	= circuit;
+	sngss7_event->event_id	= SNGSS7_RESM_IND_EVENT;
+	if (siResmEvnt != NULL) {
+		memcpy(&sngss7_event->event.siResmEvnt, siResmEvnt, sizeof(*siResmEvnt));
+	}
+
+	/* enqueue this event */
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+
+}
+
+/******************************************************************************/
+void sngss7_ssp_sta_cfm(uint32_t infId)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+#if 0
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_event_data_t	*sngss7_event = NULL;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+
+	/* initalize the sngss7_event */
+	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
+	if (sngss7_event == NULL) {
+		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+	memset(sngss7_event, 0x0, sizeof(*sngss7_event));
+
+	/* fill in the sngss7_event struct */
+	sngss7_event->spInstId	= spInstId;
+	sngss7_event->suInstId	= suInstId;
+	sngss7_event->circuit	= circuit;
+	sngss7_event->event_id	= SNGSS7_RESM_IND_EVENT;
+	if (siSuspEvnt != NULL) {
+		memcpy(&sngss7_event->event.siResmEvnt, siResmEvnt, sizeof(*siResmEvnt));
+	}
+
+	/* enqueue this event */
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+#endif
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+
+}
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

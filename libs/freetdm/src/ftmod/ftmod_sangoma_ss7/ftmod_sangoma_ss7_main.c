@@ -208,7 +208,7 @@ ftdm_state_map_t sangoma_ss7_state_map = {
 	{FTDM_CHANNEL_STATE_SUSPENDED, FTDM_CHANNEL_STATE_RESTART,
 	 FTDM_CHANNEL_STATE_CANCEL, FTDM_CHANNEL_STATE_TERMINATING,
 	 FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS,
-	 FTDM_CHANNEL_STATE_UP, FTDM_END}
+	 FTDM_CHANNEL_STATE_PROGRESS_MEDIA ,FTDM_CHANNEL_STATE_UP, FTDM_END}
 	},
    {
 	ZSD_OUTBOUND,
@@ -448,6 +448,17 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		handle_sta_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->globalFlg, sngss7_event->evntType,  &sngss7_event->event.siStaEvnt);
 		break;
 	/**************************************************************************/
+	case (SNGSS7_SUSP_IND_EVENT):
+		handle_susp_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siSuspEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_RESM_IND_EVENT):
+		handle_resm_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siResmEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_SSP_STA_CFM_EVENT):
+		break;
+	/**************************************************************************/
 	default:
 		SS7_ERROR("Unknown Event Id!\n");
 		break;
@@ -469,6 +480,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 {
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	sng_isup_inf_t		*isup_intf = NULL; 
 	int 				i = 0;
 	ftdm_sigmsg_t 		sigev;
 
@@ -589,17 +601,16 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		}
 
 		/*check if the channel is inbound or outbound */
-		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OUTBOUND))	{
+		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 			/*OUTBOUND...so we were told by the line of this so noifiy the user */
 			sigev.event_id = FTDM_SIGEVENT_PROGRESS;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 
+			/* move to progress media  */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 		} else {
 			/* inbound call so we need to send out ACM */
-			ft_to_sngss7_acm (ftdmchan);
-
-			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+			ft_to_sngss7_acm(ftdmchan);
 		}
 
 		break;
@@ -610,6 +621,13 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
 			break;
 		}
+
+		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			/* inform the user there is media avai */
+			sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
+			ftdm_span_send_signal (ftdmchan->span, &sigev);
+		}
+			
 
 		/* nothing to do at this time */
 		break;
@@ -1155,11 +1173,15 @@ suspend_goto_restart:
 		ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 		break;
 
-/**************************************************************************/
+	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_IN_LOOP:	/* COT test */
 
-		/* send the lpa */
-		ft_to_sngss7_lpa (ftdmchan);
+		isup_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
+
+		if (sngss7_test_options(isup_intf, SNGSS7_LPA_FOR_COT)) {
+			/* send the lpa */
+			ft_to_sngss7_lpa (ftdmchan);
+		} 
 
 		break;
 	/**************************************************************************/
@@ -1332,7 +1354,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 			sngss7_clear_flag(sngss7_info, FLAG_INFID_PAUSED);
 			sngss7_set_flag(sngss7_info, FLAG_INFID_RESUME);
 		}
-#if 1
+#if 0
 		/* throw the grp reset flag */
 		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
 		if (x == 1) {
@@ -1480,7 +1502,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 
 	sngss7_id = 0;
 
-	cmbLinkSetId = 1;
+	cmbLinkSetId = 0;
 
 	/* initalize the global gen_config flag */
 	g_ftdm_sngss7_data.gen_config = 0;
@@ -1507,9 +1529,9 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 	sng_event.cc.sng_fac_cfm = sngss7_fac_cfm;
 	sng_event.cc.sng_sta_ind = sngss7_sta_ind;
 	sng_event.cc.sng_umsg_ind = sngss7_umsg_ind;
-	sng_event.cc.sng_susp_ind = NULL;
-	sng_event.cc.sng_resm_ind = NULL;
-	sng_event.cc.sng_ssp_sta_cfm = NULL;
+	sng_event.cc.sng_susp_ind = sngss7_susp_ind;
+	sng_event.cc.sng_resm_ind = sngss7_resm_ind;
+	sng_event.cc.sng_ssp_sta_cfm = sngss7_ssp_sta_cfm;
 
 	sng_event.sm.sng_log = handle_sng_log;
 	sng_event.sm.sng_mtp1_alarm = handle_sng_mtp1_alarm;

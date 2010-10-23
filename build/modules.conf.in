@@ -105,5 +105,5 @@ say/mod_say_ru
 #say/mod_say_th
 
 ## Experimental Modules (don't cry if they're broken)
-#../../contrib/mod/endpoints/mod_khomp
+#endpoints/mod_khomp
 #../../contrib/mod/xml_int/mod_xml_odbc

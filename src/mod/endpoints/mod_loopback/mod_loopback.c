@@ -53,7 +53,8 @@ typedef enum {
 	TFLAG_BOWOUT = (1 << 5),
 	TFLAG_BLEG = (1 << 6),
 	TFLAG_APP = (1 << 7),
-	TFLAG_BOWOUT_USED = (1 << 8)
+	TFLAG_RUNNING_APP = (1 << 8),
+	TFLAG_BOWOUT_USED = (1 << 9)
 } TFLAGS;
 
 struct private_object {
@@ -321,11 +322,16 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
 	
+	if (switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
+		switch_clear_flag(tech_pvt, TFLAG_RUNNING_APP);
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_APP) && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && 
 		(app = switch_channel_get_variable(channel, "loopback_app"))) {
 		switch_caller_extension_t *extension = NULL;
 
 		switch_clear_flag(tech_pvt, TFLAG_APP);
+		switch_set_flag(tech_pvt, TFLAG_RUNNING_APP);
 
 		arg = switch_channel_get_variable(channel, "loopback_app_arg");
 		extension = switch_caller_extension_new(session, app, app);
@@ -717,6 +723,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
+		switch_status_t r = SWITCH_STATUS_FALSE;
+		switch_core_session_t *other_session;
+		
+		if (switch_core_session_get_partner(session, &other_session)) {
+			r = switch_core_session_receive_message(other_session, msg);
+			switch_core_session_rwunlock(other_session);
+		}
+
+		return r;
+	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:

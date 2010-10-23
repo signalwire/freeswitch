@@ -242,16 +242,23 @@ static switch_status_t sndfile_file_close(switch_file_handle_t *handle)
 static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	sndfile_context *context = handle->private_info;
-
+	sf_count_t count;
+	switch_status_t r = SWITCH_STATUS_SUCCESS;
+	
 	if (!handle->seekable) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
-	*cur_sample = (unsigned int) sf_seek(context->handle, samples, whence);
-	handle->pos = *cur_sample;
-
-	return SWITCH_STATUS_SUCCESS;
+	if ((count = sf_seek(context->handle, samples, whence)) == ((sf_count_t) -1)) {
+		r = SWITCH_STATUS_BREAK;
+		count = sf_seek(context->handle, -1, SEEK_END);
+	}
+	
+	*cur_sample = (unsigned int) count;
+	handle->pos = *cur_sample;	
+	
+	return r;
 }
 
 static switch_status_t sndfile_file_read(switch_file_handle_t *handle, void *data, size_t *len)
