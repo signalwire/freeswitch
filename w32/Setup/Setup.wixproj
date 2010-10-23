@@ -577,7 +577,7 @@
       <DoNotHarvest>
       </DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>MODLLOCATION</RefTargetDir>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
     <ProjectReference Include="..\..\src\mod\languages\mod_managed\mod_managed.2010.vcxproj">
       <Name>mod_managed</Name>
