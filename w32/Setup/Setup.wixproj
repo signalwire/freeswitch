@@ -246,6 +246,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_hash\mod_hash.2010.vcxproj">
+      <Name>mod_hash</Name>
+      <Project>{2e250296-0c08-4342-9c8a-bcbdd0e7df65}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_lcr\mod_lcr.2010.vcxproj">
       <Name>mod_lcr</Name>
       <Project>{1a3793d1-05d1-4b57-9b0f-5af3e79dc439}</Project>
@@ -372,6 +381,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_h26x\mod_h26x.2010.vcxproj">
+      <Name>mod_h26x</Name>
+      <Project>{2c3c2423-234b-4772-8899-d3b137e5ca35}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_ilbc\mod_ilbc.2010.vcxproj">
       <Name>mod_ilbc</Name>
       <Project>{d3ec0aff-76fc-4210-a825-9a17410660a3}</Project>
@@ -402,6 +420,15 @@
     <ProjectReference Include="..\..\src\mod\codecs\mod_speex\mod_speex.2010.vcxproj">
       <Name>mod_speex</Name>
       <Project>{5580d60e-0f77-4716-9cd4-b8e5986fa375}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\dialplans\mod_dialplan_asterisk\mod_dialplan_asterisk.2010.vcxproj">
+      <Name>mod_dialplan_asterisk</Name>
+      <Project>{e7bc026c-7cc5-45a3-bc7c-3b88eef01f24}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>
@@ -447,6 +474,15 @@
     <ProjectReference Include="..\..\src\mod\endpoints\mod_sofia\mod_sofia.2010.vcxproj">
       <Name>mod_sofia</Name>
       <Project>{0df3abd0-ddc0-4265-b778-07c66780979b}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_csv\mod_cdr_csv.2010.vcxproj">
+      <Name>mod_cdr_csv</Name>
+      <Project>{44d7deaf-fda5-495e-8b9d-1439e4f4c21e}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>
@@ -533,6 +569,15 @@
       </DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_managed\managed\FreeSWITCH.Managed.2010.csproj">
+      <Name>FreeSWITCH.Managed.2010</Name>
+      <Project>{834e2b2f-5483-4b80-8fe3-fe48ff76e5c0}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLLOCATION</RefTargetDir>
     </ProjectReference>
     <ProjectReference Include="..\..\src\mod\languages\mod_managed\mod_managed.2010.vcxproj">
       <Name>mod_managed</Name>
