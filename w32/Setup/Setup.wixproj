@@ -133,7 +133,8 @@
       <Name>pthread</Name>
       <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
       <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
+      <DoNotHarvest>
+      </DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLLOCATION</RefTargetDir>
     </ProjectReference>
