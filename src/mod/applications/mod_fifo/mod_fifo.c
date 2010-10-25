@@ -1212,7 +1212,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		if (!h->timeout) h->timeout = 60;
 		if (timeout < h->timeout) timeout = h->timeout;
 		
-		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s]%s,", h->timeout, h->uuid, parsed ? parsed : h->originate_string);
+		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
+							  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
 		stream2.write_function(&stream2, "%s,", h->uuid);
 		switch_safe_free(parsed);
 		
@@ -1505,17 +1506,17 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "originate_timeout", "%d", h->timeout);
 
 	if (switch_stristr("origination_caller", h->originate_string)) {
-		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q'}%s",
-										  node->name, h->originate_string);
+		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q'}%s",
+										  node->name, node->name, h->originate_string);
 	} else {
 		if (!zstr(node->outbound_name)) {
-			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q',"
 											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
-											  node->name,  node->outbound_name, h->originate_string);
+											  node->name, node->name,  node->outbound_name, h->originate_string);
 		} else {
-			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q',"
 											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
-											  node->name,  node->name, h->originate_string);
+											  node->name, node->name,  node->name, h->originate_string);
 		}
 			
 	}
