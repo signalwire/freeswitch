@@ -1722,7 +1722,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *e = NULL;
 	const char *ringback_data = NULL;
 	switch_event_t *var_event = NULL;
-	uint8_t fail_on_single_reject = 0;
+	int8_t fail_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
