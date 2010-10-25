@@ -159,11 +159,22 @@ static struct {
 	switch_mutex_t *mutex;
 	private_t *sk_console;
 	int start_port;
+
+	// CLOUDTREE (THomas Hazel)
+	switch_mutex_t *list_mutex;
+
 } globals;
 
 switch_endpoint_interface_t *skypopen_endpoint_interface;
 switch_memory_pool_t *skypopen_module_pool = NULL;
 int running = 0;
+
+// CLOUDTREE (THomas Hazel)
+#ifndef WIN32
+struct SkypopenList global_handles_list;
+extern int xio_error_handler(Display *dpy);
+extern int X11_errors_handler(Display * dpy, XErrorEvent * err);
+#endif
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
@@ -175,7 +186,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_write_silence_when_idle, globals.wr
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_setsockopt, globals.setsockopt);
 
 static switch_status_t interface_exists(char *the_interface);
-static switch_status_t remove_interface(char *the_interface);
+/* CLOUDTREE (Thomas Hazel) static*/ switch_status_t remove_interface(char *the_interface, /* CLOUDTREE (Thomas Hazel */ switch_bool_t force);
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -298,7 +309,7 @@ static switch_status_t interface_exists(char *the_interface)
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t remove_interface(char *the_interface)
+/* CLOUDTREE (Thomas Hazel) static */ switch_status_t remove_interface(char *the_interface, /* CLOUDTREE (Thomas Hazel) */ switch_bool_t force)
 {
 	int x = 10;
 	unsigned int howmany = 8;
@@ -338,7 +349,7 @@ static switch_status_t remove_interface(char *the_interface)
 		goto end;
 	}
 
-	if (strlen(globals.SKYPOPEN_INTERFACES[interface_id].session_uuid_str)) {
+	if (/* CLOUDTREE (Thomas Hazel) */ (force == FALSE) && strlen(globals.SKYPOPEN_INTERFACES[interface_id].session_uuid_str)) {
 		DEBUGA_SKYPE("interface '%s' is busy\n", SKYPOPEN_P_LOG, the_interface);
 		goto end;
 	}
@@ -743,7 +754,7 @@ read:
 				|| tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 				|| tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 		switch_mutex_lock(tech_pvt->mutex_audio_srv);
-		if (switch_buffer_inuse(tech_pvt->read_buffer)) {
+		if (tech_pvt->read_buffer && switch_buffer_inuse(tech_pvt->read_buffer)) {
 			bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, 640);
 			tech_pvt->read_frame.datalen = bytes_read;
 		}
@@ -1232,6 +1243,7 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 	private_t *tech_pvt = obj;
 	int res;
 	int forever = 1;
+	switch_event_t *event;
 
 	if (!tech_pvt)
 		return NULL;
@@ -1242,6 +1254,14 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 		if (!(running && tech_pvt->running))
 			break;
 		res = skypopen_signaling_read(tech_pvt);
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_INCOMING_RAW) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "X-Skype-Response-Code", "%d", res);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "X-Skype-Interface", "%s", tech_pvt->interface_id);
+			switch_event_add_body(event, "%s", tech_pvt->message);
+			switch_event_fire(&event);
+		}
+
 		if (res == CALLFLOW_INCOMING_HANGUP || tech_pvt->skype_callflow == CALLFLOW_INCOMING_HANGUP) {
 			switch_core_session_t *session = NULL;
 			switch_channel_t *channel = NULL;
@@ -1266,6 +1286,7 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 					DEBUGA_SKYPE("no session\n", SKYPOPEN_P_LOG);
 				}
 				switch_mutex_lock(globals.mutex);
+				tech_pvt->ringing_state = SKYPOPEN_RINGING_INIT;
 				tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				*tech_pvt->session_uuid_str = '\0';
 				*tech_pvt->skype_call_id = '\0';
@@ -1298,6 +1319,9 @@ static switch_status_t load_config(int reload_type)
 	char *cf = "skypopen.conf";
 	switch_xml_t cfg, xml, global_settings, param, interfaces, myinterface;
 	private_t *tech_pvt = NULL;
+
+	// CLOUDTREE (Thomas Hazel) - always try to load configuration
+	running = 1;
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, skypopen_module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -1769,14 +1793,32 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 	skypopen_module_pool = pool;
 	memset(&globals, '\0', sizeof(globals));
 
-	running = 1;
+	// CLOUDTREE (Thomas Hazel)
+	#ifndef WIN32
+	// XXX: these assumes no one will override
+	XSetErrorHandler(X11_errors_handler);
+	XSetIOErrorHandler(xio_error_handler);
 
-	if (load_config(FULL_RELOAD) != SWITCH_STATUS_SUCCESS) {
+	memset(&global_handles_list, 0, sizeof(global_handles_list));
+	switch_mutex_init(&globals.list_mutex, SWITCH_MUTEX_NESTED, skypopen_module_pool);
+	#endif
+
+	// CLOUDTREE (Thomas Hazel) - load_configs no longer locks things up, no need to fail load
+	/*if (*/ load_config(FULL_RELOAD); /* != SWITCH_STATUS_SUCCESS) {
 		running = 0;
 		return SWITCH_STATUS_FALSE;
 	}
+	*/
+
+	// CLOUDTREE (Thomas Hazel) - setting "running = 1;" use to be located before "load_config"
+	running = 1;
 
 	if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1793,7 +1835,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function, SKYPOPEN_CHAT_SYNTAX);
 		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
-
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;
@@ -1813,6 +1854,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 
 	for (interface_id = 0; interface_id < SKYPOPEN_MAX_INTERFACES; interface_id++) {
 		tech_pvt = &globals.SKYPOPEN_INTERFACES[interface_id];
+
 
 		if (strlen(globals.SKYPOPEN_INTERFACES[interface_id].name)) {
 			if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
@@ -1888,6 +1930,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 
 	}
 	switch_event_free_subclass(MY_EVENT_INCOMING_CHATMESSAGE);
+	switch_event_free_subclass(MY_EVENT_INCOMING_RAW);
 
 	switch_safe_free(globals.context);
 	switch_safe_free(globals.dialplan);
@@ -2058,14 +2101,14 @@ int remote_party_is_ringing(private_t * tech_pvt)
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
-		ERRORA("No session???\n", SKYPOPEN_P_LOG);
-		goto done;
+		ERRORA("No session_uuid_str???\n", SKYPOPEN_P_LOG);
+		goto bad;
 	}
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 	} else {
 		ERRORA("No session???\n", SKYPOPEN_P_LOG);
-		goto done;
+		goto bad;
 	}
 	if (channel) {
 		switch_channel_mark_ring_ready(channel);
@@ -2076,7 +2119,8 @@ int remote_party_is_ringing(private_t * tech_pvt)
 
 	switch_core_session_rwunlock(session);
 
-  done:
+	return 1;
+  bad:
 	return 0;
 }
 
@@ -2088,7 +2132,7 @@ int remote_party_is_early_media(private_t * tech_pvt)
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
-		ERRORA("No session???\n\n\n", SKYPOPEN_P_LOG);
+		ERRORA("No session_uuid_str???\n\n\n", SKYPOPEN_P_LOG);
 		goto done;
 	}
 	if (session) {
@@ -2276,7 +2320,7 @@ SWITCH_STANDARD_API(sk_function)
 		}
 	} else if (!strcasecmp(argv[0], "remove")) {
 		if (argc == 2) {
-			if (remove_interface(argv[1]) == SWITCH_STATUS_SUCCESS) {
+			if (remove_interface(argv[1], FALSE) == SWITCH_STATUS_SUCCESS) {
 				if (interface_exists(argv[1]) == SWITCH_STATUS_SUCCESS) {
 					stream->write_function(stream, "sk remove '%s' failed\n", argv[1]);
 				} else {
@@ -2399,7 +2443,9 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 	}
 	DEBUGA_SKYPE("NOT FOUND\n", SKYPOPEN_P_LOG);
 
-	if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
+	// CLOUDTREE (Thomas Hazel)
+	//if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
+	if (tech_pvt && tech_pvt->ringing_state == SKYPOPEN_RINGING_INIT) {
 		/* we are not inside an active call */
 
 		tech_pvt->interface_state = SKYPOPEN_STATE_PRERING;
@@ -2508,7 +2554,9 @@ int skypopen_answer(private_t * tech_pvt)
 	}
 	DEBUGA_SKYPE("NOT FOUND\n", SKYPOPEN_P_LOG);
 
-	if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
+	// CLOUDTREE (Thomas Hazel)
+	//if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
+	if (tech_pvt && tech_pvt->ringing_state == SKYPOPEN_RINGING_INIT) {
 		/* we are not inside an active call */
 
 		tech_pvt->ib_calls++;
@@ -2853,6 +2901,151 @@ int next_port(void)
 	return (globals.start_port - 1);
 }
 
+#ifndef WIN32
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles* skypopen_list_add(struct SkypopenList* list, struct SkypopenHandles* handle)
+{
+	switch_mutex_lock(globals.list_mutex);
+
+	if (handle->managed == SWITCH_TRUE) {
+		// already added
+		switch_mutex_unlock(globals.list_mutex);
+		return 0;
+	}
+
+	if (list->head == 0) {
+		list->head = handle;
+		handle->prev = 0;
+
+	} else {
+		((struct SkypopenHandles*) list->tail)->next = handle;
+		((struct SkypopenHandles*) handle)->prev = list->tail;
+	}
+
+	list->tail = handle;
+	handle->next = 0;
+
+	handle->managed = SWITCH_TRUE;
+
+	list->entries++;
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles* skypopen_list_remove_by_value(struct SkypopenList* list, Display* display)
+{
+	struct SkypopenHandles* iter;
+	struct SkypopenHandles* handle = 0;
+
+	switch_mutex_lock(globals.list_mutex);
+
+	iter = (struct SkypopenHandles*) list->head;
+	while (iter != 0) {
+		if (iter->disp == display) {
+			handle = iter;
+			break;
+		}
+
+		iter = (struct SkypopenHandles*) iter->next;
+	}
+
+	if ((handle != 0) && (handle->managed == SWITCH_TRUE)) {
+		if (handle->prev == 0) {
+			list->head = ((struct SkypopenHandles*) handle)->next;
+
+		} else {
+			((struct SkypopenHandles*) handle->prev)->next = ((struct SkypopenHandles*) handle)->next;
+		}
+
+		if (handle->next == 0) {
+			list->tail = ((struct SkypopenHandles*) handle)->prev;
+
+		} else {
+			((struct SkypopenHandles*) handle->next)->prev = ((struct SkypopenHandles*) handle)->prev;
+		}
+
+		handle->managed = SWITCH_FALSE;
+		handle->next = 0;
+		handle->prev = 0;
+
+		list->entries--;
+	}
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles* skypopen_list_remove_by_reference(struct SkypopenList* list, struct SkypopenHandles* handle)
+{
+	switch_mutex_lock(globals.list_mutex);
+
+	if (handle->managed == SWITCH_FALSE) {
+		// already removed
+		switch_mutex_unlock(globals.list_mutex);
+		return 0;
+	}
+
+	if (handle->prev == 0) {
+		list->head = ((struct SkypopenHandles*) handle)->next;
+
+	} else {
+		((struct SkypopenHandles*) handle->prev)->next = ((struct SkypopenHandles*) handle)->next;
+	}
+
+	if (handle->next == 0) {
+		list->tail = ((struct SkypopenHandles*) handle)->prev;
+
+	} else {
+		((struct SkypopenHandles*) handle->next)->prev = ((struct SkypopenHandles*) handle)->prev;
+	}
+
+	handle->managed = SWITCH_FALSE;
+	handle->next = 0;
+	handle->prev = 0;
+
+	list->entries--;
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+#ifdef XIO_ERROR_BY_UCONTEXT
+struct SkypopenHandles* skypopen_list_find(struct SkypopenList* list, struct SkypopenHandles* find)
+{
+	struct SkypopenHandles* iter;
+	struct SkypopenHandles* handle = NULL;
+
+	switch_mutex_lock(globals.list_mutex);
+
+	iter = (struct SkypopenHandles*) list->head;
+	while (iter != NULL) {
+		if (iter == find) {
+			handle = iter;
+			break;
+		}
+
+		iter = (struct SkypopenHandles*) iter->next;
+	}
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+#endif
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list? 
+int skypopen_list_size(struct SkypopenList* list)
+{
+	return list->entries;
+}
+#endif /* NOT WIN32 */
 
 /* For Emacs:
  * Local Variables:

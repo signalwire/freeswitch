@@ -41,6 +41,20 @@
 #include <X11/Xlib.h>
 #include <X11/Xlibint.h>
 #include <X11/Xatom.h>
+
+// CLOUDTREE (Thomas Hazel)
+#define XIO_ERROR_BY_SETJMP
+//#define XIO_ERROR_BY_UCONTEXT
+
+// CLOUDTREE (Thomas Hazel)
+#ifdef XIO_ERROR_BY_SETJMP
+	#include "setjmp.h"
+#endif
+// CLOUDTREE (Thomas Hazel)
+#ifdef XIO_ERROR_BY_UCONTEXT
+	#include "ucontext.h"
+#endif
+
 #endif //WIN32
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -58,6 +72,7 @@
 #endif
 
 #define MY_EVENT_INCOMING_CHATMESSAGE "skypopen::incoming_chatmessage"
+#define MY_EVENT_INCOMING_RAW "skypopen::incoming_raw"
 
 #define SAMPLERATE_SKYPOPEN 16000
 #define SAMPLES_PER_FRAME SAMPLERATE_SKYPOPEN/50
@@ -98,6 +113,11 @@ typedef enum {
 /*********************************/
 #define SKYPOPEN_CONTROL_RINGING		1
 #define SKYPOPEN_CONTROL_ANSWER		2
+
+/*********************************/
+// CLOUDTREE (Thomas Hazel)
+#define SKYPOPEN_RINGING_INIT		0
+#define SKYPOPEN_RINGING_PRE		1
 
 /*********************************/
 #define		SKYPOPEN_STATE_IDLE					0
@@ -154,7 +174,35 @@ struct SkypopenHandles {
 	int currentuserhandle;
 	int api_connected;
 	int fdesc[2];
+
+	// CLOUDTREE (Thomas Hazel)
+	#ifdef XIO_ERROR_BY_SETJMP
+		jmp_buf ioerror_context;
+	#endif
+	#ifdef XIO_ERROR_BY_UCONTEXT
+		ucontext_t ioerror_context;
+	#endif
+
+	// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
+	switch_bool_t managed;
+	void* prev;
+	void* next;
 };
+
+// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
+struct SkypopenList {
+	int entries;
+	void* head;
+	void* tail;
+};
+
+// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles* skypopen_list_add(struct SkypopenList* list, struct SkypopenHandles* x);
+struct SkypopenHandles* skypopen_list_find(struct SkypopenList* list, struct SkypopenHandles* x);
+struct SkypopenHandles* skypopen_list_remove_by_value(struct SkypopenList* list, Display* display);
+struct SkypopenHandles* skypopen_list_remove_by_reference(struct SkypopenList* list, struct SkypopenHandles* x);
+int skypopen_list_size(struct SkypopenList* list);
+
 #else //WIN32
 
 struct SkypopenHandles {
@@ -217,6 +265,9 @@ struct private_object {
 	int tcp_srv_port;
 #endif
 	struct SkypopenHandles SkypopenHandles;
+
+	// CLOUDTREE (Thomas Hazel)
+	char ringing_state;
 
 	int interface_state;
 	char language[80];
@@ -294,6 +345,7 @@ struct private_object {
 	char ring_id[256];
 	char ring_value[256];
 
+	char message[4096];
 };
 
 typedef struct private_object private_t;
