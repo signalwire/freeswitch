@@ -2393,6 +2393,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
 						}
+					} else if (!strcasecmp(var, "ignore-183nosdp")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
@@ -3049,6 +3055,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_T38_PASSTHRU);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
+						}
+					} else if (!strcasecmp(var, "ignore-183nosdp")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
@@ -4597,6 +4609,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (status == 183 && !r_sdp) {
+		if (switch_true(switch_channel_get_variable(channel, "sip_ignore_183nosdp")) || sofia_test_pflag(profile, PFLAG_IGNORE_183NOSDP)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp\n", switch_channel_get_name(channel));
+			goto done;
+		}
 		status = 180;
 	}
 

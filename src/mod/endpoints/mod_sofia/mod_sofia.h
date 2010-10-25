@@ -221,6 +221,7 @@ typedef enum {
 	PFLAG_CID_IN_1XX,
 	PFLAG_IN_DIALOG_CHAT,
 	PFLAG_DEL_SUBS_ON_REG,
+	PFLAG_IGNORE_183NOSDP,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
