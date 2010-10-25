@@ -216,8 +216,20 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
 			ftdm_channel_add_var(ftdmchan, "ss7_cld_nadi", nadi);
 
-			/* set the state of the channel to collecting...the rest is done by the chan monitor */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+
+			/* check if a COT test is requested */
+			if ((siConEvnt->natConInd.eh.pres) && (siConEvnt->natConInd.contChkInd.pres)) {
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Found COT Request\n", sngss7_info->circuit->cic);
+
+				/* tell the core to loop the channel */
+				ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_LOOP, NULL);
+
+				/* move to in loop state */
+				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IN_LOOP);
+			} else {
+				/* set the state of the channel to collecting...the rest is done by the chan monitor */
+				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+			}
 
 		} /* if (channel is usable */
 
@@ -256,6 +268,9 @@ handle_glare:
 	default:	/* should not have gotten an IAM while in this state */
 		SS7_ERROR_CHAN(ftdmchan, "Got IAM on channel in invalid state(%s)...reset!\n", ftdm_channel_state2str (ftdmchan->state));
 
+		/* reset the cic */
+		sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
+
 		/* move the state of the channel to RESTART to force a reset */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 
@@ -292,6 +307,7 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case (ADDRCMPLT):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ACM\n", sngss7_info->circuit->cic);
+
 		switch (ftdmchan->state) {
 		/**********************************************************************/
 		case FTDM_CHANNEL_STATE_DIALING:
@@ -315,14 +331,22 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 			}
 			
-		break;
+			break;
 		/**********************************************************************/
 		default:	/* incorrect state...reset the CIC */
+			SS7_ERROR_CHAN(ftdmchan, "RX ACM in invalid state :%s...resetting CIC\n", 
+									ftdm_channel_state2str (ftdmchan->state));
+
+			/* reset the cic */
+			sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
+
 			/* go to RESTART */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-		break;
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+			break;
 		/**********************************************************************/
 		} /* switch (ftdmchan->state) */
+
+		break;
 	/**************************************************************************/
 	case (MODIFY):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx MODIFY\n", sngss7_info->circuit->cic);
@@ -354,6 +378,34 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case (SUBSADDR):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SAM\n", sngss7_info->circuit->cic);
+
+		/* check the channel state */
+		switch (ftdmchan->state) {
+		/**********************************************************************/
+		case (FTDM_CHANNEL_STATE_COLLECT):
+			
+			/* confirm that the event contains the subsquent number field */
+			if (siCnStEvnt->subNum.eh.pres && siCnStEvnt->subNum.addrSig.pres) {
+				/* add the digits to the ftdm channel variable */
+				append_tknStr_from_sngss7(siCnStEvnt->subNum.addrSig, 
+											ftdmchan->caller_data.dnis.digits, 
+											siCnStEvnt->subNum.oddEven);
+			} else {
+				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in SAM!%s\n", " ");
+			}
+
+			/* go to idle so that collect state is processed again */
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+
+			break;
+		/**********************************************************************/
+		default:
+			SS7_ERROR_CHAN(ftdmchan, "RX SAM in invalid state :%s...ignoring\n", 
+										ftdm_channel_state2str (ftdmchan->state));
+			break;
+		/**********************************************************************/
+		} /* switch (ftdmchan->state) */
+
 		break;
 	/**************************************************************************/
 	case (EXIT):
@@ -830,7 +882,7 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONTCHK:		   /* continuity check */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx COT start\n", sngss7_info->circuit->cic);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CCR start\n", sngss7_info->circuit->cic);
 		handle_cot_start(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
@@ -840,7 +892,7 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		break;
 	/**************************************************************************/
 	case SIT_STA_STPCONTIN:		 /* stop continuity */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx COT stop\n", sngss7_info->circuit->cic);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CCR stop\n", sngss7_info->circuit->cic);
 		handle_cot_stop(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
@@ -1225,7 +1277,7 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* open the channel if it is not open */
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 		if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-			SS7_ERROR("Failed to open CIC %d for COT test!\n", sngss7_info->circuit->cic);
+			SS7_ERROR("Failed to open CIC %d for CCR test!\n", sngss7_info->circuit->cic);
 			/* KONRAD FIX ME */
 			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 			return FTDM_FAIL;
@@ -1290,6 +1342,38 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	ftdm_channel_t	  *ftdmchan = NULL;
+
+	/* get the ftdmchan and ss7_chan_data from the circuit */
+	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+
+	/* lock the channel */
+	ftdm_mutex_lock(ftdmchan->mutex);
+
+	switch (ftdmchan->state) {
+	/**************************************************************************/
+	case (FTDM_CHANNEL_STATE_IN_LOOP):
+		/* tell the core to stop looping the channel */
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
+	
+		/* exit out of the LOOP state and go to collect */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+		
+		break;
+	/**************************************************************************/
+	default:
+		/* exit out of the LOOP state to the last state */
+		ftdm_set_state_locked(ftdmchan, ftdmchan->last_state);
+
+		break;
+	/**************************************************************************/
+	} /* switch (ftdmchan->state) */
+
 	if ( (siStaEvnt->contInd.eh.pres > 0) && (siStaEvnt->contInd.contInd.pres > 0)) {
 		SS7_INFO("Continuity Test result for CIC = %d (span %d, chan %d) is: \"%s\"\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
@@ -1300,12 +1384,12 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 		SS7_ERROR("Recieved Continuity report containing no results!\n");
 	}
 
+	/* unlock the channel again before we exit */
+	ftdm_mutex_unlock(ftdmchan->mutex);
+
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
 }
-
-/******************************************************************************/
-
 
 /******************************************************************************/
 ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)

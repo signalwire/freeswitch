@@ -79,7 +79,7 @@ ftdm_state_map_t sangoma_ss7_state_map = {
 	ZSD_INBOUND,
 	ZSM_UNACCEPTABLE,
 	{FTDM_CHANNEL_STATE_IDLE, FTDM_END},
-	{FTDM_CHANNEL_STATE_RESTART, FTDM_END}
+	{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_COLLECT, FTDM_END}
 	},
    {
 	ZSD_INBOUND,
@@ -100,7 +100,8 @@ ftdm_state_map_t sangoma_ss7_state_map = {
 	ZSM_UNACCEPTABLE,
 	{FTDM_CHANNEL_STATE_COLLECT, FTDM_END},
 	{FTDM_CHANNEL_STATE_SUSPENDED, FTDM_CHANNEL_STATE_RESTART,
-	 FTDM_CHANNEL_STATE_CANCEL, FTDM_CHANNEL_STATE_RING, FTDM_END}
+	 FTDM_CHANNEL_STATE_CANCEL, FTDM_CHANNEL_STATE_RING, 
+	 FTDM_CHANNEL_STATE_IDLE, FTDM_END}
 	},
    {
 	ZSD_INBOUND,
@@ -526,29 +527,32 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
 			
 		} else {
-			SS7_INFO_CHAN(ftdmchan,"Received %d out of %d so far: %s...starting T35\n",
-						i,
-						g_ftdm_sngss7_data.min_digits,
-						ftdmchan->caller_data.dnis.digits);
-
-			/* start ISUP t35 */
-			if (ftdm_sched_timer (sngss7_info->t35.sched,
-									"t35",
-									sngss7_info->t35.beat,
-									sngss7_info->t35.callback,
-									&sngss7_info->t35,
-									&sngss7_info->t35.hb_timer_id)) {
-
-				SS7_ERROR ("Unable to schedule timer, hanging up call!\n");
-
-				ftdmchan->caller_data.hangup_cause = 41;
-
-				/* set the flag to indicate this hangup is started from the local side */
-				sngss7_set_flag (sngss7_info, FLAG_LOCAL_REL);
-
-				/* end the call */
-				ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
-			} /* if (ftdm_sched_timer(sngss7_info->t35.sched, */
+			/* if we are coming from idle state then we have already been here once before */
+			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
+				SS7_INFO_CHAN(ftdmchan,"Received %d out of %d so far: %s...starting T35\n",
+										i,
+										g_ftdm_sngss7_data.min_digits,
+										ftdmchan->caller_data.dnis.digits);
+		
+				/* start ISUP t35 */
+				if (ftdm_sched_timer (sngss7_info->t35.sched,
+										"t35",
+										sngss7_info->t35.beat,
+										sngss7_info->t35.callback,
+										&sngss7_info->t35,
+										&sngss7_info->t35.hb_timer_id)) {
+		
+					SS7_ERROR ("Unable to schedule timer, hanging up call!\n");
+		
+					ftdmchan->caller_data.hangup_cause = 41;
+		
+					/* set the flag to indicate this hangup is started from the local side */
+					sngss7_set_flag (sngss7_info, FLAG_LOCAL_REL);
+		
+					/* end the call */
+					ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+				} /* if (ftdm_sched_timer(sngss7_info->t35.sched, */
+			} /* if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) */
 		} /* checking ST/#digits */
 
 	  break;
