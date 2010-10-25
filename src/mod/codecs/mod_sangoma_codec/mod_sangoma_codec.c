@@ -65,9 +65,6 @@ unsigned long long g_next_session_id = 0;
 /* hash of sessions (I think a linked list suits better here, but FS does not have the data type) */
 static switch_hash_t *g_sessions_hash = NULL;
 
-/* global memory pool provided by FS */
-static switch_memory_pool_t *g_pool = NULL;
-
 typedef struct vocallo_codec_s {
 	int codec_id; /* vocallo codec ID */
 	int iana; /* IANA code to register in FS */
@@ -450,25 +447,31 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		*encoded_data_len = encoded_frame.datalen;
 	}
 
-	/* update encoding stats */
-	sess->encoder.rx++;
-
-	now_time = switch_micro_time_now();
-	if (!sess->encoder.last_rx_time) {
-		sess->encoder.last_rx_time = now_time;
-	} else {
-		difftime = now_time - sess->encoder.last_rx_time;
-		sess->encoder.avgrxus = sess->encoder.avgrxus ? ((sess->encoder.avgrxus + difftime)/2) : difftime;
-		sess->encoder.last_rx_time  = now_time;
-	}
-
-	/* check sequence and bump lost rx packets count if needed */
-	if (sess->encoder.lastrxseqno >= 0) {
-		if (encoded_frame.seq > (sess->encoder.lastrxseqno + 2) ) {
-			sess->encoder.rxlost += encoded_frame.seq - sess->encoder.lastrxseqno - 1;
+	/* update encoding stats if we received a frame */
+	if (*encoded_data_len) {
+		if (*encoded_data_len != codec->implementation->encoded_bytes_per_packet) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Returning odd encoded frame of %d bytes intead of %d bytes\n", *encoded_data_len, codec->implementation->encoded_bytes_per_packet);
 		}
+		sess->encoder.rx++;
+		now_time = switch_micro_time_now();
+		if (!sess->encoder.last_rx_time) {
+			sess->encoder.last_rx_time = now_time;
+		} else {
+			difftime = now_time - sess->encoder.last_rx_time;
+			sess->encoder.avgrxus = sess->encoder.avgrxus ? ((sess->encoder.avgrxus + difftime)/2) : difftime;
+			sess->encoder.last_rx_time  = now_time;
+		}
+
+		/* check sequence and bump lost rx packets count if needed */
+		if (sess->encoder.lastrxseqno >= 0) {
+			if (encoded_frame.seq > (sess->encoder.lastrxseqno + 2) ) {
+				sess->encoder.rxlost += encoded_frame.seq - sess->encoder.lastrxseqno - 1;
+			}
+		}
+		sess->encoder.lastrxseqno = encoded_frame.seq;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output from sangoma encoder\n");
 	}
-	sess->encoder.lastrxseqno = encoded_frame.seq;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -573,25 +576,34 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 		*decoded_data_len = i * 2;
 	}
 
-	/* update decoding stats */
-	sess->decoder.rx++;
-
-	now_time = switch_micro_time_now();
-	if (!sess->decoder.last_rx_time) {
-		sess->decoder.last_rx_time = now_time;
-	} else {
-		difftime = now_time - sess->decoder.last_rx_time;
-		sess->decoder.avgrxus = sess->decoder.avgrxus ? ((sess->decoder.avgrxus + difftime)/2) : difftime;
-		sess->decoder.last_rx_time = now_time;
-	}
-
-	/* check sequence and bump lost rx packets count if needed */
-	if (sess->decoder.lastrxseqno >= 0) {
-		if (ulaw_frame.seq > (sess->decoder.lastrxseqno + 2) ) {
-			sess->decoder.rxlost += ulaw_frame.seq - sess->decoder.lastrxseqno - 1;
+	if (*decoded_data_len) {
+		if (*decoded_data_len != codec->implementation->decoded_bytes_per_packet) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Returning odd decoded frame of %d bytes intead of %d bytes\n", *decoded_data_len, codec->implementation->decoded_bytes_per_packet);
 		}
+		/* update decoding stats */
+		sess->decoder.rx++;
+
+		now_time = switch_micro_time_now();
+		if (!sess->decoder.last_rx_time) {
+			sess->decoder.last_rx_time = now_time;
+		} else {
+			difftime = now_time - sess->decoder.last_rx_time;
+			sess->decoder.avgrxus = sess->decoder.avgrxus ? ((sess->decoder.avgrxus + difftime)/2) : difftime;
+			sess->decoder.last_rx_time = now_time;
+		}
+
+		/* check sequence and bump lost rx packets count if needed */
+		if (sess->decoder.lastrxseqno >= 0) {
+			if (ulaw_frame.seq > (sess->decoder.lastrxseqno + 2) ) {
+				sess->decoder.rxlost += ulaw_frame.seq - sess->decoder.lastrxseqno - 1;
+			}
+		}
+		sess->decoder.lastrxseqno = ulaw_frame.seq;
+	} else {
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output from sangoma decoder, returning silent frame of %d bytes\n", *decoded_data_len);
+		memset(dbuf_linear, 0, *decoded_data_len);
 	}
-	sess->decoder.lastrxseqno = ulaw_frame.seq;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -740,10 +752,14 @@ SWITCH_STANDARD_API(sangoma_function)
 			stream->write_function(stream, "Failed to find session %lu\n", sessid);
 			goto done;
 		}
-		stream->write_function(stream, "Session: %lu\n", sessid);
+		stream->write_function(stream, "Stats for transcoding session: %lu\n", sessid);
 
 		if (sess->encoder.rxrtp) {
 			stats = switch_rtp_get_stats(sess->encoder.rxrtp, NULL);
+			stream->write_function(stream, "=== Encoder ===\n");
+
+			stream->write_function(stream, "Remote address: %s:%d\n\n", switch_rtp_get_remote_host(sess->encoder.rxrtp), switch_rtp_get_remote_port(sess->encoder.rxrtp));
+
 			stream->write_function(stream, "-- Encoder Inbound Stats --\n");
 			stream->write_function(stream, "Rx Discarded: %lu\n", sess->encoder.rxdiscarded);
 			sangoma_print_stats(stream, &stats->inbound);
@@ -752,10 +768,16 @@ SWITCH_STANDARD_API(sangoma_function)
 			stats = switch_rtp_get_stats(sess->encoder.txrtp, NULL);
 			stream->write_function(stream, "-- Encoder Outbound Stats --\n");
 			sangoma_print_stats(stream, &stats->outbound);
+		} else {
+			stream->write_function(stream, "\n=== No Encoder ===\n\n");
 		}
 
 		if (sess->decoder.rxrtp) {
 			stats = switch_rtp_get_stats(sess->decoder.rxrtp, NULL);
+
+			stream->write_function(stream, "=== Decoder ===\n");
+			stream->write_function(stream, "Remote address: %s:%d\n\n", switch_rtp_get_remote_host(sess->decoder.rxrtp), switch_rtp_get_remote_port(sess->decoder.rxrtp));
+
 			stream->write_function(stream, "-- Decoder Inbound Stats --\n");
 			stream->write_function(stream, "Rx Discarded: %lu\n", sess->decoder.rxdiscarded);
 			sangoma_print_stats(stream, &stats->inbound);
@@ -763,6 +785,8 @@ SWITCH_STANDARD_API(sangoma_function)
 			stats = switch_rtp_get_stats(sess->decoder.txrtp, NULL);
 			stream->write_function(stream, "-- Decoder Outbound Stats --\n");
 			sangoma_print_stats(stream, &stats->outbound);
+		} else {
+			stream->write_function(stream, "\n=== No Decoder ===\n\n");
 		}
 	} else {
 		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
@@ -893,8 +917,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	if (sangoma_parse_config()) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	g_pool = pool;
 
 	g_init_cfg.log = sangoma_logger;
 	g_init_cfg.create_rtp = sangoma_create_rtp;

@@ -1425,9 +1425,12 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		}
 
 		if (tech_pvt->adv_sdp_audio_ip && !strncmp("c=IN IP", p, 7)) {
-			strncpy(q, p, 9);
-			p += 9;
-			q += 9;
+			strncpy(q, p, 7);
+			p += 7;
+			q += 7;
+			strncpy(q, strchr(tech_pvt->adv_sdp_audio_ip, ':') ? "6 " : "4 ", 2);
+			p +=2;
+			q +=2;			
 			strncpy(q, tech_pvt->adv_sdp_audio_ip, strlen(tech_pvt->adv_sdp_audio_ip));
 			q += strlen(tech_pvt->adv_sdp_audio_ip);
 
@@ -4745,6 +4748,26 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 			switch_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				nua_set_params(pptr->nua, TPTAG_LOG(on), TAG_END());				
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+}
+
+void sofia_glue_global_watchdog(switch_bool_t on)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	sofia_profile_t *pptr;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	if (mod_sofia_globals.profile_hash) {
+		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			if ((pptr = (sofia_profile_t *) val)) {
+				pptr->watchdog_enabled = (on ? 1 : 0);
 			}
 		}
 	}

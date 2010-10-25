@@ -34,7 +34,7 @@
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_redis_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_redis_shutdown);
-SWITCH_MODULE_DEFINITION(mod_redis, mod_redis_load, NULL, mod_redis_shutdown);
+SWITCH_MODULE_DEFINITION(mod_redis, mod_redis_load, mod_redis_shutdown, NULL);
 
 static struct{
 	char *host;

@@ -71,6 +71,9 @@ ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
+
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -884,6 +887,214 @@ ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info)
 }
 
 /******************************************************************************/
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type)
+{
+	/* Q931 4.5.9 
+	 * 8	7	6	5	4	3	2	1	(octet)
+	 *
+	 * 0	1	1	1	0	0	0	1	(spare 8) ( IE id 1-7)
+	 * X	X	X	X	X	X	X	X	(length of IE contents)
+	 * 1	0	0	0	Z	0	0	0	(ext 8) (NSAP type 5-7) (odd/even 4) (spare 1-3)
+	 * X	X	X	X	X	X	X	X	(sub address encoded in ia5)
+	 */
+
+	int	x = 0;
+	int p = 0;
+	int len = 0;
+	char tmp[2];
+
+	/* initalize the second element of tmp to \0 so that atoi doesn't go to far */
+	tmp[1]='\0';
+
+	/* set octet 1 aka IE id */
+	p = 0;
+	switch(type) {
+	/**************************************************************************/
+	case SNG_CALLED:						/* called party sub address */
+		subAddrIE[p] = 0x71;
+		break;
+	/**************************************************************************/
+	case SNG_CALLING:						/* calling party sub address */
+		subAddrIE[p] = 0x6d;
+		break;
+	/**************************************************************************/
+	default:								/* not good */
+		SS7_ERROR("Sub-Address type is invalid: %d\n", type);
+		return FTDM_FAIL;
+		break;
+	/**************************************************************************/
+	} /* switch(type) */
+
+	/* set octet 3 aka type and o/e */
+	p = 2;
+	subAddrIE[p] = 0x80;
+
+	/* set the subAddrIE pointer octet 4 */
+	p = 3;
+
+	/* loop through all digits in subAddr and insert them into subAddrIE */
+	while (subAddr[x] != '\0') {
+
+		/* grab a character */
+		tmp[0] = subAddr[x];
+
+		/* confirm it is a digit */
+		if (!isdigit(tmp[0])) {
+			/* move to the next character in subAddr */
+			x++;
+
+			/* restart the loop */
+			continue;
+		}
+
+		/* convert the character to IA5 encoding and write into subAddrIE */
+		subAddrIE[p] = atoi(&tmp[0]);	/* lower nibble is the digit */
+		subAddrIE[p] |= 0x3 << 4;		/* upper nibble is 0x3 */
+
+		/* increment address length counter */
+		len++;
+
+		/* increment the subAddrIE pointer */
+		p++;
+
+		/* move to the next character in subAddr */
+		x++;
+
+	} /* while (subAddr[x] != '\0') */
+
+	/* set octet 2 aka length of subaddr */
+	p = 1;
+	subAddrIE[p] = len + 1;
+
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type)
+{
+	/* Q931 4.5.9 
+	 * 8	7	6	5	4	3	2	1	(octet)
+	 *
+	 * 0	1	1	1	0	0	0	1	(spare 8) ( IE id 1-7)
+	 * X	X	X	X	X	X	X	X	(length of IE contents)
+	 * 1	0	0	0	Z	0	0	0	(ext 8) (NSAP type 5-7) (odd/even 4) (spare 1-3)
+	 * X	X	X	X	X	X	X	X	(sub address encoded in ia5)
+	 */
+
+	int		x = 0;
+	int 	p = 0;
+	int 	len = 0;
+	char 	tmp[2];
+	int 	flag = 0;
+	int 	odd = 0;
+	uint8_t	lower = 0x0;
+	uint8_t upper = 0x0;
+
+	/* initalize the second element of tmp to \0 so that atoi doesn't go to far */
+	tmp[1]='\0';
+
+	/* set octet 1 aka IE id */
+	p = 0;
+	switch(type) {
+	/**************************************************************************/
+	case SNG_CALLED:						/* called party sub address */
+		subAddrIE[p] = 0x71;
+		break;
+	/**************************************************************************/
+	case SNG_CALLING:						/* calling party sub address */
+		subAddrIE[p] = 0x6d;
+		break;
+	/**************************************************************************/
+	default:								/* not good */
+		SS7_ERROR("Sub-Address type is invalid: %d\n", type);
+		return FTDM_FAIL;
+		break;
+	/**************************************************************************/
+	} /* switch(type) */
+
+	/* set the subAddrIE pointer octet 4 */
+	p = 3;
+
+	/* loop through all digits in subAddr and insert them into subAddrIE */
+	while (1) {
+
+		/* grab a character */
+		tmp[0] = subAddr[x];
+
+		/* confirm it is a hex digit */
+		while ((!isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+			/* move to the next character in subAddr */
+			x++;
+			tmp[0] = subAddr[x];
+		}
+
+		/* check if tmp is null or a digit */
+		if (tmp[0] != '\0') {
+			/* push it into the lower nibble using strtol to allow a-f chars */
+			lower = strtol(&tmp[0], (char **)NULL, 16);
+			/* move to the next digit */
+			x++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = subAddr[x];
+
+			/* check if the digit is a hex digit and that is not null */
+			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+				x++;
+				tmp[0] = subAddr[x];
+			} /* while(!(isdigit(tmp))) */
+
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble using strtol to allow a-f chars */
+				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
+			} else {
+				/* there is no upper ... fill in spare */
+				upper = 0x00;
+				/* throw the odd flag since we need to buffer */
+				odd = 1;
+				/* throw the end flag */
+				flag = 1;
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 0;
+
+			/* throw the flag */
+			flag = 1;
+
+			/* bounce out right away */
+			break;
+		}
+
+		/* fill in the octet */
+		subAddrIE[p] = upper | lower;
+
+		/* increment address length counter */
+		len++;
+
+		/* if the flag is we're through all the digits */
+		if (flag) break;
+
+		/* increment the subAddrIE pointer */
+		p++;
+
+		/* move to the next character in subAddr */
+		x++;
+
+	} /* while (subAddr[x] != '\0') */
+
+	/* set octet 2 aka length of subaddr */
+	p = 1;
+	subAddrIE[p] = len + 1;
+
+	/* set octet 3 aka type and o/e */
+	p = 2;
+	subAddrIE[p] = 0xa0 | (odd << 3);
+
+
+	return FTDM_SUCCESS;
+}
 
 /******************************************************************************/
 /* For Emacs:

@@ -265,10 +265,12 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 	}
 
 	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
-		/* find out why we returned from the interrupt queue */
-		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 2, sleep);
+
 		/* Check if there are any timers to process */
 		ftdm_sched_run(signal_data->sched);
+		
+		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 2, sleep);
+		/* find out why we returned from the interrupt queue */
 		switch (ret_status) {
 			case FTDM_SUCCESS:  /* there was a state change on the span */
 				/* process all pending state changes */			
@@ -289,13 +291,30 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 				/* twiddle */
 				break;
 			case FTDM_FAIL:
-				ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned error!\non span = %s\n", span->name);
+				ftdm_log(FTDM_LOG_ERROR,"%s:ftdm_interrupt_wait returned error!\n", span->name);
 				break;
 
 			default:
-				ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned with unknown code on span = %s\n", span->name);
+				ftdm_log(FTDM_LOG_ERROR,"%s:ftdm_interrupt_wait returned with unknown code\n", span->name);
 				break;
 		}
+
+		/* Poll for events, e.g HW DTMF */
+		ret_status = ftdm_span_poll_event(span, 0);
+		switch(ret_status) {
+			case FTDM_SUCCESS:
+				{
+					ftdm_event_t *event;
+					while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS);
+				}
+				break;
+			case FTDM_TIMEOUT:
+				/* No events pending */
+				break;
+			default:
+				ftdm_log(FTDM_LOG_WARNING, "%s:Failed to poll span event\n", span->name);
+		}
+			
 		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
 			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
 				sleep = SNGISDN_EVENT_POLL_RATE;

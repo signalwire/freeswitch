@@ -871,7 +871,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *threa
 	while (sql_manager.db_thread_running == 1) {
 		if (++sec == SQL_CACHE_TIMEOUT) {
 			sql_close(switch_epoch_time_now(NULL));		
-			wake_thread(1);
+			wake_thread(0);
 			sec = 0;
 		}
 		switch_yield(1000);
@@ -1425,7 +1425,7 @@ static void core_event_handler(switch_event_t *event)
 				switch_queue_push(sql_manager.sql_queue[0], sql[i]);
 			}
 			sql[i] = NULL;
-			wake_thread(1);
+			wake_thread(0);
 		}
 	}
 }
@@ -1705,7 +1705,7 @@ void switch_core_sqldb_stop(void)
 			switch_queue_push(sql_manager.sql_queue[0], NULL);
 			switch_queue_push(sql_manager.sql_queue[1], NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
-			wake_thread(1);
+			wake_thread(0);
 		}
 
 		sql_manager.thread_running = -1;

@@ -188,11 +188,11 @@ ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPt
 	}
 
 	if (cdPtyNmb->nmbPlanId.pres == PRSNT_NODEF) {
-		ftdm->cid_num.plan = cdPtyNmb->nmbPlanId.val;
+		ftdm->dnis.plan = cdPtyNmb->nmbPlanId.val;
 	}
 
 	if (cdPtyNmb->typeNmb0.pres == PRSNT_NODEF) {
-		ftdm->cid_num.type = cdPtyNmb->typeNmb0.val;
+		ftdm->dnis.type = cdPtyNmb->typeNmb0.val;
 	}
 	
 	if (cdPtyNmb->nmbDigits.pres == PRSNT_NODEF) {

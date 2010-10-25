@@ -126,7 +126,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_mutex_lock(session->read_codec->mutex);
 
   top:
-
+	
+	if (session->dmachine && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		switch_ivr_dmachine_ping(session->dmachine, NULL);
+	}
+	
 	if (switch_channel_down(session->channel) || !switch_core_codec_ready(session->read_codec)) {
 		*frame = NULL;
 		status = SWITCH_STATUS_FALSE;
@@ -653,7 +657,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id ||
 			session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
 			ptime_mismatch = TRUE;
-			if (switch_test_flag(frame->codec, SWITCH_CODEC_FLAG_PASSTHROUGH) || switch_test_flag(session->read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH)) {
+			if ((switch_test_flag(frame->codec, SWITCH_CODEC_FLAG_PASSTHROUGH) || switch_test_flag(session->read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH)) ||
+				switch_channel_test_flag(session->channel, CF_PASSTHRU_PTIME_MISMATCH)) {
 				status = perform_write(session, frame, flags, stream_id);
 				goto error;
 			}
@@ -1149,6 +1154,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	switch_io_event_hook_recv_dtmf_t *ptr;
 	switch_status_t status;
 	switch_dtmf_t new_dtmf;
+	int fed = 0;
 
 	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
@@ -1170,12 +1176,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 		new_dtmf.duration = switch_core_default_dtmf_duration(0);
 	}
 
-	for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
-		if ((status = ptr->recv_dtmf(session, &new_dtmf, SWITCH_DTMF_RECV)) != SWITCH_STATUS_SUCCESS) {
-			return status;
+	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
+		if (session->dmachine && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+			char str[2] = { dtmf->digit, '\0' };
+			switch_ivr_dmachine_feed(session->dmachine, str, NULL);
+			fed = 1;
+		}
+
+		for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
+			if ((status = ptr->recv_dtmf(session, &new_dtmf, SWITCH_DTMF_RECV)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
 		}
 	}
-	return SWITCH_STATUS_SUCCESS;
+
+	return fed ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)

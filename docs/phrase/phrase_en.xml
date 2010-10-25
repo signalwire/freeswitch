@@ -419,6 +419,9 @@
 	  <prompt phrase="Dude, you suck!" filename="ivr-dude_you_suck.wav"/>
 	  <prompt phrase="Your call is very important to us, but your sanity is not, so we will be happy to keep you on hold, forever torturing you with our annoying hold music." filename="ivr-on_hold_indefinitely.wav"/>
 	  <prompt phrase="...has left the building." filename="ivr-has_left_the_building.wav"/>
+	  <prompt phrase="This phone is unassigned and may not be used to make external calls." filename="ivr-phone_is_unassigned.wav"/>
+	  <prompt phrase="This phone is not configured properly." filename="ivr-phone_not_configured.wav"/>
+	  <prompt phrase="Please contact the system administrator for assistance." filename="ivr-contact_system_administrator.wav"/>	
 	  <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
 	  <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
 	  <prompt phrase="Brian West" filename="misc-Brian_West.wav"/>
