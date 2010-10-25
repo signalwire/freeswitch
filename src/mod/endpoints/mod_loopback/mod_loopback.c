@@ -717,24 +717,13 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
-
+	int done = 1;
+	
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
-	if (switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
-		switch_status_t r = SWITCH_STATUS_FALSE;
-		switch_core_session_t *other_session;
-		
-		if (switch_core_session_get_partner(session, &other_session)) {
-			r = switch_core_session_receive_message(other_session, msg);
-			switch_core_session_rwunlock(other_session);
-		}
-
-		return r;
-	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -758,6 +747,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		}
 		break;
 	default:
+		done = 0;
 		break;
 	}
 
@@ -767,6 +757,8 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		{
 			void *pop;
+
+			done = 1;
 
 			while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 				switch_frame_t *frame = (switch_frame_t *) pop;
@@ -787,6 +779,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 
 
+	if (!done && tech_pvt->other_session && switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
+		switch_status_t r = SWITCH_STATUS_FALSE;
+		switch_core_session_t *other_session;
+		
+		if (switch_core_session_get_partner(tech_pvt->other_session, &other_session)) {
+			r = switch_core_session_receive_message(other_session, msg);
+			switch_core_session_rwunlock(other_session);
+		}
+		
+		return r;
+	}
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
