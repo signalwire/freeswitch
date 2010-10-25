@@ -597,7 +597,7 @@ int skypopen_signaling_read(private_t * tech_pvt)
 									tech_pvt->ringing_state = SKYPOPEN_RINGING_INIT;
 									tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 									tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
-									ERRORA("we're back to IDLE\n", SKYPOPEN_P_LOG, id);
+									WARNINGA("we're back to IDLE\n", SKYPOPEN_P_LOG);
 									skypopen_sleep(10000);
 
 								}
@@ -885,12 +885,14 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						nospace = 0;
 						if (len > 0) {
 							switch_mutex_lock(tech_pvt->mutex_audio_srv);
-							if (switch_buffer_freespace(tech_pvt->read_buffer) < len) {
-								switch_buffer_zero(tech_pvt->read_buffer);
-								nospace = 1;
-								//switch_buffer_toss(tech_pvt->read_buffer, len);
+							if(tech_pvt->read_buffer){
+								if (switch_buffer_freespace(tech_pvt->read_buffer) < len) {
+									switch_buffer_zero(tech_pvt->read_buffer);
+									nospace = 1;
+									//switch_buffer_toss(tech_pvt->read_buffer, len);
+								}
+								switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							}
-							switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 							if (nospace) {
 								DEBUGA_SKYPE("NO SPACE READ: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
@@ -1028,7 +1030,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 							break;
 						}
 						switch_mutex_lock(tech_pvt->mutex_audio_cli);
-						if (switch_buffer_inuse(tech_pvt->write_buffer)) {
+						if (tech_pvt->write_buffer && switch_buffer_inuse(tech_pvt->write_buffer)) {
 							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, 640);
 						}
 						switch_mutex_unlock(tech_pvt->mutex_audio_cli);
