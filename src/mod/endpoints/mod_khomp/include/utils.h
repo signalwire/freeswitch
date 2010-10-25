@@ -601,109 +601,30 @@ static std::string timeToString (time_t time_value)
 }
 /******************************************************************************/
 /******************************* Match functions ******************************/
-typedef enum
+struct MatchExtension
 {
-    MATCH_NONE,
-    MATCH_EXACT,
-    MATCH_MORE
-}
-MatchType;
+    typedef std::vector<std::string> ContextListType;
+    typedef std::vector<std::string> ExtenListType;
 
-static bool canMatch(std::string & context, std::string & exten, std::string & caller_id, bool match_more = false)
-{
-    switch_xml_t xml = NULL;
-    switch_xml_t xcontext = NULL;
-    switch_regex_t *re;
-    int ovector[30];
-    
-    if (switch_xml_locate("dialplan","context","name",context.c_str(),&xml,&xcontext, NULL,SWITCH_FALSE) == SWITCH_STATUS_SUCCESS)
+    typedef enum
     {
-        switch_xml_t xexten = NULL;
-        
-        if(!(xexten = switch_xml_child(xcontext,"extension")))
-        {
-            DBG(FUNC,"extension cannot match, returning");
-
-            if(xml)
-                switch_xml_free(xml); 
-
-            return false;
-        }
-
-        while(xexten)
-        {
-            switch_xml_t xcond = NULL;
-
-            for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next)
-            {
-                std::string expression;
-
-                if (switch_xml_child(xcond, "condition")) 
-                { 
-                    LOG(ERROR,"Nested conditions are not allowed");
-                }  
-
-                switch_xml_t xexpression = switch_xml_child(xcond, "expression");
-
-                if ((xexpression = switch_xml_child(xcond, "expression"))) 
-                {
-                    expression = switch_str_nil(xexpression->txt);
-                }
-                else 
-                {
-                    expression =  switch_xml_attr_soft(xcond, "expression");
-                }  
-
-                if(expression.empty() || expression == "^(.*)$")
-                {
-                    /** 
-                    * We're not gonna take it
-                    * No, we ain't gonna take it
-                    * We're not gonna take it anymore
-                    **/
-                    continue;
-                }
-          
-                int pm = -1; 
-                switch_status_t is_match = SWITCH_STATUS_FALSE;
-                is_match =  switch_regex_match_partial(exten.c_str(),expression.c_str(),&pm);
-                
-                if(is_match == SWITCH_STATUS_SUCCESS)
-                {
-                    if(match_more)
-                    {
-                        if(pm == 1)
-                        {
-                            switch_xml_free(xml);
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        switch_xml_free(xml);
-                        return true;
-                    }
-                }
-                else
-                {
-                    // not match
-                }
-            }            
-
-            xexten = xexten->next;
-        }
+        MATCH_NONE,
+        MATCH_EXACT,
+        MATCH_MORE
     }
-    else
-    {
-        DBG(FUNC,"context cannot match, returning");
-    }
+    MatchType;
 
-    if(xml)
-        switch_xml_free(xml); 
+    static bool canMatch(std::string & context, std::string & exten, 
+                std::string & caller_id, bool match_more = false);
 
-    return false;
-}
+    static MatchType matchExtension(std::string &, std::string &, 
+                std::string &, bool match_only = false);
 
+    static MatchType findExtension(std::string &, std::string &, 
+                ContextListType &, std::string &, std::string &,
+                bool default_ctx = true, bool default_ext = true);
+
+};
 /******************************************************************************/
 /************************** Thread helper functions ***************************/
 typedef int (HandlerType)(void *);

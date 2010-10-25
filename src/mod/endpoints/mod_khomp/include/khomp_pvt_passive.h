@@ -126,7 +126,8 @@ struct KhompPvtPassive: public KhompPvt
         return ret;
     }
     
-    bool validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context = "");
+    bool validContexts(MatchExtension::ContextListType & contexts, 
+                       std::string extra_context = "");
 
 /*
     virtual bool cleanup(CleanupType type = CLN_HARD)

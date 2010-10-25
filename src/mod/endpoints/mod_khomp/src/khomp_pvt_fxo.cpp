@@ -734,14 +734,15 @@ void BoardFXO::KhompPvtFXO::reportFailToReceive(int fail_code)
 
 }
 
-bool BoardFXO::KhompPvtFXO::validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context)
+bool BoardFXO::KhompPvtFXO::validContexts(
+        MatchExtension::ContextListType & contexts, std::string extra_context)
 {
     DBG(FUNC,PVT_FMT(_target,"(FXO) c"));
 
     contexts.push_back(Opt::_context_fxo);
     contexts.push_back(Opt::_context2_fxo);
 
-    for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {
         replaceTemplate((*i), "CC", _target.object);
     }

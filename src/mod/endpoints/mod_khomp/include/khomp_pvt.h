@@ -85,10 +85,6 @@ struct Board
 /******************************** Channel *************************************/
 struct KhompPvt
 {
-    // TODO: Here for while, put in right struct, when is ready
-    typedef std::vector<std::string> ContextListType;
-    typedef std::vector<std::string> ExtenListType;
-
     typedef SimpleNonBlockLock<25,100>      ChanLockType;
 
     typedef enum
@@ -994,29 +990,26 @@ public:
 
     virtual int getActiveChannel(bool invalid_as_not_found);
 
-    MatchType matchExtension(std::string &, std::string &, std::string &, bool match_only = false);
-
-    MatchType findExtension(std::string &, std::string &, ContextListType &, std::string &, std::string &, 
-                            bool default_ctx = true, bool default_ext = true);
-
     /* Let's validate the contexts */
-    virtual bool validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_string = "")
+    virtual bool validContexts(MatchExtension::ContextListType & contexts, 
+                               std::string extra_string = "")
     {
         DBG(FUNC,PVT_FMT(_target,"c"));
 
         if(!_group_context.empty())
         {
-            contexts.push_back(_group_context);
+            contexts.insert(contexts.begin(), _group_context);
+            //contexts.push_back(_group_context);
         }
     
-        for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
+        for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
             replaceTemplate((*i),  "DD", _target.device);
 
         BEGIN_CONTEXT  
         {    
             K3L_DEVICE_CONFIG & dev_cfg = Globals::k3lapi.device_config(_target.device);
 
-            for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
+            for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
                 replaceTemplate((*i), "SSSS", atoi(dev_cfg.SerialNumber));
         }    
         END_CONTEXT

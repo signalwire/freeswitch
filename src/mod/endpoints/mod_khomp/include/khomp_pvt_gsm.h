@@ -262,7 +262,8 @@ struct KhompPvtGSM: public KhompPvt
         _sms->statistics()->clear();
     }
 
-    bool validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context = "");
+    bool validContexts(MatchExtension::ContextListType & contexts, 
+                       std::string extra_context = "");
         
     SMS * _sms;
 

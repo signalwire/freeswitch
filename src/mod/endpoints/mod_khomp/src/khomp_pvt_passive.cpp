@@ -45,13 +45,14 @@
 #include "lock.h"
 #include "logger.h"
 
-bool BoardPassive::KhompPvtPassive::validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context)
+bool BoardPassive::KhompPvtPassive::validContexts(
+        MatchExtension::ContextListType & contexts, std::string extra_context)
 {
     DBG(FUNC,PVT_FMT(_target,"(Passive) c"));
 
     contexts.push_back(Opt::_context_pr);
 
-    for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {
         replaceTemplate((*i), "CC", _target.object);
     }
@@ -89,16 +90,16 @@ bool BoardPassive::KhompPvtHI::onSeizureStart(K3L_EVENT *e)
         }
 
         /* begin context adjusting + processing */
-        ContextListType contexts;
+        MatchExtension::ContextListType contexts;
 
         validContexts(contexts);
 
         std::string tmp_exten;
         std::string tmp_context;
 
-        switch (findExtension(tmp_exten, tmp_context, contexts, call()->_dest_addr, call()->_orig_addr, false))
+        switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, call()->_dest_addr, call()->_orig_addr, false))
         {
-        case MATCH_NONE:
+        case MatchExtension::MATCH_NONE:
             destroy();
             owner(NULL);
             LOG(WARNING, PVT_FMT(_target, "(HI) r (unable to find exten/context on incoming call %s/%s)")
@@ -111,6 +112,7 @@ bool BoardPassive::KhompPvtHI::onSeizureStart(K3L_EVENT *e)
         }
 
         call()->_incoming_context = tmp_context;
+        _call->_dest_addr = tmp_exten;
 
         startListen();
 
@@ -209,16 +211,16 @@ bool BoardPassive::KhompPvtKPR::onNewCall(K3L_EVENT *e)
         }
 
         /* begin context adjusting + processing */
-        ContextListType contexts;
+        MatchExtension::ContextListType contexts;
 
         validContexts(contexts);
 
         std::string tmp_exten;
         std::string tmp_context;
 
-        switch (findExtension(tmp_exten, tmp_context, contexts, call()->_dest_addr, call()->_orig_addr, false))
+        switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, call()->_dest_addr, call()->_orig_addr, false))
         {
-            case MATCH_NONE:
+            case MatchExtension::MATCH_NONE:
                 destroy();
                 owner(NULL);
                 LOG(WARNING, PVT_FMT(_target, "(KPR) r (unable to find exten/context on incoming call %s/%s)")

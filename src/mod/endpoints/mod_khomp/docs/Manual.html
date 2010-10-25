@@ -29,15 +29,13 @@
 </p>
 <pre><b>Sintaxe:</b> &lt;param name="..." value="..."/&gt;
 </pre>
-<ul><li><b>auto-fax-adjustment</b>: Ativa ("yes") ou desativa ("no") o ajuste automático do canal (desabilitar o cancelador de eco e a supressão DTMF) ao detectar tom de FAX; 
+<ul><li><b>dialplan</b>: Nome do módulo de <i>dialplan</i> em uso.
+</li><li><b>auto-fax-adjustment</b>: Ativa ("yes") ou desativa ("no") o ajuste automático do canal (desabilitar o cancelador de eco e a supressão DTMF) ao detectar tom de FAX; 
 </li><li><b>auto-gain-control</b>: Ativa ("yes") ou desativa ("no") a ativação do controle automático de ganho (AGC) pelo Endpoint; 
 </li><li><b>context-digital</b>: Contexto de entrada para ligações em placas digitais (o padrão é "khomp-DD-LL", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "LL" pelo número do link, "CCC" pelo número do canal e "SSSS" pelo número serial do dispositivo); 
 </li><li><b>context-fxo</b>: Contexto de entrada para placas FXO (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
-</li><li><b>context-fxo-alt</b>: Contexto de entrada alternativo para placas FXO (o padrão é vazio, no entanto quando definido, segue a mesma regra de substituição da opção <b>context-fxo</b>); 
 </li><li><b>context-fxs</b>: Contexto de entrada para placas FXS (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
-</li><li><b>context-fxs-alt</b>: Contexto de entrada alternativo para placas FXS (o padrão é vazio, no entanto quando definido, segue a mesma regra de substituição da opção <b>context-fxs</b>); 
 </li><li><b>context-gsm-call</b> (ou "context-gsm"): Contexto de entrada para ligações GSM (o padrão é "khomp-DD-CC", onde "DD" será substituído no momento da ligação pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
-</li><li><b>context-gsm-call-alt</b> (ou "context-gsm-alt"): Contexto de entrada alternativo para ligações GSM (o padrão é vazio, no entanto quando definido, segue a mesma regra de substituição da opção <b>context-gsm-call</b>); 
 </li><li><b>context-gsm-sms</b>: Contexto de entrada para SMSs (o padrão é "khomp-sms-DD-CC", onde "DD" será substituído pelo número de dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo);
 </li><li><b>context-pr</b>: Contexto de entrada para ligações em placas KPR (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal); 
 </li><li><b>disconnect-delay</b>: Define o tempo em milissegundos para realizar o processamento de um evento de desconexão, para ignorar situações onde outros equipamentos realizam o duplo atendimento para derrubar chamadas a cobrar;
@@ -215,8 +213,8 @@ de entrada no link 1 (segundo link) da placa 0.
 <br />
 </p>
 <a name="Contextos_de_entrada_em_canais_FXS.2FFXO.2FGSM" id="Contextos_de_entrada_em_canais_FXS.2FFXO.2FGSM"></a><h3> <span class="mw-headline"> Contextos de entrada em canais FXS/FXO/GSM </span></h3>
-<p>Da mesma forma que no contexto de placas E1, as ligações de entrada são encaminhadas pelo <i>Endpoint</i> para o FreeSWITCH. Entretanto, estas sinalizações possuem dois contextos pré-definidos, buscados com uma ordem de preferência.
-</p><p>O primeiro contexto é pré-definido da seguinte forma, conforme o arquivo <b>khomp.conf.xml</b>:
+<p>Da mesma forma que no contexto de placas E1, as ligações de entrada são encaminhadas pelo <i>Endpoint</i> para o FreeSWITCH. 
+</p><p>O contexto é pré-definido da seguinte forma, conforme o arquivo <b>khomp.conf.xml</b>:
 </p>
 <pre>&lt;param name="context-gsm" value="khomp-DD-CC"/&gt;&nbsp;;placas GSM
 </pre>
@@ -224,27 +222,14 @@ de entrada no link 1 (segundo link) da placa 0.
 </pre>
 <pre>&lt;param name="context-fxo" value="khomp-DD-CC"/&gt;&nbsp;; placas FXO
 </pre>
-<p>Enquanto o segundo contexto possui o seguinte formato padrão:
-</p>
-<pre>&lt;param name="context-gsm-alt" value="khomp-DD"/&gt;&nbsp;; placas GSM
-</pre>
-<pre>&lt;param name="context-fxs-alt" value="khomp-DD"/&gt;&nbsp;; placas FXS
-</pre>
-<pre>&lt;param name="context-fxo-alt" value="khomp-DD"/&gt;&nbsp;; placas FXO
-</pre>
-<p>Nestes casos, <b>DD</b> é o número dispositivo (com dois dígitos), e <b>CC</b> é o número do canal da placa. Pode-se utilizar também <b>SSSS</b>, que representa o número serial da placa. 
+<p><br />
+Nestes casos, <b>DD</b> é o número dispositivo (com dois dígitos), e <b>CC</b> é o número do canal da placa. Pode-se utilizar também <b>SSSS</b>, que representa o número serial da placa. 
 </p>
 <ul><li> <b>IMPORTANTE</b>: No caso da placa <b>KGSM</b>, as ligações entrantes são <b>sempre</b> encaminhadas para o <i>extension</i> <b>"s"</b> por padrão, visto que o protocolo GSM não identifica o número de destino nas ligações entrantes, apenas o número de origem - quando não omitido.
 </li></ul>
 <a name="Prioridade_de_contextos_na_placa_FXS" id="Prioridade_de_contextos_na_placa_FXS"></a><h4> <span class="mw-headline"> Prioridade de contextos na placa FXS </span></h4>
-<p>Em ligações originadas a partir de um ramal FXS, o Endpoint driver procura uma extensão válida dos dígitos discados em três contextos diferentes. A prioridade dos contextos é a seguinte:
-</p>
-<ol><li> Contexto específico do ramal, definido na seção <b>&lt;fxs-options&gt;</b> do arquivo de configuração do <b>khomp.conf.xml</b>;
-</li><li> Contexto definido na opção <b>context-fxs</b>;
-</li><li> Contexto definido na opção <b>context-fxs-alt</b>.
-</li></ol>
-<p>Caso durante a discagem, nenhuma extensão válida puder ser encontrada, a extensão <b>i</b> é procurada nos contextos em ordem de prioridade, e por fim no contexto <b>default</b>. Caso ocorra um <i>timeout</i> durante a discagem (configurável pela opção <b>fxs-digit-timeout</b>, no arquivo <b>khomp.conf.xml</b>) durante a discagem, o mesmo comportamento será aplicado - no entanto, a busca se dará inicialmente pelo número já discado até o <i>timeout</i> e, se não encontrado, a busca nos contextos será repetida para a extensão "t".
-<br />
+<p>Em ligações originadas a partir de um ramal FXS, o Endpoint driver procura uma extensão válida (dos dígitos discados) após o dígito <b>#</b> ou após o timeout (configurável pela opção <b>fxs-digit-timeout</b>, no arquivo <b>khomp.conf.xml</b>). Essa busca é realizada no contexto específico do ramal (definido na seção <b>&lt;fxs-options&gt;</b> do arquivo de configuração <b>khomp.conf.xml</b>), caso não seja configurado, a busca é realizada no contexto definido na opção <b>context-fxs</b>;
+</p><p><br />
 </p>
 <a name="Contextos_de_mensagens_SMS_.28apenas_GSM.29" id="Contextos_de_mensagens_SMS_.28apenas_GSM.29"></a><h3> <span class="mw-headline"> Contextos de mensagens SMS (apenas GSM) </span></h3>
 <p>Mensagens SMS são recebidas pelo <i>Endpoint</i> da Khomp e encaminhadas para o FreeSWITCH como uma ligação normal, mas sem áudio, que possui algumas variáveis ajustadas com informações recebidas na mensagem - para maiores informações sobre estas variáveis, consulte a documentação das variáveis do <i>Endpoint</i>. Este contexto também pode ser alterado, de mesma forma que o contextos acima.
@@ -270,7 +255,10 @@ de entrada no link 1 (segundo link) da placa 0.
 </pre>
 <p>Neste caso, <b>DD</b> é o número do dispositivo (com dois dígitos), e <b>CC</b> é o número do canal da placa.
 <br />
-</p><p><br />
+</p>
+<a name="Contextos_por_grupo_de_chamada" id="Contextos_por_grupo_de_chamada"></a><h3> <span class="mw-headline">Contextos por grupo de chamada </span></h3>
+<p>A seção <b>groups</b>, no arquivo de configuração <b>khomp.conf.xml</b>, pode ser utilizado para definir contextos específicos para determinados grupos de canais.
+</p><p>Esta seção é detalhada na seção <b>Configuração do Endpoint</b>.
 <br />
 </p>
 <a name="Utiliza.C3.A7.C3.A3o_do_application_bridge" id="Utiliza.C3.A7.C3.A3o_do_application_bridge"></a><h3> <span class="mw-headline">Utilização do <i>application</i> bridge </span></h3>

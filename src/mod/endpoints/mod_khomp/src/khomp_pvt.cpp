@@ -592,7 +592,7 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
 
             if(call()->_incoming_context.empty())
             {
-                Board::KhompPvt::ContextListType contexts;
+                MatchExtension::ContextListType contexts;
                 std::string context("default");
 
                 if(!validContexts(contexts))
@@ -603,16 +603,16 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
                     return SWITCH_STATUS_FALSE;
                 }
 
-                switch(findExtension(exten, context, contexts, _call->_dest_addr, _call->_orig_addr)) 
+                switch(MatchExtension::findExtension(exten, context, contexts, _call->_dest_addr, _call->_orig_addr)) 
                 {
-                    case MATCH_NONE:
+                    case MatchExtension::MATCH_NONE:
                         destroy();
                         owner(NULL);
                         LOG(ERROR, PVT_FMT(_target, "r (unable to find exten/context on incoming call %s/%s)")
                                 % _call->_dest_addr % (contexts.size() >= 1 ? contexts[0] : "default"));
                         return SWITCH_STATUS_FALSE; 
                     default:
-                        DBG(FUNC, PVT_FMT(_target, "our: context '%s', exten '%s'") % context % exten);
+                        DBG(FUNC, PVT_FMT(_target, "our: dialplan '%s', context '%s', exten '%s'") % Opt::_dialplan % context % exten);
                         break;
                 }
 
@@ -621,12 +621,12 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
             else
             {
                 exten = call()->_dest_addr;
-                DBG(FUNC, PVT_FMT(target(), "already found our: context '%s', exten '%s'") % call()->_incoming_context % exten);
+                DBG(FUNC, PVT_FMT(target(), "already found our: dialplan '%s', context '%s', exten '%s'") % Opt::_dialplan % call()->_incoming_context % exten);
             }
             
             _caller_profile = switch_caller_profile_new(switch_core_session_get_pool(_session),
                     "Khomp",                           //username
-                    "XML",                             //dialplan
+                    Opt::_dialplan.c_str(),            //dialplan
                     NULL,                              //caller_id_name
                     _call->_orig_addr.c_str(),         //caller_id_number
                     NULL,                              //network_addr
@@ -1419,91 +1419,6 @@ int Board::KhompPvt::getActiveChannel(bool invalid_as_not_found)
 {
     // AT CONSTRUCTION
     return 0;
-}
-
-MatchType Board::KhompPvt::matchExtension(std::string & context, std::string & exten,
-                                                           std::string & callerid, bool match_only)
-{
-    if(!canMatch(context,exten,callerid))
-    {
-        DBG(FUNC, "context/extension cannot match");
-        return MATCH_NONE;
-    }
-
-    if(match_only)
-    {
-        DBG(FUNC, "for now we want know if it matches...");
-        return MATCH_MORE;
-    }
-
-    if(!canMatch(context,exten,callerid,true))
-    {
-        DBG(FUNC, "it match exact!");
-        return MATCH_EXACT;
-    }
-
-    return MATCH_MORE;
-}
-
-MatchType Board::KhompPvt::findExtension(std::string & ref_extension, 
-                                         std::string & ref_context,
-                                         ContextListType & contexts,
-                                         std::string & extension,
-                                         std::string & caller_id,
-                                         bool default_ctx,
-                                         bool default_ext)
-{
-    Board::KhompPvt::ExtenListType extens;
-
-    if(!extension.empty())
-    {
-        extens.push_back(extension);
-    }
-
-    if(default_ext)
-    {
-        if (extension != "s")
-        {
-            extens.push_back("s");
-        }
-
-        extens.push_back("i");
-    }
-
-    if(default_ctx)
-    {
-        contexts.push_back("default");
-    }
-
-    for(Board::KhompPvt::ContextListType::iterator itc = contexts.begin(); itc != contexts.end(); itc++)
-    {
-        for(Board::KhompPvt::ExtenListType::iterator ite = extens.begin(); ite != extens.end(); ite++)
-        {
-            DBG(FUNC, FMT("trying context '%s' with exten '%s'...") % *itc % *ite);
-
-            MatchType m = matchExtension(*itc, *ite, caller_id, false);
-
-            switch (m)
-            {    
-                case MATCH_NONE:
-                    continue;
-
-                case MATCH_MORE:
-                case MATCH_EXACT:
-                {    
-                    ref_context = *itc;
-                    ref_extension = *ite;
-
-                    DBG(FUNC, ".... can match context/extension (some way)!");
-
-                    return m;
-                }    
-            } 
-        }
-    }
-
-    DBG(FUNC, D("... no context/extension found!"));
-    return MATCH_NONE;
 }
 
 bool Board::KhompPvt::setCollectCall()

@@ -191,7 +191,8 @@ struct KhompPvtE1: public KhompPvt
     bool setupConnection();
     bool indicateBusyUnlocked(int cause, bool sent_signaling = false);
     void setAnswerInfo(int answer_info);
-    bool validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context = "");
+    bool validContexts(MatchExtension::ContextListType & contexts, 
+                       std::string extra_context = "");
     bool isOK(void); 
 
     bool isPhysicalFree() 
@@ -931,7 +932,8 @@ struct KhompPvtFXS: public KhompPvt
     bool alloc();
     bool indicateBusyUnlocked(int cause, bool sent_signaling = false);
     void reportFailToReceive(int fail_code);
-    bool validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context = "");
+    bool validContexts(MatchExtension::ContextListType & contexts, 
+                       std::string extra_context = "");
     bool isOK(void);
 
     bool startTransfer();

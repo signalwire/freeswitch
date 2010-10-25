@@ -241,7 +241,8 @@ struct KhompPvtFXO: public KhompPvt
     void setAnswerInfo(int answer_info);
     bool indicateBusyUnlocked(int cause, bool sent_signaling = false);
     void reportFailToReceive(int fail_code);
-    bool validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context = "");
+    bool validContexts(MatchExtension::ContextListType & contexts, 
+                       std::string extra_context = "");
   
     bool isOK(void); 
 

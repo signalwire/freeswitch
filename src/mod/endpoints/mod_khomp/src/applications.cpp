@@ -382,26 +382,27 @@ bool Fax::addFaxFile(const char * filename, bool last)
 bool SMS::justAlloc(unsigned int count)
 {
     /* incoming contexts */
-    Board::KhompPvt::ContextListType contexts;
+    MatchExtension::ContextListType contexts;
 
     contexts.push_back(Opt::_context_gsm_sms);
 
     /* temporary variables */
     std::string context;
-    std::string exten;
+    std::string exten("s");
 
     K3L_DEVICE_CONFIG & dev_cfg = Globals::k3lapi.device_config(_pvt->_target.device);
 
-    for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {
         replaceTemplate((*i), "DD", _pvt->_target.device);
         replaceTemplate((*i), "CC", _pvt->_target.object);
         replaceTemplate((*i), "SSSS", atoi(dev_cfg.SerialNumber));
     }
 
-    switch(_pvt->findExtension(exten, context, contexts, _got_sms._type, _got_sms._from, false, true))
+    //switch(_pvt->findExtension(exten, context, contexts, _got_sms._type, _got_sms._from, false, true))
+    switch(MatchExtension::findExtension(exten, context, contexts, exten, _got_sms._from, false, true))
     {
-    case MATCH_NONE:
+    case MatchExtension::MATCH_NONE:
         if( _got_sms._type != "broadcast")
         {
             LOG(WARNING, PVT_FMT(_pvt->target(), "unable to find context/exten for incoming SMS (s/%s), processing disabled for this channel.")
@@ -437,7 +438,7 @@ bool SMS::justAlloc(unsigned int count)
 
         switch_caller_profile_t *caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
                 "Khomp_SMS",                       //username
-                "XML",                             //dialplan
+                Opt::_dialplan.c_str(),            //dialplan
                 NULL,                              //caller_id_name
                 _got_sms._from.c_str(),            //caller_id_number
                 NULL,                              //network_addr

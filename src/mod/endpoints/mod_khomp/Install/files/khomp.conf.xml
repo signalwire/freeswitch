@@ -13,6 +13,13 @@
 <!-- Section for main configurations about channels. -->
 
 <!--
+Name of the dialplan module in use.
+(default = XML)
+
+<param name="dialplan" value="XML"/>
+-->
+
+<!--
 Enable/disable generalized echo cancellation in the channel, for calls
 passing inside FreeSWITCH (disabled for bridged calls).
 (default = yes)
@@ -115,15 +122,6 @@ accepted, and described in the bottom of this file.
 -->
 
 <!--
-Defines the "alternative" context for calls on FXS channels, which will be
-checked if the main context does not match for a call. Some wildcards are
-accepted, and described in the bottom of this file.
-(default = khomp-DD)
-
-<param name="context-fxs-alt" value="khomp-DD"/>
--->
-
-<!--
 Defines the incoming context for calls on FXO channels. Some wildcards are
 accepted, and described in the bottom of this file.
 (default = khomp-DD-CC)
@@ -132,29 +130,11 @@ accepted, and described in the bottom of this file.
 -->
 
 <!--
-Defines the "alternative" context for calls on FXO channels, which will be
-checked if the main context does not match for a call. Some wildcards are
-accepted, and described in the bottom of this file.
-(default = khomp-DD)
-
-<param name="context-fxo-alt" value="khomp-DD"/>
--->
-
-<!--
 Defines the incoming context for calls on GSM channels. Some wildcards are
 accepted, and described in the bottom of this file.
 (default = khomp-DD-CC)
 
 <param name="context-gsm-call" value="khomp-DD-CC"/>
--->
-
-<!--
-Defines the "alternative" context for calls on GSM channels, which will be
-checked if the main context does not match for a call. Some wildcards are
-accepted, and described in the bottom of this file.
-(default = khomp-DD)
-
-<param name="context-gsm-call-alt" value="khomp-DD"/>
 -->
 
 <!--

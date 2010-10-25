@@ -511,7 +511,8 @@ int BoardGSM::KhompPvtGSM::callFailFromCause(int cause)
     return k3l_fail;
 }
 
-bool BoardGSM::KhompPvtGSM::validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context)
+bool BoardGSM::KhompPvtGSM::validContexts(
+        MatchExtension::ContextListType & contexts, std::string extra_context)
 {
     DBG(FUNC,PVT_FMT(_target,"(GSM) c"));
 
@@ -540,20 +541,12 @@ bool BoardGSM::KhompPvtGSM::validContexts(Board::KhompPvt::ContextListType & con
             context += extra_context;
             contexts.push_back(_group_context);
         }    
-
-        if (!Opt::_context2_gsm_call.empty())
-        {    
-            std::string context(Opt::_context2_gsm_call);
-            context += "-"; 
-            context += extra_context;
-            contexts.push_back(_group_context);
-        }    
     }  
 
     contexts.push_back(Opt::_context_gsm_call);
     contexts.push_back(Opt::_context2_gsm_call);
 
-    for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
         replaceTemplate((*i), "CC", _target.object);
 
     bool ret = Board::KhompPvt::validContexts(contexts,extra_context);

@@ -818,13 +818,14 @@ bool BoardE1::KhompPvtE1::application(ApplicationType type, switch_core_session_
     return true;
 }
 
-bool BoardE1::KhompPvtE1::validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context)
+bool BoardE1::KhompPvtE1::validContexts(
+        MatchExtension::ContextListType & contexts, std::string extra_context)
 {
     DBG(FUNC,PVT_FMT(_target, "(E1) c"));
 
     contexts.push_back(Opt::_context_digital);
 
-    for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
     {    
         replaceTemplate((*i), "LL", ((_target.object)/30));
         replaceTemplate((*i), "CCC", _target.object);
@@ -1903,19 +1904,19 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
         DBG(FUNC, PVT_FMT(_target, "incoming exten %s") % callR2()->_incoming_exten);
 
         /* begin context adjusting + processing */
-        Board::KhompPvt::ContextListType contexts;
+        MatchExtension::ContextListType contexts;
 
         validContexts(contexts);
 
         /* temporary */
-        std::string tmp_exten("s");
-        std::string tmp_context("default");
+        std::string tmp_exten;
+        std::string tmp_context;
         std::string tmp_orig("");
 
-        switch (findExtension(tmp_exten, tmp_context, contexts, callR2()->_incoming_exten,tmp_orig, false, false))
+        switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, callR2()->_incoming_exten,tmp_orig, false, false))
         {    
-            case MATCH_EXACT:
-            case MATCH_NONE:
+            case MatchExtension::MATCH_EXACT:
+            case MatchExtension::MATCH_NONE:
                 call()->_flags.set(Kflags::NUMBER_DIAL_FINISHD);
 
                 DBG(FUNC,FMT("incoming exten matched: %s") % callR2()->_incoming_exten);
@@ -1924,7 +1925,7 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
                 command(KHOMP_LOG,CM_END_OF_NUMBER);
                 break;
 
-            case MATCH_MORE:
+            case MatchExtension::MATCH_MORE:
                 DBG(FUNC, "didn't match exact extension, waiting...");
                 // cannot say anything exact about the number, do nothing...
                 break;
@@ -2396,18 +2397,19 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
         }
 
         /* begin context adjusting + processing */
-        ContextListType contexts;
+        MatchExtension::ContextListType contexts;
 
         pvt_fxs->validContexts(contexts);
 
-        std::string tmp_exten("s");
-        std::string tmp_context("default");
+        std::string tmp_exten;
+        std::string tmp_context;
 
-        switch (pvt_fxs->findExtension(tmp_exten, tmp_context, contexts, pvt_fxs->callFXS()->_flash_transfer, pvt_fxs->call()->_orig_addr, false, false))
+        switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, pvt_fxs->callFXS()->_flash_transfer, pvt_fxs->call()->_orig_addr, false, false))
         {
-            case MATCH_EXACT:
-            case MATCH_MORE:
+            case MatchExtension::MATCH_EXACT:
+            case MatchExtension::MATCH_MORE:
             {
+                pvt_fxs->callFXS()->_flash_transfer = tmp_exten;
                 DBG(FUNC,FMT("incoming exten matched: %s") % pvt_fxs->callFXS()->_flash_transfer);
 
                 if(!pvt_fxs->transfer(tmp_context))
@@ -2419,7 +2421,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
 
                 break;
             }
-            case MATCH_NONE:
+            case MatchExtension::MATCH_NONE:
             {
                 DBG(FUNC, PVT_FMT(pvt_fxs->target(), "match none!"));
                 
@@ -2702,7 +2704,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
         if(blind)
         {
             DBG(FUNC, PVT_FMT(_target, "Blind Transfer"));
-            switch_ivr_session_transfer(peer_session, number.c_str(), "XML", context.c_str());
+            switch_ivr_session_transfer(peer_session, number.c_str(), Opt::_dialplan.c_str(), context.c_str());
         }
         else
         {
@@ -2741,7 +2743,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             switch_channel_set_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
             switch_core_event_hook_add_state_change(session(), xferHook);
 
-            switch_ivr_session_transfer(session(), number.c_str(), "XML", context.c_str());
+            switch_ivr_session_transfer(session(), number.c_str(), Opt::_dialplan.c_str(), context.c_str());
 
             DBG(FUNC, PVT_FMT(target(), "Generating ring"));
             call()->_indication = INDICA_RING;
@@ -2819,16 +2821,17 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
             callFXS()->_incoming_exten += e->AddInfo;
 
             /* begin context adjusting + processing */
-            ContextListType contexts;
+            MatchExtension::ContextListType contexts;
 
             validContexts(contexts);
 
-            std::string tmp_exten("s");
-            std::string tmp_context("default");
+            std::string tmp_exten;
+            std::string tmp_context;
 
-            switch (findExtension(tmp_exten, tmp_context, contexts, callFXS()->_incoming_exten, call()->_orig_addr, false, false))
+            switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, callFXS()->_incoming_exten, call()->_orig_addr, false, false))
             {
-                case MATCH_EXACT:
+                case MatchExtension::MATCH_EXACT:
+                    callFXS()->_incoming_exten = tmp_exten;
                     DBG(FUNC,FMT("incoming exten matched: %s") % callFXS()->_incoming_exten);
                     Board::board(_target.device)->_timers.del(callFXS()->_idx_dial);
                     call()->_dest_addr = callFXS()->_incoming_exten;
@@ -2837,7 +2840,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     alloc();
                     break;
 
-                case MATCH_MORE:
+                case MatchExtension::MATCH_MORE:
                     DBG(FUNC, PVT_FMT(target(), "match more..."));
 
                     /* can match, will match more, and it's an external call? */
@@ -2851,23 +2854,23 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     }
 
                     break;
-                case MATCH_NONE:
+                case MatchExtension::MATCH_NONE:
                     DBG(FUNC, PVT_FMT(target(), "match none!"));
 
                     std::string invalid = "i";
                     
                     Board::board(_target.device)->_timers.del(callFXS()->_idx_dial);
 
-                    switch (findExtension(tmp_exten, tmp_context, contexts, invalid, call()->_orig_addr, true, false))
+                    switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, invalid, call()->_orig_addr, true, false))
                     {
-                        case MATCH_EXACT:
+                        case MatchExtension::MATCH_EXACT:
                             // this dialing is invalid, and we can handle it...
                             call()->_dest_addr = invalid;
                             call()->_incoming_context = tmp_context;
                             alloc();
                             break;
-                        case MATCH_MORE:
-                        case MATCH_NONE:
+                        case MatchExtension::MATCH_MORE:
+                        case MatchExtension::MATCH_NONE:
                             callFXS()->_flags.set(Kflags::FXS_DIAL_FINISHD);
                             startCadence(PLAY_FASTBUSY);
                             break;
@@ -2896,17 +2899,18 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
             callFXS()->_flash_transfer += e->AddInfo;
     
             /* begin context adjusting + processing */
-            ContextListType contexts;
+            MatchExtension::ContextListType contexts;
 
             validContexts(contexts);
 
-            std::string tmp_exten("s");
-            std::string tmp_context("default");
+            std::string tmp_exten;
+            std::string tmp_context;
             
-            switch (findExtension(tmp_exten, tmp_context, contexts, callFXS()->_flash_transfer, call()->_orig_addr, false, false))
+            switch (MatchExtension::findExtension(tmp_exten, tmp_context, contexts, callFXS()->_flash_transfer, call()->_orig_addr, false, false))
             {
-                case MATCH_EXACT:
+                case MatchExtension::MATCH_EXACT:
                 {
+                    callFXS()->_flash_transfer = tmp_exten;
                     DBG(FUNC,FMT("incoming exten matched: %s") % callFXS()->_flash_transfer);
 
                     if(!transfer(tmp_context))
@@ -2918,7 +2922,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
 
                     break;
                 }
-                case MATCH_MORE:
+                case MatchExtension::MATCH_MORE:
                     DBG(FUNC, PVT_FMT(target(), "match more..."));
 
                     /* can match, will match more, and it's an external call? */
@@ -2932,7 +2936,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     }
 
                     break;
-                case MATCH_NONE:
+                case MatchExtension::MATCH_NONE:
                 {
                     DBG(FUNC, PVT_FMT(target(), "match none!"));
 
@@ -3379,7 +3383,8 @@ void BoardE1::KhompPvtFXS::reportFailToReceive(int fail_code)
     }
 }
 
-bool BoardE1::KhompPvtFXS::validContexts(Board::KhompPvt::ContextListType & contexts, std::string extra_context)
+bool BoardE1::KhompPvtFXS::validContexts(
+        MatchExtension::ContextListType & contexts, std::string extra_context)
 {
     DBG(FUNC,PVT_FMT(_target, "(FXS) c"));
     
@@ -3389,7 +3394,7 @@ bool BoardE1::KhompPvtFXS::validContexts(Board::KhompPvt::ContextListType & cont
     contexts.push_back(Opt::_context_fxs);
     contexts.push_back(Opt::_context2_fxs);
 
-    for (Board::KhompPvt::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
+    for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {
         replaceTemplate((*i), "CC", _target.object);
     }

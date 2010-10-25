@@ -30,17 +30,14 @@ If you need to set advanced parameters of the board and/or signaling, the progra
 </p>
 <pre><b>Sintaxe:</b> &lt;param name="..." value="..."/&gt;
 </pre>
-<ul><li><b>auto-fax-adjustment</b>: Enable ("yes") or disables ("no") the automatic adjustment of the channel (disable the echo canceller and the suppression DTMF) tone to detect FAX (local option)&nbsp;;
+<ul><li><b>dialplan</b>: Name of the dialplan module in use.
+</li><li><b>auto-fax-adjustment</b>: Enable ("yes") or disables ("no") the automatic adjustment of the channel (disable the echo canceller and the suppression DTMF) tone to detect FAX (local option)&nbsp;;
 </li><li><b>auto-gain-control</b>:Enable ("yes") or disables ("no") the activation of the automatic gain control (AGC) by the Endpoint (local option);
 </li><li><b>context-digital</b>: Context for incoming connections on digital boards (the default is "khomp-DD-LL", where "DD" will be replaced at the time of connection by the device number, "LL" by the number of the link, "CCC" by channel number and "SSSS" for the device serial number);
 </li><li><b>context-fxo</b>: Context for incoming connections on FXO cards (the default is "khomp-CC-DD", where "DD" will be replaced at the time of connection by the device number, "CC" by channel number, and "SSSS" by the device serial number);
-</li><li><b>context-fxo-alt</b>: Alternative input context for FXO cards (the default is empty - when set, follows the same substitution rules for <b>context-fxo</b>);
 </li><li><b>context-fxs</b>: Context for incoming connections on FXS cards (the default is "khomp-CC-DD", where "DD" will be replaced at the time of connection by the device number, "CC" by channel number, and "SSSS" by the device serial number); 
-</li><li><b>context-fxs-alt</b>: Alternative input context for FXS cards (the default is empty - when set, follows the same substitution rules for context-fxs); number); 
 </li><li><b>context-gsm-call</b> (or <b>context-gsm</b>): Context of entry for GSM boards (the default is "khomp-CC-DD", where "DD" will be replaced at the time of connection by the device number, "CC" by channel number, and "SSSS" by the device serial number);
-</li><li><b>context-gsm-alt-call</b> (or <b>context-gsm-alt</b>): Alternative input context for GSM (the default is zero - when set, follows the same substitution rules for <b>context-gsm-call</b>);
 </li><li><b>context-gsm-sms</b>: Context for incoming SMSs (the default is "khomp-sms-CC-DD", where "DD" will be replaced by the number of device, "CC" by channel number and "SSSS" by the device's serial number);
-</li><li><b>context-gsm-wait</b>: Context used for pre-processing of incoming GSM calls that are on waiting state - to disable this feature, use <b>none</b> (the default is "khomp-wait-CC-DD", where "DD" will be replaced by the number of device, "CC" by channel number and "SSSS" by the device's serial number);
 </li><li><b>context-pr</b>: Context for incoming connections on boards KPR (default is "khomp-CC-DD", where "DD" will be replaced at the time of connection by the device number, "CC "by channel number);
 </li><li><b>disconnect-delay</b>: Sets the time in milliseconds to perform processing a disconnect event, to ignore situations where other equipment performing the double service to overthrow collect calls (local option);
 </li><li><b>echo-canceller</b> (former 'echocanceller): Active ("yes") or disables ("no") echo cancellation automatic Endpoint (local option);
@@ -223,8 +220,8 @@ that come from the link 1 (second link) of the board 0.
 </li><li> The incoming calls on the link <b>1</b> of the board <b>0</b> for the number <b>1111</b> will be redirected to the first link of the first board (b0L0) calling number <b>2345</b>.
 </li></ol>
 <a name="Contexts_of_FXS.2FFXO.2FGSM_channels" id="Contexts_of_FXS.2FFXO.2FGSM_channels"></a><h3> <span class="mw-headline"> Contexts of FXS/FXO/GSM channels </span></h3>
-<p>Just as in the context of E1 cards, inbound links are forwarded to the Endpoint FreeSwitch. However, these signals have two pre-defined contexts, sought with a preference order.
-</p><p>The first context is pre-defined as follows, according to the file <b>khomp.conf.xml</b>:
+<p>Just as in the context of E1 cards, inbound links are forwarded to the Endpoint FreeSwitch. 
+</p><p>The context is pre-defined as follows, according to the file <b>khomp.conf.xml</b>:
 </p>
 <pre>&lt;param name="context-gsm" value="khomp-DD-CC"/&gt;&nbsp;;placas GSM
 </pre>
@@ -232,26 +229,12 @@ that come from the link 1 (second link) of the board 0.
 </pre>
 <pre>&lt;param name="context-fxo" value="khomp-DD-CC"/&gt;&nbsp;; placas FXO
 </pre>
-<p>There is also an alternative context, which has the following default value:
-</p>
-<pre>&lt;param name="context-gsm-alt" value="khomp-DD"/&gt;&nbsp;; placas GSM
-</pre>
-<pre>&lt;param name="context-fxs-alt" value="khomp-DD"/&gt;&nbsp;; placas FXS
-</pre>
-<pre>&lt;param name="context-fxo-alt" value="khomp-DD"/&gt;&nbsp;; placas FXO
-</pre>
 <p>For these options, <b>DD</b> is the device number (two digits), and <b>CC</b> is the channel number (also two digits). There is also the <b>SSSS</b> format, which represents the serial number board.
 </p>
 <ul><li><b>NOTE</b>: In the <b>KGSM</b> board, incoming calls are <b>always</b> redirected to the <b>"s"</b> extension, since the GSM protocol does not identify the target number, only the originator - if not omitted.
 </li></ul>
 <a name="Priority_settings_on_the_FXS_branches" id="Priority_settings_on_the_FXS_branches"></a><h4> <span class="mw-headline"> Priority settings on the FXS branches </span></h4>
-<p>On calls originated from an FXS branch, the Endpoint searches for a valid extension in three different contexts. The priority of contexts is as follows:
-</p>
-<ol><li> Branch-specific extension, defined in section <b>&lt;fxs-options&gt;</b> of file <b>khomp.conf.xml</b>;
-</li><li> Context defined in <b>context-fxs</b>;
-</li><li> Context defined in <b>context-fxs-alt</b>.
-</li></ol>
-<p>If no valid extension can be found, the extension <b>i</b> is searched in the contexts above, and also in the <b>default</b> context. If the dialing timeout is reached (option <b>fxs-digit-timeout</b>), the search will consider all digits dialed until the timeout; if no extension is found, it will search extension "t"; if nothing is found again, then extension "i" will be searched; if no extension is found, "fast-busy" cadence will be played.
+<p>On calls originated from an FXS branch, the Endpoint searches for a valid extension (digits sent) after the DTMF <b>#</b> or after the <i>timeout</i> (option <b>fxs-digit-timeout</b>). That search is done in the context defined in section <b>&lt;fxs-options&gt;</b>, or if no context configured, the search is done in context defined in <b>context-fxs</b>.
 <br />
 </p>
 <a name="Contexts_for_SMS_messages_.28GSM_only.29" id="Contexts_for_SMS_messages_.28GSM_only.29"></a><h3> <span class="mw-headline"> Contexts for SMS messages (GSM only) </span></h3>
@@ -278,6 +261,10 @@ that come from the link 1 (second link) of the board 0.
 </pre>
 <p>In this case, <b>DD</b> is the device number (two digits), and<b>CC</b> is the channel number (also two digits). The name and format of this context can also be changed through the "context-pr" in the configuration file.
 <br />
+</p>
+<a name="Groups_contexts" id="Groups_contexts"></a><h3> <span class="mw-headline"> Groups contexts </span></h3>
+<p>The section <b>groups</b>, in the configuration file <b>khomp.conf.xml</b>, can be used to define specific settings for certain groups of channels.
+</p><p>This section is detailed in the section <b>Endpoint Configuration</b>.
 <br />
 </p>
 <a name="Using_the_bridge_application" id="Using_the_bridge_application"></a><h3> <span class="mw-headline"> Using the <i>bridge</i> application </span></h3>

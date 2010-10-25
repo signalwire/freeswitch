@@ -236,6 +236,214 @@ const char * answerInfoToString(int answer_info)
 
     return NULL;
 }
+/******************************* Match functions ******************************/
+bool MatchExtension::canMatch(std::string & context, std::string & exten, 
+                              std::string & caller_id, bool match_more)
+{
+    if(!match_more)
+    {
+        return true;
+    }
+
+    size_t finished = exten.find('#');
+
+    if(finished != std::string::npos)
+    {
+        exten.erase(finished);
+        DBG(FUNC, FMT("match exact!!! exten=%s") % exten);
+        return false;
+    }
+
+    return true;
+
+/*
+    switch_xml_t xml = NULL;
+    switch_xml_t xcontext = NULL;
+    switch_regex_t *re;
+    int ovector[30];
+
+    if (switch_xml_locate("dialplan","context","name",context.c_str(),&xml,&xcontext, NULL,SWITCH_FALSE) == SWITCH_STATUS_SUCCESS)
+    {
+        switch_xml_t xexten = NULL;
+
+        if(!(xexten = switch_xml_child(xcontext,"extension")))
+        {
+            DBG(FUNC,"extension cannot match, returning");
+
+            if(xml)
+                switch_xml_free(xml); 
+
+            return false;
+        }
+
+        while(xexten)
+        {
+            switch_xml_t xcond = NULL;
+
+            for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next)
+            {
+                std::string expression;
+
+                if (switch_xml_child(xcond, "condition")) 
+                { 
+                    LOG(ERROR,"Nested conditions are not allowed");
+                }  
+
+                switch_xml_t xexpression = switch_xml_child(xcond, "expression");
+
+                if ((xexpression = switch_xml_child(xcond, "expression"))) 
+                {
+                    expression = switch_str_nil(xexpression->txt);
+                }
+                else 
+                {
+                    expression =  switch_xml_attr_soft(xcond, "expression");
+                }  
+
+                if(expression.empty() || expression == "^(.*)$")
+                {                    
+                    //We're not gonna take it
+                    //No, we ain't gonna take it
+                    // We're not gonna take it anymore
+                    //
+                    continue;
+                }
+
+                int pm = -1; 
+                switch_status_t is_match = SWITCH_STATUS_FALSE;
+                is_match =  switch_regex_match_partial(exten.c_str(),expression.c_str(),&pm);
+
+                if(is_match == SWITCH_STATUS_SUCCESS)
+                {
+                    if(match_more)
+                    {
+                        if(pm == 1)
+                        {
+                            switch_xml_free(xml);
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        switch_xml_free(xml);
+                        return true;
+                    }
+                }
+                else
+                {
+                    // not match
+                }
+            }            
+
+            xexten = xexten->next;
+        }
+    }
+    else
+    {
+        DBG(FUNC,"context cannot match, returning");
+    }
+
+    if(xml)
+        switch_xml_free(xml); 
+
+    return false;
+*/
+}
+
+
+MatchExtension::MatchType MatchExtension::matchExtension(
+                                        std::string & context, 
+                                        std::string & exten,
+                                        std::string & callerid, 
+                                        bool match_only)
+{
+    if(!canMatch(context,exten,callerid))
+    {
+        DBG(FUNC, "context/extension cannot match");
+        return MATCH_NONE;
+    }
+
+    if(match_only)
+    {
+        DBG(FUNC, "for now we want know if it matches...");
+        return MATCH_MORE;
+    }
+
+    if(!canMatch(context,exten,callerid,true))
+    {
+        DBG(FUNC, "it match exact!");
+        return MATCH_EXACT;
+    }
+
+    return MATCH_MORE;
+}
+
+MatchExtension::MatchType MatchExtension::findExtension(
+                                        std::string & ref_extension,
+                                        std::string & ref_context,
+                                        ContextListType & contexts,
+                                        std::string & extension,
+                                        std::string & caller_id,
+                                        bool default_ctx,
+                                        bool default_ext)
+{
+    ExtenListType extens;
+
+    if(!extension.empty())
+    {
+        extens.push_back(extension);
+    }
+
+    if(default_ext)
+    {
+        if (extension != "s")
+        {
+            extens.push_back("s");
+        }
+
+        extens.push_back("i");
+    }
+
+    if(default_ctx)
+    {
+        contexts.push_back("default");
+    }
+
+    for(ContextListType::iterator itc = contexts.begin(); itc != contexts.end(); itc++)
+    {
+        for(ExtenListType::iterator ite = extens.begin(); ite != extens.end(); ite++)
+        {
+            DBG(FUNC, FMT("trying context '%s' with exten '%s'...") % *itc % *ite);
+            ref_context   = *itc;
+            ref_extension = *ite;
+
+            MatchType m = matchExtension(ref_context, ref_extension, caller_id, false);
+
+            switch (m)
+            {
+                case MATCH_NONE:
+                    continue;
+
+                case MATCH_MORE:
+                case MATCH_EXACT:
+                {
+                    //ref_context = *itc;
+                    //ref_extension = *ite;
+
+                    DBG(FUNC, ".... can match context/extension (some way)!");
+
+                    return m;
+                }
+            }
+        }
+    }
+            
+    ref_context.clear();
+    ref_extension.clear();
+
+    DBG(FUNC, D("... no context/extension found!"));
+    return MATCH_NONE;
+}
 
 /******************************** Kommuter ************************************/
 bool Kommuter::stop()
