@@ -931,12 +931,12 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 	DEBUGA_SKYPE("incoming audio (read) server (I am it) EXITING\n", SKYPOPEN_P_LOG);
 	skypopen_close_socket(s);
 	s = -1;
-	DEBUGA_SKYPE("debugging_hangup PRE srv lock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup PRE srv lock\n", SKYPOPEN_P_LOG);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
-	DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
 	tech_pvt->tcp_srv_thread = NULL;
 	switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
-	DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
 
@@ -1081,12 +1081,12 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 	DEBUGA_SKYPE("outbound audio server (I am it) EXITING\n", SKYPOPEN_P_LOG);
 	skypopen_close_socket(s);
 	s = -1;
-	DEBUGA_SKYPE("debugging_hangup PRE cli lock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup PRE cli lock\n", SKYPOPEN_P_LOG);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
-	DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
 	tech_pvt->tcp_cli_thread = NULL;
 	switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
-	DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
 

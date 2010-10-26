@@ -490,28 +490,28 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->write_buffer) {
 			switch_buffer_destroy(&tech_pvt->write_buffer);
 		}
-		DEBUGA_SKYPE("debugging_hangup 13\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 13\n", SKYPOPEN_P_LOG);
 		switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
-		DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
 		if (tech_pvt->tcp_cli_thread) {
-			DEBUGA_SKYPE("debugging_hangup 14\n", SKYPOPEN_P_LOG);
+			//DEBUGA_SKYPE("debugging_hangup 14\n", SKYPOPEN_P_LOG);
 			switch_thread_join(&status, tech_pvt->tcp_cli_thread);
 			tech_pvt->tcp_cli_thread = NULL;
-			DEBUGA_SKYPE("debugging_hangup 15\n", SKYPOPEN_P_LOG);
+			//DEBUGA_SKYPE("debugging_hangup 15\n", SKYPOPEN_P_LOG);
 		}
 		switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
-		DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 		switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
-		DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
 		if (tech_pvt->tcp_srv_thread) {
-			DEBUGA_SKYPE("debugging_hangup 16\n", SKYPOPEN_P_LOG);
+			//DEBUGA_SKYPE("debugging_hangup 16\n", SKYPOPEN_P_LOG);
 			switch_thread_join(&status, tech_pvt->tcp_srv_thread);
 			tech_pvt->tcp_srv_thread = NULL;
-			DEBUGA_SKYPE("debugging_hangup 17\n", SKYPOPEN_P_LOG);
+			//DEBUGA_SKYPE("debugging_hangup 17\n", SKYPOPEN_P_LOG);
 		}
 		switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
-		DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
-		DEBUGA_SKYPE("debugging_hangup 18\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 18\n", SKYPOPEN_P_LOG);
 
 		*tech_pvt->session_uuid_str = '\0';
 		tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
@@ -542,7 +542,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 
-	DEBUGA_SKYPE("debugging_hangup 1\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup 1\n", SKYPOPEN_P_LOG);
 
 	if (tech_pvt) {
 		if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
@@ -556,7 +556,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		switch_clear_flag(tech_pvt, TFLAG_IO);
 		switch_clear_flag(tech_pvt, TFLAG_VOICE);
 
-		DEBUGA_SKYPE("debugging_hangup 2\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 2\n", SKYPOPEN_P_LOG);
 		tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
 
 		if (strlen(tech_pvt->skype_call_id)) {
@@ -600,18 +600,18 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 			globals.calls = 0;
 		}
 
-		DEBUGA_SKYPE("debugging_hangup 9\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 9\n", SKYPOPEN_P_LOG);
 		tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
 		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
 			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 		}
-		DEBUGA_SKYPE("debugging_hangup 10\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 10\n", SKYPOPEN_P_LOG);
 		switch_mutex_unlock(globals.mutex);
 	} else {
 		WARNINGA("FYI %s CHANNEL has no tech_pvt in his private\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
-		DEBUGA_SKYPE("debugging_hangup 11\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 11\n", SKYPOPEN_P_LOG);
 	}
-	DEBUGA_SKYPE("debugging_hangup 12\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup 12\n", SKYPOPEN_P_LOG);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2124,33 +2124,33 @@ int start_audio_threads(private_t *tech_pvt)
 	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
-	DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
 	if (switch_thread_create(&tech_pvt->tcp_srv_thread, thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
 		switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
-		DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 		return -1;
 	}
 	switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
-	DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 
 	switch_threadattr_create(&thd_attr, skypopen_module_pool);
 	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
-	DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
 	if (switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
 		switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
-		DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 		return -1;
 	}
 	switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
-	DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
+	//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 	switch_sleep(100000);
 
 	if (tech_pvt->tcp_cli_thread == NULL || tech_pvt->tcp_srv_thread == NULL) {
