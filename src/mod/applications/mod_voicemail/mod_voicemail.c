@@ -69,7 +69,8 @@ typedef enum {
 
 typedef enum {
 	VM_MOVE_NEXT,
-	VM_MOVE_PREV
+	VM_MOVE_PREV,
+	VM_MOVE_SAME
 } msg_move_t;
 
 #define VM_PROFILE_CONFIGITEM_COUNT 100
@@ -107,6 +108,7 @@ struct vm_profile {
 	char rew_key[2];
 	char prev_msg_key[2];
 	char next_msg_key[2];
+	char repeat_msg_key[2];
 	char urgent_key[2];
 	char operator_key[2];
 	char vmain_key[2];
@@ -480,7 +482,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "skip-greet-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->skip_greet_key, "#", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "skip-info-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-						   &profile->skip_info_key, "", &config_dtmf, NULL, NULL);
+						   &profile->skip_info_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "config-menu-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->config_menu_key, "5", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "record-greeting-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
@@ -510,9 +512,11 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "ff-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->ff_key, "6", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "rew-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rew_key, "4", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "previous-message-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-						   &profile->prev_msg_key, "", &config_dtmf, NULL, NULL);
+						   &profile->prev_msg_key, "1", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "next-message-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-						   &profile->next_msg_key, "", &config_dtmf, NULL, NULL);
+						   &profile->next_msg_key, "3", &config_dtmf, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "repeat-message-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
+						   &profile->repeat_msg_key, "0", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "urgent-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->urgent_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
@@ -823,7 +827,8 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 
 			if (!cc->noexit
 				&& (dtmf->digit == *cc->profile->delete_file_key || dtmf->digit == *cc->profile->save_file_key
-					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key
+					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key 
+					|| dtmf->digit == *cc->profile->repeat_msg_key
 					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key
 					|| dtmf->digit == *cc->profile->email_key || dtmf->digit == *cc->profile->forward_key)) {
 				*cc->buf = dtmf->digit;
@@ -1483,6 +1488,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			}
 			if (!strcmp(input, profile->prev_msg_key)) {
 				cbt->move = VM_MOVE_PREV;
+			} else if (!strcmp(input, profile->repeat_msg_key)) {
+				cbt->move = VM_MOVE_SAME;
 			} else if (!strcmp(input, profile->next_msg_key)) {
 				cbt->move = VM_MOVE_NEXT;
 			} else if (!strcmp(input, profile->listen_file_key)) {
@@ -1538,6 +1545,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
+					cbt->move = VM_MOVE_SAME;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
@@ -1884,7 +1892,10 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						} else {
 							cur_message -= 2;
 						}
+					} else if (cbt.move == VM_MOVE_SAME) {
+						cur_message -= 1;
 					}
+					
 					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 						break;
 					}
