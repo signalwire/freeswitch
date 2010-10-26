@@ -397,6 +397,12 @@ static switch_status_t interface_exists(char *the_interface)
 		switch_yield(50000);
 	}
 
+	if (tech_pvt->SkypopenHandles.disp) {
+		NOTICA("REMOVE CLOSIN X\n", SKYPOPEN_P_LOG);
+		XCloseDisplay(tech_pvt->SkypopenHandles.disp);
+		NOTICA("REMOVE CLOSIN X END\n", SKYPOPEN_P_LOG);
+	}
+
 	if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 		switch_thread_join(&status, globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread);
 	}
@@ -1993,6 +1999,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 				x--;
 				switch_yield(50000);
 			}
+			if (tech_pvt->SkypopenHandles.disp) {
+				NOTICA("CLOSIN X\n", SKYPOPEN_P_LOG);
+				XCloseDisplay(tech_pvt->SkypopenHandles.disp);
+				NOTICA("CLOSIN X END\n", SKYPOPEN_P_LOG);
+			}
 			if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 				switch_thread_join(&status, globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread);
 			}
@@ -3106,11 +3117,15 @@ struct SkypopenHandles *skypopen_list_remove_by_value(struct SkypopenList *list,
 // CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
 struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *list, struct SkypopenHandles *handle)
 {
+	private_t *tech_pvt=NULL;
+
 	switch_mutex_lock(globals.list_mutex);
 
+	NOTICA("BEGIN REMOVE\n", SKYPOPEN_P_LOG);
 	if (handle->managed == SWITCH_FALSE) {
 		// already removed
 		switch_mutex_unlock(globals.list_mutex);
+	NOTICA("EXIT REMOVE\n", SKYPOPEN_P_LOG);
 		return 0;
 	}
 
@@ -3135,6 +3150,7 @@ struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *l
 	list->entries--;
 
 	switch_mutex_unlock(globals.list_mutex);
+	NOTICA("EXIT REMOVE\n", SKYPOPEN_P_LOG);
 
 	return handle;
 }

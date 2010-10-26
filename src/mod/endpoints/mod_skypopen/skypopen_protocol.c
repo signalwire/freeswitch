@@ -1883,7 +1883,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 #endif
 
 	tech_pvt->skypopen_api_thread = NULL;
-	XCloseDisplay(disp);
+	//XCloseDisplay(disp);
 	return NULL;
 
 }
