@@ -1875,7 +1875,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 		running = 0;
 	}
 
-	NOTICA("EXITING\n", SKYPOPEN_P_LOG);
+	DEBUGA_SKYPE("EXITING\n", SKYPOPEN_P_LOG);
 
 	// CLOUDTREE (Thomas Hazel)
 #ifndef WIN32
