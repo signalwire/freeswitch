@@ -1029,3 +1029,4 @@ void sofia_glue_global_watchdog(switch_bool_t on);
 void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
 switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
+void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);

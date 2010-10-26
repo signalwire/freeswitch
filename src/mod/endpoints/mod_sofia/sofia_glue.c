@@ -336,6 +336,23 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 
 }
 
+void sofia_glue_check_dtmf_type(private_object_t *tech_pvt) 
+{
+	const char *val;
+
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "dtmf_type"))) {
+		if (!strcasecmp(val, "rfc2833")) {
+			tech_pvt->dtmf_type = DTMF_2833;
+		} else if (!strcasecmp(val, "info")) {
+			tech_pvt->dtmf_type = DTMF_INFO;
+		} else if (!strcasecmp(val, "none")) {
+			tech_pvt->dtmf_type = DTMF_NONE;
+		} else {
+			tech_pvt->dtmf_type = tech_pvt->profile->dtmf_type;
+		}
+	}
+}
+
 
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force)
 {
@@ -357,6 +374,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
 
+	sofia_glue_check_dtmf_type(tech_pvt);
 
 	if (!tech_pvt->payload_space) {
 		int i;
@@ -796,8 +814,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	} else if (!tech_pvt->te) {
 		tech_pvt->recv_te = tech_pvt->te = profile->te;
 	}
-
-	tech_pvt->dtmf_type = profile->dtmf_type;
 
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 		if (tech_pvt->bcng_pt) {
@@ -2902,16 +2918,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
 	} else {
 		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT);
-	}
-
-	if ((val = switch_channel_get_variable(tech_pvt->channel, "dtmf_type"))) {
-		if (!strcasecmp(val, "rfc2833")) {
-			tech_pvt->dtmf_type = DTMF_2833;
-		} else if (!strcasecmp(val, "info")) {
-			tech_pvt->dtmf_type = DTMF_INFO;
-		} else {
-			tech_pvt->dtmf_type = tech_pvt->profile->dtmf_type;
-		}
 	}
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_RFC2833)

@@ -80,6 +80,9 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
+
+	sofia_glue_check_dtmf_type(tech_pvt);
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA INIT\n", switch_channel_get_name(channel));
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		sofia_glue_tech_absorb_sdp(tech_pvt);
