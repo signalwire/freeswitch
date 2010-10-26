@@ -736,6 +736,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			switch_channel_mark_pre_answered(tech_pvt->other_channel);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_RINGING:
+		if (tech_pvt->other_channel && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			switch_channel_mark_ring_ready(tech_pvt->other_channel);
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			switch_set_flag_locked(tech_pvt, TFLAG_BRIDGE);
