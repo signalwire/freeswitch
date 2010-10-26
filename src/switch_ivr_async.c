@@ -928,6 +928,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
+			const char *var;
+
 			switch_codec_implementation_t read_impl = { 0 };
 			switch_core_session_get_read_impl(session, &read_impl);
 
@@ -967,6 +969,41 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 				}
 			}
+
+			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_app"))) {
+				char *app = switch_core_session_strdup(session, var);
+				char *data;
+
+				if ((data = strchr(app, ':'))) {
+					*data++ = '\0';
+				}
+
+				switch_core_session_execute_application(session, app, data);
+			}
+
+			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_api"))) {
+				char *cmd = switch_core_session_strdup(session, var);
+				char *data, *expanded = NULL;
+				switch_stream_handle_t stream = { 0 };
+
+				SWITCH_STANDARD_STREAM(stream);
+
+				if ((data = strchr(cmd, ':'))) {
+					*data++ = '\0';
+					expanded = switch_channel_expand_variables(channel, data);
+				}
+
+				switch_api_execute(cmd, expanded, session, &stream);
+
+				if (expanded && expanded != data) {
+					free(expanded);
+				}
+
+				switch_safe_free(stream.data);
+
+			}
+
+
 		}
 
 		break;
