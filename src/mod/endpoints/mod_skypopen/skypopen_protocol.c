@@ -554,6 +554,8 @@ int skypopen_signaling_read(private_t * tech_pvt)
 					char msg_to_skype[1024];
 					skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
 					ERRORA("We are in a double call situation, trying to get out hanging up call id: %s.\n", SKYPOPEN_P_LOG, id);
+					sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
 					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
 					skypopen_sleep(10000);
@@ -590,6 +592,8 @@ int skypopen_signaling_read(private_t * tech_pvt)
 								if( !remote_party_is_ringing(tech_pvt)){
 
 									WARNINGA("We are getting the RINGING from a call we canceled, trying to get out hanging up call id: %s.\n", SKYPOPEN_P_LOG, id);
+									sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+									skypopen_signaling_write(tech_pvt, msg_to_skype);
 									sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
 									tech_pvt->skype_call_id[0] = '\0';
@@ -925,7 +929,12 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 	DEBUGA_SKYPE("incoming audio (read) server (I am it) EXITING\n", SKYPOPEN_P_LOG);
 	skypopen_close_socket(s);
 	s = -1;
+	DEBUGA_SKYPE("debugging_hangup PRE srv lock\n", SKYPOPEN_P_LOG);
+	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
+	DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
 	tech_pvt->tcp_srv_thread = NULL;
+	switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
+	DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
 
@@ -1070,7 +1079,12 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 	DEBUGA_SKYPE("outbound audio server (I am it) EXITING\n", SKYPOPEN_P_LOG);
 	skypopen_close_socket(s);
 	s = -1;
+	DEBUGA_SKYPE("debugging_hangup PRE cli lock\n", SKYPOPEN_P_LOG);
+	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
+	DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
 	tech_pvt->tcp_cli_thread = NULL;
+	switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
+	DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
 

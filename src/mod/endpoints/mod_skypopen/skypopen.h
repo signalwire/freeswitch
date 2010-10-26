@@ -307,6 +307,8 @@ struct private_object {
 	short audiobuf_srv[SAMPLES_PER_FRAME];
 	switch_mutex_t *mutex_audio_srv;
 	int flag_audio_srv;
+	switch_mutex_t *mutex_thread_audio_cli;
+	switch_mutex_t *mutex_thread_audio_srv;
 
 	FILE *phonebook_writing_fp;
 	int skypopen_dir_entry_extension_prefix;
