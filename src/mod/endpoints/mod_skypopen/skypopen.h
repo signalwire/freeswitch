@@ -48,11 +48,11 @@
 
 // CLOUDTREE (Thomas Hazel)
 #ifdef XIO_ERROR_BY_SETJMP
-	#include "setjmp.h"
+#include "setjmp.h"
 #endif
 // CLOUDTREE (Thomas Hazel)
 #ifdef XIO_ERROR_BY_UCONTEXT
-	#include "ucontext.h"
+#include "ucontext.h"
 #endif
 
 #endif //WIN32
@@ -176,32 +176,32 @@ struct SkypopenHandles {
 	int fdesc[2];
 
 	// CLOUDTREE (Thomas Hazel)
-	#ifdef XIO_ERROR_BY_SETJMP
-		jmp_buf ioerror_context;
-	#endif
-	#ifdef XIO_ERROR_BY_UCONTEXT
-		ucontext_t ioerror_context;
-	#endif
+#ifdef XIO_ERROR_BY_SETJMP
+	jmp_buf ioerror_context;
+#endif
+#ifdef XIO_ERROR_BY_UCONTEXT
+	ucontext_t ioerror_context;
+#endif
 
 	// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
 	switch_bool_t managed;
-	void* prev;
-	void* next;
+	void *prev;
+	void *next;
 };
 
 // CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
 struct SkypopenList {
 	int entries;
-	void* head;
-	void* tail;
+	void *head;
+	void *tail;
 };
 
 // CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
-struct SkypopenHandles* skypopen_list_add(struct SkypopenList* list, struct SkypopenHandles* x);
-struct SkypopenHandles* skypopen_list_find(struct SkypopenList* list, struct SkypopenHandles* x);
-struct SkypopenHandles* skypopen_list_remove_by_value(struct SkypopenList* list, Display* display);
-struct SkypopenHandles* skypopen_list_remove_by_reference(struct SkypopenList* list, struct SkypopenHandles* x);
-int skypopen_list_size(struct SkypopenList* list);
+struct SkypopenHandles *skypopen_list_add(struct SkypopenList *list, struct SkypopenHandles *x);
+struct SkypopenHandles *skypopen_list_find(struct SkypopenList *list, struct SkypopenHandles *x);
+struct SkypopenHandles *skypopen_list_remove_by_value(struct SkypopenList *list, Display * display);
+struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *list, struct SkypopenHandles *x);
+int skypopen_list_size(struct SkypopenList *list);
 
 #else //WIN32
 
@@ -352,31 +352,31 @@ struct private_object {
 
 typedef struct private_object private_t;
 
-void *SWITCH_THREAD_FUNC skypopen_api_thread_func(switch_thread_t * thread, void *obj);
-int skypopen_audio_read(private_t * tech_pvt);
-int skypopen_audio_init(private_t * tech_pvt);
-int skypopen_signaling_write(private_t * tech_pvt, char *msg_to_skype);
-int skypopen_signaling_read(private_t * tech_pvt);
+void *SWITCH_THREAD_FUNC skypopen_api_thread_func(switch_thread_t *thread, void *obj);
+int skypopen_audio_read(private_t *tech_pvt);
+int skypopen_audio_init(private_t *tech_pvt);
+int skypopen_signaling_write(private_t *tech_pvt, char *msg_to_skype);
+int skypopen_signaling_read(private_t *tech_pvt);
 
-int skypopen_call(private_t * tech_pvt, char *idest, int timeout);
-int skypopen_senddigit(private_t * tech_pvt, char digit);
+int skypopen_call(private_t *tech_pvt, char *idest, int timeout);
+int skypopen_senddigit(private_t *tech_pvt, char digit);
 
 void *skypopen_do_tcp_srv_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t *thread, void *obj);
 
 void *skypopen_do_tcp_cli_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t *thread, void *obj);
 
 void *skypopen_do_skypeapi_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t * thread, void *obj);
-int dtmf_received(private_t * tech_pvt, char *value);
-int start_audio_threads(private_t * tech_pvt);
-int new_inbound_channel(private_t * tech_pvt);
-int outbound_channel_answered(private_t * tech_pvt);
-int skypopen_signaling_write(private_t * tech_pvt, char *msg_to_skype);
+void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t *thread, void *obj);
+int dtmf_received(private_t *tech_pvt, char *value);
+int start_audio_threads(private_t *tech_pvt);
+int new_inbound_channel(private_t *tech_pvt);
+int outbound_channel_answered(private_t *tech_pvt);
+int skypopen_signaling_write(private_t *tech_pvt, char *msg_to_skype);
 #if defined(WIN32) && !defined(__CYGWIN__)
-int skypopen_pipe_read(switch_file_t * pipe, short *buf, int howmany);
-int skypopen_pipe_write(switch_file_t * pipe, short *buf, int howmany);
+int skypopen_pipe_read(switch_file_t *pipe, short *buf, int howmany);
+int skypopen_pipe_write(switch_file_t *pipe, short *buf, int howmany);
 /* Visual C do not have strsep ? */
 char *strsep(char **stringp, const char *delim);
 #else
@@ -384,20 +384,20 @@ int skypopen_pipe_read(int pipe, short *buf, int howmany);
 int skypopen_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int skypopen_close_socket(unsigned int fd);
-private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling);
-int remote_party_is_ringing(private_t * tech_pvt);
-int remote_party_is_early_media(private_t * tech_pvt);
+private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling);
+int remote_party_is_ringing(private_t *tech_pvt);
+int remote_party_is_early_media(private_t *tech_pvt);
 //int skypopen_answer(private_t * tech_pvt, char *id, char *value);
-int skypopen_answer(private_t * tech_pvt);
+int skypopen_answer(private_t *tech_pvt);
 //int skypopen_transfer(private_t * tech_pvt, char *id, char *value);
-int skypopen_transfer(private_t * tech_pvt);
+int skypopen_transfer(private_t *tech_pvt);
 #ifndef WIN32
-int skypopen_socket_create_and_bind(private_t * tech_pvt, int *which_port);
+int skypopen_socket_create_and_bind(private_t *tech_pvt, int *which_port);
 #else
-int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port);
+int skypopen_socket_create_and_bind(private_t *tech_pvt, unsigned short *which_port);
 #endif //WIN32
-int incoming_chatmessage(private_t * tech_pvt, int which);
+int incoming_chatmessage(private_t *tech_pvt, int which);
 int next_port(void);
-int skypopen_partner_handle_ring(private_t * tech_pvt);
-int skypopen_answered(private_t * tech_pvt);
-int inbound_channel_answered(private_t * tech_pvt);
+int skypopen_partner_handle_ring(private_t *tech_pvt);
+int skypopen_answered(private_t *tech_pvt);
+int inbound_channel_answered(private_t *tech_pvt);
