@@ -2522,8 +2522,9 @@ static inline dow_t _dow_read_token(const char **s)
 		(*s)++;
 		return DOW_COMA;
 	} else if (**s >= '0' && **s <= '9') {
+		dow_t r = **s - '0';
 		(*s)++;
-		return **s;
+		return r;
 	} else if ((i = switch_dow_str2int(*s)) && i != -1) {
 		(*s) += 3;
 		return i;
