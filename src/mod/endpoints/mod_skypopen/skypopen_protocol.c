@@ -213,7 +213,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 
 			if (!strncasecmp(message, "ERROR", 4)) {
 				if (!strncasecmp(message, "ERROR 96 CALL", 12)) {
-					WARNINGA
+					DEBUGA_SKYPE
 						("Skype got ERROR: |||%s|||, we are trying to use this interface to make or receive a call, but another call is half-active on this interface. Let's the previous one to continue.\n",
 						 SKYPOPEN_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 99 CALL", 12)) {
@@ -580,7 +580,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				if (!strcasecmp(prop, "DURATION") && (tech_pvt->interface_state == SKYPOPEN_STATE_ERROR_DOUBLE_CALL)) {
 					char msg_to_skype[1024];
 					skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
-					ERRORA("We are in a double call situation, trying to get out hanging up call id: %s.\n", SKYPOPEN_P_LOG, id);
+					WARNINGA("We are in a double call situation, trying to get out hanging up call id: %s.\n", SKYPOPEN_P_LOG, id);
 					sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
 					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
@@ -743,7 +743,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 									if (tech_pvt->tcp_cli_thread == NULL) {
 										DEBUGA_SKYPE("START start_audio_threads\n", SKYPOPEN_P_LOG);
 										if (start_audio_threads(tech_pvt)) {
-											ERRORA("start_audio_threads FAILED\n", SKYPOPEN_P_LOG);
+											WARNINGA("start_audio_threads FAILED\n", SKYPOPEN_P_LOG);
 											return CALLFLOW_INCOMING_HANGUP;
 										}
 									}

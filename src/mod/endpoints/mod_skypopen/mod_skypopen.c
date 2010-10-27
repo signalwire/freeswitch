@@ -2251,7 +2251,7 @@ int start_audio_threads(private_t *tech_pvt)
 	switch_sleep(100000);
 
 	if (tech_pvt->tcp_cli_thread == NULL || tech_pvt->tcp_srv_thread == NULL) {
-		ERRORA("tcp_cli_thread or tcp_srv_thread exited\n", SKYPOPEN_P_LOG);
+		WARNINGA("tcp_cli_thread or tcp_srv_thread exited\n", SKYPOPEN_P_LOG);
 		return -1;
 	}
 
