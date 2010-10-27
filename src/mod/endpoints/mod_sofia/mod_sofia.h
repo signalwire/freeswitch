@@ -76,6 +76,8 @@ typedef struct private_object private_object_t;
 
 #define SOFIA_SESSION_TIMEOUT "sofia_session_timeout"
 #define MY_EVENT_REGISTER "sofia::register"
+#define MY_EVENT_PRE_REGISTER "sofia::pre_register"
+#define MY_EVENT_REGISTER_ATTEMPT "sofia::register_attempt"
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"

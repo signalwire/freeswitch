@@ -993,9 +993,35 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (authorization) {
 		char *v_contact_str;
+		const char *username = "unknown";
+		const char *realm = reg_host;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name,
 											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count)) == AUTH_STALE) {
 			stale = 1;
+		}
+
+
+		if (auth_params) {
+			username = switch_event_get_header(auth_params, "sip_auth_username");
+			realm = switch_event_get_header(auth_params, "sip_auth_realm");
+		}
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER_ATTEMPT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+			switch_event_fire(&s_event);
 		}
 
 		if (exptime && v_event && *v_event) {
@@ -1100,6 +1126,23 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (!authorization || stale) {
 		const char *realm = profile->challenge_realm;
+
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_PRE_REGISTER) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+			switch_event_fire(&s_event);
+		}
 
 		if (zstr(realm) || !strcasecmp(realm, "auto_to")) {
 			realm = to_host;
