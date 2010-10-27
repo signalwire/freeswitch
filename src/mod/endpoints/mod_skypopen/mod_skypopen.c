@@ -461,6 +461,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
 	switch_status_t status;
+	int conta;
 
 	tech_pvt = switch_core_session_get_private(session);
 
@@ -490,6 +491,29 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->write_buffer) {
 			switch_buffer_destroy(&tech_pvt->write_buffer);
 		}
+
+		DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
+		conta=0;
+		while(tech_pvt->tcp_srv_thread){
+			switch_sleep(5000);
+			conta++;
+			if(conta==100){
+				ERRORA("tcp_srv_thread is NOT dead\n", SKYPOPEN_P_LOG);
+				break;
+			}
+		}
+		DEBUGA_SKYPE("audio tcp srv thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
+		conta=0;
+		while(tech_pvt->tcp_cli_thread){
+			switch_sleep(5000);
+			conta++;
+			if(conta==100){
+				ERRORA("tcp_cli_thread is NOT dead\n", SKYPOPEN_P_LOG);
+				break;
+			}
+		}
+		DEBUGA_SKYPE("audio tcp cli thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
+
 		//DEBUGA_SKYPE("debugging_hangup 13\n", SKYPOPEN_P_LOG);
 		switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
 		//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
@@ -526,6 +550,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		DEBUGA_SKYPE("!!!!!!NO tech_pvt!!!! CHANNEL DESTROY %s\n", SKYPOPEN_P_LOG, switch_core_session_get_uuid(session));
 	}
 
+	DEBUGA_SKYPE("CHANNEL DESTROYED %s\n", SKYPOPEN_P_LOG, switch_core_session_get_uuid(session));
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -613,6 +638,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 	//DEBUGA_SKYPE("debugging_hangup 12\n", SKYPOPEN_P_LOG);
 
+	switch_channel_set_state(channel, CS_DESTROY);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -653,7 +680,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	char msg_to_skype[256];
+	//char msg_to_skype[256];
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -664,8 +691,8 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	if (tech_pvt) {
 		switch (sig) {
 		case SWITCH_SIG_KILL:
-			switch_mutex_lock(tech_pvt->flag_mutex);
 			DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
 			if (tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD) {
 				DEBUGA_SKYPE("FYI %s CHANNEL in CALLFLOW_STATUS_REMOTEHOLD got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
 			}
@@ -676,21 +703,30 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 				WARNINGA("FYI %s CHANNEL in %d state got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel),
 						 switch_channel_get_state(channel));
 			}
+
+			switch_mutex_lock(tech_pvt->flag_mutex);
+#if 0
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			switch_clear_flag(tech_pvt, TFLAG_VOICE);
-			switch_set_flag(tech_pvt, TFLAG_HANGUP);
+			//switch_set_flag(tech_pvt, TFLAG_HANGUP);
+#endif//0
 			if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
 				switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
 			}
 			switch_mutex_unlock(tech_pvt->flag_mutex);
+#if 0
 			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->ring_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
+
+#if 1
 			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
+#endif
+#endif//0
 			break;
 		case SWITCH_SIG_BREAK:
 			DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_BREAK\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
@@ -1355,6 +1391,7 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 		if (res == CALLFLOW_INCOMING_HANGUP || tech_pvt->skype_callflow == CALLFLOW_INCOMING_HANGUP) {
 			switch_core_session_t *session = NULL;
 			switch_channel_t *channel = NULL;
+			int conta;
 
 			DEBUGA_SKYPE("skype call ended\n", SKYPOPEN_P_LOG);
 
@@ -1374,12 +1411,34 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 					switch_core_session_rwunlock(session);
 				} else {
 					DEBUGA_SKYPE("no session\n", SKYPOPEN_P_LOG);
+
+					DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
+					conta=0;
+					while(tech_pvt->tcp_srv_thread){
+						switch_sleep(5000);
+						conta++;
+						if(conta==100){
+							ERRORA("tcp_srv_thread is NOT dead\n", SKYPOPEN_P_LOG);
+							break;
+						}
+					}
+					DEBUGA_SKYPE("audio tcp srv thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
+					conta=0;
+					while(tech_pvt->tcp_cli_thread){
+						switch_sleep(5000);
+						conta++;
+						if(conta==100){
+							ERRORA("tcp_cli_thread is NOT dead\n", SKYPOPEN_P_LOG);
+							break;
+						}
+					}
+					DEBUGA_SKYPE("audio tcp cli thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
 				}
 				switch_mutex_lock(globals.mutex);
 				tech_pvt->ringing_state = SKYPOPEN_RINGING_INIT;
-				tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+				//tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				*tech_pvt->session_uuid_str = '\0';
-				*tech_pvt->skype_call_id = '\0';
+				//*tech_pvt->skype_call_id = '\0';
 				*tech_pvt->initial_skype_user = '\0';
 				*tech_pvt->answer_id = '\0';
 				*tech_pvt->answer_value = '\0';
@@ -1387,10 +1446,8 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 				*tech_pvt->ring_value = '\0';
 				*tech_pvt->callid_number = '\0';
 				*tech_pvt->callid_name = '\0';
-				switch_mutex_unlock(globals.mutex);
 
-				switch_sleep(300000);	//0.3 sec
-				switch_mutex_lock(globals.mutex);
+				//switch_sleep(300000);	//0.3 sec
 				tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 				tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
 				switch_mutex_unlock(globals.mutex);

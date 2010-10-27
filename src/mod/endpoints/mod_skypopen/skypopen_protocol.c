@@ -851,6 +851,8 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 				if (!(running && tech_pvt->running))
 					break;
 				while (tech_pvt && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN
+						&& tech_pvt->interface_state != SKYPOPEN_STATE_IDLE
+						&& tech_pvt->interface_state != SKYPOPEN_STATE_HANGUP_REQUESTED
 					   && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
@@ -1010,6 +1012,8 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 				if (!(running && tech_pvt->running))
 					break;
 				while (tech_pvt && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN
+						&& tech_pvt->interface_state != SKYPOPEN_STATE_IDLE
+						&& tech_pvt->interface_state != SKYPOPEN_STATE_HANGUP_REQUESTED
 					   && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
