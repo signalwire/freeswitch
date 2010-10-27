@@ -471,6 +471,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	if (tech_pvt) {
 		DEBUGA_SKYPE("%s CHANNEL DESTROY %s\n", SKYPOPEN_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
 
+		tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 
 		switch_mutex_lock(tech_pvt->flag_mutex);
 #if 1
@@ -510,8 +511,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		while(tech_pvt->tcp_srv_thread){
 			switch_sleep(5000);
 			conta++;
-			if(conta==100){
-				ERRORA("tcp_srv_thread is NOT dead\n", SKYPOPEN_P_LOG);
+			if(conta==200){
+				ERRORA("tcp_srv_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 				break;
 			}
 		}
@@ -520,8 +521,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		while(tech_pvt->tcp_cli_thread){
 			switch_sleep(5000);
 			conta++;
-			if(conta==100){
-				ERRORA("tcp_cli_thread is NOT dead\n", SKYPOPEN_P_LOG);
+			if(conta==200){
+				ERRORA("tcp_cli_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 				break;
 			}
 		}
@@ -1450,13 +1451,14 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 				} else {
 					DEBUGA_SKYPE("no session\n", SKYPOPEN_P_LOG);
 
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 					DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
 					conta=0;
 					while(tech_pvt->tcp_srv_thread){
 						switch_sleep(5000);
 						conta++;
-						if(conta==100){
-							ERRORA("tcp_srv_thread is NOT dead\n", SKYPOPEN_P_LOG);
+						if(conta==200){
+							ERRORA("tcp_srv_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 							break;
 						}
 					}
@@ -1465,8 +1467,8 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 					while(tech_pvt->tcp_cli_thread){
 						switch_sleep(5000);
 						conta++;
-						if(conta==100){
-							ERRORA("tcp_cli_thread is NOT dead\n", SKYPOPEN_P_LOG);
+						if(conta==200){
+							ERRORA("tcp_cli_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 							break;
 						}
 					}
@@ -2312,13 +2314,13 @@ int remote_party_is_ringing(private_t *tech_pvt)
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
 		ERRORA("No session_uuid_str???\n", SKYPOPEN_P_LOG);
-		goto bad;
+		return SWITCH_STATUS_FALSE;
 	}
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 	} else {
 		ERRORA("No session???\n", SKYPOPEN_P_LOG);
-		goto bad;
+		return SWITCH_STATUS_FALSE;
 	}
 	if (channel) {
 		switch_channel_mark_ring_ready(channel);
@@ -2329,9 +2331,7 @@ int remote_party_is_ringing(private_t *tech_pvt)
 
 	switch_core_session_rwunlock(session);
 
-	return 1;
-  bad:
-	return 0;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 int remote_party_is_early_media(private_t *tech_pvt)

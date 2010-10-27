@@ -235,9 +235,22 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to HANGUP A CALL), no problem: |||%s|||\n", SKYPOPEN_P_LOG,
 									 message);
 					}
+				} else if (!strncasecmp(message, "ERROR 36 Not online", 18)) {
+					char msg_to_skype[256];
+					ERRORA("Skype client is not online, eg: not connected to Skype network, probably got a temporary net outage: |||%s|||\n", SKYPOPEN_P_LOG, message);
+					if(strlen(tech_pvt->skype_call_id)){
+					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+					}
+					if(strlen(tech_pvt->ring_id)){
+					sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+					}
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+					return CALLFLOW_INCOMING_HANGUP;
 				} else if (!strncasecmp(message, "ERROR 589 ALTER CALL", 19)) {
 					char msg_to_skype[256];
-					ERRORA("Skype client was not able to correctly manage tcp audio sockets: |||%s|||\n", SKYPOPEN_P_LOG, message);
+					ERRORA("Skype client was not able to correctly manage tcp audio sockets, probably got a local or remote hangup: |||%s|||\n", SKYPOPEN_P_LOG, message);
 					if(strlen(tech_pvt->skype_call_id)){
 					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
@@ -605,9 +618,8 @@ int skypopen_signaling_read(private_t *tech_pvt)
 								tech_pvt->interface_state = SKYPOPEN_STATE_RINGING;
 								skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
 								DEBUGA_SKYPE("Our remote party in skype_call %s is RINGING\n", SKYPOPEN_P_LOG, id);
-								if (!remote_party_is_ringing(tech_pvt)) {
-
-									WARNINGA("We are getting the RINGING from a call we canceled, trying to get out hanging up call id: %s.\n",
+								if (remote_party_is_ringing(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+									WARNINGA("We are getting the RINGING from a call we probably canceled, trying to get out hanging up call id: %s.\n",
 											 SKYPOPEN_P_LOG, id);
 									sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
@@ -757,7 +769,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 
 					} else if (!strcasecmp(value, "LOCALHOLD")) {
 						char msg_to_skype[256];
-						WARNINGA("skype_call: %s is now LOCALHOLD\n", SKYPOPEN_P_LOG, id);
+						WARNINGA("skype_call: %s is now LOCALHOLD, let's hangup\n", SKYPOPEN_P_LOG, id);
 						sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 					} else if (!strcasecmp(value, "REMOTEHOLD")) {
@@ -1972,11 +1984,11 @@ int skypopen_answered(private_t *tech_pvt)
 		}
 		switch_core_session_rwunlock(session);
 	} else {
-		ERRORA("no session\n", SKYPOPEN_P_LOG);
+		ERRORA("no session after INPROGRESS, let's hangup\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 	} else {
-		ERRORA("no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
+		ERRORA("no tech_pvt->session_uuid_str after INPROGRESS, let's hangup\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 	return res;
