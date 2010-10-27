@@ -235,6 +235,19 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						DEBUGA_SKYPE("Skype got ERROR about a failed action (probably TRYING to HANGUP A CALL), no problem: |||%s|||\n", SKYPOPEN_P_LOG,
 									 message);
 					}
+				} else if (!strncasecmp(message, "ERROR 589 ALTER CALL", 19)) {
+					char msg_to_skype[256];
+					ERRORA("Skype client was not able to correctly manage tcp audio sockets: |||%s|||\n", SKYPOPEN_P_LOG, message);
+					if(strlen(tech_pvt->skype_call_id)){
+					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+					}
+					if(strlen(tech_pvt->ring_id)){
+					sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+					}
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+					return CALLFLOW_INCOMING_HANGUP;
 				} else {
 					ERRORA("Skype got ERROR: |||%s|||\n", SKYPOPEN_P_LOG, message);
 					tech_pvt->skype_callflow = CALLFLOW_STATUS_FINISHED;
@@ -482,7 +495,8 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				//SKYPOPEN_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
 
 				if (!strcasecmp(prop, "PARTNER_HANDLE")) {
-					if (tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {
+					//if (tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {}
+					if (tech_pvt->interface_state == SKYPOPEN_STATE_IDLE){
 						/* we are NOT inside an active call */
 						DEBUGA_SKYPE("Call %s go to skypopen_partner_handle_ring\n", SKYPOPEN_P_LOG, id);
 						skypopen_strncpy(tech_pvt->ring_id, id, sizeof(tech_pvt->ring_id));
@@ -565,8 +579,9 @@ int skypopen_signaling_read(private_t *tech_pvt)
 
 					if (!strcasecmp(value, "RINGING")) {
 						char msg_to_skype[1024];
-						if ((tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && tech_pvt->interface_state != SKYPOPEN_STATE_DIALING)
-							&& (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {
+						//if ((tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && tech_pvt->interface_state != SKYPOPEN_STATE_DIALING)
+							//&& (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {}
+						if (tech_pvt->interface_state == SKYPOPEN_STATE_IDLE){
 							// CLOUDTREE (Thomas Hazel)
 							skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
 
@@ -728,7 +743,10 @@ int skypopen_signaling_read(private_t *tech_pvt)
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
 								}
 								tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
-								skypopen_answered(tech_pvt);
+								if(skypopen_answered(tech_pvt)!= SWITCH_STATUS_SUCCESS){
+									sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
+									skypopen_signaling_write(tech_pvt, msg_to_skype);
+								}
 							} else {
 								DEBUGA_SKYPE("I'm on %s, skype_call %s is NOT MY call, ignoring\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
 							}
@@ -737,6 +755,11 @@ int skypopen_signaling_read(private_t *tech_pvt)
 							DEBUGA_SKYPE("Back from REMOTEHOLD!\n", SKYPOPEN_P_LOG);
 						}
 
+					} else if (!strcasecmp(value, "LOCALHOLD")) {
+						char msg_to_skype[256];
+						WARNINGA("skype_call: %s is now LOCALHOLD\n", SKYPOPEN_P_LOG, id);
+						sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
+						skypopen_signaling_write(tech_pvt, msg_to_skype);
 					} else if (!strcasecmp(value, "REMOTEHOLD")) {
 						tech_pvt->skype_callflow = CALLFLOW_STATUS_REMOTEHOLD;
 						DEBUGA_SKYPE("skype_call: %s is now REMOTEHOLD\n", SKYPOPEN_P_LOG, id);
@@ -1922,12 +1945,13 @@ int inbound_channel_answered(private_t *tech_pvt)
 int skypopen_answered(private_t *tech_pvt)
 {
 
-	int res = 0;
+	int res = SWITCH_STATUS_SUCCESS;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
 	//WARNINGA("ANSWERED tech_pvt->skype_call_id=%s, tech_pvt->skype_callflow=%d, tech_pvt->interface_state=%d, tech_pvt->skype_user=%s, tech_pvt->callid_number=%s, tech_pvt->ring_value=%s, tech_pvt->ring_id=%s, tech_pvt->answer_value=%s, tech_pvt->answer_id=%s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, tech_pvt->skype_callflow, tech_pvt->interface_state, tech_pvt->skype_user, tech_pvt->callid_number, tech_pvt->ring_value, tech_pvt->ring_id, tech_pvt->answer_value, tech_pvt->answer_id);
 
+	if(strlen(tech_pvt->session_uuid_str)){
 	session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	if (session) {
 		channel = switch_core_session_get_channel(session);
@@ -1944,11 +1968,16 @@ int skypopen_answered(private_t *tech_pvt)
 
 		} else {
 			ERRORA("no channel\n", SKYPOPEN_P_LOG);
+			return SWITCH_STATUS_FALSE;
 		}
 		switch_core_session_rwunlock(session);
 	} else {
 		ERRORA("no session\n", SKYPOPEN_P_LOG);
-
+		return SWITCH_STATUS_FALSE;
+	}
+	} else {
+		ERRORA("no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
+		return SWITCH_STATUS_FALSE;
 	}
 	return res;
 }
