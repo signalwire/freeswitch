@@ -2020,7 +2020,7 @@ SWITCH_STANDARD_API(transfer_function)
 }
 
 
-#define DUAL_TRANSFER_SYNTAX "<uuid> <dest-exten>[/<dialplan>][/<context>] <dest-exten>[/<dialplan>][/<context>]"
+#define DUAL_TRANSFER_SYNTAX "<uuid> <A-dest-exten>[/<A-dialplan>][/<A-context>] <B-dest-exten>[/<B-dialplan>][/<B-context>]"
 SWITCH_STANDARD_API(dual_transfer_function)
 {
 	switch_core_session_t *tsession = NULL, *other_session = NULL;
@@ -2029,14 +2029,14 @@ SWITCH_STANDARD_API(dual_transfer_function)
 	char *tuuid, *dest1, *dest2, *dp1 = NULL, *dp2 = NULL, *context1 = NULL, *context2 = NULL;
 
 	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
-		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", DUAL_TRANSFER_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc != 3) {
-		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", DUAL_TRANSFER_SYNTAX);
 		goto done;
 	}
 
@@ -2062,7 +2062,7 @@ SWITCH_STANDARD_API(dual_transfer_function)
 		stream->write_function(stream, "-ERR No Such Channel!\n");
 		goto done;
 	}
-
+	
 	if (switch_core_session_get_partner(tsession, &other_session) == SWITCH_STATUS_SUCCESS) {
 		switch_ivr_session_transfer(other_session, dest2, dp2, context2);
 		switch_core_session_rwunlock(other_session);
