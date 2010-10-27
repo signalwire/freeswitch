@@ -2467,7 +2467,6 @@ SWITCH_DECLARE(int) switch_isxdigit(int c)
 {
 	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_N | _X)));
 }
-
 static const char *DOW[] = {
 	"sat",
 	"sun",
@@ -2475,73 +2474,100 @@ static const char *DOW[] = {
 	"tue",
 	"wed",
 	"thu",
-	"fri",
-	"sat",
-	"sun",
-	NULL
+	"fri"
 };
 
 SWITCH_DECLARE(const char *) switch_dow_int2str(int val) {
-	if (val >= sizeof(DOW) / sizeof (const char*)) {
-		return NULL;
+	if (val >= switch_arraylen(DOW)) {
+		val = val % switch_arraylen(DOW);
 	}
 	return DOW[val];
 }
 
 SWITCH_DECLARE(int) switch_dow_str2int(const char *exp) {
 	int ret = -1;
-	int x = -1;
-	for (x = 0;; x++) {
-		if (!DOW[x]) {
-			break;  
-		}
-
-		if (!strcasecmp(DOW[x], exp)) {
-			ret =  x;
+	int x;
+	
+	for (x = 0; x < switch_arraylen(DOW); x++) {
+		if (!strncasecmp(DOW[x], exp, 3)) {
+			ret = x;
 			break;
 		}
 	}
 	return ret;
 }
 
-SWITCH_DECLARE(int) switch_dow_cmp(const char *exp, int val)
+typedef enum {
+	DOW_ERR = -2,
+	DOW_EOF = -1,
+	DOW_SAT = 0,
+	DOW_SUN,
+	DOW_MON,
+	DOW_TUE,
+	DOW_WED,
+	DOW_THU,
+	DOW_FRI,
+	DOW_HYPHEN = '-',
+	DOW_COMA = ','
+} dow_t;
+
+static inline dow_t _dow_read_token(const char **s) 
 {
-	char *dup = strdup(exp);
-	char *p_start;
-	char *p_end;
-	int ret = 0;
-	int start, end;
-
-	switch_assert(dup);
-
-	p_start = dup;
-
-	if ((p_end=strchr(dup, '-'))) {
-		*p_end++ = '\0';
+	int i;
+	
+	if (**s == '-') {
+		(*s)++;
+		return DOW_HYPHEN;
+	} else if (**s == ',') {
+		(*s)++;
+		return DOW_COMA;
+	} else if (**s >= '0' && **s <= '9') {
+		(*s)++;
+		return **s;
+	} else if ((i = switch_dow_str2int(*s)) && i != -1) {
+		(*s) += 3;
+		return i;
+	} else if (!**s) {
+		return DOW_EOF;
 	} else {
-		p_end = p_start;
+		return DOW_ERR;
 	}
-	if (strlen(p_start) == 3) {
-		start = switch_dow_str2int(p_start);
-	} else {
-		start = atol(p_start);
-	}
-	if (strlen(p_end) == 3) {
-		end = switch_dow_str2int(p_end);
-	} else {
-		end = atol(p_end);
-	}
-	/* Following used for this example : mon-sat = 2-0, so we need to make 0(sat) + 7 */
-	if (end < start) {
-		end += 7;
-	}
-	if (start != -1 && end != -1 && val >= start && val <= end) {
-		ret = 1;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
+{
+	dow_t cur, prev = DOW_EOF;
+	const char *p = exp;
+		
+	while ((cur = _dow_read_token(&p)) != DOW_EOF) {
+		if (cur == DOW_COMA) {
+			/* Reset state */
+			cur = prev = DOW_EOF;	
+		} else if (cur == DOW_HYPHEN) {
+			/* Save the current token and move to the next one */
+			prev = cur;
+		} else if (cur == DOW_ERR) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for [%s] at position %td (%.6s)\n", exp, p - exp, p);
+			break;
+		} else {
+			/* Valid day found */
+			if (prev != DOW_EOF) { /* Evaluating a range */
+				if (prev < cur) {
+					if (val >= prev && val <= cur) {
+						return SWITCH_TRUE;
+					}
+				} else {
+					if (val >= cur && val <= prev) {
+						return SWITCH_TRUE;
+					}
+				}
+			} else if (val == cur) {
+				return SWITCH_TRUE;
+			}
+		}
 	}
 
-	switch_safe_free(dup);
-
-	return ret;	
+	return SWITCH_FALSE;
 }
 
 SWITCH_DECLARE(int) switch_number_cmp(const char *exp, int val)
