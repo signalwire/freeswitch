@@ -6,7 +6,7 @@ freeswitch (1.0.head~git.master.20101015.1-1) unstable; urgency=low
   * cleaned up rules file and module make rules
   * more trivial changes and updates :)
 
- -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fr, 15 Oct 2010 13:14:02 +0200
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fri, 15 Oct 2010 13:14:02 +0200
 
 freeswitch (1.0.head~git.master.20101014.1-1) unstable; urgency=low
 
@@ -19,7 +19,7 @@ freeswitch (1.0.head~git.master.20101014.1-1) unstable; urgency=low
   * added patches from Julien Duqene (FS-369)
   * Various trivial changes and updates :)
 
- -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fr, 15 Oct 2010 05:05:02 +0200
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fri, 15 Oct 2010 05:05:02 +0200
 
 freeswitch (1.0.head~git.master.20100601.2-1) unstable; urgency=low
 
@@ -65,7 +65,7 @@ freeswitch (1.0.4-1ubuntu2) karmic; urgency=low
     * upgrade: Add more verbosity when building to make it easier to find build
       errors.
     * upgrade: Remove the requirement for EXACTLY automake1.9 and change it to
-      need atleast automake 1.9
+      need at least automake 1.9
     * upgrade: Add the modules (directory, cluechoo, and valet_parking) to the
       build files. These are in the standard build, so they should be here too.
 
@@ -624,7 +624,7 @@ freeswitch (1.0.1-1) unstable; urgency=low
    * ADD: reboot option for sip phones to flush_inboud_reg sofia profile api command
    * FIX: add small padding to end of mp3 to avoid cut off mp3 recording
    * FIX: patch multiple SDP connection lines in sdp for proxy media mode (MODENDP-109)
-   * FIX: don't parse ringback varable in proxy situations
+   * FIX: don't parse ringback variable in proxy situations
    * ADD: per call vm recording ext with vm_message_ext variable
    * ADD: sip_bye_h prefix to add headers to bye
    * ENHANCEMENT: more interfaces available in show fsapi command
@@ -646,7 +646,7 @@ freeswitch (1.0.1~trunk) unstable; urgency=low
      - Added mod_say_es and mod_say_nl
      - Updated descriptions
      - Added mod_cdr_csv
-   * Fixed typos and some errors in the previus patch.
+   * Fixed typos and some errors in the previous patch.
    * Modified monit script. Now it should work.
    * The debian build system now bootstrap automagically if it's necessary and all scripts are in place.
 
