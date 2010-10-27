@@ -218,7 +218,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 
 			/* check if a COT test is requested */
-			if ((siConEvnt->natConInd.eh.pres) && (siConEvnt->natConInd.contChkInd.pres)) {
+			if ((siConEvnt->natConInd.eh.pres) && 
+				(siConEvnt->natConInd.contChkInd.pres) &&
+				(siConEvnt->natConInd.contChkInd.val)) {
+
 				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Found COT Request\n", sngss7_info->circuit->cic);
 
 				/* tell the core to loop the channel */
