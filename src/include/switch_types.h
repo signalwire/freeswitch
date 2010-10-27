@@ -1307,7 +1307,8 @@ typedef enum {
 	SWITCH_FILE_CALLBACK = (1 << 12),
 	SWITCH_FILE_DONE = (1 << 13),
 	SWITCH_FILE_BUFFER_DONE = (1 << 14),
-	SWITCH_FILE_WRITE_APPEND = (1 << 15)
+	SWITCH_FILE_WRITE_APPEND = (1 << 15),
+	SWITCH_FILE_WRITE_OVER = (1 << 16)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 

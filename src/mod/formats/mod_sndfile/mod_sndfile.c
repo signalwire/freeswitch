@@ -82,7 +82,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
 			mode += SFM_RDWR;
 		} else {
 			mode += SFM_WRITE;
@@ -208,6 +208,8 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
 		handle->pos = sf_seek(context->handle, 0, SEEK_END);
+	} else if (switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
+		handle->pos = sf_seek(context->handle, 0, SEEK_SET);
 	} else {
 		sf_count_t frames = 0;
 		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
