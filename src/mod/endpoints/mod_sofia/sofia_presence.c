@@ -627,7 +627,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										 "from sip_dialogs "
 										 
 										 "where (presence_id='%q@%q' or "
-										 "(sip_from_user='%q' and (sip_from_host='%q' || sip_to_host='%q')))",
+										 "(sip_from_user='%q' and (sip_from_host='%q' or sip_to_host='%q')))",
 										 
 										 dh.status, dh.rpid, probe_euser, probe_host,  probe_euser, probe_host, probe_host);
 
