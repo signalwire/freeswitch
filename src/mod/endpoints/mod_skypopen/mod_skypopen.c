@@ -397,11 +397,13 @@ static switch_status_t interface_exists(char *the_interface)
 		switch_yield(50000);
 	}
 
+#ifndef WIN32
 	if (tech_pvt->SkypopenHandles.disp) {
 		DEBUGA_SKYPE("REMOVE CLOSIN X\n", SKYPOPEN_P_LOG);
 		XCloseDisplay(tech_pvt->SkypopenHandles.disp);
 		DEBUGA_SKYPE("REMOVE CLOSIN X END\n", SKYPOPEN_P_LOG);
 	}
+#endif
 
 	if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 		switch_thread_join(&status, globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread);
@@ -2096,11 +2098,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 				x--;
 				switch_yield(50000);
 			}
+#ifndef WIN32
 			if (tech_pvt->SkypopenHandles.disp) {
 				DEBUGA_SKYPE("CLOSIN X\n", SKYPOPEN_P_LOG);
 				XCloseDisplay(tech_pvt->SkypopenHandles.disp);
 				DEBUGA_SKYPE("CLOSIN X END\n", SKYPOPEN_P_LOG);
 			}
+#endif
 			if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 				switch_thread_join(&status, globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread);
 			}
