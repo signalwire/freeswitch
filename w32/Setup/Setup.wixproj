@@ -12,26 +12,26 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\x86\Debug\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=..\..\..\..\..\conf;FreeSWITCHSoundFilesDir=..\..\..\..\..\Win32\debug\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\release\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=..\..\..\..\..\conf;FreeSWITCHSoundFilesDir=..\..\..\..\..\Win32\release\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\x64\Debug\</OutputPath>
     <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=..\..\..\..\..\conf;FreeSWITCHSoundFilesDir=..\..\..\..\..\x64\debug\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\debug\sounds;</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\x64\Release\</OutputPath>
     <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=..\..\..\..\..\conf;FreeSWITCHSoundFilesDir=..\..\..\..\..\x64\release\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
@@ -735,8 +735,8 @@
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <PropertyGroup>
-    <PreBuildEvent>"$(WIX)bin\heat.exe" dir "..\..\..\..\..\conf" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
-"$(WIX)bin\heat.exe" dir "..\..\..\..\..\Win32\Release\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"</PreBuildEvent>
+    <PreBuildEvent>"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\conf" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
+"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\Win32\Release\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"</PreBuildEvent>
   </PropertyGroup>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.
