@@ -1677,7 +1677,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	switch_channel_t *channel = NULL;
 	const char *sip_auth_username = NULL;
 	const char *sip_auth_password = NULL;
-
+	char *dup_user = NULL;
+	char *dup_pass = NULL;
+	
 	if (session && (channel = switch_core_session_get_channel(session))) {
 		sip_auth_username = switch_channel_get_variable(channel, "sip_auth_username");
 		sip_auth_password = switch_channel_get_variable(channel, "sip_auth_password");
@@ -1747,8 +1749,37 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		}
 	}
 
+	if (!gateway && !sip_auth_username && sip && sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
+		switch_xml_t x_user, x_param, x_params;
+		switch_event_t *locate_params;
 
+		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_assert(locate_params);
 
+		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "Action", "reverse-auth-lookup");
+
+		if (switch_xml_locate_user_merged("id", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, NULL,
+										  &x_user, locate_params) == SWITCH_STATUS_SUCCESS) {
+			if ((x_params = switch_xml_child(x_user, "params"))) {
+				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+					const char *var = switch_xml_attr_soft(x_param, "name");
+					const char *val = switch_xml_attr_soft(x_param, "value");
+					
+					if (!strcasecmp(var, "reverse-auth-user")) {
+						dup_user = strdup(val);
+						sip_auth_username = dup_user;
+					} else if (!strcasecmp(var, "reverse-auth-pass")) {
+						dup_pass = strdup(val);
+						sip_auth_password = dup_pass;
+					}
+				}
+
+				switch_xml_free(x_user);
+			}
+		}
+
+		switch_event_destroy(&locate_params);
+	}
 
 	if (!(scheme && realm)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No scheme and realm!\n");
@@ -1786,6 +1817,10 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	}
 
   end:
+
+
+	switch_safe_free(dup_user);
+	switch_safe_free(dup_pass);
 
 	if (var_gateway) {
 		sofia_reg_release_gateway(var_gateway);
