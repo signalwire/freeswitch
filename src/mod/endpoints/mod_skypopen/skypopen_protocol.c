@@ -1904,7 +1904,9 @@ int inbound_channel_answered(private_t *tech_pvt)
 		channel = switch_core_session_get_channel(session);
 
 		if (channel) {
+		switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_set_flag(tech_pvt, TFLAG_IO);
+		switch_mutex_unlock(tech_pvt->flag_mutex);
 		} else {
 			ERRORA("no channel\n", SKYPOPEN_P_LOG);
 		}
