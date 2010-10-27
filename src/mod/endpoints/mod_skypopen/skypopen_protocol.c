@@ -213,11 +213,11 @@ int skypopen_signaling_read(private_t *tech_pvt)
 
 			if (!strncasecmp(message, "ERROR", 4)) {
 				if (!strncasecmp(message, "ERROR 96 CALL", 12)) {
-					DEBUGA_SKYPE
+					WARNINGA
 						("Skype got ERROR: |||%s|||, we are trying to use this interface to make or receive a call, but another call is half-active on this interface. Let's the previous one to continue.\n",
 						 SKYPOPEN_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 99 CALL", 12)) {
-					ERRORA("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPOPEN_P_LOG, message);
+					WARNINGA("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPOPEN_P_LOG, message);
 					tech_pvt->interface_state = SKYPOPEN_STATE_ERROR_DOUBLE_CALL;
 				} else if (!strncasecmp(message, "ERROR 592 ALTER CALL", 19)) {
 					NOTICA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
@@ -250,7 +250,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					return CALLFLOW_INCOMING_HANGUP;
 				} else if (!strncasecmp(message, "ERROR 589 ALTER CALL", 19)) {
 					char msg_to_skype[256];
-					ERRORA("Skype client was not able to correctly manage tcp audio sockets, probably got a local or remote hangup: |||%s|||\n", SKYPOPEN_P_LOG, message);
+					WARNINGA("Skype client was not able to correctly manage tcp audio sockets, probably got a local or remote hangup: |||%s|||\n", SKYPOPEN_P_LOG, message);
 					if(strlen(tech_pvt->skype_call_id)){
 					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
@@ -1979,16 +1979,16 @@ int skypopen_answered(private_t *tech_pvt)
 			}
 
 		} else {
-			ERRORA("no channel\n", SKYPOPEN_P_LOG);
+			ERRORA("no channel after INPROGRESS?\n", SKYPOPEN_P_LOG);
 			return SWITCH_STATUS_FALSE;
 		}
 		switch_core_session_rwunlock(session);
 	} else {
-		ERRORA("no session after INPROGRESS, let's hangup\n", SKYPOPEN_P_LOG);
+		WARNINGA("no session after INPROGRESS, let's hangup\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 	} else {
-		ERRORA("no tech_pvt->session_uuid_str after INPROGRESS, let's hangup\n", SKYPOPEN_P_LOG);
+		WARNINGA("no tech_pvt->session_uuid_str after INPROGRESS, let's hangup\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 	return res;

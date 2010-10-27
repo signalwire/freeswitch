@@ -592,6 +592,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 			}
 		}
 
+		tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
 		switch_mutex_lock(tech_pvt->flag_mutex);
 #if 1
 		switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -604,7 +605,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 
 		//DEBUGA_SKYPE("debugging_hangup 2\n", SKYPOPEN_P_LOG);
-		tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
 
 		if (strlen(tech_pvt->skype_call_id)) {
 			DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id);
@@ -648,7 +648,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		}
 
 		//DEBUGA_SKYPE("debugging_hangup 9\n", SKYPOPEN_P_LOG);
-		tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
+		tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
 			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 		}
