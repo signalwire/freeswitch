@@ -2658,8 +2658,13 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			tech_pvt->read_impl.samples_per_second != tech_pvt->rm_rate ||
 			tech_pvt->codec_ms != (uint32_t) tech_pvt->read_impl.microseconds_per_packet / 1000) {
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Changing Codec from %s@%dms to %s@%dms\n",
-							  tech_pvt->read_impl.iananame, tech_pvt->read_impl.microseconds_per_packet / 1000, tech_pvt->rm_encoding, tech_pvt->codec_ms);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+							  "Changing Codec from %s@%dms@%dhz to %s@%dms@%luhz\n",
+							  tech_pvt->read_impl.iananame, tech_pvt->read_impl.microseconds_per_packet / 1000,
+							  tech_pvt->read_impl.samples_per_second,
+							  tech_pvt->rm_encoding, 
+							  tech_pvt->codec_ms,
+							  tech_pvt->rm_rate);
 
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
@@ -4429,7 +4434,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
-					tech_pvt->rm_rate = map->rm_rate;
+					tech_pvt->rm_rate = mimp->samples_per_second;
 					tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
 					tech_pvt->bitrate = mimp->bits_per_second;
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
