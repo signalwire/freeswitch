@@ -447,9 +447,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 	switch_channel_set_variable(channel, "skype_user", tech_pvt->skype_user);
-		switch_mutex_lock(tech_pvt->flag_mutex);
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_IO);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	/* Move channel's state machine to ROUTING. This means the call is trying
 	   to get from the initial start where the call because, to the point
@@ -484,21 +484,21 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		switch_mutex_unlock(tech_pvt->flag_mutex);
 
 		DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
-		conta=0;
-		while(tech_pvt->tcp_srv_thread){
+		conta = 0;
+		while (tech_pvt->tcp_srv_thread) {
 			switch_sleep(5000);
 			conta++;
-			if(conta==200){
+			if (conta == 200) {
 				ERRORA("tcp_srv_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 				break;
 			}
 		}
 		DEBUGA_SKYPE("audio tcp srv thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
-		conta=0;
-		while(tech_pvt->tcp_cli_thread){
+		conta = 0;
+		while (tech_pvt->tcp_cli_thread) {
 			switch_sleep(5000);
 			conta++;
-			if(conta==200){
+			if (conta == 200) {
 				ERRORA("tcp_cli_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 				break;
 			}
@@ -618,7 +618,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		if (globals.calls < 0) {
 			globals.calls = 0;
 		}
-
 		//DEBUGA_SKYPE("debugging_hangup 9\n", SKYPOPEN_P_LOG);
 		tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
@@ -869,15 +868,15 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		tech_pvt->read_frame.datalen = 640;
 	}
 
-		switch_mutex_lock(tech_pvt->flag_mutex);
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_VOICE);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
-		switch_mutex_lock(tech_pvt->flag_mutex);
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_clear_flag(tech_pvt, TFLAG_BREAK);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 			DEBUGA_SKYPE("CHANNEL READ FRAME goto CNG\n", SKYPOPEN_P_LOG);
 			goto cng;
 		}
@@ -888,9 +887,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-		switch_mutex_lock(tech_pvt->flag_mutex);
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_clear_flag(tech_pvt, TFLAG_VOICE);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 			if (!tech_pvt->read_frame.datalen) {
 				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPOPEN_P_LOG);
 				continue;
@@ -916,7 +915,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 				if (digit_str[0]) {
 					switch_time_t new_dtmf_timestamp = switch_time_now();
-					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {	
+					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {
 						char *p = digit_str;
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1024,12 +1023,12 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-		switch_mutex_lock(tech_pvt->flag_mutex);
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_clear_flag(tech_pvt, TFLAG_IO);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
 	skypopen_answer(tech_pvt);
 
-	while (!switch_test_flag(tech_pvt, TFLAG_IO)) {	
+	while (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		if (switch_channel_get_state(channel) == CS_RESET) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1069,9 +1068,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
 			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_PROGRESS\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
-		switch_mutex_lock(tech_pvt->flag_mutex);
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_set_flag(tech_pvt, TFLAG_PROGRESS);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS:
@@ -1406,21 +1405,21 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 
 					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 					DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
-					conta=0;
-					while(tech_pvt->tcp_srv_thread){
+					conta = 0;
+					while (tech_pvt->tcp_srv_thread) {
 						switch_sleep(5000);
 						conta++;
-						if(conta==200){
+						if (conta == 200) {
 							ERRORA("tcp_srv_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 							break;
 						}
 					}
 					DEBUGA_SKYPE("audio tcp srv thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
-					conta=0;
-					while(tech_pvt->tcp_cli_thread){
+					conta = 0;
+					while (tech_pvt->tcp_cli_thread) {
 						switch_sleep(5000);
 						conta++;
-						if(conta==200){
+						if (conta == 200) {
 							ERRORA("tcp_cli_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
 							break;
 						}
@@ -2018,8 +2017,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 					XEvent e;
 					Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
 											 False);
-					switch_sleep(1000);	
-					XFlush(tech_pvt->SkypopenHandles.disp);	
+					switch_sleep(1000);
+					XFlush(tech_pvt->SkypopenHandles.disp);
 					memset(&e, 0, sizeof(e));
 					e.xclient.type = ClientMessage;
 					e.xclient.message_type = atom1;	/*  leading message */
@@ -2028,12 +2027,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 					e.xclient.format = 8;
 
 					XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-					XFlush(tech_pvt->SkypopenHandles.disp);	
+					XFlush(tech_pvt->SkypopenHandles.disp);
 				}
 #endif
 			}
 			x = 10;
-			while (x) {		
+			while (x) {
 				x--;
 				switch_yield(50000);
 			}
@@ -2360,7 +2359,7 @@ private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling)
 
 			tech_pvt = &globals.SKYPOPEN_INTERFACES[interface_id];
 			skype_state = tech_pvt->interface_state;
-			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1) 
+			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1)
 				&& (SKYPOPEN_STATE_IDLE == skype_state)) {
 				DEBUGA_SKYPE("returning as available skype interface name: %s, state: %d callflow: %d\n", SKYPOPEN_P_LOG, tech_pvt->name, skype_state,
 							 tech_pvt->skype_callflow);
@@ -2757,7 +2756,7 @@ int skypopen_transfer(private_t *tech_pvt)
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
 			/* let's look for a IDLE one */
-			if ((giovatech->interface_state == SKYPOPEN_STATE_IDLE) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {	
+			if ((giovatech->interface_state == SKYPOPEN_STATE_IDLE) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {
 				found = 1;
 				DEBUGA_SKYPE
 					("FOUND  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
@@ -3073,7 +3072,7 @@ struct SkypopenHandles *skypopen_list_remove_by_value(struct SkypopenList *list,
 // CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
 struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *list, struct SkypopenHandles *handle)
 {
-	private_t *tech_pvt=NULL;
+	private_t *tech_pvt = NULL;
 
 	switch_mutex_lock(globals.list_mutex);
 
@@ -3081,7 +3080,7 @@ struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *l
 	if (handle->managed == SWITCH_FALSE) {
 		// already removed
 		switch_mutex_unlock(globals.list_mutex);
-	DEBUGA_SKYPE("EXIT REMOVE\n", SKYPOPEN_P_LOG);
+		DEBUGA_SKYPE("EXIT REMOVE\n", SKYPOPEN_P_LOG);
 		return 0;
 	}
 
