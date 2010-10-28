@@ -109,7 +109,8 @@ char *interface_status[] = {	/* should match SKYPOPEN_STATE_xxx in skypopen.h */
 	"DOUBLE",
 	"SELECTD",
 	"HANG_RQ",
-	"PREANSW"
+	"PREANSW",
+	"DEAD"
 };
 char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypopen.h */
 	"CALL_IDLE",
