@@ -2537,7 +2537,7 @@ static inline dow_t _dow_read_token(const char **s)
 
 SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 {
-	dow_t cur, prev = DOW_EOF;
+	dow_t cur, prev = DOW_EOF, range_start = DOW_EOF;
 	const char *p = exp;
 		
 	while ((cur = _dow_read_token(&p)) != DOW_EOF) {
@@ -2545,27 +2545,30 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 			/* Reset state */
 			cur = prev = DOW_EOF;	
 		} else if (cur == DOW_HYPHEN) {
-			/* Save the current token and move to the next one */
-			prev = cur;
+			/* Save the previous token and move to the next one */
+			range_start = prev;
 		} else if (cur == DOW_ERR) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for [%s] at position %td (%.6s)\n", exp, p - exp, p);
 			break;
 		} else {
 			/* Valid day found */
-			if (prev != DOW_EOF) { /* Evaluating a range */
-				if (prev < cur) {
-					if (val >= prev && val <= cur) {
+			if (range_start != DOW_EOF) { /* Evaluating a range */
+				if (range_start < cur) {
+					if (val >= range_start && val <= cur) {
 						return SWITCH_TRUE;
 					}
 				} else {
-					if (val >= cur && val <= prev) {
+					if (val >= cur && val <= range_start) {
 						return SWITCH_TRUE;
 					}
 				}
+				range_start = DOW_EOF;
 			} else if (val == cur) {
 				return SWITCH_TRUE;
 			}
 		}
+		
+		prev = cur;
 	}
 
 	return SWITCH_FALSE;
