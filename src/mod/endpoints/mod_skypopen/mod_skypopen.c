@@ -380,7 +380,7 @@ static switch_status_t interface_exists(char *the_interface)
 		if (tech_pvt->running && tech_pvt->SkypopenHandles.disp) {
 			XEvent e;
 			Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
-			switch_sleep(1000);	
+			switch_sleep(1000);
 			XFlush(tech_pvt->SkypopenHandles.disp);
 			memset(&e, 0, sizeof(e));
 			e.xclient.type = ClientMessage;
@@ -390,7 +390,7 @@ static switch_status_t interface_exists(char *the_interface)
 			e.xclient.format = 8;
 
 			XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-			XFlush(tech_pvt->SkypopenHandles.disp);	
+			XFlush(tech_pvt->SkypopenHandles.disp);
 		}
 #endif
 	}
@@ -420,9 +420,9 @@ static switch_status_t interface_exists(char *the_interface)
 	} else {
 		DEBUGA_SKYPE("interface '%s' STILL console\n", SKYPOPEN_P_LOG, the_interface);
 	}
-	if(strlen(tech_pvt->session_uuid_str)){
+	if (strlen(tech_pvt->session_uuid_str)) {
 
-	}else{
+	} else {
 		memset(&globals.SKYPOPEN_INTERFACES[interface_id], '\0', sizeof(private_t));
 	}
 	globals.real_interfaces--;
@@ -563,7 +563,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->interface_state != SKYPOPEN_STATE_DEAD) {
 			tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
 			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
-		}else{
+		} else {
 			memset(tech_pvt, '\0', sizeof(private_t));
 		}
 		switch_core_session_set_private(session, NULL);
@@ -1973,7 +1973,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 
 		SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function, SKYPOPEN_CHAT_SYNTAX);
+		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
+					   SKYPOPEN_CHAT_SYNTAX);
 		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
 
 		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {

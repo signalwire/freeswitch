@@ -1514,6 +1514,7 @@ int xio_error_handler(Display * dpy)
 
 	return 0;
 }
+
 int xio_error_handler2(Display * dpy, XErrorEvent * err)
 {
 	private_t *tech_pvt = NULL;
