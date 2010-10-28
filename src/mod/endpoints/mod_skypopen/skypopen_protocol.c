@@ -217,7 +217,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						("Skype got ERROR: |||%s|||, we are trying to use this interface to make or receive a call, but another call is half-active on this interface. Let's the previous one to continue.\n",
 						 SKYPOPEN_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 99 CALL", 12)) {
-					WARNINGA("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPOPEN_P_LOG, message);
+					DEBUGA_SKYPE("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPOPEN_P_LOG, message);
 					tech_pvt->interface_state = SKYPOPEN_STATE_ERROR_DOUBLE_CALL;
 				} else if (!strncasecmp(message, "ERROR 592 ALTER CALL", 19)) {
 					NOTICA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
@@ -250,7 +250,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					return CALLFLOW_INCOMING_HANGUP;
 				} else if (!strncasecmp(message, "ERROR 589 ALTER CALL", 19)) {
 					char msg_to_skype[256];
-					WARNINGA("Skype client was not able to correctly manage tcp audio sockets, probably got a local or remote hangup: |||%s|||\n", SKYPOPEN_P_LOG, message);
+					DEBUGA_SKYPE("Skype client was not able to correctly manage tcp audio sockets, probably got a local or remote hangup: |||%s|||\n", SKYPOPEN_P_LOG, message);
 					if(strlen(tech_pvt->skype_call_id)){
 					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
@@ -619,7 +619,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 								skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
 								DEBUGA_SKYPE("Our remote party in skype_call %s is RINGING\n", SKYPOPEN_P_LOG, id);
 								if (remote_party_is_ringing(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-									WARNINGA("We are getting the RINGING from a call we probably canceled, trying to get out hanging up call id: %s.\n",
+									DEBUGA_SKYPE("We are getting the RINGING from a call we probably canceled, trying to get out hanging up call id: %s.\n",
 											 SKYPOPEN_P_LOG, id);
 									sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
@@ -629,9 +629,10 @@ int skypopen_signaling_read(private_t *tech_pvt)
 									// CLOUDTREE (Thomas Hazel)
 									tech_pvt->ringing_state = SKYPOPEN_RINGING_INIT;
 									tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
-									tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
-									WARNINGA("we're back to IDLE\n", SKYPOPEN_P_LOG);
-									skypopen_sleep(10000);
+									tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+									DEBUGA_SKYPE("we're now DOWN\n", SKYPOPEN_P_LOG);
+									return CALLFLOW_INCOMING_HANGUP;
+									//skypopen_sleep(10000);
 
 								}
 							} else {
@@ -769,7 +770,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 
 					} else if (!strcasecmp(value, "LOCALHOLD")) {
 						char msg_to_skype[256];
-						WARNINGA("skype_call: %s is now LOCALHOLD, let's hangup\n", SKYPOPEN_P_LOG, id);
+						DEBUGA_SKYPE("skype_call: %s is now LOCALHOLD, let's hangup\n", SKYPOPEN_P_LOG, id);
 						sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 					} else if (!strcasecmp(value, "REMOTEHOLD")) {

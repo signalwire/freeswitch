@@ -213,14 +213,14 @@ static switch_status_t skypopen_codec(private_t *tech_pvt, int sample_rate, int 
 	if (switch_core_codec_init
 		(&tech_pvt->read_codec, "L16", NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-		ERRORA("Can't load codec?\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_codec: Can't load codec?\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init
 		(&tech_pvt->write_codec, "L16", NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-		ERRORA("Can't load codec?\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_codec: Can't load codec?\n", SKYPOPEN_P_LOG);
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -235,10 +235,11 @@ static switch_status_t skypopen_codec(private_t *tech_pvt, int sample_rate, int 
 		switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 		switch_core_session_rwunlock(session);
 	} else {
-		ERRORA("no session\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_codec: no session\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
+	DEBUGA_SKYPE("codecs UP\n", SKYPOPEN_P_LOG);
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -255,11 +256,11 @@ switch_status_t skypopen_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	switch_core_session_set_private(session, tech_pvt);
 	switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->session_uuid_str));
 	if (!strlen(tech_pvt->session_uuid_str)) {
-		ERRORA("no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_tech_init: no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 	if (skypopen_codec(tech_pvt, SAMPLERATE_SKYPOPEN, 20) != SWITCH_STATUS_SUCCESS) {
-		ERRORA("skypopen_codec FAILED\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_tech_init: skypopen_codec FAILED\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -485,29 +486,6 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		}
 		switch_mutex_unlock(tech_pvt->flag_mutex);
 
-		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-			switch_core_codec_destroy(&tech_pvt->read_codec);
-		}
-
-		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-			switch_core_codec_destroy(&tech_pvt->write_codec);
-		}
-
-		if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
-			switch_core_timer_destroy(&tech_pvt->timer_read);
-		}
-
-		if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
-			switch_core_timer_destroy(&tech_pvt->timer_write);
-		}
-
-		if (tech_pvt->read_buffer) {
-			switch_buffer_destroy(&tech_pvt->read_buffer);
-		}
-		if (tech_pvt->write_buffer) {
-			switch_buffer_destroy(&tech_pvt->write_buffer);
-		}
-
 		DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
 		conta=0;
 		while(tech_pvt->tcp_srv_thread){
@@ -530,6 +508,30 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		}
 		DEBUGA_SKYPE("audio tcp cli thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
 
+
+		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
+
+		DEBUGA_SKYPE("codecs DOWN\n", SKYPOPEN_P_LOG);
+		if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
+			switch_core_timer_destroy(&tech_pvt->timer_read);
+		}
+
+		if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
+			switch_core_timer_destroy(&tech_pvt->timer_write);
+		}
+
+		if (tech_pvt->read_buffer) {
+			switch_buffer_destroy(&tech_pvt->read_buffer);
+		}
+		if (tech_pvt->write_buffer) {
+			switch_buffer_destroy(&tech_pvt->write_buffer);
+		}
 		//DEBUGA_SKYPE("debugging_hangup 13\n", SKYPOPEN_P_LOG);
 		switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
 		//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
@@ -2423,9 +2425,9 @@ private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling)
 			tech_pvt = &globals.SKYPOPEN_INTERFACES[interface_id];
 			skype_state = tech_pvt->interface_state;
 			//DEBUGA_SKYPE("skype interface: %d, name: %s, state: %d\n", SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].name, skype_state);
-			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1)
-				&& (SKYPOPEN_STATE_DOWN == skype_state || 0 == skype_state) && (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED
-																				|| 0 == tech_pvt->skype_callflow)) {
+			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1) 
+				//&& (SKYPOPEN_STATE_DOWN == skype_state || 0 == skype_state) && (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED || 0 == tech_pvt->skype_callflow)) {}
+				&& (SKYPOPEN_STATE_IDLE == skype_state)) {
 				DEBUGA_SKYPE("returning as available skype interface name: %s, state: %d callflow: %d\n", SKYPOPEN_P_LOG, tech_pvt->name, skype_state,
 							 tech_pvt->skype_callflow);
 				if (tech_pvt_calling == NULL) {
@@ -2883,8 +2885,9 @@ int skypopen_transfer(private_t *tech_pvt)
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			/* let's look for a DOWN one */
-			if ((giovatech->interface_state == SKYPOPEN_STATE_DOWN || giovatech->interface_state == 0) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			/* let's look for a IDLE one */
+			//if ((giovatech->interface_state == SKYPOPEN_STATE_DOWN || giovatech->interface_state == 0) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {}	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if ((giovatech->interface_state == SKYPOPEN_STATE_IDLE) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
 				DEBUGA_SKYPE
 					("FOUND  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
@@ -2975,7 +2978,7 @@ int skypopen_transfer(private_t *tech_pvt)
 			sprintf(msg_to_skype, "ALTER CALL %s TRANSFER %s", id, available_skypopen_interface->skype_user);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 			if (tech_pvt->interface_state == SKYPOPEN_STATE_SELECTED) {
-				tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;	//we marked it SKYPOPEN_STATE_SELECTED just in case it has to make an outbound call
+				//FIXME why this? tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;	//we marked it SKYPOPEN_STATE_SELECTED just in case it has to make an outbound call
 			}
 		} else {
 			/* no skypopen interfaces idle, do nothing */
