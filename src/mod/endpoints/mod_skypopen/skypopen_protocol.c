@@ -97,10 +97,6 @@ int skypopen_socket_create_and_bind(private_t *tech_pvt, unsigned short *which_p
 
 
 
-/* for virtual machines, eg: Linux domU-12-31-39-02-68-28 2.6.18-xenU-ec2-v1.0 #2 SMP Tue Feb 19 10:51:53 EST 2008 i686 athlon i386 GNU/Linux
- * use:
- * sockbufsize=SAMPLES_PER_FRAME * 8;
- */
 #ifdef WIN32
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #else
@@ -116,10 +112,6 @@ int skypopen_socket_create_and_bind(private_t *tech_pvt, unsigned short *which_p
 	getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, &size);
 	DEBUGA_SKYPE("2 SO_RCVBUF is %d, size is %d\n", SKYPOPEN_P_LOG, sockbufsize, size);
 
-/* for virtual machines, eg: Linux domU-12-31-39-02-68-28 2.6.18-xenU-ec2-v1.0 #2 SMP Tue Feb 19 10:51:53 EST 2008 i686 athlon i386 GNU/Linux
- * use:
- * sockbufsize=SAMPLES_PER_FRAME * 8;
- */
 #ifdef WIN32
 	sockbufsize = SAMPLES_PER_FRAME * 8;
 #else
@@ -175,11 +167,9 @@ int skypopen_signaling_read(private_t *tech_pvt)
 		a++;
 
 		if (read_from_pipe[i] == '\0') {
-
 			//if (!strstr(message, "DURATION")) {
 			DEBUGA_SKYPE("READING: |||%s||| \n", SKYPOPEN_P_LOG, message);
 			strncpy(tech_pvt->message, message, sizeof(tech_pvt->message));
-
 			//}
 			if (!strcasecmp(message, "SILENT_MODE OFF")) {
 				if (tech_pvt->silent_mode) {
@@ -304,7 +294,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				if (!strcasecmp(prop, "RECEIVEDAUTHREQUEST")) {
 					char msg_to_skype[256];
 					DEBUGA_SKYPE("Skype MSG: message: %s, obj: %s, id: %s, prop: %s!\n", SKYPOPEN_P_LOG, message, obj, id, prop);
-					//TODO: allow authorization based on config param
 					sprintf(msg_to_skype, "SET USER %s ISAUTHORIZED TRUE", id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
 				}
@@ -508,7 +497,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				//SKYPOPEN_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
 
 				if (!strcasecmp(prop, "PARTNER_HANDLE")) {
-					//if (tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {}
 					if (tech_pvt->interface_state == SKYPOPEN_STATE_IDLE){
 						/* we are NOT inside an active call */
 						DEBUGA_SKYPE("Call %s go to skypopen_partner_handle_ring\n", SKYPOPEN_P_LOG, id);
@@ -528,7 +516,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 							skypopen_strncpy(tech_pvt->ring_value, value, sizeof(tech_pvt->ring_value));
 							skypopen_strncpy(tech_pvt->answer_id, id, sizeof(tech_pvt->answer_id));
 							skypopen_strncpy(tech_pvt->answer_value, value, sizeof(tech_pvt->answer_value));
-							//skypopen_transfer(tech_pvt, id, value);
 							skypopen_transfer(tech_pvt);
 						}
 					}
@@ -592,8 +579,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 
 					if (!strcasecmp(value, "RINGING")) {
 						char msg_to_skype[1024];
-						//if ((tech_pvt->interface_state != SKYPOPEN_STATE_SELECTED && tech_pvt->interface_state != SKYPOPEN_STATE_DIALING)
-							//&& (!strlen(tech_pvt->skype_call_id) || !strlen(tech_pvt->session_uuid_str))) {}
 						if (tech_pvt->interface_state == SKYPOPEN_STATE_IDLE){
 							// CLOUDTREE (Thomas Hazel)
 							skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
@@ -632,7 +617,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 									tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 									DEBUGA_SKYPE("we're now DOWN\n", SKYPOPEN_P_LOG);
 									return CALLFLOW_INCOMING_HANGUP;
-									//skypopen_sleep(10000);
 
 								}
 							} else {
@@ -664,11 +648,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 
 						remote_party_is_early_media(tech_pvt);
-						/* CLOUDTREE (Thomas Hazel)
-						   } else if (!strcasecmp(value, "MISSED")) {
-						   DEBUGA_SKYPE("We missed skype_call %s\n", SKYPOPEN_P_LOG, id);
-						 */
-						// CLOUDTREE (Thomas Hazel)
 					} else if (!strcasecmp(value, "MISSED") || !strcasecmp(value, "FINISHED")) {
 						if (!strcasecmp(tech_pvt->skype_call_id, id)) {
 							DEBUGA_SKYPE("skype_call %s is MY call, now I'm going DOWN\n", SKYPOPEN_P_LOG, id);
@@ -933,7 +912,6 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 								if (switch_buffer_freespace(tech_pvt->read_buffer) < len) {
 									switch_buffer_zero(tech_pvt->read_buffer);
 									nospace = 1;
-									//switch_buffer_toss(tech_pvt->read_buffer, len);
 								}
 								switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							}
@@ -1022,7 +1000,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 		if (!(running && tech_pvt->running))
 			break;
 		FD_ZERO(&fsgio);
-		togio.tv_usec = 60000;	//20msec
+		togio.tv_usec = 60000;	//60msec
 		togio.tv_sec = 0;
 		fdselectgio = s;
 		FD_SET(fdselectgio, &fsgio);
@@ -1558,8 +1536,8 @@ int skypopen_send_message(private_t *tech_pvt, const char *message_P)
 	unsigned int len = strlen(message_P);
 	XEvent e;
 
-	skypopen_sleep(1000);		//giovanni
-	XFlush(disp);				//giovanni
+	skypopen_sleep(1000);	
+	XFlush(disp);	
 
 	memset(&e, 0, sizeof(e));
 	e.xclient.type = ClientMessage;
@@ -1581,7 +1559,6 @@ int skypopen_send_message(private_t *tech_pvt, const char *message_P)
 		pos += i;
 	} while (pos <= len);
 
-	//giovanni XSync(disp, False);
 	XFlush(disp);
 
 	// CLOUDTREE (Thomas Hazel)
@@ -1923,7 +1900,6 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 #endif
 
 	tech_pvt->skypopen_api_thread = NULL;
-	//XCloseDisplay(disp);
 	return NULL;
 
 }
@@ -1961,8 +1937,6 @@ int skypopen_answered(private_t *tech_pvt)
 	int res = SWITCH_STATUS_SUCCESS;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
-
-	//WARNINGA("ANSWERED tech_pvt->skype_call_id=%s, tech_pvt->skype_callflow=%d, tech_pvt->interface_state=%d, tech_pvt->skype_user=%s, tech_pvt->callid_number=%s, tech_pvt->ring_value=%s, tech_pvt->ring_id=%s, tech_pvt->answer_value=%s, tech_pvt->answer_id=%s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, tech_pvt->skype_callflow, tech_pvt->interface_state, tech_pvt->skype_user, tech_pvt->callid_number, tech_pvt->ring_value, tech_pvt->ring_id, tech_pvt->answer_value, tech_pvt->answer_id);
 
 	if(strlen(tech_pvt->session_uuid_str)){
 	session = switch_core_session_locate(tech_pvt->session_uuid_str);

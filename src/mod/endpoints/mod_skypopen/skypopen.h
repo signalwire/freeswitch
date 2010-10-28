@@ -387,9 +387,7 @@ int skypopen_close_socket(unsigned int fd);
 private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling);
 int remote_party_is_ringing(private_t *tech_pvt);
 int remote_party_is_early_media(private_t *tech_pvt);
-//int skypopen_answer(private_t * tech_pvt, char *id, char *value);
 int skypopen_answer(private_t *tech_pvt);
-//int skypopen_transfer(private_t * tech_pvt, char *id, char *value);
 int skypopen_transfer(private_t *tech_pvt);
 #ifndef WIN32
 int skypopen_socket_create_and_bind(private_t *tech_pvt, int *which_port);
