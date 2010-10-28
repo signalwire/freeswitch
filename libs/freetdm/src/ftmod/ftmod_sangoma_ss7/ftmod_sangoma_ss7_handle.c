@@ -598,7 +598,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* this is a remote hangup request */
 		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
-
+ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		/* move the state of the channel to CANCEL to end the call */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 
@@ -613,7 +613,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		if (siRelEvnt->causeDgn.causeVal.pres) {
 			ftdmchan->caller_data.hangup_cause = siRelEvnt->causeDgn.causeVal.val;
 		} else {
-			SS7_ERROR("REL does not have a cause code!\n");
+			SS7_ERROR("REL does not have a cause ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);code!\n");
 			ftdmchan->caller_data.hangup_cause = 0;
 		}
 
@@ -622,6 +622,23 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* move the state of the channel to TERMINATING to end the call */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+
+		break;
+	/**************************************************************************/
+	case FTDM_CHANNEL_STATE_IN_LOOP:
+
+		/* inform the core to unloop the channel*/
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
+
+		/* since we need to acknowledge the hang up set the flag for remote release */
+		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+
+		/* go to hangup complete to send the RLC */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+
+		/* save the call info for the RLC */
+		sngss7_info->suInstId = get_unique_id();
+		sngss7_info->spInstId = spInstId;
 
 		break;
 	/**************************************************************************/
@@ -1293,15 +1310,6 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* switch to the IN_LOOP state */
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IN_LOOP);
 
-	/* store the sngss7 ids */
-	if (suInstId == 0) {
-		sngss7_info->suInstId = get_unique_id();
-	} else {
-		sngss7_info->suInstId = suInstId;
-	}
-	sngss7_info->spInstId = spInstId;
-	sngss7_info->globalFlg = globalFlg;
-
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
@@ -1662,7 +1670,7 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		sngss7_set_flag(sngss7_info, FLAG_RESET_TX_RSP);
 
 		/* go to DOWN */
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+		/*ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);*/
 
 		break;
 	/**********************************************************************/

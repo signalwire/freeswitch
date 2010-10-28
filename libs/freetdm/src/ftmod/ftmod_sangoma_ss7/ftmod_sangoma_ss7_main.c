@@ -93,7 +93,8 @@ ftdm_state_map_t sangoma_ss7_state_map = {
 	ZSM_UNACCEPTABLE,
 	{FTDM_CHANNEL_STATE_IN_LOOP, FTDM_END},
 	{FTDM_CHANNEL_STATE_SUSPENDED, FTDM_CHANNEL_STATE_RESTART,
-	 FTDM_CHANNEL_STATE_COLLECT, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+	 FTDM_CHANNEL_STATE_COLLECT, FTDM_CHANNEL_STATE_DOWN,
+	 FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END}
 	},
    {
 	ZSD_INBOUND,
@@ -969,6 +970,14 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				/* go back to the last state after taking care of the rest of the restart state */
 				ftdm_set_state_locked (ftdmchan, ftdmchan->last_state);
 			break;
+			/******************************************************************/
+			case (FTDM_CHANNEL_STATE_IN_LOOP):
+				/* we screwed up in a COT/CCR, remove the loop */
+				ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
+
+				/* go to down */
+				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				break;
 			/******************************************************************/
 			default:
 				/* KONRAD: find out what the cause code should be */
