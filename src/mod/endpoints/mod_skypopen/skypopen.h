@@ -132,6 +132,7 @@ typedef enum {
 #define		SKYPOPEN_STATE_SELECTED				9
 #define 	SKYPOPEN_STATE_HANGUP_REQUESTED		10
 #define		SKYPOPEN_STATE_PREANSWER				11
+#define		SKYPOPEN_STATE_DEAD				99
 /*********************************/
 /* call flow from the device */
 #define 	CALLFLOW_CALL_IDLE					0

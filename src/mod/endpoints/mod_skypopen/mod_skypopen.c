@@ -174,6 +174,7 @@ int running = 0;
 struct SkypopenList global_handles_list;
 extern int xio_error_handler(Display * dpy);
 extern int X11_errors_handler(Display * dpy, XErrorEvent * err);
+extern int xio_error_handler2(Display * dpy, XErrorEvent * err);
 #endif
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
@@ -357,6 +358,8 @@ static switch_status_t interface_exists(char *the_interface)
 
 	globals.SKYPOPEN_INTERFACES[interface_id].running = 0;
 
+	tech_pvt->interface_state = SKYPOPEN_STATE_DEAD;
+
 	if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 #ifdef WIN32
 		skypopen_signaling_write(tech_pvt, "DIE");
@@ -377,8 +380,8 @@ static switch_status_t interface_exists(char *the_interface)
 		if (tech_pvt->running && tech_pvt->SkypopenHandles.disp) {
 			XEvent e;
 			Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
-			switch_sleep(1000);	//giovanni
-			XFlush(tech_pvt->SkypopenHandles.disp);	//giovanni
+			switch_sleep(1000);	
+			XFlush(tech_pvt->SkypopenHandles.disp);
 			memset(&e, 0, sizeof(e));
 			e.xclient.type = ClientMessage;
 			e.xclient.message_type = atom1;	/*  leading message */
@@ -387,7 +390,7 @@ static switch_status_t interface_exists(char *the_interface)
 			e.xclient.format = 8;
 
 			XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-			XFlush(tech_pvt->SkypopenHandles.disp);	//giovanni
+			XFlush(tech_pvt->SkypopenHandles.disp);	
 		}
 #endif
 	}
@@ -399,9 +402,6 @@ static switch_status_t interface_exists(char *the_interface)
 
 #ifndef WIN32
 	if (tech_pvt->SkypopenHandles.disp) {
-		DEBUGA_SKYPE("REMOVE CLOSIN X\n", SKYPOPEN_P_LOG);
-		XCloseDisplay(tech_pvt->SkypopenHandles.disp);
-		DEBUGA_SKYPE("REMOVE CLOSIN X END\n", SKYPOPEN_P_LOG);
 	}
 #endif
 
@@ -420,7 +420,11 @@ static switch_status_t interface_exists(char *the_interface)
 	} else {
 		DEBUGA_SKYPE("interface '%s' STILL console\n", SKYPOPEN_P_LOG, the_interface);
 	}
-	memset(&globals.SKYPOPEN_INTERFACES[interface_id], '\0', sizeof(private_t));
+	if(strlen(tech_pvt->session_uuid_str)){
+
+	}else{
+		memset(&globals.SKYPOPEN_INTERFACES[interface_id], '\0', sizeof(private_t));
+	}
 	globals.real_interfaces--;
 	switch_mutex_unlock(globals.mutex);
 
@@ -473,7 +477,9 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	if (tech_pvt) {
 		DEBUGA_SKYPE("%s CHANNEL DESTROY %s\n", SKYPOPEN_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
 
-		tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+		if (tech_pvt->interface_state != SKYPOPEN_STATE_DEAD) {
+			tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+		}
 
 		switch_mutex_lock(tech_pvt->flag_mutex);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -553,13 +559,13 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		//DEBUGA_SKYPE("debugging_hangup 18\n", SKYPOPEN_P_LOG);
 
 		*tech_pvt->session_uuid_str = '\0';
-		tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
-		tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
-#if 0
-		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
+
+		if (tech_pvt->interface_state != SKYPOPEN_STATE_DEAD) {
+			tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
 			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
+		}else{
+			memset(tech_pvt, '\0', sizeof(private_t));
 		}
-#endif //
 		switch_core_session_set_private(session, NULL);
 	} else {
 		DEBUGA_SKYPE("!!!!!!NO tech_pvt!!!! CHANNEL DESTROY %s\n", SKYPOPEN_P_LOG, switch_core_session_get_uuid(session));
@@ -585,6 +591,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	//DEBUGA_SKYPE("debugging_hangup 1\n", SKYPOPEN_P_LOG);
 
 	if (tech_pvt) {
+		if (tech_pvt->interface_state == SKYPOPEN_STATE_DEAD) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 		if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				tech_pvt->ob_failed_calls++;
@@ -684,6 +693,10 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		switch (sig) {
 		case SWITCH_SIG_KILL:
 			DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			if (tech_pvt->interface_state == SKYPOPEN_STATE_DEAD) {
+				switch_channel_set_state(channel, CS_HANGUP);
+				return SWITCH_STATUS_SUCCESS;
+			}
 			tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
 			if (tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD) {
 				DEBUGA_SKYPE("FYI %s CHANNEL in CALLFLOW_STATUS_REMOTEHOLD got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
@@ -1387,6 +1400,9 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 			DEBUGA_SKYPE("skype call ended\n", SKYPOPEN_P_LOG);
 
 			if (tech_pvt) {
+				if (tech_pvt->interface_state == SKYPOPEN_STATE_DEAD) {
+					break;
+				}
 				session = switch_core_session_locate(tech_pvt->session_uuid_str);
 				if (session) {
 					channel = switch_core_session_get_channel(session);
@@ -1935,28 +1951,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 	// CLOUDTREE (Thomas Hazel)
 #ifndef WIN32
 	// XXX: these assumes no one will override
-	XSetErrorHandler(X11_errors_handler);
+	//XSetErrorHandler(X11_errors_handler);
+	//XXX giovanni: seems that if Xserver is up, but skype client is crashed, the error is non fatal. Let's use Thomas handler in this case too
+	XSetErrorHandler(xio_error_handler2);
 	XSetIOErrorHandler(xio_error_handler);
 
 	memset(&global_handles_list, 0, sizeof(global_handles_list));
 	switch_mutex_init(&globals.list_mutex, SWITCH_MUTEX_NESTED, skypopen_module_pool);
 #endif
 
-	// CLOUDTREE (Thomas Hazel) - load_configs no longer locks things up, no need to fail load
-	load_config(FULL_RELOAD);
-
-	// CLOUDTREE (Thomas Hazel) - setting "running = 1;" use to be located before "load_config"
 	running = 1;
-
-	if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
-	if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-		return SWITCH_STATUS_GENERR;
-	}
+	load_config(FULL_RELOAD);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	skypopen_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
@@ -1968,14 +1973,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 
 		SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
-					   SKYPOPEN_CHAT_SYNTAX);
+		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function, SKYPOPEN_CHAT_SYNTAX);
 		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
+
+		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+			return SWITCH_STATUS_FALSE;
+		}
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;
-	} else
-		return SWITCH_STATUS_FALSE;
+	}
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)

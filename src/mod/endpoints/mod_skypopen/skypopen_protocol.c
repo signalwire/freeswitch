@@ -1514,6 +1514,30 @@ int xio_error_handler(Display * dpy)
 
 	return 0;
 }
+int xio_error_handler2(Display * dpy, XErrorEvent * err)
+{
+	private_t *tech_pvt = NULL;
+	struct SkypopenHandles *handle;
+	global_x_error = err->error_code;
+
+	ERRORA("Received error code %d from X Server\n\n", SKYPOPEN_P_LOG, global_x_error);
+	ERRORA("Display error for %d, %s\n", SKYPOPEN_P_LOG, skypopen_list_size(&global_handles_list), dpy->display_name);
+
+	handle = skypopen_list_remove_by_value(&global_handles_list, dpy);
+	if (handle != NULL) {
+#ifdef XIO_ERROR_BY_SETJMP
+		siglongjmp(handle->ioerror_context, 1);
+#endif
+#ifdef XIO_ERROR_BY_UCONTEXT
+		setcontext(&handle->ioerror_context);
+#endif
+	}
+
+	ERRORA("Fatal display error for %p, %s - failed to siglongjmp\n", SKYPOPEN_P_LOG, (void *) handle, dpy->display_name);
+
+	return 0;
+}
+
 
 int X11_errors_handler(Display * dpy, XErrorEvent * err)
 {
@@ -1685,25 +1709,38 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 	// CLOUDTREE (Thomas Hazel)
 #ifndef WIN32
 	{
+		char interfacename[256];
+
 		skypopen_list_add(&global_handles_list, SkypopenHandles);
+		sprintf(interfacename, "#%s", tech_pvt->name);
 
 #ifdef XIO_ERROR_BY_SETJMP
 		if (sigsetjmp(SkypopenHandles->ioerror_context, 1) != 0) {
 			switch_core_session_t *session = NULL;
+			tech_pvt->interface_state = SKYPOPEN_STATE_DEAD;
 			ERRORA("Fatal display error for %s - successed to jump\n", SKYPOPEN_P_LOG, tech_pvt->X11_display);
 
 			session = switch_core_session_locate(tech_pvt->session_uuid_str);
 			if (session) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-				WARNINGA("Closing session %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_user);
-				switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
+
+
+				switch_mutex_lock(tech_pvt->flag_mutex);
+				switch_clear_flag(tech_pvt, TFLAG_IO);
+				switch_clear_flag(tech_pvt, TFLAG_VOICE);
+				if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+					switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+				}
+				switch_mutex_unlock(tech_pvt->flag_mutex);
+
+
 				switch_core_session_rwunlock(session);
+				WARNINGA("Closing session for %s\n", SKYPOPEN_P_LOG, interfacename);
+				switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
 			}
 
-			WARNINGA("Removing skype user %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_user);
-			tech_pvt->skypopen_api_thread = NULL;
-			remove_interface(tech_pvt->skype_user, TRUE);
-			XCloseDisplay(disp);
+			WARNINGA("Removing skype interface %s\n", SKYPOPEN_P_LOG, interfacename);
+			remove_interface(interfacename, TRUE);
 			return NULL;
 		}
 #endif
@@ -1712,20 +1749,34 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 
 		if (skypopen_list_find(&global_handles_list, SkypopenHandles) == NULL) {
 			switch_core_session_t *session = NULL;
+			tech_pvt->interface_state = SKYPOPEN_STATE_DEAD;
 			ERRORA("Fatal display error for %s - successed to jump\n", SKYPOPEN_P_LOG, tech_pvt->X11_display);
 
 			session = switch_core_session_locate(tech_pvt->session_uuid_str);
 			if (session) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-				WARNINGA("Closing session %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_user);
-				switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
+
+
+				switch_mutex_lock(tech_pvt->flag_mutex);
+				switch_clear_flag(tech_pvt, TFLAG_IO);
+				switch_clear_flag(tech_pvt, TFLAG_VOICE);
+				if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+					switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+				}
+				switch_mutex_unlock(tech_pvt->flag_mutex);
+
+
 				switch_core_session_rwunlock(session);
+				WARNINGA("Closing session for %s\n", SKYPOPEN_P_LOG, interfacename);
+				switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
+
+				//skypopen_sleep(500000);
 			}
 
-			WARNINGA("Removing skype user %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_user);
-			tech_pvt->skypopen_api_thread = NULL;
-			remove_interface(tech_pvt->skype_user, TRUE);
-			XCloseDisplay(disp);
+			WARNINGA("Removing skype interface %s\n", SKYPOPEN_P_LOG, interfacename);
+			//tech_pvt->skypopen_api_thread = NULL;
+			remove_interface(interfacename, TRUE);
+			//XCloseDisplay(disp);
 			return NULL;
 		}
 #endif
