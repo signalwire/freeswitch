@@ -2780,7 +2780,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
 				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && 
-					   switch_channel_test_app_flag_key(__FILE_, other_channel, FIFO_APP_BRIDGE_TAG)) {
+					   switch_channel_test_app_flag_key(FIFO_APP_KEY, other_channel, FIFO_APP_BRIDGE_TAG)) {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
