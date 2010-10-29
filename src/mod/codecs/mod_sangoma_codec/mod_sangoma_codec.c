@@ -33,7 +33,6 @@
  */
 
 #include "switch.h"
-#include "g711.h"
 
 #include <sng_tc/sngtc_node.h>
 
@@ -41,7 +40,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sangoma_codec_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sangoma_codec, mod_sangoma_codec_load, mod_sangoma_codec_shutdown, NULL);
 
-#define IANA_ULAW 0
+#define IANA_LINEAR 10 
 #define SANGOMA_SESS_HASH_KEY_FORMAT "sngtc%lu"
 
 /* it seemed we need higher PTIME than the calling parties, so we assume nobody will use higher ptime than 40 */
@@ -309,7 +308,7 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 	if (encoding) {
 		sess->encoder.request.usr_priv = sess;
 		sess->encoder.request.a.host_ip = g_rtpip;
-		sess->encoder.request.a.codec_id = SNGTC_CODEC_PCMU;
+		sess->encoder.request.a.codec_id = SNGTC_CODEC_L16_1;
 		sess->encoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
 
 		sess->encoder.request.b.host_ip = g_rtpip;
@@ -324,7 +323,7 @@ static switch_status_t switch_sangoma_init(switch_codec_t *codec, switch_codec_f
 		sess->decoder.request.a.ms = codec->implementation->microseconds_per_packet/1000;
 
 		sess->decoder.request.b.host_ip = g_rtpip;
-		sess->decoder.request.b.codec_id = SNGTC_CODEC_PCMU;
+		sess->decoder.request.b.codec_id = SNGTC_CODEC_L16_1;
 		sess->decoder.request.b.ms = codec->implementation->microseconds_per_packet/1000;
 
 	}
@@ -406,13 +405,13 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 {
 	/* FS core checks the actual samples per second and microseconds per packet to determine the buffer size in the worst case scenario, no need to check
 	 * whether the buffer passed in by the core (encoded_data) will be big enough */
-	switch_frame_t ulaw_frame;
+	switch_frame_t linear_frame;
 	switch_frame_t encoded_frame;
 	switch_status_t sres = SWITCH_STATUS_FALSE;
+	uint16_t decoded_byteswapped_data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint16_t *decoded_data_linear = decoded_data;
 	switch_time_t now_time = 0, difftime = 0;
 	switch_time_t func_start_time = 0, func_end_time = 0;
-	unsigned char ebuf_ulaw[decoded_data_len / 2];
-	short *dbuf_linear;
 	int i = 0;
 	int res = 0;
 	struct sangoma_transcoding_session *sess = codec->private_info;
@@ -448,21 +447,20 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		}
 	}
 
-	/* transcode to ulaw first */
-	dbuf_linear = decoded_data;
-
-	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
-		ebuf_ulaw[i] = linear_to_ulaw(dbuf_linear[i]);
-	}
-	
 	/* do the writing */
-	memset(&ulaw_frame, 0, sizeof(ulaw_frame));	
-	ulaw_frame.source = __FUNCTION__;
-	ulaw_frame.data = ebuf_ulaw;
-	ulaw_frame.datalen = i;
-	ulaw_frame.payload = IANA_ULAW;
+	memset(&linear_frame, 0, sizeof(linear_frame));	
+	linear_frame.source = __FUNCTION__;
+	linear_frame.data = decoded_byteswapped_data;
+	linear_frame.datalen = decoded_data_len;
+	linear_frame.payload = IANA_LINEAR;
 
-	res = switch_rtp_write_frame(sess->encoder.txrtp, &ulaw_frame);
+	/* copy and byte-swap */
+	for (i = 0; i < decoded_data_len/2; i++) {
+		decoded_byteswapped_data[i] = (decoded_data_linear[i] << 8) | (decoded_data_linear[i] >> 8);
+	}
+
+
+	res = switch_rtp_write_frame(sess->encoder.txrtp, &linear_frame);
 	if (-1 == res) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to write to Sangoma encoder RTP session.\n");
 		return SWITCH_STATUS_FALSE;
@@ -595,13 +593,15 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	/* FS core checks the actual samples per second and microseconds per packet to determine the buffer size in the worst case scenario, no need to check
 	 * whether the buffer passed in by the core will be enough */
 	switch_frame_t encoded_frame;
-	switch_frame_t ulaw_frame;
+	switch_frame_t linear_frame;
 	switch_status_t sres = SWITCH_STATUS_FALSE;
 	switch_time_t now_time = 0, difftime = 0;
 	switch_time_t func_start_time = 0, func_end_time = 0;
-	short *dbuf_linear;
-	int i = 0;
+	uint16_t *dbuf_linear;
+	uint16_t *linear_frame_data;
+	uint16_t *rtp_data_linear;
 	int res = 0;
+	int i = 0;
 	struct sangoma_transcoding_session *sess = codec->private_info;
 
 	if (sess->decoder.debug_timing) {
@@ -669,7 +669,7 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 #if 0
 		prevread_time = switch_micro_time_now();
 #endif
-		sres = switch_rtp_zerocopy_read_frame(sess->decoder.rxrtp, &ulaw_frame, SWITCH_IO_FLAG_NOBLOCK);
+		sres = switch_rtp_zerocopy_read_frame(sess->decoder.rxrtp, &linear_frame, SWITCH_IO_FLAG_NOBLOCK);
 		if (sres == SWITCH_STATUS_GENERR) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read on Sangoma decoder RTP session: %d\n", sres);
 			return SWITCH_STATUS_FALSE;
@@ -682,18 +682,18 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%ldus to read on decoding session %lu.\n", (long)difftime, sess->sessid);
 		}
 #endif
-		if (0 == ulaw_frame.datalen) {
+		if (0 == linear_frame.datalen) {
 			break;
 		}
 
-		if (ulaw_frame.payload == IANACODE_CN) {
+		if (linear_frame.payload == IANACODE_CN) {
 			/* confort noise is treated as silence by us */
 			continue;
 		}
 
-		if (ulaw_frame.payload != IANA_ULAW) {
+		if (linear_frame.payload != IANA_LINEAR) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma decoder RTP session, expecting %d\n",
-					ulaw_frame.payload, IANA_ULAW);
+					linear_frame.payload, IANA_LINEAR);
 			break;
 		}
 
@@ -709,8 +709,14 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 			}
 		}
 
-		memcpy(sess->decoder.rtp_queue[sess->decoder.queue_windex].data, ulaw_frame.data, ulaw_frame.datalen);
-		sess->decoder.rtp_queue[sess->decoder.queue_windex].datalen = ulaw_frame.datalen;
+		/* byteswap the received data */
+		rtp_data_linear = (unsigned short *)sess->decoder.rtp_queue[sess->decoder.queue_windex].data;
+		linear_frame_data = linear_frame.data;
+		for (i = 0; i < linear_frame.datalen/2; i++) {
+			rtp_data_linear[i] = (linear_frame_data[i] << 8) | (linear_frame_data[i] >> 8);
+		}
+		sess->decoder.rtp_queue[sess->decoder.queue_windex].datalen = linear_frame.datalen;
+
 		SAFE_INDEX_INC(sess->decoder.rtp_queue, sess->decoder.queue_windex);
 
 		/* monitor the queue size */
@@ -737,17 +743,15 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 
 		/* check sequence and bump lost rx packets count if needed */
 		if (sess->decoder.lastrxseqno >= 0) {
-			if (ulaw_frame.seq > (sess->decoder.lastrxseqno + 2) ) {
-				sess->decoder.rxlost += ulaw_frame.seq - sess->decoder.lastrxseqno - 1;
+			if (linear_frame.seq > (sess->decoder.lastrxseqno + 2) ) {
+				sess->decoder.rxlost += linear_frame.seq - sess->decoder.lastrxseqno - 1;
 			}
 		}
-		sess->decoder.lastrxseqno = ulaw_frame.seq;
+		sess->decoder.lastrxseqno = linear_frame.seq;
 
-		/* pop the data from the queue and transcode it */
-		for (i = 0; i < sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen; i++) {
-			dbuf_linear[i] = ulaw_to_linear(((char *)sess->decoder.rtp_queue[sess->decoder.queue_rindex].data)[i]);
-		}
-		*decoded_data_len = i * 2;
+		/* pop the data from the queue */
+		memcpy(dbuf_linear, sess->decoder.rtp_queue[sess->decoder.queue_rindex].data, sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen);
+		*decoded_data_len = sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen;
 		sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen = 0;
 		SAFE_INDEX_INC(sess->decoder.rtp_queue, sess->decoder.queue_rindex);
 		sess->decoder.queue_size--;
@@ -923,7 +927,7 @@ SWITCH_STANDARD_API(sangoma_function)
 			stats = switch_rtp_get_stats(sess->encoder.rxrtp, NULL);
 			stream->write_function(stream, "=== %s Encoder ===\n", sess->impl->iananame);
 
-			stream->write_function(stream, "Tx ULAW from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->encoder.reply.a.host_ip), sess->encoder.reply.a.host_udp_port,
+			stream->write_function(stream, "Tx L16 from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->encoder.reply.a.host_ip), sess->encoder.reply.a.host_udp_port,
 					SNGTC_NIPV4(sess->encoder.reply.a.codec_ip), sess->encoder.reply.a.codec_udp_port);
 			stream->write_function(stream, "Rx %s at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", sess->impl->iananame, SNGTC_NIPV4(sess->encoder.reply.b.host_ip), sess->encoder.reply.b.host_udp_port,
 					SNGTC_NIPV4(sess->encoder.reply.b.codec_ip), sess->encoder.reply.b.codec_udp_port);
@@ -945,7 +949,7 @@ SWITCH_STANDARD_API(sangoma_function)
 			stream->write_function(stream, "=== %s Decoder ===\n", sess->impl->iananame);
 			stream->write_function(stream, "Tx %s from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n\n", sess->impl->iananame, SNGTC_NIPV4(sess->decoder.reply.a.host_ip), sess->decoder.reply.a.host_udp_port,
 					SNGTC_NIPV4(sess->decoder.reply.a.codec_ip), sess->decoder.reply.a.codec_udp_port);
-			stream->write_function(stream, "Rx ULAW at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->decoder.reply.b.host_ip), sess->decoder.reply.b.host_udp_port,
+			stream->write_function(stream, "Rx L16 at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->decoder.reply.b.host_ip), sess->decoder.reply.b.host_udp_port,
 					SNGTC_NIPV4(sess->decoder.reply.b.codec_ip), sess->decoder.reply.b.codec_udp_port);
 
 			stream->write_function(stream, "-- Inbound Stats --\n");
