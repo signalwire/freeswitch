@@ -105,8 +105,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
-	unsigned int flag = 0;
 	switch_codec_implementation_t codec_impl;
+	unsigned int flag = 0;
 
 	switch_assert(session != NULL);
 
@@ -315,7 +315,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 												  read_frame->data,
 												  read_frame->datalen,
 												  session->read_impl.actual_samples_per_second,
-												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
+												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
+												  &read_frame->flags);
 			}
 
 			if (do_resample && ((status == SWITCH_STATUS_SUCCESS) || is_cng)) {
@@ -749,7 +750,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 										  frame->data,
 										  frame->datalen,
 										  session->write_impl.actual_samples_per_second,
-										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
+										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &frame->flags);
 
 
 
