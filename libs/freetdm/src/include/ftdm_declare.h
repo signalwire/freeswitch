@@ -70,6 +70,7 @@ extern "C" {
 #define FT_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
 #define FT_DECLARE_DATA				__declspec(dllimport)
 #endif
+#define FT_DECLARE_INLINE(type)		type
 #define EX_DECLARE_DATA				__declspec(dllexport)
 #else
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
@@ -81,6 +82,7 @@ extern "C" {
 #define FT_DECLARE_NONSTD(type)	type
 #define FT_DECLARE_DATA
 #endif
+#define FT_DECLARE_INLINE(type)		type __inline__
 #define EX_DECLARE_DATA
 #endif
 
@@ -156,7 +158,12 @@ typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef __int16 int16_t;
 typedef __int8 int8_t;
+#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
+#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+#endif /* _MSC_VER */
+#else /* __WINDOWS__ */
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
 #include <stdio.h>

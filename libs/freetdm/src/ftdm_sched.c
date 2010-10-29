@@ -34,6 +34,40 @@
 
 #include "private/ftdm_core.h"
 
+#ifdef __WINDOWS__
+struct ftdm_timezone {
+    int tz_minuteswest;         /* minutes W of Greenwich */
+    int tz_dsttime;             /* type of dst correction */
+};
+int gettimeofday(struct timeval *tv, struct ftdm_timezone *tz)
+{
+    FILETIME ft;
+    unsigned __int64 tmpres = 0;
+    static int tzflag;
+    if (NULL != tv) {
+        GetSystemTimeAsFileTime(&ft);
+        tmpres |= ft.dwHighDateTime;
+        tmpres <<= 32;
+        tmpres |= ft.dwLowDateTime;
+
+        /*converting file time to unix epoch */
+        tmpres /= 10;           /*convert into microseconds */
+        tmpres -= DELTA_EPOCH_IN_MICROSECS;
+        tv->tv_sec = (long) (tmpres / 1000000UL);
+        tv->tv_usec = (long) (tmpres % 1000000UL);
+    }
+    if (NULL != tz) {
+        if (!tzflag) {
+            _tzset();
+            tzflag++;
+        }
+        tz->tz_minuteswest = _timezone / 60;
+        tz->tz_dsttime = _daylight;
+    }
+    return 0;
+}
+#endif /* __WINDOWS__ */
+
 typedef struct ftdm_timer ftdm_timer_t;
 
 static struct {
@@ -55,9 +89,7 @@ struct ftdm_sched {
 struct ftdm_timer {
 	char name[80];
 	ftdm_timer_id_t id;
-#ifdef __linux__
 	struct timeval time;
-#endif
 	void *usrdata;
 	ftdm_sched_callback_t callback;
 	ftdm_timer_t *next;
@@ -234,7 +266,6 @@ failed:
 FT_DECLARE(ftdm_status_t) ftdm_sched_run(ftdm_sched_t *sched)
 {
 	ftdm_status_t status = FTDM_FAIL;
-#ifdef __linux__
 	ftdm_timer_t *runtimer;
 	ftdm_timer_t *timer;
 	ftdm_sched_callback_t callback;
@@ -300,10 +331,6 @@ tryagain:
 done:
 
 	ftdm_mutex_unlock(sched->mutex);
-#else
-	ftdm_log(FTDM_LOG_CRIT, "Not implemented in this platform\n");
-	status = FTDM_NOTIMPL;
-#endif
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(sched);
 #endif
@@ -315,7 +342,6 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 		int ms, ftdm_sched_callback_t callback, void *data, ftdm_timer_id_t *timerid)
 {
 	ftdm_status_t status = FTDM_FAIL;
-#ifdef __linux__
 	struct timeval now;
 	int rc = 0;
 	ftdm_timer_t *newtimer;
@@ -378,10 +404,6 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 done:
 
 	ftdm_mutex_unlock(sched->mutex);
-#else
-	ftdm_log(FTDM_LOG_CRIT, "Not implemented in this platform\n");
-	status = FTDM_NOTIMPL;
-#endif
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(sched);
 	UNREFERENCED_PARAMETER(name);
@@ -396,7 +418,6 @@ done:
 FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *sched, int32_t *timeto)
 {
 	ftdm_status_t status = FTDM_FAIL;
-#ifdef __linux__
 	int res = -1;
 	int ms = 0;
 	struct timeval currtime;
@@ -445,10 +466,6 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 
 done:
 	ftdm_mutex_unlock(sched->mutex);
-#else
-	ftdm_log(FTDM_LOG_ERROR, "Implement me!\n");
-	status = FTDM_NOTIMPL;
-#endif
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(timeto);
 	UNREFERENCED_PARAMETER(sched);

@@ -44,6 +44,7 @@ uint32_t sngss7_id;
 
 /* PROTOTYPES *****************************************************************/
 uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
@@ -339,6 +340,49 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
 		return 1;
 	}
+
+	return 0;
+}
+
+/******************************************************************************/
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
+{
+	int i = 0;
+	int j = 0;
+
+	/* check if the token string is present */
+	if (str.pres == 1) {
+		/* find the length of the digits so far */
+		j = strlen(ftdm);
+
+		/* confirm that we found an acceptable length */
+		if ( j > 25 ) {
+			SS7_ERROR("string length exceeds maxium value...aborting append!\n");
+			return 1;
+		} /* if ( j > 25 ) */
+
+		/* copy in digits */
+		for (i = 0; i < str.len; i++) {
+			/* convert 4 bit integer to char and copy into lower nibblet*/
+			sprintf(&ftdm[j], "%X", (str.val[i] & 0x0F));
+			/* move along */
+			j++;
+			/* convert 4 bit integer to char and copy into upper nibblet */
+			sprintf(&ftdm[j], "%X", ((str.val[i] & 0xF0) >> 4));
+			/* move along */
+			j++;
+		} /* for (i = 0; i < str.len; i++) */
+
+		/* if the odd flag is up the last digit is a fake "0" */
+		if ((oddEven.pres == 1) && (oddEven.val == 1)) {
+			ftdm[j-1] = '\0';
+		} else {
+			ftdm[j] = '\0';
+		} /* if ((oddEven.pres == 1) && (oddEven.val == 1)) */
+	} else {
+		SS7_ERROR("Asked to copy tknStr that is not present!\n");
+		return 1;
+	} /* if (str.pres == 1) */
 
 	return 0;
 }

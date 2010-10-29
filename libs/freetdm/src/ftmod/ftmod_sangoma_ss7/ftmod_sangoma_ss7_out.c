@@ -341,9 +341,10 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 
 	/* fill in any optional parameters */
 	if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) {
+		SS7_DEBUG_CHAN(ftdmchan, "Found ACM_OBCI_BITA flag:0x%X\n", isup_intf->options);
 		acm.optBckCalInd.eh.pres				= PRSNT_NODEF;
 		acm.optBckCalInd.inbndInfoInd.pres		= PRSNT_NODEF;
-		acm.optBckCalInd.inbndInfoInd.val		= sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA);
+		acm.optBckCalInd.inbndInfoInd.val		= 0x1;
 		acm.optBckCalInd.caFwdMayOcc.pres		= PRSNT_DEF;
 		acm.optBckCalInd.simpleSegmInd.pres		= PRSNT_DEF;
 		acm.optBckCalInd.mlppUserInd.pres		= PRSNT_DEF;

@@ -143,6 +143,7 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 		signal_data->signalling == SNGISDN_SIGNALING_NET) {
 		sngisdn_info->ces = CES_MNGMNT;
 	}
+	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Outgoing call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 	cpy_called_num_from_user(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
 	cpy_calling_num_from_user(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
