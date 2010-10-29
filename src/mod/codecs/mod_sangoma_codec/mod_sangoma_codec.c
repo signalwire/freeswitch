@@ -85,7 +85,6 @@ vocallo_codec_t g_codec_map[] =
 {
 	{ SNGTC_CODEC_PCMU,    0,   "PCMU",    "Sangoma PCMU",      40, 64000,  10000, 80,  160, 80,  1 },
 	{ SNGTC_CODEC_PCMA,    8,   "PCMA",    "Sangoma PCMA",      40, 64000,  10000, 80,  160, 80,  1 },
-	{ SNGTC_CODEC_L16_1,   10,  "L16",     "Sangoma L16",       40, 120000, 10000, 80,  160, 160, 1 },
 	{ SNGTC_CODEC_G729AB,  18,  "G729",    "Sangoma G729",      40, 8000,   10000, 80,  160, 10,  1 },
 	{ SNGTC_CODEC_G726_32, 122, "G726-32", "Sangoma G.726 32k", 40, 32000,  10000, 80,  160, 40,  1 },
 	{ SNGTC_CODEC_GSM_FR,  3,   "GSM",     "Sangoma GSM",       20, 13200,  20000, 160, 320, 33,  0 },
@@ -102,7 +101,7 @@ vocallo_codec_t g_codec_map[] =
 #define IANACODE_CN 13
 
 /* default codec list to load, users may override, special codec 'all' registers everything available unless listed in noregister */
-static char g_codec_register_list[1024] = "all";
+static char g_codec_register_list[1024] = "G729";
 
 /* default codec list to NOT load, users may override */
 static char g_codec_noregister_list[1024] = "";
