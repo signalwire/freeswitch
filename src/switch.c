@@ -82,6 +82,7 @@ static void handle_SIGILL(int sig)
 	return;
 }
 
+#ifndef WIN32
 static void handle_SIGUSR2(int sig)
 {
 	if (sig);
@@ -106,6 +107,7 @@ static void handle_SIGCHLD(int sig)
 
 	return;
 }
+#endif
 
 /* kill a freeswitch process running in background mode */
 static int freeswitch_kill_background()
@@ -272,7 +274,16 @@ void daemonize(int do_wait)
 
 
 			if (do_wait) {
-				unsigned int sanity = 20;
+				unsigned int sanity = 60;
+				char *o;
+
+				if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
+					int tmp = atoi(o);
+					if (tmp > 0) {
+						sanity = tmp;
+					}
+				}
+
 				while(--sanity && !system_ready) {
 				
 					if (sanity % 2 == 0) {
