@@ -29,6 +29,7 @@
  *
  */
 #include <switch.h>
+#define FIFO_APP_KEY "mod_fifo"
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load);
@@ -864,7 +865,7 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		caller_channel = switch_core_session_get_channel(caller_session);
 	}
 
-	if (switch_channel_test_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG)) {
+	if (switch_channel_test_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 		char date[80] = "";
 		switch_time_exp_t tm;
 		switch_time_t ts = switch_micro_time_now();
@@ -874,7 +875,7 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		char *sql;
 		switch_event_t *event;
 		
-		switch_channel_clear_app_flag_key(__FILE__, consumer_channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_clear_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG);
 		switch_channel_set_variable(consumer_channel, "fifo_bridged", NULL);
 				
 		ts = switch_micro_time_now();
@@ -984,11 +985,11 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_size_t retsize;
 			const char *ced_name, *ced_number, *cid_name, *cid_number;
 			
-			if (switch_channel_test_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG)) {
+			if (switch_channel_test_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 				goto end;
 			}
 
-			switch_channel_set_app_flag_key(__FILE__, consumer_channel, FIFO_APP_BRIDGE_TAG);
+			switch_channel_set_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG);
 			
 			switch_channel_set_variable(consumer_channel, "fifo_bridged", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_manual_bridge", "true");
@@ -2038,7 +2039,7 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		return;
 	}
 
-	if (switch_channel_test_app_flag(channel, FIFO_APP_TRACKING)) {
+	if (switch_channel_test_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s trying to double-track call!\n", switch_channel_get_name(channel));
 		return;
 	}
@@ -2048,7 +2049,7 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 
 	add_bridge_call(data);
 
-	switch_channel_set_app_flag_key(__FILE__, channel, FIFO_APP_TRACKING);
+	switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING);
 
 	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
 	switch_channel_set_variable(channel, "fifo_track_call", "true");
@@ -2347,7 +2348,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
 		switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 
-		switch_channel_set_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 		if (chime_list) {
 			char *list_dup = switch_core_session_strdup(session, chime_list);
@@ -2422,7 +2423,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 	abort:
 
-		switch_channel_clear_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 		fifo_caller_del(switch_core_session_get_uuid(session));
 
@@ -2779,7 +2780,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
 				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && 
-					   switch_channel_test_app_flag(other_channel, FIFO_APP_BRIDGE_TAG)) {
+					   switch_channel_test_app_flag_key(__FILE_, other_channel, FIFO_APP_BRIDGE_TAG)) {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
@@ -3083,7 +3084,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_mutex_unlock(globals.mutex);
 
 
-	switch_channel_clear_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+	switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 	switch_core_media_bug_resume(session);
 
