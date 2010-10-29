@@ -2578,7 +2578,7 @@ int skypopen_partner_handle_ring(private_t *tech_pvt)
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			if ((giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if ((giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_IDLE) && (strcmp(giovatech->name, tech_pvt->name)) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
 				DEBUGA_SKYPE
 					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
@@ -2655,7 +2655,7 @@ int skypopen_answer(private_t *tech_pvt)
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_IDLE) && (strcmp(giovatech->name, tech_pvt->name)) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
 				DEBUGA_SKYPE
 					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
@@ -2753,7 +2753,7 @@ int skypopen_transfer(private_t *tech_pvt)
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
 			/* let's look for a RINGING one */
-			if ((giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if ((giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_IDLE) && (strcmp(giovatech->name, tech_pvt->name)) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
 				DEBUGA_SKYPE
 					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
@@ -2814,7 +2814,7 @@ int skypopen_transfer(private_t *tech_pvt)
 			if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 				giovatech = &globals.SKYPOPEN_INTERFACES[i];
-				if (strlen(giovatech->skype_transfer_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->transfer_callid_number, value)) && ((((timenow.tv_sec - giovatech->transfer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->transfer_time.tv_usec)) < 1000000)) {	//1.0 sec
+				if (strlen(giovatech->skype_transfer_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->transfer_callid_number, value)) && ((((timenow.tv_sec - giovatech->transfer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->transfer_time.tv_usec)) < 1000000)) {	//1.0 sec
 					found = 1;
 					DEBUGA_SKYPE
 						("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->transfer_callid_number=%s == value=%s)\n",
