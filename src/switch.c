@@ -358,7 +358,9 @@ int main(int argc, char *argv[])
 	int alt_dirs = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int known_opt;
 	int high_prio = 0;
+#ifndef WIN32
 	int do_wait = 0;
+#endif
 #ifdef __sun
 	switch_core_flag_t flags = SCF_USE_SQL;
 #else
