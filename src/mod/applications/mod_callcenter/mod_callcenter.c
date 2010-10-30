@@ -37,7 +37,6 @@
 #define CC_AGENT_TYPE_UUID_STANDBY "uuid-standby"
 #define CC_SQLITE_DB_NAME "callcenter"
 
-#define CC_MAX_TIME_DIFF_CHECK 5
 /* TODO
    drop caller if no agent login
    dont allow new caller
@@ -429,6 +428,7 @@ struct cc_queue {
 
 	uint32_t max_wait_time;
 	uint32_t max_wait_time_with_no_agent;
+	uint32_t max_wait_time_with_no_agent_time_reached;
 
 	switch_mutex_t *mutex;
 
@@ -540,6 +540,7 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time", SWITCH_CONFIG_INT, 0, &queue->max_wait_time, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent, 0, &config_int_0_86400, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent-time-reached", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent_time_reached, 5, &config_int_0_86400, NULL, NULL);
 
 	switch_assert(i < CC_QUEUE_CONFIGITEM_COUNT);
 
@@ -890,7 +891,7 @@ cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, s
 
 done:   
 	if (result == CC_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Get Info Agent %s set %s = %s\n", agent, key, res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Get Info Agent %s %s = %s\n", agent, key, res);
 	}
 
 	return result;
@@ -2023,7 +2024,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		}
 
 		/* Will drop the caller if no agent was found for more than X secondes */
-		if (queue->max_wait_time_with_no_agent > 0 && m->t_member_called < queue->last_agent_exist_check - CC_MAX_TIME_DIFF_CHECK &&
+		if (queue->max_wait_time_with_no_agent > 0 && m->t_member_called < queue->last_agent_exist_check - queue->max_wait_time_with_no_agent_time_reached &&
 				queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
@@ -2465,9 +2466,10 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			} else {
 				const char *key = argv[0 + initial_argc];
 				const char *agent = argv[1 + initial_argc];
-				switch (cc_agent_get(key, agent, NULL, 0)) {
+				char ret[64];
+				switch (cc_agent_get(key, agent, ret, sizeof(ret))) {
 					case CC_STATUS_SUCCESS:
-						stream->write_function(stream, "%s", "+OK\n");
+						stream->write_function(stream, "%s", ret);
 						break;
 					case CC_STATUS_INVALID_KEY:
 						stream->write_function(stream, "%s", "-ERR Invalid Agent Update KEY!\n");
@@ -2632,7 +2634,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 		} else if (action && !strcasecmp(action, "list")) {
 			if (argc-initial_argc < 1) {
 				switch_hash_index_t *hi;
-				stream->write_function(stream, "%s", "name|strategy|moh_sound|time_base_score|tier_rules_apply|tier_rule_wait_second|tier_rule_wait_multiply_level|tier_rule_no_agent_no_wait|discard_abandoned_after|abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|record_template\n");
+				stream->write_function(stream, "%s", "name|strategy|moh_sound|time_base_score|tier_rules_apply|tier_rule_wait_second|tier_rule_wait_multiply_level|tier_rule_no_agent_no_wait|discard_abandoned_after|abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|max_wait_time_with_no_agent_time_reached|record_template\n");
 				switch_mutex_lock(globals.mutex);
 				for (hi = switch_hash_first(NULL, globals.queue_hash); hi; hi = switch_hash_next(hi)) {
 					void *val = NULL;
@@ -2641,7 +2643,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					cc_queue_t *queue;
 					switch_hash_this(hi, &key, &keylen, &val);
 					queue = (cc_queue_t *) val;
-					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%s\n", queue->name, queue->strategy, queue->moh, queue->time_base_score, (queue->tier_rules_apply?"true":"false"), queue->tier_rule_wait_second, (queue->tier_rule_wait_multiply_level?"true":"false"), (queue->tier_rule_no_agent_no_wait?"true":"false"), queue->discard_abandoned_after, (queue->abandoned_resume_allowed?"true":"false"), queue->max_wait_time, queue->max_wait_time_with_no_agent, queue->record_template);
+					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s\n", queue->name, queue->strategy, queue->moh, queue->time_base_score, (queue->tier_rules_apply?"true":"false"), queue->tier_rule_wait_second, (queue->tier_rule_wait_multiply_level?"true":"false"), (queue->tier_rule_no_agent_no_wait?"true":"false"), queue->discard_abandoned_after, (queue->abandoned_resume_allowed?"true":"false"), queue->max_wait_time, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached, queue->record_template);
 					queue = NULL;
 				}
 				switch_mutex_unlock(globals.mutex);
