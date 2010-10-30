@@ -626,6 +626,10 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 				mtpLink->mtp3.ssf = SSF_NAT;
 			} else if (!strcasecmp(parm->val, "int")) {
 				mtpLink->mtp3.ssf = SSF_INTL;
+			} else if (!strcasecmp(parm->val, "spare")) {
+				mtpLink->mtp3.ssf = SSF_SPARE;
+			} else if (!strcasecmp(parm->val, "res")) {
+				mtpLink->mtp3.ssf = SSF_RES;
 			} else {
 				SS7_ERROR("\tFound an invalid ssf of \"%s\"!\n", parm->val);
 				return FTDM_FAIL;
@@ -1050,6 +1054,12 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 			} else if (!strcasecmp(parm->val, "int")) {
 				sng_isup.ssf = SSF_INTL;
 				sng_isap.ssf = SSF_INTL;
+			} else if (!strcasecmp(parm->val, "spare")) {
+				sng_isup.ssf = SSF_SPARE;
+				sng_isap.ssf = SSF_SPARE;
+			} else if (!strcasecmp(parm->val, "res")) {
+				sng_isup.ssf = SSF_RES;
+				sng_isap.ssf = SSF_RES;
 			} else {
 				SS7_ERROR("\tFound an invalid ssf of \"%s\"!\n", parm->val);
 				return FTDM_FAIL;
