@@ -81,6 +81,8 @@ typedef struct vocallo_codec_s {
 	int autoinit; /* initialize on start loop or manually */
 } vocallo_codec_t;
 
+#define ILBC_133_PAYLOAD  97
+#define ILBC_152_PAYLOAD 98
 vocallo_codec_t g_codec_map[] =
 {
 	{ SNGTC_CODEC_PCMU,    0,   "PCMU",    "Sangoma PCMU",      40, 64000,  10000, 80,  160, 80,  1 },
@@ -89,8 +91,8 @@ vocallo_codec_t g_codec_map[] =
 	{ SNGTC_CODEC_G729AB,  18,  "G729",    "Sangoma G729",      40, 8000,   10000, 80,  160, 10,  1 },
 	{ SNGTC_CODEC_G726_32, 122, "G726-32", "Sangoma G.726 32k", 40, 32000,  10000, 80,  160, 40,  1 },
 	{ SNGTC_CODEC_GSM_FR,  3,   "GSM",     "Sangoma GSM",       20, 13200,  20000, 160, 320, 33,  0 },
-	{ SNGTC_CODEC_ILBC_133, 97, "iLBC",    "Sangoma iLBC 13.3k",     -1, -1,     -1,    -1,  -1,  -1,  0 },
-	{ SNGTC_CODEC_ILBC_152, 98, "iLBC",    "Sangoma iLBC 15.2k",     -1, -1,     -1,    -1,  -1,  -1,  0 },
+	{ SNGTC_CODEC_ILBC_133, ILBC_133_PAYLOAD, "iLBC",    "Sangoma iLBC",     -1, -1,     -1,    -1,  -1,  -1,  0 },
+	{ SNGTC_CODEC_ILBC_152, ILBC_152_PAYLOAD, "iLBC",    "Sangoma iLBC",     -1, -1,     -1,    -1,  -1,  -1,  0 },
 #if 0
 	/* FIXME: sampling rate seems wrong with this, audioooo soooundssssss sloooooow ... */
 	{ SNGTC_CODEC_G722,    9,   "G722",    "Sangoma G722",      20, 64000,  20000, 160, 640, 160, 0 },
@@ -179,6 +181,17 @@ static vocallo_codec_t *get_codec_from_iana(int iana)
 	int i;
 	for (i = 0; g_codec_map[i].codec_id != -1; i++) {
 		if (iana == g_codec_map[i].iana) {
+			return &g_codec_map[i];
+		}
+	}
+	return NULL;
+}
+
+static vocallo_codec_t *get_codec_from_id(int id)
+{
+	int i;
+	for (i = 0; g_codec_map[i].codec_id != -1; i++) {
+		if (id == g_codec_map[i].codec_id) {
 			return &g_codec_map[i];
 		}
 	}
@@ -508,9 +521,19 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		}
 
 		if (encoded_frame.payload != codec->implementation->ianacode) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting %d\n",
-					encoded_frame.payload, codec->implementation->ianacode);
-			break;
+			if (sess->encoder.request.b.codec_id == SNGTC_CODEC_ILBC_152 || sess->encoder.request.b.codec_id == SNGTC_CODEC_ILBC_133) {
+				/* since we moved to SOAP based communications, the mapping between vocallo IANA and our IANA does not work, 
+				 * some codecs checks cannot be completely done, like iLBC */
+				if (encoded_frame.payload != ILBC_152_PAYLOAD && encoded_frame.payload != ILBC_133_PAYLOAD) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting either %d or %d\n",
+							encoded_frame.payload, ILBC_152_PAYLOAD, ILBC_133_PAYLOAD);
+					break;
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read unexpected payload %d in Sangoma encoder RTP session, expecting %d\n",
+						encoded_frame.payload, codec->implementation->ianacode);
+				break;
+			}
 		}
 
 		if (sess->encoder.queue_windex == sess->encoder.queue_rindex) {
@@ -1126,6 +1149,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	switch_codec_interface_t *codec_interface = NULL;
 	switch_api_interface_t *api_interface = NULL;
 	int i = 0, c = 0;
+	int ilbc_done = 0;
+	vocallo_codec_t *ilbc_codec = NULL;
 	int detected = 0, activated = 0;
 
 	/* make sure we have valid configuration */
@@ -1189,6 +1214,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 		sngtc_set_iana_code_based_on_codec_id(g_codec_map[c].codec_id, g_codec_map[c].iana);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mapped codec %d to IANA %d\n", g_codec_map[c].codec_id, g_codec_map[c].iana);
 
+		/* special check for iLBC to add a single codec interface for both ILBC bitrate versions */
+		if ((g_codec_map[c].codec_id == SNGTC_CODEC_ILBC_152 || g_codec_map[c].codec_id == SNGTC_CODEC_ILBC_133) && ilbc_done) {
+			break;
+		}
+
 		/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface 
 		 * list the core keeps, gets a codec id and set the given codec name to it.
 		 * At this point there is an empty shell codec interface registered, but not yet implementations */
@@ -1249,30 +1279,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 				
 				break;
 			case SNGTC_CODEC_ILBC_133:
-				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
-								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
-								 g_codec_map[c].iana,	/* 97, the IANA code number */
-								 g_codec_map[c].iana_name, /* the IANA code name */
-								 "mode=30",	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
-								 8000,	/* samples transferred per second */
-								 8000,	/* actual samples transferred per second */
-								 13300,	/* bits transferred per second */
-								 30000, /* microseconds per frame */
-								 240, /* samples per frame */
-								 480, /* number of bytes per frame decompressed */
-								 50, /* number of bytes per frame compressed */
-								 1,	/* number of channels represented */
-								 1, /* number of frames per network packet (I dont think this is used at all) */
-								 switch_sangoma_init,	/* function to initialize a codec session using this implementation */
-								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
-								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
-								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
-				break;
 			case SNGTC_CODEC_ILBC_152:
+				ilbc_codec = get_codec_from_id(SNGTC_CODEC_ILBC_152);
 				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
 								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
-								 g_codec_map[c].iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
-								 g_codec_map[c].iana_name, /* the IANA code name */
+								 ilbc_codec->iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
+								 ilbc_codec->iana_name, /* the IANA code name */
 								 "mode=20",	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
 								 8000,	/* samples transferred per second */
 								 8000,	/* actual samples transferred per second */
@@ -1287,6 +1299,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
 								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
 								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
+
+				ilbc_codec = get_codec_from_id(SNGTC_CODEC_ILBC_133);
+				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
+								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
+								 ilbc_codec->iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
+								 ilbc_codec->iana_name, /* the IANA code name */
+								 "mode=30",	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
+								 8000,	/* samples transferred per second */
+								 8000,	/* actual samples transferred per second */
+								 13300,	/* bits transferred per second */
+								 30000, /* microseconds per frame */
+								 240, /* samples per frame */
+								 480, /* number of bytes per frame decompressed */
+								 50, /* number of bytes per frame compressed */
+								 1,	/* number of channels represented */
+								 1, /* number of frames per network packet (I dont think this is used at all) */
+								 switch_sangoma_init,	/* function to initialize a codec session using this implementation */
+								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
+								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
+								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
+				ilbc_done = 1;
 				break;
 
 			case SNGTC_CODEC_G722:
