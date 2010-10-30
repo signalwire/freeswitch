@@ -314,11 +314,25 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			int proceed = 1;
 			int global_proceed = 1;
 			int do_extra_handlers = 1;
+			switch_io_event_hook_state_run_t *ptr;
+			switch_status_t rstatus = SWITCH_STATUS_SUCCESS;
 
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 			switch_channel_clear_flag(session->channel, CF_REDIRECT);
-
+			
+			if (session->endpoint_interface->io_routines->state_run) {
+				rstatus = session->endpoint_interface->io_routines->state_run(session);
+			}
+			
+			if (rstatus == SWITCH_STATUS_SUCCESS) {
+				for (ptr = session->event_hooks.state_run; ptr; ptr = ptr->next) {
+					if ((rstatus = ptr->state_run(session)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				}
+			}
+			
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));

@@ -61,7 +61,8 @@ typedef struct {
 
 typedef enum {
 	FIFO_APP_BRIDGE_TAG = (1 << 0),
-	FIFO_APP_TRACKING = (1 << 1)
+	FIFO_APP_TRACKING = (1 << 1),
+	FIFO_APP_DID_HOOK = (1 << 2)
 } fifo_app_flag_t;
 
 
@@ -2019,9 +2020,10 @@ static switch_status_t hanguphook(switch_core_session_t *session)
     switch_channel_t *channel = switch_core_session_get_channel(session);
     switch_channel_state_t state = switch_channel_get_state(channel);
 	
-	if (state == CS_HANGUP) {
+	if (state >= CS_HANGUP && !switch_channel_test_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_DID_HOOK)) {
 		dec_use_count(session, SWITCH_TRUE);
 		switch_core_event_hook_remove_state_change(session, hanguphook);
+		switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_DID_HOOK);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2044,6 +2046,8 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		return;
 	}
 
+	switch_core_event_hook_add_receive_message(session, messagehook);
+	switch_core_event_hook_add_state_run(session, hanguphook);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s tracking call on uuid %s!\n", switch_channel_get_name(channel), data);
 
@@ -2085,9 +2089,6 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-CID-Number", cid_number);
 		switch_event_fire(&event);
 	}
-	
-	switch_core_event_hook_add_receive_message(session, messagehook);
-	switch_core_event_hook_add_state_change(session, hanguphook);
 }
 
 
@@ -2493,6 +2494,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		if (switch_core_event_hook_remove_receive_message(session, messagehook) == SWITCH_STATUS_SUCCESS) {
 			dec_use_count(session, SWITCH_FALSE);
 			switch_core_event_hook_remove_state_change(session, hanguphook);
+			switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING);
 		}
 
 		if (!zstr(strat_str)) {
