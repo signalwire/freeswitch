@@ -93,6 +93,7 @@ vocallo_codec_t g_codec_map[] =
 	{ SNGTC_CODEC_GSM_FR,  3,   "GSM",     "Sangoma GSM",       20, 13200,  20000, 160, 320, 33,  0 },
 	{ SNGTC_CODEC_ILBC_133, ILBC_133_PAYLOAD, "iLBC",    "Sangoma iLBC",     -1, -1,     -1,    -1,  -1,  -1,  0 },
 	{ SNGTC_CODEC_ILBC_152, ILBC_152_PAYLOAD, "iLBC",    "Sangoma iLBC",     -1, -1,     -1,    -1,  -1,  -1,  0 },
+	{ SNGTC_CODEC_G723_1_63, 4, "G723",    "Sangoma G723",     90, 6300,    30000, 240,  480,  24,  0},
 #if 0
 	/* FIXME: sampling rate seems wrong with this, audioooo soooundssssss sloooooow ... */
 	{ SNGTC_CODEC_G722,    9,   "G722",    "Sangoma G722",      20, 64000,  20000, 160, 640, 160, 0 },
@@ -1216,7 +1217,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 
 		/* special check for iLBC to add a single codec interface for both ILBC bitrate versions */
 		if ((g_codec_map[c].codec_id == SNGTC_CODEC_ILBC_152 || g_codec_map[c].codec_id == SNGTC_CODEC_ILBC_133) && ilbc_done) {
-			break;
+			continue;
 		}
 
 		/* SWITCH_ADD_CODEC allocates a codec interface structure from the pool the core gave us and adds it to the internal interface 
@@ -1320,6 +1321,31 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
 								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
 				ilbc_done = 1;
+				break;
+
+			case SNGTC_CODEC_G723_1_63:
+
+				for (i = 1; i <= 3; i++) {
+					switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
+									 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
+									 g_codec_map[c].iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
+									 g_codec_map[c].iana_name, /* the IANA code name */
+									 NULL,	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
+									 8000,	/* samples transferred per second */
+									 8000,	/* actual samples transferred per second */
+									 g_codec_map[c].bps, /* bits transferred per second */
+									 g_codec_map[c].mpf * i, /* microseconds per frame */
+									 g_codec_map[c].spf * i, /* samples per frame */
+									 g_codec_map[c].bpfd * i, /* number of bytes per frame decompressed */
+									 g_codec_map[c].bpfc * i, /* number of bytes per frame compressed */
+									 1,	/* number of channels represented */
+									 g_codec_map[c].spf * i, /* number of frames per network packet (I dont think this is used at all) */
+									 switch_sangoma_init,	/* function to initialize a codec session using this implementation */
+									 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
+									 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
+									 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
+				}
+
 				break;
 
 			case SNGTC_CODEC_G722:
