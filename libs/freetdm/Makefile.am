@@ -161,7 +161,7 @@ testanalog_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 #
 # ftmod modules
 #
-mod_LTLIBRARIES = ftmod_zt.la ftmod_skel.la ftmod_analog.la ftmod_analog_em.la #ftmod_isdn.la
+mod_LTLIBRARIES = ftmod_zt.la ftmod_skel.la ftmod_analog.la ftmod_analog_em.la
 
 
 if HAVE_SCTP 
@@ -209,32 +209,13 @@ ftmod_wanpipe_la_LDFLAGS = -module -avoid-version -lsangoma
 ftmod_wanpipe_la_LIBADD  = $(MYLIB)
 endif
 
-#ftmod_isdn_la_SOURCES = \
-#$(SRC)/isdn/EuroISDNStateNT.c \
-#$(SRC)/isdn/EuroISDNStateTE.c \
-#$(SRC)/isdn/mfifo.c \
-#$(SRC)/isdn/Q921.c \
-#$(SRC)/isdn/Q931api.c \
-#$(SRC)/isdn/Q931.c \
-#$(SRC)/isdn/Q931ie.c \
-#$(SRC)/isdn/Q931mes.c \
-#$(SRC)/isdn/Q931StateNT.c \
-#$(SRC)/isdn/Q931StateTE.c \
-#$(SRC)/isdn/nationalmes.c \
-#$(SRC)/isdn/nationalStateNT.c \
-#$(SRC)/isdn/nationalStateTE.c \
-#$(SRC)/isdn/DMSmes.c \
-#$(SRC)/isdn/DMSStateNT.c \
-#$(SRC)/isdn/DMSStateTE.c \
-#$(SRC)/isdn/5ESSmes.c \
-#$(SRC)/isdn/5ESSStateNT.c \
-#$(SRC)/isdn/5ESSStateTE.c \
-#$(SRC)/isdn/Q932mes.c \
-#$(SRC)/ftmod/ftmod_isdn/ftmod_isdn.c
-
-#ftmod_isdn_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
-#ftmod_isdn_la_LDFLAGS = $(PCAP_LIB_FLAGS) -module -avoid-version
-#ftmod_isdn_la_LIBADD  = $(MYLIB)
+if HAVE_LIBISDN
+mod_LTLIBRARIES += ftmod_isdn.la
+ftmod_isdn_la_SOURCES  = $(SRC)/ftmod/ftmod_isdn/ftmod_isdn.c
+ftmod_isdn_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE $(LIBISDN_CPPFLAGS) $(PCAP_CPPFLAGS)
+ftmod_isdn_la_LDFLAGS  = -shared -module -avoid-version $(LIBISDN_LDFLAGS) $(PCAP_LDFLAGS)
+ftmod_isdn_la_LIBADD   = $(MYLIB) $(LIBISDN_LIBS) $(PCAP_LIBS)
+endif
 
 ftmod_analog_la_SOURCES = $(SRC)/ftmod/ftmod_analog/ftmod_analog.c
 ftmod_analog_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)

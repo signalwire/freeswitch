@@ -12,6 +12,7 @@ AM_INIT_AUTOMAKE(libfreetdm,0.1)
 AC_PROG_CC
 AC_PROG_MAKE_SET
 AM_PROG_CC_C_O
+PKG_PROG_PKG_CONFIG
 
 AC_PREFIX_DEFAULT(/usr/local/freetdm)
 # AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script                                                     
@@ -217,8 +218,63 @@ if test "${have_sng_ss7}" = "yes"; then
 	fi
 fi
 
+##
+# libisdn
+#
+HAVE_LIBISDN="no"
+AC_ARG_WITH([libisdn],
+	[AS_HELP_STRING([--with-libisdn], [Install ftmod_isdn (libisdn stack)])],
+	[case "${withval}" in
+	 no)	with_libisdn="no" ;;
+	 *)	with_libisdn="yes" ;;
+	 esac
+	],
+	[with_libisdn="no"]
+)
+if test "${with_libisdn}" != "no"
+then
+	AC_MSG_RESULT([${as_nl}<<>> ftmod_isdn (libisdn stack)])
+	PKG_CHECK_MODULES([libisdn],
+		[libisdn >= 0.0.1],
+		[AC_MSG_CHECKING([libisdn version])
+		 LIBISDN_VERSION="`${PKG_CONFIG} --modversion libisdn`"
+		 if test -z "${LIBISDN_VERSION}"; then
+			AC_MSG_ERROR([Failed to retrieve libisdn version])
+		 fi
+		 AC_MSG_RESULT([${LIBISDN_VERSION}])
+
+		 # check features
+		 AC_MSG_CHECKING([for new experimental API])
+		 AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM(
+				[#include <libisdn/version.h>
+				 #if !LIBISDN_FEATURE(API2)
+				 #error "libisdn API v2 not available"
+				 #endif
+				],
+				[;]
+			)],
+			[AC_MSG_RESULT([yes])],
+			[AC_MSG_RESULT([no])]
+		 )
+
+		 HAVE_LIBISDN="yes"
+		 AC_DEFINE([HAVE_LIBISDN], [1], [libisdn support])
+		 AC_SUBST([LIBISDN_CFLAGS],  [${libisdn_CFLAGS}])
+		 AC_SUBST([LIBISDN_CPPFLAGS],[${libisdn_CPPFLAGS}])
+		 AC_SUBST([LIBISDN_LDFLAGS], [${libisdn_LDFLAGS}])
+		 AC_SUBST([LIBISDN_LIBS],    [${libisdn_LIBS}])
+		 AC_SUBST([LIBISDN_VERSION])
+		],
+		[AC_MSG_ERROR([Need libisdn-0.0.1 or higher])]
+	)
+fi
+AM_CONDITIONAL([HAVE_LIBISDN], [test "${HAVE_LIBISDN}" = "yes"])
+
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
+
+AC_MSG_RESULT([${as_nl}<<>> Creating output files])
 AC_CONFIG_FILES([Makefile
 		freetdm.pc
 		mod_freetdm/Makefile])
