@@ -788,7 +788,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		switch_status_t r = SWITCH_STATUS_FALSE;
 		switch_core_session_t *other_session;
 		
-		if (switch_core_session_get_partner(tech_pvt->other_session, &other_session)) {
+		if (switch_core_session_get_partner(tech_pvt->other_session, &other_session) == SWITCH_STATUS_SUCCESS) {
 			r = switch_core_session_receive_message(other_session, msg);
 			switch_core_session_rwunlock(other_session);
 		}
