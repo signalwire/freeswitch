@@ -1590,6 +1590,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
  top:
 
+	if (!sql_manager.manage) goto skip;
+
 	/* Activate SQL database */
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
@@ -1707,6 +1709,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_execute_sql(dbh, "create index channels1 on channels(hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index calls1 on calls(hostname)", NULL);
 
+ skip:
 
 	if (sql_manager.manage) {
 		if (switch_event_bind_removable("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY,
@@ -1729,7 +1732,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_yield(10000);
 	}
 
-	switch_cache_db_release_db_handle(&dbh);
+	if (sql_manager.manage) switch_cache_db_release_db_handle(&dbh);
 
 	return SWITCH_STATUS_SUCCESS;
 }
