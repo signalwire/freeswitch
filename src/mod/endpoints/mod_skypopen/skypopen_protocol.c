@@ -15,6 +15,8 @@ extern switch_endpoint_interface_t *skypopen_endpoint_interface;
 int samplerate_skypopen = SAMPLERATE_SKYPOPEN;
 
 extern int running;
+extern char *interface_status[];
+extern char *skype_callflow[];
 
 /*************************************/
 /* suspicious globals FIXME */
