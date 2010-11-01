@@ -3483,6 +3483,12 @@ SWITCH_STANDARD_API(show_function)
 	char hostname[256] = "";
 	gethostname(hostname, sizeof(hostname));
 
+
+	if (!(cflags & SCF_USE_SQL)) {
+		stream->write_function(stream, "-ERR SQL DISABLED NO DATA AVAILABLE!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "%s", "-ERR Databse Error!\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -3514,11 +3520,6 @@ SWITCH_STANDARD_API(show_function)
 	}
 
 	holder.print_title = 1;
-
-	if (!(cflags & SCF_USE_SQL) && command && !strcasecmp(command, "channels")) {
-		stream->write_function(stream, "-ERR SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
-		goto end;
-	}
 
 	/* If you change the field qty or order of any of these select */
 	/* statements, you must also change show_callback and friends to match! */

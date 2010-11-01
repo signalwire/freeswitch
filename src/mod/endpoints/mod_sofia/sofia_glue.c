@@ -392,11 +392,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 	}
 
-	if (!tech_pvt->rm_encoding && (b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
-		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
-	}
-
-
 	if (fmtp_out_var) {
 		fmtp_out = fmtp_out_var;
 	}
@@ -433,6 +428,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	if (!port) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO PORT!\n", switch_channel_get_name(tech_pvt->channel));
 		return;
+	}
+
+	if (!tech_pvt->rm_encoding && (b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
+		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
 	}
 
 	if (!sr) {
