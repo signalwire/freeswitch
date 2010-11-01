@@ -4175,21 +4175,37 @@ static void general_event_handler(switch_event_t *event)
 
 
 				if (to_uri && from_uri && ct && es && profile_name && (profile = sofia_glue_find_profile(profile_name))) {
-					nua_handle_t *nh = nua_handle(profile->nua,
-												  NULL,
-												  NUTAG_URL(to_uri),
-												  SIPTAG_FROM_STR(from_uri),
-												  SIPTAG_TO_STR(to_uri),
-												  SIPTAG_CONTACT_STR(profile->url),
-												  TAG_END());
+					sofia_destination_t *dst = NULL;
+					nua_handle_t *nh;
+					char *route_uri = NULL;
+
+					dst = sofia_glue_get_destination((char *) to_uri);
+					
+					if (dst->route_uri) {
+						route_uri = sofia_glue_strip_uri(dst->route_uri);
+					}
+					
+					
+					nh = nua_handle(profile->nua,
+									NULL,
+									NUTAG_URL(to_uri), 
+									SIPTAG_FROM_STR(from_uri),
+									SIPTAG_TO_STR(to_uri),
+									SIPTAG_CONTACT_STR(profile->url),
+									TAG_END());
 
 					nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
-
+					
 					nua_notify(nh,
 							   NUTAG_NEWSUB(1),
 							   NUTAG_WITH_THIS(profile->nua),
+							   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+					
 
+					switch_safe_free(route_uri);
+					sofia_glue_free_destination(dst);
+					
 					sofia_glue_release_profile(profile);
 				}
 
