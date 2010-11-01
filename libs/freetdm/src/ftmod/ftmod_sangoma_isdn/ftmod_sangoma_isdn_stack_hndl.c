@@ -78,7 +78,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				break;
 			}
 			
-			sngisdn_info->suInstId = get_unique_suInstId((int8_t) suId);
+			sngisdn_info->suInstId = get_unique_suInstId(suId);
 			sngisdn_info->spInstId = spInstId;
 			
 
@@ -205,7 +205,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				sngisdn_set_flag(sngisdn_info, FLAG_DELAYED_REL);
 
 				sngisdn_info->glare.suId = suId;
-				sngisdn_info->glare.suInstId = get_unique_suInstId((int8_t) suId);
+				sngisdn_info->glare.suInstId = get_unique_suInstId(suId);
 				sngisdn_info->glare.spInstId = spInstId;
 
 				sngisdn_info->glare.dChan = dChan;

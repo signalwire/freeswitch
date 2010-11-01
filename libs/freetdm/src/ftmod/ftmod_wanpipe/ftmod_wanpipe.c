@@ -1011,6 +1011,16 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
+#if 1 
+	/* DAVIDY - Temporary fix: in the current trunk of libsangoma, for BRI, 
+		WAN_TE_BIT_ALARM_RED bit is set if the card is in disconnected state, but this has
+		not been ported to Windows-libsangoma yet */
+	if (alarms) {
+		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
+		alarms = 0;
+	}
+#endif
+
 	ftdmchan->alarm_flags = FTDM_ALARM_NONE;
 
 	if (alarms & WAN_TE_BIT_ALARM_RED) {

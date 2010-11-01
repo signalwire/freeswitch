@@ -48,7 +48,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{6374D55C-FABE-4A02-9CF1-4145308A56C5}"
 	ProjectSection(SolutionItems) = preProject
 		debug\conf\freeswitch.xml = debug\conf\freeswitch.xml
-		debug\conf\vars.xml = debug\conf\vars.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build System", "{DB1024A8-41BF-4AD7-9AE6-13202230D1F3}"
@@ -59,7 +58,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build Sys
 		configure.in = configure.in
 		Makefile.am = Makefile.am
 		build\modmake.rules.in = build\modmake.rules.in
-		build\modules.conf.in = build\modules.conf.in
 		libs\win32\util.vbs = libs\win32\util.vbs
 	EndProjectSection
 EndProject
@@ -92,13 +90,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 		conf\autoload_configs\limit.conf.xml = conf\autoload_configs\limit.conf.xml
 		conf\autoload_configs\local_stream.conf.xml = conf\autoload_configs\local_stream.conf.xml
 		conf\autoload_configs\logfile.conf.xml = conf\autoload_configs\logfile.conf.xml
-		conf\autoload_configs\modules.conf.xml = conf\autoload_configs\modules.conf.xml
 		conf\autoload_configs\openmrcp.conf.xml = conf\autoload_configs\openmrcp.conf.xml
 		conf\autoload_configs\portaudio.conf.xml = conf\autoload_configs\portaudio.conf.xml
 		conf\autoload_configs\rss.conf.xml = conf\autoload_configs\rss.conf.xml
 		conf\autoload_configs\sofia.conf.xml = conf\autoload_configs\sofia.conf.xml
 		conf\autoload_configs\spidermonkey.conf.xml = conf\autoload_configs\spidermonkey.conf.xml
-		conf\autoload_configs\switch.conf.xml = conf\autoload_configs\switch.conf.xml
 		conf\autoload_configs\syslog.conf.xml = conf\autoload_configs\syslog.conf.xml
 		conf\autoload_configs\voicemail.conf.xml = conf\autoload_configs\voicemail.conf.xml
 		conf\autoload_configs\wanpipe.conf.xml = conf\autoload_configs\wanpipe.conf.xml
@@ -123,7 +119,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{8E2E8798-8B6F-4A55-8E4F-4E6FDE40ED26}"
 	ProjectSection(SolutionItems) = preProject
 		conf\sip_profiles\external.xml = conf\sip_profiles\external.xml
-		conf\sip_profiles\internal.xml = conf\sip_profiles\internal.xml
 		conf\sip_profiles\nat.xml = conf\sip_profiles\nat.xml
 	EndProjectSection
 EndProject
@@ -212,7 +207,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{D44DD429-FE98-42AA-B5B7-4B4EBE33AEFD}"
 	ProjectSection(SolutionItems) = preProject
-		debug\conf\dialplan\default.xml = debug\conf\dialplan\default.xml
 		debug\conf\dialplan\US.conf.xml = debug\conf\dialplan\US.conf.xml
 	EndProjectSection
 EndProject
@@ -2213,12 +2207,10 @@ Global
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.All|x64.ActiveCfg = Release|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|Win32.ActiveCfg = Debug|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|Win32.Build.0 = Debug|Any CPU
-		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|x64.ActiveCfg = Debug|x64
-		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|x64.Build.0 = Debug|x64
+		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|Win32.ActiveCfg = Release|Any CPU
 		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|Win32.Build.0 = Release|Any CPU
-		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|x64.ActiveCfg = Release|x64
-		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|x64.Build.0 = Release|x64
+		{834E2B2F-5483-4B80-8FE3-FE48FF76E5C0}.Release|x64.ActiveCfg = Release|Any CPU
 		{E796E337-DE78-4303-8614-9A590862EE95}.All|Win32.ActiveCfg = Release|Win32
 		{E796E337-DE78-4303-8614-9A590862EE95}.All|Win32.Build.0 = Release|Win32
 		{E796E337-DE78-4303-8614-9A590862EE95}.All|x64.ActiveCfg = Release|Win32

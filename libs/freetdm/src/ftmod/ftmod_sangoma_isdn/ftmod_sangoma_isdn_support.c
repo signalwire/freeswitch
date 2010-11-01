@@ -91,9 +91,10 @@ FT_DECLARE_INLINE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 }
 
 
-FT_DECLARE_INLINE(uint32_t) get_unique_suInstId(uint8_t cc_id)
+FT_DECLARE_INLINE(uint32_t) get_unique_suInstId(int16_t cc_id)
 {
 	uint32_t suInstId;
+	ftdm_assert_return((cc_id > 0 && cc_id <=MAX_VARIANTS), FTDM_FAIL, "Invalid cc_id\n");
 	ftdm_mutex_lock(g_sngisdn_data.ccs[cc_id].mutex);
 	suInstId = g_sngisdn_data.ccs[cc_id].last_suInstId;
 
@@ -112,8 +113,9 @@ FT_DECLARE_INLINE(uint32_t) get_unique_suInstId(uint8_t cc_id)
 	return 0;
 }
 
-FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data)
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data)
 {
+	ftdm_assert_return((cc_id > 0 && cc_id <=MAX_VARIANTS), FTDM_FAIL, "Invalid cc_id\n");
 	ftdm_assert_return(g_sngisdn_data.ccs[cc_id].activation_done, FTDM_FAIL, "Trying to find call on unconfigured CC\n");
 
 	if (g_sngisdn_data.ccs[cc_id].active_suInstIds[suInstId] == NULL) {
@@ -123,8 +125,9 @@ FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data)
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data)
 {
+	ftdm_assert_return((cc_id > 0 && cc_id <=MAX_VARIANTS), FTDM_FAIL, "Invalid cc_id\n");
 	ftdm_assert_return(g_sngisdn_data.ccs[cc_id].activation_done, FTDM_FAIL, "Trying to find call on unconfigured CC\n");
 
 	if (g_sngisdn_data.ccs[cc_id].active_spInstIds[spInstId] == NULL) {
