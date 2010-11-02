@@ -113,13 +113,13 @@ char *interface_status[] = {	/* should match SKYPOPEN_STATE_xxx in skypopen.h */
 	"DEAD"
 };
 char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypopen.h */
-	"CALL_IDLE",
-	"CALL_DOWN",
-	"INCOMING_RNG",
+	"IDLE",
+	"DOWN",
+	"INC_RNG",
 	"CALL_DIALING",
 	"CALL_LINEBUSY",
 	"CALL_ACTIVE",
-	"INCOMING_HNG",
+	"INC_HNG",
 	"CALL_RLEASD",
 	"CALL_NOCARR",
 	"CALL_INFLUX",
@@ -129,17 +129,17 @@ char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypopen.h */
 	"CALL_OUTRESTR",
 	"CALL_SECFAIL",
 	"CALL_NOANSWER",
-	"STATUS_FNSHED",
-	"STATUS_CANCLED",
-	"STATUS_FAILED",
-	"STATUS_REFUSED",
-	"STATUS_RINGING",
-	"STATUS_INPROGRS",
-	"STATUS_UNPLACD",
-	"STATUS_ROUTING",
-	"STATUS_EARLYMD",
-	"INCOMING_CLID",
-	"STATUS_RMTEHOLD"
+	"FNSHED",
+	"CANCLED",
+	"FAILED",
+	"REFUSED",
+	"RINGING",
+	"INPROGRS",
+	"UNPLACD",
+	"ROUTING",
+	"EARLYMD",
+	"INC_CLID",
+	"RMTEHOLD"
 };
 
 
