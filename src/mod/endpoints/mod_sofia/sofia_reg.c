@@ -369,11 +369,24 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			user_via = NULL;
 			break;
 
+		case REG_STATE_TIMEOUT:
+			{
+				nua_handle_t *nh = gateway_ptr->nh;
+				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timeout Registering %s\n", gateway_ptr->name);
+
+				gateway_ptr->nh = NULL;
+				nua_handle_destroy(nh);
+				gateway_ptr->state = REG_STATE_FAILED;
+				gateway_ptr->failures++;
+				gateway_ptr->failure_status = 908;
+			}
+			break;
 		case REG_STATE_FAILED:
 			{
 				int sec;
 
-				if (gateway_ptr->failure_status == 503) {
+				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908) {
 					sec = gateway_ptr->retry_seconds;
 				} else {
 					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
@@ -384,8 +397,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->state = REG_STATE_FAIL_WAIT;
 				gateway_ptr->failure_status = 0;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n",
-								  gateway_ptr->name, sec);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration [%d], setting retry to %d seconds.\n",
+								  gateway_ptr->name, gateway_ptr->failure_status, sec);
 
 			}
 			break;
@@ -396,7 +409,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 		case REG_STATE_TRYING:
 			if (!gateway_ptr->retry || now >= gateway_ptr->retry) {
-				gateway_ptr->state = REG_STATE_FAILED;
+				gateway_ptr->state = REG_STATE_TIMEOUT;
 			}
 			break;
 		default:
