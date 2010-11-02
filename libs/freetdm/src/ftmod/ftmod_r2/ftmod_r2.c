@@ -1288,8 +1288,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			}
 		}
 
-        /* figure out what event to poll each channel for. POLLIN|POLLOUT for channels that has a call being
-         * setup, POLLPRI otherwise */
+        /* figure out what event to poll each channel for. POLLPRI when the channel is down,
+		 * POLLPRI|POLLIN|POLLOUT otherwise.
+		 */
         memset(poll_events, 0, sizeof(short)*span->chan_count);
         for (i = 0; i < span->chan_count; i++) {
             r2chan = R2CALL(span->channels[(i+1)])->r2chan;
@@ -1365,9 +1366,8 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
             }
 		} else if (status != FTDM_TIMEOUT) {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_span_poll_event returned %d.\n", status);
-        } else {
 		} 
-
+		ftdm_sleep(20);
 	}
 
 	for (i = 1; i <= span->chan_count; i++) {
