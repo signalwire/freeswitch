@@ -103,14 +103,14 @@ typedef enum {
 	GFLAG_MY_CODEC_PREFS = (1 << 0)
 } GFLAGS;
 
-#define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "]\t [DEBUG_SKYPE  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
-#define DEBUGA_CALL(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "]\t [DEBUG_CALL  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
-#define DEBUGA_PBX(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "]\t [DEBUG_PBX  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
-#define ERRORA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 		"%-*s   ["SKYPOPEN_SVN_VERSION "]\t [ERRORA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
-#define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"%-*s["SKYPOPEN_SVN_VERSION "]\t [WARNINGA     %-5d][%-15s][%s,%s] " __VA_ARGS__ );
-#define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"%-*s ["SKYPOPEN_SVN_VERSION "]\t [NOTICA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "] [DEBUG_SKYPE  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define DEBUGA_CALL(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "] [DEBUG_CALL  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define DEBUGA_PBX(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "] [DEBUG_PBX  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define ERRORA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 		"%-*s   ["SKYPOPEN_SVN_VERSION "] [ERRORA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"%-*s["SKYPOPEN_SVN_VERSION "] [WARNINGA     %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"%-*s ["SKYPOPEN_SVN_VERSION "] [NOTICA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
 
-#define SKYPOPEN_P_LOG (int)((25 - (strlen(__FILE__))) + ((__LINE__ - 1000) < 0)), " ", __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", tech_pvt ? interface_status[tech_pvt->interface_state] : "N/A", tech_pvt ? skype_callflow[tech_pvt->skype_callflow] : "N/A" 
+#define SKYPOPEN_P_LOG (int)((20 - (strlen(__FILE__))) + ((__LINE__ - 1000) < 0) + ((__LINE__ - 100) < 0)), " ", __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", tech_pvt ? interface_status[tech_pvt->interface_state] : "N/A", tech_pvt ? skype_callflow[tech_pvt->skype_callflow] : "N/A" 
 
 /*********************************/
 #define SKYPOPEN_CAUSE_NORMAL		1
