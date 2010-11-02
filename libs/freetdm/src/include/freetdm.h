@@ -667,9 +667,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signa
 /*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
 FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signaling_status_t *status);
 
-/*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
-FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
-
 /*! 
  * \brief Set user private data in the channel
  *
@@ -1178,16 +1175,6 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *spa
 FT_DECLARE(char *) ftdm_api_execute(const char *cmd);
 
 /*! 
- * \brief Disables CPU monitoring
- *
- * \note CPU monitoring is enabled by default. This means a thread will be launched at startup (ftdm_global_init)
- *       with the sole purpose of monitoring system-wide CPU usage. If the CPU usage raises above a defined
- *       threshold, no new calls will be accepted (neither incoming or outgoing)
- *
- */
-FT_DECLARE(void) ftdm_cpu_monitor_disable(void);
-
-/*! 
  * \brief Create a configuration node
  *
  * \param name The name of the configuration node
@@ -1279,7 +1266,7 @@ FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *channe
 FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *channel);
 
 /*! \brief For display debugging purposes you can display this string which describes the history of the channel 
- *  \param The channel
+ *  \param channel The channel to get the history from
  *  \return History string for the channel. You must free the string with ftdm_free
  */
 FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *channel);

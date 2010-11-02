@@ -203,9 +203,9 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
         goto end;
     }
 
-    while(t38_state_list.thread_running) {
+    switch_mutex_lock(globals.cond_mutex);
 
-		switch_mutex_lock(globals.cond_mutex);
+    while(t38_state_list.thread_running) {
 
         switch_mutex_lock(t38_state_list.mutex);
 
@@ -226,6 +226,8 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
         switch_core_timer_next(&timer);
     }
+
+    switch_mutex_unlock(globals.cond_mutex);
     
  end:
 
@@ -789,9 +791,9 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
         t38_options->T38FaxRateManagement = "transferredTCF";
         t38_options->T38FaxMaxBuffer = 2000;
         t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
-        if (strcasecmp(t38_options->T38FaxUdpEC, "t38UDPRedundancy") == 0
-            ||
-            strcasecmp(t38_options->T38FaxUdpEC, "t38UDPFEC") == 0) {
+        if (!zstr(t38_options->T38FaxUdpEC) &&
+            (strcasecmp(t38_options->T38FaxUdpEC, "t38UDPRedundancy") == 0 ||
+             strcasecmp(t38_options->T38FaxUdpEC, "t38UDPFEC") == 0)) {
             t38_options->T38FaxUdpEC = "t38UDPRedundancy";
         } else {
             t38_options->T38FaxUdpEC = NULL;
@@ -848,6 +850,12 @@ static t38_mode_t request_t38(pvt_t *pvt)
         insist = switch_true(v);
     } else {
         insist = globals.enable_t38_insist;
+    }
+
+    if ((t38_options = switch_channel_get_private(channel, "t38_options"))) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+                          "%s already has T.38 data\n", switch_channel_get_name(channel));
+        enabled = 0;
     }
 
     if (enabled) {
@@ -992,6 +1000,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	switch_frame_t write_frame = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	int16_t *buf = NULL;
+    uint32_t req_counter = 0;
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1107,10 +1116,11 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 	switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
 
-
-    /* If you have the means, I highly recommend picking one up. ...*/
-    request_t38(pvt);
-
+    if (pvt->app_mode == FUNCTION_TX) {
+        req_counter = 100;
+    } else {
+        req_counter = 50;
+    }
 
 	while (switch_channel_ready(channel)) {
 		int tx = 0;
@@ -1154,6 +1164,13 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
             break;
         case T38_MODE_UNKNOWN:
             {
+                if (req_counter) {
+                    if (!--req_counter) {
+                        /* If you have the means, I highly recommend picking one up. ...*/
+                        request_t38(pvt);
+                    }
+                }
+                
                 if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     if (negotiate_t38(pvt) == T38_MODE_NEGOTIATED) {
                         /* is is safe to call this again, it was already called above in AUDIO_MODE */

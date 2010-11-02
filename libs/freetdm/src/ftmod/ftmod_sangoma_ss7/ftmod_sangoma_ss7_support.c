@@ -44,6 +44,7 @@ uint32_t sngss7_id;
 
 /* PROTOTYPES *****************************************************************/
 uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
@@ -57,8 +58,23 @@ unsigned long get_unique_id(void);
 
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
 
+ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
+
+ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan);
+
+ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
+
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -152,8 +168,8 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 		} else {
 			/* keep the odd flag down */
 			odd = 0;
-			/* throw the flag */
-			flag = 1;
+			/* break right away since we don't need to write the digits */
+			break;
 		}
 
 		/* push the digits into the trillium structure */
@@ -254,14 +270,14 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 				upper = (atoi(&tmp[0])) << 4;
 			} else {
 				/* there is no upper ... fill in ST */
-				upper = 0xF;
-				/* throw the odd flag */
-				odd = 1;
+				upper = 0xF0;
+				/* keep the odd flag down */
+				odd = 0;
 				/* throw the end flag */
 				flag = 1;
 			} /* if (tmp != '\0') */
 		} else {
-			/* keep the odd flag down */
+			/* throw the odd flag */
 			odd = 1;
 			/* need to add the ST */
 			lower = 0xF;
@@ -324,6 +340,49 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
 		return 1;
 	}
+
+	return 0;
+}
+
+/******************************************************************************/
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
+{
+	int i = 0;
+	int j = 0;
+
+	/* check if the token string is present */
+	if (str.pres == 1) {
+		/* find the length of the digits so far */
+		j = strlen(ftdm);
+
+		/* confirm that we found an acceptable length */
+		if ( j > 25 ) {
+			SS7_ERROR("string length exceeds maxium value...aborting append!\n");
+			return 1;
+		} /* if ( j > 25 ) */
+
+		/* copy in digits */
+		for (i = 0; i < str.len; i++) {
+			/* convert 4 bit integer to char and copy into lower nibblet*/
+			sprintf(&ftdm[j], "%X", (str.val[i] & 0x0F));
+			/* move along */
+			j++;
+			/* convert 4 bit integer to char and copy into upper nibblet */
+			sprintf(&ftdm[j], "%X", ((str.val[i] & 0xF0) >> 4));
+			/* move along */
+			j++;
+		} /* for (i = 0; i < str.len; i++) */
+
+		/* if the odd flag is up the last digit is a fake "0" */
+		if ((oddEven.pres == 1) && (oddEven.val == 1)) {
+			ftdm[j-1] = '\0';
+		} else {
+			ftdm[j] = '\0';
+		} /* if ((oddEven.pres == 1) && (oddEven.val == 1)) */
+	} else {
+		SS7_ERROR("Asked to copy tknStr that is not present!\n");
+		return 1;
+	} /* if (str.pres == 1) */
 
 	return 0;
 }
@@ -446,6 +505,68 @@ unsigned long get_unique_id(void)
 }
 
 /******************************************************************************/
+ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t 		*ftdmchan = NULL;
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	int 				i;
+
+	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+			continue;
+		}
+
+		/* check if the GRP_RESET_RX flag is already up */
+		if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
+			/* we have already processed this channel...move along */
+			continue;
+		}
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		/* clear up any pending state changes */
+		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+			ftdm_sangoma_ss7_process_state_change (ftdmchan);
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "Rx GRS (%d:%d)\n", 
+				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic, 
+				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic + sngss7_span->rx_grs.range));
+
+		/* flag the channel as having received a reset */
+		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX);
+
+		switch (ftdmchan->state) {
+		/**************************************************************************/
+		case FTDM_CHANNEL_STATE_RESTART:
+
+			/* go to idle so that we can redo the restart state*/
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+
+			break;
+		/**************************************************************************/
+		default:
+
+			/* set the state of the channel to restart...the rest is done by the chan monitor */
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+			break;
+		/**************************************************************************/
+		} /* switch (ftdmchan->state) */
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+	} /* for (chans in GRS */
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t 		*ftdmchan = NULL;
@@ -456,7 +577,7 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 	int					bit = 0;
 
 
-	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %d...checking circuits\n", ftdmspan->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %s...checking circuits\n", ftdmspan->name);
 
 	/* check all the circuits in the range to see if they are done resetting */
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
@@ -493,7 +614,10 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
+			/* check if we need to die */
 			SS7_ASSERT;
+			/* move along */
+			continue;
 		}
 
 		/* throw the GRP reset flag complete flag */
@@ -535,6 +659,91 @@ GRS_UNLOCK_ALL:
 }
 
 /******************************************************************************/
+ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t 		*ftdmchan = NULL;
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	int 				i;
+
+	for (i = sngss7_span->rx_gra.circuit; i < (sngss7_span->rx_gra.circuit + sngss7_span->rx_gra.range + 1); i++) {
+
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+			continue;
+		}
+
+		/* check if the channel is already procoessing the GRA */
+		if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
+			/* move along */
+			continue;
+		}
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		/* clear up any pending state changes */
+		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+			ftdm_sangoma_ss7_process_state_change (ftdmchan);
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "Rx GRA (%d:%d)\n", 
+				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic, 
+				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic + sngss7_span->rx_gra.range));
+
+		switch (ftdmchan->state) {
+		/**********************************************************************/
+		case FTDM_CHANNEL_STATE_RESTART:
+			
+			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
+			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+
+			/* go to DOWN */
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+
+			break;
+		/**********************************************************************/
+		case FTDM_CHANNEL_STATE_DOWN:
+
+			/* do nothing, just drop the message */
+			SS7_DEBUG("Receveived GRA in down state, dropping\n");
+
+			break;
+		/**********************************************************************/
+		case FTDM_CHANNEL_STATE_TERMINATING:
+		case FTDM_CHANNEL_STATE_HANGUP:
+		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+			
+			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
+			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+
+			break;
+		/**********************************************************************/
+		default:
+			/* ITU Q764-2.9.5.1.c -> release the circuit */
+			if (sngss7_span->rx_gra.cause != 0) {
+				ftdmchan->caller_data.hangup_cause = sngss7_span->rx_gra.cause;
+			} else {
+				ftdmchan->caller_data.hangup_cause = 98;	/* Message not compatiable with call state */
+			}
+
+			/* go to terminating to hang up the call */
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+			break;
+		/**********************************************************************/
+		}
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+
+	} /* for ( circuits in request */
+
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t		*ftdmchan = NULL;
@@ -564,6 +773,11 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 		/* if we have the PAUSED flag and the sig status is still UP */
 		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) &&
 			(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
+
+			/* clear up any pending state changes */
+			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_sangoma_ss7_process_state_change (ftdmchan);
+			}
 			
 			/* throw the channel into SUSPENDED to process the flag */
 			/* after doing this once the sig status will be down */
@@ -573,6 +787,13 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 		/* if the RESUME flag is up go to SUSPENDED to process the flag */
 		/* after doing this the flag will be cleared */
 		if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) {
+
+			/* clear up any pending state changes */
+			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_sangoma_ss7_process_state_change (ftdmchan);
+			}
+
+			/* got SUSPENDED state to clear the flag */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 		}
 
@@ -588,7 +809,336 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 }
 
 /******************************************************************************/
+ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t 		*ftdmchan = NULL;
+	sngss7_chan_data_t  *sngss7_info = NULL;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	int 				i;
 
+	for (i = sngss7_span->ucic.circuit; i < (sngss7_span->ucic.circuit + sngss7_span->ucic.range + 1); i++) {
+
+		/* extract the channel in question */
+		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+			continue;
+		}
+
+		/* lock the channel */
+		ftdm_mutex_lock(ftdmchan->mutex);
+
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
+
+		/* clear up any pending state changes */
+		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+			ftdm_sangoma_ss7_process_state_change (ftdmchan);
+		}
+
+		/* throw the ckt block flag */
+		sngss7_set_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+
+		/* set the channel to suspended state */
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+
+		/* unlock the channel again before we exit */
+		ftdm_mutex_unlock(ftdmchan->mutex);
+	}
+
+	/* clear out the ucic data since we're done with it */
+	memset(&sngss7_span->ucic, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an incoming GRS */
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_DN);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info)
+{
+	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+
+	/* clear the rx_grs data fields */
+	memset(&sngss7_span->rx_grs, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info)
+{
+	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+
+	/* clear the rx_grs data fields */
+	memset(&sngss7_span->rx_gra, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+/******************************************************************************/
+ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an outgoing GRS */
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_SENT);
+	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info)
+{
+	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+
+	/* clear the rx_grs data fields */
+	memset(&sngss7_span->tx_grs, 0x0, sizeof(sngss7_group_data_t));
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+
+/******************************************************************************/
+ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an incoming RSC */
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_RX);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info)
+{
+	/* clear all the flags related to an outgoing RSC */
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_TX);
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_SENT);
+	sngss7_clear_flag(sngss7_info, FLAG_RESET_TX_RSP);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type)
+{
+	/* Q931 4.5.9 
+	 * 8	7	6	5	4	3	2	1	(octet)
+	 *
+	 * 0	1	1	1	0	0	0	1	(spare 8) ( IE id 1-7)
+	 * X	X	X	X	X	X	X	X	(length of IE contents)
+	 * 1	0	0	0	Z	0	0	0	(ext 8) (NSAP type 5-7) (odd/even 4) (spare 1-3)
+	 * X	X	X	X	X	X	X	X	(sub address encoded in ia5)
+	 */
+
+	int	x = 0;
+	int p = 0;
+	int len = 0;
+	char tmp[2];
+
+	/* initalize the second element of tmp to \0 so that atoi doesn't go to far */
+	tmp[1]='\0';
+
+	/* set octet 1 aka IE id */
+	p = 0;
+	switch(type) {
+	/**************************************************************************/
+	case SNG_CALLED:						/* called party sub address */
+		subAddrIE[p] = 0x71;
+		break;
+	/**************************************************************************/
+	case SNG_CALLING:						/* calling party sub address */
+		subAddrIE[p] = 0x6d;
+		break;
+	/**************************************************************************/
+	default:								/* not good */
+		SS7_ERROR("Sub-Address type is invalid: %d\n", type);
+		return FTDM_FAIL;
+		break;
+	/**************************************************************************/
+	} /* switch(type) */
+
+	/* set octet 3 aka type and o/e */
+	p = 2;
+	subAddrIE[p] = 0x80;
+
+	/* set the subAddrIE pointer octet 4 */
+	p = 3;
+
+	/* loop through all digits in subAddr and insert them into subAddrIE */
+	while (subAddr[x] != '\0') {
+
+		/* grab a character */
+		tmp[0] = subAddr[x];
+
+		/* confirm it is a digit */
+		if (!isdigit(tmp[0])) {
+			/* move to the next character in subAddr */
+			x++;
+
+			/* restart the loop */
+			continue;
+		}
+
+		/* convert the character to IA5 encoding and write into subAddrIE */
+		subAddrIE[p] = atoi(&tmp[0]);	/* lower nibble is the digit */
+		subAddrIE[p] |= 0x3 << 4;		/* upper nibble is 0x3 */
+
+		/* increment address length counter */
+		len++;
+
+		/* increment the subAddrIE pointer */
+		p++;
+
+		/* move to the next character in subAddr */
+		x++;
+
+	} /* while (subAddr[x] != '\0') */
+
+	/* set octet 2 aka length of subaddr */
+	p = 1;
+	subAddrIE[p] = len + 1;
+
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type)
+{
+	/* Q931 4.5.9 
+	 * 8	7	6	5	4	3	2	1	(octet)
+	 *
+	 * 0	1	1	1	0	0	0	1	(spare 8) ( IE id 1-7)
+	 * X	X	X	X	X	X	X	X	(length of IE contents)
+	 * 1	0	0	0	Z	0	0	0	(ext 8) (NSAP type 5-7) (odd/even 4) (spare 1-3)
+	 * X	X	X	X	X	X	X	X	(sub address encoded in ia5)
+	 */
+
+	int		x = 0;
+	int 	p = 0;
+	int 	len = 0;
+	char 	tmp[2];
+	int 	flag = 0;
+	int 	odd = 0;
+	uint8_t	lower = 0x0;
+	uint8_t upper = 0x0;
+
+	/* initalize the second element of tmp to \0 so that atoi doesn't go to far */
+	tmp[1]='\0';
+
+	/* set octet 1 aka IE id */
+	p = 0;
+	switch(type) {
+	/**************************************************************************/
+	case SNG_CALLED:						/* called party sub address */
+		subAddrIE[p] = 0x71;
+		break;
+	/**************************************************************************/
+	case SNG_CALLING:						/* calling party sub address */
+		subAddrIE[p] = 0x6d;
+		break;
+	/**************************************************************************/
+	default:								/* not good */
+		SS7_ERROR("Sub-Address type is invalid: %d\n", type);
+		return FTDM_FAIL;
+		break;
+	/**************************************************************************/
+	} /* switch(type) */
+
+	/* set the subAddrIE pointer octet 4 */
+	p = 3;
+
+	/* loop through all digits in subAddr and insert them into subAddrIE */
+	while (1) {
+
+		/* grab a character */
+		tmp[0] = subAddr[x];
+
+		/* confirm it is a hex digit */
+		while ((!isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+			/* move to the next character in subAddr */
+			x++;
+			tmp[0] = subAddr[x];
+		}
+
+		/* check if tmp is null or a digit */
+		if (tmp[0] != '\0') {
+			/* push it into the lower nibble using strtol to allow a-f chars */
+			lower = strtol(&tmp[0], (char **)NULL, 16);
+			/* move to the next digit */
+			x++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = subAddr[x];
+
+			/* check if the digit is a hex digit and that is not null */
+			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+				x++;
+				tmp[0] = subAddr[x];
+			} /* while(!(isdigit(tmp))) */
+
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble using strtol to allow a-f chars */
+				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
+			} else {
+				/* there is no upper ... fill in spare */
+				upper = 0x00;
+				/* throw the odd flag since we need to buffer */
+				odd = 1;
+				/* throw the end flag */
+				flag = 1;
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 0;
+
+			/* throw the flag */
+			flag = 1;
+
+			/* bounce out right away */
+			break;
+		}
+
+		/* fill in the octet */
+		subAddrIE[p] = upper | lower;
+
+		/* increment address length counter */
+		len++;
+
+		/* if the flag is we're through all the digits */
+		if (flag) break;
+
+		/* increment the subAddrIE pointer */
+		p++;
+
+		/* move to the next character in subAddr */
+		x++;
+
+	} /* while (subAddr[x] != '\0') */
+
+	/* set octet 2 aka length of subaddr */
+	p = 1;
+	subAddrIE[p] = len + 1;
+
+	/* set octet 3 aka type and o/e */
+	p = 2;
+	subAddrIE[p] = 0xa0 | (odd << 3);
+
+
+	return FTDM_SUCCESS;
+}
 
 /******************************************************************************/
 /* For Emacs:

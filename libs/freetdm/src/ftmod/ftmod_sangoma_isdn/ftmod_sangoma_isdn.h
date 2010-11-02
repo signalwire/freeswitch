@@ -38,8 +38,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <ctype.h>
 
 #include "private/ftdm_core.h"
@@ -55,6 +59,7 @@
 #define NUM_BRI_CHANNELS_PER_SPAN	2
 #define SNGISDN_EVENT_QUEUE_SIZE	100
 #define SNGISDN_EVENT_POLL_RATE		100
+#define SNGISDN_NUM_LOCAL_NUMBERS	8
 
 /* TODO: rename all *_cc_* to *_an_*  */
 
@@ -161,7 +166,7 @@ typedef struct sngisdn_chan_data {
 
 /* Span specific data */
 typedef struct sngisdn_span_data {
-	ftdm_span_t	*ftdm_span;
+	ftdm_span_t		*ftdm_span;
 	uint8_t			link_id;
 	uint8_t 		switchtype;
 	uint8_t			signalling;			/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
@@ -175,7 +180,9 @@ typedef struct sngisdn_span_data {
 	uint8_t			setup_arb;
 	uint8_t			facility;
 	int8_t			facility_timeout;
-	ftdm_sched_t	*sched;
+	uint8_t			num_local_numbers;
+	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
+	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
 } sngisdn_span_data_t;
 
@@ -259,16 +266,16 @@ extern ftdm_sngisdn_data_t	g_sngisdn_data;
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
 
 /* Support functions */
-uint32_t get_unique_suInstId(uint8_t cc_id);
-void clear_call_data(sngisdn_chan_data_t *sngisdn_info);
-void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+FT_DECLARE_INLINE(uint32_t) get_unique_suInstId(uint8_t cc_id);
+FT_DECLARE_INLINE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info);
+FT_DECLARE_INLINE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
 
 
 void stack_hdr_init(Header *hdr);
 void stack_pst_init(Pst *pst);
-ftdm_status_t get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
-ftdm_status_t get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
-ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
+FT_DECLARE_INLINE(ftdm_status_t) sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
 
 /* Outbound Call Control functions */
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);

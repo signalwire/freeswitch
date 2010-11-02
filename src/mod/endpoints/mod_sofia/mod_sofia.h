@@ -220,6 +220,7 @@ typedef enum {
 	PFLAG_T38_PASSTHRU,
 	PFLAG_CID_IN_1XX,
 	PFLAG_IN_DIALOG_CHAT,
+	PFLAG_DEL_SUBS_ON_REG,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -561,6 +562,11 @@ struct sofia_profile {
 	char *contact_user;
 	char *local_network;
 	uint32_t trans_timeout;
+	switch_time_t last_sip_event;
+	switch_time_t last_root_step;
+	uint32_t step_timeout;
+	uint32_t event_timeout;
+	int watchdog_enabled;
 };
 
 struct private_object {
@@ -577,6 +583,7 @@ struct private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
+	uint32_t bitrate;
 	switch_caller_profile_t *caller_profile;
 	uint32_t timestamp_send;
 	switch_rtp_t *rtp_session;
@@ -926,6 +933,7 @@ sofia_transport_t sofia_glue_str2transport(const char *str);
 
 const char *sofia_glue_transport2str(const sofia_transport_t tp);
 char *sofia_glue_find_parameter(const char *str, const char *param);
+char *sofia_glue_find_parameter_value(switch_core_session_t *session, const char *str, const char *param);
 char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport);
 char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport);
 char *sofia_glue_strip_uri(const char *str);
@@ -1012,3 +1020,8 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
+void sofia_glue_global_siptrace(switch_bool_t on);
+void sofia_glue_global_watchdog(switch_bool_t on);
+void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
+switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
+void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);

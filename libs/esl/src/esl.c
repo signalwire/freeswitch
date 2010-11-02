@@ -36,7 +36,10 @@
 #define closesocket(x) close(x)
 #include <fcntl.h>
 #else
+#pragma warning (disable:6386)
+/* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
+#pragma warning (default:6386)
 #endif
 
 
@@ -762,6 +765,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
  fail:
 	
 	handle->connected = 0;
+	esl_disconnect(handle);
 
 	return ESL_FAIL;
 }

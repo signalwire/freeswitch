@@ -824,7 +824,13 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
              * Modifier check.  Note that if APR_INT64_T_FMT is "d",
              * the first if condition is never true.
              */
-            if ((sizeof(APR_INT64_T_FMT) == 4 &&
+
+			/* HACK BY FREESWITCH TEAM TO FIX COMPATIBILITY 2010-09-27 */
+			if (*fmt == 'l' && *(fmt + 1) == 'l') {
+                var_type = IS_QUAD;
+				fmt += 2;
+			}
+            else if ((sizeof(APR_INT64_T_FMT) == 4 &&
                  fmt[0] == APR_INT64_T_FMT[0] &&
                  fmt[1] == APR_INT64_T_FMT[1]) ||
                 (sizeof(APR_INT64_T_FMT) == 3 &&
@@ -843,6 +849,11 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
             else if (*fmt == 'l') {
                 var_type = IS_LONG;
                 fmt++;
+				/* HACK BY FREESWITCH TEAM TO FIX COMPATIBILITY 2010-09-27 */
+				if (*fmt == 'l') {
+					var_type = IS_QUAD;
+					fmt++;
+				}
             }
             else if (*fmt == 'h') {
                 var_type = IS_SHORT;

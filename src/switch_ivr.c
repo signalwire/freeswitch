@@ -224,7 +224,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		switch_ivr_parse_all_events(session);
 
 
-		if (args && (args->input_callback || args->buf || args->buflen)) {
+		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
 			switch_dtmf_t dtmf;
 
 			/*
@@ -232,12 +232,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
-				if (!args->input_callback && !args->buf) {
+				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
-				if (args->input_callback) {
+
+				if (args->dmachine) {
+					char ds[2] = {dtmf.digit, '\0'};
+					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
 					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
@@ -263,6 +269,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
+		}
+
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 		}
 
 		if (sval && write_frame.datalen) {
@@ -876,7 +888,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	switch_time_t abs_started = 0, digit_started = 0;
 	uint32_t abs_elapsed = 0, digit_elapsed = 0;
 
-	if (!args || !args->input_callback) {
+	if (!args) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -917,8 +929,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 
 		if (switch_channel_has_dtmf(channel)) {
+			if (!args->input_callback && !args->buf && !args->dmachine) {
+				status = SWITCH_STATUS_BREAK;
+				break;
+			}
 			switch_channel_dequeue_dtmf(channel, &dtmf);
-			status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+
+			if (args->dmachine) {
+				char ds[2] = {dtmf.digit, '\0'};
+				if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			} else if (args->input_callback) {
+				status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+			}
+
 			if (digit_timeout) {
 				digit_started = switch_micro_time_now();
 			}
@@ -943,8 +968,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 			break;
 		}
 
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
 		if (read_frame && args && (args->read_frame_callback)) {
-			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+			if ((status = args->read_frame_callback(session, read_frame, args->user_data)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
@@ -1417,13 +1448,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			if (profile->callee_id_name) {
 				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", new_profile->caller_id_name);
 				new_profile->caller_id_name = switch_core_strdup(new_profile->pool, profile->callee_id_name);
-				profile->callee_id_name = NULL;
+				profile->callee_id_name = SWITCH_BLANK_STRING;
 			}
 
 			if (profile->callee_id_number) {
 				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", new_profile->caller_id_number);
 				new_profile->caller_id_number = switch_core_strdup(new_profile->pool, profile->callee_id_number);
-				profile->callee_id_number = NULL;
+				profile->callee_id_number = SWITCH_BLANK_STRING;
 			}
 		}
 		
@@ -1841,7 +1872,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channe
 	for (; hi; hi = hi->next) {
 		if (!zstr(hi->name) && !zstr(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
 			char *data;
-			switch_size_t dlen = strlen(hi->value) * 3;
+			switch_size_t dlen = strlen(hi->value) * 3 + 1;
 
 			if ((data = malloc(dlen))) {
 				memset(data, 0, dlen);
@@ -2255,6 +2286,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	if (!language) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
 		goto done;
+	}
+
+	if (!module_name) {
+		module_name = chan_lang;
 	}
 
 	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {

@@ -175,14 +175,14 @@ AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_HEADERS([sys/ioctl.h])
 AC_CHECK_HEADERS([sys/fcntl.h])
 AC_CHECK_HEADERS([audiofile.h])
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
   AC_CHECK_HEADERS([X11/X.h])
 fi
 
 AC_LANG([C++])
 
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)
@@ -193,7 +193,7 @@ fi
 
 AC_LANG([C])
 
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)

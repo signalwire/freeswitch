@@ -274,7 +274,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
-	EVENT_DISPATCH_QUEUE_RUNNING[my_id] = 1;
+	EVENT_DISPATCH_QUEUE_RUNNING[my_id] = 0;
 	THREAD_COUNT--;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
@@ -1644,14 +1644,15 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '('))) {
+				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
+					if (*vval == '(') br = 1;
 					e = vval - 1;
 					*vval++ = '\0';
 					while (*e == ' ') {
 						*e-- = '\0';
 					}
 					e = vval;
-					br = 1;
+
 					while (e && *e) {
 						if (*e == '(') {
 							br++;

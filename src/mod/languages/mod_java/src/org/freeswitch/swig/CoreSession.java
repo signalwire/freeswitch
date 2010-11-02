@@ -213,12 +213,12 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_transfer(swigCPtr, this, extension, dialplan, context);
   }
 
-  public String read(int min_digits, int max_digits, String prompt_audio_file, int timeout, String valid_terminators) {
-    return freeswitchJNI.CoreSession_read(swigCPtr, this, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators);
+  public String read(int min_digits, int max_digits, String prompt_audio_file, int timeout, String valid_terminators, int digit_timeout) {
+    return freeswitchJNI.CoreSession_read(swigCPtr, this, min_digits, max_digits, prompt_audio_file, timeout, valid_terminators, digit_timeout);
   }
 
-  public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex, String var_name) {
-    return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name);
+  public String playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, String terminators, String audio_files, String bad_input_audio_files, String digits_regex, String var_name, int digit_timeout) {
+    return freeswitchJNI.CoreSession_playAndGetDigits(swigCPtr, this, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name, digit_timeout);
   }
 
   public int streamFile(String file, int starting_sample_count) {

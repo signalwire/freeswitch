@@ -292,7 +292,8 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(int) transfer(char *extension, char *dialplan = NULL, char *context = NULL);
 
 
-		 SWITCH_DECLARE(char *) read(int min_digits, int max_digits, const char *prompt_audio_file, int timeout, const char *valid_terminators);
+		 SWITCH_DECLARE(char *) read(int min_digits, int max_digits, 
+									 const char *prompt_audio_file, int timeout, const char *valid_terminators, int digit_timeout = 0);
 
 	/** \brief Play a file into channel and collect dtmfs
 	 * 
@@ -306,7 +307,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 												 int max_digits,
 												 int max_tries,
 												 int timeout, char *terminators, char *audio_files, char *bad_input_audio_files,
-												 char *digits_regex, const char *var_name = NULL);
+												 char *digits_regex, const char *var_name = NULL, int digit_timeout = 0);
 
 	/** \brief Play a file that resides on disk into the channel
 	 *

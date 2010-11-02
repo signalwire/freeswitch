@@ -135,7 +135,7 @@ SWITCH_STANDARD_API(nat_map_function)
 	switch_bool_t sticky = SWITCH_FALSE;
 
 	if (!cmd) {
-		goto error;
+		goto usage;
 	}
 
 	if (!switch_nat_is_initialized()) {
@@ -147,9 +147,8 @@ SWITCH_STANDARD_API(nat_map_function)
 	switch_assert(mydata);
 
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-
 	if (argc < 1) {
-		goto error;
+		goto usage;
 	}
 	if (argv[0] && switch_stristr("status", argv[0])) {
 		tmp = switch_nat_status();
@@ -197,6 +196,10 @@ SWITCH_STANDARD_API(nat_map_function)
   error:
 
 	stream->write_function(stream, "false");
+	goto ok;
+
+ usage:
+	stream->write_function(stream, "USAGE: nat_map [status|reinit|republish] | [add|del] <port> [tcp|udp] [sticky]");
 
   ok:
 
@@ -1062,7 +1065,7 @@ SWITCH_STANDARD_API(url_encode_function)
 	int len = 0;
 
 	if (!zstr(cmd)) {
-		len = (strlen(cmd) * 3) + 1;
+		len = (int)(strlen(cmd) * 3) + 1;
 		switch_zmalloc(data, len);
 		switch_url_encode(cmd, data, len);
 		reply = data;
@@ -3045,7 +3048,7 @@ SWITCH_STANDARD_API(xml_wrap_api_function)
 
 		if (mystream.data) {
 			if (encoded) {
-				elen = (int) strlen(mystream.data) * 3;
+				elen = (int) strlen(mystream.data) * 3 + 1;
 				edata = malloc(elen);
 				switch_assert(edata != NULL);
 				memset(edata, 0, elen);
@@ -4215,7 +4218,7 @@ SWITCH_STANDARD_API(escape_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	len = strlen(cmd) * 2;
+	len = (int)strlen(cmd) * 2;
 	mycmd = malloc(len);
 
 	stream->write_function(stream, "%s", switch_escape_string(cmd, mycmd, len));

@@ -207,7 +207,7 @@ AC_CHECK_HEADERS([sndfile.h])
 
 AC_LANG([C])
 
-if test "${build}" == "${host}"
+if test "${build}" = "${host}"
 then
     case "${host}" in
     x86_64-*)

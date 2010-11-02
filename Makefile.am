@@ -367,14 +367,14 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 	else \
 	  if [ -d .git ] ; then \
 	    version=`git log --format="%h %ci" -1 HEAD | head -1 | sed -e 's|:|-|g' || echo hacked` ; \
-	    if [ "x$$version" == "xhacked" ] ; then \
+	    if [ "x$$version" = "xhacked" ] ; then \
 	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
 	    else \
 	      version="git-$$version" ; \
 	    fi ;\
 	  else \
 	    version=`svnversion . -n || echo hacked` ; \
-	    if [ "x$$version" == "xhacked" ] ; then \
+	    if [ "x$$version" = "xhacked" ] ; then \
 	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
 	    else \
 	      version="svn-$$version" ; \

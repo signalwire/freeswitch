@@ -775,7 +775,8 @@ SWITCH_DECLARE(char *) CoreSession::read(int min_digits,
 										 int max_digits,
 										 const char *prompt_audio_file,
 										 int timeout,
-										 const char *valid_terminators)
+										 const char *valid_terminators,
+										 int digit_timeout)
 {
 	this_check((char *)"");
 	sanity_check((char *)"");
@@ -792,7 +793,8 @@ SWITCH_DECLARE(char *) CoreSession::read(int min_digits,
 	}
 
     begin_allow_threads();
-	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, dtmf_buf, sizeof(dtmf_buf), timeout, valid_terminators);
+	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, dtmf_buf, 
+					sizeof(dtmf_buf), timeout, valid_terminators, (uint32_t)digit_timeout);
     end_allow_threads();
 
 	return dtmf_buf;
@@ -806,7 +808,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 													 char *audio_files, 
 													 char *bad_input_audio_files,
 													 char *digits_regex,
-													 const char *var_name)
+													 const char *var_name,
+													 int digit_timeout)
 {
     switch_status_t status;
 	sanity_check((char *)"");
@@ -824,7 +827,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 										 var_name,
 										 dtmf_buf, 
 										 sizeof(dtmf_buf), 
-										 digits_regex);
+										 digits_regex,
+										 (uint32_t) digit_timeout);
 
 	end_allow_threads();
 	return dtmf_buf;

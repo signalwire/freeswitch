@@ -280,6 +280,25 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
 					dtmf = "hardware";
 				}
+
+				err = sangoma_tdm_get_hw_ec(chan->sockfd, &tdm_api);
+				if (err > 0) {
+					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_HWEC);
+				}
+				
+#ifdef WP_API_FEATURE_HWEC_PERSIST
+				err = sangoma_tdm_get_hwec_persist_status(chan->sockfd, &tdm_api);
+				if (err == 0) {
+					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE);
+				}
+#else
+				if (span->trunk_type ==  FTDM_TRUNK_BRI || span->trunk_type ==  FTDM_TRUNK_BRI_PTMP) {
+					ftdm_log(FTDM_LOG_WARNING, "WP_API_FEATURE_HWEC_PERSIST feature is not supported \
+							 with your version of libsangoma, you should update your Wanpipe drivers\n");
+
+				}
+#endif
+
 			}
 
 #ifdef LIBSANGOMA_VERSION
@@ -598,18 +617,33 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case FTDM_COMMAND_ENABLE_ECHOCANCEL:
 		{
+#ifdef WP_API_FEATURE_EC_CHAN_STAT
+			err=sangoma_tdm_get_hwec_chan_status(ftdmchan->sockfd, &tdm_api);
+			if (err > 0) {
+				/* Hardware echo canceller already enabled */
+				err = 0;
+				break;
+			}
+#endif
 			err=sangoma_tdm_enable_hwec(ftdmchan->sockfd, &tdm_api);
 			if (err) {
-             			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Enable Failed");
+				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Enable Failed");
 				return FTDM_FAIL;
 			}
 		}
 		break;
 	case FTDM_COMMAND_DISABLE_ECHOCANCEL:
 		{
+#ifdef WP_API_FEATURE_EC_CHAN_STAT
+			err=sangoma_tdm_get_hwec_chan_status(ftdmchan->sockfd, &tdm_api);
+			if (!err) {
+				/* Hardware echo canceller already disabled */	
+				break;
+			}
+#endif		
 			err=sangoma_tdm_disable_hwec(ftdmchan->sockfd, &tdm_api);
 			if (err) {
-             			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Disable Failed");
+				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "HWEC Disable Failed");
 				return FTDM_FAIL;
 			}
 		}

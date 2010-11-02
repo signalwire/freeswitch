@@ -264,7 +264,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		if (globals.encode == ENCODING_TEXTXML) {
 			headers = curl_slist_append(headers, "Content-Type: text/xml");
 		} else if (globals.encode) {
-			switch_size_t need_bytes = strlen(xml_text) * 3;
+			switch_size_t need_bytes = strlen(xml_text) * 3 + 1;
 
 			xml_text_escaped = malloc(need_bytes);
 			switch_assert(xml_text_escaped);

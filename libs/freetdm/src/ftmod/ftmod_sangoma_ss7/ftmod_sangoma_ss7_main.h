@@ -58,6 +58,8 @@
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
 
+#define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
+
 typedef enum {
 	SNGSS7_CON_IND_EVENT = 0,
 	SNGSS7_CON_CFM_EVENT,
@@ -68,7 +70,10 @@ typedef enum {
 	SNGSS7_FAC_IND_EVENT,
 	SNGSS7_FAC_CFM_EVENT,
 	SNGSS7_UMSG_IND_EVENT,
-	SNGSS7_STA_IND_EVENT
+	SNGSS7_STA_IND_EVENT,
+	SNGSS7_SUSP_IND_EVENT,
+	SNGSS7_RESM_IND_EVENT,
+	SNGSS7_SSP_STA_CFM_EVENT
 } sng_event_type_t;
 
 typedef enum {
@@ -79,8 +84,19 @@ typedef enum {
 
 typedef enum {
 	CONFIGURED		= (1 << 0),
-	ACTIVE			= (1 << 1)
+	ACTIVE			= (1 << 1),
+	SNGSS7_PAUSED	= (1 << 7)
 } sng_flag_t;
+
+typedef enum {
+	SNGSS7_LPA_FOR_COT		= (1 << 0),	/* send LPA when COT arrives */
+	SNGSS7_ACM_OBCI_BITA	= (1 << 10)	/* in-band indication */
+} sng_intf_options_t;
+
+typedef enum {
+	SNG_CALLED			= 1,
+	SNG_CALLING			= 2
+} sng_addr_type_t;
 
 typedef struct sng_mtp_link {
 	char			name[MAX_NAME_LEN];
@@ -197,6 +213,7 @@ typedef struct sng_route {
 typedef struct sng_isup_intf {
 	uint32_t		id;
 	char			name[MAX_NAME_LEN];
+	uint32_t		options;
 	uint32_t		flags;
 	uint32_t		spc;
 	uint32_t		dpc;
@@ -205,6 +222,8 @@ typedef struct sng_isup_intf {
 	uint32_t		mtpRouteId;
 	uint32_t		ssf;
 	uint32_t		isap;
+	uint32_t		clg_nadi;
+	uint32_t		cld_nadi;
 	uint16_t		t4;
 	uint32_t		t10;
 	uint32_t		t11;
@@ -335,6 +354,7 @@ typedef struct sngss7_group_data {
 	uint32_t				range;
 	uint8_t					status[255];
 	uint8_t					type;
+	uint8_t					cause;
 }sngss7_group_data_t;
 
 typedef struct sngss7_chan_data {
@@ -353,11 +373,13 @@ typedef struct sngss7_chan_data {
 typedef struct sngss7_span_data {
 	ftdm_sched_t			*sched;
 	sngss7_group_data_t		rx_grs;
+	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		rx_cgb;
 	sngss7_group_data_t		tx_cgb;
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
+	sngss7_group_data_t		ucic;
 	ftdm_queue_t 			*event_queue;
 }sngss7_span_data_t;
 
@@ -379,6 +401,8 @@ typedef struct sngss7_event_data
 		SiInfoEvnt	siInfoEvnt;
 		SiFacEvnt	siFacEvnt;
 		SiStaEvnt	siStaEvnt;
+		SiSuspEvnt	siSuspEvnt;
+		SiResmEvnt	siResmEvnt;
 	} event;
 } sngss7_event_data_t;
 
@@ -427,6 +451,10 @@ extern int				cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
+/* in ftmod_sangoma_ss7_main.c */
+void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
+
+/* in ftmod_sangoma_ss7_logger.c */
 void handle_sng_log(uint8_t level, char *fmt,...);
 void handle_sng_mtp1_alarm(Pst *pst, L1Mngmt *sta);
 void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta);
@@ -434,6 +462,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta);
 void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta);
 void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta);
 
+/* in ftmod_sangoma_ss7_cfg.c */
 int ft_to_sngss7_cfg_all(void);
 int ftmod_ss7_mtp1_gen_config(void);
 int ftmod_ss7_mtp2_gen_config(void);
@@ -452,6 +481,9 @@ int ftmod_ss7_isup_ckt_config(int id);
 int ftmod_ss7_isup_isap_config(int id);
 int ftmod_ss7_cc_isap_config(int id);
 
+/* in ftmod_sangoma_ss7_cntrl.c */
+int  ft_to_sngss7_activate_all(void);
+
 int ftmod_ss7_inhibit_mtplink(uint32_t id);
 int ftmod_ss7_uninhibit_mtplink(uint32_t id);
 int ftmod_ss7_activate_mtplink(uint32_t id);
@@ -463,11 +495,12 @@ int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
 int ftmod_ss7_lpo_mtplink(uint32_t id);
 int ftmod_ss7_lpr_mtplink(uint32_t id);
 
+/* in ftmod_sangoma_ss7_sta.c */
 int ftmod_ss7_mtplink_sta(uint32_t id, SnMngmt *cfm);
 int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm);
 
-int  ft_to_sngss7_activate_all(void);
 
+/* in ftmod_sangoma_ss7_out.c */
 void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_acm(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_anm(ftdm_channel_t *ftdmchan);
@@ -487,6 +520,7 @@ void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 
+/* in ftmod_sangoma_ss7_in.c */
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
 void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -498,7 +532,11 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
+void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+void sngss7_ssp_sta_cfm(uint32_t infId);
 
+/* in ftmod_sangoma_ss7_handle.c */
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
 ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCnStEvnt *siCnStEvnt, uint8_t evntType);
 ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -508,6 +546,8 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t evntType, SiFacEvnt *siFacEvnt);
 ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
+ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
+ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
 ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
@@ -529,25 +569,46 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
 
+/* in ftmod_sangoma_ss7_xml.c */
+int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
+
+/* in ftmod_sangoma_ss7_cli.c */
+ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
+
+/* in ftmod_sangoma_ss7_support.c */
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
 uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
 uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+
 int check_for_state_change(ftdm_channel_t *ftdmchan);
 int check_cics_in_range(sngss7_chan_data_t *sngss7_info);
 int check_for_reset(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
 unsigned long get_unique_id(void);
 
-int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
-
-void handle_isup_t35(void *userdata);
-
-ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
-
+ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan);
+ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
+
+ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan);
+
+ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
+ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
+
+ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
+ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
+
+/* in ftmod_sangoma_ss7_timers.c */
+void handle_isup_t35(void *userdata);
 /******************************************************************************/
 
 /* MACROS *********************************************************************/
@@ -678,7 +739,19 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
 
-# define SS7_ASSERT	*(int*)0=0;
+#define sngss7_test_options(obj, option) ((obj)->options & option)
+#define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))
+#define sngss7_set_options(obj, option)   ((obj)->options |= (option))
+
+
+#ifdef SS7_PRODUCTION
+# define SS7_ASSERT \
+	SS7_INFO_CHAN(ftdmchan,"Production Mode, continuing%s\n", "");
+#else
+# define SS7_ASSERT	\
+	SS7_ERROR_CHAN(ftdmchan, "Debugging Mode, ending%s\n", ""); \
+	*(int*)0=0;
+#endif
 /******************************************************************************/
 
 /******************************************************************************/

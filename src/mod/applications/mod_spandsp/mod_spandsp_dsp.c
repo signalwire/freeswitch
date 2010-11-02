@@ -549,8 +549,8 @@ static switch_status_t do_config(void)
 				if (id == -1) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to add tone_descriptor: %s, tone: %s.  (too many tones)\n", name, tone_name);
 					return SWITCH_STATUS_FALSE;
-				
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding tone_descriptor: %s, tone: %s(%d)\n", name, tone_name, id);}
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding tone_descriptor: %s, tone: %s(%d)\n", name, tone_name, id);
 				/* add elements to tone */
 				for (element = switch_xml_child(tone, "element"); element; element = switch_xml_next(element)) {
 					const char *freq1_attr = switch_xml_attr(element, "freq1");

@@ -43,13 +43,15 @@
 #define SKINNY_EVENT_EXPIRE "skinny::expire"
 #define SKINNY_EVENT_ALARM "skinny::alarm"
 #define SKINNY_EVENT_CALL_STATE "skinny::call_state"
+#define SKINNY_EVENT_USER_TO_DEVICE "skinny::user_to_device"
+#define SKINNY_EVENT_DEVICE_TO_USER "skinny::device_to_user"
 
 struct skinny_globals {
     int running;
     switch_memory_pool_t *pool;
     switch_mutex_t *mutex;
     switch_hash_t *profile_hash;
-    switch_event_node_t *heartbeat_node;
+    switch_event_node_t *user_to_device_node;
     switch_event_node_t *call_state_node;
     switch_event_node_t *message_waiting_node;
     switch_event_node_t *trap_node;

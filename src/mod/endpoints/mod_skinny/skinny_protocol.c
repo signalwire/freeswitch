@@ -135,6 +135,10 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
+		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			return SWITCH_STATUS_TIMEOUT;
+		}
+
 		if (!listener_is_ready(listener)) {
 			break;
 		}
@@ -895,6 +899,68 @@ switch_status_t send_reset(listener_t *listener, uint32_t reset_type)
 	message->type = RESET_MESSAGE;
 	message->length = 4 + sizeof(message->data.reset);
 	message->data.reset.reset_type = reset_type;
+	return skinny_send_reply(listener, message);
+}
+
+switch_status_t send_data(listener_t *listener, uint32_t message_type,
+	uint32_t application_id,
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t transaction_id,
+	uint32_t data_length,
+	const char *data)
+{
+	skinny_message_t *message;
+	switch_assert(data_length == strlen(data));
+	/* data_length should be a multiple of 4 */
+	if ((data_length % 4) != 0) {
+		data_length = (data_length / 4 + 1) * 4;
+	}
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.data)+data_length-1);
+	message->type = message_type;
+	message->length = 4 + sizeof(message->data.data)+data_length-1;
+	message->data.data.application_id = application_id;
+	message->data.data.line_instance = line_instance;
+	message->data.data.call_id = call_id;
+	message->data.data.transaction_id = transaction_id;
+	message->data.data.data_length = data_length;
+	strncpy(message->data.data.data, data, data_length);
+	return skinny_send_reply(listener, message);
+}
+
+switch_status_t send_extended_data(listener_t *listener, uint32_t message_type,
+	uint32_t application_id,
+	uint32_t line_instance,
+	uint32_t call_id,
+	uint32_t transaction_id,
+	uint32_t data_length,
+	uint32_t sequence_flag,
+	uint32_t display_priority,
+	uint32_t conference_id,
+	uint32_t app_instance_id,
+	uint32_t routing_id,
+	const char *data)
+{
+	skinny_message_t *message;
+	switch_assert(data_length == strlen(data));
+	/* data_length should be a multiple of 4 */
+	if ((data_length % 4) != 0) {
+		data_length = (data_length / 4 + 1) * 4;
+	}
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.extended_data)+data_length-1);
+	message->type = message_type;
+	message->length = 4 + sizeof(message->data.extended_data)+data_length-1;
+	message->data.extended_data.application_id = application_id;
+	message->data.extended_data.line_instance = line_instance;
+	message->data.extended_data.call_id = call_id;
+	message->data.extended_data.transaction_id = transaction_id;
+	message->data.extended_data.data_length = data_length;
+	message->data.extended_data.sequence_flag = sequence_flag;
+	message->data.extended_data.display_priority = display_priority;
+	message->data.extended_data.conference_id = conference_id;
+	message->data.extended_data.app_instance_id = app_instance_id;
+	message->data.extended_data.routing_id = routing_id;
+	strncpy(message->data.extended_data.data, data, data_length);
 	return skinny_send_reply(listener, message);
 }
 

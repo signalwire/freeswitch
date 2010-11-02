@@ -265,10 +265,12 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 	}
 
 	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
-		/* find out why we returned from the interrupt queue */
-		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 2, sleep);
+
 		/* Check if there are any timers to process */
 		ftdm_sched_run(signal_data->sched);
+		
+		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 2, sleep);
+		/* find out why we returned from the interrupt queue */
 		switch (ret_status) {
 			case FTDM_SUCCESS:  /* there was a state change on the span */
 				/* process all pending state changes */			
@@ -289,13 +291,30 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 				/* twiddle */
 				break;
 			case FTDM_FAIL:
-				ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned error!\non span = %s\n", span->name);
+				ftdm_log(FTDM_LOG_ERROR,"%s:ftdm_interrupt_wait returned error!\n", span->name);
 				break;
 
 			default:
-				ftdm_log(FTDM_LOG_ERROR,"ftdm_interrupt_wait returned with unknown code on span = %s\n", span->name);
+				ftdm_log(FTDM_LOG_ERROR,"%s:ftdm_interrupt_wait returned with unknown code\n", span->name);
 				break;
 		}
+
+		/* Poll for events, e.g HW DTMF */
+		ret_status = ftdm_span_poll_event(span, 0);
+		switch(ret_status) {
+			case FTDM_SUCCESS:
+				{
+					ftdm_event_t *event;
+					while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS);
+				}
+				break;
+			case FTDM_TIMEOUT:
+				/* No events pending */
+				break;
+			default:
+				ftdm_log(FTDM_LOG_WARNING, "%s:Failed to poll span event\n", span->name);
+		}
+			
 		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
 			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
 				sleep = SNGISDN_EVENT_POLL_RATE;
@@ -726,7 +745,7 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
-{
+{	
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
 	if (sng_isdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
@@ -747,9 +766,11 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
-{
+{	
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
+	unsigned i;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
 	ftdm_log(FTDM_LOG_INFO, "Stopping span %s\n", span->name);
 	
 	/* throw the STOP_THREAD flag to signal monitor thread stop */
@@ -772,8 +793,13 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 	}
 	ftdm_iterator_free(chaniter);
 
-	ftdm_sched_destroy(&((sngisdn_span_data_t*)span->signal_data)->sched);
-	ftdm_queue_destroy(&((sngisdn_span_data_t*)span->signal_data)->event_queue);
+	ftdm_sched_destroy(&signal_data->sched);
+	ftdm_queue_destroy(&signal_data->event_queue);
+	for (i = 0 ; i < signal_data->num_local_numbers ; i++) {
+		if (signal_data->local_numbers[i] != NULL) {
+			ftdm_safe_free(signal_data->local_numbers[i]);
+		}
+	}
 	ftdm_safe_free(span->signal_data);
 
 	ftdm_log(FTDM_LOG_DEBUG, "Finished stopping span %s\n", span->name);
@@ -1003,7 +1029,7 @@ static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_isdn_io_init)
 	return FTDM_SUCCESS;
 }
 
-ftdm_module_t ftdm_module =
+EX_DECLARE_DATA ftdm_module_t ftdm_module =
 {
 	"sangoma_isdn",	               /* char name[256]; */
 	ftdm_sangoma_isdn_io_init,     /* fio_io_load_t */

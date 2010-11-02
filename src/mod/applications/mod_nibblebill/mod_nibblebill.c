@@ -419,10 +419,10 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	billaccount = switch_channel_get_variable(channel, "nibble_account");
 	
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
-		nobal_amt = atof(switch_channel_get_variable(channel, "nobal_amt"));
+		nobal_amt = (float)atof(switch_channel_get_variable(channel, "nobal_amt"));
 	}
 	if (!zstr(switch_channel_get_variable(channel, "lowbal_amt"))) {
-		lowbal_amt = atof(switch_channel_get_variable(channel, "lowbal_amt"));
+		lowbal_amt = (float)atof(switch_channel_get_variable(channel, "lowbal_amt"));
 	}
 
 	/* Return if there's no billing information on this session */

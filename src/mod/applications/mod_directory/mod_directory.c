@@ -393,7 +393,7 @@ static dir_profile_t *load_profile(const char *profile_name)
 		profile_set_config(profile);
 
 		/* Add the params to the event structure */
-		count = switch_event_import_xml(switch_xml_child(x_profile, "param"), "name", "value", &event);
+		count = (int)switch_event_import_xml(switch_xml_child(x_profile, "param"), "name", "value", &event);
 
 		if (switch_xml_config_parse_event(event, count, SWITCH_FALSE, profile->config) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to process configuration\n");
@@ -611,7 +611,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			}
 
 			if (strlen(cbr->digits) < sizeof(cbr->digits) - 2) {
-				int at = strlen(cbr->digits);
+				int at = (int)strlen(cbr->digits);
 				cbr->digits[at++] = dtmf->digit;
 				cbr->digits[at] = '\0';
 			} else {
@@ -649,25 +649,25 @@ static switch_status_t listen_entry(switch_core_session_t *session, dir_profile_
 
 	if (zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%d", DIR_RESULT_ITEM, cbt->want + 1);
-		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
+		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key, 0);
 	}
 
 	if (!zstr_buf(recorded_name) && zstr_buf(buf)) {
-		switch_ivr_read(session, 0, 1, recorded_name, NULL, buf, sizeof(buf), 1, profile->terminator_key);
+		switch_ivr_read(session, 0, 1, recorded_name, NULL, buf, sizeof(buf), 1, profile->terminator_key, 0);
 
 	}
 	if (zstr_buf(recorded_name) && zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", DIR_RESULT_SAY_NAME, cbt->fullname);
-		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
+		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key, 0);
 	}
 	if (cbt->exten_visible && zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", DIR_RESULT_AT, cbt->extension);
-		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key);
+		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), 1, profile->terminator_key, 0);
 	}
 	if (zstr_buf(buf)) {
 		switch_snprintf(macro, sizeof(macro), "phrase:%s:%c,%c,%c,%c", DIR_RESULT_MENU, *profile->select_name_key, *profile->next_key, *profile->prev_key,
 						*profile->new_search_key);
-		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), profile->digit_timeout, profile->terminator_key);
+		switch_ivr_read(session, 0, 1, macro, NULL, buf, sizeof(buf), profile->digit_timeout, profile->terminator_key, 0);
 	}
 
 	if (!zstr_buf(buf)) {

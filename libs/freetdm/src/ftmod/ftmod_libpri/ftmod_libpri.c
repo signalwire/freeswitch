@@ -374,7 +374,7 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 		},
 		{
 			ZSD_OUTBOUND,
@@ -424,7 +424,7 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_CHANNEL_STATE_DOWN, FTDM_END},
 		},
 		{
 			ZSD_INBOUND,
@@ -605,10 +605,9 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (call) {
 				pri_hangup(isdn_data->spri.pri, call, ftdmchan->caller_data.hangup_cause);
 				pri_destroycall(isdn_data->spri.pri, call);
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-			} else {
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-			}
+				ftdmchan->call_data = NULL;
+			} 
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
@@ -617,8 +616,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		{
 			sig.event_id = FTDM_SIGEVENT_STOP;
 			status = ftdm_span_send_signal(ftdmchan->span, &sig);
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-
+			/* user moves us to HANGUP and from there we go to DOWN */
 		}
 	default:
 		break;
@@ -641,10 +639,12 @@ static __inline__ void check_state(ftdm_span_t *span)
         for(j = 1; j <= span->chan_count; j++) {
             if (ftdm_test_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE)) {
 				ftdm_mutex_lock(span->channels[j]->mutex);
+		ftdm_channel_lock(span->channels[j]);
                 ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
                 state_advance(span->channels[j]);
                 ftdm_channel_complete_state(span->channels[j]);
 				ftdm_mutex_unlock(span->channels[j]->mutex);
+		ftdm_channel_unlock(span->channels[j]);
             }
         }
     }
@@ -682,17 +682,34 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 	q931_call *call = NULL;
 	ftdmchan = span->channels[pevent->hangup.channel];
 	
-	if (ftdmchan) {
-		call = (q931_call *) ftdmchan->call_data;
-		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n", spri->span->span_id, pevent->hangup.channel);
-		ftdmchan->caller_data.hangup_cause = pevent->hangup.cause;
-		pri_release(spri->pri, call, 0);
-		pri_destroycall(spri->pri, call);
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-	} else {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d %s but it's not in use?\n", spri->span->span_id,
-				pevent->hangup.channel, ftdmchan->chan_id);
+	if (!ftdmchan) {
+		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d %s but it's not in use?\n", spri->span->span_id, pevent->hangup.channel);
+		return 0;
 	}
+
+	ftdm_channel_lock(ftdmchan);
+
+	if (ftdmchan->state >= FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s\n", ftdm_channel_state2str(ftdmchan->state));
+		goto done;
+	}
+
+	if (!ftdmchan->call_data) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s with no call data\n", ftdm_channel_state2str(ftdmchan->state));
+		goto done;
+	}
+	
+	call = (q931_call *) ftdmchan->call_data;
+	ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n", spri->span->span_id, pevent->hangup.channel);
+	ftdmchan->caller_data.hangup_cause = pevent->hangup.cause;
+	pri_release(spri->pri, call, 0);
+	pri_destroycall(spri->pri, call);
+	ftdmchan->call_data = NULL;
+	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+
+done:
+
+	ftdm_channel_unlock(ftdmchan);
 
 	return 0;
 }
@@ -1087,9 +1104,16 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 						got_d = 1;
 						x++;
 						break;
+					} else {
+					    ftdm_log(FTDM_LOG_ERROR, "failed to open d-channel #%d %d:%d\n", x, span->channels[i]->span_id, span->channels[i]->chan_id);
 					}
 				}
 			}
+		}
+
+		if (!got_d) {
+			ftdm_log(FTDM_LOG_ERROR, "Failed to get a D-channel in span %d\n", span->span_id);
+			break;
 		}
 		
 		
@@ -1133,7 +1157,9 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		}
 
 		ftdm_log(FTDM_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span->span_id);
-		isdn_data->spri.dchan->state = FTDM_CHANNEL_STATE_DOWN;
+		if (isdn_data->spri.dchan) {
+			isdn_data->spri.dchan->state = FTDM_CHANNEL_STATE_DOWN;
+		}
 
 		if (!down) {
 			ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
@@ -1147,7 +1173,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		ftdm_sleep(5000);
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", isdn_data->spri.span->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", span->span_id);
 
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 	ftdm_clear_flag(isdn_data, FTMOD_LIBPRI_RUNNING);

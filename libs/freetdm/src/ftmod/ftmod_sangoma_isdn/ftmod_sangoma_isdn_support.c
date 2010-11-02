@@ -49,7 +49,7 @@ ftdm_status_t sngisdn_check_free_ids(void);
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
 void get_memory_info(void);
 
-void __inline__ clear_call_data(sngisdn_chan_data_t *sngisdn_info)
+FT_DECLARE_INLINE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 {
 	uint32_t cc_id = ((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->cc_id;
 
@@ -66,7 +66,7 @@ void __inline__ clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 	return;
 }
 
-void __inline__ clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
+FT_DECLARE_INLINE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 {
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_DEBUG, "Clearing glare data (suId:%d suInstId:%u spInstId:%u actv-suInstId:%u  actv-spInstId:%u)\n",
 										sngisdn_info->glare.suId,
@@ -91,7 +91,7 @@ void __inline__ clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 }
 
 
-uint32_t __inline__ get_unique_suInstId(uint8_t cc_id)
+FT_DECLARE_INLINE(uint32_t) get_unique_suInstId(uint8_t cc_id)
 {
 	uint32_t suInstId;
 	ftdm_mutex_lock(g_sngisdn_data.ccs[cc_id].mutex);
@@ -112,7 +112,7 @@ uint32_t __inline__ get_unique_suInstId(uint8_t cc_id)
 	return 0;
 }
 
-ftdm_status_t __inline__ get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data)
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data)
 {
 	ftdm_assert_return(g_sngisdn_data.ccs[cc_id].activation_done, FTDM_FAIL, "Trying to find call on unconfigured CC\n");
 
@@ -123,7 +123,7 @@ ftdm_status_t __inline__ get_ftdmchan_by_suInstId(uint8_t cc_id, uint32_t suInst
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t __inline__ get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data)
+FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(uint8_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data)
 {
 	ftdm_assert_return(g_sngisdn_data.ccs[cc_id].activation_done, FTDM_FAIL, "Trying to find call on unconfigured CC\n");
 
@@ -188,11 +188,11 @@ ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPt
 	}
 
 	if (cdPtyNmb->nmbPlanId.pres == PRSNT_NODEF) {
-		ftdm->cid_num.plan = cdPtyNmb->nmbPlanId.val;
+		ftdm->dnis.plan = cdPtyNmb->nmbPlanId.val;
 	}
 
 	if (cdPtyNmb->typeNmb0.pres == PRSNT_NODEF) {
-		ftdm->cid_num.type = cdPtyNmb->typeNmb0.val;
+		ftdm->dnis.type = cdPtyNmb->typeNmb0.val;
 	}
 	
 	if (cdPtyNmb->nmbDigits.pres == PRSNT_NODEF) {
@@ -424,11 +424,15 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;	
 
 	ftdm_mutex_lock(ftdmchan->mutex);
-	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
+	if (ftdmchan->caller_data.hangup_cause == IN_CCNORTTODEST || ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending delayed DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n",
 									signal_data->cc_id, sngisdn_info->glare.spInstId, sngisdn_info->glare.suInstId);
 
  		sngisdn_snd_disconnect(ftdmchan);
+		if (ftdmchan->caller_data.hangup_cause == IN_CCNORTTODEST) {
+			ftdm_channel_t *close_chan = ftdmchan;
+			ftdm_channel_close(&close_chan);
+		}
 	}
 
 	ftdm_mutex_unlock(ftdmchan->mutex);

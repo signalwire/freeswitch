@@ -125,7 +125,7 @@ su_inline
 ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
 		      struct sockaddr *from, socklen_t *fromlen)
 {
-  int retval, ilen;
+  int retval, ilen = 0;
 
   if (fromlen)
     ilen = *fromlen;

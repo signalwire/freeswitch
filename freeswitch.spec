@@ -1,11 +1,11 @@
-###############################################################################################################################
-###############################################################################################################################
+######################################################################################################################
+######################################################################################################################
 #
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
 #                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey
-#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-ru freeswitch-openzap
+#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-ru freeswitch-freetdm
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
 #
@@ -26,8 +26,8 @@
 #
 # Maintainer(s): Michal Bielicki <michal.bielicki (at) ++nospam_please++ seventhsignal.de
 #
-###############################################################################################################################
-###############################################################################################################################
+######################################################################################################################
+######################################################################################################################
 #
 # disable rpath checking
 %define __arch_install_post /usr/lib/rpm/check-buildroot
@@ -48,31 +48,31 @@ URL:          	http://www.freeswitch.org/
 Packager:     	Michal Bielicki
 Vendor:       	http://www.freeswitch.org/
 
-###############################################################################################################################
+######################################################################################################################
 #
-#							Source files and where to get them
+#					Source files and where to get them
 #
-###############################################################################################################################
+######################################################################################################################
 Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:		http://files.freeswitch.org/downloads/libs/celt-0.7.0.tar.gz
-Source2:		http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
-Source3:		http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
-Source4:		http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
-Source5:		http://files.freeswitch.org/downloads/libs/mpg123.tar.gz
-Source6:		http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source7:		http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
-Source8:		http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
-Source9:		http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
-Source10:		http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source11:		http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Prefix:         %{prefix}
+Source1:	http://files.freeswitch.org/downloads/libs/celt-0.7.1.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
+Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
+Source5:	http://files.freeswitch.org/downloads/libs/mpg123.tar.gz
+Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
+Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
+Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
+Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source11:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+Prefix:        	%{prefix}
 
 
-###############################################################################################################################
+######################################################################################################################
 #
-#										Build Dependencies
+#				Build Dependencies
 #
-###############################################################################################################################
+######################################################################################################################
 
 %if 0%{?suse_version} > 100
 #BuildRequires: openldap2-devel
@@ -103,6 +103,7 @@ BuildRequires: alsa-lib-devel
 BuildRequires: which
 BuildRequires: zlib-devel
 BuildRequires: e2fsprogs-devel
+BuildRequires: libtheora-devel
 Requires: alsa-lib
 Requires: libogg
 Requires: libvorbis
@@ -115,6 +116,9 @@ Requires: openldap
 Requires: db4
 Requires: gdbm
 Requires: zlib
+Requires: libtiff
+Requires: python
+Requires: libtheora
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -128,11 +132,11 @@ PreReq:       %insserv_prereq %fillup_prereq
 %endif
 
 
-###############################################################################################################################
+######################################################################################################################
 #
-#											Where the packages are going to be built
+#					Where the packages are going to be built
 #
-###############################################################################################################################
+######################################################################################################################
 BuildRoot:    %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
@@ -155,12 +159,12 @@ Our developers are heavily involved in open source and have donated code and oth
 other telephony projects including sipXecs, OpenSER, Asterisk, CodeWeaver and OpenPBX.
 
 
-###############################################################################################################################
+######################################################################################################################
 #
-#					    Sub Package definitions. Description and Runtime Requirements go here
-#						What goes into which package is in the files section after the whole build enchilada
+#		    Sub Package definitions. Description and Runtime Requirements go here
+#		What goes into which package is in the files section after the whole build enchilada
 #
-###############################################################################################################################
+######################################################################################################################
 
 
 %package devel
@@ -269,19 +273,23 @@ Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 German language phrases module and directory structure for say module and voicemail
 
 
-%package openzap
+%package freetdm
 Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
 Group:		System/Libraries
 Requires:        %{name} = %{version}-%{release}
+%{?with_sang_isdn: Requires: wanpipe }
+%{?with_sang_isdn: Requires: libsng_isdn }
+%{?with_sang_isdn: BuildRequires: wanpipe }
+%{?with_sang_isdn: BuildRequires: libang_isdn }
 
-%description openzap
-OpenZAP
+%description freetdm
+FreeTDM
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Unpack and prepare Source archives, copy stuff around etc ..
+#				Unpack and prepare Source archives, copy stuff around etc ..
 #
-###############################################################################################################################
+######################################################################################################################
 
 %prep
 %setup -b0 -q
@@ -297,11 +305,11 @@ cp %{SOURCE9} libs/
 cp %{SOURCE10} libs/
 cp %{SOURCE11} libs/
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Start the Build process
+#						Start the Build process
 #
-###############################################################################################################################
+######################################################################################################################
 %build
 %ifos linux
 %if 0%{?suse_version} > 1000 && 0%{?suse_version} < 1030
@@ -312,115 +320,124 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 %endif
 %endif
 
-###############################################################################################################################
+######################################################################################################################
 #
-#											Here the modules that will be build get defined
+#				Here the modules that will be build get defined
 #
-###############################################################################################################################
-###############################################################################################################################
+######################################################################################################################
+######################################################################################################################
 #
-#													Application Modules
+#						Application Modules
 #
-###############################################################################################################################
-APPLICATION_MODULES_AE="applications/mod_avmd  applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_callcenter"
-
-APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit applications/mod_memcache"
-
-APPLICATION_MODULES_NY=" applications/mod_redis applications/mod_rss applications/mod_soundtouch  applications/mod_spandsp applications/mod_stress applications/mod_spy "
-
-APPLICATION_MODULES_VZ="applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail"
+######################################################################################################################
+APPLICATION_MODULES_AE="applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
+                        applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory \
+                        applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
+                        applications/mod_esf applications/mod_expr"
+APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
+                        applications/mod_memcache"
+APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
+                        applications/mod_soundtouch applications/mod_spandsp applications/mod_spy applications/mod_stress \
+                        applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail"
 
 APPLICATIONS_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
-###############################################################################################################################
+######################################################################################################################
 #
-#													Automatic Speech Recognition and Text To Speech Modules
+#				Automatic Speech Recognition and Text To Speech Modules
 #
-###############################################################################################################################
+######################################################################################################################
 ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
-###############################################################################################################################
+######################################################################################################################
 #
-#													Codecs
+#						Codecs
 #
-###############################################################################################################################
-CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_siren codecs/mod_bv"
-###############################################################################################################################
+######################################################################################################################
+CODECS_MODULES="codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc codecs/mod_mp4v \
+                codecs/mod_silk codecs/mod_siren codecs/mod_theora"
+######################################################################################################################
 #
-#												Dialplan Modules
+#					Dialplan Modules
 #
-###############################################################################################################################
+######################################################################################################################
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
-###############################################################################################################################
+######################################################################################################################
 #
-#													Directory Modules
+#					Directory Modules
 #
-###############################################################################################################################
+######################################################################################################################
 DIRECTORIES_MODULES=""
-###############################################################################################################################
+######################################################################################################################
 #
-#													Endpoints
+#						Endpoints
 #
-###############################################################################################################################
-ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
-###############################################################################################################################
+######################################################################################################################
+ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/freetdm/mod_freetdm endpoints/mod_portaudio \
+                   endpoints/mod_sofia"
+ 
+######################################################################################################################
 #
-#													Event Handlers
+#						Event Handlers
 #
-###############################################################################################################################
-EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
-###############################################################################################################################
+######################################################################################################################
+EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_event_socket event_handlers/mod_event_multicast"
+######################################################################################################################
 #
-#													File and Audio Format Handlers
+#					File and Audio Format Handlers
 #
-###############################################################################################################################
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout formats/mod_file_string"
-###############################################################################################################################
-#
-#													Embedded Languages
-#
-###############################################################################################################################
-LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python languages/mod_spidermonkey"
-###############################################################################################################################
-#
-#													Logging Modules
-#
-###############################################################################################################################
-LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
-###############################################################################################################################
-#
-#													Passthru Codecs
-#
-###############################################################################################################################
-PASSTHRU_CODEC_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_g723_1 codecs/mod_g729"
-###############################################################################################################################
-#
-#													Phrase engine language modules
-#
-###############################################################################################################################
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_ru"
-###############################################################################################################################
-#
-#													Timers
-#
-###############################################################################################################################
-TIMERS_MODULES=
-###############################################################################################################################
-#
-#												XML Modules
-#
-###############################################################################################################################
-XML_INT_MODULES="xml_int/mod_xml_cdr xml_int/mod_xml_curl xml_int/mod_xml_rpc"
-###############################################################################################################################
-#
-#											Create one environment variable out of all the module defs
-#
-###############################################################################################################################
-MYMODULES="$PASSTHRU_CODEC_MODULES $APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
+######################################################################################################################
+FORMATS_MODULES="formats/mod_file_string formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
+                 formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Create Modules build list and set variables
+#						Embedded Languages
 #
-###############################################################################################################################
+######################################################################################################################
+LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python languages/mod_spidermonkey"
+######################################################################################################################
+#
+#						Logging Modules
+#
+######################################################################################################################
+LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
+######################################################################################################################
+#
+#						Passthru Codecs
+#
+######################################################################################################################
+PASSTHRU_CODEC_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_g723_1 codecs/mod_g729"
+######################################################################################################################
+#
+#						Phrase engine language modules
+#
+######################################################################################################################
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_ru"
+######################################################################################################################
+#
+#							Timers
+#
+######################################################################################################################
+TIMERS_MODULES=
+######################################################################################################################
+#
+#						XML Modules
+#
+######################################################################################################################
+XML_INT_MODULES="xml_int/mod_xml_cdr xml_int/mod_xml_curl xml_int/mod_xml_rpc"
+######################################################################################################################
+#
+#				Create one environment variable out of all the module defs
+#
+######################################################################################################################
+MYMODULES="$PASSTHRU_CODEC_MODULES $APPLICATIONS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES \
+$ENDPOINTS_MODULES $ASR_TTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES \
+$SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
+
+######################################################################################################################
+#
+#					Create Modules build list and set variables
+#
+######################################################################################################################
 
 export MODULES=$MYMODULES
 test ! -f  modules.conf || rm -f modules.conf
@@ -431,11 +448,11 @@ export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Bootstrap, Configure and Build the whole enchilada
+#				Bootstrap, Configure and Build the whole enchilada
 #
-###############################################################################################################################
+######################################################################################################################
 
 if test ! -f Makefile.in 
 then 
@@ -447,10 +464,10 @@ fi
                 --prefix=%{prefix} \
                 --infodir=%{_infodir} \
                 --mandir=%{_mandir} \
-				--sysconfdir=%{sysconfdir} \
-				--libdir=%{prefix}/lib \
-				--enable-core-libedit-support \
-				--enable-core-odbc-support \
+		--sysconfdir=%{sysconfdir} \
+		--libdir=%{prefix}/lib \
+		--enable-core-libedit-support \
+		--enable-core-odbc-support \
 %ifos linux
 %if 0%{?fedora_version} >= 8
 %else
@@ -467,11 +484,11 @@ touch .noversion
 %{__make}
 
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Install it and create some required dirs and links
+#				Install it and create some required dirs and links
 #
-###############################################################################################################################
+######################################################################################################################
 %install
 
 %{__make} DESTDIR=%{buildroot} install
@@ -502,11 +519,11 @@ touch .noversion
 %endif
 
 
-###############################################################################################################################
+######################################################################################################################
 #
-#										Add a freeswitch user with group daemon that will own the whole enchilada
+#			Add a freeswitch user with group daemon that will own the whole enchilada
 #
-###############################################################################################################################
+######################################################################################################################
 %pre
 %ifos linux
 if ! /usr/bin/id freeswitch &>/dev/null; then
@@ -526,11 +543,11 @@ chkconfig --add freeswitch
 
 
 %postun
-###############################################################################################################################
+######################################################################################################################
 #
-#										On uninstallation get rid of the freeswitch user
+#				On uninstallation get rid of the freeswitch user
 #
-###############################################################################################################################
+######################################################################################################################
 %{?run_ldconfig:%run_ldconfig}
 if [ $1 -eq 0 ]; then
     userdel freeswitch || %logmsg "User \"freeswitch\" could not be deleted."
@@ -540,19 +557,19 @@ fi
 %{__rm} -rf %{buildroot}
 
 %files
-###############################################################################################################################
+######################################################################################################################
 #
-#									What to install where ... first set default permissions
+#			What to install where ... first set default permissions
 #
-###############################################################################################################################
+######################################################################################################################
 %defattr(-,freeswitch,daemon)
-###############################################################################################################################
+######################################################################################################################
 #
-#													Directories
+#							Directories
 #
-###############################################################################################################################
+######################################################################################################################
 #
-#################################### Basic Directory Structure ################################################################
+#################################### Basic Directory Structure #######################################################
 #
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf
 %dir %attr(0750, freeswitch, daemon) %{prefix}/db
@@ -562,7 +579,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{runtimedir}
 %dir %attr(0750, freeswitch, daemon) %{prefix}/scripts
 #
-#################################### Config Directory Structure ################################################################
+#################################### Config Directory Structure #######################################################
 #
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan
@@ -579,7 +596,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/skinny_profiles
 #
-#################################### Grammar Directory Structure ################################################################
+#################################### Grammar Directory Structure #####################################################
 #
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/communicator
@@ -587,11 +604,11 @@ fi
 %ifos linux
 %config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
 %endif
-###############################################################################################################################
+######################################################################################################################
 #
-#													Config Files
+#						Config Files
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.tpl
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.ttml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.xml
@@ -650,60 +667,59 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_rpc.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/zeroconf.conf.xml
-###############################################################################################################################
+######################################################################################################################
 #
-#													Dialplans
+#						Dialplans
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/default/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/skinny-patterns/*.xml
-###############################################################################################################################
+######################################################################################################################
 #
-#													User Directories
+#						User Directories
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/default/*
-###############################################################################################################################
+######################################################################################################################
 #
-#													IVR Menues
+#							IVR Menues
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/ivr_menus/*.xml
-###############################################################################################################################
+######################################################################################################################
 #
-#													Sip Profiles
+#							Sip Profiles
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
-###############################################################################################################################
+######################################################################################################################
 #
-#													Other Protocol Profiles (skinny, jingle, mrcp)
+#				Other Protocol Profiles (skinny, jingle, mrcp)
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/skinny_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/jingle_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mrcp_profiles/*.xml
-###############################################################################################################################
+######################################################################################################################
 #
-#													Grammar Files
+#						Grammar Files
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/default.dic
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/wsj1/*
-###############################################################################################################################
+######################################################################################################################
 #
-#													Other Fíles
+#						Other Fíles
 #
-###############################################################################################################################
+######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
 %ifos linux
-#/etc/ld.so.conf.d/*
 /etc/rc.d/init.d/freeswitch
 /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
@@ -713,23 +729,27 @@ fi
 %ifos linux
 %dir %attr(0750, root, root) /etc/monit.d
 %endif
-###############################################################################################################################
+######################################################################################################################
 #
-#													Binaries
+#						Binaries
 #
-###############################################################################################################################
+######################################################################################################################
 %attr(0755, freeswitch, daemon) %{prefix}/bin/*
 %{prefix}/lib/libfreeswitch*.so*
-###############################################################################################################################
+######################################################################################################################
 #
-#									Modules in Alphabetical Order, please keep them that way..
+#			Modules in Alphabetical Order, please keep them that way..
 #
-###############################################################################################################################
+######################################################################################################################
 %{prefix}/mod/mod_amrwb.so*
 %{prefix}/mod/mod_avmd.so*
 %{prefix}/mod/mod_bv.so*
+%{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_cdr_csv.so*
 %{prefix}/mod/mod_celt.so*
+%{prefix}/mod/mod_cidlookup.so*
+%{prefix}/mod/mod_cluechoo.so*
+%{prefix}/mod/mod_codec2.so*
 %{prefix}/mod/mod_console.so*
 %{prefix}/mod/mod_commands.so*
 %{prefix}/mod/mod_conference.so*
@@ -747,7 +767,6 @@ fi
 %{prefix}/mod/mod_event_multicast.so* 
 %{prefix}/mod/mod_event_socket.so* 
 %{prefix}/mod/mod_expr.so*
-%{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_fifo.so*
 %{prefix}/mod/mod_file_string.so*
 %{prefix}/mod/mod_flite.so*
@@ -761,14 +780,19 @@ fi
 %{prefix}/mod/mod_logfile.so*
 %{prefix}/mod/mod_loopback.so*
 %{prefix}/mod/mod_memcache.so*
+%{prefix}/mod/mod_mp4v.so*
 %{prefix}/mod/mod_native_file.so*
+%{prefix}/mod/mod_nibblebill.so*
 %{prefix}/mod/mod_pocketsphinx.so*
 %{prefix}/mod/mod_portaudio.so*
+%{prefix}/mod/mod_portaudio_stream.so*
 %{prefix}/mod/mod_redis.so*
 %{prefix}/mod/mod_rss.so*
 %{prefix}/mod/mod_shout.so*
+%{prefix}/mod/mod_silk.so*
 %{prefix}/mod/mod_siren.so*
 %{prefix}/mod/mod_sndfile.so*
+%{prefix}/mod/mod_snom.so*
 %{prefix}/mod/mod_sofia.so*
 %{prefix}/mod/mod_soundtouch.so*
 %{prefix}/mod/mod_spandsp.so*
@@ -776,6 +800,7 @@ fi
 %{prefix}/mod/mod_spy.so*
 %{prefix}/mod/mod_stress.so*
 %{prefix}/mod/mod_syslog.so*
+%{prefix}/mod/mod_theora.so*
 %{prefix}/mod/mod_tone_stream.so*
 %{prefix}/mod/mod_unimrcp.so*
 %{prefix}/mod/mod_valet_parking.so*
@@ -784,13 +809,11 @@ fi
 %{prefix}/mod/mod_xml_cdr.so*
 %{prefix}/mod/mod_xml_curl.so* 
 %{prefix}/mod/mod_xml_rpc.so* 
-
-
-###############################################################################################################################
+######################################################################################################################
 #
-#													Package for the developer
+#						Package for the developer
 #
-###############################################################################################################################
+######################################################################################################################
 %files devel
 %defattr(-, freeswitch, daemon)
 %{prefix}/lib/*.a
@@ -799,29 +822,28 @@ fi
 %{prefix}/mod/*.a
 %{prefix}/mod/*.la
 %{prefix}/include/*.h
-
-###############################################################################################################################
+######################################################################################################################
 #
-#													OpenZAP Module for TDM Interaction
+#						OpenZAP Module for TDM Interaction
 #
-###############################################################################################################################
-%files openzap
+######################################################################################################################
+%files freetdm
 %defattr(-, freeswitch, daemon)
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/tones.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/openzap.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/freetdm.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/pika.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/openzap.conf
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/freetdm.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/wanpipe.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/zt.conf
-%{prefix}/lib/libopenzap.so*
-%{prefix}/mod/mod_openzap.so*
-%{prefix}/mod/ozmod_*.so*
+%{prefix}/lib/libfreetdm.so*
+%{prefix}/mod/mod_freetdm.so*
+%{prefix}/mod/ftm*.so*
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Passthru Codec Modules
+#						Passthru Codec Modules
 #
-###############################################################################################################################
+######################################################################################################################
 %files codec-passthru-amrwb
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_amrwb.so*
@@ -838,12 +860,11 @@ fi
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_g729.so*
 
-
-###############################################################################################################################
+######################################################################################################################
 #
-#											Embedded Language Modules
+#					Embedded Language Modules
 #
-###############################################################################################################################
+######################################################################################################################
 %files spidermonkey
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_spidermonkey*.so*
@@ -874,11 +895,11 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/python.conf.xml
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Language Modules
+#						Language Modules
 #
-###############################################################################################################################
+######################################################################################################################
 %files lang-en
 %defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en
@@ -922,12 +943,24 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 %{prefix}/mod/mod_say_ru.so*
 
-###############################################################################################################################
+######################################################################################################################
 #
-#													Changelog
+#						Changelog
 #
-###############################################################################################################################
+######################################################################################################################
 %changelog
+* Sat Oct 09 2010 - michal.bielicki@seventhsignal.de
+- added mod_silk
+- added mod_codec2
+- moved from openzap to freetdm to make way for inclusion of libsng_isdn and wanpipe
+- added mod_freetdm
+- added mod_cidlookup
+- added more runtime dependencies
+* Thu Sep 30 2010 - michal.bielicki@seventhsignal.de
+- added mod_nibblebill to standard modules
+* Sun Sep 26 2010 - michal.bielicki@seventhsignal.de
+- added portaudio_stream module
+- some more formating work
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
 - new hash module config file added to freeswitch.spec
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de

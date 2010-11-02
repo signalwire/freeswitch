@@ -468,6 +468,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				continue;
 			}
 
+			if (switch_channel_test_flag(chan_a, CF_BRIDGE_NOWRITE)) {
+				continue;
+			}
+
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
 				if (switch_core_session_write_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
@@ -839,13 +843,26 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 {
 	switch_core_session_message_t msg = { 0 };
 	switch_channel_t *channel = NULL;
+	switch_event_t *event;
+	switch_channel_state_t state;
 
 	channel = switch_core_session_get_channel(session);
+	state = switch_channel_get_state(channel);
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
 	msg.string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
 
+	if (state == CS_ROUTING) {
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+			switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
+		}
+	}
+	
 	switch_core_session_receive_message(session, &msg);
 	switch_core_event_hook_remove_state_change(session, hanguphook);
 
@@ -859,6 +876,7 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 	const char *key;
 	switch_core_session_message_t msg = { 0 };
 	switch_event_t *event = NULL;
+	switch_ivr_dmachine_t *dmachine;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -885,6 +903,19 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 			switch_event_fire(&event);
 		}
 	}
+
+	if ((dmachine = switch_core_session_get_dmachine(session))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "%s not hibernating due to active digit parser, semi-hibernation engaged.\n", switch_channel_get_name(channel));
+
+		while(switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_HIBERNATE) {
+			if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
+				switch_ivr_dmachine_ping(dmachine, NULL);
+			}
+			switch_yield(20000);
+		}
+	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -963,6 +994,12 @@ static const switch_state_handler_table_t signal_bridge_state_handlers = {
 	/*.on_hibernate */ signal_bridge_on_hibernate
 };
 
+static void check_bridge_export(switch_channel_t *channel, switch_channel_t *peer_channel)
+{
+	switch_channel_process_export(peer_channel, channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
+	switch_channel_process_export(channel, peer_channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
@@ -978,6 +1015,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_channel_hangup(peer_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		return SWITCH_STATUS_FALSE;
 	}
+
+	check_bridge_export(caller_channel, peer_channel);
 
 	switch_channel_set_flag_recursive(caller_channel, CF_SIGNAL_BRIDGE_TTL);
 	switch_channel_set_flag_recursive(peer_channel, CF_SIGNAL_BRIDGE_TTL);
@@ -1054,7 +1093,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		return switch_ivr_signal_bridge(session, peer_session);
 	}
 
-
+	check_bridge_export(caller_channel, peer_channel);
+	
 	switch_channel_set_flag_recursive(caller_channel, CF_MEDIA_BRIDGE_TTL);
 	switch_channel_set_flag_recursive(peer_channel, CF_MEDIA_BRIDGE_TTL);
 

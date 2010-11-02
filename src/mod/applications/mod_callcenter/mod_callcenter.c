@@ -402,6 +402,7 @@ static struct {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
+	char *dbname;
 	int32_t threads;
 	int32_t running;
 	switch_mutex_t *mutex;
@@ -506,7 +507,7 @@ switch_cache_db_handle_t *cc_get_db_handle(void)
 			dbh = NULL;
 		return dbh;
 	} else {
-		options.core_db_options.db_path = CC_SQLITE_DB_NAME;
+		options.core_db_options.db_path = globals.dbname;
 		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
 			dbh = NULL;
 		return dbh;
@@ -1258,6 +1259,8 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcasecmp(var, "dbname")) {
+				globals.dbname = strdup(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
 				globals.odbc_dsn = strdup(val);
 
@@ -1271,6 +1274,9 @@ static switch_status_t load_config(void)
 				}
 			}
 		}
+	}
+	if (!globals.dbname) {
+		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
 
 	/* Loading queue into memory struct */
@@ -1498,7 +1504,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		/* Update Agents Items */
 		/* Do not remove uuid of the agent if we are a standby agent */
-		sql = switch_mprintf("UPDATE agents SET %q last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
+		sql = switch_mprintf("UPDATE agents SET %s last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
 				, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""),  (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -2675,9 +2681,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
-
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	switch_status_t status;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
@@ -2685,11 +2689,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_core_hash_init(&globals.queue_hash, globals.pool);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
+	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
 	switch_mutex_lock(globals.mutex);
 	globals.running = 1;
 	switch_mutex_unlock(globals.mutex);
 
-	load_config();
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	if (!AGENT_DISPATCH_THREAD_STARTED) {
 		cc_agent_dispatch_thread_start();
@@ -2770,6 +2779,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 	}
 
 	switch_safe_free(globals.odbc_dsn);
+	switch_safe_free(globals.dbname);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;

@@ -193,10 +193,12 @@ ftdm_status_t sng_isdn_stack_cfg_phy_gen(void)
 
 ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
 {
-	/*local variables*/
-    L1Mngmt     cfg;    /*configuration structure*/
-    Pst         pst;    /*post structure*/
+	ftdm_iterator_t 	*chaniter;
+	ftdm_iterator_t 	*curr;	
+    L1Mngmt				cfg;
+    Pst					pst;
 
+	S32 				d_channel_fd = -1;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
     /* initalize the post structure */
@@ -219,20 +221,35 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
 
 	cfg.hdr.elmId.elmntInst1    = signal_data->link_id;
 
-    cfg.t.cfg.s.l1PSAP.span	= span->channels[1]->physical_span_id;
+
+	/* Find the d-channel */
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
+			d_channel_fd = (S32) ftdmchan->sockfd;
+			break;
+		}
+	}
+	ftdm_iterator_free(chaniter);
+
+	if(d_channel_fd < 0) {
+		ftdm_log(FTDM_LOG_ERROR, "%s:No d-channels specified\n", span->name);
+		return FTDM_FAIL;
+	}
+	
+	cfg.t.cfg.s.l1PSAP.sockfd = d_channel_fd;
+	
 	switch(span->trunk_type) {
 		case FTDM_TRUNK_E1:
-			cfg.t.cfg.s.l1PSAP.chan	= 16;
 			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_PRI;
 			break;
 		case FTDM_TRUNK_T1:
 		case FTDM_TRUNK_J1:
-			cfg.t.cfg.s.l1PSAP.chan	= 24;
 			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_PRI;
 			break;
 		case FTDM_TRUNK_BRI:
 		case FTDM_TRUNK_BRI_PTMP:
-			cfg.t.cfg.s.l1PSAP.chan	= 3;
 			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_BRI;
 			break;
 		default:

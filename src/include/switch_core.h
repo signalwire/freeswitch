@@ -704,7 +704,8 @@ SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_
 
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
-
+SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine);
+SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session);
 
 /*! 
   \brief Retrieve the unique identifier from the core
@@ -1339,15 +1340,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS if the handle is allocated
 */
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec,
+#define switch_core_codec_init(_codec, _codec_name, _fmtp, _rate, _ms, _channels, _flags, _codec_settings, _pool) \
+	switch_core_codec_init_with_bitrate(_codec, _codec_name, _fmtp, _rate, _ms, _channels, 0, _flags, _codec_settings, _pool)
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec_t *codec,
 													   const char *codec_name,
 													   const char *fmtp,
 													   uint32_t rate,
 													   int ms,
 													   int channels,
+													   uint32_t bitrate,
 													   uint32_t flags, const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool);
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_copy(switch_codec_t *codec, switch_codec_t *new_codec, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_codec_parse_fmtp(const char *codec_name, const char *fmtp, uint32_t rate, switch_codec_fmtp_t *codec_fmtp);
 SWITCH_DECLARE(switch_status_t) switch_core_codec_reset(switch_codec_t *codec);
 
 /*! 
@@ -2163,6 +2168,7 @@ SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
+SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 
 SWITCH_END_EXTERN_C
 #endif
