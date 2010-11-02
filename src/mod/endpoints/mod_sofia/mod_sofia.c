@@ -4092,8 +4092,9 @@ static int notify_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *es = argv[5];
 	char *body = argv[6];
 	char *id = NULL;
-	char *p, *contact;
-
+	char *contact;
+	sofia_destination_t *dst = NULL;
+	char *route_uri = NULL;
 
 	if (profile_name && strcasecmp(profile_name, profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -4105,16 +4106,24 @@ static int notify_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_assert(id);
 	contact = sofia_glue_get_url_from_contact(contact_in, 1);
 
-	if ((p = strstr(contact, ";fs_"))) {
-		*p = '\0';
+
+	dst = sofia_glue_get_destination((char *) contact);
+	
+	if (dst->route_uri) {
+		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 
-	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-
+	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+	
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
-	nua_notify(nh, NUTAG_NEWSUB(1), SIPTAG_EVENT_STR(es), SIPTAG_CONTENT_TYPE_STR(ct), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+	nua_notify(nh, NUTAG_NEWSUB(1), 
+			   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+			   SIPTAG_EVENT_STR(es), SIPTAG_CONTENT_TYPE_STR(ct), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+	
 
+	switch_safe_free(route_uri);
+	sofia_glue_free_destination(dst);
 
 	free(id);
 	free(contact);
@@ -4199,7 +4208,7 @@ static void general_event_handler(switch_event_t *event)
 					nua_notify(nh,
 							   NUTAG_NEWSUB(1),
 							   NUTAG_WITH_THIS(profile->nua),
-							   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+							   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->contact)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
 					
 
