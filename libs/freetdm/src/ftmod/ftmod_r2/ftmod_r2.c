@@ -255,7 +255,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 {
 	openr2_call_status_t callstatus;
 	ftdm_r2_data_t *r2data;
-	int safety = 100;
 
 	r2data = ftdmchan->span->signal_data;
 
@@ -281,31 +280,12 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
         return FTDM_FAIL;
     }
 
-	/* this waiting for flag cleared function releases the ftdmchan lock to give a chance to the monitor thread 
-	 * to process openr2 events and dial out, or see if an incoming call is arriving just now, then openr2 will 
-	 * call in the monitor thread the on_call_collision or on_call_acknowledged callbacks where this flag 
-	 * will be cleared, the lock will be re-acquired here and we continue within this function to inform the user 
-	 * whether the call is being placed or collision occurred and another channel must be hunted */
-	ftdm_set_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
-	while (safety-- && ftdm_test_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK)) {
-		ftdm_mutex_unlock(ftdmchan->mutex);
-		ftdm_sleep(10);
-		ftdm_mutex_lock(ftdmchan->mutex);
-	}
-
-	if (ftdm_test_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK)) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Waiting ack flag was never cleared!\n");
-		ftdm_clear_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
-		return FTDM_FAIL;
-	}
-	
 	if (ftdmchan->state !=  FTDM_CHANNEL_STATE_DIALING) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Collision after call attempt, try another channel, new state = %s\n",
 				ftdm_channel_state2str(ftdmchan->state));
 		ftdm_clear_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
 		return FTDM_BREAK;
 	}
-
 
     /* non-threaded implementation, we're done here */
     ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "R2 call placed in non-threaded mode\n");
@@ -328,29 +308,6 @@ static ftdm_status_t ftdm_r2_stop(ftdm_span_t *span)
 	}
 	return FTDM_SUCCESS;
 }
-
-#if 0
-static ftdm_status_t ftdm_r2_sig_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size)
-{
-	ftdm_r2_call_t *r2call = R2CALL(ftdmchan);
-	openr2_chan_t *r2chan = r2call->r2chan;
-	if (openr2_chan_get_read_enabled(r2chan) && !ftdm_test_flag(r2call, FTDM_R2_PROCESSING)) {
-		if (r2call->txdrops < 10) {
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "dropping user write because there is R2 processing\n");
-		} else if (r2call->txdrops == 10) {
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "too may drops, not logging any more\n");
-		}
-		r2call->txdrops++;
-		return FTDM_BREAK;
-	}
-	if (!openr2_chan_get_read_enabled(r2chan)) {
-		ftdm_mutex_lock(ftdmchan->mutex);
-		//openr2_chan_process_output(r2chan, data, size);
-		ftdm_mutex_unlock(ftdmchan->mutex);
-	}
-	return FTDM_SUCCESS;
-}
-#endif
 
 static ftdm_status_t ftdm_r2_sig_read(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size)
 {
@@ -688,24 +645,6 @@ static void ftdm_r2_on_ani_digit_received(openr2_chan_t *r2chan, char digit)
 	R2CALL(ftdmchan)->ani_index = collected_len;
 }
 
-/* XXX missing on openr2 XXX */
-#if 0
-static void ftdm_r2_on_call_collision(openr2_chan_t *r2chan)
-{
-	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-	ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Call collision detected, outgoing call attempt failed, state = %s\n", ftdm_channel_state2str(ftdmchan->state));
-	ftdm_clear_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
-	ftdm_channel_close(&ftdmchan);
-}
-
-static void ftdm_r2_on_call_acknowledged(openr2_chan_t *r2chan)
-{
-	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Outgoing call proceeding\n");
-	ftdm_clear_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
-}
-#endif
-
 static openr2_event_interface_t ftdm_r2_event_iface = {
 	.on_call_init = ftdm_r2_on_call_init,
 	.on_call_offered = ftdm_r2_on_call_offered,
@@ -725,12 +664,6 @@ static openr2_event_interface_t ftdm_r2_event_iface = {
 	.on_ani_digit_received = ftdm_r2_on_ani_digit_received,
 	/* so far we do nothing with billing pulses */
 	.on_billing_pulse_received = NULL,
-
-    /* XXX these two events are missing on openr2 XXX */
-#if 0
-    .on_call_collision = ftdm_r2_on_call_collision,
-    .on_call_acknowledged = ftdm_r2_on_call_acknowledged,
-#endif
 };
 
 static int ftdm_r2_io_set_cas(openr2_chan_t *r2chan, int cas)
@@ -853,22 +786,6 @@ static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *e
 	*event = 0;
 	ftdm_log(FTDM_LOG_ERROR, "I should not be called (I/O get oob event)!!\n");
 	return 0;
-
-#if 0
-	ftdm_status_t status;
-	ftdm_event_t *fevent = NULL;
-	ftdm_channel_t *ftdmchan = openr2_chan_get_fd(r2chan);
-	*event = OR2_OOB_EVENT_NONE;
-	status = ftdm_channel_read_event(ftdmchan, &fevent);
-	if (status != FTDM_SUCCESS) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "failed to retrieve freetdm event!\n");
-		return -1;
-	}
-	if (fevent->e_type == FTDM_EVENT_OOB && fevent->enum_id == FTDM_OOB_CAS_BITS_CHANGE) {
-		*event = OR2_OOB_EVENT_CAS_CHANGE;
-	}
-	return 0;
-#endif
 }
 
 static openr2_io_interface_t ftdm_r2_io_iface = {
@@ -1411,8 +1328,10 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 				}
 			}
 
-            /* XXX when ftdm_span_poll_event() returns FTDM_SUCCESS, means there are events pending on the span,
-             * is it possible to know on what channel there were events, without traversing the span? XXX
+            /* XXX
+			 * when ftdm_span_poll_event() returns FTDM_SUCCESS, means there are events pending on the span.
+			 * is it possible to know on which channels those events are pending, without trasvering the span?
+			 * XXX
              */
             for (i = 1; i <= span->chan_count; i++) {
                 r2chan = R2CALL(span->channels[i])->r2chan;
@@ -1627,13 +1546,6 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 					char rxavg_str[25];
 					char txavg_str[25];
 					r2chan = R2CALL(span->channels[i])->r2chan;
-#if 0
-					openr2_chan_get_stats(r2chan, &stats);
-					snprintf(rx_str, sizeof(rx_str), "%lu", stats.rxcount);
-					snprintf(tx_str, sizeof(tx_str), "%lu", stats.txcount);
-					snprintf(rxavg_str, sizeof(rxavg_str), "%u", stats.rxavg);
-					snprintf(txavg_str, sizeof(txavg_str), "%u", stats.txavg);
-#endif
 					stream->write_function(stream, "%4d    %-12.12s %-12.12s %6s %6s %6s %6s\n", 
 							span->channels[i]->chan_id,
 							openr2_chan_get_tx_cas_string(r2chan),
