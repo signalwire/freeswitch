@@ -2414,7 +2414,9 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							profile->dtmf_type = DTMF_NONE;
 						}
 					} else if (!strcasecmp(var, "NDLB-force-rport")) {
-						if (switch_true(val)) {
+						if (val && !strcasecmp(val, "safe")) {
+							profile->rport_level = 3;
+						} else if (switch_true(val)) {
 							profile->rport_level = 2;
 						}
 					} else if (!strcasecmp(var, "caller-id-type")) {
@@ -3083,7 +3085,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->dtmf_type = DTMF_NONE;
 						}
 					} else if (!strcasecmp(var, "NDLB-force-rport")) {
-						if (switch_true(val)) {
+						if (val && !strcasecmp(val, "safe")) {
+							profile->rport_level = 3;
+						} else if (switch_true(val)) {
 							profile->rport_level = 2;
 						}
 					} else if (!strcasecmp(var, "auto-rtp-bugs")) {

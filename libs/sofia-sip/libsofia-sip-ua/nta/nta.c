@@ -1674,7 +1674,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
     progress = 60 * 1000;
   agent->sa_progress = progress;
 
-  if (server_rport > 2)
+  if (server_rport > 3)
     server_rport = 1;
   else if (server_rport < 0)
     server_rport = 1;
@@ -3084,7 +3084,9 @@ int agent_check_request_via(nta_agent_t *agent,
     rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
     msg_header_replace_param(msg_home(msg), v->v_common, rport);
   }
-  else if (agent->sa_server_rport == 2) {
+  else if (agent->sa_server_rport == 2 ||
+		   (agent->sa_server_rport == 3 && sip && sip->sip_user_agent &&
+			sip->sip_user_agent->g_string && !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7))) {
     rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
     msg_header_replace_param(msg_home(msg), v->v_common, rport);
   }
