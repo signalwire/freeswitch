@@ -177,7 +177,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				if (tech_pvt->silent_mode) {
 					DEBUGA_SKYPE("Resetting SILENT_MODE on skype_call: %s.\n", SKYPOPEN_P_LOG, id);
 					skypopen_signaling_write(tech_pvt, "SET SILENT_MODE ON");
-					switch_sleep(1000);
+					//switch_sleep(1000);
 				}
 			}
 			if (!strcasecmp(message, "ERROR 68")) {
@@ -403,13 +403,13 @@ int skypopen_signaling_read(private_t *tech_pvt)
 									 tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s CHATNAME", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_HANDLE", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_DISPNAME", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						sprintf(msg_to_skype, "GET CHATMESSAGE %s BODY", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 					}
@@ -576,7 +576,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
 					sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
-					skypopen_sleep(10000);
+					//skypopen_sleep(10000);
 				}
 
 				if (!strcasecmp(prop, "STATUS")) {
@@ -592,10 +592,10 @@ int skypopen_signaling_read(private_t *tech_pvt)
 										 SKYPOPEN_P_LOG, id);
 							sprintf(msg_to_skype, "GET CALL %s PARTNER_DISPNAME", id);
 							skypopen_signaling_write(tech_pvt, msg_to_skype);
-							skypopen_sleep(100);
+							//skypopen_sleep(100);
 							sprintf(msg_to_skype, "GET CALL %s PARTNER_HANDLE", id);
 							skypopen_signaling_write(tech_pvt, msg_to_skype);
-							skypopen_sleep(10000);
+							//skypopen_sleep(10000);
 						} else {
 							/* we are inside an active call */
 							if (!strcasecmp(tech_pvt->skype_call_id, id)) {
@@ -630,7 +630,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 									 SKYPOPEN_P_LOG, id);
 								sprintf(msg_to_skype, "GET CALL %s PARTNER_HANDLE", id);
 								skypopen_signaling_write(tech_pvt, msg_to_skype);
-								skypopen_sleep(10000);
+								//skypopen_sleep(10000);
 							}
 						}
 					} else if (!strcasecmp(value, "EARLYMEDIA")) {
@@ -645,10 +645,10 @@ int skypopen_signaling_read(private_t *tech_pvt)
 								return CALLFLOW_INCOMING_HANGUP;
 							}
 						}
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 
@@ -732,10 +732,10 @@ int skypopen_signaling_read(private_t *tech_pvt)
 											return CALLFLOW_INCOMING_HANGUP;
 										}
 									}
-									skypopen_sleep(1000);
+									//skypopen_sleep(1000);
 									sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
-									skypopen_sleep(1000);
+									//skypopen_sleep(1000);
 									sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
 									skypopen_signaling_write(tech_pvt, msg_to_skype);
 								}
@@ -769,7 +769,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
 						tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 						tech_pvt->skype_call_id[0] = '\0';
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						return CALLFLOW_INCOMING_HANGUP;
 					} else if (!strcasecmp(value, "WAITING_REDIAL_COMMAND")) {
 						tech_pvt->skype_callflow = CALLFLOW_STATUS_FAILED;
@@ -779,7 +779,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
 						tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 						tech_pvt->skype_call_id[0] = '\0';
-						skypopen_sleep(1000);
+						//skypopen_sleep(1000);
 						return CALLFLOW_INCOMING_HANGUP;
 					} else {
 						WARNINGA("skype_call: %s, STATUS: %s is not recognized\n", SKYPOPEN_P_LOG, id, value);
@@ -1566,8 +1566,8 @@ int skypopen_send_message(private_t *tech_pvt, const char *message_P)
 	unsigned int len = strlen(message_P);
 	XEvent e;
 
-	skypopen_sleep(1000);
-	XFlush(disp);
+	//skypopen_sleep(1000);
+	//XFlush(disp);
 
 	memset(&e, 0, sizeof(e));
 	e.xclient.type = ClientMessage;
@@ -1868,7 +1868,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 						case ClientMessage:
 
 							if (an_event.xclient.format != 8) {
-								skypopen_sleep(1000);	//0.1 msec
+								//skypopen_sleep(1000);	//0.1 msec
 								break;
 							}
 
@@ -1924,17 +1924,18 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 								howmany = strlen(b) + 1;
 								howmany = write(SkypopenHandles->fdesc[1], b, howmany);
 								memset(buffer, '\0', 17000);
-								XFlush(disp);
+								//XFlush(disp);
 								there_were_continues = 0;
 							}
 
-							skypopen_sleep(1000);	//0.1 msec
+							//skypopen_sleep(1000);	//0.1 msec
 							break;
 						default:
-							skypopen_sleep(1000);	//0.1 msec
+							//skypopen_sleep(1000);	//0.1 msec
 							break;
 						}		//switch event.type
 					}			//while XPending
+					XFlush(disp);
 
 				}				// if select
 			}					//while running

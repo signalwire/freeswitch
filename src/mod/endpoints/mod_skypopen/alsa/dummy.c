@@ -18,7 +18,6 @@
  *
  */
 
-//#include <sound/driver.h>		//giova
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/platform_device.h>
@@ -67,7 +66,7 @@ MODULE_SUPPORTED_DEVICE("{{ALSA,Dummy soundcard}}");
 #define USE_CHANNELS_MAX 	2
 #endif
 #ifndef USE_PERIODS_MIN
-#define USE_PERIODS_MIN 	1
+#define USE_PERIODS_MIN 	10
 #endif
 #ifndef USE_PERIODS_MAX
 #define USE_PERIODS_MAX 	1024
@@ -98,17 +97,17 @@ module_param_array(pcm_substreams, int, NULL, 0444);
 MODULE_PARM_DESC(pcm_substreams, "PCM substreams # (1-64) for dummy driver.");
 
 static struct platform_device *devices[SNDRV_CARDS];
-static struct timer_list giovatimer;
-static int giovastarted = 0;
-static int giovaindex = 0;
-static spinlock_t giovalock;
-struct giovadpcm {
+static struct timer_list dummytimer;
+static int dummystarted = 0;
+static int dummyindex = 0;
+static spinlock_t dummylock;
+struct dummydpcm {
 	struct snd_pcm_substream *substream;
 	struct snd_dummy_pcm *dpcm;
 	int started;
 	int elapsed;
 };
-static struct giovadpcm giovadpcms[MAX_PCM_SUBSTREAMS];
+static struct dummydpcm dummydpcms[MAX_PCM_SUBSTREAMS];
 
 #define MIXER_ADDR_MASTER	0
 #define MIXER_ADDR_LINE		1
@@ -145,19 +144,19 @@ static inline void snd_card_dummy_pcm_timer_start(struct snd_dummy_pcm *dpcm)
 	int i;
 	int found = 0;
 
-	for (i = 0; i < giovaindex + 1; i++) {
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
-		}
+	for (i = 0; i < dummyindex + 1; i++) {
+		//if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			//printk("dummy, %s:%d, i=%d, dummyindex=%d dpcm=%p\n", __FILE__, __LINE__, i, dummyindex, dpcm);
+		//}
 
-		if (giovadpcms[i].dpcm == dpcm) {
-			giovadpcms[i].started = 1;
+		if (dummydpcms[i].dpcm == dpcm) {
+			dummydpcms[i].started = 1;
 			found = 1;
 		}
 	}
-	if (!found) {
-		printk("skypopen: start, NOT found?\n");
-	}
+	//if (!found) {
+		//printk("skypopen: start, NOT found?\n");
+	//}
 }
 
 static inline void snd_card_dummy_pcm_timer_stop(struct snd_dummy_pcm *dpcm)
@@ -165,14 +164,14 @@ static inline void snd_card_dummy_pcm_timer_stop(struct snd_dummy_pcm *dpcm)
 	int i;
 	int found = 0;
 
-	for (i = 0; i < giovaindex + 1; i++) {
+	for (i = 0; i < dummyindex + 1; i++) {
 
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
-		}
-		if (giovadpcms[i].dpcm == dpcm) {
-			giovadpcms[i].started = 0;
-			giovadpcms[i].elapsed = 0;
+		//if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			//printk("dummy, %s:%d, i=%d, dummyindex=%d dpcm=%p\n", __FILE__, __LINE__, i, dummyindex, dpcm);
+		//}
+		if (dummydpcms[i].dpcm == dpcm) {
+			dummydpcms[i].started = 0;
+			dummydpcms[i].elapsed = 0;
 			found = 1;
 		}
 	}
@@ -187,7 +186,7 @@ static int snd_card_dummy_pcm_trigger(struct snd_pcm_substream *substream, int c
 	struct snd_dummy_pcm *dpcm = runtime->private_data;
 	int err = 0;
 
-	spin_lock_bh(&giovalock);
+	spin_lock_bh(&dummylock);
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
@@ -201,7 +200,7 @@ static int snd_card_dummy_pcm_trigger(struct snd_pcm_substream *substream, int c
 		err = -EINVAL;
 		break;
 	}
-	spin_unlock_bh(&giovalock);
+	spin_unlock_bh(&dummylock);
 	return 0;
 }
 
@@ -233,22 +232,26 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 	int i;
 
 
-	giovatimer.expires = 1 + jiffies;
-	add_timer(&giovatimer);
+	dummytimer.expires = 1 + jiffies;
+	add_timer(&dummytimer);
 
-	//spin_lock_bh(&giovalock);
-	for (i = 0; i < giovaindex + 1; i++) {
+	//spin_lock_bh(&dummylock);
+	for (i = 0; i < dummyindex + 1; i++) {
 
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
+#if 0
+		if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			printk("dummy, %s:%d, i=%d, dummyindex=%d dpcm=%p\n", __FILE__, __LINE__, i, dummyindex, dpcm);
 		}
-		if (giovadpcms[i].started != 1)
+#endif
+		if (dummydpcms[i].started != 1)
 			continue;
-		dpcm = giovadpcms[i].dpcm;
+		dpcm = dummydpcms[i].dpcm;
+#if 0
 		if (dpcm == NULL) {
-			printk("giova: timer_func %d %d NULL: continue\n", __LINE__, i);
+			printk("dummy: timer_func %d %d NULL: continue\n", __LINE__, i);
 			continue;
 		}
+#endif
 		//spin_lock_bh(&dpcm->lock);
 		dpcm->pcm_irq_pos += dpcm->pcm_bps * 1;
 		dpcm->pcm_buf_pos += dpcm->pcm_bps * 1;
@@ -257,27 +260,31 @@ static void snd_card_dummy_pcm_timer_function(unsigned long data)
 			dpcm->pcm_irq_pos %= dpcm->pcm_period_size * dpcm->pcm_hz;
 			//spin_unlock_bh(&dpcm->lock);
 			//snd_pcm_period_elapsed(dpcm->substream);
-			giovadpcms[i].elapsed = 1;
+			dummydpcms[i].elapsed = 1;
 		} else {
 			//spin_unlock_bh(&dpcm->lock);
 		}
 	}
-	//spin_unlock_bh(&giovalock);
-	for (i = 0; i < giovaindex + 1; i++) {
+	//spin_unlock_bh(&dummylock);
+	for (i = 0; i < dummyindex + 1; i++) {
 
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
+#if 0
+		if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			printk("dummy, %s:%d, i=%d, dummyindex=%d dpcm=%p\n", __FILE__, __LINE__, i, dummyindex, dpcm);
 		}
-		if (giovadpcms[i].started != 1)
+#endif
+		if (dummydpcms[i].started != 1)
 			continue;
-		dpcm = giovadpcms[i].dpcm;
+		dpcm = dummydpcms[i].dpcm;
+#if 0
 		if (dpcm == NULL) {
-			printk("giova: timer_func %d %d NULL: continue\n", __LINE__, i);
+			printk("dummy: timer_func %d %d NULL: continue\n", __LINE__, i);
 			continue;
 		}
-		if (giovadpcms[i].elapsed){
+#endif
+		if (dummydpcms[i].elapsed){
 			snd_pcm_period_elapsed(dpcm->substream);
-			giovadpcms[i].elapsed = 0;
+			dummydpcms[i].elapsed = 0;
 		}
 	}
 
@@ -294,6 +301,7 @@ static snd_pcm_uframes_t snd_card_dummy_pcm_pointer(struct snd_pcm_substream *su
 
 static struct snd_pcm_hardware snd_card_dummy_playback = {
 	.info = (SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_INTERLEAVED | SNDRV_PCM_INFO_RESUME | SNDRV_PCM_INFO_MMAP_VALID),
+	//.info = (SNDRV_PCM_INFO_INTERLEAVED),
 	.formats = USE_FORMATS,
 	.rates = USE_RATE,
 	.rate_min = USE_RATE_MIN,
@@ -301,7 +309,8 @@ static struct snd_pcm_hardware snd_card_dummy_playback = {
 	.channels_min = USE_CHANNELS_MIN,
 	.channels_max = USE_CHANNELS_MAX,
 	.buffer_bytes_max = MAX_BUFFER_SIZE,
-	.period_bytes_min = 256,
+	//.period_bytes_min = 256,
+	.period_bytes_min = 2048,
 	.period_bytes_max = MAX_PERIOD_SIZE,
 	.periods_min = USE_PERIODS_MIN,
 	.periods_max = USE_PERIODS_MAX,
@@ -310,6 +319,7 @@ static struct snd_pcm_hardware snd_card_dummy_playback = {
 
 static struct snd_pcm_hardware snd_card_dummy_capture = {
 	.info = (SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_INTERLEAVED | SNDRV_PCM_INFO_RESUME | SNDRV_PCM_INFO_MMAP_VALID),
+	//.info = (SNDRV_PCM_INFO_INTERLEAVED),
 	.formats = USE_FORMATS,
 	.rates = USE_RATE,
 	.rate_min = USE_RATE_MIN,
@@ -317,7 +327,8 @@ static struct snd_pcm_hardware snd_card_dummy_capture = {
 	.channels_min = USE_CHANNELS_MIN,
 	.channels_max = USE_CHANNELS_MAX,
 	.buffer_bytes_max = MAX_BUFFER_SIZE,
-	.period_bytes_min = 256,
+	//.period_bytes_min = 256,
+	.period_bytes_min = 2048,
 	.period_bytes_max = MAX_PERIOD_SIZE,
 	.periods_min = USE_PERIODS_MIN,
 	.periods_max = USE_PERIODS_MAX,
@@ -328,21 +339,21 @@ static void snd_card_dummy_runtime_free(struct snd_pcm_runtime *runtime)
 {
 	int i;
 
-	spin_lock_bh(&giovalock);
+	spin_lock_bh(&dummylock);
 
-	for (i = 0; i < giovaindex; i++) {
+	for (i = 0; i < dummyindex; i++) {
 
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d \n", __FILE__, __LINE__, i, giovaindex);
+		if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			printk("dummy, %s:%d, i=%d, dummyindex=%d \n", __FILE__, __LINE__, i, dummyindex);
 		}
-		if ((giovadpcms[i].dpcm == runtime->private_data)) {
-			giovadpcms[i].started = 0;
-			giovadpcms[i].elapsed = 0;
+		if ((dummydpcms[i].dpcm == runtime->private_data)) {
+			dummydpcms[i].started = 0;
+			dummydpcms[i].elapsed = 0;
 		} else {
 		}
 	}
 
-	spin_unlock_bh(&giovalock);
+	spin_unlock_bh(&dummylock);
 	kfree(runtime->private_data);
 }
 
@@ -364,20 +375,20 @@ static struct snd_dummy_pcm *new_pcm_stream(struct snd_pcm_substream *substream)
 
 	dpcm = kzalloc(sizeof(*dpcm), GFP_KERNEL);
 	if (!dpcm) {
-		printk("giova, %s:%d, giovaindex=%d NO MEMORY!!!!\n", __FILE__, __LINE__, giovaindex);
+		printk("dummy, %s:%d, dummyindex=%d NO MEMORY!!!!\n", __FILE__, __LINE__, dummyindex);
 		return dpcm;
 	}
 	//init_timer(&dpcm->timer);
 	//spin_lock_init(&dpcm->lock);
 	dpcm->substream = substream;
 
-	spin_lock_bh(&giovalock);
-	for (i = 0; i < giovaindex; i++) {
+	spin_lock_bh(&dummylock);
+	for (i = 0; i < dummyindex; i++) {
 
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
-		}
-		if ((giovadpcms[i].substream == substream)) {
+		//if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			//printk("dummy, %s:%d, i=%d, dummyindex=%d dpcm=%p\n", __FILE__, __LINE__, i, dummyindex, dpcm);
+		//}
+		if ((dummydpcms[i].substream == substream)) {
 			found = 1;
 			break;
 		}
@@ -386,32 +397,32 @@ static struct snd_dummy_pcm *new_pcm_stream(struct snd_pcm_substream *substream)
 
 	if (!found) {
 
-		giovadpcms[giovaindex].substream = substream;
-		giovaindex++;
+		dummydpcms[dummyindex].substream = substream;
+		dummyindex++;
 	}
 
 
 
 	found = 0;
-	for (i = 0; i < giovaindex; i++) {
+	for (i = 0; i < dummyindex; i++) {
 
-		if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-			printk("giova, %s:%d, i=%d, giovaindex=%d dpcm=%p\n", __FILE__, __LINE__, i, giovaindex, dpcm);
-		}
-		if (giovadpcms[i].substream == substream) {
-			giovadpcms[i].dpcm = dpcm;
-			giovadpcms[i].started = 0;
-			giovadpcms[i].elapsed = 0;
+		//if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+			//printk("dummy, %s:%d, i=%d, dummyindex=%d dpcm=%p\n", __FILE__, __LINE__, i, dummyindex, dpcm);
+		//}
+		if (dummydpcms[i].substream == substream) {
+			dummydpcms[i].dpcm = dpcm;
+			dummydpcms[i].started = 0;
+			dummydpcms[i].elapsed = 0;
 			found = 1;
 			break;
 		}
 
 	}
 
-	spin_unlock_bh(&giovalock);
-	if (!found) {
-		printk("skypopen giovaindex=%d NOT found????\n", giovaindex);
-	}
+	spin_unlock_bh(&dummylock);
+	//if (!found) {
+		//printk("skypopen dummyindex=%d NOT found????\n", dummyindex);
+	//}
 	return dpcm;
 }
 
@@ -542,7 +553,7 @@ static int snd_dummy_volume_get(struct snd_kcontrol *kcontrol, struct snd_ctl_el
 	int addr = kcontrol->private_value;
 
 	if (in_irq())
-		printk("giova: line %d we are in HARDWARE IRQ\n", __LINE__);
+		printk("dummy: line %d we are in HARDWARE IRQ\n", __LINE__);
 	spin_lock_bh(&dummy->mixer_lock);
 	ucontrol->value.integer.value[0] = dummy->mixer_volume[addr][0];
 	ucontrol->value.integer.value[1] = dummy->mixer_volume[addr][1];
@@ -557,7 +568,7 @@ static int snd_dummy_volume_put(struct snd_kcontrol *kcontrol, struct snd_ctl_el
 	int left, right;
 
 	if (in_irq())
-		printk("giova: line %d we are in HARDWARE IRQ\n", __LINE__);
+		printk("dummy: line %d we are in HARDWARE IRQ\n", __LINE__);
 	left = ucontrol->value.integer.value[0];
 	if (left < -50)
 		left = -50;
@@ -592,7 +603,7 @@ static int snd_dummy_capsrc_get(struct snd_kcontrol *kcontrol, struct snd_ctl_el
 	int addr = kcontrol->private_value;
 
 	if (in_irq())
-		printk("giova: line %d we are in HARDWARE IRQ\n", __LINE__);
+		printk("dummy: line %d we are in HARDWARE IRQ\n", __LINE__);
 	spin_lock_bh(&dummy->mixer_lock);
 	ucontrol->value.integer.value[0] = dummy->capture_source[addr][0];
 	ucontrol->value.integer.value[1] = dummy->capture_source[addr][1];
@@ -607,7 +618,7 @@ static int snd_dummy_capsrc_put(struct snd_kcontrol *kcontrol, struct snd_ctl_el
 	int left, right;
 
 	if (in_irq())
-		printk("giova: line %d we are in HARDWARE IRQ\n", __LINE__);
+		printk("dummy: line %d we are in HARDWARE IRQ\n", __LINE__);
 	left = ucontrol->value.integer.value[0] & 1;
 	right = ucontrol->value.integer.value[1] & 1;
 	spin_lock_bh(&dummy->mixer_lock);
@@ -637,9 +648,9 @@ static int __devinit snd_card_dummy_new_mixer(struct snd_dummy *dummy)
 	unsigned int idx;
 	int err;
 
+	return 0;					//XXX no mixer
 	spin_lock_init(&dummy->mixer_lock);
 	strcpy(card->mixername, "Dummy Mixer");
-	return 0;					//giova no mixer
 
 	for (idx = 0; idx < ARRAY_SIZE(snd_dummy_controls); idx++) {
 		err = snd_ctl_add(card, snd_ctl_new1(&snd_dummy_controls[idx], dummy));
@@ -655,10 +666,6 @@ static int __devinit snd_dummy_probe(struct platform_device *devptr)
 	struct snd_dummy *dummy;
 	int idx, err;
 	int dev = devptr->id;
-
-	//card = snd_card_new(index[dev], id[dev], THIS_MODULE, sizeof(struct snd_dummy)); //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
-	//if (card == NULL) //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
-		//return -ENOMEM; //giova if this gives you problems, comment it out and remove comment from the 4 lines commented below
 
 	err = snd_card_create(index[dev], id[dev], THIS_MODULE,
 	sizeof(struct snd_dummy), &card);
@@ -676,9 +683,9 @@ static int __devinit snd_dummy_probe(struct platform_device *devptr)
 		if (err < 0)
 			goto __nodev;
 	}
-	err = snd_card_dummy_new_mixer(dummy);
-	if (err < 0)
-		goto __nodev;
+	//err = snd_card_dummy_new_mixer(dummy);
+	//if (err < 0)
+		//goto __nodev;
 	strcpy(card->driver, "Dummy");
 	strcpy(card->shortname, "Dummy");
 	sprintf(card->longname, "Dummy %i", dev + 1);
@@ -698,7 +705,7 @@ static int __devinit snd_dummy_probe(struct platform_device *devptr)
 static int __devexit snd_dummy_remove(struct platform_device *devptr)
 {
 
-	del_timer(&giovatimer);
+	del_timer(&dummytimer);
 	snd_card_free(platform_get_drvdata(devptr));
 	platform_set_drvdata(devptr, NULL);
 	return 0;
@@ -754,28 +761,28 @@ static int __init alsa_card_dummy_init(void)
 	if (err < 0)
 		return err;
 
-	if (!giovastarted) {
-		giovastarted = 1;
-		spin_lock_init(&giovalock);
+	if (!dummystarted) {
+		dummystarted = 1;
+		spin_lock_init(&dummylock);
 
-		spin_lock_bh(&giovalock);
+		spin_lock_bh(&dummylock);
 		for (i = 0; i < MAX_PCM_SUBSTREAMS; i++) {
 
-			if (i > MAX_PCM_SUBSTREAMS || giovaindex > MAX_PCM_SUBSTREAMS) {
-				printk("giova, %s:%d, i=%d, giovaindex=%d \n", __FILE__, __LINE__, i, giovaindex);
-			}
-			giovadpcms[i].substream = NULL;
-			giovadpcms[i].dpcm = NULL;
-			giovadpcms[i].started = 0;
-			giovadpcms[i].elapsed = 0;
+			//if (i > MAX_PCM_SUBSTREAMS || dummyindex > MAX_PCM_SUBSTREAMS) {
+				//printk("dummy, %s:%d, i=%d, dummyindex=%d \n", __FILE__, __LINE__, i, dummyindex);
+			//}
+			dummydpcms[i].substream = NULL;
+			dummydpcms[i].dpcm = NULL;
+			dummydpcms[i].started = 0;
+			dummydpcms[i].elapsed = 0;
 		}
-		init_timer(&giovatimer);
-		giovatimer.data = (unsigned long) &giovadpcms;
-		giovatimer.function = snd_card_dummy_pcm_timer_function;
-		giovatimer.expires = 1 + jiffies;
-		add_timer(&giovatimer);
-		printk("snd-dummy skypopen driver version: 6, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
-		spin_unlock_bh(&giovalock);
+		init_timer(&dummytimer);
+		dummytimer.data = (unsigned long) &dummydpcms;
+		dummytimer.function = snd_card_dummy_pcm_timer_function;
+		dummytimer.expires = 1 + jiffies;
+		add_timer(&dummytimer);
+		printk("snd-dummy skypopen driver version: 9, %s:%d working on a machine with %dHZ kernel\n", __FILE__, __LINE__, HZ);
+		spin_unlock_bh(&dummylock);
 	}
 
 
@@ -806,7 +813,7 @@ static int __init alsa_card_dummy_init(void)
 
 static void __exit alsa_card_dummy_exit(void)
 {
-	del_timer(&giovatimer);
+	del_timer(&dummytimer);
 	snd_dummy_unregister_all();
 }
 
