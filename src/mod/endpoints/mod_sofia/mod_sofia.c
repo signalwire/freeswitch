@@ -2442,8 +2442,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 								time_t now = switch_epoch_time_now(NULL);
-								if (gp->retry > now) {
-									stream->write_function(stream, " (retry: %ds)", gp->retry - now);
+								if (gp->reg_timeout > now) {
+									stream->write_function(stream, " (retry: %ds)", gp->reg_timeout - now);
 								} else {
 									stream->write_function(stream, " (retry: NEVER)");
 								}
