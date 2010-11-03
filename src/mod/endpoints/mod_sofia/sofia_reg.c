@@ -363,7 +363,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 							   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
 			}
-			gateway_ptr->retry = now + gateway_ptr->retry_seconds;
+			gateway_ptr->reg_timeout = now + gateway_ptr->reg_timeout_seconds;
 			gateway_ptr->state = REG_STATE_TRYING;
 			switch_safe_free(user_via);
 			user_via = NULL;
@@ -408,7 +408,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			break;
 		case REG_STATE_TRYING:
-			if (!gateway_ptr->retry || now >= gateway_ptr->retry) {
+			if (now >= gateway_ptr->reg_timeout) {
 				gateway_ptr->state = REG_STATE_TIMEOUT;
 			}
 			break;

@@ -414,6 +414,7 @@ struct sofia_gateway {
 	time_t expires;
 	time_t retry;
 	time_t ping;
+	time_t reg_timeout;
 	int pinging;
 	sofia_gateway_status_t status;
 	uint32_t ping_freq;
@@ -422,6 +423,7 @@ struct sofia_gateway {
 	int ping_min;
 	uint8_t flags[REG_FLAG_MAX];
 	int32_t retry_seconds;
+	int32_t reg_timeout_seconds;
 	int32_t failure_status;
 	reg_state_t state;
 	switch_memory_pool_t *pool;

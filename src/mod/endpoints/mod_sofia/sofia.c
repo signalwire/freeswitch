@@ -1874,6 +1874,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*context = profile->context,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
+				*timeout_seconds = "60",
 				*from_user = "", *from_domain = NULL, *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
 				*contact_params = NULL, *params = NULL, *register_transport = NULL;
 
@@ -1982,6 +1983,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					expire_seconds = val;
 				} else if (!strcmp(var, "retry-seconds")) {
 					retry_seconds = val;
+				} else if (!strcmp(var, "timeout-seconds")) {
+					timeout_seconds = val;
 				} else if (!strcmp(var, "retry_seconds")) {	// support typo for back compat
 					retry_seconds = val;
 				} else if (!strcmp(var, "from-user")) {
@@ -2081,12 +2084,21 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 
 			gateway->retry_seconds = atoi(retry_seconds);
-
+			
 			if (gateway->retry_seconds < 5) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid retry-seconds of %d on gateway %s, using the value of 30 instead.\n",
 								  gateway->retry_seconds, name);
 				gateway->retry_seconds = 30;
 			}
+
+			gateway->reg_timeout_seconds = atoi(timeout_seconds);
+
+			if (gateway->retry_seconds < 5) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid timeout-seconds of %d on gateway %s, using the value of 60 instead.\n",
+								  gateway->reg_timeout_seconds, name);
+				gateway->reg_timeout_seconds = 30;
+			}
+
 
 			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
 			gateway->register_context = switch_core_strdup(gateway->pool, context);
