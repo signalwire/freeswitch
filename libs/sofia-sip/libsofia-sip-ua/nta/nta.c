@@ -8176,9 +8176,12 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
 
   if (orq->orq_method == sip_method_ack)
     ;
-  else if (!orq->orq_reliable)
-    outgoing_set_timer(orq, agent->sa_t1); /* Timer A/E */
-  else if (orq->orq_try_tcp_instead && !tport_is_connected(tp))
+  else if (!orq->orq_reliable) {
+    /* race condition on initial t1 timer timeout, set minimum initial timeout to 1000ms */
+	unsigned t1_timer = agent->sa_t1;
+	if (t1_timer < 1000) t1_timer = 1000;
+    outgoing_set_timer(orq, t1_timer); /* Timer A/E */
+  } else if (orq->orq_try_tcp_instead && !tport_is_connected(tp))
     outgoing_set_timer(orq, agent->sa_t4); /* Timer N3 */
 }
 
