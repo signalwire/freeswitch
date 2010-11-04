@@ -60,6 +60,7 @@
 </li><li><b>suppression-delay</b>: Ativa ("yes") ou desativa ("no") o delay necessário para supressão DTMF. Se desativado ("no"), também desativa supressão de DTMFs; 
 </li><li><b>trace</b>: Define opções de depuração. Não deve ser utilizado em produção a não ser que estritamente necessário;
 </li><li><b>user-transfer-digits</b>: Define uma seqüência de dígitos DTMF para iniciar a transferencia entre o FreeSWITCH&reg; e um outro PABX (utilizando sinalização de usuário, como QSig ou FXO FLASH);
+</li><li><b>flash-to-digits</b>: Define os dígitos para serem enviados quando o FLASH é detectado na FXS;
 </li></ul>
 <p><br />
 </p>
@@ -119,7 +120,8 @@
 </li><li>accountcode; 
 </li><li>calleridnum; 
 </li><li>calleridname;
-</li><li>mailbox.
+</li><li>mailbox;
+</li><li>flash-to-digits.
 </li></ul>
 <p>Cada opção é separada uma da outra por um pipe "|" ou uma barra "/" e definidas após dois pontos ":", exemplo:
 </p>

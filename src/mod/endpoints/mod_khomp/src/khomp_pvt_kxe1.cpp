@@ -2055,6 +2055,7 @@ void BoardE1::KhompPvtFXS::loadOptions()
     _language = Opt::_global_language;
     _accountcode = Opt::_accountcode;
     _mailbox.clear();
+    _flash = Opt::_flash;
 
     Opt::BranchToOptMapType::iterator it3 = Opt::_branch_options.find(_fxs_orig_addr);
 
@@ -2180,6 +2181,10 @@ bool BoardE1::KhompPvtFXS::parseBranchOptions(std::string options_str)
             else if (opt_name == "mailbox")
             {
                 _mailbox = opt_value;
+            }
+            else if (opt_name == "flash-to-digits")
+            {
+                _flash = opt_value;
             }
             else
             {
@@ -3001,12 +3006,23 @@ bool BoardE1::KhompPvtFXS::onDtmfSendFinish(K3L_EVENT *e)
 
 bool BoardE1::KhompPvtFXS::onFlashDetected(K3L_EVENT *e)
 {
-    DBG(FUNC, PVT_FMT(_target, "(FXS) c"));
+    DBG(FUNC, PVT_FMT(_target, "(FXS) c (%s)") % _flash);
 
     try
     {
         ScopedPvtLock lock(this);
 
+        for(std::string::const_iterator it = _flash.begin(); it != _flash.end(); it++)
+        {
+            signalDTMF(*it);
+        }
+
+        DBG(FUNC, PVT_FMT(_target, "(FXS) r"));
+
+        return true;
+
+/******************************************************************************/
+        //Old implementation, not used
         if(callFXS()->_flags.check(Kflags::FXS_FLASH_TRANSFER))
         {
             DBG(FUNC, PVT_FMT(_target, "(FXS) transfer canceled"));
@@ -3043,6 +3059,7 @@ bool BoardE1::KhompPvtFXS::onFlashDetected(K3L_EVENT *e)
             DBG(FUNC, PVT_FMT(target(), "(FXS) r (unable to start transfer)"));
             return false;
         }
+/******************************************************************************/
 
     }
     catch (ScopedLockFailed & err)

@@ -413,6 +413,12 @@ to be used to initialize a call transfer using PBX-to-PBX signaling.
 -->
 
 <!--
+Defines the digits to be sent when the flash is detected.
+
+<param name="flash-to-digits" value="*1"/>
+-->
+
+<!--
 ;;;;;;;;;;;;;;;;;;;; CONTEXTS WILDCARDS ;;;;;;;;;;;;;;;;;;;;;;
 
 For incoming contexts, you can use the following wildcards:
@@ -512,16 +518,17 @@ In the example above, the branch numbered 804 will call the number
 <!--
 In this section, you should define options using the following syntax:
 
-'orig_prefix = option1:value | option2:value | option3:value' ...
+orig_prefix = option1:value | option2:value | option3:value ...
 
-ex: <param name="804" value="output-volume:+2' />
+ex: <param name="804" value="output-volume:+2" />
 
 In the example above, the branch numbered 804 will have specific
 configuration for default output volume set to +2.
 
 Possible values to options is:
 context, input-volume, output-volume language,
-mohclass, amaflags, accountcode, calleridnum, calleridname, mailbox.
+mohclass, amaflags, accountcode, calleridnum, 
+calleridname, mailbox, flash-to-digits.
 -->
 </fxs-options>
 

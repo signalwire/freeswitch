@@ -61,6 +61,7 @@ If you need to set advanced parameters of the board and/or signaling, the progra
 </li><li><b>suppression-delay</b> (former <b>suppressiondelay</b>): Activate ("yes") or disables ("no") the delay necessary to suppress DTMF. If disabled ("no"), also disables suppression of DTMF (local option);
 </li><li><b>trace</b>: Set debugging options. Should not be used in production unless absolutely necessary;
 </li><li><b>user-transfer-digits</b>: Defines a sequence of DTMF digits to initiate the transfer between FreeSWITCH&reg; and another PBX (using user signaling, like QSig or FXO FLASH).
+</li><li><b>flash-to-digits</b>: Defines the digits to be sent when the FLASH is detected on FXS channels..
 </li></ul>
 <p><br />
 </p>
@@ -123,7 +124,8 @@ For details, please refer to the configuration file for examples.
 </li><li>accountcode; 
 </li><li>calleridnum; 
 </li><li>calleridname;
-</li><li>mailbox.
+</li><li>mailbox;
+</li><li>flash-to-digits.
 </li></ul>
 <p>Each option is separated from each other by a pipe "|" or a slash "/" and defined after the colon ":". Example:
 </p>

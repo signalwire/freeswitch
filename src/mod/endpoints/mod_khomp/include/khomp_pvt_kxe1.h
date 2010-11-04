@@ -995,6 +995,7 @@ struct KhompPvtFXS: public KhompPvt
     std::string _language;
     std::string _accountcode;
     std::string _mailbox;
+    std::string _flash;
 
     static Opt::OrigToNseqMapType generateNseqMap();
     static void dialTimer(KhompPvt * pvt);

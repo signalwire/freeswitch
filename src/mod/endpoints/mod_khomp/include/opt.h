@@ -155,6 +155,7 @@ public:
 
     static unsigned int _transferdigittimeout;
 
+    static std::string _flash;
     static std::string _blindxfer;
     static std::string _atxfer;
 

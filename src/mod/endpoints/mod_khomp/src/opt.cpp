@@ -79,6 +79,7 @@ unsigned int Opt::_fxs_digit_timeout;
 
 unsigned int Opt::_transferdigittimeout;
 
+std::string Opt::_flash;
 std::string Opt::_atxfer;
 std::string Opt::_blindxfer;
 
@@ -154,7 +155,9 @@ void Opt::initialize(void)
 
     Globals::options.add(ConfigOption("transferdigittimeout", _transferdigittimeout, 3000u, 0u, 90000u));
 
-    Globals::options.add(ConfigOption("atxfer", _atxfer, ""));
+    Globals::options.add(ConfigOption("flash-to-digits", _flash,  "*1"));
+
+    Globals::options.add(ConfigOption("atxfer",    _atxfer, ""));
     Globals::options.add(ConfigOption("blindxfer", _blindxfer, ""));
 
     Globals::options.add(ConfigOption("delay-ringback-co",  _ringback_co_delay,  1500u, 0u, 999000u)); 

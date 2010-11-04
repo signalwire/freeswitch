@@ -249,6 +249,12 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
 
     if(finished != std::string::npos)
     {
+        if(exten.size() <= 1)
+        {
+            DBG(FUNC, FMT("exten=%s size=%d") % exten % exten.size());
+            return true;
+        }
+
         exten.erase(finished);
         DBG(FUNC, FMT("match exact!!! exten=%s") % exten);
         return false;
