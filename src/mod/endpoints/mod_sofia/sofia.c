@@ -2093,10 +2093,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			gateway->reg_timeout_seconds = atoi(timeout_seconds);
 
-			if (gateway->retry_seconds < 5) {
+			if (gateway->reg_timeout_seconds < 5) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid timeout-seconds of %d on gateway %s, using the value of 60 instead.\n",
 								  gateway->reg_timeout_seconds, name);
-				gateway->reg_timeout_seconds = 30;
+				gateway->reg_timeout_seconds = 60;
 			}
 
 
