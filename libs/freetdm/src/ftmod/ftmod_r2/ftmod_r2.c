@@ -1727,7 +1727,7 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
 	return FTDM_SUCCESS;
 }
 
-ftdm_module_t ftdm_module = { 
+EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
 	"r2",
 	ftdm_r2_io_init,
 	NULL,
