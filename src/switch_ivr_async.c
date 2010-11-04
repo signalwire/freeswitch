@@ -2187,6 +2187,20 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 				switch_zmalloc(dt, sizeof(*dt));
 				*dt = *dtmf;
 				if (switch_queue_trypush(pvt->digit_queue, dt) == SWITCH_STATUS_SUCCESS) {
+					switch_event_t *event;
+					
+					if (switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, event);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Conversion", "native:inband");
+						if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
+							switch_core_session_queue_event(session, &event);
+						} else {
+							switch_event_fire(&event);
+						}
+					}
+					
 					dt = NULL;
 					/* 
 					   SWITCH_STATUS_FALSE indicates pretend there never was a DTMF
