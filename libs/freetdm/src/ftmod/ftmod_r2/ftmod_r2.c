@@ -148,6 +148,74 @@ static ftdm_io_interface_t g_ftdm_r2_interface;
 
 static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan);
 
+
+/* functions not available on windows */
+#ifdef WIN32
+#include <mmsystem.h>
+
+static __inline int gettimeofday(struct timeval *tp, void *nothing)
+{
+#ifdef WITHOUT_MM_LIB
+    SYSTEMTIME st;
+    time_t tt;
+    struct tm tmtm;
+    /* mktime converts local to UTC */
+    GetLocalTime (&st);
+    tmtm.tm_sec = st.wSecond;
+    tmtm.tm_min = st.wMinute;
+    tmtm.tm_hour = st.wHour;
+    tmtm.tm_mday = st.wDay;
+    tmtm.tm_mon = st.wMonth - 1;
+    tmtm.tm_year = st.wYear - 1900;  tmtm.tm_isdst = -1;
+    tt = mktime (&tmtm);
+    tp->tv_sec = tt;
+    tp->tv_usec = st.wMilliseconds * 1000;
+#else
+    /**
+     ** The earlier time calculations using GetLocalTime
+     ** had a time resolution of 10ms.The timeGetTime, part
+     ** of multimedia apis offer a better time resolution
+     ** of 1ms.Need to link against winmm.lib for this
+     **/
+    unsigned long Ticks = 0;
+    unsigned long Sec =0;
+    unsigned long Usec = 0;
+    Ticks = timeGetTime();
+
+    Sec = Ticks/1000;
+    Usec = (Ticks - (Sec*1000))*1000;
+    tp->tv_sec = Sec;
+    tp->tv_usec = Usec;
+#endif /* WITHOUT_MM_LIB */
+    (void)nothing;
+    return 0;
+}
+
+static char *strsep(char **stringp, const char *delim)
+{
+   char *start = *stringp;
+   char *ptr;
+
+   if (!start)
+       return NULL;
+
+   if (!*delim)
+       ptr = start + strlen(start);
+   else {
+       ptr = strpbrk(start, delim);
+       if (!ptr) {
+           *stringp = NULL;
+           return start;
+       }
+   }
+
+   *ptr = '\0';
+   *stringp = ptr + 1;
+
+   return start;
+}
+#endif /* WIN32 */
+
 static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, openr2_call_disconnect_cause_t cause)
 {
 	switch (cause) {
@@ -646,24 +714,26 @@ static void ftdm_r2_on_ani_digit_received(openr2_chan_t *r2chan, char digit)
 }
 
 static openr2_event_interface_t ftdm_r2_event_iface = {
-	.on_call_init = ftdm_r2_on_call_init,
-	.on_call_offered = ftdm_r2_on_call_offered,
-	.on_call_accepted = ftdm_r2_on_call_accepted,
-	.on_call_answered = ftdm_r2_on_call_answered,
-	.on_call_disconnect = ftdm_r2_on_call_disconnect,
-	.on_call_end = ftdm_r2_on_call_end,
-	.on_call_read = ftdm_r2_on_call_read,
-	.on_hardware_alarm = ftdm_r2_on_hardware_alarm,
-	.on_os_error = ftdm_r2_on_os_error,
-	.on_protocol_error = ftdm_r2_on_protocol_error,
-	.on_line_blocked = ftdm_r2_on_line_blocked,
-	.on_line_idle = ftdm_r2_on_line_idle,
+	/* .on_call_init */ ftdm_r2_on_call_init,
+	/* .on_call_offered */ ftdm_r2_on_call_offered,
+	/* .on_call_accepted */ ftdm_r2_on_call_accepted,
+	/* .on_call_answered */ ftdm_r2_on_call_answered,
+	/* .on_call_disconnect */ ftdm_r2_on_call_disconnect,
+	/* .on_call_end */ ftdm_r2_on_call_end,
+	/* .on_call_read */ ftdm_r2_on_call_read,
+	/* .on_hardware_alarm */ ftdm_r2_on_hardware_alarm,
+	/* .on_os_error */ ftdm_r2_on_os_error,
+	/* .on_protocol_error */ ftdm_r2_on_protocol_error,
+	/* .on_line_blocked */ ftdm_r2_on_line_blocked,
+	/* .on_line_idle */ ftdm_r2_on_line_idle,
+
 	/* cast seems to be needed to get rid of the annoying warning regarding format attribute  */
-	.on_context_log = (openr2_handle_context_logging_func)ftdm_r2_on_context_log,
-	.on_dnis_digit_received = ftdm_r2_on_dnis_digit_received,
-	.on_ani_digit_received = ftdm_r2_on_ani_digit_received,
+	/* .on_context_log */ (openr2_handle_context_logging_func)ftdm_r2_on_context_log,
+	/* .on_dnis_digit_received */ ftdm_r2_on_dnis_digit_received,
+	/* .on_ani_digit_received */ ftdm_r2_on_ani_digit_received,
+
 	/* so far we do nothing with billing pulses */
-	.on_billing_pulse_received = NULL,
+	/* .on_billing_pulse_received */ NULL,
 };
 
 static int ftdm_r2_io_set_cas(openr2_chan_t *r2chan, int cas)
@@ -789,16 +859,16 @@ static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *e
 }
 
 static openr2_io_interface_t ftdm_r2_io_iface = {
-	.open = ftdm_r2_io_open, /* never called */
-	.close = ftdm_r2_io_close, /* never called */
-	.set_cas = ftdm_r2_io_set_cas,
-	.get_cas = ftdm_r2_io_get_cas,
-	.flush_write_buffers = ftdm_r2_io_flush_write_buffers,
-	.write = ftdm_r2_io_write,
-	.read = ftdm_r2_io_read,
-	.setup = ftdm_r2_io_setup, /* never called */
-	.wait = ftdm_r2_io_wait,
-	.get_oob_event = ftdm_r2_io_get_oob_event /* never called */
+	/* .open */ ftdm_r2_io_open, /* never called */
+	/* .close */ ftdm_r2_io_close, /* never called */
+	/* .set_cas */ ftdm_r2_io_set_cas,
+	/* .get_cas */ ftdm_r2_io_get_cas,
+	/* .flush_write_buffers */ ftdm_r2_io_flush_write_buffers,
+	/* .write */ ftdm_r2_io_write,
+	/* .read */ ftdm_r2_io_read,
+	/* .setup */ ftdm_r2_io_setup, /* never called */
+	/* .wait */ ftdm_r2_io_wait,
+	/* .get_oob_event */ ftdm_r2_io_get_oob_event /* never called */
 };
 
 static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
@@ -812,30 +882,32 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 	ftdm_r2_span_pvt_t *spanpvt = NULL;
 	ftdm_r2_call_t *r2call = NULL;
 	openr2_chan_t *r2chan = NULL;
-
-	assert(sig_cb != NULL);
+	openr2_log_level_t tmplevel;
+	char *clevel;
+	char *logval = NULL;
 
 	ft_r2_conf_t r2conf = 
 	{
-		.variant = OR2_VAR_ITU,
-		.category = OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
-		.loglevel = OR2_LOG_ERROR | OR2_LOG_WARNING,
-		.max_ani = 10,
-		.max_dnis = 4,
-		.mfback_timeout = -1,
-		.metering_pulse_timeout = -1,
-		.allow_collect_calls = -1,
-		.immediate_accept = -1,
-		.skip_category = -1,
-		.forced_release = -1,
-		.charge_calls = -1,
-		.get_ani_first = -1,
-		.call_files = 0,
-		.mf_files = 0,
-		.logdir = NULL,
-		.advanced_protocol_file = NULL
+		/* .variant */ OR2_VAR_ITU,
+		/* .category */ OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
+		/* .loglevel */ OR2_LOG_ERROR | OR2_LOG_WARNING,
+		/* .max_ani */ 10,
+		/* .max_dnis */ 4,
+		/* .mfback_timeout */ -1,
+		/* .metering_pulse_timeout */ -1,
+		/* .allow_collect_calls */ -1,
+		/* .immediate_accept */ -1,
+		/* .skip_category */ -1,
+		/* .forced_release */ -1,
+		/* .charge_calls */ -1,
+		/* .get_ani_first */ -1,
+		/* .call_files */ 0,
+		/* .mf_files */ 0,
+		/* .logdir */ NULL,
+		/* .advanced_protocol_file */ NULL
 	};
 
+	assert(sig_cb != NULL);
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling.");
@@ -892,9 +964,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 logging parameter\n");
 				continue;
 			}
-			openr2_log_level_t tmplevel;
-			char *clevel;
-			char *logval = ftdm_malloc(strlen(val)+1); /* alloca man page scared me, so better to use good ol' malloc  */
+			logval = ftdm_malloc(strlen(val)+1); /* alloca man page scared me, so better to use good ol' malloc  */
 			if (!logval) {
 				ftdm_log(FTDM_LOG_WARNING, "Ignoring R2 logging parameter: '%s', failed to alloc memory\n", val);
 				continue;
@@ -1288,6 +1358,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			}
 		}
 
+#ifndef WIN32
         /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		 * POLLPRI|POLLIN|POLLOUT otherwise.
 		 */
@@ -1300,6 +1371,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
         }
 
 		status = ftdm_span_poll_event(span, waitms, poll_events);
+#else
+		status = ftdm_span_poll_event(span, waitms, NULL);
+#endif
 
 		res = gettimeofday(&start, NULL);
 		if (res) {
@@ -1432,6 +1506,10 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 	int span_id = 0;
 	int chan_id = 0;
 	int i = 0;
+	ftdm_r2_data_t *r2data = NULL;
+	openr2_chan_t *r2chan = NULL;
+	openr2_context_t *r2context = NULL;
+	openr2_variant_t r2variant;
 
 	if (data) {
 		mycmd = ftdm_strdup(data);
@@ -1503,9 +1581,6 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 		if (!strcasecmp(argv[0], "status")) {
 			//openr2_chan_stats_t stats;
 			span_id = atoi(argv[1]);
-			ftdm_r2_data_t *r2data = NULL;
-			openr2_chan_t *r2chan = NULL;
-			openr2_context_t *r2context = NULL;
 
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS || ftdm_span_find(span_id, &span) == FTDM_SUCCESS) {
 				if (span->start != ftdm_r2_start) {
@@ -1517,7 +1592,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 					goto done;
 				}
 				r2context = r2data->r2context;
-				openr2_variant_t r2variant = openr2_context_get_variant(r2context);
+				r2variant = openr2_context_get_variant(r2context);
 				stream->write_function(stream, 
 						"Variant: %s\n"
 						"Max ANI: %d\n"
