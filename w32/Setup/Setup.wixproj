@@ -48,6 +48,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\libs\esl\fs_cli.2010.vcxproj">
+      <Name>fs_cli</Name>
+      <Project>{d2fb8043-d208-4aee-8f18-3b5857c871b9}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\libs\libteletone\libteletone.2010.vcxproj">
       <Name>libteletone</Name>
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
