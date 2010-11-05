@@ -1725,7 +1725,7 @@ static __inline__ ftdm_status_t check_events(ftdm_span_t *span, int ms_timeout)
 	ftdm_status_t status;
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = span->signal_data;
 
-	status = ftdm_span_poll_event(span, ms_timeout);
+	status = ftdm_span_poll_event(span, ms_timeout, NULL);
 
 	switch(status) {
 	case FTDM_SUCCESS:

@@ -459,7 +459,7 @@ struct ftdm_memory_handler {
 #define FIO_CHANNEL_GET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *status)
 #define FIO_SPAN_SET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t status)
 #define FIO_SPAN_GET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t *status)
-#define FIO_SPAN_POLL_EVENT_ARGS (ftdm_span_t *span, uint32_t ms)
+#define FIO_SPAN_POLL_EVENT_ARGS (ftdm_span_t *span, uint32_t ms, short *poll_events)
 #define FIO_SPAN_NEXT_EVENT_ARGS (ftdm_span_t *span, ftdm_event_t **event)
 #define FIO_SIGNAL_CB_ARGS (ftdm_sigmsg_t *sigmsg)
 #define FIO_EVENT_CB_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t *event)
@@ -817,12 +817,13 @@ FT_DECLARE(void) ftdm_channel_flush_dtmf(ftdm_channel_t *ftdmchan);
  *
  * \param span The span to wait events for
  * \param ms Milliseconds timeout
+ * \param poll_events Array of events to poll for, for each channel on the span
  *
  * \retval FTDM_SUCCESS success (at least one event available)
  * \retval FTDM_TIMEOUT Timed out waiting for events
  * \retval FTDM_FAIL failure
  */
-FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms);
+FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms, short *poll_events);
 
 /*! 
  * \brief Find a span by its id

@@ -657,7 +657,7 @@ static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj)
 		int waitms = 10;
 		ftdm_status_t status;
 
-		status = ftdm_span_poll_event(span, waitms);
+		status = ftdm_span_poll_event(span, waitms, NULL);
 		
 		switch(status) {
 		case FTDM_SUCCESS:

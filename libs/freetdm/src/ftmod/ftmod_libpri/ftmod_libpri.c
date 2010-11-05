@@ -907,7 +907,7 @@ static __inline__ void check_events(ftdm_span_t *span)
 {
 	ftdm_status_t status;
 
-	status = ftdm_span_poll_event(span, 5);
+	status = ftdm_span_poll_event(span, 5, NULL);
 
 	switch(status) {
 	case FTDM_SUCCESS:
