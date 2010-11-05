@@ -56,7 +56,14 @@
 							 Target="[INSTALLLOCATION]FreeSwitchConsole.exe"
 							 WorkingDirectory="INSTALLLOCATION"/>
 				<RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
-				<RegistryValue Root="HKCU" Key="Software\Microsoft\FreeSWITCH" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+			</Component>
+			<Component Id="FSCliShortcut" Guid="D209546C-C728-4d8f-BDB2-29AED8824282">
+				<Shortcut Id="FSCliStartMenuShortcut"
+							 Name="FS_Cli"
+							 Description="FreeSWITCH Command Line Interface"
+							 Target="[INSTALLLOCATION]fs_cli.exe"
+							 WorkingDirectory="INSTALLLOCATION"/>
+				<RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
 			</Component>
 		</DirectoryRef>
 
@@ -72,7 +79,12 @@
 			<?if $(var.Platform) = x64 ?>
 			  <MergeRef Id="CrtFiles_x64"/>
 			<?endif ?>
+		</Feature>
+		<Feature Id="ProductFeatureFreeSWITCH" Title="FreeSWITCH" Level="1">
 			<ComponentRef Id="ApplicationShortcut" />
+		</Feature>
+		<Feature Id="ProductFeatureFSCli" Title="FreeSWITCH Command Line Interface" Level="1">
+			<ComponentRef Id="FSCliShortcut" />
 		</Feature>
     <Feature Id="ProductFeatureConf" Title="FreeSWITCH Configuration Sample" Level="1">
       <ComponentGroupRef Id="FreeSWITCHConfFiles" />
