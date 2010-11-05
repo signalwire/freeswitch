@@ -998,8 +998,10 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 
 			if (caller_channel) {
 				switch_channel_set_variable(caller_channel, "fifo_role", "caller");
-				switch_process_import(consumer_session, caller_channel, "fifo_caller_consumer_import");
-				switch_process_import(caller_session, consumer_channel, "fifo_consumer_caller_import");
+				switch_process_import(consumer_session, caller_channel, "fifo_caller_consumer_import", 
+									  switch_channel_get_variable(consumer_channel, "fifo_import_prefix"));
+				switch_process_import(caller_session, consumer_channel, "fifo_consumer_caller_import",
+									  switch_channel_get_variable(caller_channel, "fifo_import_prefix"));
 			}
 
 				
@@ -2846,8 +2848,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_core_media_bug_resume(session);
 				switch_core_media_bug_resume(other_session);
-				switch_process_import(session, other_channel, "fifo_caller_consumer_import");
-				switch_process_import(other_session, channel, "fifo_consumer_caller_import");
+				switch_process_import(session, other_channel, "fifo_caller_consumer_import", switch_channel_get_variable(channel, "fifo_import_prefix"));
+				switch_process_import(other_session, channel, "fifo_consumer_caller_import", switch_channel_get_variable(other_channel, "fifo_import_prefix"));
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);

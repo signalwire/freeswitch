@@ -1038,7 +1038,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	return status;
 }
 
-SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname)
+SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname, const char *prefix)
 {
 	const char *import, *val;
 	switch_channel_t *caller_channel;
@@ -1054,7 +1054,13 @@ SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switc
 		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			for (i = 0; i < argc; i++) {
 				if ((val = switch_channel_get_variable(peer_channel, argv[i]))) {
-					switch_channel_set_variable(caller_channel, argv[i], val);
+					if (prefix) {
+						char *var = switch_mprintf("%s%s", prefix, argv[i]);
+						switch_channel_set_variable(caller_channel, var, val);
+						free(var);
+					} else {
+						switch_channel_set_variable(caller_channel, argv[i], val);
+					}
 				}
 			}
 		}
@@ -3296,7 +3302,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			} else {
 				status = SWITCH_STATUS_FALSE;
 				if (caller_channel && peer_channel) {
-					switch_process_import(oglobals.session, peer_channel, "import");
+					switch_process_import(oglobals.session, peer_channel, "import", NULL);
 				}
 				peer_channel = NULL;
 				goto done;
@@ -3347,7 +3353,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (caller_channel) {
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
 					if (peer_channel) {
-						switch_process_import(oglobals.session, peer_channel, "import");
+						switch_process_import(oglobals.session, peer_channel, "import", NULL);
 					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n",
