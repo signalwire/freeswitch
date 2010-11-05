@@ -666,17 +666,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return status;
 	}
 
+	switch_mutex_lock(session->codec_write_mutex);
+
 	if (!(frame->codec && frame->codec->implementation)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has received a bad frame with no codec!\n", 
 						  switch_channel_get_name(session->channel));
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		switch_mutex_unlock(session->codec_write_mutex);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_assert(frame->codec != NULL);
 	switch_assert(frame->codec->implementation != NULL);
-
-	switch_mutex_lock(session->codec_write_mutex);
 
 	if (!(switch_core_codec_ready(session->write_codec) && frame->codec) ||
 		!switch_channel_ready(session->channel) || !switch_channel_media_ready(session->channel)) {
