@@ -409,6 +409,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					message = NULL;
 				}
 
+				switch_ivr_parse_all_events(session);
+
 				if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
 					switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
 					if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
@@ -416,6 +418,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 					switch_channel_clear_flag(session->channel, CF_THREAD_SLEEPING);
 				}
+
+				switch_ivr_parse_all_events(session);
 
 				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_receive_message(session, message);
