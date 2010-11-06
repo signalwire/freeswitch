@@ -1099,14 +1099,14 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			break;
 		case FTDM_TRUNK_BRI:
 			res = lpwrap_init_bri(&isdn_data->spri, span, isdn_data->dchan,
-					isdn_data->pswitch, isdn_data->node, 0, isdn_data->debug);
+					isdn_data->pswitch, isdn_data->node, 1, isdn_data->debug);
 #ifndef HAVE_LIBPRI_BRI
 			goto out;
 #endif
 			break;
 		case FTDM_TRUNK_BRI_PTMP:
 			res = lpwrap_init_bri(&isdn_data->spri, span, isdn_data->dchan,
-					isdn_data->pswitch, isdn_data->node, 1, isdn_data->debug);
+					isdn_data->pswitch, isdn_data->node, 0, isdn_data->debug);
 #ifndef HAVE_LIBPRI_BRI
 			goto out;
 #endif

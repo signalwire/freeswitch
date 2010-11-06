@@ -195,9 +195,10 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 	return ret;
 }
 
-int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int ptmp, int debug)
+int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int ptp, int debug)
 {
 	int ret = -1;
+
 #ifdef HAVE_LIBPRI_BRI
 	memset(spri, 0, sizeof(struct lpwrap_pri));
 	spri->dchan = dchan;
@@ -208,7 +209,7 @@ int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 		return ret;
 	}
 
-	if ((spri->pri = pri_new_bri_cb(spri->dchan->sockfd, ptmp, node, swtype, __pri_lpwrap_read, __pri_lpwrap_write, spri))) {
+	if ((spri->pri = pri_new_bri_cb(spri->dchan->sockfd, ptp, node, swtype, __pri_lpwrap_read, __pri_lpwrap_write, spri))) {
 		unsigned char buf[4] = { 0 };
 		size_t buflen = sizeof(buf), len = 0;
 
