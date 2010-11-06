@@ -657,7 +657,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, chunk);
 	
 	if (status == FTDM_FAIL) {
-		ftdm_log(FTDM_LOG_WARNING, "failed to wait for I/O\n");
+		ftdm_log(FTDM_LOG_ERROR, "Failed to wait for I/O\n");
 		goto fail;
 	}
 	
