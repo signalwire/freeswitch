@@ -2293,11 +2293,14 @@ static const char *sofia_state_names[] = {
 	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
+	"TIMEOUT",
 	NULL
 };
 
 const char *sofia_state_string(int state)
 {
+	if (state >= REG_STATE_LAST) return "";
+
 	return sofia_state_names[state];
 }
 
