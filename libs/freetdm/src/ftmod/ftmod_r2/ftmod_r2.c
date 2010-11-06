@@ -986,6 +986,15 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 advanced_protocol_file parameter\n");
+				/* 
+				 * TODO: investigate this
+				 *
+				 * despite the fact advanced_protocol_file was initialized as NULL, it's now a bad
+				 * pointer - hence, this workaround.
+				 * this seems to happen only on windows.
+				 *
+				 */
+				r2conf.advanced_protocol_file = NULL;
 				continue;
 			}
 			r2conf.advanced_protocol_file = val;
