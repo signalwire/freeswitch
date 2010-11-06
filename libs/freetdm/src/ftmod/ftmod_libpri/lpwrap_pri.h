@@ -121,6 +121,8 @@ struct lpwrap_pri_event_list {
 const char *lpwrap_pri_event_str(lpwrap_pri_event_t event_id);
 int lpwrap_one_loop(struct lpwrap_pri *spri);
 int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int debug);
+int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int ptmp, int debug);
 int lpwrap_run_pri(struct lpwrap_pri *spri);
+#define lpwrap_run_bri(x)	lpwrap_run_pri(x)
 
 #endif

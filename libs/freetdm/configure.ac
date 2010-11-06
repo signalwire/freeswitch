@@ -145,21 +145,6 @@ fi
 AC_MSG_RESULT([${as_nl}<<>> Modules and optional features])
 
 ##
-# libpri (TODO: add checks)
-#
-HAVE_LIBPRI="no"
-AC_ARG_WITH([libpri],
-	[AS_HELP_STRING([--with-libpri], [Install ftmod_libpri])],
-	[case "${withval}" in
-	 no)	enable_libpri="no" ;;
-	 *)	enable_libpri="yes" ;;
-	 esac],
-	[enable_libpri="no"]
-)
-HAVE_LIBPRI="${enable_libpri}"
-AM_CONDITIONAL([HAVE_LIBPRI],[test "${enable_libpri}" = "yes"])
-
-##
 # pritap (TODO: add checks)
 #
 HAVE_PRITAP="no"
@@ -192,6 +177,50 @@ HAVE_OPENR2="no"
 AC_CHECK_LIB([openr2], [openr2_context_set_io_type], [HAVE_OPENR2="yes"])
 AC_MSG_RESULT([checking whether to build ftmod_r2... ${HAVE_OPENR2}])
 AM_CONDITIONAL([HAVE_OPENR2], [test "${HAVE_OPENR2}" = "yes"])
+
+##
+# Digium libpri (TODO: add checks)
+#
+HAVE_LIBPRI="no"
+AC_ARG_WITH([libpri],
+	[AS_HELP_STRING([--with-libpri], [Install ftmod_libpri])],
+	[case "${withval}" in
+	 no)	enable_libpri="no" ;;
+	 *)	enable_libpri="yes" ;;
+	 esac],
+	[enable_libpri="no"]
+)
+if test "${enable_libpri}" != "no"
+then
+	AC_MSG_RESULT([${as_nl}<<>> Digium libpri])
+
+	save_LIBS="${LIBS}"
+	LIBS="${LIBS} -lpri"
+	AC_MSG_CHECKING([whether libpri is usable])
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[#include <libpri.h>],
+			[const char *version = pri_get_version();]
+		)],
+		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		 AC_MSG_ERROR([libpri is not installed or unusable (see config.log for details)])]
+	)
+
+	AC_MSG_CHECKING([whether libpri has BRI support])
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[extern void pri_new_bri_cb(void);],
+			[pri_new_bri_cb();]
+		)],
+		[AC_DEFINE([HAVE_LIBPRI_BRI], [1], [libpri has bri support])
+		 AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])]
+	)
+	LIBS="${save_LIBS}"
+fi
+HAVE_LIBPRI="${enable_libpri}"
+AM_CONDITIONAL([HAVE_LIBPRI],[test "${enable_libpri}" = "yes"])
 
 ##
 # Sangoma Wanpipe
