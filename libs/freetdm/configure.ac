@@ -215,7 +215,8 @@ then
 		)],
 		[AC_DEFINE([HAVE_LIBPRI_BRI], [1], [libpri has bri support])
 		 AC_MSG_RESULT([yes])],
-		[AC_MSG_RESULT([no])]
+		[AC_MSG_RESULT([no])
+		 AC_MSG_NOTICE([You will need libpri-1.4.12_beta1 or newer for BRI support])]
 	)
 	LIBS="${save_LIBS}"
 fi
