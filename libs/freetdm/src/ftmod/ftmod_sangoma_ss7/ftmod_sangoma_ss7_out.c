@@ -335,7 +335,26 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.isdnAccInd.pres		= PRSNT_NODEF;
 	acm.bckCallInd.isdnAccInd.val		= ISDNACC_NONISDN;
 	acm.bckCallInd.echoCtrlDevInd.pres	= PRSNT_NODEF;
-	acm.bckCallInd.echoCtrlDevInd.val	= 0x1;	/* ec device present */
+	switch (ftdmchan->caller_data.bearer_capability) {
+	/**********************************************************************/
+	case (FTDM_BEARER_CAP_SPEECH):
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
+		break;
+	/**********************************************************************/
+	case (FTDM_BEARER_CAP_64K_UNRESTRICTED):
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x0;
+		break;
+	/**********************************************************************/
+	case (FTDM_BEARER_CAP_3_1KHZ_AUDIO):
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
+		break;
+	/**********************************************************************/
+	default:
+		SS7_ERROR_CHAN(ftdmchan, "Unknown Bearer capability falling back to speech%s\n", " ");
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
+		break;
+	/**********************************************************************/
+	} /* switch (ftdmchan->caller_data.bearer_capability) */
 	acm.bckCallInd.sccpMethInd.pres		= PRSNT_NODEF;
 	acm.bckCallInd.sccpMethInd.val		= SCCPMTH_NOIND;
 
