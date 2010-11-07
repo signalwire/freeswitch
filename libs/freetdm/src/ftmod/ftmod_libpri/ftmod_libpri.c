@@ -34,6 +34,10 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x)	(sizeof((x)) / sizeof((x)[0]))
+#endif
+
 /**
  * \brief Unloads libpri IO module
  * \return Success
@@ -143,54 +147,54 @@ static void s_pri_message(struct pri *pri, char *s)
 	ftdm_log(FTDM_LOG_DEBUG, "%s", s);
 }
 
+static const struct ftdm_libpri_debug {
+	const char *name;
+	const int   flags;
+} ftdm_libpri_debug[] = {
+	{ "q921_raw",     PRI_DEBUG_Q921_RAW   },
+	{ "q921_dump",    PRI_DEBUG_Q921_DUMP  },
+	{ "q921_state",   PRI_DEBUG_Q921_STATE },
+	{ "q921_all",    (PRI_DEBUG_Q921_RAW | PRI_DEBUG_Q921_DUMP | PRI_DEBUG_Q921_STATE) },
+
+	{ "q931_dump",    PRI_DEBUG_Q931_DUMP    },
+	{ "q931_state",   PRI_DEBUG_Q931_STATE   },
+	{ "q931_anomaly", PRI_DEBUG_Q931_ANOMALY },
+	{ "q931_all",    (PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE | PRI_DEBUG_Q931_ANOMALY) },
+
+	{ "config",       PRI_DEBUG_CONFIG },
+	{ "apdu",         PRI_DEBUG_APDU   },
+	{ "aoc",          PRI_DEBUG_AOC    }
+};
+
 /**
  * \brief Parses a debug string to flags
  * \param in Debug string to parse for
- * \return Flags
+ * \return Flags or -1 if nothing matched
  */
-static int parse_debug(const char *in)
+static int parse_debug(const char *in, int *flags)
 {
-	int flags = 0;
+	int res = -1;
+	int i;
 
-	if (!in) {
+	if (!in || !flags)
+		return -1;
+
+	if (!strcmp(in, "all")) {
+		*flags = PRI_DEBUG_ALL;
+		return 0;
+	}
+	if (strstr(in, "none")) {
+		*flags = 0;
 		return 0;
 	}
 
-	if (strstr(in, "q921_raw")) {
-		flags |= PRI_DEBUG_Q921_RAW;
+	for (i = 0; i < ARRAY_SIZE(ftdm_libpri_debug); i++) {
+		if (strstr(in, ftdm_libpri_debug[i].name)) {
+			*flags |= ftdm_libpri_debug[i].flags;
+			res = 0;
+		}
 	}
-	if (strstr(in, "q921_dump")) {
-		flags |= PRI_DEBUG_Q921_DUMP;
-	}
-	if (strstr(in, "q921_state")) {
-		flags |= PRI_DEBUG_Q921_STATE;
-	}
-	if (strstr(in, "config")) {
-		flags |= PRI_DEBUG_CONFIG;
-	}
-	if (strstr(in, "q931_dump")) {
-		flags |= PRI_DEBUG_Q931_DUMP;
-	}
-	if (strstr(in, "q931_state")) {
-		flags |= PRI_DEBUG_Q931_STATE;
-	}
-	if (strstr(in, "q931_anomaly")) {
-		flags |= PRI_DEBUG_Q931_ANOMALY;
-	}
-	if (strstr(in, "apdu")) {
-		flags |= PRI_DEBUG_APDU;
-	}
-	if (strstr(in, "aoc")) {
-		flags |= PRI_DEBUG_AOC;
-	}
-	if (strstr(in, "all")) {
-		flags |= PRI_DEBUG_ALL;
-	}
-	if (strstr(in, "none")) {
-		flags = 0;
-	}
-
-	return flags;
+	return res;
 }
 
 static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span);
@@ -199,7 +203,25 @@ static ftdm_io_interface_t ftdm_libpri_interface;
 static const char *ftdm_libpri_usage =
 	"Usage:\n"
 	"libpri kill <span>\n"
-	"libpri debug <span> <level>\n";
+	"libpri debug <span> <flag>\n"
+	"\n"
+	"Possible debug flags:\n"
+	"\tq921_raw     - Q.921 Raw messages\n"
+	"\tq921_dump    - Q.921 Decoded messages\n"
+	"\tq921_state   - Q.921 State machine changes\n"
+	"\tq921_all     - Enable all Q.921 debug options\n"
+	"\n"
+	"\tq931_dump    - Q.931 Messages\n"
+	"\tq931_state   - Q.931 State machine changes\n"
+	"\tq931_anomaly - Q.931 Anomalies\n"
+	"\tq931_all     - Enable all Q.931 debug options\n"
+	"\n"
+	"\tapdu         - Application protocol data unit\n"
+	"\taoc          - Advice of Charge messages\n"
+	"\tconfig       - Configuration\n"
+	"\n"
+	"\tnone         - Disable debugging\n"
+	"\tall          - Enable all debug options\n";
 
 /**
  * \brief API function to kill or debug a libpri span
@@ -253,13 +275,20 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
 				ftdm_libpri_data_t *isdn_data = span->signal_data;
+				int flags = 0;
+
 				if (span->start != ftdm_libpri_start) {
 					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
 					goto done;
 				}
 
-				pri_set_debug(isdn_data->spri.pri, parse_debug(argv[2]));
-				stream->write_function(stream, "%s: +OK debug set.\n", __FILE__);
+				if (parse_debug(argv[2], &flags) == -1) {
+					stream->write_function(stream, "%s: -ERR invalid debug flags given\n", __FILE__);
+					goto done;
+				}
+
+				pri_set_debug(isdn_data->spri.pri, flags);
+				stream->write_function(stream, "%s: +OK debug %s.\n", __FILE__, (flags) ? "enabled" : "disabled");
 				goto done;
 			} else {
 				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
@@ -1090,7 +1119,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		}
 
 		/* Initialize libpri trunk */
-		switch (span->trunk_type) {
+		switch (ftdm_span_get_trunk_type(span)) {
 		case FTDM_TRUNK_E1:
 		case FTDM_TRUNK_T1:
 		case FTDM_TRUNK_J1:
@@ -1348,9 +1377,9 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 	ftdm_libpri_data_t *isdn_data;
 	char *var, *val;
 
-	if (span->trunk_type >= FTDM_TRUNK_NONE) {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_trunk_type2str(span->trunk_type));
-		span->trunk_type = FTDM_TRUNK_T1;
+	if (ftdm_span_get_trunk_type(span) >= FTDM_TRUNK_NONE) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		ftdm_span_set_trunk_type(span, FTDM_TRUNK_T1);
 	}
 
 	for(i = 1; i <= span->chan_count; i++) {
@@ -1381,12 +1410,21 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
 
-	if (span->trunk_type == FTDM_TRUNK_E1) {
-		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1 trunk\n");
+	switch (ftdm_span_get_trunk_type(span)) {
+	case FTDM_TRUNK_E1:
+	case FTDM_TRUNK_BRI:
+	case FTDM_TRUNK_BRI_PTMP:
+		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1/BRI/BRI PTMP trunk\n");
 		isdn_data->l1 = PRI_LAYER_1_ALAW;
-	} else if (span->trunk_type == FTDM_TRUNK_T1) {
-		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ULAW since this is a T1 trunk\n");
+		break;
+	case FTDM_TRUNK_T1:
+	case FTDM_TRUNK_J1:
+		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ULAW since this is a T1/J1 trunk\n");
 		isdn_data->l1 = PRI_LAYER_1_ULAW;
+		break;
+	default:
+		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type\n");
+		return FTDM_FAIL;
 	}
 
 	while ((var = va_arg(ap, char *))) {
@@ -1416,7 +1454,10 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 			isdn_data->l1 = parse_l1(val);
 		}
 		else if (!strcasecmp(var, "debug")) {
-			isdn_data->debug = parse_debug(val);
+			if (parse_debug(val, &isdn_data->debug) == -1) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid debug flag, ignoring parameter\n");
+				isdn_data->debug = 0;
+			}
 		}
 		else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
