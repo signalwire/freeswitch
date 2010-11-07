@@ -1367,15 +1367,16 @@ static uint32_t parse_opts(const char *in)
  * \brief Initialises a libpri span from configuration variables
  * \param span Span to configure
  * \param sig_cb Callback function for event signals
- * \param ap List of configuration variables
+ * \param ftdm_parameters List of configuration variables
  * \return Success or failure
  */
-static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
+static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 {
 	uint32_t i, x = 0;
+	uint32_t paramindex = 0;
 	//ftdm_channel_t *dchans[2] = {0};
 	ftdm_libpri_data_t *isdn_data;
-	char *var, *val;
+	const char *var, *val;
 
 	if (ftdm_span_get_trunk_type(span) >= FTDM_TRUNK_NONE) {
 		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
@@ -1427,8 +1428,9 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_libpri_configure_span)
 		return FTDM_FAIL;
 	}
 
-	while ((var = va_arg(ap, char *))) {
-		val = va_arg(ap, char *);
+	for (paramindex = 0; paramindex < 10 && ftdm_parameters[paramindex].var; paramindex++) {
+		var = ftdm_parameters[paramindex].var;
+		val = ftdm_parameters[paramindex].val;
 
 		if (!val) {
 			ftdm_log(FTDM_LOG_ERROR, "Parameter '%s' has no value\n", var);
@@ -1497,8 +1499,9 @@ ftdm_module_t ftdm_module = {
 	ftdm_libpri_io_init,
 	ftdm_libpri_unload,
 	ftdm_libpri_init,
-	ftdm_libpri_configure_span,
-	NULL
+	NULL,
+	NULL,
+	ftdm_libpri_configure_span
 };
 
 /* For Emacs:
