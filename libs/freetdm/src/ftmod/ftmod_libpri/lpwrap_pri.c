@@ -92,7 +92,7 @@ static struct lpwrap_pri_event_list LPWRAP_PRI_EVENT_LIST[] = {
 	{8, LPWRAP_PRI_EVENT_ANSWER, "ANSWER"},
 	{9, LPWRAP_PRI_EVENT_HANGUP_ACK, "HANGUP_ACK"},
 	{10, LPWRAP_PRI_EVENT_RESTART_ACK, "RESTART_ACK"},
-	{11, LPWRAP_PRI_EVENT_FACNAME, "FACNAME"},
+	{11, LPWRAP_PRI_EVENT_FACILITY, "FACILITY"},
 	{12, LPWRAP_PRI_EVENT_INFO_RECEIVED, "INFO_RECEIVED"},
 	{13, LPWRAP_PRI_EVENT_PROCEEDING, "PROCEEDING"},
 	{14, LPWRAP_PRI_EVENT_SETUP_ACK, "SETUP_ACK"},
@@ -107,6 +107,9 @@ static struct lpwrap_pri_event_list LPWRAP_PRI_EVENT_LIST[] = {
 
 const char *lpwrap_pri_event_str(lpwrap_pri_event_t event_id)
 {
+	if (event_id < 0 || event_id >= LPWRAP_PRI_EVENT_MAX)
+		return "";
+
 	return LPWRAP_PRI_EVENT_LIST[event_id].name;
 }
 
@@ -114,8 +117,8 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 {
 	struct lpwrap_pri *spri = (struct lpwrap_pri *) pri_get_userdata(pri);
 	ftdm_size_t len = buflen;
-	int res;
 	ftdm_status_t zst;
+	int res;
 
 	if ((zst = ftdm_channel_read(spri->dchan, buf, &len)) != FTDM_SUCCESS) {
 		if (zst == FTDM_FAIL) {
@@ -130,25 +133,25 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	}
 	spri->errs = 0;
 	res = (int)len;
-	memset(&((unsigned char*)buf)[res],0,2);
-	res+=2;
+
+	memset(&((unsigned char*)buf)[res], 0, 2);
+	res += 2;
 
 #ifdef IODEBUG
 	{
 		char bb[2048] = { 0 };
 
 		print_hex_bytes(buf, res - 2, bb, sizeof(bb));
-		ftdm_log(FTDM_LOG_DEBUG, "READ %d\n", res-2);
+		ftdm_log(FTDM_LOG_DEBUG, "READ %d\n", res - 2);
 	}
 #endif
-
 	return res;
 }
 
 static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 {
 	struct lpwrap_pri *spri = (struct lpwrap_pri *) pri_get_userdata(pri);
-	ftdm_size_t len = buflen -2;
+	ftdm_size_t len = buflen - 2;
 
 	if (ftdm_channel_write(spri->dchan, buf, buflen, &len) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
@@ -161,11 +164,10 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 		char bb[2048] = { 0 };
 
 		print_hex_bytes(buf, buflen - 2, bb, sizeof(bb));
-		ftdm_log(FTDM_LOG_DEBUG, "WRITE %d\n", (int)buflen-2);
+		ftdm_log(FTDM_LOG_DEBUG, "WRITE %d\n", (int)buflen - 2);
 	}
 #endif
-
-	return (int) buflen;
+	return (int)buflen;
 }
 
 int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int debug)
@@ -186,6 +188,9 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 		size_t buflen = sizeof(buf), len = 0;
 
 		pri_set_debug(spri->pri, debug);
+#ifdef HAVE_LIBPRI_AOC
+		pri_aoc_events_enable(spri->pri, 1);
+#endif
 		ftdm_channel_write(spri->dchan, buf, buflen, &len);
 
 		ret = 0;
@@ -214,6 +219,9 @@ int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 		size_t buflen = sizeof(buf), len = 0;
 
 		pri_set_debug(spri->pri, debug);
+#ifdef HAVE_LIBPRI_AOC
+		pri_aoc_events_enable(spri->pri, 1);
+#endif
 		ftdm_channel_write(spri->dchan, buf, buflen, &len);
 
 		ret = 0;
@@ -267,9 +275,6 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 	now.tv_usec = 100000;
 
 	sel = select(pri_fd(spri->pri) + 1, &rfds, NULL, &efds, &now);
-
-	event = NULL;
-
 	if (!sel) {
 		if ((next = pri_schedule_next(spri->pri))) {
 			gettimeofday(&now, NULL);
@@ -284,33 +289,29 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 
 	if (event) {
 		/* 0 is catchall event handler */
-		if ((handler = spri->eventmap[event->e] ? spri->eventmap[event->e] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
+		if (event->e < 0 || event->e >= LPWRAP_PRI_EVENT_MAX) {
+			handler = spri->eventmap[0];
+		} else if (spri->eventmap[event->e]) {
+			handler = spri->eventmap[event->e];
+		} else {
+			handler = spri->eventmap[0];
+		}
+
+		if (handler) {
 			handler(spri, event->e, event);
 		} else {
 			ftdm_log(FTDM_LOG_CRIT, "No event handler found for event %d.\n", event->e);
 		}
 	}
-
-
 	return sel;
-
-
-	if ((handler = spri->eventmap[LPWRAP_PRI_EVENT_IO_FAIL] ? spri->eventmap[LPWRAP_PRI_EVENT_IO_FAIL] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
-		handler(spri, LPWRAP_PRI_EVENT_IO_FAIL, NULL);
-	}
-
-	return -1;
 }
 
 int lpwrap_run_pri(struct lpwrap_pri *spri)
 {
 	int ret = 0;
 
-	for (;;){
-		ret = lpwrap_one_loop(spri);
-
-		if (ret < 0) {
-
+	for (;;) {
+		if ((ret = lpwrap_one_loop(spri)) < 0) {
 #ifndef WIN32 //This needs to be adressed fror WIN32 still
 			if (errno == EINTR){
 				/* Igonore an interrupted system call */
@@ -321,9 +322,7 @@ int lpwrap_run_pri(struct lpwrap_pri *spri)
 			break;
 		}
 	}
-
 	return ret;
-
 }
 
 /* For Emacs:

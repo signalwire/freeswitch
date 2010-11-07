@@ -30,7 +30,6 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
@@ -578,7 +577,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			sr = pri_sr_new();
 			assert(sr);
 			pri_sr_set_channel(sr, ftdmchan->chan_id, 0, 0);
-			pri_sr_set_bearer(sr, 0, isdn_data->l1);
+			pri_sr_set_bearer(sr, PRI_TRANS_CAP_SPEECH, isdn_data->l1);
 			pri_sr_set_called(sr, ftdmchan->caller_data.dnis.digits, dp, 1);
 			pri_sr_set_caller(sr, ftdmchan->caller_data.cid_num.digits,
 					(isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_DISPLAY_IE ? NULL : ftdmchan->caller_data.cid_name),
@@ -589,7 +588,13 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				pri_sr_set_redirecting(sr, ftdmchan->caller_data.cid_num.digits, dp,
 					PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
 			}
-
+#ifdef HAVE_LIBPRI_AOC
+			if (isdn_data->opts & FTMOD_LIBPRI_OPT_FACILITY_AOC) {
+				/* request AOC on call */
+				pri_sr_set_aoc_charging_request(sr, (PRI_AOC_REQUEST_S | PRI_AOC_REQUEST_E | PRI_AOC_REQUEST_D));
+				ftdm_log(FTDM_LOG_DEBUG, "Requesting AOC-S/D/E on call\n");
+			}
+#endif
 			if (pri_setup(isdn_data->spri.pri, call, sr)) {
 				ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
@@ -978,6 +983,182 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	return 0;
 }
 
+/*
+ * FACILITY Advice-On-Charge handler
+ */
+#ifdef HAVE_LIBPRI_AOC
+static const char *aoc_billing_id(const int id)
+{
+	switch (id) {
+	case PRI_AOC_E_BILLING_ID_NOT_AVAILABLE:
+		return "not available";
+	case PRI_AOC_E_BILLING_ID_NORMAL:
+		return "normal";
+	case PRI_AOC_E_BILLING_ID_REVERSE:
+		return "reverse";
+	case PRI_AOC_E_BILLING_ID_CREDIT_CARD:
+		return "credit card";
+	case PRI_AOC_E_BILLING_ID_CALL_FORWARDING_UNCONDITIONAL:
+		return "call forwarding unconditional";
+	case PRI_AOC_E_BILLING_ID_CALL_FORWARDING_BUSY:
+		return "call forwarding busy";
+	case PRI_AOC_E_BILLING_ID_CALL_FORWARDING_NO_REPLY:
+		return "call forwarding no reply";
+	case PRI_AOC_E_BILLING_ID_CALL_DEFLECTION:
+		return "call deflection";
+	case PRI_AOC_E_BILLING_ID_CALL_TRANSFER:
+		return "call transfer";
+	default:
+		return "unknown\n";
+	}
+}
+
+static float aoc_money_amount(const struct pri_aoc_amount *amount)
+{
+	switch (amount->multiplier) {
+	case PRI_AOC_MULTIPLIER_THOUSANDTH:
+		return amount->cost * 0.001f;
+	case PRI_AOC_MULTIPLIER_HUNDREDTH:
+		return amount->cost * 0.01f;
+	case PRI_AOC_MULTIPLIER_TENTH:
+		return amount->cost * 0.1f;
+	case PRI_AOC_MULTIPLIER_TEN:
+		return amount->cost * 10.0f;
+	case PRI_AOC_MULTIPLIER_HUNDRED:
+		return amount->cost * 100.0f;
+	case PRI_AOC_MULTIPLIER_THOUSAND:
+		return amount->cost * 1000.0f;
+	default:
+		return amount->cost;
+	}
+}
+
+static int handle_facility_aoc_s(const struct pri_subcmd_aoc_s *aoc_s)
+{
+	/* Left as an excercise to the reader */
+	return 0;
+}
+
+static int handle_facility_aoc_d(const struct pri_subcmd_aoc_d *aoc_d)
+{
+	/* Left as an excercise to the reader */
+	return 0;
+}
+
+static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
+{
+	char tmp[1024] = { 0 };
+	int x = 0, offset = 0;
+
+	switch (aoc_e->charge) {
+	case PRI_AOC_DE_CHARGE_FREE:
+		strcat(tmp, "\tcharge-type: none\n");
+		offset = strlen(tmp);
+		break;
+
+	case PRI_AOC_DE_CHARGE_CURRENCY:
+		sprintf(tmp, "\tcharge-type: money\n\tcharge-amount: %.2f\n\tcharge-currency: %s\n",
+				aoc_money_amount(&aoc_e->recorded.money.amount),
+				aoc_e->recorded.money.currency);
+		offset = strlen(tmp);
+		break;
+
+	case PRI_AOC_DE_CHARGE_UNITS:
+		strcat(tmp, "\tcharge-type: units\n");
+		offset = strlen(tmp);
+
+		for (x = 0; x < aoc_e->recorded.unit.num_items; x++) {
+			sprintf(&tmp[offset], "\tcharge-amount: %ld (type: %d)\n",
+					aoc_e->recorded.unit.item[x].number,
+					aoc_e->recorded.unit.item[x].type);
+			offset += strlen(&tmp[offset]);
+		}
+		break;
+
+	default:
+		strcat(tmp, "\tcharge-type: not available\n");
+		offset = strlen(tmp);
+	}
+
+	sprintf(&tmp[offset], "\tbilling-id: %s\n", aoc_billing_id(aoc_e->billing_id));
+	offset += strlen(&tmp[offset]);
+
+	strcat(&tmp[offset], "\tassociation-type: ");
+	offset += strlen(&tmp[offset]);
+
+	switch (aoc_e->associated.charging_type) {
+	case PRI_AOC_E_CHARGING_ASSOCIATION_NOT_AVAILABLE:
+		strcat(&tmp[offset], "not available\n");
+		break;
+	case PRI_AOC_E_CHARGING_ASSOCIATION_NUMBER:
+		sprintf(&tmp[offset], "number\n\tassociation-number: %s\n", aoc_e->associated.charge.number.str);
+		break;
+	case PRI_AOC_E_CHARGING_ASSOCIATION_ID:
+		sprintf(&tmp[offset], "id\n\tassociation-id: %d\n", aoc_e->associated.charge.id);
+		break;
+	default:
+		strcat(&tmp[offset], "unknown\n");
+	}
+
+	ftdm_log(FTDM_LOG_INFO, "AOC-E:\n%s", tmp);
+	return 0;
+}
+#endif
+
+/**
+ * \brief Handler for libpri facility events
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ */
+static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
+{
+	struct pri_event_facility *pfac = (struct pri_event_facility *)pevent;
+	int i = 0;
+
+	if (!pevent)
+		return 0;
+
+	if (!pfac->subcmds || pfac->subcmds->counter_subcmd <= 0)
+		return 0;
+
+	for (i = 0; i < pfac->subcmds->counter_subcmd; i++) {
+		struct pri_subcommand *sub = &pfac->subcmds->subcmd[i];
+		int res = -1;
+
+		switch (sub->cmd) {
+#ifdef HAVE_LIBPRI_AOC
+		case PRI_SUBCMD_AOC_S:	/* AOC-S: Start of call */
+			res = handle_facility_aoc_s(&sub->u.aoc_s);
+			break;
+		case PRI_SUBCMD_AOC_D:	/* AOC-D: During call */
+			res = handle_facility_aoc_d(&sub->u.aoc_d);
+			break;
+		case PRI_SUBCMD_AOC_E:	/* AOC-E: End of call */
+			res = handle_facility_aoc_e(&sub->u.aoc_e);
+			break;
+		case PRI_SUBCMD_AOC_CHARGING_REQ:
+			ftdm_log(FTDM_LOG_NOTICE, "AOC Charging Request received\n");
+			break;
+		case PRI_SUBCMD_AOC_CHARGING_REQ_RSP:
+			ftdm_log(FTDM_LOG_NOTICE, "AOC Charging Request Response received [aoc_s data: %s, req: %x, resp: %x]\n",
+					sub->u.aoc_request_response.valid_aoc_s ? "yes" : "no",
+					sub->u.aoc_request_response.charging_request,
+					sub->u.aoc_request_response.charging_response);
+			break;
+#endif
+		default:
+			ftdm_log(FTDM_LOG_DEBUG, "FACILITY subcommand %d is not implemented, ignoring\n", sub->cmd);
+		}
+
+		ftdm_log(FTDM_LOG_DEBUG, "FACILITY subcommand %d handler returned %d\n", sub->cmd, res);
+	}
+
+	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", spri->span->span_id, event_type, lpwrap_pri_event_str(event_type));
+	return 0;
+}
+
 /**
  * \brief Handler for libpri dchan up event
  * \param spri Pri wrapper structure (libpri, span, dchan)
@@ -1145,6 +1326,13 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			goto out;
 		}
 
+#ifdef HAVE_LIBPRI_AOC
+		/* enable FACILITY on trunk, if needed */
+		if (isdn_data->opts & FTMOD_LIBPRI_OPT_FACILITY_AOC) {
+			pri_facility_enable(isdn_data->spri.pri);
+		}
+#endif
+
 		if (res == 0) {
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RING, on_ring);
@@ -1159,6 +1347,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_FACILITY, on_facility);
 
 			if (down) {
 				ftdm_log(FTDM_LOG_INFO, "PRI back up on span %d\n", isdn_data->spri.span->span_id);
@@ -1359,7 +1548,9 @@ static uint32_t parse_opts(const char *in)
 	if (strstr(in, "omit_redirecting_number")) {
 		flags |= FTMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE;
 	}
-
+	if (strstr(in, "aoc")) {
+		flags |= FTMOD_LIBPRI_OPT_FACILITY_AOC;
+	}
 	return flags;
 }
 

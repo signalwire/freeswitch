@@ -213,10 +213,22 @@ then
 			[extern void pri_new_bri_cb(void);],
 			[pri_new_bri_cb();]
 		)],
-		[AC_DEFINE([HAVE_LIBPRI_BRI], [1], [libpri has bri support])
+		[AC_DEFINE([HAVE_LIBPRI_BRI], [1], [libpri has BRI support])
 		 AC_MSG_RESULT([yes])],
 		[AC_MSG_RESULT([no])
 		 AC_MSG_NOTICE([You will need libpri-1.4.12_beta1 or newer for BRI support])]
+	)
+
+	AC_MSG_CHECKING([whether libpri has AOC event support])
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[extern void pri_aoc_events_enable(void);],
+			[pri_aoc_events_enable();]
+		)],
+		[AC_DEFINE([HAVE_LIBPRI_AOC], [1], [libpri has AOC event support])
+		 AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		 AC_MSG_NOTICE([You will need libpri-1.4.12_beta1 or newer for AOC event support])]
 	)
 	LIBS="${save_LIBS}"
 fi
