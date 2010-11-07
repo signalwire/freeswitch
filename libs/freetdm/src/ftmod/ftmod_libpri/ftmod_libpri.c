@@ -1424,7 +1424,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		isdn_data->l1 = PRI_LAYER_1_ULAW;
 		break;
 	default:
-		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type\n");
+		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		snprintf(span->last_error, sizeof(span->last_error), "Invalid trunk type [%s]", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
 		return FTDM_FAIL;
 	}
 
@@ -1434,6 +1435,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 
 		if (!val) {
 			ftdm_log(FTDM_LOG_ERROR, "Parameter '%s' has no value\n", var);
+			snprintf(span->last_error, sizeof(span->last_error), "Parameter [%s] has no value", var);
 			return FTDM_FAIL;
 		}
 
@@ -1462,6 +1464,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 			}
 		}
 		else {
+			ftdm_log(FTDM_LOG_ERROR, "Unknown parameter '%s', aborting configuration\n", var);
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			return FTDM_FAIL;
 		}
