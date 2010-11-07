@@ -203,7 +203,7 @@ static ftdm_io_interface_t ftdm_libpri_interface;
 static const char *ftdm_libpri_usage =
 	"Usage:\n"
 	"libpri kill <span>\n"
-	"libpri debug <span> <flag>\n"
+	"libpri debug <span> <all|none|flag,...flagN>\n"
 	"\n"
 	"Possible debug flags:\n"
 	"\tq921_raw     - Q.921 Raw messages\n"
