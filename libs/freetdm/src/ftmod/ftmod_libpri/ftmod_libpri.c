@@ -1327,7 +1327,10 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		}
 
 #ifdef HAVE_LIBPRI_AOC
-		/* enable FACILITY on trunk, if needed */
+		/*
+		 * Only enable facility on trunk if really required,
+		 * this may help avoid problems on troublesome lines.
+		 */
 		if (isdn_data->opts & FTMOD_LIBPRI_OPT_FACILITY_AOC) {
 			pri_facility_enable(isdn_data->spri.pri);
 		}
