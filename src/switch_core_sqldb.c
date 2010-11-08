@@ -702,8 +702,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 		if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 			switch_cache_db_execute_sql_real(dbh, "BEGIN", &errmsg);
 		} else {
-			if (switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0) != SWITCH_ODBC_SUCCESS) {
-				errmsg = strdup("Unable to Set AutoCommit Off.");;
+			switch_odbc_status_t result;
+			if ((result = switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
+				char tmp[100];
+				switch_snprintf(tmp, sizeof(tmp), "%s-%i", "Unable to Set AutoCommit Off", result);
+				errmsg = strdup(tmp);
 			}
 		}
 
