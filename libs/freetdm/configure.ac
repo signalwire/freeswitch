@@ -77,10 +77,13 @@ sun)
 	fi
 	;;
 *)
-	COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+	COMP_VENDOR_COMPAT_CFLAGS="-Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+	COMP_VENDOR_CFLAGS="-std=c99 $COMP_VENDOR_COMPAT_CFLAGS"
 	;;
 esac
+AC_SUBST([COMP_VENDOR_COMPAT_CFLAGS])
 AC_SUBST([COMP_VENDOR_CFLAGS])
+
 
 #  Enable debugging
 AC_ARG_ENABLE([debug],
