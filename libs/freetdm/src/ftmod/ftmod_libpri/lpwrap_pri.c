@@ -35,8 +35,8 @@
 
 #include "private/ftdm_core.h"
 #include "lpwrap_pri.h"
-#ifndef HAVE_GETTIMEOFDAY
 
+#ifndef HAVE_GETTIMEOFDAY
 #ifdef WIN32
 #include <mmsystem.h>
 
@@ -239,8 +239,8 @@ int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 int lpwrap_one_loop(struct lpwrap_pri *spri)
 {
 	fd_set rfds, efds;
-	struct timeval now = {0,0}, *next;
-	pri_event *event;
+	struct timeval now = {0,0}, *next = NULL;
+	pri_event *event = NULL;
 	event_handler handler;
 	int sel;
 
