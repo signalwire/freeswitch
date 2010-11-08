@@ -2208,6 +2208,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SOATAG_REUSE_REJECTED(1),
 									SOATAG_ORDERED_USER(1),
+									SOATAG_RTP_SELECT(1),
 									SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"),
 									TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
