@@ -300,7 +300,7 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 		}
 
 		/* Poll for events, e.g HW DTMF */
-		ret_status = ftdm_span_poll_event(span, 0);
+		ret_status = ftdm_span_poll_event(span, 0, NULL);
 		switch(ret_status) {
 			case FTDM_SUCCESS:
 				{
