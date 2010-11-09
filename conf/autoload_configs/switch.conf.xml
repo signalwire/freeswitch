@@ -86,6 +86,7 @@
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
     <!-- The system will create all the db schemas automatically, set this to false to avoid this behaviour-->
     <!--<param name="auto-create-schemas" value="true"/>-->
+	 <!-- <param name="core-dbtype" value="MSSQL"/> -->
   </settings>
 
 </configuration>

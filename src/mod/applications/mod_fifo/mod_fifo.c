@@ -29,6 +29,7 @@
  *
  */
 #include <switch.h>
+#define FIFO_APP_KEY "mod_fifo"
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load);
@@ -60,7 +61,8 @@ typedef struct {
 
 typedef enum {
 	FIFO_APP_BRIDGE_TAG = (1 << 0),
-	FIFO_APP_TRACKING = (1 << 1)
+	FIFO_APP_TRACKING = (1 << 1),
+	FIFO_APP_DID_HOOK = (1 << 2)
 } fifo_app_flag_t;
 
 
@@ -306,6 +308,8 @@ struct fifo_node {
 	int outbound_per_cycle;
 	char *outbound_name;
 	outbound_strategy_t outbound_strategy;
+	int ring_timeout;
+	int default_lag;
 };
 
 typedef struct fifo_node fifo_node_t;
@@ -864,7 +868,7 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		caller_channel = switch_core_session_get_channel(caller_session);
 	}
 
-	if (switch_channel_test_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG)) {
+	if (switch_channel_test_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 		char date[80] = "";
 		switch_time_exp_t tm;
 		switch_time_t ts = switch_micro_time_now();
@@ -874,7 +878,7 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		char *sql;
 		switch_event_t *event;
 		
-		switch_channel_clear_app_flag_key(__FILE__, consumer_channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_clear_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG);
 		switch_channel_set_variable(consumer_channel, "fifo_bridged", NULL);
 				
 		ts = switch_micro_time_now();
@@ -984,11 +988,11 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_size_t retsize;
 			const char *ced_name, *ced_number, *cid_name, *cid_number;
 			
-			if (switch_channel_test_app_flag(consumer_channel, FIFO_APP_BRIDGE_TAG)) {
+			if (switch_channel_test_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 				goto end;
 			}
 
-			switch_channel_set_app_flag_key(__FILE__, consumer_channel, FIFO_APP_BRIDGE_TAG);
+			switch_channel_set_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG);
 			
 			switch_channel_set_variable(consumer_channel, "fifo_bridged", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_manual_bridge", "true");
@@ -996,8 +1000,10 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 
 			if (caller_channel) {
 				switch_channel_set_variable(caller_channel, "fifo_role", "caller");
-				switch_process_import(consumer_session, caller_channel, "fifo_caller_consumer_import");
-				switch_process_import(caller_session, consumer_channel, "fifo_consumer_caller_import");
+				switch_process_import(consumer_session, caller_channel, "fifo_caller_consumer_import", 
+									  switch_channel_get_variable(consumer_channel, "fifo_import_prefix"));
+				switch_process_import(caller_session, consumer_channel, "fifo_consumer_caller_import",
+									  switch_channel_get_variable(caller_channel, "fifo_import_prefix"));
 			}
 
 				
@@ -1209,10 +1215,11 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed);
 		switch_event_del_header(ovars, "fifo_outbound_uuid");
 		
-		if (!h->timeout) h->timeout = 60;
+		if (!h->timeout) h->timeout = node->ring_timeout;
 		if (timeout < h->timeout) timeout = h->timeout;
 		
-		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s]%s,", h->timeout, h->uuid, parsed ? parsed : h->originate_string);
+		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
+							  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
 		stream2.write_function(&stream2, "%s,", h->uuid);
 		switch_safe_free(parsed);
 		
@@ -1505,17 +1512,17 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "originate_timeout", "%d", h->timeout);
 
 	if (switch_stristr("origination_caller", h->originate_string)) {
-		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q'}%s",
-										  node->name, h->originate_string);
+		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q'}%s",
+										  node->name, node->name, h->originate_string);
 	} else {
 		if (!zstr(node->outbound_name)) {
-			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q',"
 											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
-											  node->name,  node->outbound_name, h->originate_string);
+											  node->name, node->name,  node->outbound_name, h->originate_string);
 		} else {
-			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_hangup_check='%q',"
+			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q',"
 											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
-											  node->name,  node->name, h->originate_string);
+											  node->name, node->name,  node->name, h->originate_string);
 		}
 			
 	}
@@ -2017,9 +2024,10 @@ static switch_status_t hanguphook(switch_core_session_t *session)
     switch_channel_t *channel = switch_core_session_get_channel(session);
     switch_channel_state_t state = switch_channel_get_state(channel);
 	
-	if (state == CS_HANGUP) {
+	if (state >= CS_HANGUP && !switch_channel_test_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_DID_HOOK)) {
 		dec_use_count(session, SWITCH_TRUE);
 		switch_core_event_hook_remove_state_change(session, hanguphook);
+		switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_DID_HOOK);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2037,17 +2045,19 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		return;
 	}
 
-	if (switch_channel_test_app_flag(channel, FIFO_APP_TRACKING)) {
+	if (switch_channel_test_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s trying to double-track call!\n", switch_channel_get_name(channel));
 		return;
 	}
 
+	switch_core_event_hook_add_receive_message(session, messagehook);
+	switch_core_event_hook_add_state_run(session, hanguphook);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s tracking call on uuid %s!\n", switch_channel_get_name(channel), data);
 
 	add_bridge_call(data);
 
-	switch_channel_set_app_flag_key(__FILE__, channel, FIFO_APP_TRACKING);
+	switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING);
 
 	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
 	switch_channel_set_variable(channel, "fifo_track_call", "true");
@@ -2083,9 +2093,6 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-CID-Number", cid_number);
 		switch_event_fire(&event);
 	}
-	
-	switch_core_event_hook_add_receive_message(session, messagehook);
-	switch_core_event_hook_add_state_change(session, hanguphook);
 }
 
 
@@ -2346,7 +2353,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
 		switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 
-		switch_channel_set_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 		if (chime_list) {
 			char *list_dup = switch_core_session_strdup(session, chime_list);
@@ -2421,7 +2428,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 	abort:
 
-		switch_channel_clear_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+		switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 		fifo_caller_del(switch_core_session_get_uuid(session));
 
@@ -2491,6 +2498,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		if (switch_core_event_hook_remove_receive_message(session, messagehook) == SWITCH_STATUS_SUCCESS) {
 			dec_use_count(session, SWITCH_FALSE);
 			switch_core_event_hook_remove_state_change(session, hanguphook);
+			switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING);
 		}
 
 		if (!zstr(strat_str)) {
@@ -2778,7 +2786,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
 				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && 
-					   switch_channel_test_app_flag(other_channel, FIFO_APP_BRIDGE_TAG)) {
+					   switch_channel_test_app_flag_key(FIFO_APP_KEY, other_channel, FIFO_APP_BRIDGE_TAG)) {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
@@ -2842,8 +2850,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_core_media_bug_resume(session);
 				switch_core_media_bug_resume(other_session);
-				switch_process_import(session, other_channel, "fifo_caller_consumer_import");
-				switch_process_import(other_session, channel, "fifo_consumer_caller_import");
+				switch_process_import(session, other_channel, "fifo_caller_consumer_import", switch_channel_get_variable(channel, "fifo_import_prefix"));
+				switch_process_import(other_session, channel, "fifo_consumer_caller_import", switch_channel_get_variable(other_channel, "fifo_import_prefix"));
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
@@ -3082,7 +3090,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_mutex_unlock(globals.mutex);
 
 
-	switch_channel_clear_app_flag_key(__FILE__, channel, FIFO_APP_BRIDGE_TAG);
+	switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 	switch_core_media_bug_resume(session);
 
@@ -3512,6 +3520,12 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_per_cycle);
 	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle", tmp);
 
+	switch_snprintf(tmp, sizeof(buffer), "%u", node->ring_timeout);
+	switch_xml_set_attr_d(x_fifo, "ring_timeout", tmp);
+
+	switch_snprintf(tmp, sizeof(buffer), "%u", node->default_lag);
+	switch_xml_set_attr_d(x_fifo, "default_lag", tmp);
+
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_priority);
 	switch_xml_set_attr_d(x_fifo, "outbound_priority", tmp);
 
@@ -3922,6 +3936,8 @@ static switch_status_t load_config(int reload, int del_all)
 			int taking_calls_i = 1;
 			int timeout_i = 60;
 			int lag_i = 10;
+			int ring_timeout = 60;
+			int default_lag = 30;
 
 			name = switch_xml_attr(fifo, "name");
 
@@ -3975,11 +3991,29 @@ static switch_status_t load_config(int reload, int del_all)
 				node->has_outbound = 1;
 			}
 			
-			
+			if ((val = switch_xml_attr(fifo, "outbound_ring_timeout"))) {
+				int tmp = atoi(val);
+				if (tmp > 10) {
+					ring_timeout = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid ring_timeout: must be > 10 for queue %s\n", node->name);
+				}
+			}
+
+			if ((val = switch_xml_attr(fifo, "outbound_default_lag"))) {
+				int tmp = atoi(val);
+				if (tmp > 10) {
+					default_lag = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid default_lag: must be > 10 for queue %s\n", node->name);
+				}
+			}
+
+			node->ring_timeout = ring_timeout;
 			node->outbound_per_cycle = outbound_per_cycle;
 			node->outbound_priority = outbound_priority;
+			node->default_lag = default_lag;
 			
-
 			if (outbound_strategy) {
 				node->outbound_strategy = parse_strat(outbound_strategy);
 				node->has_outbound = 1;
@@ -4011,14 +4045,14 @@ static switch_status_t load_config(int reload, int del_all)
 
 				if (timeout) {
 					if ((timeout_i = atoi(timeout)) < 10) {
-						timeout_i = 60;
+						timeout_i = ring_timeout;
 					}
 
 				}
 
 				if (lag) {
 					if ((lag_i = atoi(lag)) < 0) {
-						lag_i = 10;
+						lag_i = default_lag;
 					}
 				}
 

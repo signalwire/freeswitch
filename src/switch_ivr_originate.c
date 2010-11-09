@@ -1038,7 +1038,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	return status;
 }
 
-SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname)
+SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname, const char *prefix)
 {
 	const char *import, *val;
 	switch_channel_t *caller_channel;
@@ -1054,7 +1054,13 @@ SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switc
 		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			for (i = 0; i < argc; i++) {
 				if ((val = switch_channel_get_variable(peer_channel, argv[i]))) {
-					switch_channel_set_variable(caller_channel, argv[i], val);
+					if (prefix) {
+						char *var = switch_mprintf("%s%s", prefix, argv[i]);
+						switch_channel_set_variable(caller_channel, var, val);
+						free(var);
+					} else {
+						switch_channel_set_variable(caller_channel, argv[i], val);
+					}
 				}
 			}
 		}
@@ -1722,7 +1728,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *e = NULL;
 	const char *ringback_data = NULL;
 	switch_event_t *var_event = NULL;
-	uint8_t fail_on_single_reject = 0;
+	int8_t fail_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
@@ -1735,6 +1741,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *soft_holding = NULL;
 	early_state_t early_state = { 0 };
 	int read_packet = 0;
+	int check_reject = 1;
 	
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
@@ -2081,9 +2088,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	   If the value is set to 'true' any fail cause will end the attempt otherwise it can contain a comma (,) separated
 	   list of cause names which should be considered fatal
 	 */
-	if ((var = switch_event_get_header(var_event, "fail_on_single_reject")) && switch_true(var)) {
+	if ((var = switch_event_get_header(var_event, "fail_on_single_reject"))) {
 		fail_on_single_reject_var = strdup(var);
-		fail_on_single_reject = 1;
+		if (switch_true(var)) {
+			fail_on_single_reject = 1;
+		} else {
+			fail_on_single_reject = -1;
+		}
 	}
 
 	if ((*oglobals.file != '\0') && (!strcmp(oglobals.file, "undef"))) {
@@ -2232,6 +2243,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			char *p, *end = NULL;
 			const char *var_begin, *var_end;
 			int q = 0;
+			check_reject = 1;
+
 			oglobals.hups = 0;
 
 			reason = SWITCH_CAUSE_NONE;
@@ -2605,6 +2618,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n",
 									  chan_type, switch_channel_cause2str(reason));
 					if (local_var_event) switch_event_destroy(&local_var_event);
+					
+					if (fail_on_single_reject_var) {
+						const char *cause_str = switch_channel_cause2str(reason);
+						check_reject = 0;
+
+						if (fail_on_single_reject == 1 || switch_stristr(cause_str, fail_on_single_reject_var)) {
+							force_reason = reason;
+							goto outer_for;
+						}
+					}
 					continue;
 				}
 
@@ -2848,26 +2871,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 					goto notready;
 				}
-
+				
 				if ((to = (uint8_t) (elapsed >= (time_t) timelimit_sec)) || (fail_on_single_reject && oglobals.hups)) {
 					int ok = 0;
 
-					if (fail_on_single_reject_var && !switch_true(fail_on_single_reject_var)) {
-						ok = 1;
-						for (i = 0; i < and_argc; i++) {
-							switch_channel_t *pchannel;
-							const char *cause_str;
+					if (fail_on_single_reject_var) {
+						if (!switch_true(fail_on_single_reject_var)) {
+							ok = 1;
 
-							if (!originate_status[i].peer_session) {
-								goto do_continue;
-							}
-							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
+							for (i = 0; i < and_argc; i++) {
+								switch_channel_t *pchannel;
+								const char *cause_str;
+								
+								if (!originate_status[i].peer_session) {
+									continue;
+								}
+								pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
 
-							if (switch_channel_down(pchannel)) {
-								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
-								if (switch_stristr(cause_str, fail_on_single_reject_var)) {
-									ok = 0;
-									break;
+								if (switch_channel_down(pchannel)) {
+									cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
+									if (switch_stristr(cause_str, fail_on_single_reject_var)) {
+										ok = 0;
+										break;
+									}
 								}
 							}
 						}
@@ -3276,7 +3302,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			} else {
 				status = SWITCH_STATUS_FALSE;
 				if (caller_channel && peer_channel) {
-					switch_process_import(oglobals.session, peer_channel, "import");
+					switch_process_import(oglobals.session, peer_channel, "import", NULL);
 				}
 				peer_channel = NULL;
 				goto done;
@@ -3327,7 +3353,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (caller_channel) {
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
 					if (peer_channel) {
-						switch_process_import(oglobals.session, peer_channel, "import");
+						switch_process_import(oglobals.session, peer_channel, "import", NULL);
 					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n",
@@ -3476,26 +3502,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			} else {
 				int ok = 0;
 
-				if (fail_on_single_reject_var && !switch_true(fail_on_single_reject_var)) {
-					ok = 1;
-					for (i = 0; i < and_argc; i++) {
-						switch_channel_t *pchannel;
-						const char *cause_str;
+				if (fail_on_single_reject && check_reject) {
 
-						if (!originate_status[i].peer_session) {
-							continue;
-						}
-						pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
+					if (!switch_true(fail_on_single_reject_var)) {
+						ok = 1;
 
-						if (switch_channel_down(pchannel)) {
-							cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
-							if (switch_stristr(cause_str, fail_on_single_reject_var)) {
-								ok = 0;
-								break;
+						for (i = 0; i < and_argc; i++) {
+							switch_channel_t *pchannel;
+							const char *cause_str;
+							
+							if (!originate_status[i].peer_session) {
+								continue;
+							}
+							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
+							
+							if (switch_channel_down(pchannel)) {
+								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
+								if (switch_stristr(cause_str, fail_on_single_reject_var)) {
+									ok = 0;
+									break;
+								}
 							}
 						}
 					}
 				}
+
 				if (ok) {
 					goto outer_for;
 				}

@@ -29,7 +29,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"
+				CommandLine="copy /Y &quot;$(ProjectDir)ssleay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"
+				CommandLine="copy /Y &quot;$(ProjectDir)ssleay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -188,7 +188,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"
+				CommandLine="copy /Y &quot;$(ProjectDir)ssleay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -268,7 +268,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"
+				CommandLine="copy /Y &quot;$(ProjectDir)ssleay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def&quot;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

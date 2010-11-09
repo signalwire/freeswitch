@@ -297,7 +297,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\winlibs.vsprops"
@@ -382,7 +382,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(OutDir)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y /S&#x0D;&#x0A;if not exist &quot;$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\htdocs&quot; xcopy &quot;$(SolutionDir)htdocs\*.*&quot; &quot;$(SolutionDir)$(OutDir)\htdocs\&quot; /C /D /Y /S&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(SolutionDir)$(OutDir)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y /S&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; xcopy &quot;$(SolutionDir)htdocs\*.*&quot; &quot;$(SolutionDir)$(OutDir)\htdocs\&quot; /C /D /Y /S&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

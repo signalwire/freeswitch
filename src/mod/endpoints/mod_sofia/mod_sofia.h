@@ -76,6 +76,8 @@ typedef struct private_object private_object_t;
 
 #define SOFIA_SESSION_TIMEOUT "sofia_session_timeout"
 #define MY_EVENT_REGISTER "sofia::register"
+#define MY_EVENT_PRE_REGISTER "sofia::pre_register"
+#define MY_EVENT_REGISTER_ATTEMPT "sofia::register_attempt"
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
@@ -221,6 +223,7 @@ typedef enum {
 	PFLAG_CID_IN_1XX,
 	PFLAG_IN_DIALOG_CHAT,
 	PFLAG_DEL_SUBS_ON_REG,
+	PFLAG_IGNORE_183NOSDP,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -340,6 +343,7 @@ typedef enum {
 	REG_STATE_FAIL_WAIT,
 	REG_STATE_EXPIRED,
 	REG_STATE_NOREG,
+	REG_STATE_TIMEOUT,
 	REG_STATE_LAST
 } reg_state_t;
 
@@ -410,6 +414,7 @@ struct sofia_gateway {
 	time_t expires;
 	time_t retry;
 	time_t ping;
+	time_t reg_timeout;
 	int pinging;
 	sofia_gateway_status_t status;
 	uint32_t ping_freq;
@@ -418,6 +423,7 @@ struct sofia_gateway {
 	int ping_min;
 	uint8_t flags[REG_FLAG_MAX];
 	int32_t retry_seconds;
+	int32_t reg_timeout_seconds;
 	int32_t failure_status;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
@@ -548,6 +554,7 @@ struct sofia_profile {
 	sofia_presence_type_t pres_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
+	uint32_t force_publish_expires;
 	char *user_agent_filter;
 	uint32_t max_registrations_perext;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
@@ -705,6 +712,8 @@ struct private_object {
 	char *user_via;
 	char *redirected;
 	sofia_cid_type_t cid_type;
+	switch_payload_t payload_space;
+	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
 };
 
 struct callback_t {
@@ -1025,3 +1034,4 @@ void sofia_glue_global_watchdog(switch_bool_t on);
 void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
 switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
+void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);

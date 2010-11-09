@@ -5,7 +5,7 @@
 # Required-Stop:     $network $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: The FreeSwitch Voice Switching System
+# Short-Description: The FreeSWITCH Voice Switching System
 # Description:       An advanced platform for voice services
 ### END INIT INFO
 
@@ -16,7 +16,7 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/opt/freeswitch/bin
-DESC="FreeSwitch Voice Switching System"
+DESC="FreeSWITCH Voice Switching System"
 NAME=freeswitch
 DAEMON=/opt/freeswitch/bin/$NAME
 USER=freeswitch

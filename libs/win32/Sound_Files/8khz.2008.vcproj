@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -33,7 +36,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ivr\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\conference\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\time\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\digits\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\misc\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\currency\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\phonetic-ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\directory\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\directory\8000&quot; /C /D /Y /S /I"
+				CommandLine="xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ivr\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\conference\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\time\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\digits\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\misc\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\currency\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\phonetic-ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\directory\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\directory\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -55,7 +58,52 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ivr\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\conference\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\time\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\digits\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\misc\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\currency\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\phonetic-ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\directory\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\directory\8000&quot; /C /D /Y /S /I"
+				CommandLine="xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ivr\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\conference\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\time\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\digits\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\misc\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\currency\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\phonetic-ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\directory\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\directory\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ivr\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\conference\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\time\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\digits\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\misc\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\currency\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\phonetic-ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\directory\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\directory\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\voicemail\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\voicemail\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ivr\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ivr\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\conference\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\conference\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\time\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\time\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\digits\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\digits\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\misc\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\misc\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\currency\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\currency\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\phonetic-ascii\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\phonetic-ascii\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(SolutionDir)libs\sounds\en\us\callie\directory\8000\*.*&quot; &quot;$(OutDir)\sounds\en\us\callie\directory\8000&quot; /C /D /Y /S /I&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

@@ -384,14 +384,14 @@
       <prompt phrase="Good morning." filename="ivr-good_morning.wav"/>
       <prompt phrase="Good afternoon." filename="ivr-good_afternoon.wav"/>
       <prompt phrase="Good evening." filename="ivr-good_evening.wav"/>
-      <prompt phrase="Thank you." filename="ivr-Thank you.wav"/>
+      <prompt phrase="Thank you." filename="ivr-Thank_you.wav"/>
       <prompt phrase="For..." filename="ivr-for.wav"/>
       <prompt phrase="We are experiencing longer than usual hold times." filename="ivr-longer_than_usual_hold_times.wav"/>
       <prompt phrase="You are the..." filename="ivr-you_are_the.wav"/>
       <prompt phrase="One moment please." filename="ivr-one_moment_please.wav"/>
       <prompt phrase="Your call will be answered in the order it was received." filename="ivr-call_answered_order_received.wav"/>
       <prompt phrase="Please enter the conference number, followed by the pound key" filename="conf-enter_conf_number.wav"/>
-      <prompt phrase="Enter the conference PIN number, followed by the pound key." filename="ivr-enter_conf_pin.wav"/>
+      <prompt phrase="Enter the conference PIN number, followed by the pound key." filename="conf-enter_conf_pin.wav"/>
       <prompt phrase="...has entered the conference." filename="conf-has_joined.wav"/>
       <prompt phrase="...has left the conference." filename="conf-has_left.wav"/>
       <prompt phrase="You entered..." filename="ivr-you_entered.wav"/>
@@ -403,27 +403,30 @@
       <prompt phrase="If this is correct, press 1. If not, press 2." filename="ivr-if_correct_one_if_not_two.wav"/>
       <prompt phrase="To repeat this information..." filename="ivr-repeat_this_information.wav"/>
       <prompt phrase="No no no!" filename="ivr-no_no_no.wav"/>
-      <prompt phrase="Do you mean to press that key?" filename="ivr-did_you_mean_to_press_key.wav"/>
+      <prompt phrase="Did you mean to press that key?" filename="ivr-did_you_mean_to_press_key.wav"/>
       <prompt phrase="Seriously. Did you REALLY mean to press that key?" filename="ivr-seriously_mean_to_press_key.wav"/>
       <prompt phrase="Oh what-EVER." filename="ivr-oh_whatever.wav"/>
       <prompt phrase="That's it! One more mistake and I WILL hang up on your ass." filename="ivr-one_more_mistake.wav"/>
       <prompt phrase="Congratulations, you pressed star. This does not mean you ARE a star. It simply means that you can press buttons and probably have fingers." filename="ivr-congratulations_you_pressed_star.wav"/>
-      <prompt phrase="All of our engineers are busy assisting other sales guys with demonstrating how cool the CudaTel is. Please stay on the line and your call will be answered in the order it was received." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
+      <prompt phrase="All of our engineers are busy assisting other sales guys with demonstrating how cool the CudaTel is." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
       <prompt phrase="The person you are trying to reach is not available and does not have voicemail." filename="vm-not_available_no_voicemail.wav"/>
       <prompt phrase="This message will self-destruct in 5, 4, 3, 2, 1..." filename="ivr-message_self_destruct.wav"/>
       <prompt phrase="You are already muted." filename="conf-you_are_already_muted.wav"/>
       <prompt phrase="You are now bi-directionally muted." filename="conf-you_are_now_bidirectionally_muted.wav"/>
 	  <prompt phrase="All your call are belong to us." filename="ivr-all_your_call_are_belong_to_us.wav"/>
 	  <prompt phrase="I just love the way you press those touch tones!" filename="ivr-love_those_touch_tones.wav"/>
-	  <prompt phrase="Yes we have no bananas." filename="ivr-yes_we_have_no_bananas.wav"/>
+	  <prompt phrase="Yes, we have no bananas." filename="ivr-yes_we_have_no_bananas.wav"/>
 	  <prompt phrase="Dude, you suck!" filename="ivr-dude_you_suck.wav"/>
 	  <prompt phrase="Your call is very important to us, but your sanity is not, so we will be happy to keep you on hold, forever torturing you with our annoying hold music." filename="ivr-on_hold_indefinitely.wav"/>
 	  <prompt phrase="...has left the building." filename="ivr-has_left_the_building.wav"/>
 	  <prompt phrase="This phone is unassigned and may not be used to make external calls." filename="ivr-phone_is_unassigned.wav"/>
 	  <prompt phrase="This phone is not configured properly." filename="ivr-phone_not_configured.wav"/>
+	  <prompt phrase="Congratulations! This phone is configured properly and may now be assigned to a user." filename="ivr-phone_is_configured_properly.wav"/>
 	  <prompt phrase="Please contact the system administrator for assistance." filename="ivr-contact_system_administrator.wav"/>	
 	  <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
 	  <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
+	  <prompt phrase="Please enter the first few letters of the person's first or last name" filename="dir-enter_person_first_or_last.wav"/>
+	  <prompt phrase="There are no calls waiting in this queue." filename="ivr-no_calls_waiting_in_queue.wav"/>
 	  <prompt phrase="Brian West" filename="misc-Brian_West.wav"/>
 	  <prompt phrase="Anthony Minessale" filename="misc-Anthony_Minessale.wav"/>
 	  <prompt phrase="Michael Jerris" filename="misc-Michael_Jerris.wav"/>
@@ -435,7 +438,7 @@
 	  <prompt phrase="Andrew Thompson" filename="misc-Andrew_Thompson.wav"/>
 	  <prompt phrase="Graham Saathoff" filename="misc-Graham_Saathoff.wav"/>
 	  <prompt phrase="Nicholaus Belluni" filename="misc-Nicholaus_Belluni.wav"/>
-	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav">
+	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>

@@ -2,6 +2,10 @@ dnl libpcap.m4--PCAP libraries and includes
 dnl Derrick Brashear
 dnl from KTH krb and Arla
 dnl $Id: libpcap.m4,v 1.4 2006/01/20 20:21:09 snsimon Exp $
+dnl 2010/10/31 (stkn):
+dnl 	rename: PCAP_INC_FLAGS -> PCAP_CPPFLAGS
+dnl 	rename: PCAP_LIB_FLAGS -> PCAP_LDFLAGS	(-L flags only)
+dnl 	add:    PCAP_LIBS (libs only)
 
 AC_DEFUN([PCAP_INC_WHERE1], [
 ac_cv_found_pcap_inc=no
@@ -129,12 +133,14 @@ AC_ARG_WITH(pcap-include,
 	  AC_MSG_RESULT(yes)
 	  PCAP_INC_DIR=$ac_cv_pcap_where_inc
 	  PCAP_LIB_DIR=$ac_cv_pcap_where_lib
-	  PCAP_INC_FLAGS="-I${PCAP_INC_DIR}"
-	  PCAP_LIB_FLAGS="-L${PCAP_LIB_DIR} -lpcap"
+	  PCAP_CPPFLAGS="-I${PCAP_INC_DIR}"
+	  PCAP_LDFLAGS="-L${PCAP_LIB_DIR}"
+	  PCAP_LIBS="-lpcap"
 	  AC_SUBST(PCAP_INC_DIR)
 	  AC_SUBST(PCAP_LIB_DIR)
-	  AC_SUBST(PCAP_INC_FLAGS)
-	  AC_SUBST(PCAP_LIB_FLAGS)
+	  AC_SUBST(PCAP_CPPFLAGS)
+	  AC_SUBST(PCAP_LDFLAGS)
+	  AC_SUBST(PCAP_LIBS)
 	  AC_DEFINE([HAVE_LIBPCAP],[1],[libpcap])
         else
 	  ac_cv_found_pcap=no

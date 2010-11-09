@@ -1,9 +1,10 @@
 Source: freeswitch-sounds-music
-Maintainer: Freeswitch Debian Team <debian@freeswitch.org>
+Maintainer: Freeswitch development Team <freeswitch-dev@freeswitch.org>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), fakeroot, sox
-Standards-Version: 3.7.3
+Build-Depends: debhelper (>= 7), sox
+Homepage: http://www.freeswitch.org/
+Standards-Version: 3.8.4
 
 Package: freeswitch-sounds-music-8000
 Architecture: all
@@ -47,14 +48,18 @@ Description: music for FreeSWITCH(TM) (48000)
 Package: freeswitch-sounds-music
 Architecture: all
 Depends: sox, freeswitch-sounds-music-48000
-Conflicts: freeswitch-sounds-music-omega, freeswitch-sounds-music-8000, freeswitch-sounds-music-16000, freeswitch-sounds-music-32000
+Conflicts: freeswitch-sounds-music-omega,
+ freeswitch-sounds-music-8000, freeswitch-sounds-music-16000,
+ freeswitch-sounds-music-32000
 Description: Music for FreeSWITCH(TM)
  This package generates the 8k, 16k, and 32k from the installed 48k
  sounds. You can select which ones you want.
 
 Package: freeswitch-sounds-music-omega
 Architecture: all
-Depends: freeswitch-sounds-music-48000, freeswitch-sounds-music-32000, freeswitch-sounds-music-16000, freeswitch-sounds-music-8000
+Depends: freeswitch-sounds-music-48000,
+ freeswitch-sounds-music-32000, freeswitch-sounds-music-16000,
+ freeswitch-sounds-music-8000
 Conflicts: freeswitch-sounds-music
 Description: Music for FreeSWITCH(TM)
  This package depends on the pregenerated 8khz, 16khz, 32khz, and 48khz sounds

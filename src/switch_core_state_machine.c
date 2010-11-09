@@ -156,9 +156,13 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
 
+	if (switch_channel_get_variable(session->channel, "recovered") && !switch_channel_test_flag(session->channel, CF_RECOVERED)) {
+		switch_channel_set_flag(session->channel, CF_RECOVERED);
+	}
+
   top:
 	switch_channel_clear_flag(session->channel, CF_RESET);
-
+	
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return;
@@ -310,11 +314,25 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			int proceed = 1;
 			int global_proceed = 1;
 			int do_extra_handlers = 1;
+			switch_io_event_hook_state_run_t *ptr;
+			switch_status_t rstatus = SWITCH_STATUS_SUCCESS;
 
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 			switch_channel_clear_flag(session->channel, CF_REDIRECT);
-
+			
+			if (session->endpoint_interface->io_routines->state_run) {
+				rstatus = session->endpoint_interface->io_routines->state_run(session);
+			}
+			
+			if (rstatus == SWITCH_STATUS_SUCCESS) {
+				for (ptr = session->event_hooks.state_run; ptr; ptr = ptr->next) {
+					if ((rstatus = ptr->state_run(session)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				}
+			}
+			
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
@@ -391,6 +409,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					message = NULL;
 				}
 
+				switch_ivr_parse_all_events(session);
+
 				if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
 					switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
 					if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
@@ -398,6 +418,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 					switch_channel_clear_flag(session->channel, CF_THREAD_SLEEPING);
 				}
+
+				switch_ivr_parse_all_events(session);
 
 				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_receive_message(session, message);

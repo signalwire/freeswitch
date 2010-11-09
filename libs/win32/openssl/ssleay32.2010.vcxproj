@@ -80,7 +80,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def</Command>
+      <Command>copy /Y "$(ProjectDir)ssleay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"</Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
@@ -107,7 +107,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def</Command>
+      <Command>copy /Y "$(ProjectDir)ssleay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"</Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
@@ -134,7 +134,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def</Command>
+      <Command>copy /Y "$(ProjectDir)ssleay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"</Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
@@ -164,7 +164,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)ssleay32.def $(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def</Command>
+      <Command>copy /Y "$(ProjectDir)ssleay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\ssleay32.def"</Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>

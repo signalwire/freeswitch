@@ -790,10 +790,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_session_t *session)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	void *pop;
 	switch_core_session_message_t *message;
 
-	while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
-		switch_core_session_free_message(&message);
+	switch_assert(session != NULL);
+
+	if (session->message_queue) {
+		while ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			message = (switch_core_session_message_t *) pop;
+			switch_core_session_free_message(&message);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1437,7 +1444,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 			}
 		}
 	}
-
+	
 	if ((callflow = switch_xml_child(xml, "callflow"))) {
 		if ((tag2 = switch_xml_child(callflow, "caller_profile"))) {
 			switch_caller_profile_t *caller_profile;
@@ -1528,6 +1535,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 
 		}
 
+
+		switch_channel_set_flag(channel, CF_RECOVERED);
 	}
 
 

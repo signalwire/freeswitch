@@ -53,7 +53,8 @@ typedef enum {
 	TFLAG_BOWOUT = (1 << 5),
 	TFLAG_BLEG = (1 << 6),
 	TFLAG_APP = (1 << 7),
-	TFLAG_BOWOUT_USED = (1 << 8)
+	TFLAG_RUNNING_APP = (1 << 8),
+	TFLAG_BOWOUT_USED = (1 << 9)
 } TFLAGS;
 
 struct private_object {
@@ -321,11 +322,16 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
 	
+	if (switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
+		switch_clear_flag(tech_pvt, TFLAG_RUNNING_APP);
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_APP) && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && 
 		(app = switch_channel_get_variable(channel, "loopback_app"))) {
 		switch_caller_extension_t *extension = NULL;
 
 		switch_clear_flag(tech_pvt, TFLAG_APP);
+		switch_set_flag(tech_pvt, TFLAG_RUNNING_APP);
 
 		arg = switch_channel_get_variable(channel, "loopback_app_arg");
 		extension = switch_caller_extension_new(session, app, app);
@@ -711,7 +717,8 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
-
+	int done = 1;
+	
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
@@ -729,6 +736,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			switch_channel_mark_pre_answered(tech_pvt->other_channel);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_RINGING:
+		if (tech_pvt->other_channel && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			switch_channel_mark_ring_ready(tech_pvt->other_channel);
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			switch_set_flag_locked(tech_pvt, TFLAG_BRIDGE);
@@ -740,6 +752,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		}
 		break;
 	default:
+		done = 0;
 		break;
 	}
 
@@ -749,6 +762,8 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		{
 			void *pop;
+
+			done = 1;
 
 			while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 				switch_frame_t *frame = (switch_frame_t *) pop;
@@ -769,6 +784,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 
 
+	if (!done && tech_pvt->other_session && switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
+		switch_status_t r = SWITCH_STATUS_FALSE;
+		switch_core_session_t *other_session;
+		
+		if (switch_core_session_get_partner(tech_pvt->other_session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			r = switch_core_session_receive_message(other_session, msg);
+			switch_core_session_rwunlock(other_session);
+		}
+		
+		return r;
+	}
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

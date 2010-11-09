@@ -840,6 +840,7 @@ typedef enum {
 	SWITCH_STATUS_IGNORE,
 	SWITCH_STATUS_TOO_SMALL,
 	SWITCH_STATUS_FOUND,
+	SWITCH_STATUS_CONTINUE,
 	SWITCH_STATUS_NOT_INITALIZED
 } switch_status_t;
 
@@ -1063,6 +1064,7 @@ typedef enum {
 	CF_CONSUME_ON_ORIGINATE,
 	CF_PASSTHRU_PTIME_MISMATCH,
 	CF_BRIDGE_NOWRITE,
+	CF_RECOVERED,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
@@ -1266,7 +1268,8 @@ typedef enum {
 	SMBF_STEREO = (1 << 5),
 	SMBF_ANSWER_REQ = (1 << 6),
 	SMBF_THREAD_LOCK = (1 << 7),
-	SMBF_PRUNE = (1 << 8)
+	SMBF_PRUNE = (1 << 8),
+	SMBF_NO_PAUSE = (1 << 9)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1304,7 +1307,8 @@ typedef enum {
 	SWITCH_FILE_CALLBACK = (1 << 12),
 	SWITCH_FILE_DONE = (1 << 13),
 	SWITCH_FILE_BUFFER_DONE = (1 << 14),
-	SWITCH_FILE_WRITE_APPEND = (1 << 15)
+	SWITCH_FILE_WRITE_APPEND = (1 << 15),
+	SWITCH_FILE_WRITE_OVER = (1 << 16)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 
