@@ -4324,7 +4324,7 @@ SWITCH_STANDARD_API(uuid_loglevel)
 #define SQL_ESCAPE_SYNTAX "<string>"
 SWITCH_STANDARD_API(sql_escape)
 {
-	if (zstr(cmd)) {
+	if (!cmd) {
 		stream->write_function(stream, "-USAGE: %s\n", SQL_ESCAPE_SYNTAX);
 	} else {
 		stream->write_function(stream, "%q", cmd);
