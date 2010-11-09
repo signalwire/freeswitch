@@ -1616,7 +1616,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_stun_ping(switch_rtp_t *rtp_
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, uint32_t queue_frames)
 {
 
-	rtp_session->jb = stfu_n_init(queue_frames);
+	rtp_session->jb = stfu_n_init(queue_frames, 0);
 
 	return SWITCH_STATUS_SUCCESS;
 }
