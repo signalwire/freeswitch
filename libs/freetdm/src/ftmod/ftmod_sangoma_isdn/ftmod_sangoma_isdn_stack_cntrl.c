@@ -158,7 +158,7 @@ ftdm_status_t sng_isdn_deactivate_phy(ftdm_span_t *span)
 
 ftdm_status_t sng_isdn_activate_cc(ftdm_span_t *span)
 {
-	CcMngmt cntrl;;
+	CcMngmt cntrl;
     Pst pst;
 
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
@@ -239,7 +239,7 @@ ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t tra
 
 ftdm_status_t sng_isdn_cntrl_q931(ftdm_span_t *span, uint8_t action, uint8_t subaction)
 {
-	InMngmt cntrl;;
+	InMngmt cntrl;
 	Pst pst;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 

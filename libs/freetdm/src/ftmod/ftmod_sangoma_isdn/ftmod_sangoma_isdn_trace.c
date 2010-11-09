@@ -100,7 +100,7 @@ uint8_t get_bits(uint8_t octet, uint8_t bitLo, uint8_t bitHi)
 void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len)
 {
 	int str_len;
-	int i;
+	uint32_t i;
 	uint8_t sapi, cr, ea, tei, ns, nr, pf, p, cmd;
 	uint8_t frame_format = 0;
 
@@ -649,7 +649,7 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 
 void print_hex_dump(char* str, uint32_t *str_len, uint8_t* data, uint32_t index_start, uint32_t index_end)
 {
-	int k;
+	uint32_t k;
 	*str_len += sprintf(&str[*str_len], "  [ ");
 	for(k=index_start; k <= index_end; k++) {
 		if (k && !(k%32)) {

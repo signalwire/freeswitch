@@ -300,7 +300,7 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 		}
 
 		/* Poll for events, e.g HW DTMF */
-		ret_status = ftdm_span_poll_event(span, 0);
+		ret_status = ftdm_span_poll_event(span, 0, NULL);
 		switch(ret_status) {
 			case FTDM_SUCCESS:
 				{
@@ -913,7 +913,8 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	}
 	
 	/* initalize sng_isdn library */
-	sng_isdn_init(&g_sngisdn_event_interface);
+
+	ftdm_assert_return(!sng_isdn_init(&g_sngisdn_event_interface), FTDM_FAIL, "Failed to initialize stack\n");	
 	return FTDM_SUCCESS;
 }
 
@@ -1029,7 +1030,7 @@ static FIO_IO_LOAD_FUNCTION(ftdm_sangoma_isdn_io_init)
 	return FTDM_SUCCESS;
 }
 
-ftdm_module_t ftdm_module =
+EX_DECLARE_DATA ftdm_module_t ftdm_module =
 {
 	"sangoma_isdn",	               /* char name[256]; */
 	ftdm_sangoma_isdn_io_init,     /* fio_io_load_t */

@@ -966,7 +966,7 @@ static void *ftdm_analog_run(ftdm_thread_t *me, void *obj)
 		int waitms = 1000;
 		ftdm_status_t status;
 
-		if ((status = ftdm_span_poll_event(span, waitms)) != FTDM_FAIL) {
+		if ((status = ftdm_span_poll_event(span, waitms, NULL)) != FTDM_FAIL) {
 			errs = 0;
 		}
 		

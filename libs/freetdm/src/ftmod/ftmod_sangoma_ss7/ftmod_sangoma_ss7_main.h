@@ -581,6 +581,8 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
 uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
 uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+
 int check_for_state_change(ftdm_channel_t *ftdmchan);
 int check_cics_in_range(sngss7_chan_data_t *sngss7_info);
 int check_for_reset(sngss7_chan_data_t *sngss7_info);
