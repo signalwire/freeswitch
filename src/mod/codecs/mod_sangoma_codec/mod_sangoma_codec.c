@@ -98,6 +98,7 @@ vocallo_codec_t g_codec_map[] =
 	/* FIXME: sampling rate seems wrong with this, audioooo soooundssssss sloooooow ... */
 	{ SNGTC_CODEC_G722,    9,   "G722",    "Sangoma G722",      20, 64000,  20000, 160, 640, 160, 0 },
 #endif
+	{ SNGTC_CODEC_AMR_1220, 96, "AMR",    "Sangoma AMR",         20, 12200,    20000, 160,  320,  0,  0},
 	{ -1,                  -1,  NULL,      NULL,                -1, -1,     -1,    -1,  -1,      -1 },
 };
 
@@ -1227,12 +1228,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 
 		/* Now add as many codec implementations as needed, just up to 40ms for now */
 		if (g_codec_map[c].autoinit) {
+			int ms = 0;
 			for (i = 1; i <= 4; i++) {
-
-				if ((g_codec_map[c].maxms/10) < i) {
-					continue;
+				ms = i * 10;
+				if (g_codec_map[c].maxms < ms) {
+					break;
 				}
 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %dms implementation of codec %s\n", ms, g_codec_map[c].fs_name);
 				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
 								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
 								 g_codec_map[c].iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
@@ -1253,7 +1256,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
 
 			}
-
 		} else {
 
 			/* custom implementation for some codecs */
@@ -1356,6 +1358,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 NULL,	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
 								 8000,	/* samples transferred per second */
 								 16000,	/* actual samples transferred per second */
+								 g_codec_map[c].bps,	/* bits transferred per second */
+								 g_codec_map[c].mpf, /* microseconds per frame */
+								 g_codec_map[c].spf, /* samples per frame */
+								 g_codec_map[c].bpfd, /* number of bytes per frame decompressed */
+								 g_codec_map[c].bpfc, /* number of bytes per frame compressed */
+								 1,	/* number of channels represented */
+								 g_codec_map[c].spf, /* number of frames per network packet (I dont think this is used at all) */
+								 switch_sangoma_init,	/* function to initialize a codec session using this implementation */
+								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
+								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
+								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
+				break;
+
+			case SNGTC_CODEC_AMR_1220:
+				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
+								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
+								 g_codec_map[c].iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
+								 g_codec_map[c].iana_name, /* the IANA code name */
+								 NULL,	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
+								 8000,	/* samples transferred per second */
+								 8000,	/* actual samples transferred per second */
 								 g_codec_map[c].bps,	/* bits transferred per second */
 								 g_codec_map[c].mpf, /* microseconds per frame */
 								 g_codec_map[c].spf, /* samples per frame */

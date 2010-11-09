@@ -899,11 +899,11 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 			continue; /* should never happen but happens when shutting down */
 		}
 		pfds[j] = ftdmchan->mod_data;
-		inflags[j] = POLLPRI;
+		inflags[j] = poll_events ? poll_events[j] : POLLPRI;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
-		pfds[j].events = POLLPRI;
+		pfds[j].events = poll_events ? poll_events[j] : POLLPRI;
 #endif
 
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
@@ -1011,6 +1011,16 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
+#if 1 
+	/* DAVIDY - Temporary fix: in the current trunk of libsangoma, for BRI, 
+		WAN_TE_BIT_ALARM_RED bit is set if the card is in disconnected state, but this has
+		not been ported to Windows-libsangoma yet */
+	if (alarms) {
+		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
+		alarms = 0;
+	}
+#endif
+
 	ftdmchan->alarm_flags = FTDM_ALARM_NONE;
 
 	if (alarms & WAN_TE_BIT_ALARM_RED) {

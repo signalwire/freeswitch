@@ -43,10 +43,11 @@ extern void get_memory_info(void);
 
 void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	uint8_t bchan_no = 0;
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Ind on unconfigured dchan\n");
@@ -103,9 +104,10 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 
 void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Cfm on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Cfm on unconfigured dchan\n");
@@ -146,10 +148,11 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 
 void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces)
 {	
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 	
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Cnst Ind on unconfigured cc\n");
 	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Cnst Ind on unconfigured dchan\n");
 
@@ -196,9 +199,10 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 
 void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(spInstId != 0, "Received DISCONNECT with invalid id");
 
@@ -231,9 +235,10 @@ void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, D
 
 void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -264,10 +269,11 @@ void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Re
 
 void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 	
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
@@ -296,9 +302,10 @@ void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, In
 
 void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -329,9 +336,10 @@ void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 
 void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -361,9 +369,10 @@ void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, S
 }
 void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -394,9 +403,10 @@ void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 
 void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -427,9 +437,10 @@ void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, R
 
 void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 			 !(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -460,9 +471,10 @@ void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -493,9 +505,10 @@ void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Fa
 
 void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	sngisdn_chan_data_t  *sngisdn_info;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
@@ -525,10 +538,11 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	sngisdn_span_data_t	*signal_data;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE IND (dChan:%d ces:%u)\n", dChan, ces);
 	
@@ -554,10 +568,11 @@ void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 
 void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	sngisdn_span_data_t	*signal_data = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE CFM (dChan:%d ces:%u)\n", dChan, ces);
 
@@ -582,10 +597,11 @@ void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 
 void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	sngisdn_span_data_t	*signal_data = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART IND (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
 	
@@ -612,10 +628,11 @@ void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 
 void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType)
 {
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 	unsigned i;
 	sngisdn_span_data_t	*signal_data;
 	sngisdn_event_data_t *sngisdn_event = NULL;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART CFM (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
 	

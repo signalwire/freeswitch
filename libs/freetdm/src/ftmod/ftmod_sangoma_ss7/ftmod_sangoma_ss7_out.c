@@ -335,15 +335,35 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.isdnAccInd.pres		= PRSNT_NODEF;
 	acm.bckCallInd.isdnAccInd.val		= ISDNACC_NONISDN;
 	acm.bckCallInd.echoCtrlDevInd.pres	= PRSNT_NODEF;
-	acm.bckCallInd.echoCtrlDevInd.val	= 0x1;	/* ec device present */
+	switch (ftdmchan->caller_data.bearer_capability) {
+	/**********************************************************************/
+	case (FTDM_BEARER_CAP_SPEECH):
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
+		break;
+	/**********************************************************************/
+	case (FTDM_BEARER_CAP_64K_UNRESTRICTED):
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x0;
+		break;
+	/**********************************************************************/
+	case (FTDM_BEARER_CAP_3_1KHZ_AUDIO):
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
+		break;
+	/**********************************************************************/
+	default:
+		SS7_ERROR_CHAN(ftdmchan, "Unknown Bearer capability falling back to speech%s\n", " ");
+		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
+		break;
+	/**********************************************************************/
+	} /* switch (ftdmchan->caller_data.bearer_capability) */
 	acm.bckCallInd.sccpMethInd.pres		= PRSNT_NODEF;
 	acm.bckCallInd.sccpMethInd.val		= SCCPMTH_NOIND;
 
 	/* fill in any optional parameters */
 	if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) {
+		SS7_DEBUG_CHAN(ftdmchan, "Found ACM_OBCI_BITA flag:0x%X\n", isup_intf->options);
 		acm.optBckCalInd.eh.pres				= PRSNT_NODEF;
 		acm.optBckCalInd.inbndInfoInd.pres		= PRSNT_NODEF;
-		acm.optBckCalInd.inbndInfoInd.val		= sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA);
+		acm.optBckCalInd.inbndInfoInd.val		= 0x1;
 		acm.optBckCalInd.caFwdMayOcc.pres		= PRSNT_DEF;
 		acm.optBckCalInd.simpleSegmInd.pres		= PRSNT_DEF;
 		acm.optBckCalInd.mlppUserInd.pres		= PRSNT_DEF;

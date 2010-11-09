@@ -44,6 +44,7 @@ uint32_t sngss7_id;
 
 /* PROTOTYPES *****************************************************************/
 uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
@@ -131,7 +132,8 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 		tmp[0] = ftdm->cid_num.digits[k];
 
 		/* check if the digit is a number and that is not null */
-		while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 			/* move on to the next value */
 			k++;
 			tmp[0] = ftdm->cid_num.digits[k];
@@ -140,14 +142,15 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 		/* check if tmp is null or a digit */
 		if (tmp[0] != '\0') {
 			/* push it into the lower nibble */
-			lower = atoi(&tmp[0]);
+			lower = strtol(&tmp[0], (char **)NULL, 16);
 			/* move to the next digit */
 			k++;
 			/* grab a digit from the ftdm digits */
 			tmp[0] = ftdm->cid_num.digits[k];
 
 			/* check if the digit is a number and that is not null */
-			while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 				k++;
 				tmp[0] = ftdm->cid_num.digits[k];
 			} /* while(!(isdigit(tmp))) */
@@ -155,7 +158,7 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 			/* check if tmp is null or a digit */
 			if (tmp[0] != '\0') {
 				/* push the digit into the upper nibble */
-				upper = (atoi(&tmp[0])) << 4;
+				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
 			} else {
 				/* there is no upper ... fill in 0 */
 				upper = 0x0;
@@ -242,7 +245,8 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 		tmp[0] = ftdm->dnis.digits[k];
 
 		/* check if the digit is a number and that is not null */
-		while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 			/* move on to the next value */
 			k++;
 			tmp[0] = ftdm->dnis.digits[k];
@@ -251,14 +255,15 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 		/* check if tmp is null or a digit */
 		if (tmp[0] != '\0') {
 			/* push it into the lower nibble */
-			lower = atoi(&tmp[0]);
+			lower = strtol(&tmp[0], (char **)NULL, 16);
 			/* move to the next digit */
 			k++;
 			/* grab a digit from the ftdm digits */
 			tmp[0] = ftdm->dnis.digits[k];
 
 			/* check if the digit is a number and that is not null */
-			while (!(isdigit(tmp[0])) && (tmp[0] != '\0')) {
+			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 				k++;
 				tmp[0] = ftdm->dnis.digits[k];
 			} /* while(!(isdigit(tmp))) */
@@ -266,7 +271,7 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 			/* check if tmp is null or a digit */
 			if (tmp[0] != '\0') {
 				/* push the digit into the upper nibble */
-				upper = (atoi(&tmp[0])) << 4;
+				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
 			} else {
 				/* there is no upper ... fill in ST */
 				upper = 0xF0;
@@ -339,6 +344,49 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
 		return 1;
 	}
+
+	return 0;
+}
+
+/******************************************************************************/
+uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
+{
+	int i = 0;
+	int j = 0;
+
+	/* check if the token string is present */
+	if (str.pres == 1) {
+		/* find the length of the digits so far */
+		j = strlen(ftdm);
+
+		/* confirm that we found an acceptable length */
+		if ( j > 25 ) {
+			SS7_ERROR("string length exceeds maxium value...aborting append!\n");
+			return 1;
+		} /* if ( j > 25 ) */
+
+		/* copy in digits */
+		for (i = 0; i < str.len; i++) {
+			/* convert 4 bit integer to char and copy into lower nibblet*/
+			sprintf(&ftdm[j], "%X", (str.val[i] & 0x0F));
+			/* move along */
+			j++;
+			/* convert 4 bit integer to char and copy into upper nibblet */
+			sprintf(&ftdm[j], "%X", ((str.val[i] & 0xF0) >> 4));
+			/* move along */
+			j++;
+		} /* for (i = 0; i < str.len; i++) */
+
+		/* if the odd flag is up the last digit is a fake "0" */
+		if ((oddEven.pres == 1) && (oddEven.val == 1)) {
+			ftdm[j-1] = '\0';
+		} else {
+			ftdm[j] = '\0';
+		} /* if ((oddEven.pres == 1) && (oddEven.val == 1)) */
+	} else {
+		SS7_ERROR("Asked to copy tknStr that is not present!\n");
+		return 1;
+	} /* if (str.pres == 1) */
 
 	return 0;
 }
@@ -940,6 +988,7 @@ ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int ty
 
 		/* confirm it is a digit */
 		if (!isdigit(tmp[0])) {
+			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 			/* move to the next character in subAddr */
 			x++;
 
@@ -1024,6 +1073,7 @@ ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int typ
 
 		/* confirm it is a hex digit */
 		while ((!isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 			/* move to the next character in subAddr */
 			x++;
 			tmp[0] = subAddr[x];
@@ -1040,6 +1090,7 @@ ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int typ
 
 			/* check if the digit is a hex digit and that is not null */
 			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
 				x++;
 				tmp[0] = subAddr[x];
 			} /* while(!(isdigit(tmp))) */
