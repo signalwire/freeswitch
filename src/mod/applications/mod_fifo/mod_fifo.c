@@ -308,6 +308,7 @@ struct fifo_node {
 	int outbound_per_cycle;
 	char *outbound_name;
 	outbound_strategy_t outbound_strategy;
+	int ring_timeout;
 };
 
 typedef struct fifo_node fifo_node_t;
@@ -1213,7 +1214,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed);
 		switch_event_del_header(ovars, "fifo_outbound_uuid");
 		
-		if (!h->timeout) h->timeout = 60;
+		if (!h->timeout) h->timeout = node->ring_timeout;
 		if (timeout < h->timeout) timeout = h->timeout;
 		
 		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
@@ -3928,6 +3929,7 @@ static switch_status_t load_config(int reload, int del_all)
 			int taking_calls_i = 1;
 			int timeout_i = 60;
 			int lag_i = 10;
+			int ring_timeout = 60;
 
 			name = switch_xml_attr(fifo, "name");
 
@@ -3981,7 +3983,16 @@ static switch_status_t load_config(int reload, int del_all)
 				node->has_outbound = 1;
 			}
 			
-			
+			if ((val = switch_xml_attr(fifo, "outbound_ring_timeout"))) {
+				int tmp = atoi(val);
+				if (tmp > 10) {
+					ring_timeout = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid ring_timeout: must be > 10 for queue %s\n", node->name);
+				}
+			}
+
+			node->ring_timeout = ring_timeout;
 			node->outbound_per_cycle = outbound_per_cycle;
 			node->outbound_priority = outbound_priority;
 			
