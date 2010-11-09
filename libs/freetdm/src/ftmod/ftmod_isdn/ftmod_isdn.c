@@ -53,7 +53,6 @@
 //#define IODEBUG
 
 /* helper macros */
-#define FTDM_SPAN_IS_BRI(x)	((x)->trunk_type == FTDM_TRUNK_BRI || (x)->trunk_type == FTDM_TRUNK_BRI_PTMP)
 #define FTDM_SPAN_IS_NT(x)	(((ftdm_isdn_data_t *)(x)->signal_data)->mode == Q921_NT)
 
 

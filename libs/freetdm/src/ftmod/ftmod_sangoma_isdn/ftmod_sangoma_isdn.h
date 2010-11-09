@@ -74,6 +74,7 @@ typedef enum {
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
 	FLAG_SEND_DISC  		= (1 << 9),
+	FLAG_ACTIVATING			= (1 << 10), /* Used for BRI only, flag is set after we request line CONNECTED */
 } sngisdn_flag_t;
 
 
@@ -181,6 +182,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			facility;
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
+	uint8_t			timer_t3;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
@@ -368,11 +370,13 @@ void sngisdn_delayed_release(void* p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
 void sngisdn_facility_timeout(void* p_sngisdn_info);
+void sngisdn_t3_timeout(void* p_sngisdn_info);
 
 /* Stack management functions */
 ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span);
 ftdm_status_t sng_isdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sng_isdn_stack_stop(ftdm_span_t *span);
+ftdm_status_t sng_isdn_wake_up_phy(ftdm_span_t *span);
 
 void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 void sngisdn_print_spans(ftdm_stream_handle_t *stream);
