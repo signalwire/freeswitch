@@ -309,6 +309,7 @@ struct fifo_node {
 	char *outbound_name;
 	outbound_strategy_t outbound_strategy;
 	int ring_timeout;
+	int default_lag;
 };
 
 typedef struct fifo_node fifo_node_t;
@@ -3519,6 +3520,12 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_per_cycle);
 	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle", tmp);
 
+	switch_snprintf(tmp, sizeof(buffer), "%u", node->ring_timeout);
+	switch_xml_set_attr_d(x_fifo, "ring_timeout", tmp);
+
+	switch_snprintf(tmp, sizeof(buffer), "%u", node->default_lag);
+	switch_xml_set_attr_d(x_fifo, "default_lag", tmp);
+
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_priority);
 	switch_xml_set_attr_d(x_fifo, "outbound_priority", tmp);
 
@@ -3930,6 +3937,7 @@ static switch_status_t load_config(int reload, int del_all)
 			int timeout_i = 60;
 			int lag_i = 10;
 			int ring_timeout = 60;
+			int default_lag = 30;
 
 			name = switch_xml_attr(fifo, "name");
 
@@ -3992,11 +4000,20 @@ static switch_status_t load_config(int reload, int del_all)
 				}
 			}
 
+			if ((val = switch_xml_attr(fifo, "outbound_default_lag"))) {
+				int tmp = atoi(val);
+				if (tmp > 10) {
+					default_lag = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid default_lag: must be > 10 for queue %s\n", node->name);
+				}
+			}
+
 			node->ring_timeout = ring_timeout;
 			node->outbound_per_cycle = outbound_per_cycle;
 			node->outbound_priority = outbound_priority;
+			node->default_lag = default_lag;
 			
-
 			if (outbound_strategy) {
 				node->outbound_strategy = parse_strat(outbound_strategy);
 				node->has_outbound = 1;
@@ -4028,14 +4045,14 @@ static switch_status_t load_config(int reload, int del_all)
 
 				if (timeout) {
 					if ((timeout_i = atoi(timeout)) < 10) {
-						timeout_i = 60;
+						timeout_i = ring_timeout;
 					}
 
 				}
 
 				if (lag) {
 					if ((lag_i = atoi(lag)) < 0) {
-						lag_i = 10;
+						lag_i = default_lag;
 					}
 				}
 
