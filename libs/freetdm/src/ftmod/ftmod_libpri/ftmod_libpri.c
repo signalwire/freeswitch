@@ -1606,9 +1606,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	memset(isdn_data, 0, sizeof(*isdn_data));
 
 	switch (ftdm_span_get_trunk_type(span)) {
-	case FTDM_TRUNK_E1:
 	case FTDM_TRUNK_BRI:
 	case FTDM_TRUNK_BRI_PTMP:
+#ifndef HAVE_LIBPRI_BRI
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported trunk type: '%s', libpri too old\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		snprintf(span->last_error, sizeof(span->last_error), "Unsupported trunk type [%s], libpri too old", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		return FTDM_FAIL;
+#endif
+	case FTDM_TRUNK_E1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1/BRI/BRI PTMP trunk\n");
 		isdn_data->l1 = PRI_LAYER_1_ALAW;
 		break;
