@@ -80,6 +80,9 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
+
+	sofia_glue_check_dtmf_type(tech_pvt);
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA INIT\n", switch_channel_get_name(channel));
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		sofia_glue_tech_absorb_sdp(tech_pvt);
@@ -1031,13 +1034,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 									if (codec_ms != tech_pvt->codec_ms) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-														  "We were told to use ptime %d but what they meant to say was %d\n"
-														  "This issue has so far been identified to happen on the following broken platforms/devices:\n"
-														  "Linksys/Sipura aka Cisco\n"
-														  "ShoreTel\n"
-														  "Sonus/L3\n"
-														  "We will try to fix it but some of the devices on this list are so broken,\n"
-														  "who knows what will happen..\n", (int) tech_pvt->codec_ms, (int) codec_ms);
+														  "Asynchronous PTIME not supported, changing our end from %d to %d\n",
+														  (int) tech_pvt->codec_ms,
+														  (int) codec_ms
+														  );
 
 										switch_channel_set_variable_printf(channel, "sip_h_X-Broken-PTIME", "Adv=%d;Sent=%d",
 																		   (int) tech_pvt->codec_ms, (int) codec_ms);
@@ -2208,6 +2208,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SOATAG_REUSE_REJECTED(1),
 									SOATAG_ORDERED_USER(1),
+									SOATAG_RTP_SELECT(1),
 									SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"),
 									TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
@@ -2293,11 +2294,14 @@ static const char *sofia_state_names[] = {
 	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
+	"TIMEOUT",
 	NULL
 };
 
 const char *sofia_state_string(int state)
 {
+	if (state >= REG_STATE_LAST) return "";
+
 	return sofia_state_names[state];
 }
 
@@ -2442,8 +2446,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 								time_t now = switch_epoch_time_now(NULL);
-								if (gp->retry > now) {
-									stream->write_function(stream, " (retry: %ds)", gp->retry - now);
+								if (gp->reg_timeout > now) {
+									stream->write_function(stream, " (retry: %ds)", gp->reg_timeout - now);
 								} else {
 									stream->write_function(stream, " (retry: NEVER)");
 								}
@@ -4092,8 +4096,9 @@ static int notify_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *es = argv[5];
 	char *body = argv[6];
 	char *id = NULL;
-	char *p, *contact;
-
+	char *contact;
+	sofia_destination_t *dst = NULL;
+	char *route_uri = NULL;
 
 	if (profile_name && strcasecmp(profile_name, profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -4105,16 +4110,24 @@ static int notify_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_assert(id);
 	contact = sofia_glue_get_url_from_contact(contact_in, 1);
 
-	if ((p = strstr(contact, ";fs_"))) {
-		*p = '\0';
+
+	dst = sofia_glue_get_destination((char *) contact);
+	
+	if (dst->route_uri) {
+		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 
-	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-
+	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+	
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
-	nua_notify(nh, NUTAG_NEWSUB(1), SIPTAG_EVENT_STR(es), SIPTAG_CONTENT_TYPE_STR(ct), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+	nua_notify(nh, NUTAG_NEWSUB(1), 
+			   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+			   SIPTAG_EVENT_STR(es), SIPTAG_CONTENT_TYPE_STR(ct), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+	
 
+	switch_safe_free(route_uri);
+	sofia_glue_free_destination(dst);
 
 	free(id);
 	free(contact);
@@ -4175,21 +4188,37 @@ static void general_event_handler(switch_event_t *event)
 
 
 				if (to_uri && from_uri && ct && es && profile_name && (profile = sofia_glue_find_profile(profile_name))) {
-					nua_handle_t *nh = nua_handle(profile->nua,
-												  NULL,
-												  NUTAG_URL(to_uri),
-												  SIPTAG_FROM_STR(from_uri),
-												  SIPTAG_TO_STR(to_uri),
-												  SIPTAG_CONTACT_STR(profile->url),
-												  TAG_END());
+					sofia_destination_t *dst = NULL;
+					nua_handle_t *nh;
+					char *route_uri = NULL;
+
+					dst = sofia_glue_get_destination((char *) to_uri);
+					
+					if (dst->route_uri) {
+						route_uri = sofia_glue_strip_uri(dst->route_uri);
+					}
+					
+					
+					nh = nua_handle(profile->nua,
+									NULL,
+									NUTAG_URL(to_uri), 
+									SIPTAG_FROM_STR(from_uri),
+									SIPTAG_TO_STR(to_uri),
+									SIPTAG_CONTACT_STR(profile->url),
+									TAG_END());
 
 					nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
-
+					
 					nua_notify(nh,
 							   NUTAG_NEWSUB(1),
 							   NUTAG_WITH_THIS(profile->nua),
+							   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->contact)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+					
 
+					switch_safe_free(route_uri);
+					sofia_glue_free_destination(dst);
+					
 					sofia_glue_release_profile(profile);
 				}
 

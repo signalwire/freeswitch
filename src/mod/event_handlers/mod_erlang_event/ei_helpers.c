@@ -377,10 +377,11 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 				// init the resolver
 				res_init();
 			}
-			if (!zstr_buf(_res.dnsrch[0])) {
+			if (_res.dnsrch[0] && !zstr_buf(_res.dnsrch[0])) {
 				strncat(thishostname, ".", 1);
 				strncat(thishostname, _res.dnsrch[0], EI_MAXHOSTNAMELEN - strlen(thishostname));
 			}
+
 		}
 		snprintf(thisnodename, MAXNODELEN + 1, "%s@%s", prefs.nodename, thishostname);
 	}

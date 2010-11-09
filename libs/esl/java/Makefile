@@ -1,4 +1,4 @@
-LOCAL_CFLAGS=-I../src/include -I/usr/java/jdk1.6.0_14/include -I/usr/java/jdk1.6.0_14/include/linux
+LOCAL_CFLAGS=-I../src/include -I/usr/java/jdk1.6.0_14/include -I/usr/java/jdk1.6.0_14/include/linux -I/usr/lib/jvm/java-6-openjdk/include/
 GCC_WARNING_JUNK=-w
 CLASSES=org/freeswitch/esl/*
 

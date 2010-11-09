@@ -1015,6 +1015,53 @@ static void launch_listener_thread(listener_t *listener)
 
 }
 
+static int read_cookie_from_file(char *filename) {
+	int fd;
+	char cookie[MAXATOMLEN+1];
+	char *end;
+	struct stat buf;
+	ssize_t res;
+
+	if (!stat(filename, &buf)) {
+		if ((buf.st_mode & S_IRWXG) || (buf.st_mode & S_IRWXO)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s must only be accessible by owner only.\n", filename);
+			return 2;
+		}
+		if (buf.st_size > MAXATOMLEN) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s contains a cookie larger than the maximum atom size of %d.\n", filename, MAXATOMLEN);
+			return 2;
+		}
+		fd = open(filename, O_RDONLY);
+		if (fd < 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to open cookie file %s : %d.\n", filename, errno);
+			return 2;
+		}
+
+		if ((res = read(fd, cookie, MAXATOMLEN)) < 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie file %s : %d.\n", filename, errno);
+		}
+
+		cookie[MAXATOMLEN] = '\0';
+
+		/* replace any end of line characters with a null */
+		if ((end = strchr(cookie, '\n'))) {
+			*end = '\0';
+		}
+
+		if ((end = strchr(cookie, '\r'))) {
+			*end = '\0';
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read %d bytes from cookie file %s.\n", (int)res, filename);
+
+		set_pref_cookie(cookie);
+		return 0;
+	} else {
+		/* don't error here, because we might be blindly trying to read $HOME/.erlang.cookie, and that can fail silently */
+		return 1;
+	}
+}
+
 
 static int config(void)
 {
@@ -1041,6 +1088,10 @@ static int config(void)
 					prefs.port = (uint16_t) atoi(val);
 				} else if (!strcmp(var, "cookie")) {
 					set_pref_cookie(val);
+				} else if (!strcmp(var, "cookie-file")) {
+					if (read_cookie_from_file(val) == 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie from %s\n", val);
+					}
 				} else if (!strcmp(var, "nodename")) {
 					set_pref_nodename(val);
 				} else if (!strcmp(var, "compat-rel")) {
@@ -1075,7 +1126,21 @@ static int config(void)
 	}
 
 	if (zstr(prefs.cookie)) {
-		set_pref_cookie("ClueCon");
+		int res;
+		char* home_dir = getenv("HOME");
+		char path_buf[1024];
+
+		if (!zstr(home_dir)) {
+			/* $HOME/.erlang.cookie */
+			switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", home_dir, SWITCH_PATH_SEPARATOR, ".erlang.cookie");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for cookie at path: %s\n", path_buf);
+
+			res = read_cookie_from_file(path_buf);
+			if (res) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No cookie or valid cookie file specified, using default cookie\n");
+				set_pref_cookie("ClueCon");
+			}
+		}
 	}
 
 	if (!prefs.port) {

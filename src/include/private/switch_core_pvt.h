@@ -193,6 +193,11 @@ struct switch_media_bug {
 	struct switch_media_bug *next;
 };
 
+typedef enum {
+	DBTYPE_DEFAULT = 0,
+	DBTYPE_MSSQL = 1,
+} switch_dbtype_t;
+
 struct switch_runtime {
 	switch_time_t initiated;
 	switch_time_t reference;
@@ -237,6 +242,7 @@ struct switch_runtime {
 	double min_idle_time;
 	int sql_buffer_len;
 	int max_sql_buffer_len;
+	switch_dbtype_t odbc_dbtype;
 };
 
 extern struct switch_runtime runtime;

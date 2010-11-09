@@ -898,7 +898,7 @@ tryagain:
 
 static void handle_call_loop_start(zap_span_t *span, sangomabc_connection_t *mcon, sangomabc_short_event_t *event)
 {
-	zap_status_t res = ZAP_FAIL;
+	zap_state_change_result_t res = ZAP_FAIL;
 	zap_channel_t *zchan;
 
 	if (!(zchan = find_zchan(span, (sangomabc_short_event_t*)event, 0))) {
@@ -923,7 +923,7 @@ static void handle_call_loop_start(zap_span_t *span, sangomabc_connection_t *mco
 
 static __inline__ void stop_loop(zap_channel_t *zchan)
 {
-	zap_status_t res = ZAP_FAIL;
+	zap_state_change_result_t res = ZAP_STATE_CHANGE_FAIL;
 	zap_channel_command(zchan, ZAP_COMMAND_DISABLE_LOOP, NULL);
 	/* even when we did not sent a msg we set this flag to avoid sending call stop in the DOWN state handler */
 	zap_set_flag(zchan, SFLAG_SENT_FINAL_MSG);

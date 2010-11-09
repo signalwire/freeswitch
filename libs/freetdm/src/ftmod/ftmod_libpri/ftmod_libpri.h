@@ -42,8 +42,9 @@ typedef enum {
 	FTMOD_LIBPRI_OPT_SUGGEST_CHANNEL = (1 << 0),
 	FTMOD_LIBPRI_OPT_OMIT_DISPLAY_IE = (1 << 1),
 	FTMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE = (1 << 2),
-		
-	FTMOD_LIBPRI_OPT_MAX = (1 << 3)
+	FTMOD_LIBPRI_OPT_FACILITY_AOC = (1 << 3),
+
+	FTMOD_LIBPRI_OPT_MAX = (1 << 4)
 } ftdm_isdn_opts_t;
 
 typedef enum {

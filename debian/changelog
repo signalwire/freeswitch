@@ -1,3 +1,53 @@
+freeswitch (1.0.head~git.master.20101015.1-1) unstable; urgency=low
+
+  * reintroduced mod_flite
+  * disabled the patching stuff introduced by Julien ... needs an overwork
+  * reintroduced mod_tts_commandline
+  * cleaned up rules file and module make rules
+  * more trivial changes and updates :)
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fri, 15 Oct 2010 13:14:02 +0200
+
+freeswitch (1.0.head~git.master.20101014.1-1) unstable; urgency=low
+
+  * replaced mod_openzap with mod_freetdm
+  * added mod_theora
+  * added mod_codec2
+  * added mod_amrwb
+  * added mod_portaudio_stream
+  * cleaned up rules file and module make rules
+  * added patches from Julien Duqene (FS-369)
+  * Various trivial changes and updates :)
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fri, 15 Oct 2010 05:05:02 +0200
+
+freeswitch (1.0.head~git.master.20100601.2-1) unstable; urgency=low
+
+  * Various trivial changes and updates.
+  * Change upstream package version numbering scheme for unreleased versions:
+    new format is major.minor.micro~git.branch.date.commits-1
+  * Change source format to 3.0 (quilt).
+  * Upgrade debhelper compatibility to version 7.
+  * Update maintainer data and copyright file; now includes the full text
+    of the MPL since it is not (yet?) available in /usr/share/common-licenses/
+
+  * Build and install mod_file_string.so (FSBUILD-247)
+  * Work around build failure caused by clean rules for openzap.
+
+  * Remove several libraries from explicit dependencies, there were no special
+    version requirements and they should be picked up by dh_shlibdeps.
+  * Add dh_makeshlibs and make dh_shlibsdeps work again.
+  * Move openssl to Suggests: as it is not a required package to install or
+    run freeswitch.
+
+  * Add upstream-convert rule to apply patches, generate orig tarball
+    and set package version.
+  * Add check to ensure debian patches are applied before attempting build.
+  * Fix clean rule to avoid unwanted tree change before building orig.tar
+    archives with git-buildpackage.
+
+ -- Julien Plissonneau Duquene <exp-end-2010-06-88a41947@aqiii.org>  Tue, 01 Jun 2010 09:53:44 -0400
+
 freeswitch (1.0.6-1ubuntu1) maverick; urgency=low
 
   [ Gabriel Gunderson ]
@@ -15,7 +65,7 @@ freeswitch (1.0.4-1ubuntu2) karmic; urgency=low
     * upgrade: Add more verbosity when building to make it easier to find build
       errors.
     * upgrade: Remove the requirement for EXACTLY automake1.9 and change it to
-      need atleast automake 1.9
+      need at least automake 1.9
     * upgrade: Add the modules (directory, cluechoo, and valet_parking) to the
       build files. These are in the standard build, so they should be here too.
 
@@ -574,7 +624,7 @@ freeswitch (1.0.1-1) unstable; urgency=low
    * ADD: reboot option for sip phones to flush_inboud_reg sofia profile api command
    * FIX: add small padding to end of mp3 to avoid cut off mp3 recording
    * FIX: patch multiple SDP connection lines in sdp for proxy media mode (MODENDP-109)
-   * FIX: don't parse ringback varable in proxy situations
+   * FIX: don't parse ringback variable in proxy situations
    * ADD: per call vm recording ext with vm_message_ext variable
    * ADD: sip_bye_h prefix to add headers to bye
    * ENHANCEMENT: more interfaces available in show fsapi command
@@ -596,7 +646,7 @@ freeswitch (1.0.1~trunk) unstable; urgency=low
      - Added mod_say_es and mod_say_nl
      - Updated descriptions
      - Added mod_cdr_csv
-   * Fixed typos and some errors in the previus patch.
+   * Fixed typos and some errors in the previous patch.
    * Modified monit script. Now it should work.
    * The debian build system now bootstrap automagically if it's necessary and all scripts are in place.
 

@@ -2761,7 +2761,7 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 	if (time_match && xtod) {
 		int test = (tm.tm_hour * 60 * 60) + (tm.tm_min * 60) + tm.tm_sec;
 		char tmpdate[10];
-		switch_snprintf(tmpdate, 6, "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+		switch_snprintf(tmpdate, 10, "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
 		time_match = switch_tod_cmp(xtod, test);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
 				"XML DateTime Check: time of day[%s] =~ %s (%s)\n", tmpdate, xtod, time_match ? "PASS" : "FAIL");

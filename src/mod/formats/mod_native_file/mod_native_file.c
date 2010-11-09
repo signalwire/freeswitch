@@ -58,7 +58,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE;
-		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
 			flags |= SWITCH_FOPEN_READ;
 		} else {
 			flags |= SWITCH_FOPEN_TRUNCATE;

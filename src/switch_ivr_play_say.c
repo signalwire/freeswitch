@@ -364,6 +364,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
 	int asis = 0;
+	int32_t sample_start = 0;
 	int waste_resources = 0, fill_cng = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_frame_t write_frame = { 0 };
@@ -404,6 +405,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	fh->channels = read_impl.number_of_channels;
 	fh->native_rate = read_impl.actual_samples_per_second;
+
+	if (fh->samples > 0) {
+		sample_start = fh->samples;
+		fh->samples = 0;
+	}
 
 	if ((vval = switch_channel_get_variable(channel, "record_sample_rate"))) {
 		int tmp = 0;
@@ -497,6 +503,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}
 
+	if (switch_test_flag(fh, SWITCH_FILE_WRITE_OVER) || ((p = switch_channel_get_variable(channel, "RECORD_WRITE_OVER")) && switch_true(p))) {
+		file_flags |= SWITCH_FILE_WRITE_OVER;
+	}
+
 	if (!fh->prefix) {
 		fh->prefix = prefix;
 	}
@@ -506,6 +516,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
+
+	if (sample_start > 0) {
+		uint32_t pos = 0;
+		switch_core_file_seek(fh, &pos, sample_start, SEEK_SET);
+		switch_clear_flag(fh, SWITCH_FILE_SEEK);	
+		fh->samples = 0;
+	}
+
 
 	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 		asis = 1;
@@ -1130,6 +1148,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			uint32_t pos = 0;
 			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 			switch_core_file_seek(fh, &pos, sample_start, SEEK_CUR);
+			switch_clear_flag(fh, SWITCH_FILE_SEEK);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
@@ -1319,6 +1338,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					}
 				}
 
+				fh->offset_pos += asis ? bread : bread / 2;
+
 				if (bread < framelen) {
 					memset(abuf + bread, 255, framelen - bread);
 				}
@@ -1338,9 +1359,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 				switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
 				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
+				fh->offset_pos += olen / 2;
+
 				if (!asis) {
 					olen /= 2;
 				}
+
 			}
 
 			if (done || olen <= 0) {
@@ -1455,7 +1479,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 
 			more_data = 0;
-
 			write_frame.samples = (uint32_t) olen;
 
 			if (asis) {
@@ -1480,7 +1503,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
 			}
 
-			fh->offset_pos += write_frame.samples / 2;
 			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			if (timeout_samples) {

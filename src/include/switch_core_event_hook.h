@@ -45,6 +45,7 @@ typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_chann
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
 typedef struct switch_io_event_hook_recv_dtmf switch_io_event_hook_recv_dtmf_t;
 typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
+typedef struct switch_io_event_hook_state_run switch_io_event_hook_state_run_t;
 typedef struct switch_io_event_hook_resurrect_session switch_io_event_hook_resurrect_session_t;
 typedef switch_status_t (*switch_outgoing_channel_hook_t)
                 (switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t *, switch_originate_flag_t);
@@ -58,6 +59,7 @@ typedef switch_status_t (*switch_kill_channel_hook_t) (switch_core_session_t *, 
 typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *, switch_dtmf_direction_t direction);
 typedef switch_status_t (*switch_recv_dtmf_hook_t) (switch_core_session_t *, const switch_dtmf_t *, switch_dtmf_direction_t direction);
 typedef switch_status_t (*switch_state_change_hook_t) (switch_core_session_t *);
+typedef switch_status_t (*switch_state_run_hook_t) (switch_core_session_t *);
 typedef switch_call_cause_t (*switch_resurrect_session_hook_t) (switch_core_session_t **, switch_memory_pool_t **, void *);
 
 /*! \brief Node in which to store custom receive message callback hooks */
@@ -136,6 +138,13 @@ struct switch_io_event_hook_state_change {
 	struct switch_io_event_hook_state_change *next;
 };
 
+/*! \brief Node in which to store state run callback hooks */
+struct switch_io_event_hook_state_run {
+	/*! the state run channel callback hook */
+	switch_state_run_hook_t state_run;
+	struct switch_io_event_hook_state_run *next;
+};
+
 
 struct switch_io_event_hook_resurrect_session {
 	switch_resurrect_session_hook_t resurrect_session;
@@ -166,6 +175,7 @@ struct switch_io_event_hooks {
 	switch_io_event_hook_recv_dtmf_t *recv_dtmf;
 	/*! a list of state change hooks */
 	switch_io_event_hook_state_change_t *state_change;
+	switch_io_event_hook_state_run_t *state_run;
 	switch_io_event_hook_resurrect_session_t *resurrect_session;
 };
 
@@ -218,6 +228,7 @@ NEW_HOOK_DECL_ADD_P(outgoing_channel);
 NEW_HOOK_DECL_ADD_P(receive_message);
 NEW_HOOK_DECL_ADD_P(receive_event);
 NEW_HOOK_DECL_ADD_P(state_change);
+NEW_HOOK_DECL_ADD_P(state_run);
 NEW_HOOK_DECL_ADD_P(read_frame);
 NEW_HOOK_DECL_ADD_P(write_frame);
 NEW_HOOK_DECL_ADD_P(video_read_frame);
@@ -231,6 +242,7 @@ NEW_HOOK_DECL_REM_P(outgoing_channel);
 NEW_HOOK_DECL_REM_P(receive_message);
 NEW_HOOK_DECL_REM_P(receive_event);
 NEW_HOOK_DECL_REM_P(state_change);
+NEW_HOOK_DECL_REM_P(state_run);
 NEW_HOOK_DECL_REM_P(read_frame);
 NEW_HOOK_DECL_REM_P(write_frame);
 NEW_HOOK_DECL_REM_P(video_read_frame);

@@ -111,6 +111,8 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 	switch_event_t *event;
 	switch_status_t status;
 
+	switch_channel_set_variable(channel, "last_non_matching_digits", match->match_digits);
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
 					  switch_channel_get_name(channel), match->match_digits);
 
@@ -141,6 +143,8 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	char *string = act->string;
 	switch_channel_t *channel = switch_core_session_get_channel(act->session);
 
+	switch_channel_set_variable(channel, "last_matching_digits", match->match_digits);
+	
 	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s]\n", 
 						  switch_channel_get_name(channel), act->string, act->value);

@@ -363,17 +363,30 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 							   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
 			}
-			gateway_ptr->retry = now + gateway_ptr->retry_seconds;
+			gateway_ptr->reg_timeout = now + gateway_ptr->reg_timeout_seconds;
 			gateway_ptr->state = REG_STATE_TRYING;
 			switch_safe_free(user_via);
 			user_via = NULL;
 			break;
 
+		case REG_STATE_TIMEOUT:
+			{
+				nua_handle_t *nh = gateway_ptr->nh;
+				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timeout Registering %s\n", gateway_ptr->name);
+
+				gateway_ptr->nh = NULL;
+				nua_handle_destroy(nh);
+				gateway_ptr->state = REG_STATE_FAILED;
+				gateway_ptr->failures++;
+				gateway_ptr->failure_status = 908;
+			}
+			break;
 		case REG_STATE_FAILED:
 			{
 				int sec;
 
-				if (gateway_ptr->failure_status == 503) {
+				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908) {
 					sec = gateway_ptr->retry_seconds;
 				} else {
 					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
@@ -384,8 +397,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->state = REG_STATE_FAIL_WAIT;
 				gateway_ptr->failure_status = 0;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n",
-								  gateway_ptr->name, sec);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration [%d], setting retry to %d seconds.\n",
+								  gateway_ptr->name, gateway_ptr->failure_status, sec);
 
 			}
 			break;
@@ -395,8 +408,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			break;
 		case REG_STATE_TRYING:
-			if (!gateway_ptr->retry || now >= gateway_ptr->retry) {
-				gateway_ptr->state = REG_STATE_FAILED;
+			if (now >= gateway_ptr->reg_timeout) {
+				gateway_ptr->state = REG_STATE_TIMEOUT;
 			}
 			break;
 		default:
@@ -676,14 +689,16 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING)) {
 			switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
-							" from sip_registrations where hostname='%s'", mod_sofia_globals.hostname);
+ " from sip_registrations where hostname='%s' and " 
+ "profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
 			
 			sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_nat_callback, profile);
 		} else if (sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
 			switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
 							" from sip_registrations where (status like '%%NAT%%' "
-							"or contact like '%%fs_nat=yes%%') and hostname='%s'", mod_sofia_globals.hostname);
+ "or contact like '%%fs_nat=yes%%') and hostname='%s' " 
+ "and profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
 			
 			sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_nat_callback, profile);
 		}
@@ -991,9 +1006,35 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (authorization) {
 		char *v_contact_str;
+		const char *username = "unknown";
+		const char *realm = reg_host;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name,
 											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count)) == AUTH_STALE) {
 			stale = 1;
+		}
+
+
+		if (auth_params) {
+			username = switch_event_get_header(auth_params, "sip_auth_username");
+			realm = switch_event_get_header(auth_params, "sip_auth_realm");
+		}
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER_ATTEMPT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+			switch_event_fire(&s_event);
 		}
 
 		if (exptime && v_event && *v_event) {
@@ -1098,6 +1139,23 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (!authorization || stale) {
 		const char *realm = profile->challenge_realm;
+
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_PRE_REGISTER) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+			switch_event_fire(&s_event);
+		}
 
 		if (zstr(realm) || !strcasecmp(realm, "auto_to")) {
 			realm = to_host;
@@ -1468,12 +1526,12 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 			} else if (port && atoi(port) != network_port) {
 				is_nat = "via port";
 			}
-		}
-	}
 
-	if (!is_nat && sip && sip->sip_via && sip->sip_via->v_port &&
-		atoi(sip->sip_via->v_port) == 5060 && network_port != 5060 ) {
-		is_nat = "via port";
+			if (!is_nat && sip->sip_via->v_port &&
+				atoi(sip->sip_via->v_port) == 5060 && network_port != 5060 ) {
+				is_nat = "via port";
+			}
+		}
 	}
 
 	if (!is_nat && profile->nat_acl_count) {
@@ -1632,7 +1690,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	switch_channel_t *channel = NULL;
 	const char *sip_auth_username = NULL;
 	const char *sip_auth_password = NULL;
-
+	char *dup_user = NULL;
+	char *dup_pass = NULL;
+	
 	if (session && (channel = switch_core_session_get_channel(session))) {
 		sip_auth_username = switch_channel_get_variable(channel, "sip_auth_username");
 		sip_auth_password = switch_channel_get_variable(channel, "sip_auth_password");
@@ -1702,8 +1762,37 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		}
 	}
 
+	if (!gateway && !sip_auth_username && sip && sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_user && sip->sip_to->a_url->url_host) {
+		switch_xml_t x_user, x_param, x_params;
+		switch_event_t *locate_params;
 
+		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_assert(locate_params);
 
+		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "Action", "reverse-auth-lookup");
+
+		if (switch_xml_locate_user_merged("id", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, NULL,
+										  &x_user, locate_params) == SWITCH_STATUS_SUCCESS) {
+			if ((x_params = switch_xml_child(x_user, "params"))) {
+				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+					const char *var = switch_xml_attr_soft(x_param, "name");
+					const char *val = switch_xml_attr_soft(x_param, "value");
+					
+					if (!strcasecmp(var, "reverse-auth-user")) {
+						dup_user = strdup(val);
+						sip_auth_username = dup_user;
+					} else if (!strcasecmp(var, "reverse-auth-pass")) {
+						dup_pass = strdup(val);
+						sip_auth_password = dup_pass;
+					}
+				}
+
+				switch_xml_free(x_user);
+			}
+		}
+
+		switch_event_destroy(&locate_params);
+	}
 
 	if (!(scheme && realm)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No scheme and realm!\n");
@@ -1741,6 +1830,10 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	}
 
   end:
+
+
+	switch_safe_free(dup_user);
+	switch_safe_free(dup_pass);
 
 	if (var_gateway) {
 		sofia_reg_release_gateway(var_gateway);

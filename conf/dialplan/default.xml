@@ -95,7 +95,7 @@
     <extension name="global-intercept">
       <condition field="destination_number" expression="^886$">
 	<action application="answer"/>
-	<action application="intercept" data="${hash(select/${domain_name}-last_dial/global)}"/>
+	<action application="intercept" data="${hash(select/${domain_name}-last_dial_ext/global)}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
@@ -103,7 +103,7 @@
     <extension name="group-intercept">
       <condition field="destination_number" expression="^\*8$">
 	<action application="answer"/>
-	<action application="intercept" data="${hash(select/${domain_name}-last_dial/${callgroup})}"/>
+	<action application="intercept" data="${hash(select/${domain_name}-last_dial_ext/${callgroup})}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
@@ -260,6 +260,8 @@
 	<action application="set" data="continue_on_fail=true"/>
 	<action application="hash" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
+	<action application="hash" data="insert/${domain_name}-last_dial_ext/${called_party_callgroup}/${uuid}"/>
+	<action application="hash" data="insert/${domain_name}-last_dial_ext/global/${uuid}"/>
 	<action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
 	<!--<action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
 	<action application="hash" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>

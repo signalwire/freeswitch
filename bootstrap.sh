@@ -148,7 +148,7 @@ if [ "x$libtoolize" = "x" ]; then
     exit 1
 fi
 if [ ! -x "$libtoolize" ]; then
-    echo "$libtoolize does not exist or ist not executable"
+    echo "$libtoolize does not exist or is not executable"
     exit 1
 fi
 
