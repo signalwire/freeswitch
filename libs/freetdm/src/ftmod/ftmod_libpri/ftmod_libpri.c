@@ -1294,7 +1294,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 				}
 			}
 		}
-		if (!got_d) {
+		if (!got_d || !isdn_data->dchan) {
 			ftdm_log(FTDM_LOG_ERROR, "Failed to get a D-channel in span %d\n", span->span_id);
 			break;
 		}
@@ -1577,7 +1577,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		ftdm_span_set_trunk_type(span, FTDM_TRUNK_T1);
 	}
 
-	for(i = 1; i <= span->chan_count; i++) {
+	for (i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i]->type == FTDM_CHAN_TYPE_DQ921) {
 			if (x > 1) {
 				snprintf(span->last_error, sizeof(span->last_error), "Span has more than 2 D-Channels!");
@@ -1590,16 +1590,15 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 					x++;
 				}
 #endif
+				x++;
 			}
 		}
 	}
-
-#if 0
 	if (!x) {
-		snprintf(span->last_error, sizeof(span->last_error), "Span has no D-Channels!");
+		ftdm_log(FTDM_LOG_ERROR, "Span has no D-Channel!\n");
+		snprintf(span->last_error, sizeof(span->last_error), "Span has no D-Channel!");
 		return FTDM_FAIL;
 	}
-#endif
 
 	isdn_data = ftdm_malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
