@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2010, Stefan Knoblich <s.knoblich@axsentis.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +34,29 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
+/***
+ * Move to core
+ ***/
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x)	(sizeof((x)) / sizeof((x)[0]))
 #endif
+
+static ftdm_channel_state_t ftdm_channel_get_state(const ftdm_channel_t *chan)
+{
+	assert(chan);
+	return chan->state;
+}
+
+static void _ftdm_channel_set_state_force(ftdm_channel_t *chan, const ftdm_channel_state_t state)
+{
+	assert(chan);
+	chan->state = state;
+}
+
+static const char *ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
+{
+	return ftdm_trunk_type2str(span->trunk_type);
+}
 
 /**
  * \brief Unloads libpri IO module
@@ -258,7 +279,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 					goto done;
 				}
 
-				ftdm_clear_flag((&isdn_data->spri), LPWRAP_PRI_READY);
+				ftdm_clear_flag(&(isdn_data->spri), LPWRAP_PRI_READY);
 				stream->write_function(stream, "%s: +OK killed.\n", __FILE__);
 				goto done;
 			} else {
@@ -452,140 +473,155 @@ static ftdm_state_map_t isdn_state_map = {
  * \brief Handler for channel state change
  * \param ftdmchan Channel to handle
  */
-static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
+static __inline__ void state_advance(ftdm_channel_t *chan)
 {
-	//Q931mes_Generic *gen = (Q931mes_Generic *) ftdmchan->caller_data.raw_data;
-	ftdm_libpri_data_t *isdn_data = ftdmchan->span->signal_data;
+	ftdm_libpri_data_t *isdn_data = chan->span->signal_data;
+	q931_call *call = (q931_call *)chan->call_data;
 	ftdm_status_t status;
 	ftdm_sigmsg_t sig;
-	q931_call *call = (q931_call *) ftdmchan->call_data;
 
 	ftdm_log(FTDM_LOG_DEBUG, "%d:%d STATE [%s]\n",
-			ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state));
+			ftdm_channel_get_span_id(chan), ftdm_channel_get_id(chan), ftdm_channel_get_state_str(chan));
 
 #if 0
-	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) && !call) {
+	if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND) && !call) {
 		ftdm_log(FTDM_LOG_WARNING, "NO CALL!!!!\n");
 	}
 #endif
 
-
 	memset(&sig, 0, sizeof(sig));
-	sig.chan_id = ftdmchan->chan_id;
-	sig.span_id = ftdmchan->span_id;
-	sig.channel = ftdmchan;
+	sig.chan_id = ftdm_channel_get_id(chan);
+	sig.span_id = ftdm_channel_get_span_id(chan);
+	sig.channel = chan;
 
-
-	switch (ftdmchan->state) {
+	switch (ftdm_channel_get_state(chan)) {
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
-			ftdmchan->call_data = NULL;
-			ftdm_channel_done(ftdmchan);
+			chan->call_data = NULL;
+			ftdm_channel_done(chan);
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_PROGRESS:
 		{
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS;
-				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
-				pri_progress(isdn_data->spri.pri, call, ftdmchan->chan_id, 1);
+				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
 			} else {
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 		{
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
-				pri_proceeding(isdn_data->spri.pri, call, ftdmchan->chan_id, 1);
+				pri_proceeding(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
 			} else {
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_RING:
 		{
-			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				if (call) {
-					pri_acknowledge(isdn_data->spri.pri, call, ftdmchan->chan_id, 0);
+					pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
 					sig.event_id = FTDM_SIGEVENT_START;
-					if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
-						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
+						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 					}
 				} else {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 				}
 			}
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_RESTART:
 		{
-			ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_UNSPECIFIED;
+			chan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_UNSPECIFIED;
 			sig.event_id = FTDM_SIGEVENT_RESTART;
-			status = ftdm_span_send_signal(ftdmchan->span, &sig);
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_UP:
 		{
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_UP;
-				if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
 				pri_answer(isdn_data->spri.pri, call, 0, 1);
 			} else {
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_DIALING:
 		if (isdn_data) {
+			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 			struct pri_sr *sr;
-			int dp;
+			int ton;
 
 			if (!(call = pri_new_call(isdn_data->spri.pri))) {
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				ftdm_log(FTDM_LOG_ERROR, "Failed to create new call on channel %d:%d\n",
+					ftdm_channel_get_span_id(chan), ftdm_channel_get_id(chan));
+				/* TODO: set hangup cause? */
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 				return;
 			}
 
-			dp = ftdmchan->caller_data.dnis.type;
-			switch(dp) {
+			ton = caller_data->dnis.type;
+			switch (ton) {
 			case FTDM_TON_NATIONAL:
-				dp = PRI_NATIONAL_ISDN;
+				ton = PRI_NATIONAL_ISDN;
 				break;
 			case FTDM_TON_INTERNATIONAL:
-				dp = PRI_INTERNATIONAL_ISDN;
+				ton = PRI_INTERNATIONAL_ISDN;
 				break;
 			case FTDM_TON_SUBSCRIBER_NUMBER:
-				dp = PRI_LOCAL_ISDN;
+				ton = PRI_LOCAL_ISDN;
 				break;
 			default:
-				dp = isdn_data->dp;
+				ton = isdn_data->dp;
 			}
 
-			ftdmchan->call_data = call;
+			chan->call_data = call;
+
 			sr = pri_sr_new();
+			if (!sr) {
+				ftdm_log(FTDM_LOG_ERROR, "Failed to create new setup request on channel %d:%d\n",
+					ftdm_channel_get_span_id(chan), ftdm_channel_get_id(chan));
+				/* TODO: handle error properly */
+			}
 			assert(sr);
-			pri_sr_set_channel(sr, ftdmchan->chan_id, 0, 0);
+
+			pri_sr_set_channel(sr, ftdm_channel_get_id(chan), 0, 0);
 			pri_sr_set_bearer(sr, PRI_TRANS_CAP_SPEECH, isdn_data->l1);
-			pri_sr_set_called(sr, ftdmchan->caller_data.dnis.digits, dp, 1);
-			pri_sr_set_caller(sr, ftdmchan->caller_data.cid_num.digits,
-					(isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_DISPLAY_IE ? NULL : ftdmchan->caller_data.cid_name),
-					dp,
-					(ftdmchan->caller_data.pres != 1 ? PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN : PRES_PROHIB_USER_NUMBER_NOT_SCREENED));
+
+			pri_sr_set_called(sr, caller_data->dnis.digits, ton, 1);
+			pri_sr_set_caller(sr, caller_data->cid_num.digits,
+					((isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_DISPLAY_IE) ? NULL : caller_data->cid_name),
+					ton,
+					((caller_data->pres != 1) ? PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN : PRES_PROHIB_USER_NUMBER_NOT_SCREENED));
 
 			if (!(isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE)) {
-				pri_sr_set_redirecting(sr, ftdmchan->caller_data.cid_num.digits, dp,
+				pri_sr_set_redirecting(sr, caller_data->cid_num.digits, ton,
 					PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
 			}
 #ifdef HAVE_LIBPRI_AOC
@@ -596,39 +632,40 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			}
 #endif
 			if (pri_setup(isdn_data->spri.pri, call, sr)) {
-				ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+				caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 			}
 
 			pri_sr_free(sr);
 		}
-
 		break;
+
 	case FTDM_CHANNEL_STATE_HANGUP:
 		{
 			if (call) {
-				pri_hangup(isdn_data->spri.pri, call, ftdmchan->caller_data.hangup_cause);
+				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+				pri_hangup(isdn_data->spri.pri, call, caller_data->hangup_cause);
 				pri_destroycall(isdn_data->spri.pri, call);
-				ftdmchan->call_data = NULL;
+
+				chan->call_data = NULL;
 			}
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
+
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 		break;
+
 	case FTDM_CHANNEL_STATE_TERMINATING:
 		{
 			sig.event_id = FTDM_SIGEVENT_STOP;
-			status = ftdm_span_send_signal(ftdmchan->span, &sig);
+			status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig);
 			/* user moves us to HANGUP and from there we go to DOWN */
 		}
 	default:
 		break;
 	}
-
-
-
-	return;
 }
 
 /**
@@ -642,15 +679,17 @@ static __inline__ void check_state(ftdm_span_t *span)
 
 		ftdm_clear_flag_locked(span, FTDM_SPAN_STATE_CHANGE);
 
-		for (j = 1; j <= span->chan_count; j++) {
-			if (ftdm_test_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE)) {
-				ftdm_channel_lock(span->channels[j]);
+		for (j = 1; j <= ftdm_span_get_chan_count(span); j++) {
+			ftdm_channel_t *chan = ftdm_span_get_channel(span, j);
 
-				ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
-				state_advance(span->channels[j]);
-				ftdm_channel_complete_state(span->channels[j]);
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_channel_lock(chan);
 
-				ftdm_channel_unlock(span->channels[j]);
+				ftdm_clear_flag(chan, FTDM_CHANNEL_STATE_CHANGE);
+				state_advance(chan);
+				ftdm_channel_complete_state(chan);
+
+				ftdm_channel_unlock(chan);
 			}
 		}
 	}
@@ -666,6 +705,7 @@ static __inline__ void check_state(ftdm_span_t *span)
 static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	ftdm_log(FTDM_LOG_DEBUG, "number is: %s\n", pevent->ring.callednum);
+
 	if (strlen(pevent->ring.callednum) > 3) {
 		ftdm_log(FTDM_LOG_DEBUG, "final number is: %s\n", pevent->ring.callednum);
 		pri_answer(spri->pri, pevent->ring.call, 0, 1);
@@ -682,40 +722,40 @@ static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
  */
 static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_span_t *span = spri->private_info;
-	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->hangup.channel);
 	q931_call *call = NULL;
-	ftdmchan = span->channels[pevent->hangup.channel];
 
-	if (!ftdmchan) {
-		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d %s but it's not in use?\n", spri->span->span_id, pevent->hangup.channel);
+	if (!chan) {
+		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d %s but it's not in use?\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
 		return 0;
 	}
 
-	ftdm_channel_lock(ftdmchan);
+	ftdm_channel_lock(chan);
 
-	if (ftdmchan->state >= FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s\n", ftdm_channel_state2str(ftdmchan->state));
+	if (ftdm_channel_get_state(chan) >= FTDM_CHANNEL_STATE_TERMINATING) {
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s\n", ftdm_channel_get_state_str(chan));
 		goto done;
 	}
 
-	if (!ftdmchan->call_data) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s with no call data\n", ftdm_channel_state2str(ftdmchan->state));
+	if (!chan->call_data) {
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s with no call data\n", ftdm_channel_get_state_str(chan));
 		goto done;
 	}
 
-	call = (q931_call *) ftdmchan->call_data;
-	ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n", spri->span->span_id, pevent->hangup.channel);
-	ftdmchan->caller_data.hangup_cause = pevent->hangup.cause;
+	call = (q931_call *)chan->call_data;
+
+	ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
+
 	pri_release(spri->pri, call, 0);
 	pri_destroycall(spri->pri, call);
-	ftdmchan->call_data = NULL;
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+
+	chan->caller_data.hangup_cause = pevent->hangup.cause;
+	chan->call_data = NULL;
+	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
 
 done:
-
-	ftdm_channel_unlock(ftdmchan);
-
+	ftdm_channel_unlock(chan);
 	return 0;
 }
 
@@ -728,18 +768,16 @@ done:
  */
 static int on_answer(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_span_t *span = spri->private_info;
-	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->answer.channel);
 
-	ftdmchan = span->channels[pevent->answer.channel];
-
-	if (ftdmchan) {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Answer on channel %d:%d\n", spri->span->span_id, pevent->answer.channel);
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
+	if (chan) {
+		ftdm_log(FTDM_LOG_DEBUG, "-- Answer on channel %d:%d\n", ftdm_span_get_id(span), pevent->answer.channel);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_UP);
 	} else {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Answer on channel %d:%d %s but it's not in use?\n", spri->span->span_id, pevent->answer.channel, ftdmchan->chan_id);
+		ftdm_log(FTDM_LOG_DEBUG, "-- Answer on channel %d:%d but it's not in the span?\n",
+			ftdm_span_get_id(span), pevent->answer.channel);
 	}
-
 	return 0;
 }
 
@@ -752,19 +790,16 @@ static int on_answer(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
  */
 static int on_proceed(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_span_t *span = spri->private_info;
-	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->answer.channel);
 
-	ftdmchan = span->channels[pevent->proceeding.channel];
-
-	if (ftdmchan) {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d\n", spri->span->span_id, pevent->proceeding.channel);
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+	if (chan) {
+		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	} else {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d %s but it's not in use?\n", spri->span->span_id,
-						  pevent->proceeding.channel, ftdmchan->chan_id);
+		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d but it's not in the span?\n",
+						ftdm_span_get_id(span), pevent->proceeding.channel);
 	}
-
 	return 0;
 }
 
@@ -777,22 +812,20 @@ static int on_proceed(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
  */
 static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_span_t *span = spri->private_info;
-	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ringing.channel);
 
-	ftdmchan = span->channels[pevent->ringing.channel];
-
-	if (ftdmchan) {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d\n", spri->span->span_id, pevent->ringing.channel);
+	if (chan) {
+		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d\n", ftdm_span_get_id(span), pevent->ringing.channel);
 		/* we may get on_ringing even when we're already in FTDM_CHANNEL_STATE_PROGRESS_MEDIA */
-		if (ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
+		if (ftdm_channel_get_state(chan) == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 			/* dont try to move to STATE_PROGRESS to avoid annoying veto warning */
 			return 0;
 		}
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
 	} else {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d %s but it's not in use?\n", spri->span->span_id,
-						  pevent->ringing.channel, ftdmchan->chan_id);
+		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d but it's not in the span?\n",
+			ftdm_span_get_id(span), pevent->ringing.channel);
 	}
 
 	return 0;
@@ -807,50 +840,49 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
  */
 static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_span_t *span = spri->private_info;
-	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ring.channel);
+	ftdm_caller_data_t *caller_data = NULL;
 	int ret = 0;
 
-	//switch_mutex_lock(globals.channel_mutex);
-
-	ftdmchan = span->channels[pevent->ring.channel];
-	if (!ftdmchan || ftdmchan->state != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-		ftdm_log(FTDM_LOG_WARNING, "--Duplicate Ring on channel %d:%d (ignored)\n", spri->span->span_id, pevent->ring.channel);
-		ret = 0;
+	if (!chan || ftdm_channel_get_state(chan) != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(chan, FTDM_CHANNEL_INUSE)) {
+		ftdm_log(FTDM_LOG_WARNING, "--Duplicate Ring on channel %d:%d (ignored)\n", ftdm_span_get_id(span), pevent->ring.channel);
 		goto done;
 	}
 
-	if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_WARNING, "--Failure opening channel %d:%d (ignored)\n", spri->span->span_id, pevent->ring.channel);
-		ret = 0;
+	if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_WARNING, "--Failure opening channel %d:%d (ignored)\n", ftdm_span_get_id(span), pevent->ring.channel);
 		goto done;
 	}
 
-	ftdm_log(FTDM_LOG_NOTICE, "-- Ring on channel %d:%d (from %s to %s)\n", spri->span->span_id, pevent->ring.channel,
+	ftdm_log(FTDM_LOG_NOTICE, "-- Ring on channel %d:%d (from %s to %s)\n", ftdm_span_get_id(span), pevent->ring.channel,
 					  pevent->ring.callingnum, pevent->ring.callednum);
 
-	memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
+	caller_data = ftdm_channel_get_caller_data(chan);
 
-	ftdm_set_string(ftdmchan->caller_data.cid_num.digits, (char *)pevent->ring.callingnum);
+	memset(caller_data, 0, sizeof(*caller_data));
+
+	ftdm_set_string(caller_data->cid_num.digits, (char *)pevent->ring.callingnum);
+	ftdm_set_string(caller_data->ani.digits, (char *)pevent->ring.callingani);
+	ftdm_set_string(caller_data->dnis.digits, (char *)pevent->ring.callednum);
+
 	if (!ftdm_strlen_zero((char *)pevent->ring.callingname)) {
-		ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)pevent->ring.callingname);
+		ftdm_set_string(caller_data->cid_name, (char *)pevent->ring.callingname);
 	} else {
-		ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)pevent->ring.callingnum);
+		ftdm_set_string(caller_data->cid_name, (char *)pevent->ring.callingnum);
 	}
-	ftdm_set_string(ftdmchan->caller_data.ani.digits, (char *)pevent->ring.callingani);
-	ftdm_set_string(ftdmchan->caller_data.dnis.digits, (char *)pevent->ring.callednum);
 
 	if (pevent->ring.ani2 >= 0) {
-		snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", pevent->ring.ani2);
+		snprintf(caller_data->aniII, 5, "%.2d", pevent->ring.ani2);
 	}
 
 	// scary to trust this pointer, you'd think they would give you a copy of the call data so you own it......
-	ftdmchan->call_data = pevent->ring.call;
+	/* hurr, this valid as along as nobody releases the call */
+	chan->call_data = pevent->ring.call;
 
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
+	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RING);
 
 done:
-	//switch_mutex_unlock(globals.channel_mutex);
 	return ret;
 }
 
@@ -867,15 +899,15 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	ftdm_log(FTDM_LOG_DEBUG, "EVENT [%s][%d][%d:%d] STATE [%s]\n",
 			ftdm_oob_event2str(event->enum_id),
 			event->enum_id,
-			event->channel->span_id,
-			event->channel->chan_id,
-			ftdm_channel_state2str(event->channel->state));
+			ftdm_channel_get_span_id(event->channel),
+			ftdm_channel_get_id(event->channel),
+			ftdm_channel_get_state_str(event->channel));
 
-	switch(event->enum_id) {
+	switch (event->enum_id) {
 	case FTDM_OOB_ALARM_TRAP:
 		{
-			if (event->channel->state != FTDM_CHANNEL_STATE_DOWN) {
-				if (event->channel->type == FTDM_CHAN_TYPE_B) {
+			if (ftdm_channel_get_state(event->channel) != FTDM_CHANNEL_STATE_DOWN) {
+				if (ftdm_channel_get_type(event->channel) == FTDM_CHAN_TYPE_B) {
 					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_RESTART);
 				}
 			}
@@ -883,23 +915,23 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			ftdm_set_flag(event->channel, FTDM_CHANNEL_SUSPENDED);
 
 			ftdm_channel_get_alarms(event->channel, &alarmbits);
-			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
-					event->channel->span_id, event->channel->chan_id, 
-					event->channel->physical_span_id, event->channel->physical_chan_id, 
-					event->channel->last_error);
+			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n",
+					ftdm_channel_get_span_id(event->channel), ftdm_channel_get_id(event->channel),
+					ftdm_channel_get_ph_span_id(event->channel), ftdm_channel_get_ph_id(event->channel),
+					ftdm_channel_get_last_error(event->channel));
 		}
 		break;
 	case FTDM_OOB_ALARM_CLEAR:
 		{
-			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n", event->channel->span_id, event->channel->chan_id,
-					event->channel->physical_span_id, event->channel->physical_chan_id);
+			ftdm_log(FTDM_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n",
+					ftdm_channel_get_span_id(event->channel), ftdm_channel_get_id(event->channel),
+					ftdm_channel_get_ph_span_id(event->channel), ftdm_channel_get_ph_id(event->channel));
 
 			ftdm_clear_flag(event->channel, FTDM_CHANNEL_SUSPENDED);
 			ftdm_channel_get_alarms(event->channel, &alarmbits);
 		}
 		break;
 	}
-
 	return FTDM_SUCCESS;
 }
 
@@ -913,7 +945,7 @@ static __inline__ void check_events(ftdm_span_t *span)
 
 	status = ftdm_span_poll_event(span, 5, NULL);
 
-	switch(status) {
+	switch (status) {
 	case FTDM_SUCCESS:
 		{
 			ftdm_event_t *event;
@@ -946,7 +978,7 @@ static __inline__ void check_events(ftdm_span_t *span)
  */
 static int check_flags(lpwrap_pri_t *spri)
 {
-	ftdm_span_t *span = spri->private_info;
+	ftdm_span_t *span = spri->span;
 
 	if (!ftdm_running() || ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD)) {
 		return -1;
@@ -966,24 +998,21 @@ static int check_flags(lpwrap_pri_t *spri)
  */
 static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_span_t *span = spri->private_info;
-	ftdm_channel_t *ftdmchan;
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->restart.channel);
 
-	ftdm_log(FTDM_LOG_NOTICE, "-- Restarting %d:%d\n", spri->span->span_id, pevent->restart.channel);
+	ftdm_log(FTDM_LOG_NOTICE, "-- Restarting %d:%d\n", ftdm_span_get_id(span), pevent->restart.channel);
+	_ftdm_channel_set_state_force(spri->dchan, FTDM_CHANNEL_STATE_UP);
 
-	spri->dchan->state = FTDM_CHANNEL_STATE_UP;
-	ftdmchan = span->channels[pevent->restart.channel];
-
-	if (!ftdmchan) {
+	if (!chan) {
 		return 0;
 	}
 
 	if (pevent->restart.channel < 1) {
-		ftdm_set_state_all(ftdmchan->span, FTDM_CHANNEL_STATE_RESTART);
+		ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
 	} else {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 	}
-
 	return 0;
 }
 
@@ -1156,7 +1185,7 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 		ftdm_log(FTDM_LOG_DEBUG, "FACILITY subcommand %d handler returned %d\n", sub->cmd, res);
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", spri->span->span_id, event_type, lpwrap_pri_event_str(event_type));
+	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
 #endif
@@ -1172,27 +1201,27 @@ static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 {
 	if (!ftdm_test_flag(spri, LPWRAP_PRI_READY)) {
 		ftdm_signaling_status_t status = FTDM_SIG_STATE_UP;
-		ftdm_channel_t *ftdmchan = NULL;
+		ftdm_span_t *span = spri->span;
 		ftdm_sigmsg_t sig;
 		int i;
 
-		ftdm_log(FTDM_LOG_INFO, "Span %d D-Chan UP!\n", spri->span->span_id);
+		ftdm_log(FTDM_LOG_INFO, "Span %d D-Channel UP!\n", ftdm_span_get_id(span));
 		ftdm_set_flag(spri, LPWRAP_PRI_READY);
-		ftdm_set_state_all(spri->span, FTDM_CHANNEL_STATE_RESTART);
+		ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
 
-		ftdm_log(FTDM_LOG_NOTICE, "%d:Signaling link status changed to %s\n", spri->span->span_id, ftdm_signaling_status2str(status));
+		ftdm_log(FTDM_LOG_NOTICE, "%d:Signaling link status changed to %s\n", ftdm_span_get_id(span), ftdm_signaling_status2str(status));
 
-		for (i = 1; i <= spri->span->chan_count; i++) {
-			ftdmchan = spri->span->channels[i];
+		for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
+			ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
 
 			memset(&sig, 0, sizeof(sig));
-			sig.chan_id = ftdmchan->chan_id;
-			sig.span_id = ftdmchan->span_id;
-			sig.channel = ftdmchan;
+			sig.span_id = ftdm_channel_get_span_id(chan);
+			sig.chan_id = ftdm_channel_get_id(chan);
+			sig.channel = chan;
 			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
 			sig.raw_data = &status;
 
-			ftdm_span_send_signal(spri->span, &sig);
+			ftdm_span_send_signal(span, &sig);
 		}
 	}
 	return 0;
@@ -1209,27 +1238,27 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 {
 	if (ftdm_test_flag(spri, LPWRAP_PRI_READY)) {
 		ftdm_signaling_status_t status = FTDM_SIG_STATE_DOWN;
-		ftdm_channel_t *ftdmchan = NULL;
+		ftdm_span_t *span = spri->span;
 		ftdm_sigmsg_t sig;
 		int i;
 
-		ftdm_log(FTDM_LOG_INFO, "Span %d D-Chan DOWN!\n", spri->span->span_id);
+		ftdm_log(FTDM_LOG_INFO, "Span %d D-Channel DOWN!\n", ftdm_span_get_id(span));
 		ftdm_clear_flag(spri, LPWRAP_PRI_READY);
-		ftdm_set_state_all(spri->span, FTDM_CHANNEL_STATE_RESTART);
+		ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
 
-		ftdm_log(FTDM_LOG_NOTICE, "%d:Signaling link status changed to %s\n", spri->span->span_id, ftdm_signaling_status2str(status));
+		ftdm_log(FTDM_LOG_NOTICE, "%d:Signaling link status changed to %s\n", ftdm_span_get_id(span), ftdm_signaling_status2str(status));
 
-		for (i = 1; i <= spri->span->chan_count; i++) {
-			ftdmchan = spri->span->channels[i];
+		for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
+			ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
 
 			memset(&sig, 0, sizeof(sig));
-			sig.chan_id = ftdmchan->chan_id;
-			sig.span_id = ftdmchan->span_id;
-			sig.channel = ftdmchan;
+			sig.span_id = ftdm_channel_get_span_id(chan);
+			sig.chan_id = ftdm_channel_get_id(chan);
+			sig.channel = chan;
 			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
 			sig.raw_data = &status;
 
-			ftdm_span_send_signal(spri->span, &sig);
+			ftdm_span_send_signal(span, &sig);
 		}
 	}
 
@@ -1245,7 +1274,7 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
  */
 static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "Caught Event span %d %u (%s)\n", spri->span->span_id, event_type, lpwrap_pri_event_str(event_type));
+	ftdm_log(FTDM_LOG_DEBUG, "Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
 
@@ -1258,7 +1287,7 @@ static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
  */
 static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "Caught Event span %d %u (%s)\n", spri->span->span_id, event_type, lpwrap_pri_event_str(event_type));
+	ftdm_log(FTDM_LOG_DEBUG, "Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
 
@@ -1283,21 +1312,25 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		if (!got_d) {
 			int i, x;
 
-			for (i = 1, x = 0; i <= span->chan_count; i++) {
-				if (span->channels[i]->type == FTDM_CHAN_TYPE_DQ921) {
-					if (ftdm_channel_open(span->span_id, i, &isdn_data->dchan) == FTDM_SUCCESS) {
-						ftdm_log(FTDM_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, isdn_data->dchan->span_id, isdn_data->dchan->chan_id);
+			for (i = 1, x = 0; i <= ftdm_span_get_chan_count(span); i++) {
+				ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
+
+				if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_DQ921) {
+					if (ftdm_channel_open(ftdm_span_get_id(span), i, &isdn_data->dchan) == FTDM_SUCCESS) {
+						ftdm_log(FTDM_LOG_DEBUG, "opening D-Channel #%d %d:%d\n", x,
+							ftdm_channel_get_span_id(isdn_data->dchan), ftdm_channel_get_id(isdn_data->dchan));
 						got_d = 1;
 						x++;
 						break;
 					} else {
-					    ftdm_log(FTDM_LOG_ERROR, "failed to open d-channel #%d %d:%d\n", x, span->channels[i]->span_id, span->channels[i]->chan_id);
+					    ftdm_log(FTDM_LOG_ERROR, "failed to open D-Channel #%d %d:%d\n", x,
+						ftdm_channel_get_span_id(chan), ftdm_channel_get_id(chan));
 					}
 				}
 			}
 		}
 		if (!got_d || !isdn_data->dchan) {
-			ftdm_log(FTDM_LOG_ERROR, "Failed to get a D-channel in span %d\n", span->span_id);
+			ftdm_log(FTDM_LOG_ERROR, "Failed to get a D-Channel in span %d\n", ftdm_span_get_id(span));
 			break;
 		}
 
@@ -1356,26 +1389,28 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_FACILITY, on_facility);
 #endif
 			if (down) {
-				ftdm_log(FTDM_LOG_INFO, "PRI back up on span %d\n", isdn_data->spri.span->span_id);
+				ftdm_log(FTDM_LOG_INFO, "PRI back up on span %d\n", ftdm_span_get_id(span));
 				ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
 				down = 0;
 			}
 
 			isdn_data->spri.on_loop = check_flags;
-			isdn_data->spri.private_info = span;
+//			isdn_data->spri.private_info = span;
 
 			lpwrap_run_pri(&isdn_data->spri);
 		} else {
-			snprintf(span->last_error, sizeof(span->last_error), "PRI init FAIL!");
+			ftdm_log(FTDM_LOG_CRIT, "PRI init failed!\n");
+			snprintf(span->last_error, sizeof(span->last_error), "PRI init failed!");
+			break;
 		}
 
 		if (!ftdm_running() || ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD)) {
 			break;
 		}
 
-		ftdm_log(FTDM_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span->span_id);
+		ftdm_log(FTDM_LOG_CRIT, "PRI down on span %d\n", ftdm_span_get_id(span));
 		if (isdn_data->spri.dchan) {
-			isdn_data->spri.dchan->state = FTDM_CHANNEL_STATE_DOWN;
+			_ftdm_channel_set_state_force(isdn_data->spri.dchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 
 		if (!down) {
@@ -1386,11 +1421,11 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		check_state(span);
 		check_events(span);
 
-		down++;
+		down = 1;
 		ftdm_sleep(5000);
 	}
 out:
-	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", span->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", ftdm_span_get_id(span));
 
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 	ftdm_clear_flag(isdn_data, FTMOD_LIBPRI_RUNNING);
@@ -1437,8 +1472,8 @@ static ftdm_status_t ftdm_libpri_stop(ftdm_span_t *span)
  */
 static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span)
 {
-	ftdm_status_t ret;
 	ftdm_libpri_data_t *isdn_data = span->signal_data;
+	ftdm_status_t ret;
 
 	if (ftdm_test_flag(isdn_data, FTMOD_LIBPRI_RUNNING)) {
 		return FTDM_FAIL;
@@ -1569,37 +1604,58 @@ static uint32_t parse_opts(const char *in)
  */
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 {
-	uint32_t i, x = 0;
+	uint32_t i;
+	uint32_t bchan_count = 0;
+	uint32_t dchan_count = 0;
 	uint32_t paramindex = 0;
-	//ftdm_channel_t *dchans[2] = {0};
+	//ftdm_channel_t *dchan = NULL;
 	ftdm_libpri_data_t *isdn_data;
 	const char *var, *val;
 
 	if (ftdm_span_get_trunk_type(span) >= FTDM_TRUNK_NONE) {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_span_get_trunk_type_str(span));
 		ftdm_span_set_trunk_type(span, FTDM_TRUNK_T1);
 	}
 
-	for (i = 1; i <= span->chan_count; i++) {
-		if (span->channels[i]->type == FTDM_CHAN_TYPE_DQ921) {
-			if (x > 1) {
+	for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
+		ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
+
+		switch (ftdm_channel_get_type(chan)) {
+		case FTDM_CHAN_TYPE_DQ921:
+			if (dchan_count > 1) {
+				ftdm_log(FTDM_LOG_ERROR, "Span has more than 2 D-Channels!\n");
 				snprintf(span->last_error, sizeof(span->last_error), "Span has more than 2 D-Channels!");
 				return FTDM_FAIL;
 			} else {
 #if 0
-				if (ftdm_channel_open(span->span_id, i, &dchans[x]) == FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, dchans[x]->span_id, dchans[x]->chan_id);
-					dchans[x]->state = FTDM_CHANNEL_STATE_UP;
-					x++;
+				if (ftdm_channel_open(ftdm_span_get_id(span), i, &dchan) == FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_DEBUG, "opening D-Channel %d:%d\n", ftdm_channel_get_span_id(dchan), ftdm_channel_get_id(dchan));
+					_ftdm_channel_set_state_force(dchan, FTDM_CHANNEL_STATE_UP);
+				} else {
+					ftdm_log(FTDM_LOG_ERROR, "Failed to open D-Channel %d:%d\n", ftdm_channel_get_span_id(chan), ftdm_channel_getid(chan));
+					snprintf(span->last_error, sizeof(span->last_error), "Failed to open D-Channel %d:%d\n", ftdm_channel_get_span_id(chan), ftdm_channel_getid(chan));
+					return FTDM_FAIL;
 				}
 #endif
-				x++;
+				dchan_count++;
 			}
+			break;
+
+		case FTDM_CHAN_TYPE_B:
+			bchan_count++;
+			break;
+		default:		/* Ignore other channel types */
+			break;
 		}
 	}
-	if (!x) {
+	if (!dchan_count) {
 		ftdm_log(FTDM_LOG_ERROR, "Span has no D-Channel!\n");
 		snprintf(span->last_error, sizeof(span->last_error), "Span has no D-Channel!");
+		return FTDM_FAIL;
+	}
+	if (!bchan_count) {
+		ftdm_log(FTDM_LOG_ERROR, "Span has no B-Channels!\n");
+		snprintf(span->last_error, sizeof(span->last_error), "Span has no B-Channels!");
 		return FTDM_FAIL;
 	}
 
@@ -1611,8 +1667,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	case FTDM_TRUNK_BRI:
 	case FTDM_TRUNK_BRI_PTMP:
 #ifndef HAVE_LIBPRI_BRI
-		ftdm_log(FTDM_LOG_ERROR, "Unsupported trunk type: '%s', libpri too old\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
-		snprintf(span->last_error, sizeof(span->last_error), "Unsupported trunk type [%s], libpri too old", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported trunk type: '%s', libpri too old\n", ftdm_span_get_trunk_type_str(span));
+		snprintf(span->last_error, sizeof(span->last_error), "Unsupported trunk type [%s], libpri too old", ftdm_span_get_trunk_type_str(span));
 		return FTDM_FAIL;
 #endif
 	case FTDM_TRUNK_E1:
@@ -1625,8 +1681,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		isdn_data->l1 = PRI_LAYER_1_ULAW;
 		break;
 	default:
-		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
-		snprintf(span->last_error, sizeof(span->last_error), "Invalid trunk type [%s]", ftdm_trunk_type2str(ftdm_span_get_trunk_type(span)));
+		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_span_get_trunk_type_str(span));
+		snprintf(span->last_error, sizeof(span->last_error), "Invalid trunk type [%s]", ftdm_span_get_trunk_type_str(span));
 		return FTDM_FAIL;
 	}
 
