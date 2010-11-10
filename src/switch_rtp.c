@@ -1366,7 +1366,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 		switch_sockaddr_info_get(&rtp_session->rtcp_from_addr, NULL, SWITCH_UNSPEC, 0, 0, pool);
 	}
-	rtp_session->seq = (uint16_t) rand();
+	rtp_session->seq = (rtp_session->rtp_bugs & RTP_BUG_START_SEQ_AT_ZERO) ? 0 : (uint16_t) rand();
 	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL));
 
 	rtp_session->send_msg.header.ssrc = htonl(rtp_session->ssrc);
@@ -3179,10 +3179,15 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = payload;
 
-		if (timestamp) {
+		if (rtp_session->rtp_bugs & RTP_BUG_SEND_LINEAR_TIMESTAMPS) {
+			rtp_session->ts += rtp_session->samples_per_interval;
+			if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
+				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+			}
+		} else if (timestamp) {
 			rtp_session->ts = (uint32_t) timestamp;
 			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
-			if (rtp_session->ts <= rtp_session->last_write_ts) {
+			if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 				m++;
 			}
 		} else if (rtp_session->timer.timer_interface) {
@@ -3216,8 +3221,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->cn = 0;
 			m++;
 		}
-
-		send_msg->header.m = m ? 1 : 0;
+		
+		send_msg->header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
 
 		memcpy(send_msg->body, data, datalen);
 		bytes = datalen + rtp_header_len;
@@ -3287,7 +3292,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 							if (diff >= rtp_session->vad_data.diff_level || ++rtp_session->vad_data.hangunder_hits >= rtp_session->vad_data.hangunder) {
 
 								switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
-								send_msg->header.m = 1;
+								if (!(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
+									send_msg->header.m = 1;
+								}
 								rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
 									switch_event_t *event;
@@ -3755,7 +3762,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	rtp_session->write_msg.header.seq = htons(++rtp_session->seq);
 	rtp_session->write_msg.header.ts = htonl(ts);
 	rtp_session->write_msg.header.pt = payload;
-	rtp_session->write_msg.header.m = m ? 1 : 0;
+	rtp_session->write_msg.header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
 	memcpy(rtp_session->write_msg.body, data, datalen);
 
 	bytes = rtp_header_len + datalen;
