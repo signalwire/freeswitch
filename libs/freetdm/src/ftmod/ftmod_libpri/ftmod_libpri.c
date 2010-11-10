@@ -191,7 +191,7 @@ static const struct ftdm_libpri_debug {
  * \param in Debug string to parse for
  * \return Flags or -1 if nothing matched
  */
-static int parse_debug(const char *in, int *flags)
+static int parse_debug(const char *in, uint32_t *flags)
 {
 	int res = -1;
 	int i;
@@ -295,7 +295,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
 				ftdm_libpri_data_t *isdn_data = span->signal_data;
-				int flags = 0;
+				uint32_t flags = 0;
 
 				if (span->start != ftdm_libpri_start) {
 					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
@@ -598,7 +598,7 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 				ton = PRI_LOCAL_ISDN;
 				break;
 			default:
-				ton = isdn_data->dp;
+				ton = isdn_data->ton;
 			}
 
 			chan->call_data = call;
@@ -612,7 +612,7 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 			assert(sr);
 
 			pri_sr_set_channel(sr, ftdm_channel_get_id(chan), 0, 0);
-			pri_sr_set_bearer(sr, PRI_TRANS_CAP_SPEECH, isdn_data->l1);
+			pri_sr_set_bearer(sr, PRI_TRANS_CAP_SPEECH, isdn_data->layer1);
 
 			pri_sr_set_called(sr, caller_data->dnis.digits, ton, 1);
 			pri_sr_set_caller(sr, caller_data->cid_num.digits,
@@ -1340,18 +1340,18 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		case FTDM_TRUNK_T1:
 		case FTDM_TRUNK_J1:
 			res = lpwrap_init_pri(&isdn_data->spri, span, isdn_data->dchan,
-					isdn_data->pswitch, isdn_data->node, isdn_data->debug);
+					isdn_data->dialect, isdn_data->mode, isdn_data->debug_mask);
 			break;
 		case FTDM_TRUNK_BRI:
 			res = lpwrap_init_bri(&isdn_data->spri, span, isdn_data->dchan,
-					isdn_data->pswitch, isdn_data->node, 1, isdn_data->debug);
+					isdn_data->dialect, isdn_data->mode, 1, isdn_data->debug_mask);
 #ifndef HAVE_LIBPRI_BRI
 			goto out;
 #endif
 			break;
 		case FTDM_TRUNK_BRI_PTMP:
 			res = lpwrap_init_bri(&isdn_data->spri, span, isdn_data->dchan,
-					isdn_data->pswitch, isdn_data->node, 0, isdn_data->debug);
+					isdn_data->dialect, isdn_data->mode, 0, isdn_data->debug_mask);
 #ifndef HAVE_LIBPRI_BRI
 			goto out;
 #endif
@@ -1395,7 +1395,6 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			}
 
 			isdn_data->spri.on_loop = check_flags;
-//			isdn_data->spri.private_info = span;
 
 			lpwrap_run_pri(&isdn_data->spri);
 		} else {
@@ -1473,7 +1472,6 @@ static ftdm_status_t ftdm_libpri_stop(ftdm_span_t *span)
 static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span)
 {
 	ftdm_libpri_data_t *isdn_data = span->signal_data;
-	ftdm_status_t ret;
 
 	if (ftdm_test_flag(isdn_data, FTMOD_LIBPRI_RUNNING)) {
 		return FTDM_FAIL;
@@ -1483,13 +1481,8 @@ static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span)
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 
 	ftdm_set_flag(isdn_data, FTMOD_LIBPRI_RUNNING);
-	ret = ftdm_thread_create_detached(ftdm_libpri_run, span);
 
-	if (ret != FTDM_SUCCESS) {
-		return ret;
-	}
-
-	return ret;
+	return ftdm_thread_create_detached(ftdm_libpri_run, span);
 }
 
 /**
@@ -1497,12 +1490,13 @@ static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span)
  * \param node Node string to convert
  * \return -1 on failure, node value on success
  */
-static int parse_node(const char *node)
+static int parse_mode(const char *mode)
 {
-	if (!strcasecmp(node, "cpe") || !strcasecmp(node, "user"))
+	if (!strcasecmp(mode, "cpe") || !strcasecmp(mode, "user"))
 		return PRI_CPE;
-	if (!strcasecmp(node, "network") || !strcasecmp(node, "net"))
+	if (!strcasecmp(mode, "network") || !strcasecmp(mode, "net"))
 		return PRI_NETWORK;
+
 	return -1;
 }
 
@@ -1511,23 +1505,23 @@ static int parse_node(const char *node)
  * \param swtype Swtype string to convert
  * \return Switch value
  */
-static int parse_switch(const char *swtype)
+static int parse_dialect(const char *dialect)
 {
-	if (!strcasecmp(swtype, "ni1"))
+	if (!strcasecmp(dialect, "ni1"))
 		return PRI_SWITCH_NI1;
-	if (!strcasecmp(swtype, "ni2"))
+	if (!strcasecmp(dialect, "ni2"))
 		return PRI_SWITCH_NI2;
-	if (!strcasecmp(swtype, "dms100"))
+	if (!strcasecmp(dialect, "dms100"))
 		return PRI_SWITCH_DMS100;
-	if (!strcasecmp(swtype, "lucent5e") || !strcasecmp(swtype, "5ess"))
+	if (!strcasecmp(dialect, "lucent5e") || !strcasecmp(dialect, "5ess"))
 		return PRI_SWITCH_LUCENT5E;
-	if (!strcasecmp(swtype, "att4ess") || !strcasecmp(swtype, "4ess"))
+	if (!strcasecmp(dialect, "att4ess") || !strcasecmp(dialect, "4ess"))
 		return PRI_SWITCH_ATT4ESS;
-	if (!strcasecmp(swtype, "euroisdn"))
+	if (!strcasecmp(dialect, "euroisdn") || !strcasecmp(dialect, "q931"))
 		return PRI_SWITCH_EUROISDN_E1;
-	if (!strcasecmp(swtype, "gr303eoc"))
+	if (!strcasecmp(dialect, "gr303eoc"))
 		return PRI_SWITCH_GR303_EOC;
-	if (!strcasecmp(swtype, "gr303tmc"))
+	if (!strcasecmp(dialect, "gr303tmc"))
 		return PRI_SWITCH_GR303_TMC;
 
 	return PRI_SWITCH_DMS100;
@@ -1538,9 +1532,9 @@ static int parse_switch(const char *swtype)
  * \param l1 L1 string to convert
  * \return L1 value
  */
-static int parse_l1(const char *l1)
+static int parse_layer1(const char *val)
 {
-	if (!strcasecmp(l1, "alaw"))
+	if (!strcasecmp(val, "alaw"))
 		return PRI_LAYER_1_ALAW;
 
 	return PRI_LAYER_1_ULAW;
@@ -1551,17 +1545,17 @@ static int parse_l1(const char *l1)
  * \param dp DP string to convert
  * \return DP value
  */
-static int parse_numplan(const char *dp)
+static int parse_ton(const char *ton)
 {
-	if (!strcasecmp(dp, "international"))
+	if (!strcasecmp(ton, "international"))
 		return PRI_INTERNATIONAL_ISDN;
-	if (!strcasecmp(dp, "national"))
+	if (!strcasecmp(ton, "national"))
 		return PRI_NATIONAL_ISDN;
-	if (!strcasecmp(dp, "local"))
+	if (!strcasecmp(ton, "local"))
 		return PRI_LOCAL_ISDN;
-	if (!strcasecmp(dp, "private"))
+	if (!strcasecmp(ton, "private"))
 		return PRI_PRIVATE;
-	if (!strcasecmp(dp, "unknown"))
+	if (!strcasecmp(ton, "unknown"))
 		return PRI_UNKNOWN;
 
 	return PRI_UNKNOWN;
@@ -1673,12 +1667,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 #endif
 	case FTDM_TRUNK_E1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1/BRI/BRI PTMP trunk\n");
-		isdn_data->l1 = PRI_LAYER_1_ALAW;
+		isdn_data->layer1 = PRI_LAYER_1_ALAW;
 		break;
 	case FTDM_TRUNK_T1:
 	case FTDM_TRUNK_J1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ULAW since this is a T1/J1 trunk\n");
-		isdn_data->l1 = PRI_LAYER_1_ULAW;
+		isdn_data->layer1 = PRI_LAYER_1_ULAW;
 		break;
 	default:
 		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_span_get_trunk_type_str(span));
@@ -1696,28 +1690,28 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 			return FTDM_FAIL;
 		}
 
-		if (!strcasecmp(var, "node")) {
-			if ((isdn_data->node = parse_node(val)) == -1) {
+		if (!strcasecmp(var, "node") || !strcasecmp(var, "mode")) {
+			if ((isdn_data->mode = parse_mode(val)) == -1) {
 				ftdm_log(FTDM_LOG_ERROR, "Unknown node type '%s', defaulting to CPE mode\n", val);
-				isdn_data->node = PRI_CPE;
+				isdn_data->mode = PRI_CPE;
 			}
 		}
-		else if (!strcasecmp(var, "switch")) {
-			isdn_data->pswitch = parse_switch(val);
+		else if (!strcasecmp(var, "switch") || !strcasecmp(var, "dialect")) {
+			isdn_data->dialect = parse_dialect(val);
 		}
 		else if (!strcasecmp(var, "opts")) {
 			isdn_data->opts = parse_opts(val);
 		}
-		else if (!strcasecmp(var, "dp")) {
-			isdn_data->dp = parse_numplan(val);
+		else if (!strcasecmp(var, "dp") || !strcasecmp(var, "ton")) {
+			isdn_data->ton = parse_ton(val);
 		}
-		else if (!strcasecmp(var, "l1")) {
-			isdn_data->l1 = parse_l1(val);
+		else if (!strcasecmp(var, "l1") || !strcasecmp(var, "layer1")) {
+			isdn_data->layer1 = parse_layer1(val);
 		}
 		else if (!strcasecmp(var, "debug")) {
-			if (parse_debug(val, &isdn_data->debug) == -1) {
+			if (parse_debug(val, &isdn_data->debug_mask) == -1) {
 				ftdm_log(FTDM_LOG_ERROR, "Invalid debug flag, ignoring parameter\n");
-				isdn_data->debug = 0;
+				isdn_data->debug_mask = 0;
 			}
 		}
 		else {
@@ -1730,9 +1724,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	span->start = ftdm_libpri_start;
 	span->stop  = ftdm_libpri_stop;
 	span->signal_cb = sig_cb;
-	//isdn_data->dchans[0] = dchans[0];
-	//isdn_data->dchans[1] = dchans[1];
-	//isdn_data->dchan = isdn_data->dchans[0];
 
 	span->signal_data = isdn_data;
 	span->signal_type = FTDM_SIGTYPE_ISDN;
