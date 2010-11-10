@@ -1107,7 +1107,6 @@ static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
 	ftdm_log(FTDM_LOG_INFO, "AOC-E:\n%s", tmp);
 	return 0;
 }
-#endif
 
 /**
  * \brief Handler for libpri facility events
@@ -1132,7 +1131,6 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 		int res = -1;
 
 		switch (sub->cmd) {
-#ifdef HAVE_LIBPRI_AOC
 		case PRI_SUBCMD_AOC_S:	/* AOC-S: Start of call */
 			res = handle_facility_aoc_s(&sub->u.aoc_s);
 			break;
@@ -1151,7 +1149,6 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 					sub->u.aoc_request_response.charging_request,
 					sub->u.aoc_request_response.charging_response);
 			break;
-#endif
 		default:
 			ftdm_log(FTDM_LOG_DEBUG, "FACILITY subcommand %d is not implemented, ignoring\n", sub->cmd);
 		}
@@ -1162,6 +1159,7 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", spri->span->span_id, event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
+#endif
 
 /**
  * \brief Handler for libpri dchan up event
@@ -1354,8 +1352,9 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
+#ifdef HAVE_LIBPRI_AOC
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_FACILITY, on_facility);
-
+#endif
 			if (down) {
 				ftdm_log(FTDM_LOG_INFO, "PRI back up on span %d\n", isdn_data->spri.span->span_id);
 				ftdm_set_state_all(span, FTDM_CHANNEL_STATE_RESTART);
