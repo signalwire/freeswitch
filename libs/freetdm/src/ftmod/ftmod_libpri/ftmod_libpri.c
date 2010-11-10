@@ -1639,13 +1639,11 @@ static uint32_t parse_opts(const char *in)
  */
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 {
-	uint32_t i;
+	ftdm_libpri_data_t *isdn_data = NULL;
+	//ftdm_channel_t *dchan = NULL;
 	uint32_t bchan_count = 0;
 	uint32_t dchan_count = 0;
-	uint32_t paramindex = 0;
-	//ftdm_channel_t *dchan = NULL;
-	ftdm_libpri_data_t *isdn_data;
-	const char *var, *val;
+	uint32_t i;
 
 	if (ftdm_span_get_trunk_type(span) >= FTDM_TRUNK_NONE) {
 		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_span_get_trunk_type_str(span));
@@ -1721,9 +1719,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		return FTDM_FAIL;
 	}
 
-	for (paramindex = 0; paramindex < 10 && ftdm_parameters[paramindex].var; paramindex++) {
-		var = ftdm_parameters[paramindex].var;
-		val = ftdm_parameters[paramindex].val;
+	for (i = 0; i < 10 && ftdm_parameters[i].var; i++) {
+		const char *var = ftdm_parameters[i].var;
+		const char *val = ftdm_parameters[i].val;
 
 		if (!val) {
 			ftdm_log(FTDM_LOG_ERROR, "Parameter '%s' has no value\n", var);
