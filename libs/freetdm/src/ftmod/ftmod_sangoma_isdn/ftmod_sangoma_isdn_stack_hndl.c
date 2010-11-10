@@ -135,6 +135,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
 			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
 			cpy_calling_name_from_stack(&ftdmchan->caller_data, &conEvnt->display);
+			cpy_redir_num_from_stack(&ftdmchan->caller_data, &conEvnt->redirNmb);
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
