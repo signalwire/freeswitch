@@ -167,19 +167,23 @@ static void s_pri_message(struct pri *pri, char *s)
 	ftdm_log(FTDM_LOG_DEBUG, "%s", s);
 }
 
+#define PRI_DEBUG_Q921_ALL	(PRI_DEBUG_Q921_RAW | PRI_DEBUG_Q921_DUMP | PRI_DEBUG_Q921_STATE)
+#define PRI_DEBUG_Q931_ALL	(PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE | PRI_DEBUG_Q931_ANOMALY)
+
 static const struct ftdm_libpri_debug {
 	const char *name;
 	const int   flags;
 } ftdm_libpri_debug[] = {
+	/* NOTE: order is important for print_debug() */
+	{ "q921_all",     PRI_DEBUG_Q921_ALL   },
 	{ "q921_raw",     PRI_DEBUG_Q921_RAW   },
 	{ "q921_dump",    PRI_DEBUG_Q921_DUMP  },
 	{ "q921_state",   PRI_DEBUG_Q921_STATE },
-	{ "q921_all",    (PRI_DEBUG_Q921_RAW | PRI_DEBUG_Q921_DUMP | PRI_DEBUG_Q921_STATE) },
 
+	{ "q931_all",     PRI_DEBUG_Q931_ALL     },
 	{ "q931_dump",    PRI_DEBUG_Q931_DUMP    },
 	{ "q931_state",   PRI_DEBUG_Q931_STATE   },
 	{ "q931_anomaly", PRI_DEBUG_Q931_ANOMALY },
-	{ "q931_all",    (PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE | PRI_DEBUG_Q931_ANOMALY) },
 
 	{ "config",       PRI_DEBUG_CONFIG },
 	{ "apdu",         PRI_DEBUG_APDU   },
@@ -217,13 +221,43 @@ static int parse_debug(const char *in, uint32_t *flags)
 	return res;
 }
 
+static int print_debug(uint32_t flags, char *tmp, const int size)
+{
+	int offset = 0;
+	int res = 0;
+	int i;
+
+	if ((flags & PRI_DEBUG_ALL) == PRI_DEBUG_ALL) {
+		strcat(tmp, "all");
+		return 0;
+	}
+	else if (!flags) {
+		strcat(tmp, "none");
+		return 0;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(ftdm_libpri_debug); i++) {
+		if ((flags & ftdm_libpri_debug[i].flags) == ftdm_libpri_debug[i].flags) {
+			res = snprintf(&tmp[offset], size - offset, "%s,", ftdm_libpri_debug[i].name);
+			if (res <= 0 || res == (size - offset))
+				goto out;
+			offset += res;
+			flags  &= ~ftdm_libpri_debug[i].flags;	/* remove detected flags to make *_all work correctly */
+		}
+	}
+
+out:
+	tmp[offset - 1] = '\0';
+	return 0;
+}
+
 static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span);
 static ftdm_io_interface_t ftdm_libpri_interface;
 
 static const char *ftdm_libpri_usage =
 	"Usage:\n"
 	"libpri kill <span>\n"
-	"libpri debug <span> <all|none|flag,...flagN>\n"
+	"libpri debug <span> [all|none|flag,...flagN]\n"
 	"\n"
 	"Possible debug flags:\n"
 	"\tq921_raw     - Q.921 Raw messages\n"
@@ -289,7 +323,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 		}
 	}
 
-	if (argc > 2) {
+	if (argc >= 2) {
 		if (!strcasecmp(argv[0], "debug")) {
 			ftdm_span_t *span = NULL;
 
@@ -299,6 +333,13 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 
 				if (span->start != ftdm_libpri_start) {
 					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					goto done;
+				}
+
+				if (argc == 2) {
+					char tmp[100] = { 0 };
+					print_debug(pri_get_debug(isdn_data->spri.pri), tmp, sizeof(tmp));
+					stream->write_function(stream, "%s: +OK current debug flags: '%s'\n", __FILE__, tmp);
 					goto done;
 				}
 
