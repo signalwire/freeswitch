@@ -280,7 +280,8 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 			i->miss_count++;
 
-			if (i->miss_count > 10 || (i->in_queue->array_len == i->in_queue->array_size) || tried >= i->in_queue->array_size) {
+			if (i->miss_count > 10 || (i->in_queue->array_len == i->in_queue->array_size) || 
+                tried >= (i->in_queue->array_size + i->out_queue->array_size)) {
 				i->running = 0;
 				i->interval = 0;
 				i->out_queue->wr_len = i->out_queue->array_size;

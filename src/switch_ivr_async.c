@@ -72,6 +72,21 @@ struct switch_ivr_dmachine {
 	void *user_data;
 };
 
+
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback)
+{
+
+	dmachine->match_callback = match_callback;
+
+}
+
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_nonmatch_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t nonmatch_callback)
+{
+
+	dmachine->nonmatch_callback = nonmatch_callback;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p, 
 														   const char *name,
 														   switch_memory_pool_t *pool,
@@ -223,11 +238,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 	}
 	
 	if (binding->is_regex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: binding realm: %s regex: %s key: %.4d callback: %p data: %p\n", 
-						  dmachine->name, realm, digits, key, (void *)(intptr_t) callback, user_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
+						  dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: binding realm %s digits: %4s key: %.4d callback: %p data: %p\n", 
-						  dmachine->name, realm, digits, key, (void *)(intptr_t) callback, user_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
+						  dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -244,60 +259,62 @@ typedef enum {
 static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachine, switch_bool_t is_timeout)
 {
 	dm_match_t best = DM_MATCH_NONE;
-	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL;
-	int exact_count = 0, partial_count = 0, both_count = 0;
+	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL, *partial_bp = NULL, *both_bp = NULL, *r_bp = NULL;
 	
-
 	if (!dmachine->cur_digit_len || !dmachine->realm) goto end;
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
-
 		if (bp->is_regex) {
 			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
 
 			if (r_status == SWITCH_STATUS_SUCCESS) {
 				if (is_timeout) {
 					best = DM_MATCH_EXACT;
-					exact_count++;
 					exact_bp = bp;
 					break;
 				}
 
 				best = DM_MATCH_PARTIAL;
-				partial_count++;
-				continue;
 			}
 		} else {
+
 			if (!exact_bp && !strcmp(bp->digits, dmachine->digits)) {
-				exact_bp = bp;				
 				best = DM_MATCH_EXACT;
-				exact_count++;
-				continue;
+				exact_bp = bp;
+				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
 			}
 
-			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
-				if (best == DM_MATCH_EXACT) {
-					if (is_timeout) {
-						best = DM_MATCH_EXACT;
-						exact_count++;
-						exact_bp = bp;
-					} else {
-						best = DM_MATCH_BOTH;
-						both_count++;
-					}
+			if (!(both_bp && partial_bp) && !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
+				if (exact_bp) {
+					best = DM_MATCH_BOTH;
+					both_bp = bp;
 				} else {
 					best = DM_MATCH_PARTIAL;
-					partial_count++;
+					partial_bp = bp;
 				}
-				break;
 			}
+
+			if (both_bp && exact_bp && partial_bp) break;
 		}
 	}
 	
  end:
+
+	if (is_timeout) {
+		if (both_bp) {
+			r_bp = exact_bp ? exact_bp : both_bp;
+		} else if (partial_bp) {
+			r_bp = partial_bp;
+		}
+	} 
+
+	if (best == DM_MATCH_EXACT && exact_bp) {
+		r_bp = exact_bp;
+	}
 	
-	if (!both_count && exact_bp) {
-		dmachine->last_matching_binding = exact_bp;
+	
+	if (r_bp) {
+		dmachine->last_matching_binding = r_bp;
 		switch_set_string(dmachine->last_matching_digits, dmachine->digits);
 		best = DM_MATCH_EXACT;
 	}
@@ -342,8 +359,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 {
 	switch_bool_t is_timeout = switch_ivr_dmachine_check_timeout(dmachine);
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
-	switch_status_t r;
-
+	switch_status_t r, s;
+	int clear = 0;
+	
 	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
 	} else if (dmachine->cur_digit_len > dmachine->max_digit_len) {
@@ -362,25 +380,49 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		dmachine->is_match = 1;
 
 		dmachine->match.type = DM_MATCH_POSITIVE;
-
+		
 		if (dmachine->last_matching_binding->callback) {
-			dmachine->last_matching_binding->callback(&dmachine->match);
+			s = dmachine->last_matching_binding->callback(&dmachine->match);
+			
+			switch(s) {
+			case SWITCH_STATUS_CONTINUE:
+				r = SWITCH_STATUS_SUCCESS;
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				break;
+			default:
+				r = SWITCH_STATUS_BREAK;
+				break;
+			}
 		}
 
 		if (dmachine->match_callback) {
 			dmachine->match.user_data = dmachine->user_data;
-			dmachine->match_callback(&dmachine->match);
+			s = dmachine->match_callback(&dmachine->match);
+
+			switch(s) {
+			case SWITCH_STATUS_CONTINUE:
+				r = SWITCH_STATUS_SUCCESS;
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				break;
+			default:
+				r = SWITCH_STATUS_BREAK;
+				break;
+			}
+
 		}
-		
+
+		clear++;
 	} else if (is_timeout) {
 		r = SWITCH_STATUS_TIMEOUT;
-	} else if (dmachine->cur_digit_len == dmachine->max_digit_len) {
+	} else if (is_match == DM_MATCH_NONE && dmachine->cur_digit_len == dmachine->max_digit_len) {
 		r = SWITCH_STATUS_NOTFOUND;
 	} else {
 		r = SWITCH_STATUS_SUCCESS;
 	}
 	
-	if (r != SWITCH_STATUS_FOUND && r != SWITCH_STATUS_SUCCESS) {
+	if (r != SWITCH_STATUS_FOUND && r != SWITCH_STATUS_SUCCESS && r != SWITCH_STATUS_BREAK) {
 		switch_set_string(dmachine->last_failed_digits, dmachine->digits);
 		dmachine->match.match_digits = dmachine->last_failed_digits;
 		
@@ -388,11 +430,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		
 		if (dmachine->nonmatch_callback) {
 			dmachine->match.user_data = dmachine->user_data;
-			dmachine->nonmatch_callback(&dmachine->match);
+			s = dmachine->nonmatch_callback(&dmachine->match);
+
+			switch(s) {
+			case SWITCH_STATUS_CONTINUE:
+				r = SWITCH_STATUS_SUCCESS;
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				break;
+			default:
+				r = SWITCH_STATUS_BREAK;
+				break;
+			}
+
 		}
+		
+		clear++;
 	}
 	
-	if (r != SWITCH_STATUS_SUCCESS) {
+	if (clear) {
 		switch_ivr_dmachine_clear(dmachine);
 	}
 
@@ -414,6 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear(switch_ivr_dmachine_t *dmachine)
 {
+
 	memset(dmachine->digits, 0, sizeof(dmachine->digits));
 	dmachine->cur_digit_len = 0;
 	dmachine->last_digit_time = 0;
@@ -827,10 +884,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 
 	if (flags && strchr(flags, 'r')) {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug);
+										   read_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	} else {
 		status = switch_core_media_bug_add(session, "displace", file,
-										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug);
+										   write_displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug);
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -871,6 +928,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
+			const char *var;
+
 			switch_codec_implementation_t read_impl = { 0 };
 			switch_core_session_get_read_impl(session, &read_impl);
 
@@ -906,9 +965,45 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_core_file_close(rh->fh);
 				if (rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
+					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 				}
 			}
+
+			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_app"))) {
+				char *app = switch_core_session_strdup(session, var);
+				char *data;
+
+				if ((data = strchr(app, ':'))) {
+					*data++ = '\0';
+				}
+
+				switch_core_session_execute_application(session, app, data);
+			}
+
+			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_api"))) {
+				char *cmd = switch_core_session_strdup(session, var);
+				char *data, *expanded = NULL;
+				switch_stream_handle_t stream = { 0 };
+
+				SWITCH_STANDARD_STREAM(stream);
+
+				if ((data = strchr(cmd, ':'))) {
+					*data++ = '\0';
+					expanded = switch_channel_expand_variables(channel, data);
+				}
+
+				switch_api_execute(cmd, expanded, session, &stream);
+
+				if (expanded && expanded != data) {
+					free(expanded);
+				}
+
+				switch_safe_free(stream.data);
+
+			}
+
+
 		}
 
 		break;
@@ -1066,9 +1161,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_core_session_message_t msg = { 0 };
 		char cid_buf[1024] = "";
 		switch_caller_profile_t *cp = NULL;
+		uint32_t sanity = 600;
 
 		if (!switch_channel_media_ready(channel)) {
 			goto end;
+		}
+
+		while(switch_channel_state_change_pending(tchannel)) {
+			switch_yield(10000);
+			if (!--sanity) break;
 		}
 
 		if (!switch_channel_media_ready(tchannel)) {
@@ -1166,7 +1267,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		if (switch_core_media_bug_add(tsession, "eavesdrop", uuid,
 									  eavesdrop_callback, ep, 0,
-									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_READ_PING | SMBF_THREAD_LOCK,
+									  SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | 
+									  SMBF_READ_PING | SMBF_THREAD_LOCK | SMBF_NO_PAUSE,
 									  &bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot attach bug\n");
 			goto end;
@@ -1622,7 +1724,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	time_t to = 0;
-	switch_media_bug_flag_t flags = 0;
+	switch_media_bug_flag_t flags = SMBF_NO_PAUSE;
 	switch_codec_implementation_t read_impl = { 0 };
 	pp_cb_t *cb;
 	int update = 0;
@@ -1885,7 +1987,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_audio(switch_core_session_t *
 	switch_status_t status;
 	switch_session_audio_t *pvt;
 	switch_codec_implementation_t read_impl = { 0 };
-	int existing = 0, c_read = 0, c_write = 0, flags = 0;
+	int existing = 0, c_read = 0, c_write = 0, flags = SMBF_NO_PAUSE;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -2035,7 +2137,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 	}
 
 	if ((status = switch_core_media_bug_add(session, "inband_dtmf", NULL,
-											inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+											inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -2085,6 +2187,20 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 				switch_zmalloc(dt, sizeof(*dt));
 				*dt = *dtmf;
 				if (switch_queue_trypush(pvt->digit_queue, dt) == SWITCH_STATUS_SUCCESS) {
+					switch_event_t *event;
+					
+					if (switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, event);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Conversion", "native:inband");
+						if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
+							switch_core_session_queue_event(session, &event);
+						} else {
+							switch_event_fire(&event);
+						}
+					}
+					
 					dt = NULL;
 					/* 
 					   SWITCH_STATUS_FALSE indicates pretend there never was a DTMF
@@ -2236,7 +2352,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 
 	if ((status = switch_core_media_bug_add(session, "inband_dtmf_generate", NULL,
 											inband_dtmf_generate_callback, pvt, 0,
-											pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+											SMBF_NO_PAUSE | pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE , &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -2269,7 +2385,38 @@ typedef struct {
 	switch_media_bug_t *bug;
 	switch_core_session_t *session;
 	int bug_running;
+	int detect_fax;
 } switch_tone_container_t;
+
+static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_tone_container_t *cont = switch_channel_get_private(channel, "_tone_detect_");
+	switch_event_t *event;
+	int i;
+
+	if (!cont || !cont->detect_fax || dtmf->digit != 'f') {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	i = cont->detect_fax;
+
+	if (cont->list[i].callback) {
+		cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
+	} else if (cont->list[i].app) {
+		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+			switch_core_session_queue_private_event(cont->session, &event, SWITCH_FALSE);
+		}
+	}
+		
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 
 static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -2402,6 +2549,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 			cont->list[i].up = 0;
 		}
 		switch_core_media_bug_remove(session, &cont->bug);
+		if (cont->detect_fax) {
+			cont->detect_fax = 0;
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 	return SWITCH_STATUS_FALSE;
@@ -2416,7 +2566,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	switch_status_t status;
 	switch_tone_container_t *cont = switch_channel_get_private(channel, "_tone_detect_");
 	char *p, *next;
-	int i = 0, ok = 0;
+	int i = 0, ok = 0, detect_fax = 0;
 	switch_media_bug_flag_t bflags = 0;
 	const char *var;
 	switch_codec_implementation_t read_impl = { 0 };
@@ -2469,6 +2619,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 			ok++;
 			cont->list[cont->index].map.freqs[i++] = this;
 		}
+		if (!strncasecmp(p, "1100", 4)) {
+			detect_fax = cont->index;
+		}
+
 		if (next) {
 			p = next + 1;
 		}
@@ -2479,6 +2633,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid tone spec!\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	cont->detect_fax = detect_fax;
 
 	cont->list[cont->index].key = switch_core_session_strdup(session, key);
 
@@ -2540,11 +2696,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		}
 	}
 
+	bflags |= SMBF_NO_PAUSE;
+
 	if (cont->bug_running) {
 		status = SWITCH_STATUS_SUCCESS;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s bug already running\n", switch_channel_get_name(channel));
 	} else {
 		cont->bug_running = 1;
+		if (cont->detect_fax) {
+			switch_core_event_hook_add_send_dtmf(session, tone_on_dtmf);
+			switch_core_event_hook_add_recv_dtmf(session, tone_on_dtmf);
+		}
+
 		if ((status = switch_core_media_bug_add(session, "tone_detect", key,
 												tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
 			cont->bug_running = 0;
@@ -3192,7 +3355,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	}
 
 	if ((status = switch_core_media_bug_add(session, "detect_speech", key,
-											speech_callback, sth, 0, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
+											speech_callback, sth, 0, SMBF_READ_STREAM | SMBF_NO_PAUSE, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
 		return status;
 	}

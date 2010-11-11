@@ -1011,13 +1011,15 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
-#if 1 
-	/* DAVIDY - Temporary fix: in the current trunk of libsangoma, for BRI, 
+#ifdef WIN32
+	/* Temporary fix: in the current trunk of libsangoma, for BRI,
 		WAN_TE_BIT_ALARM_RED bit is set if the card is in disconnected state, but this has
 		not been ported to Windows-libsangoma yet */
-	if (alarms) {
-		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
-		alarms = 0;
+	if (FTDM_SPAN_IS_BRI(ftdmchan->span)) {
+		if (alarms) {
+			ftdmchan->alarm_flags |= FTDM_ALARM_RED;
+			alarms = 0;
+		}
 	}
 #endif
 
@@ -1027,6 +1029,7 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
 		alarms &= ~WAN_TE_BIT_ALARM_RED;
 	}
+		
 
 	if (alarms & WAN_TE_BIT_ALARM_AIS) {
 		ftdmchan->alarm_flags |= FTDM_ALARM_BLUE;
@@ -1175,6 +1178,11 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				{
 					char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
 					event_id = FTDM_OOB_NOOP;
+
+					if (tmp_dtmf[0] == 'f') {
+						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c, fax tones will be passed through!\n", tmp_dtmf[0]);
+						break;
+					}
 
 					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
 						ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);

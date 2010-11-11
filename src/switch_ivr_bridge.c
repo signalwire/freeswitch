@@ -853,15 +853,15 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	msg.from = __FILE__;
 	msg.string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
 
-	if (state == CS_ROUTING) {
-		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
-			switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
-			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(channel, event);
-				switch_event_fire(&event);
-			}
+	
+	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+		switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
 		}
 	}
+
 	
 	switch_core_session_receive_message(session, &msg);
 	switch_core_event_hook_remove_state_change(session, hanguphook);

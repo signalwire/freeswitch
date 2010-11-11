@@ -140,7 +140,7 @@ switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 	}
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_dtmf_detect", NULL,
-                                            inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+                                            inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 

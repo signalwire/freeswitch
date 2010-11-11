@@ -1,0 +1,247 @@
+diff -r -u ../../../../libs/libshout-2.2.2/Makefile.am ../../../../libs/libshout-2.2.2a/Makefile.am
+--- ../../../../libs/libshout-2.2.2/Makefile.am	2006-01-30 19:42:43.000000000 -0600
++++ ../../../../libs/libshout-2.2.2a/Makefile.am	2010-10-22 12:07:22.000000000 -0500
+@@ -3,16 +3,14 @@
+ AUTOMAKE_OPTIONS = 1.6 foreign
+ ACLOCAL_AMFLAGS = -I m4
+ 
+-SUBDIRS = include src examples debian doc win32
++SUBDIRS = include src #examples debian doc win32
+ 
+-EXTRA_DIST = INSTALL m4/shout.m4 m4/ac_config_libconfig_in.m4 m4/acx_pthread.m4 \
+-	m4/ogg.m4 m4/vorbis.m4 m4/xiph_compiler.m4 m4/xiph_net.m4 \
+-	m4/xiph_types.m4
++EXTRA_DIST = INSTALL m4/shout.m4 m4/ac_config_libconfig_in.m4 m4/acx_pthread.m4
+ 
+ DISTCLEANFILES = shout-config.in
+ 
+ docdir = $(datadir)/doc/$(PACKAGE)
+-doc_DATA = COPYING NEWS README examples/example.c examples/nonblocking.c
++#doc_DATA = COPYING NEWS README examples/example.c examples/nonblocking.c
+ 
+ m4datadir = $(datadir)/aclocal
+ m4data_DATA = m4/shout.m4
+diff -r -u ../../../../libs/libshout-2.2.2/Makefile.in ../../../../libs/libshout-2.2.2a/Makefile.in
+--- ../../../../libs/libshout-2.2.2/Makefile.in	2006-06-19 15:36:36.000000000 -0500
++++ ../../../../libs/libshout-2.2.2a/Makefile.in	2010-10-22 12:09:46.000000000 -0500
+@@ -246,14 +246,14 @@
+ target_alias = @target_alias@
+ AUTOMAKE_OPTIONS = 1.6 foreign
+ ACLOCAL_AMFLAGS = -I m4
+-SUBDIRS = include src examples debian doc win32
++SUBDIRS = include src 
+ EXTRA_DIST = INSTALL m4/shout.m4 m4/ac_config_libconfig_in.m4 m4/acx_pthread.m4 \
+ 	m4/ogg.m4 m4/vorbis.m4 m4/xiph_compiler.m4 m4/xiph_net.m4 \
+ 	m4/xiph_types.m4
+ 
+ DISTCLEANFILES = shout-config.in
+ docdir = $(datadir)/doc/$(PACKAGE)
+-doc_DATA = COPYING NEWS README examples/example.c examples/nonblocking.c
++
+ m4datadir = $(datadir)/aclocal
+ m4data_DATA = m4/shout.m4
+ @HAVE_PKGCONFIG_TRUE@pkgconfigdir = $(libdir)/pkgconfig
+diff -r -u ../../../../libs/libshout-2.2.2/configure ../../../../libs/libshout-2.2.2a/configure
+--- ../../../../libs/libshout-2.2.2/configure	2006-06-19 15:36:37.000000000 -0500
++++ ../../../../libs/libshout-2.2.2a/configure	2010-10-22 12:08:39.000000000 -0500
+@@ -22911,7 +22911,7 @@
+ 
+ fi
+ 
+-SHOUT_REQUIRES="ogg"
++#SHOUT_REQUIRES="ogg"
+ 
+ 
+ 
+@@ -23380,10 +23380,6 @@
+ 
+ fi
+ 
+-VORBIS_LIBS="-lvorbis"
+-VORBISFILE_LIBS="-lvorbisfile"
+-VORBISENC_LIBS="-lvorbisenc"
+-
+ xt_save_LIBS="$LIBS"
+ xt_save_LDFLAGS="$LDFLAGS"
+ xt_save_CPPFLAGS="$CPPFLAGS"
+@@ -23580,18 +23576,18 @@
+ LIBS="$xt_save_LIBS"
+ LDFLAGS="$xt_save_LDFLAGS"
+ 
+-if test "x$xt_lib_vorbis" = "xok"; then
+-    :
+-else
+-    VORBIS_CFLAGS=""
+-    VORBIS_LDFLAGS=""
+-    VORBIS_LIBS=""
+-    VORBISFILE_LIBS=""
+-    VORBISENC_LIBS=""
+-    { { echo "$as_me:$LINENO: error: requisite Ogg Vorbis library not found" >&5
+-echo "$as_me: error: requisite Ogg Vorbis library not found" >&2;}
+-   { (exit 1); exit 1; }; }
+-fi
++# if test "x$xt_lib_vorbis" = "xok"; then
++#     :
++# else
++#     VORBIS_CFLAGS=""
++#     VORBIS_LDFLAGS=""
++#     VORBIS_LIBS=""
++#     VORBISFILE_LIBS=""
++#     VORBISENC_LIBS=""
++#     { { echo "$as_me:$LINENO: error: requisite Ogg Vorbis library not found" >&5
++# echo "$as_me: error: requisite Ogg Vorbis library not found" >&2;}
++#    { (exit 1); exit 1; }; }
++# fi
+ 
+ 
+ 
+@@ -23687,10 +23683,6 @@
+ 
+ fi
+ 
+-VORBIS_LIBS="-lvorbis"
+-VORBISFILE_LIBS="-lvorbisfile"
+-VORBISENC_LIBS="-lvorbisenc"
+-
+ xt_save_LIBS="$LIBS"
+ xt_save_LDFLAGS="$LDFLAGS"
+ xt_save_CPPFLAGS="$CPPFLAGS"
+@@ -23887,18 +23879,18 @@
+ LIBS="$xt_save_LIBS"
+ LDFLAGS="$xt_save_LDFLAGS"
+ 
+-if test "x$xt_lib_vorbis" = "xok"; then
+-    :
+-else
+-    VORBIS_CFLAGS=""
+-    VORBIS_LDFLAGS=""
+-    VORBIS_LIBS=""
+-    VORBISFILE_LIBS=""
+-    VORBISENC_LIBS=""
+-    { { echo "$as_me:$LINENO: error: requisite Ogg Vorbis library not found" >&5
+-echo "$as_me: error: requisite Ogg Vorbis library not found" >&2;}
+-   { (exit 1); exit 1; }; }
+-fi
++# if test "x$xt_lib_vorbis" = "xok"; then
++#     :
++# else
++#     VORBIS_CFLAGS=""
++#     VORBIS_LDFLAGS=""
++#     VORBIS_LIBS=""
++#     VORBISFILE_LIBS=""
++#     VORBISENC_LIBS=""
++#     { { echo "$as_me:$LINENO: error: requisite Ogg Vorbis library not found" >&5
++# echo "$as_me: error: requisite Ogg Vorbis library not found" >&2;}
++#    { (exit 1); exit 1; }; }
++# fi
+ 
+ 
+ 
+@@ -25819,7 +25811,7 @@
+ 
+ 
+ 
+-                                                                                                                                                                ac_config_files="$ac_config_files Makefile debian/Makefile include/Makefile include/shout/Makefile include/shout/shout.h src/Makefile src/net/Makefile src/timing/Makefile src/thread/Makefile src/avl/Makefile src/httpp/Makefile doc/Makefile examples/Makefile win32/Makefile shout-config shout.pc"
++                                                                                                                                                                ac_config_files="$ac_config_files Makefile debian/Makefile include/Makefile include/shout/Makefile include/shout/shout.h src/Makefile src/net/Makefile src/timing/Makefile src/thread/Makefile src/avl/Makefile src/httpp/Makefile doc/Makefile win32/Makefile shout-config shout.pc"
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+ # tests run on this system so they can be shared between configure
+@@ -26423,7 +26415,6 @@
+   "src/avl/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/avl/Makefile" ;;
+   "src/httpp/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/httpp/Makefile" ;;
+   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+-  "examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+   "win32/Makefile" ) CONFIG_FILES="$CONFIG_FILES win32/Makefile" ;;
+   "shout-config" ) CONFIG_FILES="$CONFIG_FILES shout-config" ;;
+   "shout.pc" ) CONFIG_FILES="$CONFIG_FILES shout.pc" ;;
+diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.am ../../../../libs/libshout-2.2.2a/src/Makefile.am
+--- ../../../../libs/libshout-2.2.2/src/Makefile.am	2006-01-30 19:42:42.000000000 -0600
++++ ../../../../libs/libshout-2.2.2a/src/Makefile.am	2010-10-22 11:59:57.000000000 -0500
+@@ -20,9 +20,9 @@
+ lib_LTLIBRARIES = libshout.la
+ libshout_la_LDFLAGS = -version-info 5:0:2
+ 
+-EXTRA_DIST = theora.c speex.c
+-noinst_HEADERS = shout_ogg.h shout_private.h util.h
+-libshout_la_SOURCES = shout.c util.c ogg.c vorbis.c mp3.c $(MAYBE_THEORA) $(MAYBE_SPEEX)
++EXTRA_DIST = 
++noinst_HEADERS = shout_private.h util.h
++libshout_la_SOURCES = shout.c util.c mp3.c $(MAYBE_THEORA) $(MAYBE_SPEEX)
+ AM_CFLAGS = @XIPH_CFLAGS@
+ 
+ libshout_la_LIBADD = net/libicenet.la timing/libicetiming.la avl/libiceavl.la\
+diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libshout-2.2.2a/src/Makefile.in
+--- ../../../../libs/libshout-2.2.2/src/Makefile.in	2006-06-19 15:36:32.000000000 -0500
++++ ../../../../libs/libshout-2.2.2a/src/Makefile.in	2010-10-22 12:04:24.000000000 -0500
+@@ -42,10 +42,7 @@
+ 	$(srcdir)/Makefile.in
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/ac_config_libconfig_in.m4 \
+-	$(top_srcdir)/m4/acx_pthread.m4 $(top_srcdir)/m4/ogg.m4 \
+-	$(top_srcdir)/m4/speex.m4 $(top_srcdir)/m4/theora.m4 \
+-	$(top_srcdir)/m4/vorbis.m4 $(top_srcdir)/m4/xiph_compiler.m4 \
+-	$(top_srcdir)/m4/xiph_net.m4 $(top_srcdir)/m4/xiph_types.m4 \
++	$(top_srcdir)/m4/acx_pthread.m4 \
+ 	$(top_srcdir)/configure.ac
+ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
+ 	$(ACLOCAL_M4)
+@@ -66,11 +63,11 @@
+ libshout_la_DEPENDENCIES = net/libicenet.la timing/libicetiming.la \
+ 	avl/libiceavl.la httpp/libicehttpp.la $(am__DEPENDENCIES_1) \
+ 	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
+-am__libshout_la_SOURCES_DIST = shout.c util.c ogg.c vorbis.c mp3.c \
++am__libshout_la_SOURCES_DIST = shout.c util.c mp3.c \
+ 	theora.c speex.c
+ @HAVE_THEORA_TRUE@am__objects_1 = theora.lo
+ @HAVE_SPEEX_TRUE@am__objects_2 = speex.lo
+-am_libshout_la_OBJECTS = shout.lo util.lo ogg.lo vorbis.lo mp3.lo \
++am_libshout_la_OBJECTS = shout.lo util.lo mp3.lo \
+ 	$(am__objects_1) $(am__objects_2)
+ libshout_la_OBJECTS = $(am_libshout_la_OBJECTS)
+ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
+@@ -152,10 +149,6 @@
+ MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
+ MAKEINFO = @MAKEINFO@
+ OBJEXT = @OBJEXT@
+-OGG_CFLAGS = @OGG_CFLAGS@
+-OGG_LDFLAGS = @OGG_LDFLAGS@
+-OGG_LIBS = @OGG_LIBS@
+-OGG_PREFIX = @OGG_PREFIX@
+ OPT = @OPT@
+ PACKAGE = @PACKAGE@
+ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
+@@ -257,8 +250,8 @@
+ lib_LTLIBRARIES = libshout.la
+ libshout_la_LDFLAGS = -version-info 5:0:2
+ EXTRA_DIST = theora.c speex.c
+-noinst_HEADERS = shout_ogg.h shout_private.h util.h
+-libshout_la_SOURCES = shout.c util.c ogg.c vorbis.c mp3.c $(MAYBE_THEORA) $(MAYBE_SPEEX)
++noinst_HEADERS = shout_private.h util.h
++libshout_la_SOURCES = shout.c util.c mp3.c $(MAYBE_THEORA) $(MAYBE_SPEEX)
+ AM_CFLAGS = @XIPH_CFLAGS@
+ libshout_la_LIBADD = net/libicenet.la timing/libicetiming.la avl/libiceavl.la\
+ 		httpp/libicehttpp.la $(MAYBE_THREAD_LIB) $(THEORA_LIBS) $(VORBIS_LIBS)
+@@ -334,7 +327,7 @@
+ 	-rm -f *.tab.c
+ 
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mp3.Plo@am__quote@
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ogg.Plo@am__quote@
++#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ogg.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shout.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/speex.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/theora.Plo@am__quote@
+diff -r -u ../../../../libs/libshout-2.2.2/src/shout.c ../../../../libs/libshout-2.2.2a/src/shout.c
+--- ../../../../libs/libshout-2.2.2/src/shout.c	2008-07-28 11:33:56.000000000 -0500
++++ ../../../../libs/libshout-2.2.2a/src/shout.c	2010-10-22 12:12:46.000000000 -0500
+@@ -994,10 +994,7 @@
+ 		if ((rc = parse_response(self)) != SHOUTERR_SUCCESS)
+                         goto failure;
+ 
+-		if (self->format == SHOUT_FORMAT_OGG) {
+-			if ((rc = self->error = shout_open_ogg(self)) != SHOUTERR_SUCCESS)
+-                                goto failure;
+-		} else if (self->format == SHOUT_FORMAT_MP3) {
++		if (self->format == SHOUT_FORMAT_MP3) {
+ 			if ((rc = self->error = shout_open_mp3(self)) != SHOUTERR_SUCCESS)
+                                 goto failure;
+ 		} else {

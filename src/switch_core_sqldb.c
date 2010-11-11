@@ -62,6 +62,10 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 {
 	switch_cache_db_connection_options_t options = { {0} };
 	switch_status_t r;
+	
+	if (!sql_manager.manage) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!zstr(runtime.odbc_dsn)) {
 		options.odbc_options.dsn = runtime.odbc_dsn;
@@ -695,7 +699,16 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 	while (begin_retries > 0) {
 		again = 0;
 
-		switch_cache_db_execute_sql_real(dbh, "BEGIN", &errmsg);
+		if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
+			switch_cache_db_execute_sql_real(dbh, "BEGIN", &errmsg);
+		} else {
+			switch_odbc_status_t result;
+			if ((result = switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
+				char tmp[100];
+				switch_snprintf(tmp, sizeof(tmp), "%s-%i", "Unable to Set AutoCommit Off", result);
+				errmsg = strdup(tmp);
+			}
+		}
 
 		if (errmsg) {
 			begin_retries--;
@@ -708,7 +721,13 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 			errmsg = NULL;
 
 			if (again) {
-				switch_cache_db_execute_sql_real(dbh, "COMMIT", NULL);
+				if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
+					switch_cache_db_execute_sql_real(dbh, "COMMIT", NULL);
+				} else  {
+					switch_odbc_SQLEndTran(dbh->native_handle.odbc_dbh, 1);
+					switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 1);
+				}
+
 				goto again;
 			}
 
@@ -746,7 +765,12 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 
  done:
 
-	switch_cache_db_execute_sql_real(dbh, "COMMIT", NULL);
+	if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
+		switch_cache_db_execute_sql_real(dbh, "COMMIT", NULL);
+	} else {
+		switch_odbc_SQLEndTran(dbh->native_handle.odbc_dbh, 1);
+		switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 1);
+	}
 
 	if (dbh->io_mutex) {
 		switch_mutex_unlock(dbh->io_mutex);
@@ -1300,6 +1324,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
 		{
 			const char *callee_cid_name, *callee_cid_num, *direction;
+			char *func_name;
 
 			direction = switch_event_get_header(event, "other-leg-direction");
 
@@ -1315,10 +1340,19 @@ static void core_event_handler(switch_event_t *event)
 			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' and hostname='%q'",
 									   switch_event_get_header_nil(event, "channel-call-uuid"),
 									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
-			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,function,caller_cid_name,"
+
+			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
+				func_name = "function";
+			}
+			else {
+				func_name = "call_function";
+			}
+
+			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,%s,caller_cid_name,"
 									   "caller_cid_num,caller_dest_num,caller_chan_name,caller_uuid,callee_cid_name,"
 									   "callee_cid_num,callee_dest_num,callee_chan_name,callee_uuid,hostname) "
 									   "values ('%s', '%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s','%q')",
+									   func_name,
 									   switch_event_get_header_nil(event, "channel-call-uuid"),
 									   switch_event_get_header_nil(event, "event-date-local"),
 									   (long) switch_epoch_time_now(NULL),
@@ -1559,6 +1593,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
  top:
 
+	if (!sql_manager.manage) goto skip;
+
 	/* Activate SQL database */
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
@@ -1618,11 +1654,21 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		{
 			char *err;
 			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate from channels", "DROP TABLE channels", create_channels_sql);
-			switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
+			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
+				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
+			} else {
+				char *tmp = switch_string_replace(create_calls_sql, "function", "call_function");
+				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", tmp);
+				free(tmp);
+			}
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
 
-			switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
+			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
+				switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
+			} else {
+				switch_cache_db_execute_sql(dbh, "delete from channels where hostname='';delete from channels where hostname='';", &err);
+			}
 
 			if (err) {
 				runtime.odbc_dsn = NULL;
@@ -1666,6 +1712,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_execute_sql(dbh, "create index channels1 on channels(hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index calls1 on calls(hostname)", NULL);
 
+ skip:
 
 	if (sql_manager.manage) {
 		if (switch_event_bind_removable("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY,
@@ -1688,7 +1735,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_yield(10000);
 	}
 
-	switch_cache_db_release_db_handle(&dbh);
+	if (sql_manager.manage) switch_cache_db_release_db_handle(&dbh);
 
 	return SWITCH_STATUS_SUCCESS;
 }

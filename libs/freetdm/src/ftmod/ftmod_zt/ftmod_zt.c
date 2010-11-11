@@ -867,7 +867,7 @@ static FIO_WAIT_FUNCTION(zt_wait)
 {
 	int32_t inflags = 0;
 	int result;
-    struct pollfd pfds[1];
+	struct pollfd pfds[1];
 
 	if (*flags & FTDM_READ) {
 		inflags |= POLLIN;
@@ -882,13 +882,14 @@ static FIO_WAIT_FUNCTION(zt_wait)
 	}
 
 
-    memset(&pfds[0], 0, sizeof(pfds[0]));
-    pfds[0].fd = ftdmchan->sockfd;
-    pfds[0].events = inflags;
-    result = poll(pfds, 1, to);
+	memset(&pfds[0], 0, sizeof(pfds[0]));
+	pfds[0].fd = ftdmchan->sockfd;
+	pfds[0].events = inflags;
+	result = poll(pfds, 1, to);
 	*flags = 0;
 
 	if (pfds[0].revents & POLLERR) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "DAHDI device got POLLERR\n");
 		result = -1;
 	}
 
@@ -900,6 +901,7 @@ static FIO_WAIT_FUNCTION(zt_wait)
 
 	if (result < 0){
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Poll failed");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to poll DAHDI device: %s\n", strerror(errno));
 		return FTDM_FAIL;
 	}
 

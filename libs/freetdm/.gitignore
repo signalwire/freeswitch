@@ -11,6 +11,20 @@ config.*
 configure
 libtool
 aclocal.m4
+build/libtool.m4
+build/ltoptions.m4
+build/ltsugar.m4
+build/ltversion.m4
+build/lt~obsolete.m4
+
+testanalog
+testapp
+testboost
+testcid
+testpri
+testr2
+testsangomaboost
+testtones
 
 !/sample/boost/Makefile
 !/sample/dso/Makefile

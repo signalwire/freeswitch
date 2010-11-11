@@ -49,7 +49,6 @@ ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisd
 static void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span);
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event);
-
 static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
 
@@ -279,6 +278,10 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span)
 {
 	ftdm_status_t		ret_status;
+	ftdm_channel_t *ftdmchan;
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	
 	ret_status = ftdm_span_poll_event(span, 0, NULL);
 	switch(ret_status) {
 		case FTDM_SUCCESS:

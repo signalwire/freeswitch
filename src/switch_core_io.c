@@ -105,8 +105,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
-	unsigned int flag = 0;
 	switch_codec_implementation_t codec_impl;
+	unsigned int flag = 0;
 
 	switch_assert(session != NULL);
 
@@ -119,10 +119,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			return SWITCH_STATUS_SUCCESS;
 		}
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_mutex_lock(session->codec_read_mutex);
+
+	if (!switch_core_codec_ready(session->read_codec)) {
+		switch_mutex_unlock(session->codec_read_mutex);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+		*frame = &runtime.dummy_cng_frame;
+        return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(session->read_codec->mutex);
 
   top:
@@ -180,6 +190,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 
 		switch_mutex_lock(session->codec_read_mutex);
+
+		if (!switch_core_codec_ready(session->read_codec)) {
+			switch_mutex_unlock(session->codec_read_mutex);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+			*frame = &runtime.dummy_cng_frame;
+			return SWITCH_STATUS_FALSE;
+		}
+
 		switch_mutex_lock(session->read_codec->mutex);
 		if (!switch_core_codec_ready(session->read_codec)) {
 			*frame = NULL;
@@ -296,7 +315,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 												  read_frame->data,
 												  read_frame->datalen,
 												  session->read_impl.actual_samples_per_second,
-												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
+												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
+												  &read_frame->flags);
 			}
 
 			if (do_resample && ((status == SWITCH_STATUS_SUCCESS) || is_cng)) {
@@ -367,13 +387,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 
-		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
+		if (session->bugs) {
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 			for (bp = session->bugs; bp; bp = bp->next) {
+				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+					continue;
+				}
+
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
@@ -528,12 +552,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (flag & SFF_CNG) {
 			switch_set_flag((*frame), SFF_CNG);
 		}
-		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
+		if (session->bugs) {
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+					continue;
+				}
+
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
@@ -622,6 +650,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (!(session->write_codec && switch_core_codec_ready(session->write_codec)) && !pass_cng) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no write codec.\n", switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -637,10 +666,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return status;
 	}
 
+	switch_mutex_lock(session->codec_write_mutex);
+
+	if (!(frame->codec && frame->codec->implementation)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has received a bad frame with no codec!\n", 
+						  switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		switch_mutex_unlock(session->codec_write_mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_assert(frame->codec != NULL);
 	switch_assert(frame->codec->implementation != NULL);
-
-	switch_mutex_lock(session->codec_write_mutex);
 
 	if (!(switch_core_codec_ready(session->write_codec) && frame->codec) ||
 		!switch_channel_ready(session->channel) || !switch_channel_media_ready(session->channel)) {
@@ -721,7 +758,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 										  frame->data,
 										  frame->datalen,
 										  session->write_impl.actual_samples_per_second,
-										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
+										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &frame->flags);
 
 
 
@@ -814,7 +851,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 
 
-	if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
+	if (session->bugs) {
 		switch_media_bug_t *bp;
 		int prune = 0;
 
@@ -822,6 +859,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		for (bp = session->bugs; bp; bp = bp->next) {
 			switch_bool_t ok = SWITCH_TRUE;
 			if (!bp->ready) {
+				continue;
+			}
+
+			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 				continue;
 			}
 

@@ -100,6 +100,8 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 				ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported switchtype %s for trunktype:%s\n", span->name, switch_name, ftdm_trunk_type2str(span->trunk_type));
 				return FTDM_FAIL;
 			}
+			ftdm_set_flag(span, FTDM_SPAN_USE_AV_RATE);
+			ftdm_set_flag(span, FTDM_SPAN_PWR_SAVING);
 			 /* can be > 1 for some BRI variants */
 			break;
 		default:
@@ -188,6 +190,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->min_digits = 8;
 	signal_data->overlap_dial = SNGISDN_OPT_DEFAULT;
 	signal_data->setup_arb = SNGISDN_OPT_DEFAULT;
+	signal_data->timer_t3 = 8;
 
 	signal_data->link_id = span->span_id;
 	span->default_caller_data.bearer_capability = IN_ITC_SPEECH;
@@ -198,6 +201,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	if (span->trunk_type == FTDM_TRUNK_BRI ||
 		span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
 
+		
 		ftdm_span_set_npi("unknown", &span->default_caller_data.dnis.plan);
 		ftdm_span_set_ton("unknown", &span->default_caller_data.dnis.type);
 		ftdm_span_set_npi("unknown", &span->default_caller_data.cid_num.plan);

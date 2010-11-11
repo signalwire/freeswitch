@@ -109,16 +109,17 @@ char *interface_status[] = {	/* should match SKYPOPEN_STATE_xxx in skypopen.h */
 	"DOUBLE",
 	"SELECTD",
 	"HANG_RQ",
-	"PREANSW"
+	"PREANSW",
+	"DEAD"
 };
 char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypopen.h */
-	"CALL_IDLE",
-	"CALL_DOWN",
-	"INCOMING_RNG",
+	"IDLE",
+	"DOWN",
+	"INC_RNG",
 	"CALL_DIALING",
 	"CALL_LINEBUSY",
 	"CALL_ACTIVE",
-	"INCOMING_HNG",
+	"INC_HNG",
 	"CALL_RLEASD",
 	"CALL_NOCARR",
 	"CALL_INFLUX",
@@ -128,17 +129,17 @@ char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypopen.h */
 	"CALL_OUTRESTR",
 	"CALL_SECFAIL",
 	"CALL_NOANSWER",
-	"STATUS_FNSHED",
-	"STATUS_CANCLED",
-	"STATUS_FAILED",
-	"STATUS_REFUSED",
-	"STATUS_RINGING",
-	"STATUS_INPROGRS",
-	"STATUS_UNPLACD",
-	"STATUS_ROUTING",
-	"STATUS_EARLYMD",
-	"INCOMING_CLID",
-	"STATUS_RMTEHOLD"
+	"FNSHED",
+	"CANCLED",
+	"FAILED",
+	"REFUSED",
+	"RINGING",
+	"INPROGRS",
+	"UNPLACD",
+	"ROUTING",
+	"EARLYMD",
+	"INC_CLID",
+	"RMTEHOLD"
 };
 
 
@@ -159,11 +160,23 @@ static struct {
 	switch_mutex_t *mutex;
 	private_t *sk_console;
 	int start_port;
+
+	// CLOUDTREE (THomas Hazel)
+	switch_mutex_t *list_mutex;
+
 } globals;
 
 switch_endpoint_interface_t *skypopen_endpoint_interface;
 switch_memory_pool_t *skypopen_module_pool = NULL;
 int running = 0;
+
+// CLOUDTREE (THomas Hazel)
+#ifndef WIN32
+struct SkypopenList global_handles_list;
+extern int xio_error_handler(Display * dpy);
+extern int X11_errors_handler(Display * dpy, XErrorEvent * err);
+extern int xio_error_handler2(Display * dpy, XErrorEvent * err);
+#endif
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
@@ -175,7 +188,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_write_silence_when_idle, globals.wr
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_setsockopt, globals.setsockopt);
 
 static switch_status_t interface_exists(char *the_interface);
-static switch_status_t remove_interface(char *the_interface);
+/* CLOUDTREE (Thomas Hazel) static*/ switch_status_t remove_interface(char *the_interface, /* CLOUDTREE (Thomas Hazel */ switch_bool_t force);
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -193,23 +206,23 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
-static switch_status_t skypopen_tech_init(private_t * tech_pvt, switch_core_session_t *session);
+static switch_status_t skypopen_tech_init(private_t *tech_pvt, switch_core_session_t *session);
 
-static switch_status_t skypopen_codec(private_t * tech_pvt, int sample_rate, int codec_ms)
+static switch_status_t skypopen_codec(private_t *tech_pvt, int sample_rate, int codec_ms)
 {
 	switch_core_session_t *session = NULL;
 
 	if (switch_core_codec_init
 		(&tech_pvt->read_codec, "L16", NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-		ERRORA("Can't load codec?\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_codec: Can't load codec?\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init
 		(&tech_pvt->write_codec, "L16", NULL, sample_rate, codec_ms, 1,
 		 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-		ERRORA("Can't load codec?\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_codec: Can't load codec?\n", SKYPOPEN_P_LOG);
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -224,15 +237,16 @@ static switch_status_t skypopen_codec(private_t * tech_pvt, int sample_rate, int
 		switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 		switch_core_session_rwunlock(session);
 	} else {
-		ERRORA("no session\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_codec: no session\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
+	DEBUGA_SKYPE("codecs UP\n", SKYPOPEN_P_LOG);
 	return SWITCH_STATUS_SUCCESS;
 
 }
 
-switch_status_t skypopen_tech_init(private_t * tech_pvt, switch_core_session_t *session)
+switch_status_t skypopen_tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
 
 	switch_assert(tech_pvt != NULL);
@@ -244,11 +258,11 @@ switch_status_t skypopen_tech_init(private_t * tech_pvt, switch_core_session_t *
 	switch_core_session_set_private(session, tech_pvt);
 	switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->session_uuid_str));
 	if (!strlen(tech_pvt->session_uuid_str)) {
-		ERRORA("no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_tech_init: no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 	if (skypopen_codec(tech_pvt, SAMPLERATE_SKYPOPEN, 20) != SWITCH_STATUS_SUCCESS) {
-		ERRORA("skypopen_codec FAILED\n", SKYPOPEN_P_LOG);
+		ERRORA("skypopen_tech_init: skypopen_codec FAILED\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -298,7 +312,7 @@ static switch_status_t interface_exists(char *the_interface)
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t remove_interface(char *the_interface)
+/* CLOUDTREE (Thomas Hazel) static */ switch_status_t remove_interface(char *the_interface, /* CLOUDTREE (Thomas Hazel) */ switch_bool_t force)
 {
 	int x = 10;
 	unsigned int howmany = 8;
@@ -338,12 +352,14 @@ static switch_status_t remove_interface(char *the_interface)
 		goto end;
 	}
 
-	if (strlen(globals.SKYPOPEN_INTERFACES[interface_id].session_uuid_str)) {
+	if ( /* CLOUDTREE (Thomas Hazel) */ (force == FALSE) && strlen(globals.SKYPOPEN_INTERFACES[interface_id].session_uuid_str)) {
 		DEBUGA_SKYPE("interface '%s' is busy\n", SKYPOPEN_P_LOG, the_interface);
 		goto end;
 	}
 
 	globals.SKYPOPEN_INTERFACES[interface_id].running = 0;
+
+	tech_pvt->interface_state = SKYPOPEN_STATE_DEAD;
 
 	if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 #ifdef WIN32
@@ -365,8 +381,8 @@ static switch_status_t remove_interface(char *the_interface)
 		if (tech_pvt->running && tech_pvt->SkypopenHandles.disp) {
 			XEvent e;
 			Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
-			switch_sleep(1000);//giovanni
-			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
+			switch_sleep(1000);
+			XFlush(tech_pvt->SkypopenHandles.disp);
 			memset(&e, 0, sizeof(e));
 			e.xclient.type = ClientMessage;
 			e.xclient.message_type = atom1;	/*  leading message */
@@ -375,8 +391,7 @@ static switch_status_t remove_interface(char *the_interface)
 			e.xclient.format = 8;
 
 			XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-			//giovanni XSync(tech_pvt->SkypopenHandles.disp, False);
-			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
+			XFlush(tech_pvt->SkypopenHandles.disp);
 		}
 #endif
 	}
@@ -385,6 +400,11 @@ static switch_status_t remove_interface(char *the_interface)
 		x--;
 		switch_yield(50000);
 	}
+
+#ifndef WIN32
+	if (tech_pvt->SkypopenHandles.disp) {
+	}
+#endif
 
 	if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 		switch_thread_join(&status, globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread);
@@ -401,7 +421,11 @@ static switch_status_t remove_interface(char *the_interface)
 	} else {
 		DEBUGA_SKYPE("interface '%s' STILL console\n", SKYPOPEN_P_LOG, the_interface);
 	}
-	memset(&globals.SKYPOPEN_INTERFACES[interface_id], '\0', sizeof(private_t));
+	if (strlen(tech_pvt->session_uuid_str)) {
+
+	} else {
+		memset(&globals.SKYPOPEN_INTERFACES[interface_id], '\0', sizeof(private_t));
+	}
 	globals.real_interfaces--;
 	switch_mutex_unlock(globals.mutex);
 
@@ -428,7 +452,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 	switch_channel_set_variable(channel, "skype_user", tech_pvt->skype_user);
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_IO);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	/* Move channel's state machine to ROUTING. This means the call is trying
 	   to get from the initial start where the call because, to the point
@@ -443,12 +469,49 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
+	switch_status_t status;
+	int conta;
 
 	tech_pvt = switch_core_session_get_private(session);
 
 
 	if (tech_pvt) {
 		DEBUGA_SKYPE("%s CHANNEL DESTROY %s\n", SKYPOPEN_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
+
+		if (tech_pvt->interface_state != SKYPOPEN_STATE_DEAD) {
+			tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+		}
+
+		switch_mutex_lock(tech_pvt->flag_mutex);
+		switch_clear_flag(tech_pvt, TFLAG_IO);
+		switch_clear_flag(tech_pvt, TFLAG_VOICE);
+		if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+			switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+		}
+		switch_mutex_unlock(tech_pvt->flag_mutex);
+
+		DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
+		conta = 0;
+		while (tech_pvt->tcp_srv_thread) {
+			switch_sleep(5000);
+			conta++;
+			if (conta == 200) {
+				ERRORA("tcp_srv_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
+				break;
+			}
+		}
+		DEBUGA_SKYPE("audio tcp srv thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
+		conta = 0;
+		while (tech_pvt->tcp_cli_thread) {
+			switch_sleep(5000);
+			conta++;
+			if (conta == 200) {
+				ERRORA("tcp_cli_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
+				break;
+			}
+		}
+		DEBUGA_SKYPE("audio tcp cli thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
+
 
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -458,31 +521,58 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
 
-		if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
+		DEBUGA_SKYPE("codecs DOWN\n", SKYPOPEN_P_LOG);
+		if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 			switch_core_timer_destroy(&tech_pvt->timer_read);
 		}
 
-		if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next){
+		if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
 			switch_core_timer_destroy(&tech_pvt->timer_write);
 		}
 
-		if(tech_pvt->read_buffer){
+		if (tech_pvt->read_buffer) {
 			switch_buffer_destroy(&tech_pvt->read_buffer);
 		}
-		if(tech_pvt->write_buffer){
+		if (tech_pvt->write_buffer) {
 			switch_buffer_destroy(&tech_pvt->write_buffer);
 		}
+		//DEBUGA_SKYPE("debugging_hangup 13\n", SKYPOPEN_P_LOG);
+		switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
+		//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
+		if (tech_pvt->tcp_cli_thread) {
+			//DEBUGA_SKYPE("debugging_hangup 14\n", SKYPOPEN_P_LOG);
+			switch_thread_join(&status, tech_pvt->tcp_cli_thread);
+			tech_pvt->tcp_cli_thread = NULL;
+			//DEBUGA_SKYPE("debugging_hangup 15\n", SKYPOPEN_P_LOG);
+		}
+		switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
+		//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
+		switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
+		//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
+		if (tech_pvt->tcp_srv_thread) {
+			//DEBUGA_SKYPE("debugging_hangup 16\n", SKYPOPEN_P_LOG);
+			switch_thread_join(&status, tech_pvt->tcp_srv_thread);
+			tech_pvt->tcp_srv_thread = NULL;
+			//DEBUGA_SKYPE("debugging_hangup 17\n", SKYPOPEN_P_LOG);
+		}
+		switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
+		//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
+		//DEBUGA_SKYPE("debugging_hangup 18\n", SKYPOPEN_P_LOG);
 
 		*tech_pvt->session_uuid_str = '\0';
-		tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
-		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
+
+		if (tech_pvt->interface_state != SKYPOPEN_STATE_DEAD) {
+			tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
 			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
+		} else {
+			memset(tech_pvt, '\0', sizeof(private_t));
 		}
 		switch_core_session_set_private(session, NULL);
 	} else {
 		DEBUGA_SKYPE("!!!!!!NO tech_pvt!!!! CHANNEL DESTROY %s\n", SKYPOPEN_P_LOG, switch_core_session_get_uuid(session));
 	}
 
+	DEBUGA_SKYPE("CHANNEL DESTROYED %s\n", SKYPOPEN_P_LOG, switch_core_session_get_uuid(session));
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -491,52 +581,67 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	char msg_to_skype[256];
-	switch_status_t status;
+	//switch_status_t status;
 
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
 
-	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			tech_pvt->ob_failed_calls++;
-		} else {
-			tech_pvt->ib_failed_calls++;
+	//DEBUGA_SKYPE("debugging_hangup 1\n", SKYPOPEN_P_LOG);
+
+	if (tech_pvt) {
+		if (tech_pvt->interface_state == SKYPOPEN_STATE_DEAD) {
+			return SWITCH_STATUS_SUCCESS;
 		}
-	}
+		if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				tech_pvt->ob_failed_calls++;
+			} else {
+				tech_pvt->ib_failed_calls++;
+			}
+		}
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_clear_flag(tech_pvt, TFLAG_VOICE);
+		tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
+		switch_mutex_lock(tech_pvt->flag_mutex);
+		switch_clear_flag(tech_pvt, TFLAG_IO);
+		switch_clear_flag(tech_pvt, TFLAG_VOICE);
+		if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+			switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+		}
+		switch_mutex_unlock(tech_pvt->flag_mutex);
 
-	tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
 
-	if (strlen(tech_pvt->skype_call_id)) {
-		DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id);
-		sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
-		skypopen_signaling_write(tech_pvt, msg_to_skype);
-	}
+		//DEBUGA_SKYPE("debugging_hangup 2\n", SKYPOPEN_P_LOG);
 
-	if (tech_pvt->tcp_cli_thread) {
-		switch_thread_join(&status, tech_pvt->tcp_cli_thread);
+		if (strlen(tech_pvt->skype_call_id)) {
+			DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id);
+			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
+			skypopen_signaling_write(tech_pvt, msg_to_skype);
+			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
+			skypopen_signaling_write(tech_pvt, msg_to_skype);
+		}
+		DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPOPEN_P_LOG, tech_pvt->name);
+		switch_mutex_lock(globals.mutex);
+		globals.calls--;
+		if (globals.calls < 0) {
+			globals.calls = 0;
+		}
+		//DEBUGA_SKYPE("debugging_hangup 9\n", SKYPOPEN_P_LOG);
+		tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
+			tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
+		}
+		//DEBUGA_SKYPE("debugging_hangup 10\n", SKYPOPEN_P_LOG);
+		switch_mutex_unlock(globals.mutex);
+	} else {
+		WARNINGA("FYI %s CHANNEL has no tech_pvt in his private\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+		//DEBUGA_SKYPE("debugging_hangup 11\n", SKYPOPEN_P_LOG);
 	}
-	if (tech_pvt->tcp_srv_thread) {
-		switch_thread_join(&status, tech_pvt->tcp_srv_thread);
-	}
-	DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPOPEN_P_LOG, tech_pvt->name);
-	switch_mutex_lock(globals.mutex);
-	globals.calls--;
-	if (globals.calls < 0) {
-		globals.calls = 0;
-	}
+	//DEBUGA_SKYPE("debugging_hangup 12\n", SKYPOPEN_P_LOG);
 
-	tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
-	if (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED) {
-		tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
-	}
-	switch_mutex_unlock(globals.mutex);
+	switch_channel_set_state(channel, CS_DESTROY);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -578,46 +683,53 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	char msg_to_skype[256];
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
 
 	//DEBUGA_SKYPE("%s CHANNEL KILL_CHANNEL\n", SKYPOPEN_P_LOG, tech_pvt->name);
-	switch (sig) {
-	case SWITCH_SIG_KILL:
-		switch_mutex_lock(tech_pvt->flag_mutex);
-		DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
-		if (tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD) {
-			DEBUGA_SKYPE("FYI %s CHANNEL in CALLFLOW_STATUS_REMOTEHOLD got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+	if (tech_pvt) {
+		switch (sig) {
+		case SWITCH_SIG_KILL:
+			DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			if (tech_pvt->interface_state == SKYPOPEN_STATE_DEAD) {
+				switch_channel_set_state(channel, CS_HANGUP);
+				return SWITCH_STATUS_SUCCESS;
+			}
+			tech_pvt->interface_state = SKYPOPEN_STATE_HANGUP_REQUESTED;
+			if (tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD) {
+				DEBUGA_SKYPE("FYI %s CHANNEL in CALLFLOW_STATUS_REMOTEHOLD got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			}
+			if (switch_channel_get_state(channel) == CS_NEW) {
+				WARNINGA("FYI %s CHANNEL in CS_NEW state got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			}
+			if (switch_channel_get_state(channel) != CS_NEW && switch_channel_get_state(channel) < CS_EXECUTE) {
+				WARNINGA("FYI %s CHANNEL in %d state got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel),
+						 switch_channel_get_state(channel));
+			}
+
+			switch_mutex_lock(tech_pvt->flag_mutex);
+			switch_clear_flag(tech_pvt, TFLAG_IO);
+			switch_clear_flag(tech_pvt, TFLAG_VOICE);
+			switch_set_flag(tech_pvt, TFLAG_HANGUP);
+			if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+				switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+			}
+			switch_mutex_unlock(tech_pvt->flag_mutex);
+			break;
+		case SWITCH_SIG_BREAK:
+			DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_BREAK\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			switch_mutex_lock(tech_pvt->flag_mutex);
+			switch_set_flag(tech_pvt, TFLAG_BREAK);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
+			break;
+		default:
+			break;
 		}
-		if (switch_channel_get_state(channel) == CS_NEW) {
-			ERRORA("FYI %s CHANNEL in CS_NEW state got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
-		}
-		if (switch_channel_get_state(channel) != CS_NEW && switch_channel_get_state(channel) < CS_EXECUTE) {
-			ERRORA("FYI %s CHANNEL in %d state got SWITCH_SIG_KILL\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel), switch_channel_get_state(channel));
-		}
-		switch_clear_flag(tech_pvt, TFLAG_IO);
-		switch_clear_flag(tech_pvt, TFLAG_VOICE);
-		switch_set_flag(tech_pvt, TFLAG_HANGUP);
-		if(switch_test_flag(tech_pvt, TFLAG_PROGRESS)){
-			switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
-		}
-		switch_mutex_unlock(tech_pvt->flag_mutex);
-		sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
-		skypopen_signaling_write(tech_pvt, msg_to_skype);
-		break;
-	case SWITCH_SIG_BREAK:
-		DEBUGA_SKYPE("%s CHANNEL got SWITCH_SIG_BREAK\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
-		switch_mutex_lock(tech_pvt->flag_mutex);
-		switch_set_flag(tech_pvt, TFLAG_BREAK);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
-		break;
-	default:
-		break;
+	} else {
+		WARNINGA("FYI %s CHANNEL has no tech_pvt in his private\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -662,7 +774,7 @@ static switch_status_t channel_on_reset(switch_core_session_t *session)
 		ERRORA("No session???\n", SKYPOPEN_P_LOG);
 	}
 	if (channel) {
-	switch_channel_set_state(channel, CS_HANGUP);
+		switch_channel_set_state(channel, CS_HANGUP);
 	} else {
 		ERRORA("No channel???\n", SKYPOPEN_P_LOG);
 	}
@@ -696,7 +808,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	unsigned int i;
 	unsigned int a;
 	size_t bytes_read = 0;
-	int try=0;
+	int try = 0;
 
 
 	*frame = NULL;
@@ -709,8 +821,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	tech_pvt->read_frame.flags = SFF_NONE;
 
-	if (!switch_channel_ready(channel) || !switch_test_flag(tech_pvt, TFLAG_IO)) {
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		switch_sleep(20000);
+		return SWITCH_STATUS_FALSE;
+	}
+	if (!switch_channel_ready(channel)) {
 		ERRORA("channel not ready \n", SKYPOPEN_P_LOG);
+		switch_sleep(20000);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -731,29 +848,29 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 
 
-	if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
+	if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 		switch_core_timer_next(&tech_pvt->timer_read);
 	}
 
-read:
+  read:
 
 
 	if (tech_pvt && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN
-			&& (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
-				|| tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
-				|| tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
+		&& (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
+			|| tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
+			|| tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 		switch_mutex_lock(tech_pvt->mutex_audio_srv);
-		if (switch_buffer_inuse(tech_pvt->read_buffer)) {
+		if (tech_pvt->read_buffer && switch_buffer_inuse(tech_pvt->read_buffer)) {
 			bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, 640);
 			tech_pvt->read_frame.datalen = bytes_read;
 		}
 		switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 
-		try=0;
+		try = 0;
 		if (!bytes_read) {
 			switch_sleep(1000);
 			try++;
-			if(try < 5)
+			if (try < 5)
 				goto read;
 			DEBUGA_SKYPE("skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
 			memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
@@ -765,10 +882,15 @@ read:
 		tech_pvt->read_frame.datalen = 640;
 	}
 
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_VOICE);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
+
 	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_clear_flag(tech_pvt, TFLAG_BREAK);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 			DEBUGA_SKYPE("CHANNEL READ FRAME goto CNG\n", SKYPOPEN_P_LOG);
 			goto cng;
 		}
@@ -779,7 +901,9 @@ read:
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_clear_flag(tech_pvt, TFLAG_VOICE);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 			if (!tech_pvt->read_frame.datalen) {
 				DEBUGA_SKYPE("CHANNEL READ CONTINUE\n", SKYPOPEN_P_LOG);
 				continue;
@@ -805,7 +929,7 @@ read:
 
 				if (digit_str[0]) {
 					switch_time_t new_dtmf_timestamp = switch_time_now();
-					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {	//FIXME: make it configurable
+					if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {
 						char *p = digit_str;
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -851,7 +975,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	int no_space=0;
+	int no_space = 0;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -887,15 +1011,14 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_mutex_lock(tech_pvt->mutex_audio_cli);
 	if (switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen) {
 		DEBUGA_SKYPE("NO SPACE WRITE: %d\n", SKYPOPEN_P_LOG, frame->datalen);
-		//switch_buffer_toss(tech_pvt->write_buffer, frame->datalen);
 		switch_buffer_zero(tech_pvt->write_buffer);
-		no_space=1;
+		no_space = 1;
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
-	if(no_space){
+	if (no_space) {
 		switch_sleep(20000);
-	}else{
+	} else {
 		tech_pvt->begin_to_write = 1;
 	}
 
@@ -906,6 +1029,7 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 {
 	private_t *tech_pvt;
 	switch_channel_t *channel = NULL;
+	int conta = 0;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -913,14 +1037,20 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
 	skypopen_answer(tech_pvt);
 
-	while(!switch_test_flag(tech_pvt, TFLAG_IO)){ //FIXME that would be better with a timeout
-		if(switch_channel_get_state(channel) == CS_RESET){
+	while (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		if (switch_channel_get_state(channel) == CS_RESET) {
 			return SWITCH_STATUS_FALSE;
 		}
 		switch_sleep(5000);
+		conta++;
+		if (conta == 100) {		//0.5 seconds
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 	switch_mutex_lock(globals.mutex);
 	globals.calls++;
@@ -936,12 +1066,11 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t * msg)
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
 	char msg_to_skype[256];
-	//int i;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -953,41 +1082,52 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
 			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_PROGRESS\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_set_flag(tech_pvt, TFLAG_PROGRESS);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS:
 		{
 			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
-			if(switch_set_flag(tech_pvt, TFLAG_PROGRESS)){
+			if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
 				sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->ring_id);
 				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->ring_id);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_mutex_lock(tech_pvt->flag_mutex);
 				switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+				switch_mutex_unlock(tech_pvt->flag_mutex);
 			}
 		}
 		break;
 
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
-		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_ANSWER\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
+			DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_ANSWER\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
 
-			//switch_set_flag(tech_pvt, TFLAG_IO);
 			channel_answer_channel(session);
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 
-			if(tech_pvt->read_buffer){
+			if (tech_pvt->read_buffer) {
 				switch_mutex_lock(tech_pvt->mutex_audio_srv);
 				switch_buffer_zero(tech_pvt->read_buffer);
-				if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
+				if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 					switch_core_timer_sync(&tech_pvt->timer_read);
 				}
 				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 			}
 
-			if(tech_pvt->write_buffer){
+			if (tech_pvt->write_buffer) {
 				switch_mutex_lock(tech_pvt->mutex_audio_cli);
 				switch_buffer_zero(tech_pvt->write_buffer);
-				if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next){
+				if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
 					switch_core_timer_sync(&tech_pvt->timer_write);
 				}
 				switch_mutex_unlock(tech_pvt->mutex_audio_cli);
@@ -1000,46 +1140,46 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_AUDIO_SYNC\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
 
-			if(tech_pvt->read_buffer){
-				switch_mutex_lock(tech_pvt->mutex_audio_srv);
-				switch_buffer_zero(tech_pvt->read_buffer);
-				if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
-					switch_core_timer_sync(&tech_pvt->timer_read);
-				}
-				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+		if (tech_pvt->read_buffer) {
+			switch_mutex_lock(tech_pvt->mutex_audio_srv);
+			switch_buffer_zero(tech_pvt->read_buffer);
+			if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
+				switch_core_timer_sync(&tech_pvt->timer_read);
 			}
+			switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+		}
 
-			if(tech_pvt->write_buffer){
-				switch_mutex_lock(tech_pvt->mutex_audio_cli);
-				switch_buffer_zero(tech_pvt->write_buffer);
-				if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next){
-					switch_core_timer_sync(&tech_pvt->timer_write);
-				}
-				switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+		if (tech_pvt->write_buffer) {
+			switch_mutex_lock(tech_pvt->mutex_audio_cli);
+			switch_buffer_zero(tech_pvt->write_buffer);
+			if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
+				switch_core_timer_sync(&tech_pvt->timer_write);
 			}
-			DEBUGA_SKYPE("Synching audio\n", SKYPOPEN_P_LOG);
+			switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+		}
+		DEBUGA_SKYPE("Synching audio\n", SKYPOPEN_P_LOG);
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		DEBUGA_SKYPE("%s CHANNEL got SWITCH_MESSAGE_INDICATE_BRIDGE\n", SKYPOPEN_P_LOG, switch_channel_get_name(channel));
 
-			if(tech_pvt->read_buffer){
-				switch_mutex_lock(tech_pvt->mutex_audio_srv);
-				switch_buffer_zero(tech_pvt->read_buffer);
-				if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next){
-					switch_core_timer_sync(&tech_pvt->timer_read);
-				}
-				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+		if (tech_pvt->read_buffer) {
+			switch_mutex_lock(tech_pvt->mutex_audio_srv);
+			switch_buffer_zero(tech_pvt->read_buffer);
+			if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
+				switch_core_timer_sync(&tech_pvt->timer_read);
 			}
+			switch_mutex_unlock(tech_pvt->mutex_audio_srv);
+		}
 
-			if(tech_pvt->write_buffer){
-				switch_mutex_lock(tech_pvt->mutex_audio_cli);
-				switch_buffer_zero(tech_pvt->write_buffer);
-				if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next){
-					switch_core_timer_sync(&tech_pvt->timer_write);
-				}
-				switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+		if (tech_pvt->write_buffer) {
+			switch_mutex_lock(tech_pvt->mutex_audio_cli);
+			switch_buffer_zero(tech_pvt->write_buffer);
+			if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
+				switch_core_timer_sync(&tech_pvt->timer_write);
 			}
-			DEBUGA_SKYPE("Synching audio\n", SKYPOPEN_P_LOG);
+			switch_mutex_unlock(tech_pvt->mutex_audio_cli);
+		}
+		DEBUGA_SKYPE("Synching audio\n", SKYPOPEN_P_LOG);
 		break;
 
 	default:
@@ -1212,7 +1352,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_profile->destination_number = rdest;
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
+		switch_mutex_lock(tech_pvt->flag_mutex);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_mutex_unlock(tech_pvt->flag_mutex);
 		switch_channel_set_state(channel, CS_INIT);
 		skypopen_call(tech_pvt, rdest, 30);
 		switch_mutex_unlock(globals.mutex);
@@ -1227,11 +1369,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
  * \brief This thread runs during a call, and monitor the interface for signaling, like hangup, caller id, etc most of signaling is handled inside the skypopen_signaling_read function
  *
  */
-static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t * thread, void *obj)
+static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *thread, void *obj)
 {
 	private_t *tech_pvt = obj;
 	int res;
 	int forever = 1;
+	switch_event_t *event;
 
 	if (!tech_pvt)
 		return NULL;
@@ -1242,13 +1385,25 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 		if (!(running && tech_pvt->running))
 			break;
 		res = skypopen_signaling_read(tech_pvt);
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_INCOMING_RAW) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "X-Skype-Response-Code", "%d", res);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "X-Skype-Interface", "%s", tech_pvt->interface_id);
+			switch_event_add_body(event, "%s", tech_pvt->message);
+			switch_event_fire(&event);
+		}
+
 		if (res == CALLFLOW_INCOMING_HANGUP || tech_pvt->skype_callflow == CALLFLOW_INCOMING_HANGUP) {
 			switch_core_session_t *session = NULL;
 			switch_channel_t *channel = NULL;
+			int conta;
 
 			DEBUGA_SKYPE("skype call ended\n", SKYPOPEN_P_LOG);
 
 			if (tech_pvt) {
+				if (tech_pvt->interface_state == SKYPOPEN_STATE_DEAD) {
+					break;
+				}
 				session = switch_core_session_locate(tech_pvt->session_uuid_str);
 				if (session) {
 					channel = switch_core_session_get_channel(session);
@@ -1264,11 +1419,33 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 					switch_core_session_rwunlock(session);
 				} else {
 					DEBUGA_SKYPE("no session\n", SKYPOPEN_P_LOG);
+
+					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+					DEBUGA_SKYPE("audio tcp threads to DIE\n", SKYPOPEN_P_LOG);
+					conta = 0;
+					while (tech_pvt->tcp_srv_thread) {
+						switch_sleep(5000);
+						conta++;
+						if (conta == 200) {
+							ERRORA("tcp_srv_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
+							break;
+						}
+					}
+					DEBUGA_SKYPE("audio tcp srv thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
+					conta = 0;
+					while (tech_pvt->tcp_cli_thread) {
+						switch_sleep(5000);
+						conta++;
+						if (conta == 200) {
+							ERRORA("tcp_cli_thread is NOT dead, this can LEAK MEMORY\n", SKYPOPEN_P_LOG);
+							break;
+						}
+					}
+					DEBUGA_SKYPE("audio tcp cli thread DEAD %d\n", SKYPOPEN_P_LOG, conta);
 				}
 				switch_mutex_lock(globals.mutex);
-				tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
+				tech_pvt->ringing_state = SKYPOPEN_RINGING_INIT;
 				*tech_pvt->session_uuid_str = '\0';
-				*tech_pvt->skype_call_id = '\0';
 				*tech_pvt->initial_skype_user = '\0';
 				*tech_pvt->answer_id = '\0';
 				*tech_pvt->answer_value = '\0';
@@ -1276,10 +1453,7 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 				*tech_pvt->ring_value = '\0';
 				*tech_pvt->callid_number = '\0';
 				*tech_pvt->callid_name = '\0';
-				switch_mutex_unlock(globals.mutex);
 
-				switch_sleep(300000);	//0.3 sec
-				switch_mutex_lock(globals.mutex);
 				tech_pvt->skype_callflow = CALLFLOW_CALL_IDLE;
 				tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;
 				switch_mutex_unlock(globals.mutex);
@@ -1288,7 +1462,7 @@ static void *SWITCH_THREAD_FUNC skypopen_signaling_thread_func(switch_thread_t *
 			}
 		}
 	}
-	tech_pvt->skypopen_signaling_thread=NULL;
+	tech_pvt->skypopen_signaling_thread = NULL;
 	DEBUGA_SKYPE("EXITING\n", SKYPOPEN_P_LOG);
 	return NULL;
 }
@@ -1298,6 +1472,9 @@ static switch_status_t load_config(int reload_type)
 	char *cf = "skypopen.conf";
 	switch_xml_t cfg, xml, global_settings, param, interfaces, myinterface;
 	private_t *tech_pvt = NULL;
+
+	// CLOUDTREE (Thomas Hazel) - always try to load configuration
+	running = 1;
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, skypopen_module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -1364,22 +1541,22 @@ static switch_status_t load_config(int reload_type)
 			char *setsockopt = "false";
 			uint32_t interface_id = 0;
 
-			if(globals.context)
-				context=globals.context;
-			if(globals.dialplan)
-				dialplan=globals.dialplan;
-			if(globals.destination)
-				destination=globals.destination;
-			if(globals.skype_user)
-				skype_user=globals.skype_user;
-			if(globals.report_incoming_chatmessages)
-				report_incoming_chatmessages=globals.report_incoming_chatmessages;
-			if(globals.silent_mode)
-				silent_mode=globals.silent_mode;
-			if(globals.write_silence_when_idle)
-				write_silence_when_idle=globals.write_silence_when_idle;
-			if(globals.setsockopt)
-				setsockopt=globals.setsockopt;
+			if (globals.context)
+				context = globals.context;
+			if (globals.dialplan)
+				dialplan = globals.dialplan;
+			if (globals.destination)
+				destination = globals.destination;
+			if (globals.skype_user)
+				skype_user = globals.skype_user;
+			if (globals.report_incoming_chatmessages)
+				report_incoming_chatmessages = globals.report_incoming_chatmessages;
+			if (globals.silent_mode)
+				silent_mode = globals.silent_mode;
+			if (globals.write_silence_when_idle)
+				write_silence_when_idle = globals.write_silence_when_idle;
+			if (globals.setsockopt)
+				setsockopt = globals.setsockopt;
 
 			tech_pvt = NULL;
 
@@ -1545,7 +1722,8 @@ static switch_status_t load_config(int reload_type)
 				switch_threadattr_detach_set(skypopen_api_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypopen_api_thread_attr, SWITCH_THREAD_STACKSIZE);
 				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].skypopen_api_thread,
-									 skypopen_api_thread_attr, skypopen_do_skypeapi_thread, &globals.SKYPOPEN_INTERFACES[interface_id], skypopen_module_pool);
+									 skypopen_api_thread_attr, skypopen_do_skypeapi_thread, &globals.SKYPOPEN_INTERFACES[interface_id],
+									 skypopen_module_pool);
 
 				switch_sleep(100000);
 
@@ -1561,6 +1739,8 @@ static switch_status_t load_config(int reload_type)
 				skypopen_audio_init(&globals.SKYPOPEN_INTERFACES[interface_id]);
 				switch_mutex_init(&globals.SKYPOPEN_INTERFACES[interface_id].mutex_audio_srv, SWITCH_MUTEX_NESTED, skypopen_module_pool);
 				switch_mutex_init(&globals.SKYPOPEN_INTERFACES[interface_id].mutex_audio_cli, SWITCH_MUTEX_NESTED, skypopen_module_pool);
+				switch_mutex_init(&globals.SKYPOPEN_INTERFACES[interface_id].mutex_thread_audio_srv, SWITCH_MUTEX_NESTED, skypopen_module_pool);
+				switch_mutex_init(&globals.SKYPOPEN_INTERFACES[interface_id].mutex_thread_audio_cli, SWITCH_MUTEX_NESTED, skypopen_module_pool);
 
 				NOTICA
 					("WAITING roughly 10 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d\n",
@@ -1594,8 +1774,6 @@ static switch_status_t load_config(int reload_type)
 						("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n",
 						 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].skype_user);
 
-
-/* giovanni*/
 					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "PROTOCOL 7");
 					switch_sleep(10000);
 					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "SET AUTOAWAY OFF");
@@ -1612,7 +1790,6 @@ static switch_status_t load_config(int reload_type)
 						skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "SET SILENT_MODE ON");
 						switch_sleep(10000);
 					}
-/*  giovanni */
 				} else {
 					ERRORA
 						("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypopen exiting now\n",
@@ -1648,7 +1825,8 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].report_incoming_chatmessages=%d\n", SKYPOPEN_P_LOG, i, i,
 							 globals.SKYPOPEN_INTERFACES[i].report_incoming_chatmessages);
 				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].silent_mode=%d\n", SKYPOPEN_P_LOG, i, i, globals.SKYPOPEN_INTERFACES[i].silent_mode);
-				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].write_silence_when_idle=%d\n", SKYPOPEN_P_LOG, i, i, globals.SKYPOPEN_INTERFACES[i].write_silence_when_idle);
+				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].write_silence_when_idle=%d\n", SKYPOPEN_P_LOG, i, i,
+							 globals.SKYPOPEN_INTERFACES[i].write_silence_when_idle);
 				DEBUGA_SKYPE("i=%d globals.SKYPOPEN_INTERFACES[%d].setsockopt=%d\n", SKYPOPEN_P_LOG, i, i, globals.SKYPOPEN_INTERFACES[i].setsockopt);
 			}
 		}
@@ -1704,7 +1882,8 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 				if (strlen(globals.SKYPOPEN_INTERFACES[i].name)
 					&& (strncmp(globals.SKYPOPEN_INTERFACES[i].name, hint, strlen(hint)) == 0)) {
 					tech_pvt = &globals.SKYPOPEN_INTERFACES[i];
-					DEBUGA_SKYPE("Using interface: globals.SKYPOPEN_INTERFACES[%d].name=|||%s|||\n", SKYPOPEN_P_LOG, i, globals.SKYPOPEN_INTERFACES[i].name);
+					DEBUGA_SKYPE("Using interface: globals.SKYPOPEN_INTERFACES[%d].name=|||%s|||\n", SKYPOPEN_P_LOG, i,
+								 globals.SKYPOPEN_INTERFACES[i].name);
 					found = 1;
 					break;
 				}
@@ -1715,7 +1894,8 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 				if (strlen(globals.SKYPOPEN_INTERFACES[i].name)
 					&& (strncmp(globals.SKYPOPEN_INTERFACES[i].skype_user, from, strlen(from)) == 0)) {
 					tech_pvt = &globals.SKYPOPEN_INTERFACES[i];
-					DEBUGA_SKYPE("Using interface: globals.SKYPOPEN_INTERFACES[%d].name=|||%s|||\n", SKYPOPEN_P_LOG, i, globals.SKYPOPEN_INTERFACES[i].name);
+					DEBUGA_SKYPE("Using interface: globals.SKYPOPEN_INTERFACES[%d].name=|||%s|||\n", SKYPOPEN_P_LOG, i,
+								 globals.SKYPOPEN_INTERFACES[i].name);
 					found = 1;
 					break;
 				}
@@ -1769,17 +1949,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 	skypopen_module_pool = pool;
 	memset(&globals, '\0', sizeof(globals));
 
+	// CLOUDTREE (Thomas Hazel)
+#ifndef WIN32
+	// XXX: these assumes no one will override
+	//XSetErrorHandler(X11_errors_handler);
+	//XXX giovanni: seems that if Xserver is up, but skype client is crashed, the error is non fatal. Let's use Thomas handler in this case too
+	XSetErrorHandler(xio_error_handler2);
+	XSetIOErrorHandler(xio_error_handler);
+
+	memset(&global_handles_list, 0, sizeof(global_handles_list));
+	switch_mutex_init(&globals.list_mutex, SWITCH_MUTEX_NESTED, skypopen_module_pool);
+#endif
+
 	running = 1;
-
-	if (load_config(FULL_RELOAD) != SWITCH_STATUS_SUCCESS) {
-		running = 0;
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-		return SWITCH_STATUS_GENERR;
-	}
+	load_config(FULL_RELOAD);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	skypopen_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
@@ -1791,14 +1974,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 
 		SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function, SKYPOPEN_CHAT_SYNTAX);
+		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
+					   SKYPOPEN_CHAT_SYNTAX);
 		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
 
+		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+			return SWITCH_STATUS_FALSE;
+		}
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;
-	} else
-		return SWITCH_STATUS_FALSE;
+	}
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
@@ -1813,6 +2006,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 
 	for (interface_id = 0; interface_id < SKYPOPEN_MAX_INTERFACES; interface_id++) {
 		tech_pvt = &globals.SKYPOPEN_INTERFACES[interface_id];
+
 
 		if (strlen(globals.SKYPOPEN_INTERFACES[interface_id].name)) {
 			if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
@@ -1832,15 +2026,15 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 #ifdef WIN32
 				if (SendMessage(tech_pvt->SkypopenHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {	// let's the skypopen_api_thread_func die
 					DEBUGA_SKYPE("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", SKYPOPEN_P_LOG, GetLastError());
-					tech_pvt->skypopen_api_thread=NULL;
+					tech_pvt->skypopen_api_thread = NULL;
 				}
 #else
 				if (tech_pvt->SkypopenHandles.disp) {
 					XEvent e;
 					Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
 											 False);
-			switch_sleep(1000);//giovanni
-			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
+					switch_sleep(1000);
+					XFlush(tech_pvt->SkypopenHandles.disp);
 					memset(&e, 0, sizeof(e));
 					e.xclient.type = ClientMessage;
 					e.xclient.message_type = atom1;	/*  leading message */
@@ -1849,16 +2043,22 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 					e.xclient.format = 8;
 
 					XSendEvent(tech_pvt->SkypopenHandles.disp, tech_pvt->SkypopenHandles.win, False, 0, &e);
-					//giovanni XSync(tech_pvt->SkypopenHandles.disp, False);
-			XFlush(tech_pvt->SkypopenHandles.disp); //giovanni
+					XFlush(tech_pvt->SkypopenHandles.disp);
 				}
 #endif
 			}
 			x = 10;
-			while (x) {			//FIXME 0.5 seconds?
+			while (x) {
 				x--;
 				switch_yield(50000);
 			}
+#ifndef WIN32
+			if (tech_pvt->SkypopenHandles.disp) {
+				DEBUGA_SKYPE("CLOSIN X\n", SKYPOPEN_P_LOG);
+				XCloseDisplay(tech_pvt->SkypopenHandles.disp);
+				DEBUGA_SKYPE("CLOSIN X END\n", SKYPOPEN_P_LOG);
+			}
+#endif
 			if (globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread) {
 				switch_thread_join(&status, globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread);
 			}
@@ -1888,6 +2088,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 
 	}
 	switch_event_free_subclass(MY_EVENT_INCOMING_CHATMESSAGE);
+	switch_event_free_subclass(MY_EVENT_INCOMING_RAW);
 
 	switch_safe_free(globals.context);
 	switch_safe_free(globals.dialplan);
@@ -1901,22 +2102,22 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t * thread, void *obj)
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t *thread, void *obj)
 {
 	return skypopen_do_tcp_srv_thread_func(obj);
 }
 
-void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t * thread, void *obj)
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t *thread, void *obj)
 {
 	return skypopen_do_tcp_cli_thread_func(obj);
 }
 
-void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t * thread, void *obj)
+void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t *thread, void *obj)
 {
 	return skypopen_do_skypeapi_thread_func(obj);
 }
 
-int dtmf_received(private_t * tech_pvt, char *value)
+int dtmf_received(private_t *tech_pvt, char *value)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -1953,7 +2154,7 @@ int dtmf_received(private_t * tech_pvt, char *value)
 	return 0;
 }
 
-int start_audio_threads(private_t * tech_pvt)
+int start_audio_threads(private_t *tech_pvt)
 {
 	switch_threadattr_t *thd_attr = NULL;
 
@@ -1977,33 +2178,45 @@ int start_audio_threads(private_t * tech_pvt)
 	switch_threadattr_create(&thd_attr, skypopen_module_pool);
 	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
+	//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
 	if (switch_thread_create(&tech_pvt->tcp_srv_thread, thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
+		switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
+		//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 		return -1;
 	}
+	switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
+	//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 
 	switch_threadattr_create(&thd_attr, skypopen_module_pool);
 	switch_threadattr_detach_set(thd_attr, 0);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
+	//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
 	if (switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
+		switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
+		//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 		return -1;
 	}
+	switch_mutex_unlock(tech_pvt->mutex_thread_audio_cli);
+	//DEBUGA_SKYPE("debugging_hangup cli unlock\n", SKYPOPEN_P_LOG);
 	switch_sleep(100000);
 
 	if (tech_pvt->tcp_cli_thread == NULL || tech_pvt->tcp_srv_thread == NULL) {
-		ERRORA("tcp_cli_thread or tcp_srv_thread exited\n", SKYPOPEN_P_LOG);
+		WARNINGA("tcp_cli_thread or tcp_srv_thread exited\n", SKYPOPEN_P_LOG);
 		return -1;
 	}
 
 	return 0;
 }
 
-int new_inbound_channel(private_t * tech_pvt)
+int new_inbound_channel(private_t *tech_pvt)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -2050,7 +2263,7 @@ int new_inbound_channel(private_t * tech_pvt)
 	return 0;
 }
 
-int remote_party_is_ringing(private_t * tech_pvt)
+int remote_party_is_ringing(private_t *tech_pvt)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -2058,14 +2271,14 @@ int remote_party_is_ringing(private_t * tech_pvt)
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
-		ERRORA("No session???\n", SKYPOPEN_P_LOG);
-		goto done;
+		ERRORA("No session_uuid_str???\n", SKYPOPEN_P_LOG);
+		return SWITCH_STATUS_FALSE;
 	}
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 	} else {
 		ERRORA("No session???\n", SKYPOPEN_P_LOG);
-		goto done;
+		return SWITCH_STATUS_FALSE;
 	}
 	if (channel) {
 		switch_channel_mark_ring_ready(channel);
@@ -2076,11 +2289,10 @@ int remote_party_is_ringing(private_t * tech_pvt)
 
 	switch_core_session_rwunlock(session);
 
-  done:
-	return 0;
+	return SWITCH_STATUS_SUCCESS;
 }
 
-int remote_party_is_early_media(private_t * tech_pvt)
+int remote_party_is_early_media(private_t *tech_pvt)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -2088,7 +2300,7 @@ int remote_party_is_early_media(private_t * tech_pvt)
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	} else {
-		ERRORA("No session???\n\n\n", SKYPOPEN_P_LOG);
+		ERRORA("No session_uuid_str???\n\n\n", SKYPOPEN_P_LOG);
 		goto done;
 	}
 	if (session) {
@@ -2111,7 +2323,7 @@ int remote_party_is_early_media(private_t * tech_pvt)
 	return 0;
 }
 
-int outbound_channel_answered(private_t * tech_pvt)
+int outbound_channel_answered(private_t *tech_pvt)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
@@ -2142,7 +2354,7 @@ int outbound_channel_answered(private_t * tech_pvt)
 	return 0;
 }
 
-private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling)
+private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling)
 {
 	private_t *tech_pvt = NULL;
 	int i;
@@ -2151,7 +2363,6 @@ private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling)
 
 	/* Fact is the real interface start from 1 */
 	//XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)  
-	//if (globals.next_interface == 0) globals.next_interface = 1;
 
 	for (i = 0; i < SKYPOPEN_MAX_INTERFACES; i++) {
 		int interface_id;
@@ -2164,10 +2375,8 @@ private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling)
 
 			tech_pvt = &globals.SKYPOPEN_INTERFACES[interface_id];
 			skype_state = tech_pvt->interface_state;
-			//DEBUGA_SKYPE("skype interface: %d, name: %s, state: %d\n", SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].name, skype_state);
 			if ((tech_pvt_calling ? strcmp(tech_pvt->skype_user, tech_pvt_calling->skype_user) : 1)
-				&& (SKYPOPEN_STATE_DOWN == skype_state || 0 == skype_state) && (tech_pvt->skype_callflow == CALLFLOW_STATUS_FINISHED
-																			   || 0 == tech_pvt->skype_callflow)) {
+				&& (SKYPOPEN_STATE_IDLE == skype_state)) {
 				DEBUGA_SKYPE("returning as available skype interface name: %s, state: %d callflow: %d\n", SKYPOPEN_P_LOG, tech_pvt->name, skype_state,
 							 tech_pvt->skype_callflow);
 				if (tech_pvt_calling == NULL) {
@@ -2266,8 +2475,6 @@ SWITCH_STANDARD_API(sk_function)
 			goto end;
 		}
 
-	} else if (!strcasecmp(argv[0], "ciapalino")) {
-
 	} else if (!strcasecmp(argv[0], "reload")) {
 		if (load_config(SOFT_RELOAD) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "sk reload failed\n");
@@ -2276,7 +2483,7 @@ SWITCH_STANDARD_API(sk_function)
 		}
 	} else if (!strcasecmp(argv[0], "remove")) {
 		if (argc == 2) {
-			if (remove_interface(argv[1]) == SWITCH_STATUS_SUCCESS) {
+			if (remove_interface(argv[1], FALSE) == SWITCH_STATUS_SUCCESS) {
 				if (interface_exists(argv[1]) == SWITCH_STATUS_SUCCESS) {
 					stream->write_function(stream, "sk remove '%s' failed\n", argv[1]);
 				} else {
@@ -2353,7 +2560,7 @@ SWITCH_STANDARD_API(skypopen_function)
 }
 
 
-int skypopen_partner_handle_ring(private_t * tech_pvt)
+int skypopen_partner_handle_ring(private_t *tech_pvt)
 {
 	char msg_to_skype[1024];
 	int i;
@@ -2363,20 +2570,20 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 	char *id = tech_pvt->ring_id;
 	char *value = tech_pvt->ring_value;
 	switch_core_session_t *session = NULL;
-	//switch_channel_t *channel = NULL;
 
 	switch_mutex_lock(globals.mutex);
-
-	//WARNINGA("PARTNER_HANDLE tech_pvt->skype_call_id=%s, tech_pvt->skype_callflow=%d, tech_pvt->interface_state=%d, tech_pvt->skype_user=%s, tech_pvt->callid_number=%s, tech_pvt->ring_value=%s, tech_pvt->ring_id=%s, tech_pvt->answer_value=%s, tech_pvt->answer_id=%s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, tech_pvt->skype_callflow, tech_pvt->interface_state, tech_pvt->skype_user, tech_pvt->callid_number, tech_pvt->ring_value, tech_pvt->ring_id, tech_pvt->answer_value, tech_pvt->answer_id);
 
 	gettimeofday(&timenow, NULL);
 	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			if ((giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if ((giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_IDLE) && (strcmp(giovatech->name, tech_pvt->name)) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
-				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+				DEBUGA_SKYPE
+					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
+					 SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number,
+					 value);
 				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
 					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				} else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN) {
@@ -2399,15 +2606,13 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 	}
 	DEBUGA_SKYPE("NOT FOUND\n", SKYPOPEN_P_LOG);
 
-	if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
+	// CLOUDTREE (Thomas Hazel)
+	if (tech_pvt && tech_pvt->ringing_state == SKYPOPEN_RINGING_INIT) {
 		/* we are not inside an active call */
 
 		tech_pvt->interface_state = SKYPOPEN_STATE_PRERING;
 		gettimeofday(&tech_pvt->ring_time, NULL);
 		switch_copy_string(tech_pvt->callid_number, value, sizeof(tech_pvt->callid_number) - 1);
-
-
-		//WARNINGA("PARTNER_HANDLE_RING tech_pvt->skype_call_id=%s, tech_pvt->skype_callflow=%d, tech_pvt->interface_state=%d, tech_pvt->skype_user=%s, tech_pvt->callid_number=%s, tech_pvt->ring_value=%s, tech_pvt->ring_id=%s, tech_pvt->answer_value=%s, tech_pvt->answer_id=%s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, tech_pvt->skype_callflow, tech_pvt->interface_state, tech_pvt->skype_user, tech_pvt->callid_number, tech_pvt->ring_value, tech_pvt->ring_id, tech_pvt->answer_value, tech_pvt->answer_id);
 
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 		if (session) {
@@ -2417,29 +2622,13 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 
 		new_inbound_channel(tech_pvt);
 
-#if 0
-		session = switch_core_session_locate(tech_pvt->session_uuid_str);
-		if (session) {
-			channel = switch_core_session_get_channel(session);
-
-			switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
-			if (channel) {
-				switch_channel_mark_ring_ready(channel);
-			} else {
-				ERRORA("no channel\n", SKYPOPEN_P_LOG);
-			}
-			switch_core_session_rwunlock(session);
-		} else {
-			ERRORA("no session\n", SKYPOPEN_P_LOG);
-
-		}
-#endif //0
-
 	} else if (!tech_pvt || !tech_pvt->skype_call_id) {
 		ERRORA("No Call ID?\n", SKYPOPEN_P_LOG);
 	} else {
 		DEBUGA_SKYPE("We're in a call now (%s), let's refuse this one (%s)\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
 		sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+		skypopen_signaling_write(tech_pvt, msg_to_skype);
+		sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 		skypopen_signaling_write(tech_pvt, msg_to_skype);
 	}
 
@@ -2447,7 +2636,7 @@ int skypopen_partner_handle_ring(private_t * tech_pvt)
 	return 0;
 }
 
-int skypopen_answer(private_t * tech_pvt)
+int skypopen_answer(private_t *tech_pvt)
 {
 	char msg_to_skype[1024];
 	int i;
@@ -2461,16 +2650,17 @@ int skypopen_answer(private_t * tech_pvt)
 
 	switch_mutex_lock(globals.mutex);
 
-	//WARNINGA("ANSWER tech_pvt->skype_call_id=%s, tech_pvt->skype_callflow=%d, tech_pvt->interface_state=%d, tech_pvt->skype_user=%s, tech_pvt->callid_number=%s, tech_pvt->ring_value=%s, tech_pvt->ring_id=%s, tech_pvt->answer_value=%s, tech_pvt->answer_id=%s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, tech_pvt->skype_callflow, tech_pvt->interface_state, tech_pvt->skype_user, tech_pvt->callid_number, tech_pvt->ring_value, tech_pvt->ring_id, tech_pvt->answer_value, tech_pvt->answer_id);
-
 	gettimeofday(&timenow, NULL);
 	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_IDLE) && (strcmp(giovatech->name, tech_pvt->name)) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
-				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+				DEBUGA_SKYPE
+					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
+					 SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number,
+					 value);
 				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
 					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				} else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN) {
@@ -2482,17 +2672,22 @@ int skypopen_answer(private_t * tech_pvt)
 				if (!zstr(tech_pvt->session_uuid_str)) {
 					session = switch_core_session_locate(tech_pvt->session_uuid_str);
 				} else {
-					ERRORA("No session???\n", SKYPOPEN_P_LOG);
+					ERRORA("No session_uuid_str???\n", SKYPOPEN_P_LOG);
+					break;
 				}
 				if (session) {
 					channel = switch_core_session_get_channel(session);
 				} else {
 					ERRORA("No session???\n", SKYPOPEN_P_LOG);
+					switch_core_session_rwunlock(session);
+					break;
 				}
 				if (channel) {
 					switch_channel_set_state(channel, CS_RESET);
 				} else {
 					ERRORA("No channel???\n", SKYPOPEN_P_LOG);
+					switch_core_session_rwunlock(session);
+					break;
 				}
 
 				switch_core_session_rwunlock(session);
@@ -2508,7 +2703,8 @@ int skypopen_answer(private_t * tech_pvt)
 	}
 	DEBUGA_SKYPE("NOT FOUND\n", SKYPOPEN_P_LOG);
 
-	if (tech_pvt && tech_pvt->skype_call_id && !strlen(tech_pvt->skype_call_id)) {
+	// CLOUDTREE (Thomas Hazel)
+	if (tech_pvt && tech_pvt->ringing_state == SKYPOPEN_RINGING_INIT) {
 		/* we are not inside an active call */
 
 		tech_pvt->ib_calls++;
@@ -2531,13 +2727,15 @@ int skypopen_answer(private_t * tech_pvt)
 		DEBUGA_SKYPE("We're in a call now (%s), let's refuse this one (%s)\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
 		sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
 		skypopen_signaling_write(tech_pvt, msg_to_skype);
+		sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
+		skypopen_signaling_write(tech_pvt, msg_to_skype);
 	}
 
 	switch_mutex_unlock(globals.mutex);
 	return 0;
 }
-//int skypopen_transfer(private_t * tech_pvt, char *id, char *value)
-int skypopen_transfer(private_t * tech_pvt)
+
+int skypopen_transfer(private_t *tech_pvt)
 {
 	char msg_to_skype[1024];
 	int i;
@@ -2555,77 +2753,34 @@ int skypopen_transfer(private_t * tech_pvt)
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
 			/* let's look for a RINGING one */
-			if ((giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
+			if ((giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_IDLE) && (strcmp(giovatech->name, tech_pvt->name)) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->ring_value, value)) && ((((timenow.tv_sec - giovatech->ring_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->ring_time.tv_usec)) < 1000000)) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
 				found = 1;
-				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+				DEBUGA_SKYPE
+					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
+					 SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number,
+					 value);
 				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
 					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
-				} 
-				
-				
-#if 0	
-				
-				
-				else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN) {
-					WARNINGA("Why an interface_state %d HERE?\n", SKYPOPEN_P_LOG, tech_pvt->interface_state);
-					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				}
-
-				*tech_pvt->answer_id = '\0';
-				*tech_pvt->answer_value = '\0';
-				*tech_pvt->ring_id = '\0';
-				*tech_pvt->ring_value = '\0';
-#endif //0
 				break;
 			}
 		}
 	}
 
-
-	/*****************************************/
-#if 0
-	gettimeofday(&timenow, NULL);
 	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
 		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			if (strlen(giovatech->skype_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 500000)) {	//0.5sec
+			/* let's look for a IDLE one */
+			if ((giovatech->interface_state == SKYPOPEN_STATE_IDLE) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {
 				found = 1;
 				DEBUGA_SKYPE
-					("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
-					 SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state,
-					 giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value)
-					break;
-			}
-		}
-	}
-#endif //0
-	for (i = 0; !found && i < SKYPOPEN_MAX_INTERFACES; i++) {
-		if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
-
-			giovatech = &globals.SKYPOPEN_INTERFACES[i];
-			/* let's look for a DOWN one */
-			if ((giovatech->interface_state == SKYPOPEN_STATE_DOWN || giovatech->interface_state == 0) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user))) {	//XXX 1.0sec - can have a max of 1 call coming from the same skypename to the same skypename each 1.0 seconds
-				found = 1;
-				DEBUGA_SKYPE ("FOUND  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n", SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number, value);
+					("FOUND  (name=%s, giovatech->interface_state=%d == SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
+					 SKYPOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->skype_user, tech_pvt->skype_user, giovatech->callid_number,
+					 value);
 				if (tech_pvt->interface_state == SKYPOPEN_STATE_PRERING) {
 					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
-				} 
-				
-				
-#if 0	
-				
-				
-				else if (tech_pvt->interface_state != 0 && tech_pvt->interface_state != SKYPOPEN_STATE_DOWN) {
-					WARNINGA("Why an interface_state %d HERE?\n", SKYPOPEN_P_LOG, tech_pvt->interface_state);
-					tech_pvt->interface_state = SKYPOPEN_STATE_DOWN;
 				}
-
-				*tech_pvt->answer_id = '\0';
-				*tech_pvt->answer_value = '\0';
-				*tech_pvt->ring_id = '\0';
-				*tech_pvt->ring_value = '\0';
-#endif //0
 				break;
 			}
 		}
@@ -2659,7 +2814,7 @@ int skypopen_transfer(private_t * tech_pvt)
 			if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
 
 				giovatech = &globals.SKYPOPEN_INTERFACES[i];
-				if (strlen(giovatech->skype_transfer_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->transfer_callid_number, value)) && ((((timenow.tv_sec - giovatech->transfer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->transfer_time.tv_usec)) < 1000000)) {	//1.0 sec
+				if (strlen(giovatech->skype_transfer_call_id) && (giovatech->interface_state != SKYPOPEN_STATE_DOWN) && (giovatech->interface_state != SKYPOPEN_STATE_DEAD) && (!strcmp(giovatech->skype_user, tech_pvt->skype_user)) && (!strcmp(giovatech->transfer_callid_number, value)) && ((((timenow.tv_sec - giovatech->transfer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->transfer_time.tv_usec)) < 1000000)) {	//1.0 sec
 					found = 1;
 					DEBUGA_SKYPE
 						("FOUND  (name=%s, giovatech->interface_state=%d != SKYPOPEN_STATE_DOWN) && (giovatech->skype_user=%s == tech_pvt->skype_user=%s) && (giovatech->transfer_callid_number=%s == value=%s)\n",
@@ -2694,15 +2849,14 @@ int skypopen_transfer(private_t * tech_pvt)
 
 			sprintf(msg_to_skype, "ALTER CALL %s TRANSFER %s", id, available_skypopen_interface->skype_user);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
-			if (tech_pvt->interface_state == SKYPOPEN_STATE_SELECTED) {
-				tech_pvt->interface_state = SKYPOPEN_STATE_IDLE;	//we marked it SKYPOPEN_STATE_SELECTED just in case it has to make an outbound call
-			}
 		} else {
-			/* no skypopen interfaces idle, do nothing */
+			/* no skypopen interfaces idle, do hangup */
 			DEBUGA_SKYPE
 				("Not answering the skype_call %s, because we are already in a skypopen call(%s) and not transferring, because no other skypopen interfaces are available\n",
 				 SKYPOPEN_P_LOG, id, tech_pvt->skype_call_id);
 			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", id);
+			skypopen_signaling_write(tech_pvt, msg_to_skype);
+			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 		}
 		switch_sleep(10000);
@@ -2715,7 +2869,7 @@ int skypopen_transfer(private_t * tech_pvt)
 	return 0;
 }
 
-int incoming_chatmessage(private_t * tech_pvt, int which)
+int incoming_chatmessage(private_t *tech_pvt, int which)
 {
 	switch_event_t *event;
 	switch_core_session_t *session = NULL;
@@ -2853,6 +3007,156 @@ int next_port(void)
 	return (globals.start_port - 1);
 }
 
+#ifndef WIN32
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles *skypopen_list_add(struct SkypopenList *list, struct SkypopenHandles *handle)
+{
+	switch_mutex_lock(globals.list_mutex);
+
+	if (handle->managed == SWITCH_TRUE) {
+		// already added
+		switch_mutex_unlock(globals.list_mutex);
+		return 0;
+	}
+
+	if (list->head == 0) {
+		list->head = handle;
+		handle->prev = 0;
+
+	} else {
+		((struct SkypopenHandles *) list->tail)->next = handle;
+		((struct SkypopenHandles *) handle)->prev = list->tail;
+	}
+
+	list->tail = handle;
+	handle->next = 0;
+
+	handle->managed = SWITCH_TRUE;
+
+	list->entries++;
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles *skypopen_list_remove_by_value(struct SkypopenList *list, Display * display)
+{
+	struct SkypopenHandles *iter;
+	struct SkypopenHandles *handle = 0;
+
+	switch_mutex_lock(globals.list_mutex);
+
+	iter = (struct SkypopenHandles *) list->head;
+	while (iter != 0) {
+		if (iter->disp == display) {
+			handle = iter;
+			break;
+		}
+
+		iter = (struct SkypopenHandles *) iter->next;
+	}
+
+	if ((handle != 0) && (handle->managed == SWITCH_TRUE)) {
+		if (handle->prev == 0) {
+			list->head = ((struct SkypopenHandles *) handle)->next;
+
+		} else {
+			((struct SkypopenHandles *) handle->prev)->next = ((struct SkypopenHandles *) handle)->next;
+		}
+
+		if (handle->next == 0) {
+			list->tail = ((struct SkypopenHandles *) handle)->prev;
+
+		} else {
+			((struct SkypopenHandles *) handle->next)->prev = ((struct SkypopenHandles *) handle)->prev;
+		}
+
+		handle->managed = SWITCH_FALSE;
+		handle->next = 0;
+		handle->prev = 0;
+
+		list->entries--;
+	}
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *list, struct SkypopenHandles *handle)
+{
+	private_t *tech_pvt = NULL;
+
+	switch_mutex_lock(globals.list_mutex);
+
+	DEBUGA_SKYPE("BEGIN REMOVE\n", SKYPOPEN_P_LOG);
+	if (handle->managed == SWITCH_FALSE) {
+		// already removed
+		switch_mutex_unlock(globals.list_mutex);
+		DEBUGA_SKYPE("EXIT REMOVE\n", SKYPOPEN_P_LOG);
+		return 0;
+	}
+
+	if (handle->prev == 0) {
+		list->head = ((struct SkypopenHandles *) handle)->next;
+
+	} else {
+		((struct SkypopenHandles *) handle->prev)->next = ((struct SkypopenHandles *) handle)->next;
+	}
+
+	if (handle->next == 0) {
+		list->tail = ((struct SkypopenHandles *) handle)->prev;
+
+	} else {
+		((struct SkypopenHandles *) handle->next)->prev = ((struct SkypopenHandles *) handle)->prev;
+	}
+
+	handle->managed = SWITCH_FALSE;
+	handle->next = 0;
+	handle->prev = 0;
+
+	list->entries--;
+
+	switch_mutex_unlock(globals.list_mutex);
+	DEBUGA_SKYPE("EXIT REMOVE\n", SKYPOPEN_P_LOG);
+
+	return handle;
+}
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list?
+#ifdef XIO_ERROR_BY_UCONTEXT
+struct SkypopenHandles *skypopen_list_find(struct SkypopenList *list, struct SkypopenHandles *find)
+{
+	struct SkypopenHandles *iter;
+	struct SkypopenHandles *handle = NULL;
+
+	switch_mutex_lock(globals.list_mutex);
+
+	iter = (struct SkypopenHandles *) list->head;
+	while (iter != NULL) {
+		if (iter == find) {
+			handle = iter;
+			break;
+		}
+
+		iter = (struct SkypopenHandles *) iter->next;
+	}
+
+	switch_mutex_unlock(globals.list_mutex);
+
+	return handle;
+}
+#endif
+
+// CLOUDTREE (THomas Hazel) - is there a capable freeswitch list? 
+int skypopen_list_size(struct SkypopenList *list)
+{
+	return list->entries;
+}
+#endif /* NOT WIN32 */
 
 /* For Emacs:
  * Local Variables:

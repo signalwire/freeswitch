@@ -238,9 +238,14 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 	char *sql = NULL;
 	char *exp = NULL;
 	switch_cache_db_handle_t *db = NULL;
+	switch_core_flag_t cflags = switch_core_flags();
 	int full = 0;
 
 	
+	if (!(cflags & SCF_USE_SQL)) {
+		return NULL;
+	}
+
 	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 		return NULL;

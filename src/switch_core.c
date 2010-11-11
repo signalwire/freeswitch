@@ -1237,6 +1237,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.max_dtmf_duration = SWITCH_MAX_DTMF_DURATION;
 	runtime.default_dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
+	runtime.odbc_dbtype = DBTYPE_DEFAULT;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -1423,7 +1424,7 @@ static void switch_load_core_config(const char *file)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 
-	switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
+	//switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
 	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
 
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
@@ -1589,6 +1590,12 @@ static void switch_load_core_config(const char *file)
 						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+					}
+				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
+					if (!strcasecmp(val, "MSSQL")) {
+						runtime.odbc_dbtype = DBTYPE_MSSQL;
+					} else {
+						runtime.odbc_dbtype = DBTYPE_DEFAULT;
 					}
 #ifdef ENABLE_ZRTP
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {

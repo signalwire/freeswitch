@@ -223,7 +223,6 @@ extern "C" {
 #define ftdm_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
 #define FTDM_SPAN_IS_BRI(x)	((x)->trunk_type == FTDM_TRUNK_BRI || (x)->trunk_type == FTDM_TRUNK_BRI_PTMP)
-	
 /*!
   \brief Copy flags from one arbitrary object to another
   \command dest the object to copy the flags to

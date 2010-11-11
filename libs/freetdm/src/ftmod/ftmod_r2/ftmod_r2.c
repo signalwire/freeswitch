@@ -403,6 +403,7 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Cannot start call when channel is in use (state = %s)\n", ftdm_channel_state2str(ftdmchan->state));
 		ftdm_mutex_unlock(ftdmchan->mutex);
+		return;
 	}
 
 	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
@@ -436,9 +437,6 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
 	ftdm_mutex_unlock(ftdmchan->mutex);
-
-    ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Span is not threaded, not launching thread for this call\n");
-    return;
 }
 
 /* only called for incoming calls when the ANI, DNIS etc is complete and the user has to decide either to accept or reject the call */
@@ -447,9 +445,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Priority = (%d)\n", ani, dnis, category);
-	//ftdmchan->caller_data.priority = category;
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
-
 }
 
 static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t mode)
@@ -602,8 +598,8 @@ static void ftdm_r2_on_line_idle(openr2_chan_t *r2chan)
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end unblocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
 
-    /* XXX when should we set/unset this flag? XXX */
-    ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SIG_UP);
+	 /* XXX when should we set/unset this flag? XXX */
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SIG_UP);
 }
 
 static void ftdm_r2_write_log(openr2_log_level_t level, const char *file, const char *function, int line, const char *message)
@@ -1116,7 +1112,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		memset(r2call, 0, sizeof(*r2call));
 		openr2_chan_set_logging_func(r2chan, ftdm_r2_on_chan_log);
 		openr2_chan_set_client_data(r2chan, span->channels[i]);
-        r2call->r2chan = r2chan;
+		r2call->r2chan = r2chan;
 		span->channels[i]->call_data = r2call;
 		/* value and key are the same so just free one of them */
 		snprintf(r2call->name, sizeof(r2call->name), "chancall%d", i);
@@ -1331,8 +1327,8 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 {
 	openr2_chan_t *r2chan;
-    ftdm_r2_call_t *r2call = NULL;
-    ftdm_channel_t *ftdmchan = NULL;
+	ftdm_r2_call_t *r2call = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_status_t status;
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_r2_data_t *r2data = span->signal_data;
@@ -1368,16 +1364,14 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		}
 
 #ifndef WIN32
-        /* figure out what event to poll each channel for. POLLPRI when the channel is down,
-		 * POLLPRI|POLLIN|POLLOUT otherwise.
-		 */
-        memset(poll_events, 0, sizeof(short)*span->chan_count);
-        for (i = 0; i < span->chan_count; i++) {
-            r2chan = R2CALL(span->channels[(i+1)])->r2chan;
-            ftdmchan = openr2_chan_get_client_data(r2chan);
-
-            poll_events[i] = ftdmchan->state == FTDM_CHANNEL_STATE_DOWN ? POLLPRI : (POLLPRI | POLLIN | POLLOUT);
-        }
+		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
+		  * POLLPRI|POLLIN|POLLOUT otherwise */
+		memset(poll_events, 0, sizeof(short)*span->chan_count);
+		for (i = 0; i < span->chan_count; i++) {
+			r2chan = R2CALL(span->channels[(i+1)])->r2chan;
+			ftdmchan = openr2_chan_get_client_data(r2chan);
+			poll_events[i] = ftdmchan->state == FTDM_CHANNEL_STATE_DOWN ? POLLPRI : (POLLPRI | POLLIN | POLLOUT);
+		}
 
 		status = ftdm_span_poll_event(span, waitms, poll_events);
 #else
@@ -1394,62 +1388,61 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
-        if (FTDM_SUCCESS == status) {
+		 if (FTDM_SUCCESS == status) {
 			ftdm_event_t *event;
 			while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS) {
 				if (event->enum_id == FTDM_OOB_CAS_BITS_CHANGE) {
-                    r2call = R2CALL(event->channel);
-                    r2chan = r2call->r2chan;
+					r2call = R2CALL(event->channel);
+					r2chan = r2call->r2chan;
 
 					ftdm_log(FTDM_LOG_DEBUG, "Handling CAS on channel %d.\n", openr2_chan_get_number(r2chan));
 					// we only expect CAS and other OOB events on this thread/loop, once a call is started
 					// the MF events (in-band signaling) are handled in the call thread
 					openr2_chan_process_cas_signaling(r2chan);
-
 				} else {
 					ftdm_log(FTDM_LOG_DEBUG, "Ignoring event %d on channel %d.\n", event->enum_id, openr2_chan_get_number(r2chan));
 					// XXX TODO: handle alarms here XXX
 				}
 			}
 
-            /* XXX
-			 * when ftdm_span_poll_event() returns FTDM_SUCCESS, means there are events pending on the span.
-			 * is it possible to know on which channels those events are pending, without trasvering the span?
-			 * XXX
-             */
-            for (i = 1; i <= span->chan_count; i++) {
-                r2chan = R2CALL(span->channels[i])->r2chan;
-                ftdmchan = openr2_chan_get_client_data(r2chan);
-                r2call = R2CALL(ftdmchan);
+			/* XXX
+			* when ftdm_span_poll_event() returns FTDM_SUCCESS, means there are events pending on the span.
+			* is it possible to know on which channels those events are pending, without traversing the span?
+			* XXX */
+			for (i = 1; i <= span->chan_count; i++) {
+				r2chan = R2CALL(span->channels[i])->r2chan;
+				ftdmchan = openr2_chan_get_client_data(r2chan);
+				r2call = R2CALL(ftdmchan);
 
-                ftdm_mutex_lock(ftdmchan->mutex);
-                ftdm_set_flag(r2call, FTDM_R2_PROCESSING);
+				ftdm_mutex_lock(ftdmchan->mutex);
+				ftdm_set_flag(r2call, FTDM_R2_PROCESSING);
 
-                if (ftdm_r2_state_advance(ftdmchan)) {
-                    ftdm_clear_flag(r2call, FTDM_R2_PROCESSING);
-                    ftdm_mutex_unlock(ftdmchan->mutex);
-                    continue;
-                }
+				if (ftdm_r2_state_advance(ftdmchan)) {
+					ftdm_clear_flag(r2call, FTDM_R2_PROCESSING);
+					ftdm_mutex_unlock(ftdmchan->mutex);
+					continue;
+				}
 
-                /* handle timeout events first if any */
-                openr2_chan_run_schedule(r2chan);
+				/* handle timeout events first if any */
+				openr2_chan_run_schedule(r2chan);
 
-                /* process mf tones, if any */
-                if (openr2_chan_get_read_enabled(r2chan))
-                    openr2_chan_process_mf_signaling(r2chan);
+				/* process mf tones, if any */
+				if (openr2_chan_get_read_enabled(r2chan)) {
+					openr2_chan_process_mf_signaling(r2chan);
+				}
 
-                if (ftdm_r2_state_advance(ftdmchan)) {
-                    ftdm_clear_flag(r2call, FTDM_R2_PROCESSING);
-                    ftdm_mutex_unlock(ftdmchan->mutex);
-                    continue;
-                }
+				if (ftdm_r2_state_advance(ftdmchan)) {
+					ftdm_clear_flag(r2call, FTDM_R2_PROCESSING);
+					ftdm_mutex_unlock(ftdmchan->mutex);
+					continue;
+				}
 
-                ftdm_clear_flag(r2call, FTDM_R2_PROCESSING);
-                ftdm_mutex_unlock(ftdmchan->mutex);
-            }
+				ftdm_clear_flag(r2call, FTDM_R2_PROCESSING);
+				ftdm_mutex_unlock(ftdmchan->mutex);
+			}
 		} else if (status != FTDM_TIMEOUT) {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_span_poll_event returned %d.\n", status);
-		} 
+		}
 		ftdm_sleep(20);
 	}
 

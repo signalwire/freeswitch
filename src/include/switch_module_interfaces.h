@@ -134,6 +134,7 @@ typedef switch_status_t (*switch_io_send_dtmf_t) (switch_core_session_t *, const
 typedef switch_status_t (*switch_io_receive_message_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_io_receive_event_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_io_state_change_t) (switch_core_session_t *);
+typedef switch_status_t (*switch_io_state_run_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_io_read_video_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_video_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_call_cause_t (*switch_io_resurrect_session_t) (switch_core_session_t **, switch_memory_pool_t **, void *);
@@ -174,6 +175,8 @@ struct switch_io_routines {
 	switch_io_read_video_frame_t read_video_frame;
 	/*! write a video frame to a session */
 	switch_io_write_video_frame_t write_video_frame;
+	/*! change a sessions channel run state */
+	switch_io_state_run_t state_run;
 	/*! resurrect a session */
 	switch_io_resurrect_session_t resurrect_session;
 	void *padding[10];

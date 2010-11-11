@@ -657,7 +657,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, chunk);
 	
 	if (status == FTDM_FAIL) {
-		ftdm_log(FTDM_LOG_WARNING, "failed to wait for I/O\n");
+		ftdm_log(FTDM_LOG_ERROR, "Failed to wait for I/O\n");
 		goto fail;
 	}
 	
@@ -3088,85 +3088,44 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "libpri_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
+			ftdm_conf_parameter_t spanparameters[10];
 			ftdm_status_t zstatus = FTDM_FAIL;
-			const char *context = "default";
+			const char *context  = "default";
 			const char *dialplan = "XML";
-			
-			const char *o_node = "cpe";
-			const char *o_switch = "dms100";
-			const char *o_dp = "unknown";
-			const char *o_l1 = "ulaw";
-			const char *o_debug = "none";
-			const char* opts = "none";	
-					
-			uint32_t span_id = 0;
+			unsigned paramindex = 0;
 			ftdm_span_t *span = NULL;
+			uint32_t span_id = 0;
 
-			
-			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+			if (!name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
+				continue;
+			}
+
+			for (param = switch_xml_child(myspan, "param"); param && paramindex < 10; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (!strcasecmp(var, "node")) {
-					o_node = val;
-				} else if (!strcasecmp(var, "switch")) {
-					o_switch = val;
-				} else if (!strcasecmp(var, "dp")) {
-					o_dp = val;
-				} else if (!strcasecmp(var, "l1")) {
-					o_l1 = val;
-				} else if (!strcasecmp(var, "debug")) {
-					o_debug = val;
-				} else if (!strcasecmp(var, "context")) {
+				if (!strcasecmp(var, "context")) {
 					context = val;
-				} else if (!strcasecmp(var, "opts")) {
-					opts = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
-				}
-			}
-	
-			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
-				continue;
-			}
-			
-			if (name) {
-				zstatus = ftdm_span_find_by_name(name, &span);
-			} else {
-				if (switch_is_number(id)) {
-					span_id = atoi(id);
-					zstatus = ftdm_span_find(span_id, &span);
-				}
-
-				if (zstatus != FTDM_SUCCESS) {
-					zstatus = ftdm_span_find_by_name(id, &span);
+				} else {
+					spanparameters[paramindex].var = var;
+					spanparameters[paramindex].val = val;
+					paramindex++;
 				}
 			}
 
+			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
-			if (!span_id) {
-				span_id = ftdm_span_get_id(span);
-			}
-			
-			
-			if (ftdm_configure_span(span, "libpri", on_clear_channel_signal, 
-								   "node", o_node,
-								   "switch", o_switch,
-								   "dp", o_dp,
-								   "l1", o_l1,
-								   "debug", o_debug,
-								   "opts", opts,
-								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d node: %s switch: %s dp: %s l1: %s debug: %s error: %s\n", 
-						span_id, switch_str_nil(o_node), switch_str_nil(o_switch), switch_str_nil(o_dp), switch_str_nil(o_l1), switch_str_nil(o_debug),
-						ftdm_span_get_last_error(span));
+			span_id = ftdm_span_get_id(span);
+			if (ftdm_configure_span_signaling(span, "libpri", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
