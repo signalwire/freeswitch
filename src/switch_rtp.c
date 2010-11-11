@@ -772,6 +772,11 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, switch_rtp_bug_flag_t bugs)
 {
 	rtp_session->rtp_bugs = bugs;
+
+	if ((rtp_session->rtp_bugs & RTP_BUG_START_SEQ_AT_ZERO)) {
+		rtp_session->seq = 0;
+	}
+
 }
 
 
@@ -1366,7 +1371,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 		switch_sockaddr_info_get(&rtp_session->rtcp_from_addr, NULL, SWITCH_UNSPEC, 0, 0, pool);
 	}
-	rtp_session->seq = (rtp_session->rtp_bugs & RTP_BUG_START_SEQ_AT_ZERO) ? 0 : (uint16_t) rand();
+	rtp_session->seq = (uint16_t) rand();
 	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL));
 
 	rtp_session->send_msg.header.ssrc = htonl(rtp_session->ssrc);
