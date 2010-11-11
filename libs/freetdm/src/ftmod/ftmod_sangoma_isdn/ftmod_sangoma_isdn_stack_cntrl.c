@@ -113,40 +113,6 @@ ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span)
 }
 
 
-ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span)
-{
-	L1Mngmt cntrl;
-	Pst pst;
-
-	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
-
-	/* initalize the post structure */
-	stack_pst_init(&pst);
-
-	/* insert the destination Entity */
-	pst.dstEnt = ENTL1;
-
-	/* initalize the control structure */
-	memset(&cntrl, 0, sizeof(cntrl));
-
-	/* initalize the control header */
-	stack_hdr_init(&cntrl.hdr);
-
-	cntrl.hdr.msgType = TCNTRL;			/* configuration */
-	cntrl.hdr.entId.ent = ENTL1;		/* entity */
-	cntrl.hdr.entId.inst = S_INST;		/* instance */
-	cntrl.hdr.elmId.elmnt = STTSAP;		/* SAP Specific cntrl */
-
-	cntrl.t.cntrl.action = AENA;
-	cntrl.t.cntrl.subAction = SAELMNT;
-	cntrl.t.cntrl.sapId = signal_data->link_id;
-	
-	if (sng_isdn_phy_cntrl(&pst, &cntrl)) {
-		return FTDM_FAIL;
-	}
-	return FTDM_SUCCESS;
-}
-
 ftdm_status_t sngisdn_activate_phy(ftdm_span_t *span)
 {
 
