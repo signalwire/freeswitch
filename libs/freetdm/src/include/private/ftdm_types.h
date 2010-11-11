@@ -176,10 +176,11 @@ typedef enum {
 	FTDM_SPAN_USE_CHAN_QUEUE = (1 << 6),
 	FTDM_SPAN_SUGGEST_CHAN_ID = (1 << 7),
 	FTDM_SPAN_USE_AV_RATE = (1 << 8),
+	FTDM_SPAN_PWR_SAVING = (1 << 9),
 	/* If you use this flag, you MUST call ftdm_span_trigger_signals to deliver the user signals
 	 * after having called ftdm_send_span_signal(), which with this flag it will just enqueue the signal
 	 * for later delivery */
-	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 9),
+	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 10),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */

@@ -38,52 +38,52 @@ extern ftdm_sngisdn_data_t	g_sngisdn_data;
 
 uint8_t sng_isdn_stack_switchtype(sngisdn_switchtype_t switchtype);
 
-ftdm_status_t sng_isdn_cfg_phy(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cfg_q921(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cfg_q931(ftdm_span_t *span);
-ftdm_status_t sng_isdn_cfg_cc(ftdm_span_t *span);
+ftdm_status_t sngisdn_cfg_phy(ftdm_span_t *span);
+ftdm_status_t sngisdn_cfg_q921(ftdm_span_t *span);
+ftdm_status_t sngisdn_cfg_q931(ftdm_span_t *span);
+ftdm_status_t sngisdn_cfg_cc(ftdm_span_t *span);
 
-ftdm_status_t sng_isdn_stack_cfg_phy_gen(void);
-ftdm_status_t sng_isdn_stack_cfg_q921_gen(void);
-ftdm_status_t sng_isdn_stack_cfg_q931_gen(void);
-ftdm_status_t sng_isdn_stack_cfg_cc_gen(void);
+ftdm_status_t sngisdn_stack_cfg_phy_gen(void);
+ftdm_status_t sngisdn_stack_cfg_q921_gen(void);
+ftdm_status_t sngisdn_stack_cfg_q931_gen(void);
+ftdm_status_t sngisdn_stack_cfg_cc_gen(void);
 
 
-ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management);
-ftdm_status_t sng_isdn_stack_cfg_q931_tsap(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_cfg_q931_dlsap(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_cfg_q931_lce(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management);
+ftdm_status_t sngisdn_stack_cfg_q931_tsap(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span);
 
-ftdm_status_t sng_isdn_stack_cfg_cc_sap(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg_cc_sap(ftdm_span_t *span);
 
-ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span)
+ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
 	if (!g_sngisdn_data.gen_config_done) {
 		g_sngisdn_data.gen_config_done = 1;
 		ftdm_log(FTDM_LOG_DEBUG, "Starting general stack configuration\n");
-		if(sng_isdn_stack_cfg_phy_gen()!= FTDM_SUCCESS) {
+		if(sngisdn_stack_cfg_phy_gen()!= FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_CRIT, "Failed general physical configuration\n");
 			return FTDM_FAIL;
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "General stack physical done\n");
 	
-		if(sng_isdn_stack_cfg_q921_gen()!= FTDM_SUCCESS) {
+		if(sngisdn_stack_cfg_q921_gen()!= FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_CRIT, "Failed general q921 configuration\n");
 			return FTDM_FAIL;
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "General stack q921 done\n");
 
-		if(sng_isdn_stack_cfg_q931_gen()!= FTDM_SUCCESS) {
+		if(sngisdn_stack_cfg_q931_gen()!= FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_CRIT, "Failed general q921 configuration\n");
 			return FTDM_FAIL;
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "General stack q931 done\n");
 
-		if(sng_isdn_stack_cfg_cc_gen()!= FTDM_SUCCESS) {
+		if(sngisdn_stack_cfg_cc_gen()!= FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_CRIT, "Failed general CC configuration\n");
 			return FTDM_FAIL;
 		}
@@ -92,26 +92,26 @@ ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span)
 	}
 
 	/* TODO: for NFAS, should only call these function for spans with d-chans */
-	if (sng_isdn_stack_cfg_phy_psap(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_cfg_phy_psap(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:phy_psap configuration failed\n", span->name);
 		return FTDM_FAIL;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%s:phy_psap configuration done\n", span->name);
 
-	if (sng_isdn_stack_cfg_q921_msap(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_cfg_q921_msap(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:q921_msap configuration failed\n", span->name);
 		return FTDM_FAIL;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%s:q921_msap configuration done\n", span->name);
 
-	if (sng_isdn_stack_cfg_q921_dlsap(span, 0) != FTDM_SUCCESS) {
+	if (sngisdn_stack_cfg_q921_dlsap(span, 0) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:q921_dlsap configuration failed\n", span->name);
 		return FTDM_FAIL;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%s:q921_dlsap configuration done\n", span->name);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-		if (sng_isdn_stack_cfg_q921_dlsap(span, 1) != FTDM_SUCCESS) {
+		if (sngisdn_stack_cfg_q921_dlsap(span, 1) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "%s:q921_dlsap management configuration failed\n", span->name);
 			return FTDM_FAIL;
 		}
@@ -119,13 +119,13 @@ ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span)
 	}
 	
 
-	if (sng_isdn_stack_cfg_q931_dlsap(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_cfg_q931_dlsap(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:q931_dlsap configuration failed\n", span->name);
 		return FTDM_FAIL;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%s:q931_dlsap configuration done\n", span->name);
 
-	if (sng_isdn_stack_cfg_q931_lce(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_cfg_q931_lce(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:q931_lce configuration failed\n", span->name);
 		return FTDM_FAIL;
 	}
@@ -134,13 +134,13 @@ ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span)
 	if (!g_sngisdn_data.ccs[signal_data->cc_id].config_done) {
 		g_sngisdn_data.ccs[signal_data->cc_id].config_done = 1;
 		/* if BRI, need to configure dlsap_mgmt */
-		if (sng_isdn_stack_cfg_q931_tsap(span) != FTDM_SUCCESS) {
+		if (sngisdn_stack_cfg_q931_tsap(span) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "%s:q931_tsap configuration failed\n", span->name);
 			return FTDM_FAIL;
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "%s:q931_tsap configuration done\n", span->name);
 
-		if (sng_isdn_stack_cfg_cc_sap(span) != FTDM_SUCCESS) {
+		if (sngisdn_stack_cfg_cc_sap(span) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "%s:cc_sap configuration failed\n", span->name);
 			return FTDM_FAIL;
 		}
@@ -153,7 +153,7 @@ ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span)
 
 
 
-ftdm_status_t sng_isdn_stack_cfg_phy_gen(void)
+ftdm_status_t sngisdn_stack_cfg_phy_gen(void)
 {
 	/*local variables*/
     L1Mngmt     cfg;    /*configuration structure*/
@@ -191,14 +191,11 @@ ftdm_status_t sng_isdn_stack_cfg_phy_gen(void)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
-{
-	ftdm_iterator_t 	*chaniter;
-	ftdm_iterator_t 	*curr;	
+ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
+{	
     L1Mngmt				cfg;
     Pst					pst;
 
-	int32_t d_channel_fd = -1;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
     /* initalize the post structure */
@@ -220,25 +217,13 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
     cfg.hdr.elmId.elmnt = STPSAP;
 
 	cfg.hdr.elmId.elmntInst1    = signal_data->link_id;
-
-
-	/* Find the d-channel */
-	chaniter = ftdm_span_get_chan_iterator(span, NULL);
-	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-		ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
-		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
-			d_channel_fd = (int32_t)ftdmchan->sockfd;
-			break;
-		}
-	}
-	ftdm_iterator_free(chaniter);
-
-	if(d_channel_fd < 0) {
+	
+	if (!signal_data->dchan) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:No d-channels specified\n", span->name);
 		return FTDM_FAIL;
-	}
-	
-	cfg.t.cfg.s.l1PSAP.sockfd = d_channel_fd;
+	} 
+
+	cfg.t.cfg.s.l1PSAP.sockfd = (int32_t)signal_data->dchan->sockfd;
 	
 	switch(span->trunk_type) {
 		case FTDM_TRUNK_E1:
@@ -257,7 +242,7 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
 			return FTDM_FAIL;
 	}	
     cfg.t.cfg.s.l1PSAP.spId		= signal_data->link_id;
-
+		
 	if (sng_isdn_phy_config(&pst, &cfg)) {
 		return FTDM_FAIL;
 	}
@@ -265,7 +250,7 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
 }
 
 
-ftdm_status_t sng_isdn_stack_cfg_q921_gen(void)
+ftdm_status_t sngisdn_stack_cfg_q921_gen(void)
 {
 	BdMngmt cfg;
     Pst     pst;
@@ -308,7 +293,7 @@ ftdm_status_t sng_isdn_stack_cfg_q921_gen(void)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span)
+ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 {
 	BdMngmt cfg;
     Pst     pst;
@@ -401,7 +386,7 @@ ftdm_status_t sng_isdn_stack_cfg_q921_msap(ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management)
+ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management)
 {
 	BdMngmt cfg;
     Pst     pst;
@@ -483,7 +468,7 @@ ftdm_status_t sng_isdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t managemen
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_stack_cfg_q931_gen(void)
+ftdm_status_t sngisdn_stack_cfg_q931_gen(void)
 {
 	InMngmt cfg;
     Pst     pst;
@@ -538,7 +523,7 @@ ftdm_status_t sng_isdn_stack_cfg_q931_gen(void)
 }
 
 /* Link between CC and q931 */
-ftdm_status_t sng_isdn_stack_cfg_q931_tsap(ftdm_span_t *span)
+ftdm_status_t sngisdn_stack_cfg_q931_tsap(ftdm_span_t *span)
 {
 	InMngmt cfg;
     Pst     pst;
@@ -601,7 +586,7 @@ ftdm_status_t sng_isdn_stack_cfg_q931_tsap(ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
+ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 {
 	InMngmt cfg;
     Pst     pst;
@@ -851,7 +836,7 @@ ftdm_status_t sng_isdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_stack_cfg_q931_lce(ftdm_span_t *span)
+ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 {
 	InMngmt cfg;
     Pst     pst;
@@ -927,7 +912,7 @@ ftdm_status_t sng_isdn_stack_cfg_q931_lce(ftdm_span_t *span)
 }
 
 
-ftdm_status_t sng_isdn_stack_cfg_cc_gen(void)
+ftdm_status_t sngisdn_stack_cfg_cc_gen(void)
 {
 	CcMngmt cfg;
 	Pst     pst;
@@ -966,7 +951,7 @@ ftdm_status_t sng_isdn_stack_cfg_cc_gen(void)
 }
 
 
-ftdm_status_t sng_isdn_stack_cfg_cc_sap(ftdm_span_t *span)
+ftdm_status_t sngisdn_stack_cfg_cc_sap(ftdm_span_t *span)
 {
 	CcMngmt cfg;
 	Pst     pst;

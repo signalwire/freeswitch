@@ -137,7 +137,7 @@ FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
+ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
 {
 	
 	if (span->trunk_type == FTDM_TRUNK_BRI ||
@@ -380,6 +380,39 @@ ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmc
 		}
 	}
 	return FTDM_SUCCESS;
+}
+
+void sngisdn_t3_timeout(void* p_sngisdn_info)
+{
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
+	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Timer T3 expired (suId:%d suInstId:%u spInstId:%u)\n",
+				  signal_data->cc_id, sngisdn_info->glare.spInstId, sngisdn_info->glare.suInstId);
+	ftdm_mutex_lock(ftdmchan->mutex);
+	if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)){
+		/* PHY layer timed-out, need to clear the call */
+		ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Failed to Wake-Up line (suId:%d suInstId:%u spInstId:%u)\n",
+					  signal_data->cc_id, sngisdn_info->glare.spInstId, sngisdn_info->glare.suInstId);
+
+		ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NO_ROUTE_DESTINATION;
+		ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
+		ftdm_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+	}	
+	ftdm_mutex_unlock(ftdmchan->mutex);
+}
+
+void sngisdn_delayed_setup(void* p_sngisdn_info)
+{
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
+	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	ftdm_mutex_lock(ftdmchan->mutex);
+	sngisdn_snd_setup(ftdmchan);
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return;
 }
 
 void sngisdn_delayed_release(void* p_sngisdn_info)

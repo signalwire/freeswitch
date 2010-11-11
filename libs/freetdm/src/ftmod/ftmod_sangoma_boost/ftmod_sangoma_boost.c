@@ -1557,11 +1557,11 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 			ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
 			ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
 			if (strlen(ftdmchan->caller_data.rdnis.digits)) {
-					event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
-					event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
-					event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
+				event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
+				event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
+				event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
 			}
-		    
+
 			event.calling.screening_ind = ftdmchan->caller_data.screen;
 			event.calling.presentation_ind = ftdmchan->caller_data.pres;
 

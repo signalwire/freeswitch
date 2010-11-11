@@ -736,7 +736,7 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 				
 				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_UP);
-				sng_isdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
+				sngisdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
 			} else {
 				ftdm_log(FTDM_LOG_WARNING, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
 						 		status->t.usta.suId,
@@ -745,7 +745,7 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 				
 				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_DOWN);
-				sng_isdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
+				sngisdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
 			}
 		}
 		break;
@@ -864,6 +864,26 @@ end_of_trace:
 	ftdm_safe_free(data_str);
 	SPutMsg(mBuf);
 	return;
+}
+
+int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length)
+{
+	ftdm_status_t status;
+	ftdm_wait_flag_t flags = FTDM_WRITE;
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
+	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
+
+	status = signal_data->dchan->fio->wait(signal_data->dchan, &flags, 10);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_WARNING, "transmit timed-out\n");
+		return -1;
+	}
+	status = signal_data->dchan->fio->write(signal_data->dchan, buff, (ftdm_size_t*)&length);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_CRIT, "Failed to transmit frame\n");
+		return -1;
+	}
+	return 0;
 }
 
 void sngisdn_rcv_sng_assert(char *message)

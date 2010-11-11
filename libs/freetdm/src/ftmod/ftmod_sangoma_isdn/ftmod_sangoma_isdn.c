@@ -47,6 +47,8 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span);
 
 ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
 static void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan);
+static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span);
+static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event);
 
 static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
@@ -56,7 +58,7 @@ static sng_isdn_event_interface_t		g_sngisdn_event_interface;
 
 ftdm_sngisdn_data_t				g_sngisdn_data;
 
-extern ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
+extern ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 extern ftdm_status_t sngisdn_check_free_ids(void);
 
 ftdm_state_map_t sangoma_isdn_state_map = {
@@ -238,6 +240,106 @@ static __inline__ void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftd
 	}
 }
 
+static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event)
+{
+
+	switch (event) {
+		/* Check if the span woke up from power-saving mode */
+		case FTDM_OOB_ALARM_CLEAR:
+			sngisdn_snd_event(span, SNG_L1EVENT_ALARM_OFF);
+			if (FTDM_SPAN_IS_BRI(span)) {
+				ftdm_channel_t *ftdmchan;
+				ftdm_iterator_t *chaniter = NULL;
+				ftdm_iterator_t *curr = NULL;
+				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+				
+				chaniter = ftdm_span_get_chan_iterator(span, NULL);
+				for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+					ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+					sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
+
+					if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)) {
+						ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
+
+						ftdm_sched_timer(signal_data->sched, "delayed_setup", 1, sngisdn_delayed_setup, (void*) ftdmchan->call_data, NULL);
+					}
+				}
+				ftdm_iterator_free(chaniter);
+			}
+			break;
+		case FTDM_OOB_ALARM_TRAP:		
+			sngisdn_snd_event(span, SNG_L1EVENT_ALARM_ON);
+			break;
+		default:
+			/* Ignore other events for now */
+			break;
+	}
+}
+
+static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span)
+{
+	ftdm_status_t		ret_status;
+	ret_status = ftdm_span_poll_event(span, 0, NULL);
+	switch(ret_status) {
+		case FTDM_SUCCESS:
+			{
+				ftdm_event_t *event;
+				while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS) {
+					ftdm_sangoma_isdn_process_phy_events(span, event->enum_id);
+				}
+			}
+			break;
+		case FTDM_TIMEOUT:
+			/* No events pending */
+			break;
+		default:
+			ftdm_log(FTDM_LOG_WARNING, "%s:Failed to poll span event\n", span->name);
+	}
+}
+
+static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
+{
+	uint8_t data[1000];
+	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_wait_flag_t wflags = FTDM_READ;
+	ftdm_span_t *span = (ftdm_span_t*) obj;
+	ftdm_channel_t *dchan = ((sngisdn_span_data_t*)span->signal_data)->dchan;
+	ftdm_size_t len = 0;
+	
+	
+	ftdm_assert(dchan, "Span does not have a dchannel");
+	ftdm_channel_open_chan(dchan);
+	
+	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
+		wflags = FTDM_READ;
+		status = ftdm_channel_wait(dchan, &wflags, 0);
+		switch(status) {
+			case FTDM_FAIL:
+				ftdm_log_chan_msg(dchan, FTDM_LOG_CRIT, "Failed to wait for d-channel\n");
+				break;
+			case FTDM_TIMEOUT:
+				break;
+			case FTDM_SUCCESS:
+				if ((wflags & FTDM_READ)) {
+					len = 1000;
+					status = ftdm_channel_read(dchan, data, &len);
+					if (status == FTDM_SUCCESS) {
+						sngisdn_snd_data(span, data, len);
+					} else {
+						ftdm_log_chan_msg(dchan, FTDM_LOG_WARNING, "Failed to read from channel \n");
+					}
+				} else {
+					ftdm_log_chan_msg(dchan, FTDM_LOG_CRIT, "Failed to poll for d-channel\n");
+				}
+				break;
+			default:
+				ftdm_log_chan_msg(dchan, FTDM_LOG_CRIT, "Unhandled IO event\n");
+		}
+	}
+	ftdm_channel_close(&dchan);
+	return NULL;
+}
+
 static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 {
 	ftdm_interrupt_t	*ftdm_sangoma_isdn_int[2];
@@ -300,21 +402,8 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 		}
 
 		/* Poll for events, e.g HW DTMF */
-		ret_status = ftdm_span_poll_event(span, 0, NULL);
-		switch(ret_status) {
-			case FTDM_SUCCESS:
-				{
-					ftdm_event_t *event;
-					while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS);
-				}
-				break;
-			case FTDM_TIMEOUT:
-				/* No events pending */
-				break;
-			default:
-				ftdm_log(FTDM_LOG_WARNING, "%s:Failed to poll span event\n", span->name);
-		}
-			
+		ftdm_sangoma_isdn_poll_events(span);
+		
 		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
 			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
 				sleep = SNGISDN_EVENT_POLL_RATE;
@@ -498,8 +587,20 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		}
 		break;
 	case FTDM_CHANNEL_STATE_DIALING: /* outgoing call request */
-		{
-			sngisdn_snd_setup(ftdmchan);
+		{			
+			if (FTDM_SPAN_IS_BRI(ftdmchan->span) &&
+				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM) &&
+				ftdm_test_flag(ftdmchan->span, FTDM_SPAN_PWR_SAVING)) {
+
+				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+				
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Line activation\n");
+				sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);
+				sngisdn_wake_up_phy(ftdmchan->span);
+				ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
+			} else {
+				sngisdn_snd_setup(ftdmchan);
+			}
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
@@ -592,7 +693,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 					sngisdn_snd_release(ftdmchan, 0);
 
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-						sng_isdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
+						sngisdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 					}
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
@@ -747,7 +848,7 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 {	
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
-	if (sng_isdn_stack_start(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
 		return FTDM_FAIL;
 	}
@@ -758,6 +859,12 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	/*start the span monitor thread*/
 	if (ftdm_thread_create_detached(ftdm_sangoma_isdn_run, span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT,"Failed to start Sangoma ISDN Span Monitor Thread!\n");
+		return FTDM_FAIL;
+	}
+
+	/*start the dchan monitor thread*/
+	if (ftdm_thread_create_detached(ftdm_sangoma_isdn_dchan_run, span) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT,"Failed to start Sangoma ISDN d-channel Monitor Thread!\n");
 		return FTDM_FAIL;
 	}
 
@@ -782,7 +889,7 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span)
 		ftdm_sleep(10);
 	}
 
-	if (sng_isdn_stack_stop(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_stop(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to stop span %s\n", span->name);
 	}
 	
@@ -834,7 +941,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 		return FTDM_FAIL;
 	}
 
-	if (sng_isdn_stack_cfg(span) != FTDM_SUCCESS) {
+	if (sngisdn_stack_cfg(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Sangoma ISDN Stack configuration failed\n");
 		return FTDM_FAIL;
 	}
@@ -856,9 +963,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
-
-		ftdm_set_flag(span, FTDM_SPAN_USE_AV_RATE);
-		sng_isdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
+		
+		sngisdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
 	}
 
 	/* Initialize scheduling context */
@@ -906,7 +1012,9 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	g_sngisdn_event_interface.sta.sng_q921_trc_ind	= sngisdn_rcv_q921_trace;
 	g_sngisdn_event_interface.sta.sng_q931_sta_ind	= sngisdn_rcv_q931_ind;
 	g_sngisdn_event_interface.sta.sng_q931_trc_ind	= sngisdn_rcv_q931_trace;
-	g_sngisdn_event_interface.sta.sng_cc_sta_ind	= sngisdn_rcv_cc_ind;	
+	g_sngisdn_event_interface.sta.sng_cc_sta_ind	= sngisdn_rcv_cc_ind;
+
+	g_sngisdn_event_interface.io.sng_data_req = sngisdn_rcv_data_req;
 
 	for(i=1;i<=MAX_VARIANTS;i++) {		
 		ftdm_mutex_create(&g_sngisdn_data.ccs[i].mutex);
@@ -914,7 +1022,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	
 	/* initalize sng_isdn library */
 
-	ftdm_assert_return(!sng_isdn_init(&g_sngisdn_event_interface), FTDM_FAIL, "Failed to initialize stack\n");	
+	ftdm_assert_return(!sng_isdn_init(&g_sngisdn_event_interface), FTDM_FAIL, "Failed to initialize stack\n");
 	return FTDM_SUCCESS;
 }
 
@@ -968,11 +1076,11 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			goto done;
 		}
 		if (!strcasecmp(trace_opt, "q921")) {
-			sng_isdn_activate_trace(span, SNGISDN_TRACE_Q921);
+			sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 		} else if (!strcasecmp(trace_opt, "q931")) {
-			sng_isdn_activate_trace(span, SNGISDN_TRACE_Q931);
+			sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
 		} else if (!strcasecmp(trace_opt, "disable")) {
-			sng_isdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
+			sngisdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
 		} else {
 			stream->write_function(stream, "-ERR invalid trace option <q921|q931> <span name>\n");
 		}	

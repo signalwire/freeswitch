@@ -539,7 +539,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 		case FTDM_CHANNEL_STATE_DIALING:
 			/* Remote side rejected our SETUP message on outbound call */
 			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-				sng_isdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
+				sngisdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 			}
 			/* fall-through */
 		case FTDM_CHANNEL_STATE_PROGRESS:

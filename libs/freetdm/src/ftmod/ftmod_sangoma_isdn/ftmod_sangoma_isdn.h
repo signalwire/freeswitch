@@ -74,6 +74,7 @@ typedef enum {
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
 	FLAG_SEND_DISC  		= (1 << 9),
+	FLAG_ACTIVATING			= (1 << 10), /* Used for BRI only, flag is set after we request line CONNECTED */
 } sngisdn_flag_t;
 
 
@@ -167,6 +168,7 @@ typedef struct sngisdn_chan_data {
 /* Span specific data */
 typedef struct sngisdn_span_data {
 	ftdm_span_t		*ftdm_span;
+	ftdm_channel_t	*dchan;
 	uint8_t			link_id;
 	uint8_t 		switchtype;
 	uint8_t			signalling;			/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
@@ -181,6 +183,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			facility;
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
+	uint8_t			timer_t3;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
@@ -275,7 +278,7 @@ void stack_hdr_init(Header *hdr);
 void stack_pst_init(Pst *pst);
 FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
 FT_DECLARE_INLINE(ftdm_status_t) get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
-FT_DECLARE_INLINE(ftdm_status_t) sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
+FT_DECLARE_INLINE(ftdm_status_t) sngisdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
 
 /* Outbound Call Control functions */
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
@@ -290,25 +293,28 @@ void sngisdn_snd_reset(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_data(ftdm_span_t *span, uint8_t *data, ftdm_size_t len);
+void sngisdn_snd_event(ftdm_span_t *span, sng_isdn_l1_event_t l1_event);
 
 /* Inbound Call Control functions */
-void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt);
-void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt);
-void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt);
-void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
-void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
-void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
-void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
-void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
-void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_sta_cfm ( int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
-void sngisdn_rcv_srv_ind ( int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_srv_cfm ( int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_rst_cfm ( int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
-void sngisdn_rcv_rst_ind ( int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+void sngisdn_rcv_con_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_con_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_cnst_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_disc_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt);
+void sngisdn_rcv_rel_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt);
+void sngisdn_rcv_dat_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt);
+void sngisdn_rcv_sshl_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
+void sngisdn_rcv_sshl_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
+void sngisdn_rcv_rmrt_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
+void sngisdn_rcv_rmrt_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
+void sngisdn_rcv_flc_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
+void sngisdn_rcv_fac_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_sta_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
+void sngisdn_rcv_srv_ind(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_srv_cfm(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_rst_cfm(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+void sngisdn_rcv_rst_ind(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length);
 
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event);
 void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event);
@@ -364,15 +370,18 @@ static __inline__ void sngisdn_set_flag(sngisdn_chan_data_t *sngisdn_info, sngis
 
 void handle_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t status);
+void sngisdn_delayed_setup(void* p_sngisdn_info);
 void sngisdn_delayed_release(void* p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
 void sngisdn_facility_timeout(void* p_sngisdn_info);
+void sngisdn_t3_timeout(void* p_sngisdn_info);
 
 /* Stack management functions */
-ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_start(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_stop(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
+ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
 void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 void sngisdn_print_spans(ftdm_stream_handle_t *stream);

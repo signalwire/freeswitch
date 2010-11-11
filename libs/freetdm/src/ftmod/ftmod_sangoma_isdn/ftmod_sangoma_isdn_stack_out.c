@@ -600,6 +600,17 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 	return;
 }
 
+void sngisdn_snd_data(ftdm_span_t *span, uint8_t *data, ftdm_size_t len)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+	sng_isdn_data_ind(signal_data->link_id, data, len);
+}
+
+void sngisdn_snd_event(ftdm_span_t *span, sng_isdn_l1_event_t l1_event)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+	sng_isdn_event_ind(signal_data->link_id, l1_event);
+}
 
 
 /* For Emacs:
