@@ -873,16 +873,30 @@ int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length)
 	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
 	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
 
-	status = signal_data->dchan->fio->wait(signal_data->dchan, &flags, 10);
-	if (status != FTDM_SUCCESS) {
-		ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_WARNING, "transmit timed-out\n");
-		return -1;
-	}
-	status = signal_data->dchan->fio->write(signal_data->dchan, buff, (ftdm_size_t*)&length);
-	if (status != FTDM_SUCCESS) {
-		ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_CRIT, "Failed to transmit frame\n");
-		return -1;
-	}
+	do {
+		flags = FTDM_WRITE;
+		status = signal_data->dchan->fio->wait(signal_data->dchan, &flags, 1000);
+		if (status != FTDM_SUCCESS) {
+			ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_WARNING, "transmit timed-out\n");
+			return -1;
+		}
+		
+		
+		if ((flags & FTDM_WRITE)) {
+			status = signal_data->dchan->fio->write(signal_data->dchan, buff, (ftdm_size_t*)&length);
+			if (status != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_CRIT, "Failed to transmit frame\n");
+				return -1;
+			}
+			break;
+		/* On WIN32, it is possible for poll to return without FTDM_WRITE flag set, so we try to retransmit */
+#ifndef WIN32
+		} else {
+			ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_WARNING, "Failed to poll for d-channel\n");
+			return -1;
+#endif
+		}
+	} while(1);
 	return 0;
 }
 

@@ -115,7 +115,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
 static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout, int *flags)
 {
 	
-#ifdef LIBSANGOMA_VERSION
+#ifdef LIBSANGOMA_VERSION	
 	int err;
     uint32_t inflags = *flags;
     uint32_t outflags = 0;
@@ -130,6 +130,7 @@ static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout
     if (err == SANG_STATUS_APIPOLL_TIMEOUT) {
         err = 0;
     }
+	
     return err;
 #else
  	struct pollfd pfds[1];

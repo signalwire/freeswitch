@@ -52,10 +52,10 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
 
-static ftdm_io_interface_t		    	g_sngisdn_io_interface;
-static sng_isdn_event_interface_t		g_sngisdn_event_interface;
+static ftdm_io_interface_t	    	g_sngisdn_io_interface;
+static sng_isdn_event_interface_t	g_sngisdn_event_interface;
 
-ftdm_sngisdn_data_t				g_sngisdn_data;
+ftdm_sngisdn_data_t 			g_sngisdn_data;
 
 extern ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 extern ftdm_status_t sngisdn_check_free_ids(void);
@@ -248,6 +248,7 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 			sngisdn_snd_event(span, SNG_L1EVENT_ALARM_OFF);
 			if (FTDM_SPAN_IS_BRI(span)) {
 				ftdm_channel_t *ftdmchan;
+				sngisdn_chan_data_t *sngisdn_info;
 				ftdm_iterator_t *chaniter = NULL;
 				ftdm_iterator_t *curr = NULL;
 				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
@@ -255,7 +256,7 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 				chaniter = ftdm_span_get_chan_iterator(span, NULL);
 				for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 					ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
-					sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
+					sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
 
 					if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)) {
 						ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
@@ -277,8 +278,7 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 
 static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span)
 {
-	ftdm_status_t		ret_status;
-	ftdm_channel_t *ftdmchan;
+	ftdm_status_t 	ret_status;
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
 	
@@ -315,7 +315,7 @@ static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 	
 	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
 		wflags = FTDM_READ;
-		status = ftdm_channel_wait(dchan, &wflags, 0);
+		status = ftdm_channel_wait(dchan, &wflags, 10000);
 		switch(status) {
 			case FTDM_FAIL:
 				ftdm_log_chan_msg(dchan, FTDM_LOG_CRIT, "Failed to wait for d-channel\n");
@@ -331,8 +331,10 @@ static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 					} else {
 						ftdm_log_chan_msg(dchan, FTDM_LOG_WARNING, "Failed to read from channel \n");
 					}
+#ifndef WIN32 /* It is valid on WIN32 for poll to return without errors, but no flags set */
 				} else {
 					ftdm_log_chan_msg(dchan, FTDM_LOG_CRIT, "Failed to poll for d-channel\n");
+#endif
 				}
 				break;
 			default:
@@ -986,7 +988,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	ftdm_log(FTDM_LOG_INFO, "Loading ftmod_sangoma_isdn...\n");
 
 	memset(&g_sngisdn_data, 0, sizeof(g_sngisdn_data));
-
+	memset(&g_sngisdn_event_interface, 0, sizeof(g_sngisdn_event_interface));
 	/* set callbacks */
 	g_sngisdn_event_interface.cc.sng_con_ind 	= sngisdn_rcv_con_ind;
 	g_sngisdn_event_interface.cc.sng_con_cfm 	= sngisdn_rcv_con_cfm;
@@ -1017,8 +1019,8 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	g_sngisdn_event_interface.sta.sng_q931_trc_ind	= sngisdn_rcv_q931_trace;
 	g_sngisdn_event_interface.sta.sng_cc_sta_ind	= sngisdn_rcv_cc_ind;
 
-	g_sngisdn_event_interface.io.sng_data_req = sngisdn_rcv_data_req;
-
+	g_sngisdn_event_interface.io.sng_data_req 	= sngisdn_rcv_data_req;
+	
 	for(i=1;i<=MAX_VARIANTS;i++) {		
 		ftdm_mutex_create(&g_sngisdn_data.ccs[i].mutex);
 	}
