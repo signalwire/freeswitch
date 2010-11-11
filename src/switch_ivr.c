@@ -702,7 +702,40 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	time_t expires = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_call_cause_t timeout_cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_codec_t codec = { 0 };
+	int sval = 0;
+	const char *var;
+	switch_frame_t write_frame = { 0 };
+	unsigned char *abuf = NULL;
+	switch_codec_implementation_t imp = { 0 };
 
+	if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+		switch_core_session_get_read_impl(session, &imp);
+
+		if (switch_core_codec_init(&codec,
+								   "L16",
+								   NULL,
+								   imp.samples_per_second,
+								   imp.microseconds_per_packet / 1000,
+								   imp.number_of_channels,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n",
+							  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+			return SWITCH_STATUS_FALSE;
+		}
+
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n",
+						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+
+		write_frame.codec = &codec;
+		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
+		write_frame.data = abuf;
+		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+		write_frame.datalen = imp.decoded_bytes_per_packet;
+		write_frame.samples = write_frame.datalen / sizeof(int16_t);
+	}
 
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
@@ -746,7 +779,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		}
 
 		if (rate) {
-			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
+			if (switch_channel_test_flag(channel, CF_SERVICE)) {
+				switch_cond_next();
+				status = SWITCH_STATUS_SUCCESS;
+			} else {
+				status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
+			}
 		} else {
 			switch_yield(20000);
 
@@ -760,110 +798,140 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
-		} else {
-			if (expires && switch_epoch_time_now(NULL) >= expires) {
-				switch_channel_hangup(channel, timeout_cause);
-				break;
+		}
+
+		if (write_frame.data) {
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+		}
+		
+		if (expires && switch_epoch_time_now(NULL) >= expires) {
+			switch_channel_hangup(channel, timeout_cause);
+			break;
+		}
+
+		if (switch_channel_test_flag(channel, CF_UNICAST)) {
+			if (!switch_channel_media_ready(channel)) {
+				if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+					return SWITCH_STATUS_FALSE;
+				}
 			}
 
-			if (switch_channel_test_flag(channel, CF_UNICAST)) {
-				if (!switch_channel_media_ready(channel)) {
-					if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-						return SWITCH_STATUS_FALSE;
-					}
-				}
-
-				if (!conninfo) {
-					if (!(conninfo = switch_channel_get_private(channel, "unicast"))) {
-						switch_channel_clear_flag(channel, CF_UNICAST);
-					}
-
-					if (conninfo) {
-						unicast_thread_launch(conninfo);
-					}
+			if (!conninfo) {
+				if (!(conninfo = switch_channel_get_private(channel, "unicast"))) {
+					switch_channel_clear_flag(channel, CF_UNICAST);
 				}
 
 				if (conninfo) {
-					switch_size_t len = 0;
-					uint32_t flags = 0;
-					switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
-					uint32_t dlen = sizeof(decoded);
-					switch_status_t tstatus;
-					switch_byte_t *sendbuf = NULL;
-					uint32_t sendlen = 0;
-
-					switch_assert(read_frame);
-
-					if (switch_test_flag(read_frame, SFF_CNG)) {
-						sendlen = bpf;
-						switch_assert(sendlen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
-						memset(decoded, 255, sendlen);
-						sendbuf = decoded;
-						tstatus = SWITCH_STATUS_SUCCESS;
-					} else {
-						if (switch_test_flag(conninfo, SUF_NATIVE)) {
-							tstatus = SWITCH_STATUS_NOOP;
-						} else {
-							switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
-							tstatus = switch_core_codec_decode(read_codec,
-															   &conninfo->read_codec,
-															   read_frame->data,
-															   read_frame->datalen, read_impl.actual_samples_per_second, decoded, &dlen, &rate, &flags);
-						}
-						switch (tstatus) {
-						case SWITCH_STATUS_NOOP:
-						case SWITCH_STATUS_BREAK:
-							sendbuf = read_frame->data;
-							sendlen = read_frame->datalen;
-							tstatus = SWITCH_STATUS_SUCCESS;
-							break;
-						case SWITCH_STATUS_SUCCESS:
-							sendbuf = decoded;
-							sendlen = dlen;
-							tstatus = SWITCH_STATUS_SUCCESS;
-							break;
-						default:
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Codec Error\n");
-							switch_ivr_deactivate_unicast(session);
-							break;
-						}
-					}
-
-					if (tstatus == SWITCH_STATUS_SUCCESS) {
-						len = sendlen;
-						if (switch_socket_sendto(conninfo->socket, conninfo->remote_addr, 0, (void *) sendbuf, &len) != SWITCH_STATUS_SUCCESS) {
-							switch_ivr_deactivate_unicast(session);
-						}
-					}
+					unicast_thread_launch(conninfo);
 				}
 			}
 
-			switch_ivr_parse_all_events(session);
+			if (conninfo) {
+				switch_size_t len = 0;
+				uint32_t flags = 0;
+				switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
+				uint32_t dlen = sizeof(decoded);
+				switch_status_t tstatus;
+				switch_byte_t *sendbuf = NULL;
+				uint32_t sendlen = 0;
 
+				switch_assert(read_frame);
 
-			if (switch_channel_has_dtmf(channel)) {
-				switch_dtmf_t dtmf = { 0 };
-				switch_channel_dequeue_dtmf(channel, &dtmf);
-				if (args && args->input_callback) {
-					if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
-						break;
-					}
-				}
-			}
-
-			if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-				if (args && args->input_callback) {
-					if ((status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
-						break;
-					}
+				if (switch_test_flag(read_frame, SFF_CNG)) {
+					sendlen = bpf;
+					switch_assert(sendlen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
+					memset(decoded, 255, sendlen);
+					sendbuf = decoded;
+					tstatus = SWITCH_STATUS_SUCCESS;
 				} else {
-					switch_channel_event_set_data(channel, event);
-					switch_event_fire(&event);
+					if (switch_test_flag(conninfo, SUF_NATIVE)) {
+						tstatus = SWITCH_STATUS_NOOP;
+					} else {
+						switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+						tstatus = switch_core_codec_decode(read_codec,
+														   &conninfo->read_codec,
+														   read_frame->data,
+														   read_frame->datalen, read_impl.actual_samples_per_second, decoded, &dlen, &rate, &flags);
+					}
+					switch (tstatus) {
+					case SWITCH_STATUS_NOOP:
+					case SWITCH_STATUS_BREAK:
+						sendbuf = read_frame->data;
+						sendlen = read_frame->datalen;
+						tstatus = SWITCH_STATUS_SUCCESS;
+						break;
+					case SWITCH_STATUS_SUCCESS:
+						sendbuf = decoded;
+						sendlen = dlen;
+						tstatus = SWITCH_STATUS_SUCCESS;
+						break;
+					default:
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Codec Error\n");
+						switch_ivr_deactivate_unicast(session);
+						break;
+					}
+				}
+
+				if (tstatus == SWITCH_STATUS_SUCCESS) {
+					len = sendlen;
+					if (switch_socket_sendto(conninfo->socket, conninfo->remote_addr, 0, (void *) sendbuf, &len) != SWITCH_STATUS_SUCCESS) {
+						switch_ivr_deactivate_unicast(session);
+					}
 				}
 			}
 		}
 
+		switch_ivr_parse_all_events(session);
+
+
+		if (switch_channel_has_dtmf(channel)) {
+			switch_dtmf_t dtmf = { 0 };
+				
+			if (!args->input_callback && !args->buf && !args->dmachine) {
+				status = SWITCH_STATUS_BREAK;
+				break;
+			}
+				
+			switch_channel_dequeue_dtmf(channel, &dtmf);
+
+			if (args->dmachine) {
+				char ds[2] = {dtmf.digit, '\0'};
+				if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			} else if (args && args->input_callback) {
+				if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
+		}
+
+		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			if (args && args->input_callback) {
+				if ((status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			} else {
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
+		}
+			
+		if (args && args->dmachine) {
+			if ((status = switch_ivr_dmachine_ping(args->dmachine, NULL)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+		
+
 	}
+
+	if (write_frame.codec) {
+		switch_core_codec_destroy(&codec);
+	}
+
+	switch_safe_free(abuf);
 
 	switch_channel_clear_flag(channel, CF_CONTROLLED);
 	switch_channel_clear_flag(channel, CF_PARK);
