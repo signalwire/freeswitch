@@ -1187,7 +1187,7 @@ static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
  */
 static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	struct pri_event_facility *pfac = (struct pri_event_facility *)&pevent->facility;
+	struct pri_event_facility *pfac = &pevent->facility;
 	int i = 0;
 
 	if (!pevent)
