@@ -130,7 +130,7 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_se
 {
 	/*! This is a worst case sample rate estimate */
     avmd_session->rate = 48000;
-    INIT_CIRC_BUFFER(&avmd_session->b, BEEP_LEN(avmd_session->rate), FRAME_LEN(avmd_session->rate));
+    INIT_CIRC_BUFFER(&avmd_session->b, BEEP_LEN(avmd_session->rate), FRAME_LEN(avmd_session->rate), fs_session);
 
     avmd_session->session = fs_session;
     avmd_session->pos = 0;
@@ -176,6 +176,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
     case SWITCH_ABC_TYPE_READ_PING:
         break;
     case SWITCH_ABC_TYPE_CLOSE:
+		
         break;
     case SWITCH_ABC_TYPE_READ:
         break;
