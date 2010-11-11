@@ -1187,11 +1187,13 @@ static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
  */
 static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	struct pri_event_facility *pfac = (struct pri_event_facility *)pevent;
+	struct pri_event_facility *pfac = (struct pri_event_facility *)&pevent->facility;
 	int i = 0;
 
 	if (!pevent)
 		return 0;
+
+	ftdm_log(FTDM_LOG_DEBUG, "Got a FACILITY event on span %d:%d\n", ftdm_span_get_id(spri->span), pfac->channel);
 
 	if (!pfac->subcmds || pfac->subcmds->counter_subcmd <= 0)
 		return 0;
