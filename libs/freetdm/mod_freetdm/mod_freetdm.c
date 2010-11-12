@@ -2434,7 +2434,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (ftdm_array_len(spanparameters) == paramindex) {
+			if (ftdm_array_len(spanparameters) - 1 == paramindex) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
 				break;
 			}
@@ -2594,7 +2594,7 @@ static switch_status_t load_config(void)
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (ftdm_array_len(spanparameters) == paramindex) {
+				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
 					break;
 				}
@@ -3106,7 +3106,7 @@ static switch_status_t load_config(void)
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (ftdm_array_len(spanparameters) == paramindex) {
+				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
 					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for libpri span, ignoring everything after '%s'\n", var);
 					break;
 				}
@@ -3171,7 +3171,7 @@ static switch_status_t load_config(void)
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (ftdm_array_len(spanparameters) == paramindex) {
+				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for boost span, ignoring any parameter after %s\n", var);
 					break;
 				}
