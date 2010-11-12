@@ -88,21 +88,22 @@ typedef struct vocallo_codec_s {
 vocallo_codec_t g_codec_map[] =
 {
 	/* auto-init codecs */
-	{ SNGTC_CODEC_PCMU,    0,   "PCMU",    "Sangoma PCMU",      40, 64000,  10000, 80,  160, 80,  8000,  8000,  1 },
-	{ SNGTC_CODEC_PCMA,    8,   "PCMA",    "Sangoma PCMA",      40, 64000,  10000, 80,  160, 80,  8000,  8000,  1 },
-	{ SNGTC_CODEC_L16_1,   10,  "L16",     "Sangoma L16",       40, 120000, 10000, 80,  160, 160, 8000,  8000,  0 },
-	{ SNGTC_CODEC_L16_2,   10,  "L16",     "Sangoma L16 2",     40, 320000, 10000, 160, 320, 320, 16000, 16000, 0 },
-	{ SNGTC_CODEC_G729AB,  18,  "G729",    "Sangoma G729",      40, 8000,   10000, 80,  160, 10,  8000,  8000,  1 },
-	{ SNGTC_CODEC_G726_32, 122, "G726-32", "Sangoma G.726 32k", 40, 32000,  10000, 80,  160, 40,  8000,  8000,  1 },
-	{ SNGTC_CODEC_G722,    9,   "G722",    "Sangoma G722",      20, 64000,  10000, 80,  160, 80,  8000,  8000, 1 },
+	{ SNGTC_CODEC_PCMU,      IANA_PCMU_A_8000_1,  "PCMU",    "Sangoma PCMU",      40, 64000,  10000, 80,  160, 80,  8000,  8000,  1 },
+	{ SNGTC_CODEC_PCMA,      IANA_PCMA_A_8000_1,  "PCMA",    "Sangoma PCMA",      40, 64000,  10000, 80,  160, 80,  8000,  8000,  1 },
+	{ SNGTC_CODEC_L16_1,     IANA_L16_A_44100_1,  "L16",     "Sangoma L16",       40, 120000, 10000, 80,  160, 160, 8000,  8000,  0 },
+	{ SNGTC_CODEC_L16_2,     IANA_L16_A_44100_1,  "L16",     "Sangoma L16 2",     40, 320000, 10000, 160, 320, 320, 16000, 16000, 0 },
+	{ SNGTC_CODEC_G729AB,    IANA_G729_AB_8000_1, "G729",    "Sangoma G729",      40, 8000,   10000, 80,  160, 10,  8000,  8000,  1 },
+	{ SNGTC_CODEC_G726_32,   IANA_G726_32_8000_1, "G726-32", "Sangoma G.726 32k", 40, 32000,  10000, 80,  160, 40,  8000,  8000,  1 },
+	{ SNGTC_CODEC_G722,      IANA_G722_A_8000_1,  "G722",    "Sangoma G722",      20, 64000,  10000, 80,  160, 80,  8000,  8000, 1  },
 
 	/* manually initialized */
-	{ SNGTC_CODEC_GSM_FR,    3,                "GSM",  "Sangoma GSM",  20, 13200, 20000, 160, 320, 33, 8000, 8000, 0 },
-	{ SNGTC_CODEC_G723_1_63, 4,                "G723", "Sangoma G723", 90, 6300,  30000, 240, 480, 24, 8000, 8000, 0 },
-	{ SNGTC_CODEC_AMR_1220,  96,               "AMR",  "Sangoma AMR",  20, 12200, 20000, 160, 320, 0,  8000, 8000, 0 },
-	{ SNGTC_CODEC_ILBC_133,  ILBC_133_PAYLOAD, "iLBC", "Sangoma iLBC", -1, -1,    -1,    -1,  -1,  -1, -1,   -1,   0 },
-	{ SNGTC_CODEC_ILBC_152,  ILBC_152_PAYLOAD, "iLBC", "Sangoma iLBC", -1, -1,    -1,    -1,  -1,  -1, -1,   -1,   0 },
-	{ -1,                    -1,               NULL,   NULL,           -1, -1,    -1,    -1,  -1,  -1, -1,   -1,   0 },
+	{ SNGTC_CODEC_GSM_FR,    IANA_GSM_A_8000_1,    "GSM",   "Sangoma GSM",    20, 13200, 20000, 160, 320, 33, 8000,  8000,  0 },
+	{ SNGTC_CODEC_G723_1_63, IANA_G723_A_8000_1,   "G723",  "Sangoma G723",   90, 6300,  30000, 240, 480, 24, 8000,  8000,  0 },
+	{ SNGTC_CODEC_AMR_1220,  IANA_AMR_WB_16000_1,  "AMR",   "Sangoma AMR",    20, 12200, 20000, 160, 320, 0,  8000,  8000,  0 },
+	{ SNGTC_CODEC_SIREN7_32, IANA_SIREN7,          "G7221", "Sangoma G722.1", 20, 32000, 20000, 320, 640, 80, 16000, 16000, 0 },
+	{ SNGTC_CODEC_ILBC_133,  IANA_ILBC_133_8000_1, "iLBC",  "Sangoma iLBC",   -1, -1,    -1,    -1,  -1,  -1, -1,    -1,    0 },
+	{ SNGTC_CODEC_ILBC_152,  IANA_ILBC_152_8000_1, "iLBC",  "Sangoma iLBC",   -1, -1,    -1,    -1,  -1,  -1, -1,    -1,    0 },
+	{ -1,                    -1,                   NULL,    NULL,             -1, -1,    -1,    -1,  -1,  -1, -1,    -1,    0 },
 };
 
 /* RFC3389 RTP Payload for Comfort Noise */
@@ -386,6 +387,12 @@ static switch_status_t switch_sangoma_init_ilbc(switch_codec_t *codec, switch_co
 	return switch_sangoma_init(codec, flags, codec_settings);
 }
 
+static switch_status_t switch_sangoma_init_siren7(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+{
+	int bit_rate = codec->implementation->bits_per_second;
+	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "bitrate=%d", bit_rate);
+	return switch_sangoma_init(codec, flags, codec_settings);
+}
 
 static void flush_rtp(switch_rtp_t *rtp)
 {
@@ -1322,7 +1329,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 50, /* number of bytes per frame compressed */
 								 1,	/* number of channels represented */
 								 1, /* number of frames per network packet (I dont think this is used at all) */
-								 switch_sangoma_init,	/* function to initialize a codec session using this implementation */
+								 switch_sangoma_init_ilbc, /* function to initialize a codec session using this implementation */
 								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
 								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
 								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
@@ -1353,6 +1360,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 				}
 
 				break;
+
 			case SNGTC_CODEC_AMR_1220:
 				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
 								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
@@ -1369,6 +1377,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 1,	/* number of channels represented */
 								 g_codec_map[c].spf, /* number of frames per network packet (I dont think this is used at all) */
 								 switch_sangoma_init,	/* function to initialize a codec session using this implementation */
+								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
+								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
+								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
+				break;
+
+			case SNGTC_CODEC_SIREN7_32:
+				switch_core_codec_add_implementation(pool, codec_interface,	/* the codec interface we allocated and we want to register with the core */
+								 SWITCH_CODEC_TYPE_AUDIO, /* enumeration defining the type of the codec */
+								 g_codec_map[c].iana,	/* the IANA code number, ie http://www.iana.org/assignments/rtp-parameters */
+								 g_codec_map[c].iana_name, /* the IANA code name */
+								 "bitrate=32000",	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
+								 g_codec_map[c].sampling_rate,	/* samples transferred per second */
+								 g_codec_map[c].actual_sampling_rate, /* actual samples transferred per second */
+								 g_codec_map[c].bps,	/* bits transferred per second */
+								 g_codec_map[c].mpf, /* microseconds per frame */
+								 g_codec_map[c].spf, /* samples per frame */
+								 g_codec_map[c].bpfd, /* number of bytes per frame decompressed */
+								 g_codec_map[c].bpfc, /* number of bytes per frame compressed */
+								 1,	/* number of channels represented */
+								 g_codec_map[c].spf, /* number of frames per network packet (I dont think this is used at all) */
+								 switch_sangoma_init_siren7,	/* function to initialize a codec session using this implementation */
 								 switch_sangoma_encode,	/* function to encode slinear data into encoded data */
 								 switch_sangoma_decode,	/* function to decode encoded data into slinear data */
 								 switch_sangoma_destroy); /* deinitalize a codec handle using this implementation */
