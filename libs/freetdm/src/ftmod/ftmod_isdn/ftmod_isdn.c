@@ -54,24 +54,6 @@
 #define DEFAULT_NATIONAL_PREFIX 	"0"
 #define DEFAULT_INTERNATIONAL_PREFIX	"00"
 
-static const char *ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
-{
-	assert(span);
-	return ftdm_trunk_type2str(span->trunk_type);
-}
-
-static int ftdm_channel_get_state(const ftdm_channel_t *chan)
-{
-	assert(chan);
-	return chan->state;
-}
-
-static int ftdm_channel_get_last_state(const ftdm_channel_t *chan)
-{
-	assert(chan);
-	return chan->last_state;
-}
-
 /*****************************************************************************************
  * PCAP
  *          Based on Helmut Kuper's (<helmut.kuper@ewetel.de>) implementation,

@@ -34,28 +34,14 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
-/***
- * Move to core
- ***/
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x)	(sizeof((x)) / sizeof((x)[0]))
 #endif
-
-static ftdm_channel_state_t ftdm_channel_get_state(const ftdm_channel_t *chan)
-{
-	assert(chan);
-	return chan->state;
-}
 
 static void _ftdm_channel_set_state_force(ftdm_channel_t *chan, const ftdm_channel_state_t state)
 {
 	assert(chan);
 	chan->state = state;
-}
-
-static const char *ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
-{
-	return ftdm_trunk_type2str(span->trunk_type);
 }
 
 /**
