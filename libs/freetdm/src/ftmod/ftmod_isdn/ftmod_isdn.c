@@ -54,6 +54,11 @@
 #define DEFAULT_NATIONAL_PREFIX 	"0"
 #define DEFAULT_INTERNATIONAL_PREFIX	"00"
 
+static const char *ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
+{
+	return ftdm_trunk_type2str(span->trunk_type);
+}
+
 /*****************************************************************************************
  * PCAP
  *          Based on Helmut Kuper's (<helmut.kuper@ewetel.de>) implementation,
@@ -2266,9 +2271,8 @@ static ftdm_status_t ftdm_isdn_start(ftdm_span_t *span)
 
 static int32_t parse_loglevel(const char *level)
 {
-	if (!level) {
+	if (!level)
 		return -1;
-	}
 
 	if (!strcasecmp(level, "debug")) {
 		return FTDM_LOG_LEVEL_DEBUG;
@@ -2291,53 +2295,53 @@ static int32_t parse_loglevel(const char *level)
 	}
 }
 
-static uint32_t parse_opts(const char *in)
+static int parse_opts(const char *in, uint32_t *flags)
 {
-	uint32_t flags = 0;
-
-	if (!in) {
-		return 0;
-	}
+	if (!in || !flags)
+		return -1;
 
 	if (strstr(in, "suggest_channel")) {
-		flags |= FTDM_ISDN_OPT_SUGGEST_CHANNEL;
+		*flags |= FTDM_ISDN_OPT_SUGGEST_CHANNEL;
 	}
-
 	if (strstr(in, "omit_display")) {
-		flags |= FTDM_ISDN_OPT_OMIT_DISPLAY_IE;
+		*flags |= FTDM_ISDN_OPT_OMIT_DISPLAY_IE;
 	}
-
 	if (strstr(in, "disable_tones")) {
-		flags |= FTDM_ISDN_OPT_DISABLE_TONES;
+		*flags |= FTDM_ISDN_OPT_DISABLE_TONES;
 	}
 
-	return flags;
+	return 0;
 }
 
-static uint32_t parse_dialect(const char *in)
+static int parse_dialect(const char *in, uint32_t *dialect)
 {
-	if (!in) {
-		return Q931_Dialect_Count;
-	}
+	if (!in || !dialect)
+		return -1;
 
 #if __UNSUPPORTED__
 	if (!strcasecmp(in, "national")) {
-		return Q931_Dialect_National;
+		*dialect = Q931_Dialect_National;
+		return 0;
 	}
 	if (!strcasecmp(in, "dms")) {
-		return Q931_Dialect_DMS;
+		*dialect = Q931_Dialect_DMS;
+		return 0;
 	}
 #endif
 	if (!strcasecmp(in, "5ess")) {
-		return Q931_Dialect_5ESS;
+		*dialect = Q931_Dialect_5ESS;
+		return 0;
 	}
-	if (!strcasecmp(in, "dss1")) {
-		return Q931_Dialect_DSS1;
+	if (!strcasecmp(in, "dss1") || !strcasecmp(in, "euroisdn")) {
+		*dialect = Q931_Dialect_DSS1;
+		return 0;
 	}
 	if (!strcasecmp(in, "q931")) {
-		return Q931_Dialect_Q931;
+		*dialect = Q931_Dialect_Q931;
+		return 0;
 	}
-	return Q931_Dialect_Count;
+
+	return -1;
 }
 
 
@@ -2563,44 +2567,80 @@ done:
 	return FTDM_SUCCESS;
 }
 
-static FIO_SIG_CONFIGURE_FUNCTION(isdn_configure_span)
+static int parse_mode(const char *mode)
 {
-	uint32_t i, x = 0;
-	ftdm_channel_t *dchans[2] = { 0 };
-	ftdm_isdn_data_t *isdn_data;
-	const char *tonemap = "us";
-	char *var, *val;
+	if (!mode)
+		return -1;
+
+	if (!strcasecmp(mode, "user") || !strcasecmp(mode, "cpe")) {
+		return Q931_TE;
+	}
+	if (!strcasecmp(mode, "net") || !strcasecmp(mode, "network")) {
+		return Q931_NT;
+	}
+
+	return -1;
+}
+
+static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
+{
 	Q931Dialect_t dialect = Q931_Dialect_National;
+	ftdm_channel_t *dchan = NULL;
+	ftdm_isdn_data_t *isdn_data;
 	int32_t digit_timeout = 0;
+	const char *tonemap = "us";
+	int dchan_count = 0, bchan_count = 0;
 	int q921loglevel = -1;
 	int q931loglevel = -1;
+	uint32_t i;
 
 	if (span->signal_type) {
-		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
+		ftdm_log(FTDM_LOG_ERROR, "Span is already configured for signalling [%d]\n", span->signal_type);
+		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d]", span->signal_type);
 		return FTDM_FAIL;
 	}
 
-	if (span->trunk_type >= FTDM_TRUNK_NONE) {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", ftdm_trunk_type2str(span->trunk_type));
+	if (ftdm_span_get_trunk_type(span) >= FTDM_TRUNK_NONE) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1\n", ftdm_span_get_trunk_type_str(span));
 		span->trunk_type = FTDM_TRUNK_T1;
 	}
 
-	for(i = 1; i <= span->chan_count; i++) {
-		if (span->channels[i]->type == FTDM_CHAN_TYPE_DQ921) {
-			if (x > 1) {
-				snprintf(span->last_error, sizeof(span->last_error), "Span has more than 2 D-Channels!");
+	for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
+		ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
+
+		switch (ftdm_channel_get_type(chan)) {
+		case FTDM_CHAN_TYPE_DQ921:
+			if (dchan_count > 1) {
+				ftdm_log(FTDM_LOG_ERROR, "Span has more than 1 D-Channel!\n");
+				snprintf(span->last_error, sizeof(span->last_error), "Span has more than 1 D-Channel!");
 				return FTDM_FAIL;
 			}
 
-			if (ftdm_channel_open(span->span_id, i, &dchans[x]) == FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, dchans[x]->span_id, dchans[x]->chan_id);
-				dchans[x]->state = FTDM_CHANNEL_STATE_UP;
-				x++;
+			if (ftdm_channel_open(ftdm_span_get_id(span), i, &dchan) == FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_DEBUG, "opening d-channel #%d %d:%d\n", dchan_count,
+					ftdm_channel_get_span_id(dchan), ftdm_channel_get_id(dchan));
+				dchan->state = FTDM_CHANNEL_STATE_UP;
 			}
+
+			dchan_count++;
+			break;
+
+		case FTDM_CHAN_TYPE_B:
+			bchan_count++;
+			break;
+
+		default:
+			break;
 		}
 	}
-	if (!x) {
-		snprintf(span->last_error, sizeof(span->last_error), "Span has no D-Channels!");
+	if (!dchan_count) {
+		ftdm_log(FTDM_LOG_ERROR, "Span has no D-Channel!\n");
+		snprintf(span->last_error, sizeof(span->last_error), "Span has no D-Channel!");
+		return FTDM_FAIL;
+	}
+	if (!bchan_count) {
+		ftdm_log(FTDM_LOG_ERROR, "Span has no B-Channels!\n");
+		snprintf(span->last_error, sizeof(span->last_error), "Span has no B-Channels!");
 		return FTDM_FAIL;
 	}
 
@@ -2611,52 +2651,55 @@ static FIO_SIG_CONFIGURE_FUNCTION(isdn_configure_span)
 	isdn_data->mode = Q931_TE;
 	dialect = Q931_Dialect_Q931;
 
-	while((var = va_arg(ap, char *))) {
+	for (i = 0; ftdm_parameters[i].var; i++) {
+		const char *var = ftdm_parameters[i].var;
+		const char *val = ftdm_parameters[i].val;
+
+		if (!val) {
+			ftdm_log(FTDM_LOG_ERROR, "Variable '%s' has no value\n", var);
+			return FTDM_FAIL;
+		}
+
 		if (!strcasecmp(var, "mode")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
+			if ((isdn_data->mode = parse_mode(val)) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid/unknown mode '%s'\n", val);
+				snprintf(span->last_error, sizeof(span->last_error), "Invalid/unknown mode [%s]!", val);
+				return FTDM_FAIL;
 			}
-			isdn_data->mode = strcasecmp(val, "net") ? Q931_TE : Q931_NT;
 		} else if (!strcasecmp(var, "dialect")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
-			}
-			dialect = parse_dialect(val);
-			if (dialect == Q931_Dialect_Count) {
+			if (parse_dialect(val, &dialect) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid/unknown dialect '%s'\n", val);
 				snprintf(span->last_error, sizeof(span->last_error), "Invalid/unknown dialect [%s]!", val);
 				return FTDM_FAIL;
 			}
 		} else if (!strcasecmp(var, "opts")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
+			if (parse_opts(val, &isdn_data->opts) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid/unknown options '%s'\n", val);
+				snprintf(span->last_error, sizeof(span->last_error), "Invalid/unknown options [%s]!", val);
+				return FTDM_FAIL;
 			}
-			isdn_data->opts = parse_opts(val);
 		} else if (!strcasecmp(var, "tonemap")) {
-			if (!(val = va_arg(ap, char *))) {
-				break;
-			}
 			tonemap = (const char *)val;
 		} else if (!strcasecmp(var, "digit_timeout")) {
-			int *optp;
-			if (!(optp = va_arg(ap, int *))) {
-				break;
+			digit_timeout = atoi(val);
+			if (digit_timeout < 3000 || digit_timeout > 30000) {
+				ftdm_log(FTDM_LOG_WARNING, "Digit timeout %d ms outside of range (3000 - 30000 ms), using default (10000 ms)\n", digit_timeout);
+				digit_timeout = DEFAULT_DIGIT_TIMEOUT;
 			}
-			digit_timeout = *optp;
 		} else if (!strcasecmp(var, "q921loglevel")) {
-			q921loglevel = va_arg(ap, int);
-			if (q921loglevel < Q921_LOG_NONE) {
-				q921loglevel = Q921_LOG_NONE;
-			} else if (q921loglevel > Q921_LOG_DEBUG) {
-				q921loglevel = Q921_LOG_DEBUG;
+			if ((q921loglevel = parse_loglevel(val)) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid/unknown loglevel '%s'\n", val);
+				snprintf(span->last_error, sizeof(span->last_error), "Invalid/unknown loglevel [%s]!", val);
+				return FTDM_FAIL;
 			}
 		} else if (!strcasecmp(var, "q931loglevel")) {
-			q931loglevel = va_arg(ap, int);
-			if (q931loglevel < Q931_LOG_NONE) {
-				q931loglevel = Q931_LOG_NONE;
-			} else if (q931loglevel > Q931_LOG_DEBUG) {
-				q931loglevel = Q931_LOG_DEBUG;
+			if ((q931loglevel = parse_loglevel(val)) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid/unknown loglevel '%s'\n", val);
+				snprintf(span->last_error, sizeof(span->last_error), "Invalid/unknown loglevel [%s]!", val);
+				return FTDM_FAIL;
 			}
 		} else {
+			ftdm_log(FTDM_LOG_ERROR, "Unknown parameter '%s'\n", var);
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			return FTDM_FAIL;
 		}
@@ -2665,39 +2708,35 @@ static FIO_SIG_CONFIGURE_FUNCTION(isdn_configure_span)
 	if (!digit_timeout) {
 		digit_timeout = DEFAULT_DIGIT_TIMEOUT;
 	}
-	else if (digit_timeout < 3000 || digit_timeout > 30000) {
-		ftdm_log(FTDM_LOG_WARNING, "Digit timeout %d ms outside of range (3000 - 30000 ms), using default (10000 ms)\n", digit_timeout);
-		digit_timeout = DEFAULT_DIGIT_TIMEOUT;
-	}
 
 	/* allocate per b-chan data */
 	if (isdn_data->mode == Q931_NT) {
 		ftdm_isdn_bchan_data_t *data;
 
-		data = malloc(span->chan_count * sizeof(ftdm_isdn_bchan_data_t));
+		data = malloc(bchan_count * sizeof(ftdm_isdn_bchan_data_t));
 		if (!data) {
 			return FTDM_FAIL;
 		}
 
-		for (i = 1; i <= span->chan_count; i++, data++) {
-			if (span->channels[i]->type == FTDM_CHAN_TYPE_B) {
-				span->channels[i]->mod_data = data;
+		for (i = 1; i <= ftdm_span_get_chan_count(span); i++, data++) {
+			ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
+
+			if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B) {
+				chan->mod_data = data;
 				memset(data, 0, sizeof(ftdm_isdn_bchan_data_t));
 			}
 		}
 	}
 
-	isdn_data->sig_cb    = sig_cb;
-	isdn_data->dchans[0] = dchans[0];
-	isdn_data->dchans[1] = dchans[1];
-	isdn_data->dchan     = isdn_data->dchans[0];
+	isdn_data->sig_cb = sig_cb;
+	isdn_data->dchan  = dchan;
 	isdn_data->digit_timeout = digit_timeout;
 
 	Q921_InitTrunk(&isdn_data->q921,
 				   0,
 				   0,
 				   isdn_data->mode,
-				   span->trunk_type == FTDM_TRUNK_BRI_PTMP ? Q921_PTMP : Q921_PTP,
+				   (ftdm_span_get_trunk_type(span) == FTDM_TRUNK_BRI_PTMP) ? Q921_PTMP : Q921_PTP,
 				   0,
 				   ftdm_isdn_921_21,
 				   (Q921Tx23CB_t)ftdm_isdn_921_23,
@@ -2798,7 +2837,7 @@ ftdm_module_t ftdm_module = {
 	.io_unload     = NULL,
 	.sig_load      = isdn_load,
 	.sig_unload    = isdn_unload,
-	.sig_configure = isdn_configure_span
+	.configure_span_signaling = isdn_configure_span
 };
 
 /* For Emacs:

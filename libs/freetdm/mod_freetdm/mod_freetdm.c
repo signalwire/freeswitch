@@ -2923,102 +2923,49 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "pri_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
+			ftdm_conf_parameter_t spanparameters[10];
 			ftdm_status_t zstatus = FTDM_FAIL;
 			const char *context = "default";
 			const char *dialplan = "XML";
-			//Q921NetUser_t mode = Q931_TE;
-			//Q931Dialect_t dialect = Q931_Dialect_National;
-			char *mode = NULL;
-			char *dialect = NULL;
-			uint32_t span_id = 0;
+			unsigned paramindex = 0;
 			ftdm_span_t *span = NULL;
-			const char *tonegroup = NULL;
-			char *digit_timeout = NULL;
-			const char *opts = "none";
-			uint32_t to = 0;
-			int q921loglevel = -1;
-			int q931loglevel = -1;
-			
-			// quick debug
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ID: '%s', Name:'%s'\n",id,name);
+			uint32_t span_id = 0;
 
-			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+			if (!name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
+				continue;
+			}
+
+			for (param = switch_xml_child(myspan, "param"); param && paramindex < 10; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (!strcasecmp(var, "tonegroup")) {
-					tonegroup = val;
-				} else if (!strcasecmp(var, "mode")) {
-					mode = val;
-				} else if (!strcasecmp(var, "dialect")) {
-					dialect = val;
-				} else if (!strcasecmp(var, "q921loglevel")) {
-                    if ((q921loglevel = switch_log_str2level(val)) == SWITCH_LOG_INVALID) {
-                        q921loglevel = -1;
-                    }
-				} else if (!strcasecmp(var, "q931loglevel")) {
-                    if ((q931loglevel = switch_log_str2level(val)) == SWITCH_LOG_INVALID) {
-                        q931loglevel = -1;
-                    }
-				} else if (!strcasecmp(var, "context")) {
+				if (ftdm_array_len(spanparameters) == paramindex) {
+					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for pri span '%s', ignoring everything after '%s'\n", name, var);
+					break;
+				}
+
+				if (!strcasecmp(var, "context")) {
 					context = val;
-				} else if (!strcasecmp(var, "opts")) {
-					opts = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
-				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
-					digit_timeout = val;
-				}
-			}
-	
-			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
-				continue;
-			}
-			
-			if (name) {
-				zstatus = ftdm_span_find_by_name(name, &span);
-			} else {
-				if (switch_is_number(id)) {
-					span_id = atoi(id);
-					zstatus = ftdm_span_find(span_id, &span);
-				}
-
-				if (zstatus != FTDM_SUCCESS) {
-					zstatus = ftdm_span_find_by_name(id, &span);
+				} else {
+					spanparameters[paramindex].var = var;
+					spanparameters[paramindex].val = val;
+					paramindex++;
 				}
 			}
 
-			if (digit_timeout) {
-				to = atoi(digit_timeout);
-			}
-			
+			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
-			if (!span_id) {
-				span_id = ftdm_span_get_id(span);
-			}
-
-			if (!tonegroup) {
-				tonegroup = "us";
-			}
-			
-			if (ftdm_configure_span(span, "isdn", on_clear_channel_signal, 
-								   "mode", mode,
-								   "dialect", dialect,
-								   "digit_timeout", &to,
-								   "opts", opts,
-								   "tonemap", tonegroup,
-								   "q921loglevel", q921loglevel,
-								   "q931loglevel", q931loglevel,
-								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d mode: %s dialect: %s error: %s\n", span_id, 
-						mode, dialect, ftdm_span_get_last_error(span));
+			span_id = ftdm_span_get_id(span);
+			if (ftdm_configure_span_signaling(span, "isdn", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
