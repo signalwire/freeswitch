@@ -34,10 +34,6 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(x)	(sizeof((x)) / sizeof((x)[0]))
-#endif
-
 static void _ftdm_channel_set_state_force(ftdm_channel_t *chan, const ftdm_channel_state_t state)
 {
 	assert(chan);
@@ -198,7 +194,7 @@ static int parse_debug(const char *in, uint32_t *flags)
 		return 0;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(ftdm_libpri_debug); i++) {
+	for (i = 0; i < ftdm_array_len(ftdm_libpri_debug); i++) {
 		if (strstr(in, ftdm_libpri_debug[i].name)) {
 			*flags |= ftdm_libpri_debug[i].flags;
 			res = 0;
@@ -222,7 +218,7 @@ static int print_debug(uint32_t flags, char *tmp, const int size)
 		return 0;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(ftdm_libpri_debug); i++) {
+	for (i = 0; i < ftdm_array_len(ftdm_libpri_debug); i++) {
 		if ((flags & ftdm_libpri_debug[i].flags) == ftdm_libpri_debug[i].flags) {
 			res = snprintf(&tmp[offset], size - offset, "%s,", ftdm_libpri_debug[i].name);
 			if (res <= 0 || res == (size - offset))
