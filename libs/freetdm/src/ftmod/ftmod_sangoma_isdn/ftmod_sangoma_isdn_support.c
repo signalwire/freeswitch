@@ -34,16 +34,6 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
-
-ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
-
 ftdm_status_t sngisdn_check_free_ids(void);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
@@ -157,7 +147,7 @@ ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
+FT_DECLARE(ftdm_status_t) cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
 {
 	if (cgPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -184,7 +174,7 @@ ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgP
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
+FT_DECLARE(ftdm_status_t) cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
 {
 	if (cdPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -206,7 +196,7 @@ ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPt
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
+FT_DECLARE(ftdm_status_t) cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
 {
 	if (redirNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -226,7 +216,7 @@ ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redir
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display)
+FT_DECLARE(ftdm_status_t) cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display)
 {
 	if (display->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -239,7 +229,7 @@ ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *dis
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
+FT_DECLARE(ftdm_status_t) cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->cid_num.digits);
 	if (!len) {
@@ -267,7 +257,7 @@ ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
+FT_DECLARE(ftdm_status_t) cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->dnis.digits);
 	if (!len) {
@@ -297,7 +287,7 @@ ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *f
     return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
+FT_DECLARE(ftdm_status_t) cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->rdnis.digits);
 	if (!len) {
@@ -329,7 +319,7 @@ ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ft
 }
 
 
-ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
+FT_DECLARE(ftdm_status_t) cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
 {
 	uint8_t len;
 	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
