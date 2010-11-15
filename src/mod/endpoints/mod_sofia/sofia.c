@@ -4671,9 +4671,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 					}
-					switch_mutex_unlock(tech_pvt->sofia_mutex);
-					switch_channel_pre_answer(other_channel);
-					switch_mutex_lock(tech_pvt->sofia_mutex);
+					//switch_channel_pre_answer(other_channel);
+					switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_PROGRESS);
 					switch_core_session_rwunlock(other_session);
 				}
 				goto done;
@@ -5100,10 +5099,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
-						other_channel = switch_core_session_get_channel(other_session);
-						switch_mutex_unlock(tech_pvt->sofia_mutex);
-						switch_channel_answer(other_channel);
-						switch_mutex_lock(tech_pvt->sofia_mutex);
+						//other_channel = switch_core_session_get_channel(other_session);
+						//switch_channel_answer(other_channel);
+						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 						switch_core_session_rwunlock(other_session);
 					}
 				}
@@ -5132,9 +5130,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 						}
-						switch_mutex_unlock(tech_pvt->sofia_mutex);
-						switch_channel_answer(other_channel);
-						switch_mutex_lock(tech_pvt->sofia_mutex);
+						
+						//switch_channel_answer(other_channel);
+						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
+
 						switch_core_session_rwunlock(other_session);
 					}
 					goto done;

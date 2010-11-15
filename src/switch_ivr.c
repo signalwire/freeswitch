@@ -658,12 +658,38 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_session_t *session)
 {
 	switch_core_session_message_t *message;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int i = 0;
 
 	while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 		i++;
-		switch_core_session_receive_message(session, message);
+		
+		switch(message->message_id) {
+		case SWITCH_MESSAGE_INDICATE_ANSWER:
+			if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+			switch_core_session_free_message(&message);
+			break;
+		case SWITCH_MESSAGE_INDICATE_PROGRESS:
+			if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+			switch_core_session_free_message(&message);
+			break;
+		case SWITCH_MESSAGE_INDICATE_RINGING:
+			if (switch_channel_ring_ready(channel) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+			switch_core_session_free_message(&message);
+			break;
+		default:
+			switch_core_session_receive_message(session, message);
+			break;
+		}
+
 		message = NULL;
+
 	}
 
 	return i ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
