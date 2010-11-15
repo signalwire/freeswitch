@@ -54,6 +54,13 @@ SWITCH_DECLARE(int) switch_isspace(int c);
 SWITCH_DECLARE(int) switch_isupper(int c);
 SWITCH_DECLARE(int) switch_isxdigit(int c);
 
+typedef union{
+    uint32_t v4;
+    struct in6_addr v6;
+} ip_t;
+
+SWITCH_DECLARE(switch_bool_t) switch_testv6_subnet(ip_t _ip, ip_t _net, ip_t _mask);
+
 #define switch_goto_status(_status, _label) status = _status; goto _label
 #define switch_goto_int(_n, _i, _label) _n = _i; goto _label
 #define switch_samples_per_packet(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
@@ -694,7 +701,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 
 
 
-SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp);
+SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, uint32_t *bitp);
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type,
 														   switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token);
@@ -703,6 +710,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok);
 SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token);
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_network_list_t *list, ip_t ip, const char **token);
 #define switch_network_list_validate_ip(_list, _ip) switch_network_list_validate_ip_token(_list, _ip, NULL);
 
 #define switch_test_subnet(_ip, _net, _mask) (_mask ? ((_net & _mask) == (_ip & _mask)) : _net ? _net == _ip : 1)

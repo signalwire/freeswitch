@@ -2643,6 +2643,12 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_testv6_subnet(ip_t _ip, ip_t _net, ip_t _mask) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_testv6_subnet(ip_t.getCPtr(_ip), ip_t.getCPtr(_net), ip_t.getCPtr(_mask));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static int _zstr(string s) {
     int ret = freeswitchPINVOKE._zstr(s);
     return ret;
@@ -2949,8 +2955,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_parse_cidr(string arg0, SWIGTYPE_p_unsigned_long ip, SWIGTYPE_p_unsigned_long mask, SWIGTYPE_p_unsigned_long bitp) {
-    int ret = freeswitchPINVOKE.switch_parse_cidr(arg0, SWIGTYPE_p_unsigned_long.getCPtr(ip), SWIGTYPE_p_unsigned_long.getCPtr(mask), SWIGTYPE_p_unsigned_long.getCPtr(bitp));
+  public static int switch_parse_cidr(string arg0, ip_t ip, ip_t mask, SWIGTYPE_p_unsigned_long bitp) {
+    int ret = freeswitchPINVOKE.switch_parse_cidr(arg0, ip_t.getCPtr(ip), ip_t.getCPtr(mask), SWIGTYPE_p_unsigned_long.getCPtr(bitp));
     return ret;
   }
 
@@ -2971,6 +2977,12 @@ public class freeswitch {
 
   public static switch_bool_t switch_network_list_validate_ip_token(SWIGTYPE_p_switch_network_list list, uint ip, ref string token) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_network_list_validate_ip_token(SWIGTYPE_p_switch_network_list.getCPtr(list), ip, ref token);
+    return ret;
+  }
+
+  public static switch_bool_t switch_network_list_validate_ip6_token(SWIGTYPE_p_switch_network_list list, ip_t ip, ref string token) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_network_list_validate_ip6_token(SWIGTYPE_p_switch_network_list.getCPtr(list), ip_t.getCPtr(ip), ref token);
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
@@ -8430,6 +8442,27 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_isxdigit")]
   public static extern int switch_isxdigit(int jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v4_set")]
+  public static extern void ip_t_v4_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v4_get")]
+  public static extern uint ip_t_v4_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v6_set")]
+  public static extern void ip_t_v6_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v6_get")]
+  public static extern IntPtr ip_t_v6_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_ip_t")]
+  public static extern IntPtr new_ip_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_ip_t")]
+  public static extern void delete_ip_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_testv6_subnet")]
+  public static extern int switch_testv6_subnet(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SMAX_get")]
   public static extern int SWITCH_SMAX_get();
 
@@ -8627,6 +8660,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_network_list_validate_ip_token")]
   public static extern int switch_network_list_validate_ip_token(HandleRef jarg1, uint jarg2, ref string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_network_list_validate_ip6_token")]
+  public static extern int switch_network_list_validate_ip6_token(HandleRef jarg1, HandleRef jarg2, ref string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_dow_int2str")]
   public static extern string switch_dow_int2str(int jarg1);
@@ -13785,6 +13821,75 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
+public class ip_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal ip_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(ip_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~ip_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_ip_t(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint v4 {
+    set {
+      freeswitchPINVOKE.ip_t_v4_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.ip_t_v4_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_in6_addr v6 {
+    set {
+      freeswitchPINVOKE.ip_t_v6_set(swigCPtr, SWIGTYPE_p_in6_addr.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_in6_addr ret = new SWIGTYPE_p_in6_addr(freeswitchPINVOKE.ip_t_v6_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public ip_t() : this(freeswitchPINVOKE.new_ip_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
 public class IvrMenu : IDisposable {
   private HandleRef swigCPtr;
   protected bool swigCMemOwn;
@@ -16380,6 +16485,36 @@ public class SWIGTYPE_p_HashElem {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_HashElem obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_in6_addr {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_in6_addr(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_in6_addr() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_in6_addr obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -28053,7 +28188,10 @@ public enum switch_rtp_bug_flag_t {
   RTP_BUG_NONE = 0,
   RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
   RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1),
-  RTP_BUG_IGNORE_MARK_BIT = (1 << 2)
+  RTP_BUG_IGNORE_MARK_BIT = (1 << 2),
+  RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
+  RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
+  RTP_BUG_NEVER_SEND_MARKER = (1 << 5)
 }
 
 }
