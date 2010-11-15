@@ -266,7 +266,7 @@ PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event)
 {
 	PK_STATUS pk_status;
 	ftdm_channel_t *ftdmchan = event->userData;
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 
 	//PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 	//PKH_EVENT_GetText(event->id, event_text, sizeof(event_text));
@@ -345,8 +345,8 @@ static unsigned pika_open_range(ftdm_span_t *span, unsigned boardno, unsigned sp
 		
 	}
 
-	if (span->mod_data) {
-		span_data = span->mod_data;
+	if (span->io_data) {
+		span_data = span->io_data;
 	} else {
 		span_data = ftdm_malloc(sizeof(*span_data));
 		assert(span_data != NULL);
@@ -364,7 +364,7 @@ static unsigned pika_open_range(ftdm_span_t *span, unsigned boardno, unsigned sp
 
 		//PKH_QUEUE_Attach(span_data->event_queue, globals.open_boards[boardno], NULL);
 
-		span->mod_data = span_data;
+		span->io_data = span_data;
 	}
 
 	if (type == FTDM_CHAN_TYPE_FXS || type == FTDM_CHAN_TYPE_FXO) {
@@ -380,7 +380,7 @@ static unsigned pika_open_range(ftdm_span_t *span, unsigned boardno, unsigned sp
 		assert(chan_data);
 		memset(chan_data, 0, sizeof(*chan_data));
 		ftdm_span_add_channel(span, 0, type, &chan);
-		chan->mod_data = chan_data;
+		chan->io_data = chan_data;
 
 		if ((type == FTDM_CHAN_TYPE_B || type == FTDM_CHAN_TYPE_DQ921) && !span_data->handle) {
 			PKH_TBoardConfig boardConfig;
@@ -680,7 +680,7 @@ static FIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
  */
 static FIO_OPEN_FUNCTION(pika_open) 
 {
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 
 	if (!chan_data && !ftdm_test_flag(chan_data, PK_FLAG_READY)) {
 		return FTDM_FAIL;
@@ -715,7 +715,7 @@ static FIO_CLOSE_FUNCTION(pika_close)
  */
 static FIO_WAIT_FUNCTION(pika_wait)
 {
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 	PK_STATUS status;
 	ftdm_wait_flag_t myflags = *flags;
 	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
@@ -754,7 +754,7 @@ static FIO_WAIT_FUNCTION(pika_wait)
  */
 static FIO_READ_FUNCTION(pika_read)
 {
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 	PK_STATUS status;
 	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 	uint32_t len;
@@ -795,7 +795,7 @@ static FIO_READ_FUNCTION(pika_read)
  */
 static FIO_WRITE_FUNCTION(pika_write)
 {
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 	PK_STATUS status;
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
@@ -821,8 +821,8 @@ static FIO_WRITE_FUNCTION(pika_write)
  */
 static FIO_COMMAND_FUNCTION(pika_command)
 {
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
-	//pika_span_data_t *span_data = (pika_span_data_t *) ftdmchan->span->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
+	//pika_span_data_t *span_data = (pika_span_data_t *) ftdmchan->span->io_data;
 	PK_STATUS pk_status;
 	ftdm_status_t status = FTDM_SUCCESS;
 
@@ -956,7 +956,7 @@ static FIO_COMMAND_FUNCTION(pika_command)
  */
 static FIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 {
-	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
+	pika_span_data_t *span_data = (pika_span_data_t *) span->io_data;
 	PK_STATUS status;
 	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 
@@ -1025,7 +1025,7 @@ static FIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 				for(x = 1; x <= span->chan_count; x++) {
 					ftdmchan = span->channels[x];
 					assert(ftdmchan != NULL);
-					chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+					chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 					assert(chan_data != NULL);
 					
 
@@ -1042,7 +1042,7 @@ static FIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 		//ftdm_log(FTDM_LOG_DEBUG, "Event: %s\n", event_text);
 		
 		if (ftdmchan) {
-			pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
+			pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
 
 			assert(chan_data != NULL);
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_EVENT);
@@ -1068,7 +1068,7 @@ static FIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_EVENT)) {
-			pika_chan_data_t *chan_data = (pika_chan_data_t *) span->channels[i]->mod_data;
+			pika_chan_data_t *chan_data = (pika_chan_data_t *) span->channels[i]->io_data;
 			PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 			
 			ftdm_clear_flag(span->channels[i], FTDM_CHANNEL_EVENT);
@@ -1207,7 +1207,7 @@ static FIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
  */
 static FIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
 {
-	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
+	pika_span_data_t *span_data = (pika_span_data_t *) span->io_data;
 	
 	if (span_data) {
 		PKH_QUEUE_Destroy(span_data->event_queue);
@@ -1224,8 +1224,8 @@ static FIO_SPAN_DESTROY_FUNCTION(pika_span_destroy)
  */
 static FIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 {
-	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->mod_data;
-	pika_span_data_t *span_data = (pika_span_data_t *) ftdmchan->span->mod_data;
+	pika_chan_data_t *chan_data = (pika_chan_data_t *) ftdmchan->io_data;
+	pika_span_data_t *span_data = (pika_span_data_t *) ftdmchan->span->io_data;
 	
 	if (!chan_data) {
 		return FTDM_FAIL;
