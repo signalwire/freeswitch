@@ -2937,13 +2937,20 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			for (param = switch_xml_child(myspan, "param"); param && paramindex < 10; param = param->next) {
+			memset(spanparameters, 0, sizeof(spanparameters));
+
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
-				if (ftdm_array_len(spanparameters) == paramindex) {
+				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
 					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for pri span '%s', ignoring everything after '%s'\n", name, var);
 					break;
+				}
+
+				if (ftdm_strlen_zero(var) || ftdm_strlen_zero(val)) {
+					ftdm_log(FTDM_LOG_WARNING, "Skipping parameter with empty name or value\n");
+					continue;
 				}
 
 				if (!strcasecmp(var, "context")) {
@@ -2995,10 +3002,17 @@ static switch_status_t load_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
 				continue;
 			}
-			
+
+			memset(spanparameters, 0, sizeof(spanparameters));
+
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
+					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for pritap span '%s', ignoring everything after '%s'\n", name, var);
+					break;
+				}
 
 				if (!strcasecmp(var, "context")) {
 					context = val;
@@ -3049,13 +3063,20 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			for (param = switch_xml_child(myspan, "param"); param && paramindex < 10; param = param->next) {
+			memset(spanparameters, 0, sizeof(spanparameters));
+
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
 					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for libpri span, ignoring everything after '%s'\n", var);
 					break;
+				}
+
+				if (ftdm_strlen_zero(var) || ftdm_strlen_zero(val)) {
+					ftdm_log(FTDM_LOG_WARNING, "Skipping parameter with empty name or value\n");
+					continue;
 				}
 
 				if (!strcasecmp(var, "context")) {

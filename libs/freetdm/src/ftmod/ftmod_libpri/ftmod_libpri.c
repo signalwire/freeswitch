@@ -1704,11 +1704,16 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		return FTDM_FAIL;
 	}
 
-	for (i = 0; i < 10 && ftdm_parameters[i].var; i++) {
+	for (i = 0; ftdm_parameters[i].var; i++) {
 		const char *var = ftdm_parameters[i].var;
 		const char *val = ftdm_parameters[i].val;
 
-		if (!val) {
+		if (ftdm_strlen_zero(var)) {
+			ftdm_log(FTDM_LOG_WARNING, "Skipping parameter with no name\n");
+			continue;
+		}
+
+		if (ftdm_strlen_zero(val)) {
 			ftdm_log(FTDM_LOG_ERROR, "Parameter '%s' has no value\n", var);
 			snprintf(span->last_error, sizeof(span->last_error), "Parameter [%s] has no value", var);
 			return FTDM_FAIL;

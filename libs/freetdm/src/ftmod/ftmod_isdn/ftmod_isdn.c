@@ -2667,7 +2667,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
 		const char *var = ftdm_parameters[i].var;
 		const char *val = ftdm_parameters[i].val;
 
-		if (!val) {
+		if (ftdm_strlen_zero(var)) {
+			ftdm_log(FTDM_LOG_WARNING, "Skipping variable with no name\n");
+			continue;
+		}
+
+		if (ftdm_strlen_zero(val)) {
 			ftdm_log(FTDM_LOG_ERROR, "Variable '%s' has no value\n", var);
 			return FTDM_FAIL;
 		}
