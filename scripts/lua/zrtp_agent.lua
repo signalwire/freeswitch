@@ -8,7 +8,7 @@ session:sleep(3000);
 -- Give the agent time to bring up ZRTP.
 
 local zrtp_secure_media_confirmed = session:getVariable("zrtp_secure_media_confirmed_audio");
-local zrtp_new_user_enrolled = session:getVariable("zrtp_new_user_enrolled");
+local zrtp_new_user_enrolled = session:getVariable("zrtp_new_user_enrolled_audio");
 local zrtp_already_enrolled = session:getVariable("zrtp_already_enrolled_audio");
 
 if zrtp_secure_media_confirmed == "true" then

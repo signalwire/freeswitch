@@ -558,6 +558,7 @@ struct sofia_profile {
 	char *user_agent_filter;
 	uint32_t max_registrations_perext;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
+	switch_rtp_bug_flag_t manual_rtp_bugs;
 	uint32_t ib_calls;
 	uint32_t ob_calls;
 	uint32_t ib_failed_calls;
@@ -1035,3 +1036,4 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
 switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
+void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str);

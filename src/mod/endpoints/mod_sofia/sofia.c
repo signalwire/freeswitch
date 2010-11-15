@@ -2220,39 +2220,6 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 	}
 }
 
-static void parse_rtp_bugs(sofia_profile_t *profile, const char *str)
-{
-
-	if (switch_stristr("clear", str)) {
-		profile->auto_rtp_bugs = 0;
-	}
-
-	if (switch_stristr("CISCO_SKIP_MARK_BIT_2833", str)) {
-		profile->auto_rtp_bugs |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
-	}
-
-	if (switch_stristr("~CISCO_SKIP_MARK_BIT_2833", str)) {
-		profile->auto_rtp_bugs &= ~RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
-	}
-
-	if (switch_stristr("SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
-		profile->auto_rtp_bugs |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
-	}
-
-	if (switch_stristr("~SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
-		profile->auto_rtp_bugs &= ~RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
-	}
-
-	if (switch_stristr("IGNORE_MARK_BIT", str)) {
-		profile->auto_rtp_bugs |= RTP_BUG_IGNORE_MARK_BIT;
-	}	
-
-	if (switch_stristr("~IGNORE_MARK_BIT", str)) {
-		profile->auto_rtp_bugs &= ~RTP_BUG_IGNORE_MARK_BIT;
-	}	
-
-}
-
 switch_status_t reconfig_sofia(sofia_profile_t *profile)
 {
 	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag, aliases_tag, alias_tag, settings, param;
@@ -2382,7 +2349,9 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						}
 					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
-						parse_rtp_bugs(profile, val);
+						sofia_glue_parse_rtp_bugs(&profile->auto_rtp_bugs, val);
+					} else if (!strcasecmp(var, "manual-rtp-bugs")) {
+						sofia_glue_parse_rtp_bugs(&profile->manual_rtp_bugs, val);
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "auto-restart")) {
@@ -3103,7 +3072,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->rport_level = 2;
 						}
 					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
-						parse_rtp_bugs(profile, val);
+						sofia_glue_parse_rtp_bugs(&profile->auto_rtp_bugs, val);
+					} else if (!strcasecmp(var, "manual-rtp-bugs")) {
+						sofia_glue_parse_rtp_bugs(&profile->manual_rtp_bugs, val);
 					} else if (!strcasecmp(var, "dbname")) {
 						profile->dbname = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "presence-hosts")) {
@@ -4700,9 +4671,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 					}
-					switch_mutex_unlock(tech_pvt->sofia_mutex);
-					switch_channel_pre_answer(other_channel);
-					switch_mutex_lock(tech_pvt->sofia_mutex);
+					//switch_channel_pre_answer(other_channel);
+					switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_PROGRESS);
 					switch_core_session_rwunlock(other_session);
 				}
 				goto done;
@@ -5129,10 +5099,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
-						other_channel = switch_core_session_get_channel(other_session);
-						switch_mutex_unlock(tech_pvt->sofia_mutex);
-						switch_channel_answer(other_channel);
-						switch_mutex_lock(tech_pvt->sofia_mutex);
+						//other_channel = switch_core_session_get_channel(other_session);
+						//switch_channel_answer(other_channel);
+						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 						switch_core_session_rwunlock(other_session);
 					}
 				}
@@ -5161,9 +5130,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 						}
-						switch_mutex_unlock(tech_pvt->sofia_mutex);
-						switch_channel_answer(other_channel);
-						switch_mutex_lock(tech_pvt->sofia_mutex);
+						
+						//switch_channel_answer(other_channel);
+						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
+
 						switch_core_session_rwunlock(other_session);
 					}
 					goto done;

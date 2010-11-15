@@ -34,11 +34,6 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-extern ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-extern ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-extern ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-extern ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
-
 /* Remote side transmit a SETUP */
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 {

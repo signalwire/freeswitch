@@ -596,7 +596,7 @@ typedef enum {
 		 */
 
 
-	RTP_BUG_IGNORE_MARK_BIT = (1 << 2)
+	RTP_BUG_IGNORE_MARK_BIT = (1 << 2),
 
 	/*
 	  A Huawei SBC has been discovered that sends the mark bit on every single RTP packet.
@@ -605,6 +605,34 @@ typedef enum {
 	  This flag will do nothing when an inbound packet contains the mark bit.
 
 	 */
+
+	
+	RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
+
+	/*
+	  Our friends at Sonus get real mad when the timestamps are not in perfect sequence even during periods of silence.
+	  With this flag, we will only increment the timestamp when write packets even if they are eons apart.
+	  
+	 */
+
+	RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
+
+	/*
+	  Our friends at Sonus also get real mad if the sequence number does not start at 0.  
+	  Typically, we set this to a random starting value for your saftey.
+	  This is a security risk you take upon yourself when you enable this flag.
+	 */
+
+
+	RTP_BUG_NEVER_SEND_MARKER = (1 << 5),
+
+	/*
+	  Our friends at Sonus are on a roll, They also get easily dumbfounded by marker bits.
+	  This flag will never send any. Sheesh....
+	 */
+	
+	
+
 
 
 } switch_rtp_bug_flag_t;

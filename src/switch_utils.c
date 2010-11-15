@@ -39,9 +39,10 @@
 #define ESCAPE_META '\\'
 
 struct switch_network_node {
-	uint32_t ip;
-	uint32_t mask;
+	ip_t ip;
+	ip_t mask;
 	uint32_t bits;
+	int family;
 	switch_bool_t ok;
 	char *token;
 	char *str;
@@ -140,6 +141,50 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define IN6_AND_MASK(result, ip, mask) \
+	((uint32_t *) (result))[0] =((const uint32_t *) (ip))[0] & ((const uint32_t *)(mask))[0]; \
+	((uint32_t *) (result))[1] =((const uint32_t *) (ip))[1] & ((const uint32_t *)(mask))[1]; \
+	((uint32_t *) (result))[2] =((const uint32_t *) (ip))[2] & ((const uint32_t *)(mask))[2]; \
+	((uint32_t *) (result))[3] =((const uint32_t *) (ip))[3] & ((const uint32_t *)(mask))[3];
+SWITCH_DECLARE(switch_bool_t) switch_testv6_subnet(ip_t _ip, ip_t _net, ip_t _mask) {
+		if (!IN6_IS_ADDR_UNSPECIFIED(&_mask.v6)) {
+			struct in6_addr a, b;
+			IN6_AND_MASK(&a, &_net, &_mask);
+			IN6_AND_MASK(&b, &_ip, &_mask);
+			return !memcmp(&a,&b, sizeof(struct in6_addr));
+		} else {
+			if (!IN6_IS_ADDR_UNSPECIFIED(&_net.v6)) {
+				return !memcmp(&_net,&_ip,sizeof(struct in6_addr));
+			}
+			else return SWITCH_TRUE;
+		}
+}
+SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip6_token(switch_network_list_t *list, ip_t ip, const char **token)
+{
+	switch_network_node_t *node;
+	switch_bool_t ok = list->default_type;
+	uint32_t bits = 0;
+
+	for (node = list->node_head; node; node = node->next) {
+		if (node->family == AF_INET) continue;
+		if (node->bits > bits && switch_testv6_subnet(ip, node->ip, node->mask)) {
+			if (node->ok) {
+				ok = SWITCH_TRUE;
+			} else {
+				ok = SWITCH_FALSE;
+			}
+
+			bits = node->bits;
+
+			if (token) {
+				*token = node->token;
+			}
+		}
+	}
+
+	return ok;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_network_list_t *list, uint32_t ip, const char **token)
 {
 	switch_network_node_t *node;
@@ -147,7 +192,8 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 	uint32_t bits = 0;
 
 	for (node = list->node_head; node; node = node->next) {
-		if (node->bits > bits && switch_test_subnet(ip, node->ip, node->mask)) {
+		if (node->family == AF_INET6) continue; /* want AF_INET */
+		if (node->bits > bits && switch_test_subnet(ip, node->ip.v4, node->mask.v4)) {
 			if (node->ok) {
 				ok = SWITCH_TRUE;
 			} else {
@@ -168,7 +214,8 @@ SWITCH_DECLARE(switch_bool_t) switch_network_list_validate_ip_token(switch_netwo
 SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok,
 																		   const char *token)
 {
-	uint32_t ip, mask, bits;
+	ip_t ip, mask;
+	uint32_t bits;
 	switch_network_node_t *node;
 
 	if (switch_parse_cidr(cidr_str, &ip, &mask, &bits)) {
@@ -184,6 +231,12 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_perform_add_cidr_token(switc
 	node->ok = ok;
 	node->bits = bits;
 	node->str = switch_core_strdup(list->pool, cidr_str);
+
+	if (strchr(cidr_str,':')) {
+		node->family = AF_INET6;
+	} else {
+		node->family = AF_INET;
+	}
 
 	if (!zstr(token)) {
 		node->token = switch_core_strdup(list->pool, token);
@@ -227,7 +280,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network_list_t *list, const char *host, const char *mask_str, switch_bool_t ok)
 {
-	int ip, mask;
+	ip_t ip, mask;
 	switch_network_node_t *node;
 
 	switch_inet_pton(AF_INET, host, &ip);
@@ -235,14 +288,15 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 
 	node = switch_core_alloc(list->pool, sizeof(*node));
 
-	node->ip = ntohl(ip);
-	node->mask = ntohl(mask);
+	node->ip.v4 = ntohl(ip.v4);
+	node->mask.v4 = ntohl(mask.v4);
 	node->ok = ok;
 
 	/* http://graphics.stanford.edu/~seander/bithacks.html */
-	mask = mask - ((mask >> 1) & 0x55555555);
-	mask = (mask & 0x33333333) + ((mask >> 2) & 0x33333333);
-	node->bits = (((mask + (mask >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+	mask.v4 = mask.v4 - ((mask.v4 >> 1) & 0x55555555);
+	mask.v4 = (mask.v4 & 0x33333333) + ((mask.v4 >> 2) & 0x33333333);
+	node->bits = (((mask.v4 + (mask.v4 >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+
 	node->str = switch_core_sprintf(list->pool, "%s:%s", host, mask_str);
 
 	node->next = list->node_head;
@@ -252,13 +306,16 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 }
 
 
-SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp)
+SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, uint32_t *bitp)
 {
 	char host[128];
 	char *bit_str;
 	int32_t bits;
+	const char *ipv6;
+	ip_t *maskv = mask;
+	ip_t *ipv = ip;
 
-	switch_copy_string(host, string, sizeof(host));
+	memcpy(host, string, sizeof(host));
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
@@ -267,17 +324,36 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t
 
 	*bit_str++ = '\0';
 	bits = atoi(bit_str);
+	ipv6 = strchr(string, ':');
+	if (ipv6) {
+		int i,n;
+		if (bits < 0 || bits > 128) {
+			return -2;
+		}
+		bits = atoi(bit_str);
+		switch_inet_pton(AF_INET6, host, (unsigned char *)ip);
+		for (n=bits,i=0 ;i < 16; i++){
+			if (n >= 8) {
+				maskv->v6.s6_addr[i] = 0xFF;
+				n -= 8;
+			} else if (n < 8) {
+				maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> n);
+				n -= n;
+			} else if (n == 0) {
+				maskv->v6.s6_addr[i] = 0x00;
+			}
+		}
+	} else {
+		if (bits < 0 || bits > 32) {
+			return -2;
+		}
 
-	if (bits < 0 || bits > 32) {
-		return -2;
+		bits = atoi(bit_str);
+		switch_inet_pton(AF_INET, host, (unsigned char *)ip);
+		ipv->v4 = htonl(ipv->v4);
+
+		maskv->v4 = 0xFFFFFFFF & ~(0xFFFFFFFF >> bits);
 	}
-
-	bits = atoi(bit_str);
-	switch_inet_pton(AF_INET, host, ip);
-	*ip = htonl(*ip);
-
-	*mask = 0xFFFFFFFF & ~(0xFFFFFFFF >> bits);
-
 	*bitp = bits;
 
 	return 0;
@@ -394,7 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 			if (++y != 72) {
 				continue;
 			}
-			//out[bytes++] = '\n';
+			/* out[bytes++] = '\n'; */
 			y = 0;
 		}
 	}
@@ -963,7 +1039,7 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		if (ip.s_addr == me->sin_addr.s_addr) {
 			ioctl(sock, SIOCGIFNETMASK, &ifreqs[i]);
 			sin = (struct sockaddr_in *) &ifreqs[i].ifr_addr;
-			//mask = sin->sin_addr;
+			/* mask = sin->sin_addr; */
 			*mask = sin->sin_addr.s_addr;
 			r = 0;
 			break;
@@ -1094,7 +1170,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 		break;
 	case AF_INET6:
 		switch_copy_string(buf, "::1", len);
-		base = "2001:503:BA3E::2:30";	// DNS Root server A 
+		base = "2001:503:BA3E::2:30";	/* DNS Root server A */
 		break;
 	default:
 		base = "127.0.0.1";
