@@ -357,6 +357,7 @@ typedef struct {
 } ftdm_dtmf_debug_t;
 #endif
 
+
 typedef struct {
 	const char *file;
 	const char *func;
@@ -365,6 +366,33 @@ typedef struct {
 	ftdm_channel_state_t last_state;
 	ftdm_time_t time;
 } ftdm_channel_history_entry_t;
+
+typedef enum {
+	FTDM_IOSTATS_ERROR_CRC			= (1<<0),
+	FTDM_IOSTATS_ERROR_FRAME		= (1<<1),
+	FTDM_IOSTATS_ERROR_ABORT 		= (1<<2),
+	FTDM_IOSTATS_ERROR_FIFO 		= (1<<3),
+	FTDM_IOSTATS_ERROR_DMA			= (1<<4),
+	FTDM_IOSTATS_ERROR_QUEUE_THRES	= (1<<5), /* Queue reached high threshold */
+	FTDM_IOSTATS_ERROR_QUEUE_FULL	= (1<<6), /* Queue is full */
+} ftdm_iostats_error_type_t;
+
+typedef struct {
+	union {
+		struct {
+			uint32_t	errors;
+			uint16_t	flags;
+			uint8_t		rx_queue_size;	/* max queue size configured */
+			uint8_t		rx_queue_len;	/* Current number of elements in queue */
+		} rx;
+		struct {
+			uint32_t	errors;
+			uint16_t	flags;
+			uint8_t		tx_queue_size;	/* max queue size configured */
+			uint8_t		tx_queue_len;	/* Current number of elements in queue */
+		} tx;
+	} s;
+} ftdm_channel_iostats_t;
 
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
@@ -438,6 +466,7 @@ struct ftdm_channel {
 	int availability_rate;
 	void *user_private;
 	ftdm_timer_id_t hangup_timer;
+	ftdm_channel_iostats_t iostats;
 #ifdef FTDM_DEBUG_DTMF
 	ftdm_dtmf_debug_t dtmfdbg;
 #endif
@@ -632,9 +661,20 @@ FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
 #define ftdm_channel_lock(chan) ftdm_mutex_lock(chan->mutex)
 #define ftdm_channel_unlock(chan) ftdm_mutex_unlock(chan->mutex)
+
+#define ftdm_log_throttle(level, ...) \
+	time_current_throttle_log = ftdm_current_time_in_ms(); \
+	if (time_current_throttle_log - time_last_throttle_log > FTDM_THROTTLE_LOG_INTERVAL) {\
+		ftdm_log(level, __VA_ARGS__); \
+		time_last_throttle_log = time_current_throttle_log; \
+	} 
+
 #define ftdm_log_chan_ex(fchan, file, func, line, level, format, ...) ftdm_log(file, func, line, level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan(fchan, level, format, ...) ftdm_log(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan_msg(fchan, level, msg) ftdm_log(level, "[s%dc%d][%d:%d] " msg, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id)
+
+#define ftdm_log_chan_throttle(fchan, level, format, ...) ftdm_log_throttle(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
+#define ftdm_log_chan_msg_throttle(fchan, level, format, ...) ftdm_log_throttle(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 
 #define ftdm_span_lock(span) ftdm_mutex_lock(span->mutex)
 #define ftdm_span_unlock(span) ftdm_mutex_unlock(span->mutex)

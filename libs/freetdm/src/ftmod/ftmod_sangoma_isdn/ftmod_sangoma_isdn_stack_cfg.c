@@ -156,34 +156,34 @@ ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
 ftdm_status_t sngisdn_stack_cfg_phy_gen(void)
 {
 	/*local variables*/
-    L1Mngmt     cfg;    /*configuration structure*/
-    Pst         pst;    /*post structure*/
+	L1Mngmt     cfg;    /*configuration structure*/
+	Pst         pst;    /*post structure*/
 
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 
-    /* insert the destination Entity */
-    pst.dstEnt = ENTL1;
+	/* insert the destination Entity */
+	pst.dstEnt = ENTL1;
 
-    /*clear the configuration structure*/
+	/*clear the configuration structure*/
 	memset(&cfg, 0, sizeof(cfg));
 
-    /*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	/*fill in some general sections of the header*/
+	stack_hdr_init(&cfg.hdr);
 
-    /*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTL1;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STGEN;
+	/*fill in the specific fields of the header*/
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTL1;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STGEN;
 
-    stack_pst_init(&cfg.t.cfg.s.l1Gen.sm );
-    cfg.t.cfg.s.l1Gen.sm.srcEnt     = ENTL1;
-    cfg.t.cfg.s.l1Gen.sm.dstEnt     = ENTSM;
+	stack_pst_init(&cfg.t.cfg.s.l1Gen.sm );
+	cfg.t.cfg.s.l1Gen.sm.srcEnt     = ENTL1;
+	cfg.t.cfg.s.l1Gen.sm.dstEnt     = ENTSM;
 
-    cfg.t.cfg.s.l1Gen.nmbLnks       = MAX_L1_LINKS+1;
-    cfg.t.cfg.s.l1Gen.poolTrUpper   = POOL_UP_TR;        /* upper pool threshold */
-    cfg.t.cfg.s.l1Gen.poolTrLower   = POOL_LW_TR;        /* lower pool threshold */
+	cfg.t.cfg.s.l1Gen.nmbLnks       = MAX_L1_LINKS;
+	cfg.t.cfg.s.l1Gen.poolTrUpper   = POOL_UP_TR;        /* upper pool threshold */
+	cfg.t.cfg.s.l1Gen.poolTrLower   = POOL_LW_TR;        /* lower pool threshold */
 
 	if (sng_isdn_phy_config(&pst, &cfg)) {
 		return FTDM_FAIL;
@@ -193,38 +193,38 @@ ftdm_status_t sngisdn_stack_cfg_phy_gen(void)
 
 ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 {	
-    L1Mngmt				cfg;
-    Pst					pst;
+	L1Mngmt				cfg;
+	Pst					pst;
 
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 
-    /* insert the destination Entity */
-    pst.dstEnt = ENTL1;
+	/* insert the destination Entity */
+	pst.dstEnt = ENTL1;
 
-    /*clear the configuration structure*/
+	/*clear the configuration structure*/
 	memset(&cfg, 0, sizeof(cfg));
 
-    /*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	/*fill in some general sections of the header*/
+	stack_hdr_init(&cfg.hdr);
 
-    /*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTL1;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STPSAP;
+	/*fill in the specific fields of the header*/
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTL1;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STPSAP;
 
 	cfg.hdr.elmId.elmntInst1    = signal_data->link_id;
-	
+
 	if (!signal_data->dchan) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:No d-channels specified\n", span->name);
 		return FTDM_FAIL;
-	} 
+	}
 
 	cfg.t.cfg.s.l1PSAP.sockfd = (int32_t)signal_data->dchan->sockfd;
-	
+
 	switch(span->trunk_type) {
 		case FTDM_TRUNK_E1:
 			cfg.t.cfg.s.l1PSAP.type = SNG_L1_TYPE_PRI;
@@ -240,9 +240,9 @@ ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 		default:
 			ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported trunk type %d\n", span->name, span->trunk_type);
 			return FTDM_FAIL;
-	}	
-    cfg.t.cfg.s.l1PSAP.spId		= signal_data->link_id;
-		
+	}
+	cfg.t.cfg.s.l1PSAP.spId		= signal_data->link_id;
+
 	if (sng_isdn_phy_config(&pst, &cfg)) {
 		return FTDM_FAIL;
 	}
@@ -253,25 +253,25 @@ ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 ftdm_status_t sngisdn_stack_cfg_q921_gen(void)
 {
 	BdMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 	/* insert the destination Entity */
-    pst.dstEnt = ENTLD;
+	pst.dstEnt = ENTLD;
 
-    /*clear the configuration structure*/
-    memset(&cfg, 0, sizeof(cfg));
+	/*clear the configuration structure*/
+	memset(&cfg, 0, sizeof(cfg));
 	/*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
-		
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTLD;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STGEN;
-    /* fill in the Gen Conf structures internal pst struct */
+	stack_hdr_init(&cfg.hdr);
 
-    stack_pst_init(&cfg.t.cfg.s.bdGen.sm);
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTLD;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STGEN;
+	/* fill in the Gen Conf structures internal pst struct */
+
+	stack_pst_init(&cfg.t.cfg.s.bdGen.sm);
 
 	cfg.t.cfg.s.bdGen.sm.dstEnt    = ENTSM;         /* entity */
 	
@@ -284,8 +284,8 @@ ftdm_status_t sngisdn_stack_cfg_q921_gen(void)
 #ifdef LAPD_3_4
 	cfg.t.cfg.s.bdGen.timeRes     = 100;      /* timer resolution = 1 sec */
 #endif
-    cfg.t.cfg.s.bdGen.poolTrUpper   = 2;        /* upper pool threshold */
-    cfg.t.cfg.s.bdGen.poolTrLower   = 1;        /* lower pool threshold */
+	cfg.t.cfg.s.bdGen.poolTrUpper   = 2;        /* upper pool threshold */
+	cfg.t.cfg.s.bdGen.poolTrLower   = 1;        /* lower pool threshold */
 
 	if (sng_isdn_q921_config(&pst, &cfg)) {
 		return FTDM_FAIL;
@@ -296,27 +296,27 @@ ftdm_status_t sngisdn_stack_cfg_q921_gen(void)
 ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 {
 	BdMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 	/* insert the destination Entity */
-    pst.dstEnt = ENTLD;
+	pst.dstEnt = ENTLD;
 
-    /*clear the configuration structure*/
-    memset(&cfg, 0, sizeof(cfg));
+	/*clear the configuration structure*/
+	memset(&cfg, 0, sizeof(cfg));
 	/*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	stack_hdr_init(&cfg.hdr);
 
 	cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTLD;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STMSAP;
+	cfg.hdr.entId.ent   = ENTLD;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STMSAP;
 
 	cfg.t.cfg.s.bdMSAP.lnkNmb      = signal_data->link_id;
-	
+
 	cfg.t.cfg.s.bdMSAP.maxOutsFrms = 24;            /* MAC window */
 	cfg.t.cfg.s.bdMSAP.tQUpperTrs  = 32;           /* Tx Queue Upper Threshold */
 	cfg.t.cfg.s.bdMSAP.tQLowerTrs  = 24;            /* Tx Queue Lower Threshold */
@@ -328,7 +328,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 	cfg.t.cfg.s.bdMSAP.route       = RTESPEC;            /* Route */
 	cfg.t.cfg.s.bdMSAP.dstProcId   = SFndProcId(); /* destination proc id */
 	cfg.t.cfg.s.bdMSAP.dstEnt      = ENTL1;        /* entity */
-	cfg.t.cfg.s.bdMSAP.dstInst     = S_INST;      /* instance */	
+	cfg.t.cfg.s.bdMSAP.dstInst     = S_INST;      /* instance */
 	cfg.t.cfg.s.bdMSAP.t201Tmr     = 1;            /* T201 - should be equal to t200Tmr */
 	cfg.t.cfg.s.bdMSAP.t202Tmr     = 2;          /* T202 */
 	cfg.t.cfg.s.bdMSAP.bndRetryCnt = 2;            /* bind retry counter */
@@ -377,7 +377,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 	if (signal_data->setup_arb == SNGISDN_OPT_TRUE) {
 		cfg.t.cfg.s.bdMSAP.setUpArb    = ACTIVE;
 	} else if (signal_data->setup_arb == SNGISDN_OPT_FALSE) {
- 		cfg.t.cfg.s.bdMSAP.setUpArb    = PASSIVE;
+		cfg.t.cfg.s.bdMSAP.setUpArb    = PASSIVE;
 	}
 
 	if (sng_isdn_q921_config(&pst, &cfg)) {
@@ -389,24 +389,24 @@ ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management)
 {
 	BdMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 	/* insert the destination Entity */
-    pst.dstEnt = ENTLD;
+	pst.dstEnt = ENTLD;
 
-    /*clear the configuration structure*/
-    memset(&cfg, 0, sizeof(cfg));
+	/*clear the configuration structure*/
+	memset(&cfg, 0, sizeof(cfg));
 	/*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	stack_hdr_init(&cfg.hdr);
 
 	/*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTLD;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STDLSAP;
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTLD;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STDLSAP;
 
 	cfg.t.cfg.s.bdDLSAP.lnkNmb		= signal_data->link_id;
 
@@ -418,10 +418,10 @@ ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management
 	} else {
 		cfg.t.cfg.s.bdDLSAP.k			= 7;             	/* k */
 	}
-	
+
 	cfg.t.cfg.s.bdDLSAP.n200		= 3;             	/* n200 */
 	cfg.t.cfg.s.bdDLSAP.congTmr		= 300;           	/* congestion timer */
-	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 1;				/* t1 changed from 25 */ 
+	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 1;				/* t1 changed from 25 */
 	cfg.t.cfg.s.bdDLSAP.t203Tmr		= 10;				/* t3 changed from 50 */
 	cfg.t.cfg.s.bdDLSAP.mod			= 128;           	/* modulo */
 	cfg.t.cfg.s.bdDLSAP.selector	= 0;				/* Selector 0 */
@@ -471,28 +471,28 @@ ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management
 ftdm_status_t sngisdn_stack_cfg_q931_gen(void)
 {
 	InMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 
-    /* insert the destination Entity */
-    pst.dstEnt = ENTIN;
+	/* insert the destination Entity */
+	pst.dstEnt = ENTIN;
 
-    /*clear the configuration structure*/
+	/*clear the configuration structure*/
 	memset(&cfg, 0, sizeof(cfg));
 
-    /*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	/*fill in some general sections of the header*/
+	stack_hdr_init(&cfg.hdr);
 
-    /*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTIN;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STGEN;
+	/*fill in the specific fields of the header*/
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTIN;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STGEN;
 
-    /* fill in the Gen Conf structures internal pst struct */
-    stack_pst_init(&cfg.t.cfg.s.inGen.sm);
+	/* fill in the Gen Conf structures internal pst struct */
+	stack_pst_init(&cfg.t.cfg.s.inGen.sm);
 
 	cfg.t.cfg.s.inGen.nmbSaps = MAX_VARIANTS+1;			/* Total number of variants supported */
 
@@ -526,26 +526,26 @@ ftdm_status_t sngisdn_stack_cfg_q931_gen(void)
 ftdm_status_t sngisdn_stack_cfg_q931_tsap(ftdm_span_t *span)
 {
 	InMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 	unsigned i;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 
-    /* insert the destination Entity */
-    pst.dstEnt = ENTIN;
+	/* insert the destination Entity */
+	pst.dstEnt = ENTIN;
 
-    /*clear the configuration structure*/
+	/*clear the configuration structure*/
 	memset(&cfg, 0, sizeof(cfg));
 
-    /*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	/*fill in some general sections of the header*/
+	stack_hdr_init(&cfg.hdr);
 
-    /*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTIN;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STTSAP;
+	/*fill in the specific fields of the header*/
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTIN;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STTSAP;
 
 	cfg.t.cfg.s.inTSAP.sapId = signal_data->cc_id;
 
@@ -589,31 +589,31 @@ ftdm_status_t sngisdn_stack_cfg_q931_tsap(ftdm_span_t *span)
 ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 {
 	InMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 
 	unsigned i;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 
-    /* insert the destination Entity */
-    pst.dstEnt = ENTIN;
+	/* insert the destination Entity */
+	pst.dstEnt = ENTIN;
 
-    /*clear the configuration structure*/
+	/*clear the configuration structure*/
 	memset(&cfg, 0, sizeof(cfg));
 
-    /*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);
+	/*fill in some general sections of the header*/
+	stack_hdr_init(&cfg.hdr);
 
-    /*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTIN;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STDLSAP;
-	
+	/*fill in the specific fields of the header*/
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTIN;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STDLSAP;
+
 	cfg.hdr.response.selector=0;
 
-	
+
 	cfg.t.cfg.s.inDLSAP.sapId = signal_data->link_id;
 	cfg.t.cfg.s.inDLSAP.spId = signal_data->link_id;
 	cfg.t.cfg.s.inDLSAP.swtch = sng_isdn_stack_switchtype(signal_data->switchtype);
@@ -659,7 +659,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 		cfg.t.cfg.s.inDLSAP.ctldInt[1] = 1;
 	}
 
-	cfg.t.cfg.s.inDLSAP.numRstInd = 255;	
+	cfg.t.cfg.s.inDLSAP.numRstInd = 255;
 	cfg.t.cfg.s.inDLSAP.relOpt = TRUE;
 #ifdef ISDN_SRV
 	cfg.t.cfg.s.inDLSAP.bcas = FALSE;
@@ -839,36 +839,36 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 {
 	InMngmt cfg;
-    Pst     pst;
+	Pst     pst;
 	uint8_t	i;
-	uint8_t numCes=1;	
+	uint8_t numCes=1;
 
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP && signal_data->signalling == SNGISDN_SIGNALING_NET) {
 		numCes = 8;
 	}
-    /* initalize the post structure */
-    stack_pst_init(&pst);
+	/* initalize the post structure */
+	stack_pst_init(&pst);
 
-    /* insert the destination Entity */
-    pst.dstEnt = ENTIN;
+	/* insert the destination Entity */
+	pst.dstEnt = ENTIN;
 
-    /*clear the configuration structure*/
+	/*clear the configuration structure*/
 	memset(&cfg, 0, sizeof(cfg));
 
-    /*fill in some general sections of the header*/
-    stack_hdr_init(&cfg.hdr);	
+	/*fill in some general sections of the header*/
+	stack_hdr_init(&cfg.hdr);
 
-    /*fill in the specific fields of the header*/
-    cfg.hdr.msgType     = TCFG;
-    cfg.hdr.entId.ent   = ENTIN;
-    cfg.hdr.entId.inst  = S_INST;
-    cfg.hdr.elmId.elmnt = STDLC;
+	/*fill in the specific fields of the header*/
+	cfg.hdr.msgType     = TCFG;
+	cfg.hdr.entId.ent   = ENTIN;
+	cfg.hdr.entId.inst  = S_INST;
+	cfg.hdr.elmId.elmnt = STDLC;
 
 	cfg.hdr.response.selector=0;
 
 	cfg.t.cfg.s.inLCe.sapId = signal_data->link_id;
-	
+
 
 	cfg.t.cfg.s.inLCe.lnkUpDwnInd = TRUE;
 	cfg.t.cfg.s.inLCe.tCon.enb = TRUE;
@@ -877,7 +877,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 	cfg.t.cfg.s.inLCe.tDisc.val = 35;
 	cfg.t.cfg.s.inLCe.t314.enb = FALSE; /* if segmentation enabled, set to TRUE */
 	cfg.t.cfg.s.inLCe.t314.val = 35;
-		
+
 	cfg.t.cfg.s.inLCe.t332i.enb = FALSE; /* set to TRUE for NFAS */
 
 #ifdef NFAS
@@ -896,7 +896,6 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 #endif
 	cfg.t.cfg.s.inLCe.tRstAck.enb = TRUE;
 	cfg.t.cfg.s.inLCe.tRstAck.val = 10;
-
 
 	cfg.t.cfg.s.inLCe.usid = 0;
 	cfg.t.cfg.s.inLCe.tid = 0;
@@ -983,11 +982,11 @@ ftdm_status_t sngisdn_stack_cfg_cc_sap(ftdm_span_t *span)
 	cfg.t.cfg.s.ccISAP.pst.dstInst		= S_INST;
 	cfg.t.cfg.s.ccISAP.pst.dstProcId	= SFndProcId();
 
-    cfg.t.cfg.s.ccISAP.pst.prior		= PRIOR0;
-    cfg.t.cfg.s.ccISAP.pst.route		= RTESPEC;
-    cfg.t.cfg.s.ccISAP.pst.region		= S_REG;
-    cfg.t.cfg.s.ccISAP.pst.pool			= S_POOL;
-    cfg.t.cfg.s.ccISAP.pst.selector		= 0;
+	cfg.t.cfg.s.ccISAP.pst.prior		= PRIOR0;
+	cfg.t.cfg.s.ccISAP.pst.route		= RTESPEC;
+	cfg.t.cfg.s.ccISAP.pst.region		= S_REG;
+	cfg.t.cfg.s.ccISAP.pst.pool			= S_POOL;
+	cfg.t.cfg.s.ccISAP.pst.selector		= 0;
 
 	cfg.t.cfg.s.ccISAP.suId				= signal_data->cc_id;
 	cfg.t.cfg.s.ccISAP.spId				= signal_data->cc_id;
@@ -1005,19 +1004,19 @@ ftdm_status_t sngisdn_stack_cfg_cc_sap(ftdm_span_t *span)
 void stack_pst_init(Pst *pst)
 {
 	memset(pst, 0, sizeof(Pst));
-	 /*fill in the post structure*/
-    pst->dstProcId   = SFndProcId();
-    pst->dstInst     = S_INST;
+		/*fill in the post structure*/
+	pst->dstProcId   = SFndProcId();
+	pst->dstInst     = S_INST;
 
-    pst->srcProcId   = SFndProcId();
-    pst->srcEnt      = ENTSM;
-    pst->srcInst     = S_INST;
+	pst->srcProcId   = SFndProcId();
+	pst->srcEnt      = ENTSM;
+	pst->srcInst     = S_INST;
 
-    pst->prior       = PRIOR0;
-    pst->route       = RTESPEC;
-    pst->region      = S_REG;
-    pst->pool        = S_POOL;
-    pst->selector    = 0;
+	pst->prior       = PRIOR0;
+	pst->route       = RTESPEC;
+	pst->region      = S_REG;
+	pst->pool        = S_POOL;
+	pst->selector    = 0;
 	return;
 }
 
@@ -1026,21 +1025,21 @@ void stack_pst_init(Pst *pst)
 void stack_hdr_init(Header *hdr)
 {
 	hdr->msgType                = 0;
-    hdr->msgLen                 = 0;
-    hdr->entId.ent              = 0;
-    hdr->entId.inst             = 0;
-    hdr->elmId.elmnt            = 0;
-    hdr->elmId.elmntInst1       = 0;
-    hdr->elmId.elmntInst2       = 0;
-    hdr->elmId.elmntInst3       = 0;
-    hdr->seqNmb                 = 0;
-    hdr->version                = 0;
-    hdr->response.prior         = PRIOR0;
-    hdr->response.route         = RTESPEC;
-    hdr->response.mem.region    = S_REG;
-    hdr->response.mem.pool      = S_POOL;
-    hdr->transId                = 0;
-    hdr->response.selector      = 0;
+	hdr->msgLen                 = 0;
+	hdr->entId.ent              = 0;
+	hdr->entId.inst             = 0;
+	hdr->elmId.elmnt            = 0;
+	hdr->elmId.elmntInst1       = 0;
+	hdr->elmId.elmntInst2       = 0;
+	hdr->elmId.elmntInst3       = 0;
+	hdr->seqNmb                 = 0;
+	hdr->version                = 0;
+	hdr->response.prior         = PRIOR0;
+	hdr->response.route         = RTESPEC;
+	hdr->response.mem.region    = S_REG;
+	hdr->response.mem.pool      = S_POOL;
+	hdr->transId                = 0;
+	hdr->response.selector      = 0;
 	return;
 }
 

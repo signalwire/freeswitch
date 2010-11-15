@@ -293,8 +293,8 @@ void sngisdn_snd_reset(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_data(ftdm_span_t *span, uint8_t *data, ftdm_size_t len);
-void sngisdn_snd_event(ftdm_span_t *span, sng_isdn_l1_event_t l1_event);
+void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
+void sngisdn_snd_event(ftdm_channel_t *span, sng_isdn_l1_event_t l1_event);
 
 /* Inbound Call Control functions */
 void sngisdn_rcv_con_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
@@ -314,7 +314,9 @@ void sngisdn_rcv_srv_ind(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces)
 void sngisdn_rcv_srv_cfm(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
 void sngisdn_rcv_rst_cfm(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
 void sngisdn_rcv_rst_ind(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
-int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length);
+int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_isdn_l1_frame_t *l1_frame);
+int16_t sngisdn_rcv_l1_cmd_req(uint16_t spId, sng_l1_cmd_t *l1_cmd);
+
 
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event);
 void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event);

@@ -170,7 +170,7 @@ static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 static __inline__ sng_fd_t __tdmv_api_open_span_chan(int span, int chan) 
 { 
 	return  __sangoma_open_tdmapi_span_chan(span, chan);
-}                        
+}
 #endif
 
 static ftdm_io_interface_t wanpipe_interface;
@@ -759,6 +759,49 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 	return FTDM_SUCCESS;
 }
 
+static void wanpipe_read_stats(ftdmchan, wp_tdm_api_rx_hdr_t *rx_stats)
+{
+	ftdmchan->iostats.s.rx.error_flags = 0;
+	if (rx_stats->rx_hdr_errors) {
+		wanpipe_reset_stats(ftdmchan);
+		ftdm_log_chan_msg_throttle(ftdmchan, "IO errors\n");
+	}
+
+	ftdmchan->iostats.s.rx_queue_size = rx_stats->rx_h.rx_h.max_rx_queue_length;
+	ftdmchan->iostats.s.rx_queue_len = rx_stats->rx_h.current_number_of_frames_in_rx_queue;
+	
+	if (rx_stats->rx_h.wp_api_rx_hdr_error_map & (1<<WP_ABORT_ERROR_BIT)) {
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_ABORT);
+	}
+	if (rx_stats->rx_h.wp_api_rx_hdr_error_map & (1<<WP_DMA_ERROR_BIT)) {
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_DMA);
+	}
+	if (rx_stats->rx_h.wp_api_rx_hdr_error_map & (1<<WP_FIFO_ERROR_BIT)) {
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_FIFO);
+	}
+	if (rx_stats->rx_h.wp_api_rx_hdr_error_map & (1<<WP_CRC_ERROR_BIT)) {
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_CRC);
+	}
+	if (rx_stats->rx_h.wp_api_rx_hdr_error_map & (1<<WP_FRAME_ERROR_BIT)) {
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_FRAME);
+	}
+
+	if (ftdmchan->iostats.s.rx_queue_len >= (0.8*ftdmchan->iostats.s.rx_queue_size)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Rx Queue length exceeded threshold (%d/%d)\n",
+					  								ftdmchan->iostats.s.rx_queue_len, ftdmchan->iostats.s.rx_queue_size);
+		
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
+	}
+	
+	if (ftdmchan->iostats.s.rx_queue_len >= ftdmchan->iostats.s.rx_queue_size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Rx Queue Full (%d/%d)\n",
+					  ftdmchan->iostats.s.rx_queue_len, ftdmchan->iostats.s.rx_queue_size);
+		
+		ftdm_set_flag(&(ftdmchan->iostats.s.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+	}
+	return;
+}
+
 /**
  * \brief Reads data from a Wanpipe channel
  * \param ftdmchan Channel to read from
@@ -787,9 +830,11 @@ static FIO_READ_FUNCTION(wanpipe_read)
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read from sangoma device: %s (%d)\n", strerror(errno), rx_len);
 		return FTDM_FAIL;
-	} 
+	}
 
-
+	if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
+		wanpipe_read_stats(ftdmchan, &hdrframe);
+	}
 	return FTDM_SUCCESS;
 }
 

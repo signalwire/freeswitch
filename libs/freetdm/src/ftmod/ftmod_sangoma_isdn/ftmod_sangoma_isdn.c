@@ -242,10 +242,10 @@ static __inline__ void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftd
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event)
 {
 
+	sngisdn_snd_event(span, event);
 	switch (event) {
 		/* Check if the span woke up from power-saving mode */
 		case FTDM_OOB_ALARM_CLEAR:
-			sngisdn_snd_event(span, SNG_L1EVENT_ALARM_OFF);
 			if (FTDM_SPAN_IS_BRI(span)) {
 				ftdm_channel_t *ftdmchan;
 				sngisdn_chan_data_t *sngisdn_info;
@@ -266,9 +266,6 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 				}
 				ftdm_iterator_free(chaniter);
 			}
-			break;
-		case FTDM_OOB_ALARM_TRAP:		
-			sngisdn_snd_event(span, SNG_L1EVENT_ALARM_ON);
 			break;
 		default:
 			/* Ignore other events for now */
@@ -327,7 +324,7 @@ static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 					len = 1000;
 					status = ftdm_channel_read(dchan, data, &len);
 					if (status == FTDM_SUCCESS) {
-						sngisdn_snd_data(span, data, len);
+						sngisdn_snd_data(dchan, data, len);
 					} else {
 						ftdm_log_chan_msg(dchan, FTDM_LOG_WARNING, "Failed to read from channel \n");
 					}
@@ -1019,7 +1016,8 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	g_sngisdn_event_interface.sta.sng_q931_trc_ind	= sngisdn_rcv_q931_trace;
 	g_sngisdn_event_interface.sta.sng_cc_sta_ind	= sngisdn_rcv_cc_ind;
 
-	g_sngisdn_event_interface.io.sng_data_req 	= sngisdn_rcv_data_req;
+	g_sngisdn_event_interface.io.sng_l1_data_req	= sngisdn_rcv_l1_data_req;
+	g_sngisdn_event_interface.io.sng_l1_cmd_req		= sngisdn_rcv_l1_cmd_req;
 	
 	for(i=1;i<=MAX_VARIANTS;i++) {		
 		ftdm_mutex_create(&g_sngisdn_data.ccs[i].mutex);
