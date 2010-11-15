@@ -888,6 +888,7 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_set_string(caller_data->cid_num.digits, (char *)pevent->ring.callingnum);
 	ftdm_set_string(caller_data->ani.digits, (char *)pevent->ring.callingani);
 	ftdm_set_string(caller_data->dnis.digits, (char *)pevent->ring.callednum);
+	ftdm_set_string(caller_data->rdnis.digits, (char *)pevent->ring.redirectingnum);
 
 	if (!ftdm_strlen_zero((char *)pevent->ring.callingname)) {
 		ftdm_set_string(caller_data->cid_name, (char *)pevent->ring.callingname);
