@@ -879,7 +879,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 	ftdm_r2_call_t *r2call = NULL;
 	openr2_chan_t *r2chan = NULL;
 	openr2_log_level_t tmplevel;
-	char *clevel;
+	char *clevel = NULL;
 	char *logval = NULL;
 
 	ft_r2_conf_t r2conf = 
@@ -887,20 +887,21 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		/* .variant */ OR2_VAR_ITU,
 		/* .category */ OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
 		/* .loglevel */ OR2_LOG_ERROR | OR2_LOG_WARNING,
+		/* .logdir */ NULL,
+		/* .advanced_protocol_file */ NULL,
 		/* .max_ani */ 10,
 		/* .max_dnis */ 4,
 		/* .mfback_timeout */ -1,
 		/* .metering_pulse_timeout */ -1,
-		/* .allow_collect_calls */ -1,
 		/* .immediate_accept */ -1,
 		/* .skip_category */ -1,
-		/* .forced_release */ -1,
-		/* .charge_calls */ -1,
 		/* .get_ani_first */ -1,
 		/* .call_files */ 0,
 		/* .mf_files */ 0,
-		/* .logdir */ NULL,
-		/* .advanced_protocol_file */ NULL
+		/* .double_answer */ 0,
+		/* .charge_calls */ -1,
+		/* .forced_release */ -1,
+		/* .allow_collect_calls */ -1
 	};
 
 	assert(sig_cb != NULL);
@@ -982,15 +983,6 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 advanced_protocol_file parameter\n");
-				/* 
-				 * TODO: investigate this
-				 *
-				 * despite the fact advanced_protocol_file was initialized as NULL, it's now a bad
-				 * pointer - hence, this workaround.
-				 * this seems to happen only on windows.
-				 *
-				 */
-				r2conf.advanced_protocol_file = NULL;
 				continue;
 			}
 			r2conf.advanced_protocol_file = val;
