@@ -2121,7 +2121,7 @@ static int ftmod_ss7_fill_in_circuits(sng_isupCkt_t *isupCkt)
 				ftdmchan->call_data = ss7_info;
 
 				/* prepare the timer structures */
-				ss7_info->t35.sched			= ((sngss7_span_data_t *)isupCkt->span->mod_data)->sched;
+				ss7_info->t35.sched			= ((sngss7_span_data_t *)isupCkt->span->signal_data)->sched;
 				ss7_info->t35.counter		= 1;
 				ss7_info->t35.beat			= g_ftdm_sngss7_data.cfg.isupIntf[isupCkt->isupInf].t35*100; /* beat is in ms, t35 is in 100ms */
 				ss7_info->t35.callback		= handle_isup_t35;
