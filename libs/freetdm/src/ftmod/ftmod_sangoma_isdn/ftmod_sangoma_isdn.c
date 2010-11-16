@@ -51,6 +51,8 @@ static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span);
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event);
 static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
+static void ftdm_sangoma_isdn_wakeup_phy(ftdm_channel_t *dchan);
+static void ftdm_sangoma_isdn_dchan_set_queue_size(ftdm_channel_t *ftdmchan);
 
 static ftdm_io_interface_t	    	g_sngisdn_io_interface;
 static sng_isdn_event_interface_t	g_sngisdn_event_interface;
@@ -241,8 +243,9 @@ static __inline__ void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftd
 
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event)
 {
-
-	sngisdn_snd_event(span, event);
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+	sngisdn_snd_event(signal_data->dchan, event);
+	
 	switch (event) {
 		/* Check if the span woke up from power-saving mode */
 		case FTDM_OOB_ALARM_CLEAR:
@@ -251,8 +254,7 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 				sngisdn_chan_data_t *sngisdn_info;
 				ftdm_iterator_t *chaniter = NULL;
 				ftdm_iterator_t *curr = NULL;
-				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
-				
+								
 				chaniter = ftdm_span_get_chan_iterator(span, NULL);
 				for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 					ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
@@ -261,7 +263,7 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 					if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)) {
 						ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
 
-						ftdm_sched_timer(signal_data->sched, "delayed_setup", 1, sngisdn_delayed_setup, (void*) ftdmchan->call_data, NULL);
+						ftdm_sched_timer(signal_data->sched, "delayed_setup", 1000, sngisdn_delayed_setup, (void*) ftdmchan->call_data, NULL);
 					}
 				}
 				ftdm_iterator_free(chaniter);
@@ -276,9 +278,7 @@ static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_eve
 static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span)
 {
 	ftdm_status_t 	ret_status;
-	ftdm_iterator_t *chaniter = NULL;
-	ftdm_iterator_t *curr = NULL;
-	
+		
 	ret_status = ftdm_span_poll_event(span, 0, NULL);
 	switch(ret_status) {
 		case FTDM_SUCCESS:
@@ -297,6 +297,33 @@ static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span)
 	}
 }
 
+static void ftdm_sangoma_isdn_dchan_set_queue_size(ftdm_channel_t *dchan)
+{
+	ftdm_status_t 	ret_status;
+	uint32_t queue_size;
+	
+	queue_size = SNGISDN_DCHAN_QUEUE_LEN;
+	ret_status = ftdm_channel_command(dchan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &queue_size);
+	ftdm_assert(ret_status == FTDM_SUCCESS, "Failed to set Rx Queue size");
+
+	queue_size = SNGISDN_DCHAN_QUEUE_LEN;
+	ret_status = ftdm_channel_command(dchan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &queue_size);
+	ftdm_assert(ret_status == FTDM_SUCCESS, "Failed to set Tx Queue size");
+
+	RETVOID;
+}
+
+static void ftdm_sangoma_isdn_wakeup_phy(ftdm_channel_t *dchan)
+{
+	ftdm_status_t 	ret_status;
+	ftdm_channel_hw_link_status_t status = FTDM_HW_LINK_CONNECTED;
+	ret_status = ftdm_channel_command(dchan, FTDM_COMMAND_SET_LINK_STATUS, &status);
+	if (ret_status != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(dchan, FTDM_LOG_WARNING, "Failed to wake-up link\n");
+	}
+	return;
+}
+
 static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 {
 	uint8_t data[1000];
@@ -306,7 +333,9 @@ static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 	ftdm_channel_t *dchan = ((sngisdn_span_data_t*)span->signal_data)->dchan;
 	ftdm_size_t len = 0;
 	
-	
+	ftdm_channel_set_feature(dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+	ftdm_sangoma_isdn_dchan_set_queue_size(dchan);
+
 	ftdm_assert(dchan, "Span does not have a dchannel");
 	ftdm_channel_open_chan(dchan);
 	
@@ -597,8 +626,8 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 				
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Line activation\n");
-				sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);
-				sngisdn_wake_up_phy(ftdmchan->span);
+				sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);				
+				ftdm_sangoma_isdn_wakeup_phy(ftdmchan);
 				ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
 			} else {
 				sngisdn_snd_setup(ftdmchan);

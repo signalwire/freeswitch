@@ -866,13 +866,15 @@ end_of_trace:
 	return;
 }
 
-int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length)
+/* The stacks is wants to transmit a frame */
+int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 {
 	ftdm_status_t status;
 	ftdm_wait_flag_t flags = FTDM_WRITE;
 	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
 	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
-
+	ftdm_size_t length = l1_frame->len;
+	
 	do {
 		flags = FTDM_WRITE;
 		status = signal_data->dchan->fio->wait(signal_data->dchan, &flags, 1000);
@@ -883,7 +885,7 @@ int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length)
 		
 		
 		if ((flags & FTDM_WRITE)) {
-			status = signal_data->dchan->fio->write(signal_data->dchan, buff, (ftdm_size_t*)&length);
+			status = signal_data->dchan->fio->write(signal_data->dchan, l1_frame->data, (ftdm_size_t*)&length);
 			if (status != FTDM_SUCCESS) {
 				ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_CRIT, "Failed to transmit frame\n");
 				return -1;
@@ -897,6 +899,45 @@ int16_t sngisdn_rcv_data_req(uint16_t spId, uint8_t *buff, uint32_t length)
 #endif
 		}
 	} while(1);
+	return 0;
+}
+
+int16_t sngisdn_rcv_l1_cmd_req(uint16_t spId, sng_l1_cmd_t *l1_cmd)
+{	
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
+	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
+	
+	switch(l1_cmd->type) {
+		case SNG_L1CMD_SET_LINK_STATUS:
+			{
+				ftdm_channel_hw_link_status_t status = FTDM_HW_LINK_CONNECTED;
+				ftdm_channel_command(signal_data->dchan, FTDM_COMMAND_SET_LINK_STATUS, &status);
+			}
+			break;
+		case SNG_L1CMD_GET_LINK_STATUS:
+			{
+				ftdm_channel_hw_link_status_t status = 0;
+				ftdm_channel_command(signal_data->dchan, FTDM_COMMAND_GET_LINK_STATUS, &status);
+				if (status == FTDM_HW_LINK_CONNECTED) {
+					l1_cmd->cmd.status = 1;
+				} else if (status == FTDM_HW_LINK_DISCONNECTED) {
+					l1_cmd->cmd.status = 0;
+				} else {
+					ftdm_log_chan(signal_data->dchan, FTDM_LOG_CRIT, "Invalid link status reported %d\n", status);
+					l1_cmd->cmd.status = 0;
+				}
+			}
+			break;
+		case SNG_L1CMD_FLUSH_STATS:
+			ftdm_channel_command(signal_data->dchan, FTDM_COMMAND_FLUSH_IOSTATS, NULL);
+			break;
+		case SNG_L1CMD_FLUSH_BUFFERS:
+			ftdm_channel_command(signal_data->dchan, FTDM_COMMAND_FLUSH_BUFFERS, NULL);
+			break;
+		default:
+			ftdm_log_chan(signal_data->dchan, FTDM_LOG_CRIT, "Unsupported channel command:%d\n", l1_cmd->type);
+			return -1;
+	}
 	return 0;
 }
 

@@ -391,7 +391,7 @@ typedef struct {
 			uint8_t		tx_queue_size;	/* max queue size configured */
 			uint8_t		tx_queue_len;	/* Current number of elements in queue */
 		} tx;
-	} s;
+	} stats;
 } ftdm_channel_iostats_t;
 
 /* 2^8 table size, one for each byte (sample) value */
