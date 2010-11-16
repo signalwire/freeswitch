@@ -642,10 +642,11 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
 {
 	sng_l1_event_t l1_event;
+	sngisdn_span_data_t *signal_data = NULL;
 	memset(&l1_event, 0, sizeof(l1_event));
 	
 	
-	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
+	signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
 	switch(event) {
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;

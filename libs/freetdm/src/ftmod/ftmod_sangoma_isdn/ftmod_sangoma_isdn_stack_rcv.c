@@ -871,9 +871,10 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 {
 	ftdm_status_t status;
 	ftdm_wait_flag_t flags = FTDM_WRITE;
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
-	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];	
 	ftdm_size_t length = l1_frame->len;
+
+	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
 	
 	do {
 		flags = FTDM_WRITE;
