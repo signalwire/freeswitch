@@ -896,7 +896,7 @@ pollagain:
 	result = poll(pfds, 1, to);
 	*flags = 0;
 
-	if (rc < 0 && errno == EINTR) {
+	if result < 0 && errno == EINTR) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "DAHDI wait got interrupted, trying again\n");
 		goto pollagain;
 	}
