@@ -31,11 +31,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
 #ifdef __linux__
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE /* for strsep() */
+#endif
 #include <syscall.h>
 #include <poll.h>
+#include <string.h>
 #endif
+#include <stdio.h>
 #include <openr2.h>
 #include "freetdm.h"
 #include "private/ftdm_core.h"
@@ -1607,22 +1611,13 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 						r2data->loops,
 						r2data->monitor_thread_id);
 				stream->write_function(stream, "\n");
-				stream->write_function(stream, "%4s %-12.12s %-12.12s %6s %6s %6s %6s\n", "Channel", "Tx CAS", "Rx CAS", 
-						"Rx Avg", "Tx Avg", "Rx", "Tx");
+				stream->write_function(stream, "%4s %-12.12s %-12.12s\n", "Channel", "Tx CAS", "Rx CAS");
 				for (i = 1; i <= span->chan_count; i++) {
-					char rx_str[25];
-					char tx_str[25];
-					char rxavg_str[25];
-					char txavg_str[25];
 					r2chan = R2CALL(span->channels[i])->r2chan;
-					stream->write_function(stream, "%4d    %-12.12s %-12.12s %6s %6s %6s %6s\n", 
+					stream->write_function(stream, "%4d    %-12.12s %-12.12s\n", 
 							span->channels[i]->chan_id,
 							openr2_chan_get_tx_cas_string(r2chan),
-							openr2_chan_get_rx_cas_string(r2chan),
-							rxavg_str,
-							txavg_str,
-							rx_str,
-							tx_str);
+							openr2_chan_get_rx_cas_string(r2chan));
 				}
 				stream->write_function(stream, "\n");
 				stream->write_function(stream, "+OK.\n");
