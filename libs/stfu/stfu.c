@@ -269,22 +269,22 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 {
 	uint32_t index;
 	stfu_frame_t *rframe = NULL;
-
+    
 	if (((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
 		return NULL;
 	}
 
     if (i->cur_ts == 0) {
-		i->cur_ts = i->out_queue->array[1].ts;
+		i->cur_ts = i->out_queue->array[0].ts;
     } else {
 		i->cur_ts += i->interval;
     }
     
+
     if (stfu_n_find_frame(i->out_queue, i->cur_ts, &rframe, &index) || stfu_n_find_frame(i->in_queue, i->cur_ts, &rframe, &index)) {
         i->last_frame = rframe;
 		i->out_queue->wr_len++;
 		i->last_wr_ts = rframe->ts;
-		rframe->was_read = 1;
 		i->miss_count = 0;
     } else {
         i->last_wr_ts = i->cur_ts;
