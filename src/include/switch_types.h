@@ -471,7 +471,9 @@ typedef enum {
 	SWITCH_VAD_FLAG_TALKING = (1 << 0),
 	SWITCH_VAD_FLAG_EVENTS_TALK = (1 << 1),
 	SWITCH_VAD_FLAG_EVENTS_NOTALK = (1 << 2),
-	SWITCH_VAD_FLAG_CNG = (1 << 3)
+	SWITCH_VAD_FLAG_CNG = (1 << 3),
+/*      added to keep track when last normal packet sent */
+	SWITCH_VAD_NPACKET_SENT = (1 << 4)
 } switch_vad_flag_enum_t;
 typedef uint32_t switch_vad_flag_t;
 
