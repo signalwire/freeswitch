@@ -41,6 +41,20 @@
 #include <X11/Xlib.h>
 #include <X11/Xlibint.h>
 #include <X11/Xatom.h>
+
+// CLOUDTREE (Thomas Hazel)
+#define XIO_ERROR_BY_SETJMP
+//#define XIO_ERROR_BY_UCONTEXT
+
+// CLOUDTREE (Thomas Hazel)
+#ifdef XIO_ERROR_BY_SETJMP
+#include "setjmp.h"
+#endif
+// CLOUDTREE (Thomas Hazel)
+#ifdef XIO_ERROR_BY_UCONTEXT
+#include "ucontext.h"
+#endif
+
 #endif //WIN32
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -58,9 +72,16 @@
 #endif
 
 #define MY_EVENT_INCOMING_CHATMESSAGE "skypopen::incoming_chatmessage"
+#define MY_EVENT_INCOMING_RAW "skypopen::incoming_raw"
 
 #define SAMPLERATE_SKYPOPEN 16000
 #define SAMPLES_PER_FRAME SAMPLERATE_SKYPOPEN/50
+
+#ifdef SKYPOPEN_C_VER
+#ifdef MODSKYPOPEN_C_VER
+#define SKYPOPEN_SVN_VERSION MODSKYPOPEN_C_VER"|"SKYPOPEN_C_VER
+#endif
+#endif
 
 #ifndef SKYPOPEN_SVN_VERSION
 #define SKYPOPEN_SVN_VERSION SWITCH_VERSION_REVISION
@@ -82,14 +103,14 @@ typedef enum {
 	GFLAG_MY_CODEC_PREFS = (1 << 0)
 } GFLAGS;
 
-#define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][DEBUG_SKYPE  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define DEBUGA_CALL(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][DEBUG_CALL  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define DEBUGA_PBX(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][DEBUG_PBX  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define ERRORA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][ERRORA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][WARNINGA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
-#define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"rev "SKYPOPEN_SVN_VERSION "[%p|%-7lx][NOTICA  %-5d][%-10s][%2d,%2d,%2d] " __VA_ARGS__ );
+#define DEBUGA_SKYPE(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "] [DEBUG_SKYPE  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define DEBUGA_CALL(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "] [DEBUG_CALL  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define DEBUGA_PBX(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 		"%-*s  ["SKYPOPEN_SVN_VERSION "] [DEBUG_PBX  %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define ERRORA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 		"%-*s   ["SKYPOPEN_SVN_VERSION "] [ERRORA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"%-*s["SKYPOPEN_SVN_VERSION "] [WARNINGA     %-5d][%-15s][%s,%s] " __VA_ARGS__ );
+#define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"%-*s ["SKYPOPEN_SVN_VERSION "] [NOTICA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
 
-#define SKYPOPEN_P_LOG NULL, (unsigned long)55, __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", -1, tech_pvt ? tech_pvt->interface_state : -1, tech_pvt ? tech_pvt->skype_callflow : -1
+#define SKYPOPEN_P_LOG (int)((20 - (strlen(__FILE__))) + ((__LINE__ - 1000) < 0) + ((__LINE__ - 100) < 0)), " ", __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", tech_pvt ? interface_status[tech_pvt->interface_state] : "N/A", tech_pvt ? skype_callflow[tech_pvt->skype_callflow] : "N/A" 
 
 /*********************************/
 #define SKYPOPEN_CAUSE_NORMAL		1
@@ -98,6 +119,11 @@ typedef enum {
 /*********************************/
 #define SKYPOPEN_CONTROL_RINGING		1
 #define SKYPOPEN_CONTROL_ANSWER		2
+
+/*********************************/
+// CLOUDTREE (Thomas Hazel)
+#define SKYPOPEN_RINGING_INIT		0
+#define SKYPOPEN_RINGING_PRE		1
 
 /*********************************/
 #define		SKYPOPEN_STATE_IDLE					0
@@ -112,6 +138,7 @@ typedef enum {
 #define		SKYPOPEN_STATE_SELECTED				9
 #define 	SKYPOPEN_STATE_HANGUP_REQUESTED		10
 #define		SKYPOPEN_STATE_PREANSWER				11
+#define		SKYPOPEN_STATE_DEAD				12
 /*********************************/
 /* call flow from the device */
 #define 	CALLFLOW_CALL_IDLE					0
@@ -154,7 +181,35 @@ struct SkypopenHandles {
 	int currentuserhandle;
 	int api_connected;
 	int fdesc[2];
+
+	// CLOUDTREE (Thomas Hazel)
+#ifdef XIO_ERROR_BY_SETJMP
+	jmp_buf ioerror_context;
+#endif
+#ifdef XIO_ERROR_BY_UCONTEXT
+	ucontext_t ioerror_context;
+#endif
+
+	// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
+	switch_bool_t managed;
+	void *prev;
+	void *next;
 };
+
+// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
+struct SkypopenList {
+	int entries;
+	void *head;
+	void *tail;
+};
+
+// CLOUDTREE (Thomas Hazel) - is there a capable freeswitch list?
+struct SkypopenHandles *skypopen_list_add(struct SkypopenList *list, struct SkypopenHandles *x);
+struct SkypopenHandles *skypopen_list_find(struct SkypopenList *list, struct SkypopenHandles *x);
+struct SkypopenHandles *skypopen_list_remove_by_value(struct SkypopenList *list, Display * display);
+struct SkypopenHandles *skypopen_list_remove_by_reference(struct SkypopenList *list, struct SkypopenHandles *x);
+int skypopen_list_size(struct SkypopenList *list);
+
 #else //WIN32
 
 struct SkypopenHandles {
@@ -218,6 +273,9 @@ struct private_object {
 #endif
 	struct SkypopenHandles SkypopenHandles;
 
+	// CLOUDTREE (Thomas Hazel)
+	char ringing_state;
+
 	int interface_state;
 	char language[80];
 	char exten[80];
@@ -256,6 +314,8 @@ struct private_object {
 	short audiobuf_srv[SAMPLES_PER_FRAME];
 	switch_mutex_t *mutex_audio_srv;
 	int flag_audio_srv;
+	switch_mutex_t *mutex_thread_audio_cli;
+	switch_mutex_t *mutex_thread_audio_srv;
 
 	FILE *phonebook_writing_fp;
 	int skypopen_dir_entry_extension_prefix;
@@ -294,35 +354,36 @@ struct private_object {
 	char ring_id[256];
 	char ring_value[256];
 
+	char message[4096];
 };
 
 typedef struct private_object private_t;
 
-void *SWITCH_THREAD_FUNC skypopen_api_thread_func(switch_thread_t * thread, void *obj);
-int skypopen_audio_read(private_t * tech_pvt);
-int skypopen_audio_init(private_t * tech_pvt);
-int skypopen_signaling_write(private_t * tech_pvt, char *msg_to_skype);
-int skypopen_signaling_read(private_t * tech_pvt);
+void *SWITCH_THREAD_FUNC skypopen_api_thread_func(switch_thread_t *thread, void *obj);
+int skypopen_audio_read(private_t *tech_pvt);
+int skypopen_audio_init(private_t *tech_pvt);
+int skypopen_signaling_write(private_t *tech_pvt, char *msg_to_skype);
+int skypopen_signaling_read(private_t *tech_pvt);
 
-int skypopen_call(private_t * tech_pvt, char *idest, int timeout);
-int skypopen_senddigit(private_t * tech_pvt, char digit);
+int skypopen_call(private_t *tech_pvt, char *idest, int timeout);
+int skypopen_senddigit(private_t *tech_pvt, char digit);
 
 void *skypopen_do_tcp_srv_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_srv_thread(switch_thread_t *thread, void *obj);
 
 void *skypopen_do_tcp_cli_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC skypopen_do_tcp_cli_thread(switch_thread_t *thread, void *obj);
 
 void *skypopen_do_skypeapi_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t * thread, void *obj);
-int dtmf_received(private_t * tech_pvt, char *value);
-int start_audio_threads(private_t * tech_pvt);
-int new_inbound_channel(private_t * tech_pvt);
-int outbound_channel_answered(private_t * tech_pvt);
-int skypopen_signaling_write(private_t * tech_pvt, char *msg_to_skype);
+void *SWITCH_THREAD_FUNC skypopen_do_skypeapi_thread(switch_thread_t *thread, void *obj);
+int dtmf_received(private_t *tech_pvt, char *value);
+int start_audio_threads(private_t *tech_pvt);
+int new_inbound_channel(private_t *tech_pvt);
+int outbound_channel_answered(private_t *tech_pvt);
+int skypopen_signaling_write(private_t *tech_pvt, char *msg_to_skype);
 #if defined(WIN32) && !defined(__CYGWIN__)
-int skypopen_pipe_read(switch_file_t * pipe, short *buf, int howmany);
-int skypopen_pipe_write(switch_file_t * pipe, short *buf, int howmany);
+int skypopen_pipe_read(switch_file_t *pipe, short *buf, int howmany);
+int skypopen_pipe_write(switch_file_t *pipe, short *buf, int howmany);
 /* Visual C do not have strsep ? */
 char *strsep(char **stringp, const char *delim);
 #else
@@ -330,20 +391,18 @@ int skypopen_pipe_read(int pipe, short *buf, int howmany);
 int skypopen_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int skypopen_close_socket(unsigned int fd);
-private_t *find_available_skypopen_interface_rr(private_t * tech_pvt_calling);
-int remote_party_is_ringing(private_t * tech_pvt);
-int remote_party_is_early_media(private_t * tech_pvt);
-//int skypopen_answer(private_t * tech_pvt, char *id, char *value);
-int skypopen_answer(private_t * tech_pvt);
-//int skypopen_transfer(private_t * tech_pvt, char *id, char *value);
-int skypopen_transfer(private_t * tech_pvt);
+private_t *find_available_skypopen_interface_rr(private_t *tech_pvt_calling);
+int remote_party_is_ringing(private_t *tech_pvt);
+int remote_party_is_early_media(private_t *tech_pvt);
+int skypopen_answer(private_t *tech_pvt);
+int skypopen_transfer(private_t *tech_pvt);
 #ifndef WIN32
-int skypopen_socket_create_and_bind(private_t * tech_pvt, int *which_port);
+int skypopen_socket_create_and_bind(private_t *tech_pvt, int *which_port);
 #else
-int skypopen_socket_create_and_bind(private_t * tech_pvt, unsigned short *which_port);
+int skypopen_socket_create_and_bind(private_t *tech_pvt, unsigned short *which_port);
 #endif //WIN32
-int incoming_chatmessage(private_t * tech_pvt, int which);
+int incoming_chatmessage(private_t *tech_pvt, int which);
 int next_port(void);
-int skypopen_partner_handle_ring(private_t * tech_pvt);
-int skypopen_answered(private_t * tech_pvt);
-int inbound_channel_answered(private_t * tech_pvt);
+int skypopen_partner_handle_ring(private_t *tech_pvt);
+int skypopen_answered(private_t *tech_pvt);
+int inbound_channel_answered(private_t *tech_pvt);

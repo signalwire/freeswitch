@@ -38,7 +38,6 @@ struct stfu_queue {
 	uint32_t array_size;
 	uint32_t array_len;	
 	uint32_t wr_len;
-	uint32_t last_index;
 };
 typedef struct stfu_queue stfu_queue_t;
 
@@ -47,10 +46,12 @@ struct stfu_instance {
 	struct stfu_queue b_queue;
 	struct stfu_queue *in_queue;
 	struct stfu_queue *out_queue;
-	uint32_t last_ts;
+    struct stfu_frame *last_frame;
+	uint32_t last_wr_ts;
+	uint32_t last_rd_ts;
 	uint32_t interval;
 	uint32_t miss_count;
-	uint8_t running;
+	uint32_t max_plc;
 };
 
 
@@ -112,7 +113,7 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     return s;
 }
 
-stfu_instance_t *stfu_n_init(uint32_t qlen)
+stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_plc)
 {
 	struct stfu_instance *i;
 
@@ -125,6 +126,13 @@ stfu_instance_t *stfu_n_init(uint32_t qlen)
 	stfu_n_init_aqueue(&i->b_queue, qlen);
 	i->in_queue = &i->a_queue;
 	i->out_queue = &i->b_queue;
+
+    if (max_plc) {
+        i->max_plc = max_plc;
+    } else {
+        i->max_plc = qlen / 2;
+    }
+
 	return i;
 }
 
@@ -135,10 +143,9 @@ void stfu_n_reset(stfu_instance_t *i)
 	i->in_queue->array_len = 0;
 	i->out_queue->array_len = 0;
 	i->out_queue->wr_len = 0;
-	i->out_queue->last_index = 0;
+	i->last_frame = NULL;
 	i->miss_count = 0;	
-	i->last_ts = 0;
-	i->running = 0;
+	i->last_wr_ts = 0;
 	i->miss_count = 0;
 	i->interval = 0;
 }
@@ -197,7 +204,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 
 		i->in_queue->array_len = 0;
 		i->out_queue->wr_len = 0;
-		i->out_queue->last_index = 0;
+		i->last_frame = NULL;
 		i->miss_count = 0;
 
 		if (stfu_n_process(i, i->out_queue) < 0) {
@@ -222,6 +229,8 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 		cplen = sizeof(frame->data);
 	}
 
+    i->last_rd_ts = ts;
+
 	memcpy(frame->data, data, cplen);
     frame->pt = pt;
 	frame->ts = ts;
@@ -231,87 +240,71 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 	return STFU_IT_WORKED;
 }
 
+static int stfu_n_find_frame(stfu_queue_t *queue, uint32_t ts, stfu_frame_t **r_frame, uint32_t *index)
+{
+    uint32_t i = 0;
+    stfu_frame_t *frame = NULL;
+
+    assert(r_frame);
+    assert(index);
+    
+    *r_frame = NULL;
+
+    for(i = 0; i < queue->array_len; i++) {
+        frame = &queue->array[i];
+        
+        if (frame->ts == ts) {
+            *r_frame = frame;
+            *index = i;
+            frame->was_read = 1;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 {
-	uint32_t index, index2;
+	uint32_t index;
 	uint32_t should_have = 0;
-	stfu_frame_t *frame = NULL, *rframe = NULL;
+	stfu_frame_t *rframe = NULL;
 
 	if (((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
 		return NULL;
 	}
 
-	if (i->running) {
-		should_have = i->last_ts + i->interval;
+	if (i->last_wr_ts) {
+		should_have = i->last_wr_ts + i->interval;
 	} else {
 		should_have = i->out_queue->array[0].ts;
 	}
 
-	for(index = 0; index < i->out_queue->array_len; index++) {
-		if (i->out_queue->array[index].was_read) {
-			continue;
-		}
-
-		frame = &i->out_queue->array[index];
-
-		if (frame->ts != should_have) {
-			unsigned int tried = 0;
-			for (index2 = 0; index2 < i->out_queue->array_len; index2++) {
-				if (i->out_queue->array[index2].was_read) {
-					continue;
-				}
-				tried++;
-				if (i->out_queue->array[index2].ts == should_have) {
-					rframe = &i->out_queue->array[index2];
-					i->out_queue->last_index = index2;
-					goto done;
-				}
-			}
-			for (index2 = 0; index2 < i->in_queue->array_len; index2++) {
-				if (i->in_queue->array[index2].was_read) {
-					continue;
-				}
-				tried++;
-				if (i->in_queue->array[index2].ts == should_have) {
-					rframe = &i->in_queue->array[index2];
-					goto done;
-				}
-			}
-
-			i->miss_count++;
-
-			if (i->miss_count > 10 || (i->in_queue->array_len == i->in_queue->array_size) || tried >= i->in_queue->array_size) {
-				i->running = 0;
-				i->interval = 0;
-				i->out_queue->wr_len = i->out_queue->array_size;
-				return NULL;
-			}
-
-			i->last_ts = should_have;
-			rframe = &i->out_queue->int_frame;
-			rframe->dlen = i->out_queue->array[i->out_queue->last_index].dlen;
-			/* poor man's plc..  Copy the last frame, but we flag it so you can use a better one if you wish */
-			memcpy(rframe->data, i->out_queue->array[i->out_queue->last_index].data, rframe->dlen);
-			rframe->ts = should_have;
-			i->out_queue->wr_len++;
-			i->running = 1;
-			return rframe;			
-		} else {
-			rframe = &i->out_queue->array[index];
-			i->out_queue->last_index = index;
-			goto done;
-		}
-	}
-
-done:
-
-	if (rframe) {
+    if (stfu_n_find_frame(i->out_queue, should_have, &rframe, &index) || stfu_n_find_frame(i->in_queue, should_have, &rframe, &index)) {
+        i->last_frame = rframe;
 		i->out_queue->wr_len++;
-		i->last_ts = rframe->ts;
+		i->last_wr_ts = rframe->ts;
 		rframe->was_read = 1;
-		i->running = 1;
 		i->miss_count = 0;
-	}
+    } else {
+        i->last_wr_ts = should_have;
+        rframe = &i->out_queue->int_frame;
+
+        if (i->last_frame && i->last_frame != rframe) {
+            rframe->dlen = i->last_frame->dlen;
+            /* poor man's plc..  Copy the last frame, but we flag it so you can use a better one if you wish */
+            memcpy(rframe->data, i->last_frame->data, rframe->dlen);
+        }
+
+        rframe->ts = should_have;
+
+        if (++i->miss_count > i->max_plc) {
+            i->interval = 0;
+            i->out_queue->wr_len = i->out_queue->array_size;
+            i->last_wr_ts = 0;
+            rframe = NULL;
+        }
+    }
 
 	return rframe;
 }

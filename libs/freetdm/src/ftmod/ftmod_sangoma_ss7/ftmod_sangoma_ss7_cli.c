@@ -1482,7 +1482,7 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = sngss7_info->ftdmchan;
-			sngss7_span = ftdmchan->span->mod_data;
+			sngss7_span = ftdmchan->span->signal_data;
 
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
@@ -1529,7 +1529,7 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = sngss7_info->ftdmchan;
-			sngss7_span = ftdmchan->span->mod_data;
+			sngss7_span = ftdmchan->span->signal_data;
 
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
@@ -1572,7 +1572,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 			/* extract the channel and span info for this circuit */
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = sngss7_info->ftdmchan;
-			sngss7_span = ftdmchan->span->mod_data;
+			sngss7_span = ftdmchan->span->signal_data;
 
 			/* check if this circuit is part of the block */
 			if ((ftdmchan->physical_span_id == span) && 
@@ -1628,7 +1628,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = sngss7_info->ftdmchan;
-			sngss7_span = ftdmchan->span->mod_data;
+			sngss7_span = ftdmchan->span->signal_data;
 
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
@@ -1672,7 +1672,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 			/* extract the channel and span info for this circuit */
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = sngss7_info->ftdmchan;
-			sngss7_span = ftdmchan->span->mod_data;
+			sngss7_span = ftdmchan->span->signal_data;
 
 			/* check if this circuit is part of the block */
 			if ((ftdmchan->physical_span_id == span) && 
@@ -1728,7 +1728,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = sngss7_info->ftdmchan;
-			sngss7_span = ftdmchan->span->mod_data;
+			sngss7_span = ftdmchan->span->signal_data;
 
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {

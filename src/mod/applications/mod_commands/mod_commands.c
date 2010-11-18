@@ -2019,6 +2019,66 @@ SWITCH_STANDARD_API(transfer_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define DUAL_TRANSFER_SYNTAX "<uuid> <A-dest-exten>[/<A-dialplan>][/<A-context>] <B-dest-exten>[/<B-dialplan>][/<B-context>]"
+SWITCH_STANDARD_API(dual_transfer_function)
+{
+	switch_core_session_t *tsession = NULL, *other_session = NULL;
+	char *mycmd = NULL, *argv[5] = { 0 };
+	int argc = 0;
+	char *tuuid, *dest1, *dest2, *dp1 = NULL, *dp2 = NULL, *context1 = NULL, *context2 = NULL;
+
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-USAGE: %s\n", DUAL_TRANSFER_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc != 3) {
+		stream->write_function(stream, "-USAGE: %s\n", DUAL_TRANSFER_SYNTAX);
+		goto done;
+	}
+
+	tuuid = argv[0];
+	dest1 = argv[1];
+	dest2= argv[2];
+
+	if ((dp1 = strchr(dest1, '/'))) {
+		*dp1++ = '\0';
+		if ((context1 = strchr(dp1, '/'))) {
+			*context1++ = '\0';
+		}
+	}
+
+	if ((dp2 = strchr(dest2, '/'))) {
+		*dp2++ = '\0';
+		if ((context2 = strchr(dp2, '/'))) {
+			*context2++ = '\0';
+		}
+	}
+
+	if (zstr(tuuid) || !(tsession = switch_core_session_locate(tuuid))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+		goto done;
+	}
+	
+	if (switch_core_session_get_partner(tsession, &other_session) == SWITCH_STATUS_SUCCESS) {
+		switch_ivr_session_transfer(other_session, dest2, dp2, context2);
+		switch_core_session_rwunlock(other_session);
+	}
+
+	switch_ivr_session_transfer(tsession, dest1, dp1, context1);
+
+	stream->write_function(stream, "+OK\n");
+
+	switch_core_session_rwunlock(tsession);
+
+  done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define TONE_DETECT_SYNTAX "<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args> <hits>]"
 SWITCH_STANDARD_API(tone_detect_session_function)
 {
@@ -3423,6 +3483,12 @@ SWITCH_STANDARD_API(show_function)
 	char hostname[256] = "";
 	gethostname(hostname, sizeof(hostname));
 
+
+	if (!(cflags & SCF_USE_SQL)) {
+		stream->write_function(stream, "-ERR SQL DISABLED NO DATA AVAILABLE!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "%s", "-ERR Databse Error!\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -3454,11 +3520,6 @@ SWITCH_STANDARD_API(show_function)
 	}
 
 	holder.print_title = 1;
-
-	if (!(cflags & SCF_USE_SQL) && command && !strcasecmp(command, "channels")) {
-		stream->write_function(stream, "-ERR SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
-		goto end;
-	}
 
 	/* If you change the field qty or order of any of these select */
 	/* statements, you must also change show_callback and friends to match! */
@@ -4263,7 +4324,7 @@ SWITCH_STANDARD_API(uuid_loglevel)
 #define SQL_ESCAPE_SYNTAX "<string>"
 SWITCH_STANDARD_API(sql_escape)
 {
-	if (zstr(cmd)) {
+	if (!cmd) {
 		stream->write_function(stream, "-USAGE: %s\n", SQL_ESCAPE_SYNTAX);
 	} else {
 		stream->write_function(stream, "%q", cmd);
@@ -4630,6 +4691,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar_multi", "uuid_setvar_multi", uuid_setvar_multi_function, SETVAR_MULTI_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_transfer", "Transfer a session", transfer_function, TRANSFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_dual_transfer", "Transfer a session and its partner", dual_transfer_function, DUAL_TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
@@ -4749,6 +4811,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_setvar_multi ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
+	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");

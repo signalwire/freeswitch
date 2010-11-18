@@ -1335,6 +1335,10 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_channel_set_variable(channel, "is_outbound", "true");
 	}
 
+	if (flag == CF_RECOVERED) {
+		switch_channel_set_variable(channel, "recovered", "true");
+	}
+
 }
 
 SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel, switch_channel_flag_t flag)
@@ -1348,6 +1352,10 @@ SWITCH_DECLARE(void) switch_channel_set_flag_recursive(switch_channel_t *channel
 
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", "true");
+	}
+
+	if (flag == CF_RECOVERED) {
+		switch_channel_set_variable(channel, "recovered", "true");
 	}
 }
 
@@ -1460,6 +1468,10 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 
 	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", NULL);
+	}
+
+	if (flag == CF_RECOVERED) {
+		switch_channel_set_variable(channel, "recovered", NULL);
 	}
 }
 

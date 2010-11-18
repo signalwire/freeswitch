@@ -32,7 +32,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
+				CommandLine="copy /Y &quot;$(ProjectDir)opensslconf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)applink.c&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)buildinf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)libeay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&quot;&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -116,7 +116,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
+				CommandLine="copy /Y &quot;$(ProjectDir)opensslconf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)applink.c&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)buildinf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)libeay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&quot;&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -201,7 +201,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
+				CommandLine="copy /Y &quot;$(ProjectDir)opensslconf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)applink.c&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)buildinf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)libeay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&quot;&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -286,7 +286,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&#x0D;&#x0A;copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&#x0D;&#x0A;copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&#x0D;&#x0A;copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
+				CommandLine="copy /Y &quot;$(ProjectDir)opensslconf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)applink.c&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)buildinf.h&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h&quot;&#x0D;&#x0A;copy /Y &quot;$(ProjectDir)libeay32.def&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def&quot;&#x0D;&#x0A;if not exist &quot; $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h&quot; xcopy &quot;$(ProjectDir)\include\*.*&quot; &quot;$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\&quot; /C /Y /S&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

@@ -1751,7 +1751,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 		goto done;
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM) && !ftdm_test_flag(ftdmchan->span, FTDM_SPAN_PWR_SAVING)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is alarmed\n");
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Cannot open channel when is alarmed\n");
 		goto done;
@@ -1913,6 +1913,11 @@ FT_DECLARE(void) ftdm_span_set_trunk_type(ftdm_span_t *span, ftdm_trunk_type_t t
 FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span)
 {
 	return span->trunk_type;
+}
+
+FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
+{
+	return ftdm_trunk_type2str(span->trunk_type);
 }
 
 FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span)
@@ -2114,6 +2119,15 @@ FT_DECLARE(ftdm_caller_data_t *) ftdm_channel_get_caller_data(ftdm_channel_t *ft
 	return &ftdmchan->caller_data;
 }
 
+FT_DECLARE(int) ftdm_channel_get_state(const ftdm_channel_t *ftdmchan)
+{
+	int state;
+	ftdm_channel_lock(ftdmchan);
+	state = ftdmchan->state;
+	ftdm_channel_unlock(ftdmchan);
+	return state;
+}
+
 FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *ftdmchan)
 {
 	const char *state;
@@ -2121,6 +2135,15 @@ FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *ftdmch
 	state = ftdm_channel_state2str(ftdmchan->state);
 	ftdm_channel_unlock(ftdmchan);
 	return state;
+}
+
+FT_DECLARE(int) ftdm_channel_get_last_state(const ftdm_channel_t *ftdmchan)
+{
+	int last_state;
+	ftdm_channel_lock(ftdmchan);
+	last_state = ftdmchan->last_state;
+	ftdm_channel_unlock(ftdmchan);
+	return last_state;
 }
 
 FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *ftdmchan)
@@ -3926,6 +3949,11 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 		if (span->fio->get_alarms(span->channels[chan_index]) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "%d:%d: Failed to get alarms\n", span->channels[chan_index]->physical_span_id, span->channels[chan_index]->physical_chan_id);
 			return FTDM_FAIL;
+		}
+		if (span->channels[chan_index]->alarm_flags) {
+			ftdm_set_flag_locked(span->channels[chan_index], FTDM_CHANNEL_IN_ALARM);
+		} else {
+			ftdm_clear_flag_locked(span->channels[chan_index], FTDM_CHANNEL_IN_ALARM);
 		}
 	}
 	return FTDM_SUCCESS;

@@ -34,17 +34,12 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-extern ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-extern ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-extern ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
-
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_progress(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
-
 
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 {
@@ -147,6 +142,7 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 
 	cpy_called_num_from_user(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
 	cpy_calling_num_from_user(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
+	cpy_redir_num_from_user(&conEvnt.redirNmb, &ftdmchan->caller_data);
 	cpy_calling_name_from_user(&conEvnt, ftdmchan);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);

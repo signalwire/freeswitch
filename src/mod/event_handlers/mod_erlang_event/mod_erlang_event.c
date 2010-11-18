@@ -366,12 +366,20 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	ei_x_buff buf;
 	ei_x_new_with_version(&buf);
 
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+
+	ei_x_encode_tuple_header(&buf, 7);
+	ei_x_encode_atom(&buf, "fetch");
+	ei_x_encode_atom(&buf, sectionstr);
+	_ei_x_encode_string(&buf, tag_name ? tag_name : "undefined");
+	_ei_x_encode_string(&buf, key_name ? key_name : "undefined");
+	_ei_x_encode_string(&buf, key_value ? key_value : "undefined");
+	_ei_x_encode_string(&buf, uuid_str);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "looking for bindings\n");
 
 	section = switch_xml_parse_section_string((char *) sectionstr);
-
-	switch_uuid_get(&uuid);
-	switch_uuid_format(uuid_str, &uuid);
 
 	for (ptr = bindings.head; ptr; ptr = ptr->next) {
 		if (ptr->section != section)
@@ -384,13 +392,6 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "binding for %s in section %s with key %s and value %s requested from node %s\n", tag_name, sectionstr, key_name, key_value, ptr->process.pid.node);
 
-		ei_x_encode_tuple_header(&buf, 7);
-		ei_x_encode_atom(&buf, "fetch");
-		ei_x_encode_atom(&buf, sectionstr);
-		_ei_x_encode_string(&buf, tag_name ? tag_name : "undefined");
-		_ei_x_encode_string(&buf, key_name ? key_name : "undefined");
-		_ei_x_encode_string(&buf, key_value ? key_value : "undefined");
-		_ei_x_encode_string(&buf, uuid_str);
 		if (params) {
 			ei_encode_switch_event_headers(&buf, params);
 		} else {
@@ -401,20 +402,22 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 			/* Create a new fetch object. */
 			p = malloc(sizeof(*p));
 			switch_thread_cond_create(&p->ready_or_found, module_pool);
-			p->usecount = 1;
+			switch_mutex_init(&p->mutex, SWITCH_MUTEX_UNNESTED, module_pool);
 			p->state = reply_not_ready;
 			p->reply = NULL;
 			switch_core_hash_insert_locked(globals.fetch_reply_hash, uuid_str, p, globals.fetch_reply_mutex);
+			p->state = reply_waiting;
 			now = switch_micro_time_now();
 		}
 		/* We don't need to lock here because everybody is waiting
 		   on our condition before the action starts. */
-		p->usecount ++;
 
 		switch_mutex_lock(ptr->listener->sock_mutex);
 		ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
 		switch_mutex_unlock(ptr->listener->sock_mutex);
 	}
+
+	ei_x_free(&buf);
 
 	if (!p) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no binding for %s\n", sectionstr);
@@ -422,20 +425,19 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	}
 
 	/* Tell the threads to be ready, and wait five seconds for a reply. */
-	switch_mutex_lock(globals.fetch_reply_mutex);
-	p->state = reply_waiting;
-	switch_thread_cond_broadcast(p->ready_or_found);
+	switch_mutex_lock(p->mutex);
+	//p->state = reply_waiting;
 	switch_thread_cond_timedwait(p->ready_or_found,
-			globals.fetch_reply_mutex, 5000000);
+			p->mutex, 5000000);
 	if (!p->reply) {
 		p->state = reply_timeout;
-		switch_mutex_unlock(globals.fetch_reply_mutex);
+		switch_mutex_unlock(p->mutex);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out after %d milliseconds when waiting for XML fetch response for %s\n", (int) (switch_micro_time_now() - now) / 1000, uuid_str);
 		goto cleanup;
 	}
 
 	rep = p->reply;
-	switch_mutex_unlock(globals.fetch_reply_mutex);
+	switch_mutex_unlock(p->mutex);
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
 
@@ -449,7 +451,6 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 						  size);
 		goto cleanup;
 	}
-
 
 	if (!(xmlstr = malloc(size + 1))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error\n");
@@ -471,26 +472,17 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	/* cleanup */
  cleanup:
 	if (p) {
-		switch_mutex_lock(globals.fetch_reply_mutex);
-		put_reply_unlock(p, uuid_str);
+		/* lock so nothing can have it while we delete it */
+		switch_mutex_lock(p->mutex);
+		switch_core_hash_delete_locked(globals.fetch_reply_hash, uuid_str, globals.fetch_reply_mutex);
+		switch_mutex_unlock(p->mutex);
+		switch_mutex_destroy(p->mutex);
+		switch_thread_cond_destroy(p->ready_or_found);
+		switch_safe_free(p->reply);
+		switch_safe_free(p);
 	}
 
 	return xml;
-}
-
-
-void put_reply_unlock(fetch_reply_t *p, char *uuid_str)
-{
-	if (-- p->usecount == 0) {
-		switch_core_hash_delete(globals.fetch_reply_hash, uuid_str);
-		switch_thread_cond_destroy(p->ready_or_found);
-		if (p->reply) {
-			switch_safe_free(p->reply->buff);
-			switch_safe_free(p->reply);
-		}
-		switch_safe_free(p);
-	}
-	switch_mutex_unlock(globals.fetch_reply_mutex);
 }
 
 
@@ -1015,6 +1007,53 @@ static void launch_listener_thread(listener_t *listener)
 
 }
 
+static int read_cookie_from_file(char *filename) {
+	int fd;
+	char cookie[MAXATOMLEN+1];
+	char *end;
+	struct stat buf;
+	ssize_t res;
+
+	if (!stat(filename, &buf)) {
+		if ((buf.st_mode & S_IRWXG) || (buf.st_mode & S_IRWXO)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s must only be accessible by owner only.\n", filename);
+			return 2;
+		}
+		if (buf.st_size > MAXATOMLEN) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s contains a cookie larger than the maximum atom size of %d.\n", filename, MAXATOMLEN);
+			return 2;
+		}
+		fd = open(filename, O_RDONLY);
+		if (fd < 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to open cookie file %s : %d.\n", filename, errno);
+			return 2;
+		}
+
+		if ((res = read(fd, cookie, MAXATOMLEN)) < 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie file %s : %d.\n", filename, errno);
+		}
+
+		cookie[MAXATOMLEN] = '\0';
+
+		/* replace any end of line characters with a null */
+		if ((end = strchr(cookie, '\n'))) {
+			*end = '\0';
+		}
+
+		if ((end = strchr(cookie, '\r'))) {
+			*end = '\0';
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read %d bytes from cookie file %s.\n", (int)res, filename);
+
+		set_pref_cookie(cookie);
+		return 0;
+	} else {
+		/* don't error here, because we might be blindly trying to read $HOME/.erlang.cookie, and that can fail silently */
+		return 1;
+	}
+}
+
 
 static int config(void)
 {
@@ -1041,6 +1080,10 @@ static int config(void)
 					prefs.port = (uint16_t) atoi(val);
 				} else if (!strcmp(var, "cookie")) {
 					set_pref_cookie(val);
+				} else if (!strcmp(var, "cookie-file")) {
+					if (read_cookie_from_file(val) == 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie from %s\n", val);
+					}
 				} else if (!strcmp(var, "nodename")) {
 					set_pref_nodename(val);
 				} else if (!strcmp(var, "compat-rel")) {
@@ -1075,7 +1118,21 @@ static int config(void)
 	}
 
 	if (zstr(prefs.cookie)) {
-		set_pref_cookie("ClueCon");
+		int res;
+		char* home_dir = getenv("HOME");
+		char path_buf[1024];
+
+		if (!zstr(home_dir)) {
+			/* $HOME/.erlang.cookie */
+			switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", home_dir, SWITCH_PATH_SEPARATOR, ".erlang.cookie");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for cookie at path: %s\n", path_buf);
+
+			res = read_cookie_from_file(path_buf);
+			if (res) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No cookie or valid cookie file specified, using default cookie\n");
+				set_pref_cookie("ClueCon");
+			}
+		}
 	}
 
 	if (!prefs.port) {

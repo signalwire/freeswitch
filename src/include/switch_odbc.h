@@ -58,6 +58,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 															 char **err);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_handle_t *handle, const char *sql, char *resbuf, size_t len, char **err);
 SWITCH_DECLARE(switch_bool_t) switch_odbc_available(void);
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLSetAutoCommitAttr(switch_odbc_handle_t *handle, switch_bool_t on);
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLEndTran(switch_odbc_handle_t *handle, switch_bool_t commit);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_statement_handle_free(switch_odbc_statement_handle_t *stmt);
 
 /*!

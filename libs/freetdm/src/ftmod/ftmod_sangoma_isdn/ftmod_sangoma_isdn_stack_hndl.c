@@ -34,11 +34,6 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-extern ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-extern ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-extern ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-extern ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
-
 /* Remote side transmit a SETUP */
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 {
@@ -78,7 +73,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				break;
 			}
 			
-			sngisdn_info->suInstId = get_unique_suInstId((int8_t) suId);
+			sngisdn_info->suInstId = get_unique_suInstId(suId);
 			sngisdn_info->spInstId = spInstId;
 			
 
@@ -135,6 +130,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
 			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
 			cpy_calling_name_from_stack(&ftdmchan->caller_data, &conEvnt->display);
+			cpy_redir_num_from_stack(&ftdmchan->caller_data, &conEvnt->redirNmb);
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
@@ -205,7 +201,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				sngisdn_set_flag(sngisdn_info, FLAG_DELAYED_REL);
 
 				sngisdn_info->glare.suId = suId;
-				sngisdn_info->glare.suInstId = get_unique_suInstId((int8_t) suId);
+				sngisdn_info->glare.suInstId = get_unique_suInstId(suId);
 				sngisdn_info->glare.spInstId = spInstId;
 
 				sngisdn_info->glare.dChan = dChan;

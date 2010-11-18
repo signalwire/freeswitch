@@ -1,39 +1,39 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
-# This file is public domain software, originally written by Joey Hess. 
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 export DH_OPTIONS
 export DEB_DH_INSTALL_SOURCEDIR=debian/tmp
-export PASSTHRU_CODEC_MODULES=codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr
+export PASSTHRU_CODEC_MODULES=codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb
 # Modules listed by those built by default, then those that are added in this package
-export APPLICATIONS_MODULES=applications/mod_cluechoo applications/mod_commands applications/mod_conference applications/mod_dptools \
-                            applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_fsv \
-                            applications/mod_hash applications/mod_db applications/mod_valet_parking applications/mod_voicemail applications/mod_rss \
-                            applications/mod_spandsp applications/mod_cidlookup applications/mod_curl applications/mod_easyroute \
-			    applications/mod_lcr applications/mod_nibblebill applications/mod_snom \
-			    applications/mod_spy applications/mod_vmd applications/mod_directory applications/mod_callcenter
-export ASR_TTS_MODULES=asr_tts/mod_tts_commandline
-export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_siren codecs/mod_celt
-export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml
-export DIRECTORIES_MODULES=
-export DOTNET_MODULES=
-export ENDPOINTS_MODULES=endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia \
-			 endpoints/mod_loopback ../../libs/openzap/mod_openzap endpoints/mod_skypopen \
-			 endpoints/mod_skinny
+export APPLICATION_MODULES_AE= applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
+ applications/mod_commands applications/mod_conference applications/mod_curl applications/mod_db applications/mod_directory \
+ applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
+ applications/mod_esf applications/mod_expr 
+export APPLICATION_MODULES_FM= applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
+ applications/mod_memcache 
+export APPLICATION_MODULES_NY= applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
+ applications/mod_spandsp applications/mod_spy applications/mod_stress \
+ applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail 
+
+export APPLICATIONS_MODULES= $(APPLICATION_MODULES_AE) $(APPLICATION_MODULES_FM) $(APPLICATION_MODULES_NY) $(APPLICATION_MODULES_VZ) 
+export ASR_TTS_MODULES= asr_tts/mod_pocketsphinx  asr_tts/mod_flite asr_tts/mod_tts_commandline
+export CODECS_MODULES= codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc codecs/mod_mp4v \
+ codecs/mod_silk codecs/mod_siren codecs/mod_theora 
+export DIALPLANS_MODULES= dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml 
+export ENDPOINTS_MODULES= endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_loopback  \
+ ../../libs/freetdm/mod_freetdm endpoints/mod_skypopen endpoints/mod_skinny 
 export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
-export FORMATS_MODULES=formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout
+export FORMATS_MODULES= formats/mod_file_string formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
+ formats/mod_shout formats/mod_sndfile formats/mod_tone_stream 
 export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
 export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
-export TIMERS_MODULES=
-export DISABLED_MODULES=applications/mod_memcache applications/mod_soundtouch directories/mod_ldap languages/mod_java \
-			asr_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe \
-			event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf
 export XML_INT_MODULES=xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr
-export MYMODULES=$(PASSTHRU_CODEC_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(DIRECTORIES_MODULES) $(DOTNET_MODULES) $(ENDPOINTS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(TIMERS_MODULES) $(XML_INT_MODULES)
+export MYMODULES= $(PASSTHRU_CODEC_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(ENDPOINTS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(XML_INT_MODULES)
 export MODULES=$(MYMODULES)
+
+
 
 ifndef AUTOCONF
 	AUTOCONFS := $(wildcard /usr/bin/autoconf*)
@@ -57,6 +57,116 @@ ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	FEATURES += --disable-optimization
 endif
 
+.pc/applied-patches:
+	@echo
+	@echo \ \ Sorry, currently this package cannot be built directly from upstream
+	@echo \ \ source git/tarball: patches are needed for policy compliance, and the
+	@echo \ \ "new 3.0 (quilt) source format requires patches to be already applied."
+	@echo
+	@echo \ \ Please first convert this tree by running:
+	@echo -e \\t./debian/rules upstream-convert
+	@echo
+	@echo \ \ Note that this will insert an entry in debian/changelog, rename the
+	@echo \ \ current directory to the version number there, create a .orig.tar.bz2
+	@echo \ \ archive and apply all the patches in debian/patches/series.
+	@echo
+	@echo \ \ Using git-buildpackage is not recommended for now.
+	@echo
+	@exit 1
+
+upstream-convert:
+	@dh_testdir
+	@test -s .pc/applied-patches && \
+		echo "Aborted: patches are already applied." && \
+		exit 1 || exit 0
+	   # update (or not) version number in debian/changelog
+	   @set -e ; \
+			   echo Checking version number ; \
+			   v1="$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: //')" ; \
+			   v2="$${v1}" ; \
+			   echo "  Current version: $${v1}" ; \
+			   if [ "$$(which git)" = "" -o ! -d .git ] ; then \
+					   echo Git not available. Keeping current version number. ; \
+					   exit 0 ; \
+			   fi ; \
+			   if [ "$$(which debchange)" = "" ] ; then \
+					   echo debchange not available. Keeping current version number. ; \
+					   exit 0 ; \
+			   fi ; \
+			   if echo -n "$${v1}" | grep -q '~git\.[a-z0-9]\+\.20[0-9]\{6\}\.[0-9]\+-[^-]\+$$' ; then \
+					   maj1="$$(echo -n "$${v1}" | sed -e 's/^\([^.]\+\)\..*$$/\1/')" ; \
+					   min1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.\([^.]\+\)\..*$$/\1/')" ; \
+					   mic1="$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.\([a-zA-Z0-9]\+\).*$$/\1/')" ; \
+					   b1="$$(echo -n "$${v1}" | sed -e 's/^.*~git\.\([a-z0-9]\+\)\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
+					   d1="$$(echo -n "$${v1}" | sed -e 's/^.*\.\(20[0-9]\{6\}\)\.[0-9]\+-[^-]\+$$/\1/')" ; \
+					   n1="$$(echo -n "$${v1}" | sed -e 's/^.*\.20[0-9]\{6\}\.\([0-9]\+\)-[^-]\+$$/\1/')" ; \
+					   maj2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MAJOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+					   min2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MINOR/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+					   mic2="$$(sed -e '/^AC_SUBST(SWITCH_VERSION_MICRO/ ! d' -e 's/^.*\[\([^\[]\+\)\][^\]]*$$/\1/' configure.in)" ; \
+					   b2="$$(git branch | sed -e '/^[^*]/ d' -e 's/* \(.*\)/\1/')" ; \
+					   d2="$$(TZ=UTC git log --date=local -1 --format='%ai' | sed -e 's/^\(....\).\(..\).\(..\).*$$/\1\2\3/')" ; \
+					   n2="$$(TZ=UTC git log --date=local --format=oneline --since="$${d2::4}-$${d2:4:2}-$${d2:6:2} 00:00" | wc -l)" ; \
+					   if [ "$${b2}" != "$$(echo "$${b2}" | tr -dc a-z0-9)" ] ; then \
+							   echo Invalid branch name "'$${b2}'". Aborted. ; \
+							   exit 1; \
+					   fi ; \
+					   if [ "$${b1}.$${d1}.$${n1}" != "$${b2}.$${d2}.$${n2}" \
+							   -o "$${maj1}.$${min1}.$${mic1}" != "$${maj2}.$${min2}.$${mic2}" ] ; then \
+							   v2="$$(echo -n "$${maj2}.$${min2}.$${mic2}")" ; \
+							   v2="$${v2}$$(echo -n "$${v1}" | sed -e 's/^[^.]\+\.[^.]\+\.[^.]\+\(.*\)~git\..*$$/\1/')" ; \
+							   v2="$${v2}~git.$${b2}.$${d2}.$${n2}-1" ; \
+							   echo "	  New version: $${v2}" ; \
+							   echo Updating debian/changelog with new version number ; \
+							   debchange -v "$${v2}" "New upstream release" ; \
+					   else \
+							   echo Version number already correct, no change. ; \
+					   fi ; \
+			   else \
+					   echo 'Not a ~git. version number. Keeping current version number.' ; \
+			   fi
+	   # rename (or not) current directory to match packagename-version.number
+	   @set -e ; \
+			   echo Checking directory name ; \
+			   d1="$$(basename "$$(cd . && echo "$$PWD")")" ; \
+			   d2="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
+			   d2="$${d2}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
+			   if [ "$${d1}" != "$${d2}" ] ; then \
+					   if [ -e "../$${d2}" ] ; then \
+							   test . -ef "../$${d2}" && exit 0 ; \
+							   echo Aborted: directory "../$${d2}" already exists. ; \
+							   exit 1 ; \
+					   fi ; \
+					   echo Renaming current directory to "$${d2}" ; \
+					   mv ../$${d1} ../$${d2} ; \
+			   fi
+	   # create .orig.tar.bz2
+	   @set -e ; \
+			   n="$$(dpkg-parsechangelog | sed -e '/^Source: / ! d' -e 's/^Source: //')" ; \
+			   d="$${n}-$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/')" ; \
+			   n="$${n}_$$(dpkg-parsechangelog | sed -e '/^Version: / ! d' -e 's/^Version: \(.*\)-[^-]\+$$/\1/').orig.tar.bz2" ; \
+			   echo "Creating source archive $${n}" ; \
+			   cd .. && tar cjf "$${n}" --exclude='.git*' "$${d}"
+	   # apply patches
+	   @set -e ; \
+			   echo "Applying patches in debian/patches/series" ; \
+			   QUILT_PATCHES=debian/patches ; \
+			   export QUILT_PATCHES ; \
+			   while quilt next ; do \
+					   quilt push -v ; \
+					   quilt refresh ; \
+			   done
+	   # remind user to change dir
+	   @echo Done.
+	   @echo
+	   @if [ "$(CURDIR)" != "$$PWD" ] ; then \
+			   echo \ \ You should now tell your shell to update its current working directory: ; \
+			   echo -e \\t'cd $$(pwd)' ; \
+			   echo \ \ or ; \
+			   echo -e "\\tcd $$PWD" ; \
+			   echo ; \
+	   fi
+
+
 config.status: configure
 	dh_testdir
 	rm -f modules.conf
@@ -65,15 +175,12 @@ config.status: configure
 	for i in $(MODULES); do echo $$i >> modules.conf; done
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
-configure:
-	if test ! -f Makefile.in ;  then \
-	    if test -f ./bootstrap.sh ; then \
-		AUTOCONF=${AUTOCONF} ./bootstrap.sh ; \
-	    else \
-		echo "No Makefile.in and no known way to bootstrap." ; \
-		exit 1; \
-	    fi; \
-	fi;
+configure: bootstrap.sh # .pc/applied-patches
+	   dh_testdir
+	   test -e /usr/share/misc/config.sub && cp -f /usr/share/misc/config.sub build/config/config.sub
+	   test -e /usr/share/misc/config.guess && cp -f /usr/share/misc/config.guess build/config/config.guess
+	   AUTOCONF=${AUTOCONF} ./bootstrap.sh
+
 
 build: build-stamp
 build-stamp:  config.status
@@ -83,19 +190,13 @@ build-stamp:  config.status
 
 	touch $@
 
-clean:
+clean:  # .pc/applied-patches
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 
 
 	-$(MAKE) update-clean
-ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-	cp -f /usr/share/misc/config.sub build/config/config.sub
-endif
-ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-	cp -f /usr/share/misc/config.guess build/config/config.guess
-endif
-	rm -f config.status
+	rm -f configure config.status
 	rm -f */*/config.status
 	rm -f */*/*/config.status
 	dh_clean
@@ -103,8 +204,8 @@ endif
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
-	dh_installdirs -A --sourcedir=debian/tmp
+	dh_prep
+	dh_installdirs -A
 
 	VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
@@ -123,11 +224,12 @@ binary-arch: build install
 	cp debian/monit/freeswitch.monitrc debian/freeswitch/etc/monit/freeswitch.monitrc
 	dh_install --sourcedir=debian/tmp
 	dh_link
-	dh_strip --dbg-package=freeswitch
+	dh_strip --dbg-package=freeswitch-dbg
 	dh_compress
 	dh_fixperms --exclude /opt/freeswitch/conf
+	dh_makeshlibs
+	dh_shlibdeps
 	dh_installdeb
-	dh_shlibdeps --exclude=/opt/freeswitch
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb

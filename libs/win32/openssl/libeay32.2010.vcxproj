@@ -81,10 +81,10 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h
-copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c
-copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h
-copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def
+      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h"
+copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c"
+copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h"
+copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def"
 if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\" /C /Y /S
 </Command>
     </PreBuildEvent>
@@ -115,10 +115,10 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h
-copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c
-copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h
-copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def
+      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h"
+copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c"
+copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h"
+copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def"
 if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\" /C /Y /S
 </Command>
     </PreBuildEvent>
@@ -151,10 +151,10 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h
-copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c
-copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h
-copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def
+      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h"
+copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c"
+copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h"
+copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def"
 if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\" /C /Y /S
 </Command>
     </PreBuildEvent>
@@ -185,10 +185,10 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>copy /Y $(ProjectDir)opensslconf.h $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h
-copy /Y $(ProjectDir)applink.c $(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c
-copy /Y $(ProjectDir)buildinf.h $(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h
-copy /Y $(ProjectDir)libeay32.def $(ProjectDir)..\..\openssl-1.0.0a\libeay32.def
+      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\opensslconf.h"
+copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\applink.c"
+copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-1.0.0a\crypto\buildinf.h"
+copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-1.0.0a\libeay32.def"
 if not exist "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-1.0.0a\include\openssl\" /C /Y /S
 </Command>
     </PreBuildEvent>

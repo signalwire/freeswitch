@@ -50,7 +50,7 @@
 /* pid filename: Stores the process id of the freeswitch process */
 #define PIDFILE "sangoma-media-gateway.pid"
 static char *pfile = PIDFILE;
-
+static int system_ready = 0;
 
 /* Picky compiler */
 #ifdef __ICC
@@ -81,6 +81,33 @@ static void handle_SIGILL(int sig)
 	switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 	return;
 }
+
+#ifndef WIN32
+static void handle_SIGUSR2(int sig)
+{
+	if (sig);
+
+	system_ready = 1;
+
+	return;
+}
+
+static void handle_SIGCHLD(int sig)
+{
+	int status = 0;
+	int pid = 0;
+
+	if (sig);
+
+	pid = wait(&status);
+	
+	if (pid > 0) {
+		system_ready = -1;
+	}
+
+	return;
+}
+#endif
 
 /* kill a freeswitch process running in background mode */
 static int freeswitch_kill_background()
@@ -209,27 +236,31 @@ void WINAPI service_main(DWORD numArgs, char **args)
 
 #else
 
-void daemonize(void)
+void daemonize(int do_wait)
 {
 	int fd;
 	pid_t pid;
 
-	switch (fork()) {
-	case 0:
-		break;
-	case -1:
-		fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
-		exit(0);
-		break;
-	default:
-		exit(0);
+	if (!do_wait) {
+		switch (fork()) {
+		case 0:
+			break;
+		case -1:
+			fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
+			exit(0);
+			break;
+		default:
+			exit(0);
+		}
+
+		if (setsid() < 0) {
+			fprintf(stderr, "Error Backgrounding (setsid)! %d - %s\n", errno, strerror(errno));
+			exit(0);
+		}
 	}
 
-	if (setsid() < 0) {
-		fprintf(stderr, "Error Backgrounding (setsid)! %d - %s\n", errno, strerror(errno));
-		exit(0);
-	}
 	pid = fork();
+
 	switch (pid) {
 	case 0:
 		break;
@@ -238,8 +269,46 @@ void daemonize(void)
 		exit(0);
 		break;
 	default:
-		fprintf(stderr, "%d Backgrounding.\n", (int) pid);
+		{
+			fprintf(stderr, "%d Backgrounding.\n", (int) pid);
+
+
+			if (do_wait) {
+				unsigned int sanity = 60;
+				char *o;
+
+				if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
+					int tmp = atoi(o);
+					if (tmp > 0) {
+						sanity = tmp;
+					}
+				}
+
+				while(--sanity && !system_ready) {
+				
+					if (sanity % 2 == 0) {
+						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", getpid(), (int) pid);
+					}
+					sleep(1);
+				}
+
+				if (system_ready == 1) {
+					printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
+				} else {
+					printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
+					kill(pid, 9);
+					exit(-1);
+				}
+			
+			}
+
+		}
+
 		exit(0);
+	}
+
+	if (do_wait) {
+		setsid();
 	}
 
 	/* redirect std* to null */
@@ -286,9 +355,12 @@ int main(int argc, char *argv[])
 	int local_argc = argc;
 	char *arg_argv[128] = { 0 };
 	char *usageDesc;
-	int alt_dirs = 0, log_set = 0, run_set = 0, kill = 0;
+	int alt_dirs = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int known_opt;
 	int high_prio = 0;
+#ifndef WIN32
+	int do_wait = 0;
+#endif
 #ifdef __sun
 	switch_core_flag_t flags = SCF_USE_SQL;
 #else
@@ -343,6 +415,9 @@ int main(int argc, char *argv[])
 		"\t-nort                  -- disable clock clock_realtime\n"
 		"\t-stop                  -- stop freeswitch\n"
 		"\t-nc                    -- do not output to a console and background\n"
+#ifndef WIN32
+		"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
+#endif
 		"\t-c                     -- output to a console and stay in the foreground\n"
 		"\t-base [basedir]        -- specify an alternate base dir\n"
 		"\t-conf [confdir]        -- specify an alternate config dir\n"
@@ -519,7 +594,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-stop")) {
-			kill++;
+			do_kill++;
 			known_opt++;
 		}
 
@@ -527,7 +602,13 @@ int main(int argc, char *argv[])
 			nc++;
 			known_opt++;
 		}
-
+#ifndef WIN32
+		if (local_argv[x] && !strcmp(local_argv[x], "-ncwait")) {
+			nc++;
+			do_wait++;
+			known_opt++;
+		}
+#endif
 		if (local_argv[x] && !strcmp(local_argv[x], "-c")) {
 			nc = 0;
 			known_opt++;
@@ -681,7 +762,7 @@ int main(int argc, char *argv[])
 		strcpy(SWITCH_GLOBAL_dirs.run_dir, SWITCH_GLOBAL_dirs.log_dir);
 	}
 
-	if (kill) {
+	if (do_kill) {
 		return freeswitch_kill_background();
 	}
 
@@ -695,47 +776,58 @@ int main(int argc, char *argv[])
 		return 255;
 	}
 
-	signal(SIGILL, handle_SIGILL);
-	signal(SIGTERM, handle_SIGILL);
 
-	if (nc) {
-#ifdef WIN32
-		FreeConsole();
-#else
-		if (!nf) {
-			daemonize();
-		}
-#endif
-	}
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste && !(flags & SCF_VG)) {
+		int x;
+
 		memset(&rlp, 0, sizeof(rlp));
-		getrlimit(RLIMIT_STACK, &rlp);
+		x = getrlimit(RLIMIT_STACK, &rlp);
+
 		if (rlp.rlim_max > SWITCH_THREAD_STACKSIZE) {
 			char buf[1024] = "";
 			int i = 0;
 
 			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance...\n",
 					(int) (rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, local_argv[0]);
-
+			
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
 			rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
-
+			
 			apr_terminate();
 			ret = (int) execv(argv[0], argv);
-
+			
 			for (i = 0; i < argc; i++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
 			}
-
+			
 			return system(buf);
 
 		}
 	}
 #endif
 
+
+	signal(SIGILL, handle_SIGILL);
+	signal(SIGTERM, handle_SIGILL);
+#ifndef WIN32
+	if (do_wait) {
+		signal(SIGUSR2, handle_SIGUSR2);
+		signal(SIGCHLD, handle_SIGCHLD);
+	}
+#endif
+	
+	if (nc) {
+#ifdef WIN32
+		FreeConsole();
+#else
+		if (!nf) {
+			daemonize(do_wait);
+		}
+#endif
+	}
 
 
 
@@ -816,6 +908,12 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Cannot Initialize [%s]\n", err);
 		return 255;
 	}
+
+#ifndef WIN32
+	if (do_wait) {
+		kill(getppid(), SIGUSR2);
+	}
+#endif
 
 	switch_core_runtime_loop(nc);
 

@@ -629,6 +629,32 @@ SWITCH_DECLARE(switch_bool_t) switch_odbc_available(void)
 #endif
 }
 
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLSetAutoCommitAttr(switch_odbc_handle_t *handle, switch_bool_t on)
+{
+#ifdef SWITCH_HAVE_ODBC
+	if (on) {
+		return SQLSetConnectAttr(handle->con, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER *) SQL_AUTOCOMMIT_ON, 0 );
+	} else {
+		return SQLSetConnectAttr(handle->con, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER *) SQL_AUTOCOMMIT_OFF, 0 );
+	}
+#else
+	return SWITCH_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLEndTran(switch_odbc_handle_t *handle, switch_bool_t commit)
+{
+#ifdef SWITCH_HAVE_ODBC
+	if (commit) {
+		return SQLEndTran(SQL_HANDLE_DBC, handle->con, SQL_COMMIT);
+	} else {
+		return SQLEndTran(SQL_HANDLE_DBC, handle->con, SQL_ROLLBACK);
+	}
+#else
+	return SWITCH_FALSE;
+#endif
+}
+
 
 /* For Emacs:
  * Local Variables:

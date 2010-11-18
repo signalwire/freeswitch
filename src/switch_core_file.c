@@ -407,39 +407,55 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)
 {
-	size_t bytes = 0;
 	switch_status_t status;
-
+	int ok = 1;
+	
 	switch_assert(fh != NULL);
-	switch_assert(fh->file_interface != NULL);
 
-	if (!switch_test_flag(fh, SWITCH_FILE_OPEN) || !switch_test_flag(fh, SWITCH_FILE_FLAG_READ)) {
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN) || !fh->file_interface->file_seek) {
+		ok = 0;
+	} else if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
+		if (!(switch_test_flag(fh, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(fh, SWITCH_FILE_WRITE_OVER))) {
+			ok = 0;
+		}
+	} else if (!switch_test_flag(fh, SWITCH_FILE_FLAG_READ)) {
+		ok = 0;
+	}
+	
+	if (!ok) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	if (!fh->file_interface->file_seek) {
-		return SWITCH_STATUS_FALSE;
-	}
-
+	
 	if (fh->buffer) {
-		bytes += switch_buffer_inuse(fh->buffer);
 		switch_buffer_zero(fh->buffer);
 	}
 
 	if (fh->pre_buffer) {
-		bytes += switch_buffer_inuse(fh->pre_buffer);
 		switch_buffer_zero(fh->pre_buffer);
 	}
 
 	if (whence == SWITCH_SEEK_CUR) {
-		samples -= bytes / sizeof(int16_t);
+		unsigned int cur = 0;
+
+		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
+			fh->file_interface->file_seek(fh, &cur, fh->samples_out, SEEK_SET);
+		} else {
+			fh->file_interface->file_seek(fh, &cur, fh->offset_pos, SEEK_SET);
+		}
 	}
 
 	switch_set_flag(fh, SWITCH_FILE_SEEK);
 	status = fh->file_interface->file_seek(fh, cur_pos, samples, whence);
+
 	if (samples) {
 		fh->offset_pos = *cur_pos;
+
+		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
+			fh->samples_out = *cur_pos;
+		}
 	}
+
+
 	return status;
 }
 

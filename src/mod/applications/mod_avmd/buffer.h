@@ -78,18 +78,18 @@ extern size_t next_power_of_2(size_t v);
 
 #define CALC_BUFF_LEN(fl, bl) (((fl) >= (bl))? next_power_of_2((fl) << 1): next_power_of_2((bl) << 1))
 
-#define INIT_CIRC_BUFFER(bf, bl, fl) \
+#define INIT_CIRC_BUFFER(bf, bl, fl, s)			\
     { \
 	(bf)->buf_len = CALC_BUFF_LEN((fl), (bl)); \
 	(bf)->mask = (bf)->buf_len - 1; \
-	(bf)->buf = (BUFF_TYPE *)calloc((bf)->buf_len, sizeof(BUFF_TYPE)); \
+	(bf)->buf = (BUFF_TYPE *) switch_core_session_alloc(s, (bf)->buf_len * sizeof(BUFF_TYPE)); \
 	assert((bf)->buf != NULL); \
 	(bf)->pos = 0; \
 	(bf)->lpos = 0; \
 	(bf)->backlog = 0; \
     }
 
-#define DESTROY_CIRC_BUFFER(b) free((b)->buf)
+//#define DESTROY_CIRC_BUFFER(b) free((b)->buf)
 #define GET_BACKLOG_POS(b) ((b)->lpos - (b)->backlog)
 #define GET_CURRENT_POS(b) ((b)->lpos)
 #define GET_CURRENT_SAMPLE(b) GET_SAMPLE((b), GET_CURRENT_POS((b)))

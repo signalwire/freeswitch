@@ -5,7 +5,7 @@
 # Required-Stop:     $network $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: The FreeSwitch Voice Switching System
+# Short-Description: The FreeSWITCH Voice Switching System
 # Description:       An advanced platform for voice services
 ### END INIT INFO
 
@@ -16,7 +16,7 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/opt/freeswitch/bin
-DESC="FreeSwitch Voice Switching System"
+DESC="FreeSWITCH Voice Switching System"
 NAME=freeswitch
 DAEMON=/opt/freeswitch/bin/$NAME
 USER=freeswitch
@@ -49,6 +49,24 @@ fi
 . /lib/lsb/init-functions
 
 #
+# Function that sets ulimit values for the daemon
+#
+do_setlimits() {
+        ulimit -c unlimited
+        ulimit -d unlimited
+        ulimit -f unlimited
+        ulimit -i unlimited
+        ulimit -n 999999
+        ulimit -q unlimited
+        ulimit -u unlimited
+        ulimit -v unlimited
+        ulimit -x unlimited
+        ulimit -s 240
+        ulimit -l unlimited
+        return 0
+}
+
+#
 # Function that starts the daemon/service
 #
 do_start()
@@ -59,6 +77,7 @@ do_start()
 	#   2 if daemon could not be started
 	start-stop-daemon -d $WORKDIR -c $USER --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
+	do_setlimits
 	start-stop-daemon -d $WORKDIR -c $USER --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
 		$FREESWITCH_PARAMS \
 		|| return 2

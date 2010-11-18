@@ -2,18 +2,22 @@ Source: freeswitch
 Section: comm
 Priority: extra
 Maintainer: FreeSWITCH developers <freeswitch-dev@lists.freeswitch.org>
-Uploaders: Michal Bielicki <michal.bielicki@voiceworks.pl>, Gabriel Gunderson <gabe@gundy.org>, William King <quentusrex@gmail.com>, Mathieu Parent <sathieu@debian.org>
-Build-Depends: debhelper (>= 5), fakeroot, wget, automake (>=1.9), autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev, libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev, libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev
+Uploaders: Michal Bielicki <michal.bielicki@seventhsignal.pl>, Gabriel Gunderson <gabe@gundy.org>, William King <quentusrex@gmail.com>, Mathieu Parent <sathieu@debian.org>
+Build-Depends: debhelper (>= 7), wget, automake (>=1.9), autoconf, libtool,
+ unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev,
+ libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev,
+ libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev
 Homepage: http://freeswitch.org/
 Standards-Version: 3.9.1
-Vcs-Svn: http://svn.freeswitch.org/svn/freeswitch/trunk/
-Vcs-Browser: http://fisheye.freeswitch.org/browse/FreeSWITCH
+Vcs-Git: git://git.freeswitch.org/freeswitch.git
+Vcs-Browser: http://fisheye.freeswitch.org/browse/freeswitch.git
 
 Package: freeswitch
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, unixodbc, libasound2, libcurl3, openssl, libncurses5, libvorbis0a, libuuid1
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: freeswitch-lang-en
-Suggests: freeswitch-spidermonkey, freeswitch-lua, freeswitch-perl, freeswitch-sounds-music-8000, monit 
+Suggests: freeswitch-spidermonkey, freeswitch-lua, freeswitch-perl,
+ freeswitch-sounds-music-8000, monit, openssl 
 Description: open source telephony platform
  FreeSWITCH is an open source telephony platform designed to facilitate the
  creation of voice and chat driven products scaling from a soft-phone up to a
@@ -48,8 +52,8 @@ Description: development libraries and header files for FreeSWITCH
  gateway or a media server to host IVR applications using simple scripts or XML
  to control the callflow.
  .
- This package contains the include files used if you wish to compile a package which requires FreeSWITCH's
- source file headers. 
+ This package contains the include files used if you wish to compile a package 
+ which require FreeSWITCH's source file headers. 
 
 Package: freeswitch-spidermonkey
 Architecture: any
@@ -123,6 +127,19 @@ Description: pass through AMR codec support for FreeSWITCH
  .
  This package contains the mod_amr codec module.
 
+Package: freeswitch-codec-passthru-amrwb
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: pass through AMRWB codec support for FreeSWITCH
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to a
+ soft-switch.  It can be used as a simple switching engine, a PBX, a media
+ gateway or a media server to host IVR applications using simple scripts or XML
+ to control the callflow.
+ .
+ This package contains the mod_amrwb codec module.
+
+
 Package: freeswitch-codec-passthru-g729
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
@@ -139,7 +156,8 @@ Package: freeswitch-lang-en
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Recommends: freeswitch-sounds-en-us-callie-8000
-Suggests: freeswitch-sounds-en-us-callie-16000, freeswitch-sounds-en-us-callie-32000, freeswitch-sounds-en-us-callie-48000
+Suggests: freeswitch-sounds-en-us-callie-16000, freeswitch-sounds-en-us-callie-32000,
+ freeswitch-sounds-en-us-callie-48000
 Description: English language files for FreeSWITCH
  FreeSWITCH is an open source telephony platform designed to facilitate the
  creation of voice and chat driven products scaling from a soft-phone up to a
@@ -219,7 +237,8 @@ Package: freeswitch-lang-ru
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Recommends: freeswitch-sounds-ru-ru-elena-8000
-Suggests: freeswitch-sounds-ru-ru-elena-16000, freeswitch-sounds-ru-ru-elena-32000, freeswitch-sounds-ru-ru-elena-48000
+Suggests: freeswitch-sounds-ru-ru-elena-16000, freeswitch-sounds-ru-ru-elena-32000,
+ freeswitch-sounds-ru-ru-elena-48000
 Description: Russian language files for FreeSWITCH
  FreeSWITCH is an open source telephony platform designed to facilitate the
  creation of voice and chat driven products scaling from a soft-phone up to a
@@ -229,3 +248,18 @@ Description: Russian language files for FreeSWITCH
  .
  This package contains the mod_say_ru module and available language
  configuration files.
+
+Package: freeswitch-freetdm
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: FreeTDM is a signaling and board API abstraction used mainly by the
+ FreeSWITCH project to place calls in TDM and analog telephony circuits. The library
+ was previously named "OpenZAP". Sangoma has worked along with the FreeSWITCH
+ developers in this library so Sangoma's customers can also use it to do custom
+ development. The library is still under heavy development but the overall API
+ does not change often. The intention of the library is to present a consistent
+ API for different telephony signaling stacks and board I/O APIs.  FreeTDM can
+ either be used as a standalone API or along with FreeSWITCH as an endpoint
+ (mod_freetdm). If you want to use it as a part of FreeSWITCH remember following
+ the FreeSWITCH configuration section.
+ This package contains all the freetdm modules and libs and submodules

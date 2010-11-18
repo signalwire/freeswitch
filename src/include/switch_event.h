@@ -345,11 +345,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char
 */
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)
 
-	 static inline switch_status_t switch_event_create_plain(switch_event_t **event, switch_event_types_t event_id)
+static inline switch_status_t switch_event_create_plain(switch_event_t **event, switch_event_types_t event_id)
 {
 	switch_status_t status = switch_event_create(event, SWITCH_EVENT_CLONE);
 	if (status == SWITCH_STATUS_SUCCESS) {
 		(*event)->event_id = event_id;
+
+		if (event_id == SWITCH_EVENT_REQUEST_PARAMS || event_id == SWITCH_EVENT_CHANNEL_DATA) {
+			(*event)->flags |= EF_UNIQ_HEADERS;
+		}
 	}
 
 	return status;

@@ -331,7 +331,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #
 ######################################################################################################################
 APPLICATION_MODULES_AE="applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
-                        applications/mod_commands applications/mod_conference applications/mod_db applications/mod_directory \
+                        applications/mod_commands applications/mod_conference applications/mod_curl applications/mod_db applications/mod_directory \
                         applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
                         applications/mod_esf applications/mod_expr"
 APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
@@ -753,6 +753,7 @@ fi
 %{prefix}/mod/mod_console.so*
 %{prefix}/mod/mod_commands.so*
 %{prefix}/mod/mod_conference.so*
+%{prefix}/mod/mod_curl.so*
 %{prefix}/mod/mod_db.so*
 %{prefix}/mod/mod_dialplan_asterisk.so* 
 %{prefix}/mod/mod_dialplan_directory.so* 
@@ -949,6 +950,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Fri Oct 15 2010 - michal.bielicki@seventhsignal.de
+- added mod_curl
 * Sat Oct 09 2010 - michal.bielicki@seventhsignal.de
 - added mod_silk
 - added mod_codec2

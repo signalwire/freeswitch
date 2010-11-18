@@ -619,7 +619,7 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t *sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t *sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 	SiStaEvnt	gra;
 	
@@ -663,7 +663,7 @@ void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 	
 	SiStaEvnt grs;
@@ -696,7 +696,7 @@ void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan)
 {	
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	int					x = 0;
 	
@@ -745,7 +745,7 @@ void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan)
 {	
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	int					x = 0;
 	
@@ -794,7 +794,7 @@ void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 
-	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	SiStaEvnt 			cgb;
 	int					x = 0;
@@ -844,7 +844,7 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 
-	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	SiStaEvnt 			cgu;
 	int					x = 0;

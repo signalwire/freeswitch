@@ -51,7 +51,11 @@ typedef enum {
 	LPWRAP_PRI_EVENT_ANSWER        = PRI_EVENT_ANSWER,
 	LPWRAP_PRI_EVENT_HANGUP_ACK    = PRI_EVENT_HANGUP_ACK,
 	LPWRAP_PRI_EVENT_RESTART_ACK   = PRI_EVENT_RESTART_ACK,
-	LPWRAP_PRI_EVENT_FACNAME       = PRI_EVENT_FACNAME,
+#ifdef PRI_EVENT_FACILITY
+	LPWRAP_PRI_EVENT_FACILITY      = PRI_EVENT_FACILITY,
+#else
+	LPWRAP_PRI_EVENT_FACILITY      = PRI_EVENT_FACNAME,
+#endif
 	LPWRAP_PRI_EVENT_INFO_RECEIVED = PRI_EVENT_INFO_RECEIVED,
 	LPWRAP_PRI_EVENT_PROCEEDING    = PRI_EVENT_PROCEEDING,
 	LPWRAP_PRI_EVENT_SETUP_ACK     = PRI_EVENT_SETUP_ACK,
@@ -121,6 +125,8 @@ struct lpwrap_pri_event_list {
 const char *lpwrap_pri_event_str(lpwrap_pri_event_t event_id);
 int lpwrap_one_loop(struct lpwrap_pri *spri);
 int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int debug);
+int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int ptp, int debug);
 int lpwrap_run_pri(struct lpwrap_pri *spri);
+#define lpwrap_run_bri(x)	lpwrap_run_pri(x)
 
 #endif

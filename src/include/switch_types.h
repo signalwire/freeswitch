@@ -596,7 +596,7 @@ typedef enum {
 		 */
 
 
-	RTP_BUG_IGNORE_MARK_BIT = (1 << 2)
+	RTP_BUG_IGNORE_MARK_BIT = (1 << 2),
 
 	/*
 	  A Huawei SBC has been discovered that sends the mark bit on every single RTP packet.
@@ -605,6 +605,34 @@ typedef enum {
 	  This flag will do nothing when an inbound packet contains the mark bit.
 
 	 */
+
+	
+	RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
+
+	/*
+	  Our friends at Sonus get real mad when the timestamps are not in perfect sequence even during periods of silence.
+	  With this flag, we will only increment the timestamp when write packets even if they are eons apart.
+	  
+	 */
+
+	RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
+
+	/*
+	  Our friends at Sonus also get real mad if the sequence number does not start at 0.  
+	  Typically, we set this to a random starting value for your saftey.
+	  This is a security risk you take upon yourself when you enable this flag.
+	 */
+
+
+	RTP_BUG_NEVER_SEND_MARKER = (1 << 5),
+
+	/*
+	  Our friends at Sonus are on a roll, They also get easily dumbfounded by marker bits.
+	  This flag will never send any. Sheesh....
+	 */
+	
+	
+
 
 
 } switch_rtp_bug_flag_t;
@@ -840,6 +868,7 @@ typedef enum {
 	SWITCH_STATUS_IGNORE,
 	SWITCH_STATUS_TOO_SMALL,
 	SWITCH_STATUS_FOUND,
+	SWITCH_STATUS_CONTINUE,
 	SWITCH_STATUS_NOT_INITALIZED
 } switch_status_t;
 
@@ -1063,6 +1092,7 @@ typedef enum {
 	CF_CONSUME_ON_ORIGINATE,
 	CF_PASSTHRU_PTIME_MISMATCH,
 	CF_BRIDGE_NOWRITE,
+	CF_RECOVERED,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
@@ -1266,7 +1296,8 @@ typedef enum {
 	SMBF_STEREO = (1 << 5),
 	SMBF_ANSWER_REQ = (1 << 6),
 	SMBF_THREAD_LOCK = (1 << 7),
-	SMBF_PRUNE = (1 << 8)
+	SMBF_PRUNE = (1 << 8),
+	SMBF_NO_PAUSE = (1 << 9)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1304,7 +1335,8 @@ typedef enum {
 	SWITCH_FILE_CALLBACK = (1 << 12),
 	SWITCH_FILE_DONE = (1 << 13),
 	SWITCH_FILE_BUFFER_DONE = (1 << 14),
-	SWITCH_FILE_WRITE_APPEND = (1 << 15)
+	SWITCH_FILE_WRITE_APPEND = (1 << 15),
+	SWITCH_FILE_WRITE_OVER = (1 << 16)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 

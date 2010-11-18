@@ -658,6 +658,14 @@ static FIO_OPEN_FUNCTION(zt_open)
  */
 static FIO_CLOSE_FUNCTION(zt_close)
 {
+	if (ftdmchan->type == FTDM_CHAN_TYPE_B) {
+		int value = 0;	/* disable audio mode */
+		if (ioctl(ftdmchan->sockfd, codes.AUDIOMODE, &value)) {
+			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
+			ftdm_log(FTDM_LOG_ERROR, "%s\n", ftdmchan->last_error);
+			return FTDM_FAIL;
+		}
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -867,7 +875,7 @@ static FIO_WAIT_FUNCTION(zt_wait)
 {
 	int32_t inflags = 0;
 	int result;
-    struct pollfd pfds[1];
+	struct pollfd pfds[1];
 
 	if (*flags & FTDM_READ) {
 		inflags |= POLLIN;
@@ -882,13 +890,14 @@ static FIO_WAIT_FUNCTION(zt_wait)
 	}
 
 
-    memset(&pfds[0], 0, sizeof(pfds[0]));
-    pfds[0].fd = ftdmchan->sockfd;
-    pfds[0].events = inflags;
-    result = poll(pfds, 1, to);
+	memset(&pfds[0], 0, sizeof(pfds[0]));
+	pfds[0].fd = ftdmchan->sockfd;
+	pfds[0].events = inflags;
+	result = poll(pfds, 1, to);
 	*flags = 0;
 
 	if (pfds[0].revents & POLLERR) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "DAHDI device got POLLERR\n");
 		result = -1;
 	}
 
@@ -900,6 +909,7 @@ static FIO_WAIT_FUNCTION(zt_wait)
 
 	if (result < 0){
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Poll failed");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to poll DAHDI device: %s\n", strerror(errno));
 		return FTDM_FAIL;
 	}
 

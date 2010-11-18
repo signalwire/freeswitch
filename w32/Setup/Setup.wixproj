@@ -1,0 +1,758 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProductVersion>3.5</ProductVersion>
+    <ProjectGuid>{47213370-b933-487d-9f45-bca26d7e2b6f}</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>FreeSWITCH</OutputName>
+    <OutputType>Package</OutputType>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;</DefineConstants>
+    <WixVariables>
+    </WixVariables>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\release\</OutputPath>
+    <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\debug\sounds;</DefineConstants>
+    <WixVariables>
+    </WixVariables>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
+    <Compile Include="Fragments\FreeSWITCHSoundFiles8.wxs" />
+    <Compile Include="Product.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\broadvoice\src\libbroadvoice.2010.vcxproj">
+      <Name>libbroadvoice</Name>
+      <Project>{cf70f278-3364-4395-a2e1-23501c9b8ad2}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\esl\fs_cli.2010.vcxproj">
+      <Name>fs_cli</Name>
+      <Project>{d2fb8043-d208-4aee-8f18-3b5857c871b9}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\libteletone\libteletone.2010.vcxproj">
+      <Name>libteletone</Name>
+      <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2010.vcxproj">
+      <Name>libspandsp</Name>
+      <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\apr-util\libaprutil.2010.vcxproj">
+      <Name>libaprutil</Name>
+      <Project>{f057da7f-79e5-4b00-845c-ef446ef055e3}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\apr\libapr.2010.vcxproj">
+      <Name>libapr</Name>
+      <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\js\js.2010.vcxproj">
+      <Name>js</Name>
+      <Project>{204fa0de-305d-4414-ae2e-f195a23f390d}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\openssl\libeay32.2010.vcxproj">
+      <Name>libeay32</Name>
+      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\openssl\openssl.2010.vcxproj">
+      <Name>openssl __Libraries\openssl\openssl_</Name>
+      <Project>{25bd39b1-c8bf-4676-a738-9cabd9c6bc79}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\openssl\ssleay32.2010.vcxproj">
+      <Name>ssleay32</Name>
+      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\pocketsphinx\pocketsphinx.2010.vcxproj">
+      <Name>pocketsphinx</Name>
+      <Project>{94001a0e-a837-445c-8004-f918f10d0226}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\pthread\pthread.2010.vcxproj">
+      <Name>pthread</Name>
+      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\sphinxbase\sphinxbase.2010.vcxproj">
+      <Name>sphinxbase</Name>
+      <Project>{2f025ead-99bd-40f5-b2cc-f0a28cad7f2d}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_avmd\mod_avmd.2010.vcxproj">
+      <Name>mod_avmd</Name>
+      <Project>{990baa76-89d3-4e38-8479-c7b28784efc8}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_commands\mod_commands.2010.vcxproj">
+      <Name>mod_commands</Name>
+      <Project>{30a5b29c-983e-4580-9fd0-d647ccdcc7eb}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_conference\mod_conference.2010.vcxproj">
+      <Name>mod_conference</Name>
+      <Project>{c24fb505-05d7-4319-8485-7540b44c8603}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_curl\mod_curl.2010.vcxproj">
+      <Name>mod_curl</Name>
+      <Project>{ef300386-a8df-4372-b6d8-fb9bffca9aed}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_db\mod_db.2010.vcxproj">
+      <Name>mod_db</Name>
+      <Project>{f6a33240-8f29-48bd-98f0-826995911799}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_dptools\mod_dptools.2010.vcxproj">
+      <Name>mod_dptools</Name>
+      <Project>{b5881a85-fe70-4f64-8607-2caae52669c6}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_enum\mod_enum.2010.vcxproj">
+      <Name>mod_enum</Name>
+      <Project>{71a967d5-0e99-4cef-a587-98836ee6f2ef}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_esf\mod_esf.2010.vcxproj">
+      <Name>mod_esf</Name>
+      <Project>{3850d93a-5f24-4922-bc1c-74d08c37c256}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_expr\mod_expr.2010.vcxproj">
+      <Name>mod_expr</Name>
+      <Project>{65a6273d-fcab-4c55-b09e-65100141a5d4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_fifo\mod_fifo.2010.vcxproj">
+      <Name>mod_fifo</Name>
+      <Project>{75df7f29-2fbf-47f7-b5af-5b4952dc1abd}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_fsv\mod_fsv.2010.vcxproj">
+      <Name>mod_fsv</Name>
+      <Project>{e3246d17-e29b-4ab5-962a-c69b0c5837bb}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_hash\mod_hash.2010.vcxproj">
+      <Name>mod_hash</Name>
+      <Project>{2e250296-0c08-4342-9c8a-bcbdd0e7df65}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_lcr\mod_lcr.2010.vcxproj">
+      <Name>mod_lcr</Name>
+      <Project>{1a3793d1-05d1-4b57-9b0f-5af3e79dc439}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_nibblebill\mod_nibblebill.2010.vcxproj">
+      <Name>mod_nibblebill</Name>
+      <Project>{3c977801-fe88-48f2-83d3-fa2ebff6688e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_rss\mod_rss.2010.vcxproj">
+      <Name>mod_rss</Name>
+      <Project>{b69247fa-ecd6-40ed-8e44-5ca6c3baf9a4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_snom\mod_snom.2010.vcxproj">
+      <Name>mod_snom</Name>
+      <Project>{2a3d00c6-588d-4e86-81ac-9ef5ede86e03}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_spandsp\mod_spandsp.2010.vcxproj">
+      <Name>mod_spandsp</Name>
+      <Project>{1e21afe0-6fdb-41d2-942d-863607c24b91}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_valet_parking\mod_valet_parking.2010.vcxproj">
+      <Name>mod_valet_parking</Name>
+      <Project>{432db165-1eb2-4781-a9c0-71e62610b20a}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_vmd\mod_vmd.2010.vcxproj">
+      <Name>mod_vmd</Name>
+      <Project>{14e4a972-9cfb-436d-b0a5-4943f3f80d47}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_voicemail\mod_voicemail.2010.vcxproj">
+      <Name>mod_voicemail</Name>
+      <Project>{d7f1e3f2-a3f4-474c-8555-15122571af52}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\asr_tts\mod_pocketsphinx\mod_pocketsphinx.2010.vcxproj">
+      <Name>mod_pocketsphinx</Name>
+      <Project>{2286da73-9fc5-45bc-a508-85994c3317ab}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\asr_tts\mod_unimrcp\mod_unimrcp.2010.vcxproj">
+      <Name>mod_unimrcp</Name>
+      <Project>{d07c378a-f5f7-438f-adf3-4ac4fb1883cd}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_amr\mod_amr.2010.vcxproj">
+      <Name>mod_amr</Name>
+      <Project>{8deb383c-4091-4f42-a56f-c9e46d552d79}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_celt\mod_celt.vcxproj">
+      <Name>mod_celt</Name>
+      <Project>{4d418176-3b33-47e6-a63e-01ba34add21c}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_g723_1\mod_g723_1.2010.vcxproj">
+      <Name>mod_g723_1</Name>
+      <Project>{fea1eef7-876f-48de-88bf-c0e3e606d758}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_g729\mod_g729.2010.vcxproj">
+      <Name>mod_g729</Name>
+      <Project>{1d95cd95-0de2-48c3-ac23-d5c7d1c9c0f0}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_h26x\mod_h26x.2010.vcxproj">
+      <Name>mod_h26x</Name>
+      <Project>{2c3c2423-234b-4772-8899-d3b137e5ca35}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_ilbc\mod_ilbc.2010.vcxproj">
+      <Name>mod_ilbc</Name>
+      <Project>{d3ec0aff-76fc-4210-a825-9a17410660a3}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_silk\mod_silk.2010.vcxproj">
+      <Name>mod_silk</Name>
+      <Project>{afa983d6-4569-4f88-ba94-555ed00fd9a8}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_siren\mod_siren.2010.vcxproj">
+      <Name>mod_siren</Name>
+      <Project>{0b6c905b-142e-4999-b39d-92ff7951e921}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\codecs\mod_speex\mod_speex.2010.vcxproj">
+      <Name>mod_speex</Name>
+      <Project>{5580d60e-0f77-4716-9cd4-b8e5986fa375}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\dialplans\mod_dialplan_asterisk\mod_dialplan_asterisk.2010.vcxproj">
+      <Name>mod_dialplan_asterisk</Name>
+      <Project>{e7bc026c-7cc5-45a3-bc7c-3b88eef01f24}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\dialplans\mod_dialplan_directory\mod_dialplan_directory.2010.vcxproj">
+      <Name>mod_dialplan_directory</Name>
+      <Project>{a27cca23-1541-4337-81a4-f0a6413078a0}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\dialplans\mod_dialplan_xml\mod_dialplan_xml.2010.vcxproj">
+      <Name>mod_dialplan_xml</Name>
+      <Project>{07113b25-d3af-4e04-ba77-4cd1171f022c}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_loopback\mod_loopback.2010.vcxproj">
+      <Name>mod_loopback</Name>
+      <Project>{b3f424ec-3d8f-417c-b244-3919d5e1a577}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_portaudio\mod_PortAudio.2010.vcxproj">
+      <Name>mod_PortAudio</Name>
+      <Project>{5fd31a25-5d83-4794-8bee-904dad84ce71}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_sofia\mod_sofia.2010.vcxproj">
+      <Name>mod_sofia</Name>
+      <Project>{0df3abd0-ddc0-4265-b778-07c66780979b}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_csv\mod_cdr_csv.2010.vcxproj">
+      <Name>mod_cdr_csv</Name>
+      <Project>{44d7deaf-fda5-495e-8b9d-1439e4f4c21e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\event_handlers\mod_event_multicast\mod_event_multicast.2010.vcxproj">
+      <Name>mod_event_multicast</Name>
+      <Project>{784113ef-44d9-4949-835d-7065d3c7ad08}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\event_handlers\mod_event_socket\mod_event_socket.2010.vcxproj">
+      <Name>mod_event_socket</Name>
+      <Project>{05515420-16de-4e63-be73-85be85ba5142}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\formats\mod_file_string\mod_file_string.2010.vcxproj">
+      <Name>mod_file_string</Name>
+      <Project>{70564d74-199a-4452-9c60-19ed5f242f0d}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\formats\mod_local_stream\mod_local_stream.2010.vcxproj">
+      <Name>mod_local_stream</Name>
+      <Project>{2ca40887-1622-46a1-a7f9-17fd7e7e545b}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\formats\mod_native_file\mod_native_file.2010.vcxproj">
+      <Name>mod_native_file</Name>
+      <Project>{9254c4b0-6f60-42b6-bb3a-36d63fc001c7}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\formats\mod_sndfile\mod_sndfile.2010.vcxproj">
+      <Name>mod_sndfile</Name>
+      <Project>{afac0568-7548-42d5-9f6a-8d3400a1e4f6}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\formats\mod_tone_stream\mod_tone_stream.2010.vcxproj">
+      <Name>mod_tone_stream</Name>
+      <Project>{6ff941ac-82c5-429f-aa4c-ad2fb9e5da52}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_lua\lua\lua.2010.vcxproj">
+      <Name>lua51</Name>
+      <Project>{d0b36172-cd76-454a-9b89-990025266c2a}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_lua\mod_lua.2010.vcxproj">
+      <Name>mod_lua</Name>
+      <Project>{7b077e7f-1be7-4291-ab86-55e527b25cac}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_managed\managed\FreeSWITCH.Managed.2010.csproj">
+      <Name>FreeSWITCH.Managed.2010</Name>
+      <Project>{834e2b2f-5483-4b80-8fe3-fe48ff76e5c0}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_managed\mod_managed.2010.vcxproj">
+      <Name>mod_managed</Name>
+      <Project>{7b42bda1-72c0-4378-a9b6-5c530f8cd61e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\loggers\mod_console\mod_console.2010.vcxproj">
+      <Name>mod_console</Name>
+      <Project>{1c453396-d912-4213-89fd-9b489162b7b5}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\loggers\mod_logfile\mod_logfile.2010.vcxproj">
+      <Name>mod_logfile</Name>
+      <Project>{d0bcac02-d94b-46b8-9b49-cddcc2bd7909}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_de\mod_say_de.2010.vcxproj">
+      <Name>mod_say_de</Name>
+      <Project>{5bc072db-3826-48ea-af34-fe32aa01e83b}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_en\mod_say_en.2010.vcxproj">
+      <Name>mod_say_en</Name>
+      <Project>{988cacf7-3fcb-4992-be69-77872ae67dc8}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_es\mod_say_es.2010.vcxproj">
+      <Name>mod_say_es</Name>
+      <Project>{fa429e98-8b03-45e6-a096-a4bc5e821de4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_fr\mod_say_fr.2010.vcxproj">
+      <Name>mod_say_fr</Name>
+      <Project>{06e3a538-ab32-44f2-b477-755ff9cb5d37}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_it\mod_say_it.2010.vcxproj">
+      <Name>mod_say_it</Name>
+      <Project>{6d1bec70-4dcd-4fe9-adbd-4a43a67e4d05}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_nl\mod_say_nl.2010.vcxproj">
+      <Name>mod_say_nl</Name>
+      <Project>{a4b122cf-5196-476b-8c0e-d8bd59ac3c14}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_ru\mod_say_ru.2010.vcxproj">
+      <Name>mod_say_ru</Name>
+      <Project>{0382e8fd-cfdc-41c0-8b03-792c7c84fc31}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\say\mod_say_zh\mod_say_zh.2010.vcxproj">
+      <Name>mod_say_zh</Name>
+      <Project>{b6a9fb7a-1cc4-442b-812d-ec33e4e4a36e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\xml_int\mod_xml_cdr\mod_xml_cdr.2010.vcxproj">
+      <Name>mod_xml_cdr</Name>
+      <Project>{08dad348-9e0a-4a2e-97f1-f1e7e24a7836}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\xml_int\mod_xml_curl\mod_xml_curl.2010.vcxproj">
+      <Name>mod_xml_curl</Name>
+      <Project>{ab91a099-7690-4ecf-8994-e458f4ea1ed4}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\xml_int\mod_xml_rpc\mod_xml_rpc.2010.vcxproj">
+      <Name>mod_xml_rpc</Name>
+      <Project>{cbec7225-0c21-4da8-978e-1f158f8ad950}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\w32\Console\FreeSwitchConsole.2010.vcxproj">
+      <Name>FreeSwitchConsole</Name>
+      <Project>{1af3a893-f7be-43dd-b697-8ab2397c0d67}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
+      <Name>FreeSwitchCoreLib</Name>
+      <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLLOCATION</RefTargetDir>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Fragments" />
+  </ItemGroup>
+  <Import Project="$(WixTargetsPath)" />
+  <PropertyGroup>
+    <PreBuildEvent>"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\conf" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
+"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\Win32\Release\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"</PreBuildEvent>
+  </PropertyGroup>
+  <!--
+	To modify your build process, add your task inside one of the targets below and uncomment it.
+	Other similar extension points exist, see Wix.targets.
+	<Target Name="BeforeBuild">
+	</Target>
+	<Target Name="AfterBuild">
+	</Target>
+	-->
+</Project>

@@ -198,7 +198,7 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
     L1Mngmt				cfg;
     Pst					pst;
 
-	S32 				d_channel_fd = -1;
+	int32_t d_channel_fd = -1;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
     /* initalize the post structure */
@@ -227,7 +227,7 @@ ftdm_status_t sng_isdn_stack_cfg_phy_psap(ftdm_span_t *span)
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 		ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
 		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
-			d_channel_fd = (S32) ftdmchan->sockfd;
+			d_channel_fd = (int32_t)ftdmchan->sockfd;
 			break;
 		}
 	}
