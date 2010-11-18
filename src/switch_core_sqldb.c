@@ -898,7 +898,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *threa
 			wake_thread(0);
 			sec = 0;
 		}
-		switch_yield(1000);
+		switch_yield(1000000);
 	}
 
 
