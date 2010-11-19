@@ -41,7 +41,6 @@ ftdm_status_t sngisdn_activate_phy(ftdm_span_t *span);
 ftdm_status_t sngisdn_deactivate_phy(ftdm_span_t *span);
 
 ftdm_status_t sngisdn_activate_cc(ftdm_span_t *span);
-ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 
 ftdm_status_t sngisdn_cntrl_q931(ftdm_span_t *span, uint8_t action, uint8_t subaction);
 ftdm_status_t sngisdn_cntrl_q921(ftdm_span_t *span, uint8_t action, uint8_t subaction);

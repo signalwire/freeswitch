@@ -195,7 +195,7 @@
 
   <!-- various debug and defaults -->
   <X-PRE-PROCESS cmd="set" data="call_debug=false"/>
-  <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
+  <X-PRE-PROCESS cmd="set" data="console_loglevel=debug"/>
   <X-PRE-PROCESS cmd="set" data="default_areacode=918"/>
   <X-PRE-PROCESS cmd="set" data="default_country=US"/>
 

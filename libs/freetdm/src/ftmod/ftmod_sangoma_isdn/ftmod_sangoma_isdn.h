@@ -270,9 +270,11 @@ extern ftdm_sngisdn_data_t	g_sngisdn_data;
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
 
 /* Support functions */
-FT_DECLARE(uint32_t) get_unique_suInstId(int16_t cc_id);
-FT_DECLARE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info);
-FT_DECLARE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+uint32_t get_unique_suInstId(int16_t cc_id);
+void clear_call_data(sngisdn_chan_data_t *sngisdn_info);
+void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail);
+ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 
 
 void stack_hdr_init(Header *hdr);

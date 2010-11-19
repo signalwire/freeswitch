@@ -13,7 +13,6 @@
       <param name="time-base-score" value="system"/>
       <param name="max-wait-time" value="0"/>
       <param name="max-wait-time-with-no-agent" value="0"/>
-      <param name="max-wait-time-with-no-agent-time-reached" value="5"/>
       <param name="tier-rules-apply" value="false"/>
       <param name="tier-rule-wait-second" value="300"/>
       <param name="tier-rule-wait-multiply-level" value="true"/>
