@@ -1256,6 +1256,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 			/* Do we have enough statements or is the timeout expired */
 			while (sql || (sofia_test_pflag(profile, PFLAG_RUNNING) && mod_sofia_globals.running == 1 &&
+						switch_micro_time_now() - last_check < 1000000 &&
 				    	(statements == 0 || (statements <= 1024 && (switch_micro_time_now() - last_commit)/1000 < profile->trans_timeout)))) {
 				
 				switch_interval_time_t sleepy_time = !statements ? 1000000 : switch_micro_time_now() - last_commit - profile->trans_timeout*1000;
