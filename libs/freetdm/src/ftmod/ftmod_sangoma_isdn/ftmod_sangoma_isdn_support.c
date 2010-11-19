@@ -319,7 +319,7 @@ ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ft
 }
 
 
-ftm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
+ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
 {
 	uint8_t len;
 	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
