@@ -240,7 +240,6 @@ struct switch_rtp {
 
 	switch_time_t send_time;
 	switch_byte_t auto_adj_used;
-	int last_voicepkt;
 };
 
 struct switch_rtcp_senderinfo {
@@ -1357,7 +1356,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->pool = pool;
 	rtp_session->te = 101;
 	rtp_session->recv_te = 101;
-	rtp_session->last_voicepkt=0;
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -3157,12 +3155,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 {
 	switch_size_t bytes, rtcp_bytes;
 	uint8_t send = 1;
-	uint8_t CNdata[10] = { 0 };
-	uint8_t sendCN = 0;
 	uint32_t this_ts = 0;
 	int ret;
 	switch_time_t now;
-	CNdata[0] = 65;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
@@ -3244,15 +3239,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->recv_msg.header.pt = 102;
 	}
 
-	if ( !switch_test_flag(rtp_session,SWITCH_RTP_FLAG_VAD ) )
-		switch_set_flag( rtp_session,SWITCH_RTP_FLAG_VAD);
-
-
-/*
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD) &&
 		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->implementation->ianacode) {
-*/
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
+
 		int16_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE / sizeof(int16_t)] = { 0 };
 		uint32_t rate = 0;
 		uint32_t codec_flags = 0;
@@ -3300,7 +3289,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 					} else {
 						if (score > rtp_session->vad_data.bg_level && !switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
 							uint32_t diff = score - rtp_session->vad_data.bg_level;
-
 
 							if (rtp_session->vad_data.hangover_hits) {
 								rtp_session->vad_data.hangover_hits--;
@@ -3354,31 +3342,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	this_ts = ntohl(send_msg->header.ts);
 
-
-	/* if previous normal packet is sent but this one is not scheduled to be sent, send a CN packet */
-	if ( !rtp_session->last_voicepkt  && send==0 ) {
-		send=1;
-		sendCN=1;
-		//switch_set_flag(&rtp_session->vad_data,SWITCH_VAD_NPACKET_SENT );
-		rtp_session->last_voicepkt=1;
-	}
-
 	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts) {
 		send = 0;
 	}
 
-	/* we send CN automatically. ignore other attempts */
-	if ( send_msg->header.pt == rtp_session->cng_pt ){
-		send = 0;
-	}
-
-	
-
 	if (send) {
-		if ( !sendCN)
-			rtp_session->last_voicepkt=0;
-
-
 		send_msg->header.seq = htons(++rtp_session->seq);
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
@@ -3473,18 +3441,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 		}
 
-		if ( sendCN ) {
-			int CNdatalen = 2;
-			rtp_session->cn++;
-			memcpy(send_msg->body, CNdata, CNdatalen);
-			bytes = CNdatalen + rtp_header_len;
-			payload = rtp_session->cng_pt;
-			send_msg->header.pt = rtp_session->cng_pt;
-			send_msg->header.m = 0;
-			rtp_session->last_voicepkt=1;
-		}
-
-
 
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 			rtp_session->seq--;
@@ -3566,9 +3522,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 		}
 	}
-
-	
-
 
 	if (rtp_session->remote_stun_addr) {
 		do_stun_ping(rtp_session);
