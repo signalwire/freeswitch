@@ -666,21 +666,32 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 			}
 		}
 	}
-
+	
 	if (((tmp = switch_channel_get_variable(channel, "effective_callee_id_name")) ||
-		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_name")) ||
-		 (tmp = switch_channel_get_variable(channel, "callee_id_name"))) && !zstr(tmp)) {
+		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_name"))) && !zstr(tmp)) {
 		name = (char *) tmp;
 	}
 
 	if (((tmp = switch_channel_get_variable(channel, "effective_callee_id_number")) ||
-		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_number")) ||
-		 (tmp = switch_channel_get_variable(channel, "callee_id_number"))) && !zstr(tmp)) {
+		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_number"))) && !zstr(tmp)) {
 		number = tmp;
 	}
 
-	if (zstr(name))
+	if (zstr(number)) {
+		if ((tmp = switch_channel_get_variable(channel, "callee_id_number")) && !zstr(tmp)) {
+			number = (char *) tmp;
+		}
+	}
+
+	if (zstr(name)) {
+		if ((tmp = switch_channel_get_variable(channel, "callee_id_name")) && !zstr(tmp)) {
+			name = (char *) tmp;
+		}
+	}
+
+	if (zstr(name)) {
 		name = (char *) number;
+	}
 
 	if (zstr(name) && zstr(number)) {
 		goto end;
@@ -5947,7 +5958,12 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 		/* Barf if we didn't get our private */
 		assert(switch_core_session_get_private(session));
-
+		
+		if (!strncasecmp(sip->sip_content_type->c_type, "message", 7) && !strcasecmp(sip->sip_content_type->c_subtype, "update_display")) {
+			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+			goto end;
+		}
+		
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
 			sip->sip_payload && sip->sip_payload->pl_data) {
 			if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "media_control+xml")) {
@@ -6000,8 +6016,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf")) {
 				int tmp = atoi(sip->sip_payload->pl_data);
 				dtmf.digit = switch_rfc2833_to_char(tmp);
-			} else if (!strncasecmp(sip->sip_content_type->c_type, "message", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "update_display")) {
-				sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 			} else {
 				goto end;
 			}
