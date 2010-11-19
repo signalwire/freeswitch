@@ -17,7 +17,8 @@ my @netblocks = split(/\n/, get("http://www.infiltrated.net/voipabuse/netblocks.
 
 print "<list name=\"voip-abuse-addresses\" default=\"deny\">\n";
 foreach $addr (@addresses) {
-    next unless $addr =~ m/\d+\.\d+\.\d+\.\d+/;
+    $addr =~ s/\s//g;                            # strip whitespace
+    next unless $addr =~ m/\d+\.\d+\.\d+\.\d+/;  # imperfect but useful IP addr check 
     print "  <node type=\"allow\" cidr=\"$addr/32\"/>\n";
 }
 print "</list>\n";
@@ -25,7 +26,8 @@ print "</list>\n";
 
 print "<list name=\"voip-abuse-netblocks\" default=\"deny\">\n";
 foreach $netb (@netblocks) {
-    next unless $netb =~ m/\d+\.\d+\.\d+\.\d+/;
+    $netb =~ s/\s//g;                            # strip whitespace
+    next unless $netb =~ m/\d+\.\d+\.\d+\.\d+/;  # imperfect but useful IP addr check
     print "  <node type=\"allow\" cidr=\"$netb\"/>\n";
 }
 print "</list>\n";
