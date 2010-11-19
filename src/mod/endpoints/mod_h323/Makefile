@@ -1,7 +1,11 @@
 BASE=../../../..
-LOCAL_CFLAGS+=-g -ggdb  -I/usr/local/include/ptlib -I/usr/local/include/openh323  -I. -DPTRACING=1 -D_REENTRANT -fno-exceptions
-LOCAL_LDFLAGS= -lopenh323 -lpt -lrt 
+
+export PTLIBDIR = $(shell /usr/bin/ptlib-config --ptlibdir)
+LOCAL_CFLAGS+=-g -I$PTLIBDIR -I/usr/include/openh323  -I. -DPTRACING=1 -D_REENTRANT -fno-exceptions
+LOCAL_LDFLAGS= -L/usr/lib -lopenh323 -lpt -lrt 
+
+ifeq ($(shell uname -m),x86_64)
+LOCAL_CFLAGS+=-DP_64BIT
+endif
 
 include $(BASE)/build/modmake.rules
-
-

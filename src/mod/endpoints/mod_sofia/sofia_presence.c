@@ -1259,7 +1259,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *to = NULL;
 	char *open;
 	char *prpid;
-	char *sql;
 	time_t exptime = switch_epoch_time_now(NULL) + 3600;
 	int is_dialog = 0;
 	sofia_profile_t *ext_profile = NULL, *profile = helper->profile;
@@ -1617,15 +1616,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	}
 
+	/* commenting to test
 	if (helper->event){ 
 		const char *uuid = switch_event_get_header_nil(helper->event, "unique-id");
 
 		if (!zstr(uuid) && strchr(uuid, '-')) {
-			sql = switch_mprintf("update sip_dialogs set rpid='%q',status='%q' where uuid='%q'", rpid, status_line, uuid);
+		    char *sql = switch_mprintf("update sip_dialogs set rpid='%q',status='%q' where uuid='%q'", rpid, status_line, uuid);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
-
+	*/
 
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 

@@ -1918,6 +1918,11 @@ FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span)
 	return span->trunk_type;
 }
 
+FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
+{
+	return ftdm_trunk_type2str(span->trunk_type);
+}
+
 FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span)
 {
 	return span->span_id;
@@ -2117,6 +2122,15 @@ FT_DECLARE(ftdm_caller_data_t *) ftdm_channel_get_caller_data(ftdm_channel_t *ft
 	return &ftdmchan->caller_data;
 }
 
+FT_DECLARE(int) ftdm_channel_get_state(const ftdm_channel_t *ftdmchan)
+{
+	int state;
+	ftdm_channel_lock(ftdmchan);
+	state = ftdmchan->state;
+	ftdm_channel_unlock(ftdmchan);
+	return state;
+}
+
 FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *ftdmchan)
 {
 	const char *state;
@@ -2124,6 +2138,15 @@ FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *ftdmch
 	state = ftdm_channel_state2str(ftdmchan->state);
 	ftdm_channel_unlock(ftdmchan);
 	return state;
+}
+
+FT_DECLARE(int) ftdm_channel_get_last_state(const ftdm_channel_t *ftdmchan)
+{
+	int last_state;
+	ftdm_channel_lock(ftdmchan);
+	last_state = ftdmchan->last_state;
+	ftdm_channel_unlock(ftdmchan);
+	return last_state;
 }
 
 FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *ftdmchan)

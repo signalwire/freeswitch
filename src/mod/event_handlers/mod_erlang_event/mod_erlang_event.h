@@ -60,7 +60,7 @@ enum reply_state { reply_not_ready, reply_waiting, reply_found, reply_timeout };
 struct fetch_reply_struct
 {
 	switch_thread_cond_t *ready_or_found;
-	int usecount;
+	switch_mutex_t *mutex;
 	enum reply_state state;
 	ei_x_buff *reply;
 	char winner[MAXNODELEN + 1];

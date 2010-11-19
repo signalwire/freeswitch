@@ -1243,6 +1243,9 @@ FT_DECLARE(void) ftdm_span_set_trunk_type(ftdm_span_t *span, ftdm_trunk_type_t t
  */
 FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span);
 
+/*! \brief For display debugging purposes you can display this string which describes the trunk type of a span */
+FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span);
+
 /*! 
  * \brief Return the channel identified by the provided id
  *
@@ -1261,6 +1264,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan,
 
 /*! \brief Get the caller data for a channel, typically you need this when receiving FTDM_SIGEVENT_START */
 FT_DECLARE(ftdm_caller_data_t *) ftdm_channel_get_caller_data(ftdm_channel_t *channel);
+
+/*! \brief Get current state of a channel */
+FT_DECLARE(int) ftdm_channel_get_state(const ftdm_channel_t *ftdmchan);
+
+/*! \brief Get last state of a channel */
+FT_DECLARE(int) ftdm_channel_get_last_state(const ftdm_channel_t *ftdmchan);
 
 /*! \brief For display debugging purposes you can display this string which describes the current channel internal state */
 FT_DECLARE(const char *) ftdm_channel_get_state_str(const ftdm_channel_t *channel);

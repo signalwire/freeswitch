@@ -34,10 +34,6 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-extern void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len);
-extern void sngisdn_trace_q931(char* str, uint8_t* data, uint32_t data_len);
-extern void get_memory_info(void);
-
 #define MAX_DECODE_STR_LEN 2000
 
 

@@ -1722,7 +1722,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* fill in the span structure for this circuit */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 	sngss7_span->rx_grs.circuit = circuit; 
 	sngss7_span->rx_grs.range = range;
 
@@ -1758,7 +1758,7 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* fill in the span structure for this circuit */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 	sngss7_span->rx_gra.circuit = circuit; 
 	sngss7_span->rx_gra.range = range;
 
@@ -1866,7 +1866,7 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	}
 
 	/* check if we just sent a GRS request...*/
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 	if (sngss7_span->tx_grs.circuit > 0) {
 		/* we need to put all circuits on this UCIC */
 		sngss7_span->ucic.circuit = sngss7_span->tx_grs.circuit;
@@ -1917,7 +1917,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* grab the span info */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 
 	/* figure out what type of block needs to be applied */
 	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
@@ -2058,7 +2058,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* grab the span info */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 
 	/* figure out what type of block needs to be applied */
 	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {

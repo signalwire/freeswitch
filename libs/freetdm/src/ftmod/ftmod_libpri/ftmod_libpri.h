@@ -54,34 +54,19 @@ typedef enum {
 
 struct ftdm_libpri_data {
 	ftdm_channel_t *dchan;
-	ftdm_channel_t *dchans[2];
-	struct ftdm_sigmsg sigmsg;
-	uint32_t flags;
-	int32_t mode;
 	ftdm_isdn_opts_t opts;
+	uint32_t flags;
+	uint32_t debug_mask;
 
-	int node;
-	int pswitch;
-	char *dialplan;
-	unsigned int l1;
-	unsigned int dp;
-
-	int debug;
+	int mode;
+	int dialect;
+	unsigned int layer1;
+	unsigned int ton;
 
 	lpwrap_pri_t spri;
 };
 
 typedef struct ftdm_libpri_data ftdm_libpri_data_t;
-
-
-/* b-channel private data */
-struct ftdm_isdn_bchan_data
-{
-	int32_t digit_timeout;
-};
-
-typedef struct ftdm_isdn_bchan_data ftdm_isdn_bchan_data_t;
-
 
 #endif
 

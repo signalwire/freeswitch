@@ -90,7 +90,7 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	memcpy(&sngss7_event->event.siConEvnt, siConEvnt, sizeof(*siConEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -128,7 +128,7 @@ void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	memcpy(&sngss7_event->event.siConEvnt, siConEvnt, sizeof(*siConEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -167,7 +167,7 @@ void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCn
 	memcpy(&sngss7_event->event.siCnStEvnt, siCnStEvnt, sizeof(*siCnStEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -205,7 +205,7 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	memcpy(&sngss7_event->event.siRelEvnt, siRelEvnt, sizeof(*siRelEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -243,7 +243,7 @@ void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	memcpy(&sngss7_event->event.siRelEvnt, siRelEvnt, sizeof(*siRelEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -281,7 +281,7 @@ void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiIn
 	memcpy(&sngss7_event->event.siInfoEvnt, siInfoEvnt, sizeof(*siInfoEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -320,7 +320,7 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	memcpy(&sngss7_event->event.siFacEvnt, siFacEvnt, sizeof(*siFacEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -359,7 +359,7 @@ void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	memcpy(&sngss7_event->event.siFacEvnt, siFacEvnt, sizeof(*siFacEvnt));
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -396,7 +396,7 @@ void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 	sngss7_event->event_id	= SNGSS7_UMSG_IND_EVENT;
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 
@@ -438,7 +438,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	}
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -478,7 +478,7 @@ void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiS
 	}
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 
@@ -519,7 +519,7 @@ void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiR
 	}
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 
@@ -560,7 +560,7 @@ void sngss7_ssp_sta_cfm(uint32_t infId)
 	}
 
 	/* enqueue this event */
-	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->mod_data)->event_queue, sngss7_event);
+	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 #endif
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 

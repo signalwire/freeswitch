@@ -1391,6 +1391,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		data++;
 	}
 
+	if (session) {
+		switch_caller_profile_t *cpp = NULL;
+		channel = switch_core_session_get_channel(session);
+		if ((cpp = switch_channel_get_caller_profile(channel))) {
+			cp = switch_caller_profile_dup(pool, cpp);
+		}
+	}
+
 	if (ovars) {
 		var_event = ovars;
 	} else {
@@ -1434,14 +1442,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
-	}
-
-	if (session) {
-		switch_caller_profile_t *cpp = NULL;
-		channel = switch_core_session_get_channel(session);
-		if ((cpp = switch_channel_get_caller_profile(channel))) {
-			cp = switch_caller_profile_dup(pool, cpp);
-		}
 	}
 
 	switch_threadattr_create(&thd_attr, pool);

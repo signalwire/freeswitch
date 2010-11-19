@@ -513,7 +513,7 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t 		*ftdmchan = NULL;
 	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 	int 				i;
 
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
@@ -575,7 +575,7 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t 		*ftdmchan = NULL;
 	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 	int 				i;
 	int					byte = 0;
 	int					bit = 0;
@@ -667,7 +667,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t 		*ftdmchan = NULL;
 	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 	int 				i;
 
 	for (i = sngss7_span->rx_gra.circuit; i < (sngss7_span->rx_gra.circuit + sngss7_span->rx_gra.range + 1); i++) {
@@ -817,7 +817,7 @@ ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t 		*ftdmchan = NULL;
 	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 	int 				i;
 
 	for (i = sngss7_span->ucic.circuit; i < (sngss7_span->ucic.circuit + sngss7_span->ucic.range + 1); i++) {
@@ -869,7 +869,7 @@ ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
 ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info)
 {
 	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
-	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->signal_data;
 
 	/* clear the rx_grs data fields */
 	memset(&sngss7_span->rx_grs, 0x0, sizeof(sngss7_group_data_t));
@@ -881,7 +881,7 @@ ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info)
 ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info)
 {
 	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
-	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->signal_data;
 
 	/* clear the rx_grs data fields */
 	memset(&sngss7_span->rx_gra, 0x0, sizeof(sngss7_group_data_t));
@@ -904,7 +904,7 @@ ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
 ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info)
 {
 	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
-	sngss7_span_data_t	*sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span_data_t	*sngss7_span = ftdmchan->span->signal_data;
 
 	/* clear the rx_grs data fields */
 	memset(&sngss7_span->tx_grs, 0x0, sizeof(sngss7_group_data_t));
