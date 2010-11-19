@@ -173,68 +173,74 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
 	} else {
-		ei_x_buff *nbuf = malloc(sizeof(nbuf));
-		nbuf->buff = malloc(buf->buffsz);
-		memcpy(nbuf->buff, buf->buff, buf->buffsz);
-		nbuf->index = buf->index;
-		nbuf->buffsz = buf->buffsz;
+		/* TODO - maybe use a rwlock instead */
+		if ((p = switch_core_hash_find_locked(globals.fetch_reply_hash, uuid_str, globals.fetch_reply_mutex))) {
+			/* try to lock the mutex, so no other responder can */
+			if (switch_mutex_trylock(p->mutex) == SWITCH_STATUS_SUCCESS) {
+				if (p->state == reply_waiting) {
+					/* alright, we've got the lock and we're the first to reply */
 
-		switch_mutex_lock(globals.fetch_reply_mutex);
-		if ((p = switch_core_hash_find(globals.fetch_reply_hash, uuid_str))) {
-			/* Get the status and release the lock ASAP. */
-			enum { is_timeout, is_waiting, is_filled } status;
-			if (p->state == reply_not_ready) {
-				switch_thread_cond_wait(p->ready_or_found, globals.fetch_reply_mutex);
-			}
+					/* clone the reply so it doesn't get destroyed on us */
+					ei_x_buff *nbuf = malloc(sizeof(nbuf));
+					nbuf->buff = malloc(buf->buffsz);
+					memcpy(nbuf->buff, buf->buff, buf->buffsz);
+					nbuf->index = buf->index;
+					nbuf->buffsz = buf->buffsz;
 
-			if (p->state == reply_waiting) {
-				/* update the key with a reply */
-				status = is_waiting;
-				p->reply = nbuf;
-				p->state = reply_found;
-				strncpy(p->winner, listener->peer_nodename, MAXNODELEN);
-				switch_thread_cond_broadcast(p->ready_or_found);
-			} else if (p->state == reply_timeout) {
-				status = is_timeout;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got reply for %s\n", uuid_str);
+
+					/* copy info into the reply struct */
+					p->state = reply_found;
+					p->reply = nbuf;
+					strncpy(p->winner, listener->peer_nodename, MAXNODELEN);
+
+					/* signal waiting thread that its time to wake up */
+					switch_thread_cond_signal(p->ready_or_found);
+
+					/* reply OK */
+					ei_x_encode_tuple_header(rbuf, 2);
+					ei_x_encode_atom(rbuf, "ok");
+					_ei_x_encode_string(rbuf, uuid_str);
+
+					/* unlock */
+					switch_mutex_unlock(p->mutex);
+				} else {
+					if (p->state == reply_found) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reply for already complete request %s\n", uuid_str);
+						ei_x_encode_tuple_header(rbuf, 3);
+						ei_x_encode_atom(rbuf, "error");
+						_ei_x_encode_string(rbuf, uuid_str);
+						ei_x_encode_atom(rbuf, "duplicate_response");
+					} else if (p->state == reply_timeout) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reply for timed out request %s\n", uuid_str);
+						ei_x_encode_tuple_header(rbuf, 3);
+						ei_x_encode_atom(rbuf, "error");
+						_ei_x_encode_string(rbuf, uuid_str);
+						ei_x_encode_atom(rbuf, "timeout");
+					} else if (p->state == reply_not_ready) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Request %s is not ready?!\n", uuid_str);
+						ei_x_encode_tuple_header(rbuf, 3);
+						ei_x_encode_atom(rbuf, "error");
+						_ei_x_encode_string(rbuf, uuid_str);
+						ei_x_encode_atom(rbuf, "not_ready");
+					}
+					switch_mutex_unlock(p->mutex);
+				}
 			} else {
-				status = is_filled;
-			}
-
-			put_reply_unlock(p, uuid_str);
-
-			/* Relay the status back to the fetch responder. */
-			if (status == is_waiting) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", uuid_str);
-				ei_x_encode_tuple_header(rbuf, 2);
-				ei_x_encode_atom(rbuf, "ok");
-				_ei_x_encode_string(rbuf, uuid_str);
-				/* Return here to avoid freeing the reply. */
-				return SWITCH_STATUS_SUCCESS;
-			} else if (status == is_timeout) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", uuid_str);
-				ei_x_encode_tuple_header(rbuf, 3);
-				ei_x_encode_atom(rbuf, "error");
-				_ei_x_encode_string(rbuf, uuid_str);
-				ei_x_encode_atom(rbuf, "timeout");
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", uuid_str);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not lock mutex for reply %s\n", uuid_str);
 				ei_x_encode_tuple_header(rbuf, 3);
 				ei_x_encode_atom(rbuf, "error");
 				_ei_x_encode_string(rbuf, uuid_str);
 				ei_x_encode_atom(rbuf, "duplicate_response");
 			}
 		} else {
-			/* nothing in the hash */
-			switch_mutex_unlock(globals.fetch_reply_mutex);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Empty slot for %s\n", uuid_str);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find request for reply %s\n", uuid_str);
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
 			ei_x_encode_atom(rbuf, "invalid_uuid");
 		}
-
-		switch_safe_free(nbuf->buff);
-		switch_safe_free(nbuf);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1052,7 +1058,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 
 			if (se->spawn_reply->state == reply_waiting) {
 				se->spawn_reply->pid = pid;
-				switch_thread_cond_broadcast(se->spawn_reply->ready_or_found);
+				switch_thread_cond_signal(se->spawn_reply->ready_or_found);
 				ei_x_encode_atom(rbuf, "ok");
 				switch_thread_rwlock_unlock(listener->session_rwlock);
 				switch_mutex_unlock(se->spawn_reply->mutex);

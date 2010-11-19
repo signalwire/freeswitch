@@ -2643,6 +2643,12 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_testv6_subnet(ip_t _ip, ip_t _net, ip_t _mask) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_testv6_subnet(ip_t.getCPtr(_ip), ip_t.getCPtr(_net), ip_t.getCPtr(_mask));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static int _zstr(string s) {
     int ret = freeswitchPINVOKE._zstr(s);
     return ret;
@@ -2949,8 +2955,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_parse_cidr(string arg0, SWIGTYPE_p_unsigned_long ip, SWIGTYPE_p_unsigned_long mask, SWIGTYPE_p_unsigned_long bitp) {
-    int ret = freeswitchPINVOKE.switch_parse_cidr(arg0, SWIGTYPE_p_unsigned_long.getCPtr(ip), SWIGTYPE_p_unsigned_long.getCPtr(mask), SWIGTYPE_p_unsigned_long.getCPtr(bitp));
+  public static int switch_parse_cidr(string arg0, ip_t ip, ip_t mask, SWIGTYPE_p_unsigned_long bitp) {
+    int ret = freeswitchPINVOKE.switch_parse_cidr(arg0, ip_t.getCPtr(ip), ip_t.getCPtr(mask), SWIGTYPE_p_unsigned_long.getCPtr(bitp));
     return ret;
   }
 
@@ -2974,6 +2980,12 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_network_list_validate_ip6_token(SWIGTYPE_p_switch_network_list list, ip_t ip, ref string token) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_network_list_validate_ip6_token(SWIGTYPE_p_switch_network_list.getCPtr(list), ip_t.getCPtr(ip), ref token);
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static string switch_dow_int2str(int val) {
     string ret = freeswitchPINVOKE.switch_dow_int2str(val);
     return ret;
@@ -2984,8 +2996,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_dow_cmp(string exp, int val) {
-    int ret = freeswitchPINVOKE.switch_dow_cmp(exp, val);
+  public static switch_bool_t switch_dow_cmp(string exp, int val) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_dow_cmp(exp, val);
     return ret;
   }
 
@@ -4374,13 +4386,21 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_process_import(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_channel peer_channel, string varname) {
-    freeswitchPINVOKE.switch_process_import(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_channel.getCPtr(peer_channel), varname);
+  public static void switch_process_import(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_channel peer_channel, string varname, string prefix) {
+    freeswitchPINVOKE.switch_process_import(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_channel.getCPtr(peer_channel), varname, prefix);
   }
 
   public static switch_bool_t switch_ivr_uuid_exists(string uuid) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_ivr_uuid_exists(uuid);
     return ret;
+  }
+
+  public static void switch_ivr_dmachine_set_match_callback(SWIGTYPE_p_switch_ivr_dmachine dmachine, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t match_callback) {
+    freeswitchPINVOKE.switch_ivr_dmachine_set_match_callback(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t.getCPtr(match_callback));
+  }
+
+  public static void switch_ivr_dmachine_set_nonmatch_callback(SWIGTYPE_p_switch_ivr_dmachine dmachine, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t nonmatch_callback) {
+    freeswitchPINVOKE.switch_ivr_dmachine_set_nonmatch_callback(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t.getCPtr(nonmatch_callback));
   }
 
   public static switch_status_t switch_ivr_dmachine_create(SWIGTYPE_p_p_switch_ivr_dmachine dmachine_p, string name, SWIGTYPE_p_apr_pool_t pool, uint digit_timeout, uint input_timeout, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t match_callback, SWIGTYPE_p_f_p_switch_ivr_dmachine_match__switch_status_t nonmatch_callback, SWIGTYPE_p_void user_data) {
@@ -5038,6 +5058,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_event_hook_add_state_run(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session__switch_status_t state_run) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_state_run(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session__switch_status_t.getCPtr(state_run));
+    return ret;
+  }
+
   public static switch_status_t switch_core_event_hook_add_read_frame(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t read_frame) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_add_read_frame(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session_p_p_switch_frame_unsigned_long_int__switch_status_t.getCPtr(read_frame));
     return ret;
@@ -5095,6 +5120,11 @@ public class freeswitch {
 
   public static switch_status_t switch_core_event_hook_remove_state_change(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session__switch_status_t state_change) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_state_change(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session__switch_status_t.getCPtr(state_change));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_event_hook_remove_state_run(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_core_session__switch_status_t state_run) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_event_hook_remove_state_run(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_core_session__switch_status_t.getCPtr(state_run));
     return ret;
   }
 
@@ -8412,6 +8442,27 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_isxdigit")]
   public static extern int switch_isxdigit(int jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v4_set")]
+  public static extern void ip_t_v4_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v4_get")]
+  public static extern uint ip_t_v4_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v6_set")]
+  public static extern void ip_t_v6_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_ip_t_v6_get")]
+  public static extern IntPtr ip_t_v6_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_ip_t")]
+  public static extern IntPtr new_ip_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_ip_t")]
+  public static extern void delete_ip_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_testv6_subnet")]
+  public static extern int switch_testv6_subnet(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SMAX_get")]
   public static extern int SWITCH_SMAX_get();
 
@@ -8609,6 +8660,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_network_list_validate_ip_token")]
   public static extern int switch_network_list_validate_ip_token(HandleRef jarg1, uint jarg2, ref string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_network_list_validate_ip6_token")]
+  public static extern int switch_network_list_validate_ip6_token(HandleRef jarg1, HandleRef jarg2, ref string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_dow_int2str")]
   public static extern string switch_dow_int2str(int jarg1);
@@ -9263,6 +9317,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_io_routines_write_video_frame_get")]
   public static extern IntPtr switch_io_routines_write_video_frame_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_routines_state_run_set")]
+  public static extern void switch_io_routines_state_run_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_routines_state_run_get")]
+  public static extern IntPtr switch_io_routines_state_run_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_io_routines_resurrect_session_set")]
   public static extern void switch_io_routines_resurrect_session_set(HandleRef jarg1, HandleRef jarg2);
@@ -12121,10 +12181,16 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_sound_test(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_process_import")]
-  public static extern void switch_process_import(HandleRef jarg1, HandleRef jarg2, string jarg3);
+  public static extern void switch_process_import(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_uuid_exists")]
   public static extern int switch_ivr_uuid_exists(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_set_match_callback")]
+  public static extern void switch_ivr_dmachine_set_match_callback(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_set_nonmatch_callback")]
+  public static extern void switch_ivr_dmachine_set_nonmatch_callback(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_create")]
   public static extern int switch_ivr_dmachine_create(HandleRef jarg1, string jarg2, HandleRef jarg3, uint jarg4, uint jarg5, HandleRef jarg6, HandleRef jarg7, HandleRef jarg8);
@@ -12897,6 +12963,24 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_io_event_hook_state_change")]
   public static extern void delete_switch_io_event_hook_state_change(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hook_state_run_state_run_set")]
+  public static extern void switch_io_event_hook_state_run_state_run_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hook_state_run_state_run_get")]
+  public static extern IntPtr switch_io_event_hook_state_run_state_run_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hook_state_run_next_set")]
+  public static extern void switch_io_event_hook_state_run_next_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hook_state_run_next_get")]
+  public static extern IntPtr switch_io_event_hook_state_run_next_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_io_event_hook_state_run")]
+  public static extern IntPtr new_switch_io_event_hook_state_run();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_io_event_hook_state_run")]
+  public static extern void delete_switch_io_event_hook_state_run(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hook_resurrect_session_resurrect_session_set")]
   public static extern void switch_io_event_hook_resurrect_session_resurrect_session_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -12981,6 +13065,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hooks_state_change_get")]
   public static extern IntPtr switch_io_event_hooks_state_change_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hooks_state_run_set")]
+  public static extern void switch_io_event_hooks_state_run_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hooks_state_run_get")]
+  public static extern IntPtr switch_io_event_hooks_state_run_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hooks_resurrect_session_set")]
   public static extern void switch_io_event_hooks_resurrect_session_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -13004,6 +13094,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_event_hook_add_state_change")]
   public static extern int switch_core_event_hook_add_state_change(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_event_hook_add_state_run")]
+  public static extern int switch_core_event_hook_add_state_run(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_event_hook_add_read_frame")]
   public static extern int switch_core_event_hook_add_read_frame(HandleRef jarg1, HandleRef jarg2);
@@ -13040,6 +13133,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_event_hook_remove_state_change")]
   public static extern int switch_core_event_hook_remove_state_change(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_event_hook_remove_state_run")]
+  public static extern int switch_core_event_hook_remove_state_run(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_event_hook_remove_read_frame")]
   public static extern int switch_core_event_hook_remove_read_frame(HandleRef jarg1, HandleRef jarg2);
@@ -13707,6 +13803,75 @@ public class input_callback_state_t : IDisposable {
   }
 
   public input_callback_state_t() : this(freeswitchPINVOKE.new_input_callback_state_t(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class ip_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal ip_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(ip_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~ip_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_ip_t(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint v4 {
+    set {
+      freeswitchPINVOKE.ip_t_v4_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.ip_t_v4_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_in6_addr v6 {
+    set {
+      freeswitchPINVOKE.ip_t_v6_set(swigCPtr, SWIGTYPE_p_in6_addr.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_in6_addr ret = new SWIGTYPE_p_in6_addr(freeswitchPINVOKE.ip_t_v6_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public ip_t() : this(freeswitchPINVOKE.new_ip_t(), true) {
   }
 
 }
@@ -16320,6 +16485,36 @@ public class SWIGTYPE_p_HashElem {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_HashElem obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_in6_addr {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_in6_addr(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_in6_addr() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_in6_addr obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -21201,6 +21396,7 @@ public enum switch_channel_flag_t {
   CF_CONSUME_ON_ORIGINATE,
   CF_PASSTHRU_PTIME_MISMATCH,
   CF_BRIDGE_NOWRITE,
+  CF_RECOVERED,
   CF_FLAG_MAX
 }
 
@@ -24310,7 +24506,8 @@ namespace FreeSWITCH.Native {
   SWITCH_FILE_CALLBACK = (1 << 12),
   SWITCH_FILE_DONE = (1 << 13),
   SWITCH_FILE_BUFFER_DONE = (1 << 14),
-  SWITCH_FILE_WRITE_APPEND = (1 << 15)
+  SWITCH_FILE_WRITE_APPEND = (1 << 15),
+  SWITCH_FILE_WRITE_OVER = (1 << 16)
 }
 
 }
@@ -25990,6 +26187,17 @@ public class switch_io_event_hooks : IDisposable {
     } 
   }
 
+  public switch_io_event_hook_state_run state_run {
+    set {
+      freeswitchPINVOKE.switch_io_event_hooks_state_run_set(swigCPtr, switch_io_event_hook_state_run.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_io_event_hooks_state_run_get(swigCPtr);
+      switch_io_event_hook_state_run ret = (cPtr == IntPtr.Zero) ? null : new switch_io_event_hook_state_run(cPtr, false);
+      return ret;
+    } 
+  }
+
   public switch_io_event_hook_resurrect_session resurrect_session {
     set {
       freeswitchPINVOKE.switch_io_event_hooks_resurrect_session_set(swigCPtr, switch_io_event_hook_resurrect_session.getCPtr(value));
@@ -26140,6 +26348,75 @@ public class switch_io_event_hook_state_change : IDisposable {
   }
 
   public switch_io_event_hook_state_change() : this(freeswitchPINVOKE.new_switch_io_event_hook_state_change(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_io_event_hook_state_run : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_io_event_hook_state_run(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_io_event_hook_state_run obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_io_event_hook_state_run() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_io_event_hook_state_run(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public SWIGTYPE_p_f_p_switch_core_session__switch_status_t state_run {
+    set {
+      freeswitchPINVOKE.switch_io_event_hook_state_run_state_run_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session__switch_status_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_io_event_hook_state_run_state_run_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_core_session__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session__switch_status_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_io_event_hook_state_run next {
+    set {
+      freeswitchPINVOKE.switch_io_event_hook_state_run_next_set(swigCPtr, switch_io_event_hook_state_run.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_io_event_hook_state_run_next_get(swigCPtr);
+      switch_io_event_hook_state_run ret = (cPtr == IntPtr.Zero) ? null : new switch_io_event_hook_state_run(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_io_event_hook_state_run() : this(freeswitchPINVOKE.new_switch_io_event_hook_state_run(), true) {
   }
 
 }
@@ -26541,6 +26818,17 @@ public class switch_io_routines : IDisposable {
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_write_video_frame_get(swigCPtr);
       SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session_p_switch_frame_unsigned_long_int__switch_status_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_f_p_switch_core_session__switch_status_t state_run {
+    set {
+      freeswitchPINVOKE.switch_io_routines_state_run_set(swigCPtr, SWIGTYPE_p_f_p_switch_core_session__switch_status_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_io_routines_state_run_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_core_session__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_core_session__switch_status_t(cPtr, false);
       return ret;
     } 
   }
@@ -27578,7 +27866,8 @@ namespace FreeSWITCH.Native {
   SMBF_STEREO = (1 << 5),
   SMBF_ANSWER_REQ = (1 << 6),
   SMBF_THREAD_LOCK = (1 << 7),
-  SMBF_PRUNE = (1 << 8)
+  SMBF_PRUNE = (1 << 8),
+  SMBF_NO_PAUSE = (1 << 9)
 }
 
 }
@@ -27899,7 +28188,10 @@ public enum switch_rtp_bug_flag_t {
   RTP_BUG_NONE = 0,
   RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
   RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1),
-  RTP_BUG_IGNORE_MARK_BIT = (1 << 2)
+  RTP_BUG_IGNORE_MARK_BIT = (1 << 2),
+  RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
+  RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
+  RTP_BUG_NEVER_SEND_MARKER = (1 << 5)
 }
 
 }
@@ -29660,6 +29952,7 @@ public enum switch_status_t {
   SWITCH_STATUS_IGNORE,
   SWITCH_STATUS_TOO_SMALL,
   SWITCH_STATUS_FOUND,
+  SWITCH_STATUS_CONTINUE,
   SWITCH_STATUS_NOT_INITALIZED
 }
 

@@ -658,6 +658,14 @@ static FIO_OPEN_FUNCTION(zt_open)
  */
 static FIO_CLOSE_FUNCTION(zt_close)
 {
+	if (ftdmchan->type == FTDM_CHAN_TYPE_B) {
+		int value = 0;	/* disable audio mode */
+		if (ioctl(ftdmchan->sockfd, codes.AUDIOMODE, &value)) {
+			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
+			ftdm_log(FTDM_LOG_ERROR, "%s\n", ftdmchan->last_error);
+			return FTDM_FAIL;
+		}
+	}
 	return FTDM_SUCCESS;
 }
 

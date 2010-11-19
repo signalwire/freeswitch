@@ -1490,6 +1490,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	int network_port = 0;
 	char *is_nat = NULL;
 
+#if 0 /* This seems to cause undesirable effects so nevermind */
 	if (sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_host) {
 		const char *to_host = sip->sip_to->a_url->url_host;
 		if (profile->reg_db_domain) {
@@ -1500,6 +1501,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 			}
 		}
 	}
+#endif
 
 	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
 

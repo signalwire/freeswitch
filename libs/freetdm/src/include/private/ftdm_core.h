@@ -451,7 +451,9 @@ struct ftdm_channel {
 	ftdm_fsk_data_state_t fsk;
 	uint8_t fsk_buf[80];
 	uint32_t ring_count;
-	void *mod_data;
+	/* Private I/O data. Do not touch unless you are an I/O module */
+	void *io_data;
+	/* Private signaling data. Do not touch unless you are a signaling module */
 	void *call_data;
 	struct ftdm_caller_data caller_data;
 	struct ftdm_span *span;
@@ -484,6 +486,7 @@ struct ftdm_span {
 	ftdm_trunk_type_t trunk_type;
 	ftdm_analog_start_type_t start_type;
 	ftdm_signal_type_t signal_type;
+	/* Private signaling data. Do not touch unless you are a signaling module */
 	void *signal_data;
 	fio_signal_cb_t signal_cb;
 	ftdm_event_t event_header;
@@ -501,7 +504,8 @@ struct ftdm_span {
 	ftdm_span_start_t start;
 	ftdm_span_stop_t stop;
 	ftdm_channel_sig_read_t sig_read;
-	void *mod_data;
+	/* Private I/O data per span. Do not touch unless you are an I/O module */
+	void *io_data;
 	char *type;
 	char *dtmf_hangup;
 	size_t dtmf_hangup_len;

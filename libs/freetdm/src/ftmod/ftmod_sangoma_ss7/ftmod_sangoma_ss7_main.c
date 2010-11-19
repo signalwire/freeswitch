@@ -275,7 +275,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->mod_data;
+	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 
 	ftdm_log (FTDM_LOG_INFO, "ftmod_sangoma_ss7 monitor thread for span=%u started.\n", ftdmspan->span_id);
 
@@ -788,7 +788,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/* check if this is the base circuit and send out the GRA
 			 * we insure that this is the last circuit to have the state change queued
 			 */
-			sngss7_span_data_t *span = ftdmchan->span->mod_data;
+			sngss7_span_data_t *span = ftdmchan->span->signal_data;
 			if (span->rx_grs.circuit == sngss7_info->circuit->id) {
 				/* send out the GRA */
 				ft_to_sngss7_gra(ftdmchan);
@@ -1350,7 +1350,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 		ftdmchan = span->channels[x];
 		if (ftdmchan->call_data == NULL) continue;
 		sngss7_info = ftdmchan->call_data;
-		sngss7_span = ftdmchan->span->mod_data;
+		sngss7_span = ftdmchan->span->signal_data;
 		sngss7_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
 
 
@@ -1474,7 +1474,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	span->get_channel_sig_status	= ftdm_sangoma_ss7_get_sig_status;
 	span->set_channel_sig_status 	= ftdm_sangoma_ss7_set_sig_status;
 	span->state_map			 		= &sangoma_ss7_state_map;
-	span->mod_data					= ss7_span_info;
+	span->signal_data					= ss7_span_info;
 
 	/* set the flag to indicate that this span uses channel state change queues */
 	ftdm_set_flag (span, FTDM_SPAN_USE_CHAN_QUEUE);

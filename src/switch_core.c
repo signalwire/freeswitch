@@ -901,16 +901,25 @@ static switch_ip_list_t IP_LIST = { 0 };
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token)
 {
 	switch_network_list_t *list;
-	uint32_t ip, net, mask, bits;
+	ip_t  ip, mask, net;
+	uint32_t bits;
+	char *ipv6 = strchr(ip_str,':');
 	switch_bool_t ok = SWITCH_FALSE;
 
 	switch_mutex_lock(runtime.global_mutex);
-	switch_inet_pton(AF_INET, ip_str, &ip);
-
-	ip = htonl(ip);
+	if (ipv6) {
+		switch_inet_pton(AF_INET6, ip_str, &ip);
+	} else {
+		switch_inet_pton(AF_INET, ip_str, &ip);
+		ip.v4 = htonl(ip.v4);
+	}
 
 	if ((list = switch_core_hash_find(IP_LIST.hash, list_name))) {
-		ok = switch_network_list_validate_ip_token(list, ip, token);
+		if (ipv6) {
+			ok = switch_network_list_validate_ip6_token(list, ip, token);
+		} else {
+			ok = switch_network_list_validate_ip_token(list, ip.v4, token);
+		}
 	} else if (strchr(list_name, '/')) {
 		if (strchr(list_name, ',')) {
 			char *list_name_dup = strdup(list_name);
@@ -923,15 +932,21 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_
 				int i;
 				for (i = 0; i < argc; i++) {
 					switch_parse_cidr(argv[i], &net, &mask, &bits);
-					if ((ok = switch_test_subnet(ip, net, mask))) {
-						break;
+					if (ipv6) {
+						if ((ok = switch_testv6_subnet(ip, net, mask))){
+							break;
+						}
+					} else {
+						if ((ok = switch_test_subnet(ip.v4, net.v4, mask.v4))) {
+							break;
+						}
 					}
 				}
 			}
 			free(list_name_dup);
 		} else {
 			switch_parse_cidr(list_name, &net, &mask, &bits);
-			ok = switch_test_subnet(ip, net, mask);
+			ok = switch_test_subnet(ip.v4, net.v4, mask.v4);
 		}
 	}
 	switch_mutex_unlock(runtime.global_mutex);

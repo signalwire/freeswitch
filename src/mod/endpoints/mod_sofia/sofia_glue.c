@@ -3106,7 +3106,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			tech_pvt->rtp_bugs |= RTP_BUG_IGNORE_MARK_BIT;
 		}
 
-		switch_rtp_intentional_bugs(tech_pvt->rtp_session, tech_pvt->rtp_bugs);
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_manual_rtp_bugs"))) {
+			sofia_glue_parse_rtp_bugs(&tech_pvt->rtp_bugs, val);
+		}
+
+		switch_rtp_intentional_bugs(tech_pvt->rtp_session, tech_pvt->rtp_bugs | tech_pvt->profile->manual_rtp_bugs);
 
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
@@ -5989,6 +5993,62 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 	switch_core_session_queue_message(session, msg);
 }
 
+
+void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str)
+{
+
+	if (switch_stristr("clear", str)) {
+		*flag_pole = 0;
+	}
+
+	if (switch_stristr("CISCO_SKIP_MARK_BIT_2833", str)) {
+		*flag_pole |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
+	}
+
+	if (switch_stristr("~CISCO_SKIP_MARK_BIT_2833", str)) {
+		*flag_pole &= ~RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
+	}
+
+	if (switch_stristr("SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
+		*flag_pole |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+	}
+
+	if (switch_stristr("~SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
+		*flag_pole &= ~RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+	}
+
+	if (switch_stristr("IGNORE_MARK_BIT", str)) {
+		*flag_pole |= RTP_BUG_IGNORE_MARK_BIT;
+	}	
+
+	if (switch_stristr("~IGNORE_MARK_BIT", str)) {
+		*flag_pole &= ~RTP_BUG_IGNORE_MARK_BIT;
+	}	
+
+	if (switch_stristr("SEND_LINEAR_TIMESTAMPS", str)) {
+		*flag_pole |= RTP_BUG_SEND_LINEAR_TIMESTAMPS;
+	}
+
+	if (switch_stristr("~SEND_LINEAR_TIMESTAMPS", str)) {
+		*flag_pole &= ~RTP_BUG_SEND_LINEAR_TIMESTAMPS;
+	}
+
+	if (switch_stristr("START_SEQ_AT_ZERO", str)) {
+		*flag_pole |= RTP_BUG_START_SEQ_AT_ZERO;
+	}
+
+	if (switch_stristr("~START_SEQ_AT_ZERO", str)) {
+		*flag_pole &= ~RTP_BUG_START_SEQ_AT_ZERO;
+	}
+
+	if (switch_stristr("NEVER_SEND_MARKER", str)) {
+		*flag_pole |= RTP_BUG_NEVER_SEND_MARKER;
+	}
+
+	if (switch_stristr("~NEVER_SEND_MARKER", str)) {
+		*flag_pole &= ~RTP_BUG_NEVER_SEND_MARKER;
+	}
+}
 
 
 

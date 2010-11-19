@@ -59,9 +59,6 @@ static sng_isdn_event_interface_t	g_sngisdn_event_interface;
 
 ftdm_sngisdn_data_t 			g_sngisdn_data;
 
-extern ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
-extern ftdm_status_t sngisdn_check_free_ids(void);
-
 ftdm_state_map_t sangoma_isdn_state_map = {
 	{
 	{

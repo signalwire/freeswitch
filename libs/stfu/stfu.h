@@ -96,7 +96,7 @@ typedef struct {
 
 void stfu_n_report(stfu_instance_t *i, stfu_report_t *r);
 void stfu_n_destroy(stfu_instance_t **i);
-stfu_instance_t *stfu_n_init(uint32_t qlen);
+stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_plc);
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen);
 stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);

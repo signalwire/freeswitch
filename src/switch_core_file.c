@@ -411,7 +411,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 	int ok = 1;
 	
 	switch_assert(fh != NULL);
-	switch_assert(fh->file_interface != NULL);
 
 	if (!switch_test_flag(fh, SWITCH_FILE_OPEN) || !fh->file_interface->file_seek) {
 		ok = 0;

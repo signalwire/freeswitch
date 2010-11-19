@@ -71,7 +71,7 @@ static int next_file(switch_file_handle_t *handle)
 		switch_core_file_close(&context->fh);
 	}
 
-	if (context->index == context->argc) {
+	if (context->index >= context->argc) {
 		return 0;
 	}
 
@@ -108,6 +108,24 @@ static int next_file(switch_file_handle_t *handle)
 	}
 
 	return 1;
+}
+
+
+static switch_status_t file_string_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+{
+	file_string_context_t *context = handle->private_info;
+
+	if (samples == 0 && whence == SEEK_SET) {
+		context->index = -1;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (!handle->seekable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+		return SWITCH_STATUS_NOTIMPL;
+	}
+
+	return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
 }
 
 static switch_status_t file_string_file_open(switch_file_handle_t *handle, const char *path)
@@ -185,6 +203,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_file_string_load)
 	file_interface->file_open = file_string_file_open;
 	file_interface->file_close = file_string_file_close;
 	file_interface->file_read = file_string_file_read;
+	file_interface->file_seek = file_string_file_seek;
 
 	memset(&globals, 0, sizeof(globals));
 	/* indicate that the module should continue to be loaded */
