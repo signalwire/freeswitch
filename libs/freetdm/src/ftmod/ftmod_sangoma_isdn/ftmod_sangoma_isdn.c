@@ -431,6 +431,7 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 
 		/* Poll for events, e.g HW DTMF */
 		ftdm_sangoma_isdn_poll_events(span);
+		ftdm_span_trigger_signals(span);
 		
 		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
 			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
