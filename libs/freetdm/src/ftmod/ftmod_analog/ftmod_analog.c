@@ -49,13 +49,16 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj);
  */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
+	ftdm_analog_data_t *analog_data = ftdmchan->span->signal_data;
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INTHREAD)) {		
 		ftdm_channel_clear_needed_tones(ftdmchan);
 		ftdm_channel_clear_detected_tones(ftdmchan);
 
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_OFFHOOK, NULL);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_PROGRESS_DETECT, NULL);
-		ftdmchan->needed_tones[FTDM_TONEMAP_DIAL] = 1;
+		if (analog_data->wait_dialtone_timeout) {
+			ftdmchan->needed_tones[FTDM_TONEMAP_DIAL] = 1;
+		}
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 		ftdm_thread_create_detached(ftdm_analog_channel_run, ftdmchan);
 		return FTDM_SUCCESS;
@@ -157,6 +160,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	const char *tonemap = "us";
 	const char *hotline = "";
 	uint32_t digit_timeout = 10;
+	uint32_t wait_dialtone_timeout = 30000;
 	uint32_t max_dialstr = MAX_DTMF;
 	const char *var, *val;
 	int *intval;
@@ -191,6 +195,15 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 				break;
 			}
 			digit_timeout = *intval;
+		} else if (!strcasecmp(var, "wait_dialtone_timeout")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			wait_dialtone_timeout = *intval;
+			if (wait_dialtone_timeout < 0) {
+				wait_dialtone_timeout = 0;
+			}
+			ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Wait dial tone ms = %d\n", wait_dialtone_timeout);
 		} else if (!strcasecmp(var, "enable_callerid")) {
 			if (!(val = va_arg(ap, char *))) {
                 		break;
@@ -221,7 +234,6 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 		}			
 	}
 
-
 	if (digit_timeout < 2000 || digit_timeout > 10000) {
 		digit_timeout = 2000;
 	}
@@ -241,6 +253,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	span->stop = ftdm_analog_stop;
 	analog_data->flags = flags;
 	analog_data->digit_timeout = digit_timeout;
+	analog_data->wait_dialtone_timeout = wait_dialtone_timeout;
 	analog_data->max_dialstr = max_dialstr;
 	span->signal_cb = sig_cb;
 	strncpy(analog_data->hotline, hotline, sizeof(analog_data->hotline));
@@ -325,6 +338,27 @@ static void send_caller_id(ftdm_channel_t *ftdmchan)
 	ftdm_channel_send_fsk_data(ftdmchan, &fsk_data, -14);
 }
 
+static void analog_dial(ftdm_channel_t *ftdmchan, uint32_t *state_counter, uint32_t *dial_timeout)
+{
+	if (ftdm_strlen_zero(ftdmchan->caller_data.dnis.digits)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "No Digits to send!\n");
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
+	} else {
+		if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_SEND_DTMF, ftdmchan->caller_data.dnis.digits) != FTDM_SUCCESS) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Send Digits Failed [%s]\n", ftdmchan->last_error);
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
+		} else {
+			*state_counter = 0;
+			ftdmchan->needed_tones[FTDM_TONEMAP_RING] = 1;
+			ftdmchan->needed_tones[FTDM_TONEMAP_BUSY] = 1;
+			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL1] = 1;
+			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL2] = 1;
+			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL3] = 1;
+			*dial_timeout = ((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
+		}
+	}
+}
+
 /**
  * \brief Main thread function for analog channel (outgoing call)
  * \param me Current thread
@@ -342,7 +376,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_size_t dtmf_offset = 0;
 	ftdm_analog_data_t *analog_data = ftdmchan->span->signal_data;
 	ftdm_channel_t *closed_chan;
-	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = 30000;
+	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = analog_data->wait_dialtone_timeout;
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
 	
@@ -383,7 +417,11 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	
-	assert(interval != 0);
+	ftdm_assert(interval != 0, NULL);
+
+	if (!dial_timeout) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Not waiting for dial tone to dial number %s\n", ftdmchan->caller_data.dnis.digits);
+	}
 
 	while (ftdm_running() && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INTHREAD)) {
 		ftdm_wait_flag_t flags = FTDM_READ;
@@ -412,7 +450,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						} else {
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
 						}
-					} 
+					}
 				}
 				break;
 			case FTDM_CHANNEL_STATE_GENRING:
@@ -730,28 +768,15 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failure indication detected!\n");
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 			} else if (ftdmchan->detected_tones[FTDM_TONEMAP_DIAL]) {
-				if (ftdm_strlen_zero(ftdmchan->caller_data.dnis.digits)) {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "No Digits to send!\n");
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
-				} else {
-					if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_SEND_DTMF, ftdmchan->caller_data.dnis.digits) != FTDM_SUCCESS) {
-						ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Send Digits Failed [%s]\n", ftdmchan->last_error);
-						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
-					} else {
-						state_counter = 0;
-						ftdmchan->needed_tones[FTDM_TONEMAP_RING] = 1;
-						ftdmchan->needed_tones[FTDM_TONEMAP_BUSY] = 1;
-						ftdmchan->needed_tones[FTDM_TONEMAP_FAIL1] = 1;
-						ftdmchan->needed_tones[FTDM_TONEMAP_FAIL2] = 1;
-						ftdmchan->needed_tones[FTDM_TONEMAP_FAIL3] = 1;
-						dial_timeout = ((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
-					}
-				}
+				analog_dial(ftdmchan, &state_counter, &dial_timeout);
 			} else if (ftdmchan->detected_tones[FTDM_TONEMAP_RING]) {
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
 			}
 			
 			ftdm_channel_clear_detected_tones(ftdmchan);
+		} else if (!dial_timeout) {
+			/* we were requested not to wait for dial tone, we can dial immediately */
+			analog_dial(ftdmchan, &state_counter, &dial_timeout);
 		}
 
 		if ((ftdmchan->dtmf_buffer && ftdm_buffer_inuse(ftdmchan->dtmf_buffer)) || (ftdmchan->fsk_buffer && ftdm_buffer_inuse(ftdmchan->fsk_buffer))) {
