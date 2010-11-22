@@ -187,7 +187,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 
 static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen, 
 					   switch_port_t port,
-					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map)
+					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp)
 {
 	int i = 0;
 	int rate;
@@ -298,7 +298,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 			}
 		}
 		
-		if (tech_pvt->ianacodes[i] > 95) {
+		if (tech_pvt->ianacodes[i] > 95 || verbose_sdp) {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate);
 		}
 
@@ -373,6 +373,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *fmtp_out_var = switch_channel_get_variable(tech_pvt->channel, "sip_force_audio_fmtp");
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
+	int verbose_sdp = 0;
 
 	sofia_glue_check_dtmf_type(tech_pvt);
 
@@ -394,6 +395,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	if (fmtp_out_var) {
 		fmtp_out = fmtp_out_var;
+	}
+
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "verbose_sdp")) && switch_true(val)) {
+		verbose_sdp = 1;
 	}
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
@@ -533,7 +538,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 
 		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
-			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map);
+			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
 		} else {
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
@@ -547,7 +552,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				
 				if (cur_ptime != this_ptime) {
 					cur_ptime = this_ptime;
-					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map);
+					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
 				}
 				
 			}

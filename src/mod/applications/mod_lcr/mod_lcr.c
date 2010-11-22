@@ -1387,7 +1387,6 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
-	char *lcr_profile = NULL;
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
 	const char *intrastate = NULL;
@@ -1402,11 +1401,6 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		routes.event = event;
 	}
 	routes.pool = pool;
-
-	if (!(routes.profile = locate_profile(lcr_profile))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
-		goto end;
-	}
 
 	intrastate = switch_channel_get_variable(channel, "intrastate");
 	intralata = switch_channel_get_variable(channel, "intralata");
@@ -1427,7 +1421,12 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", caller_profile->destination_number, lcr_profile);
+	if (!(routes.profile = locate_profile(caller_profile->context))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", caller_profile->context);
+		goto end;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", caller_profile->destination_number, caller_profile->context);
 	routes.lookup_number = caller_profile->destination_number;
 	routes.cid = (char *) caller_profile->caller_id_number;
 	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
@@ -1465,7 +1464,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 			switch_caller_extension_add_application(session, extension, app, argc);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n", caller_profile->destination_number, lcr_profile);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n", caller_profile->destination_number, caller_profile->context);
 	}
 
 end:

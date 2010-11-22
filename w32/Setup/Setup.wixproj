@@ -597,6 +597,51 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey.2010.vcxproj">
+      <Name>mod_spidermonkey</Name>
+      <Project>{1ad3f51e-bbb6-4090-ba39-9dfab1ef1f5f}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_core_db.2010.vcxproj">
+      <Name>mod_spidermonkey_core_db</Name>
+      <Project>{acfff684-4d19-4d48-af12-88ea1d778bdf}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_odbc.2010.vcxproj">
+      <Name>mod_spidermonkey_odbc</Name>
+      <Project>{0a6b5ea5-6e9b-4a51-931f-ed25aa87b4df}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_socket.2010.vcxproj">
+      <Name>mod_spidermonkey_socket</Name>
+      <Project>{028c7278-05d7-4e18-82fe-be231b844f41}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_teletone.2010.vcxproj">
+      <Name>mod_spidermonkey_teletone</Name>
+      <Project>{8f992c49-6c51-412f-b2a3-34eab708eb65}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\loggers\mod_console\mod_console.2010.vcxproj">
       <Name>mod_console</Name>
       <Project>{1c453396-d912-4213-89fd-9b489162b7b5}</Project>

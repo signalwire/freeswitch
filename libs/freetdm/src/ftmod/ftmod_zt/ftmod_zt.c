@@ -889,12 +889,17 @@ static FIO_WAIT_FUNCTION(zt_wait)
 		inflags |= POLLPRI;
 	}
 
-
+pollagain:
 	memset(&pfds[0], 0, sizeof(pfds[0]));
 	pfds[0].fd = ftdmchan->sockfd;
 	pfds[0].events = inflags;
 	result = poll(pfds, 1, to);
 	*flags = 0;
+
+	if (result < 0 && errno == EINTR) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "DAHDI wait got interrupted, trying again\n");
+		goto pollagain;
+	}
 
 	if (pfds[0].revents & POLLERR) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "DAHDI device got POLLERR\n");

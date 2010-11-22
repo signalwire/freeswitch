@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
+				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1;XP_WIN"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -111,7 +111,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
+				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1;XP_WIN"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -178,7 +178,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
+				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1;XP_WIN"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -244,7 +244,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
+				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1;XP_WIN"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
