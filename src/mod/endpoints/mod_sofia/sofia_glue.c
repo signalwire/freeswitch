@@ -5740,6 +5740,10 @@ char *sofia_glue_get_register_host(const char *uri)
 	const char *s;
 	char *p = NULL;
 
+	if (zstr(uri)) {
+		return NULL;
+	}
+
 	if ((s = switch_stristr("sip:", uri))) {
 		s += 4;
 	} else if ((s = switch_stristr("sips:", uri))) {
@@ -5755,9 +5759,12 @@ char *sofia_glue_get_register_host(const char *uri)
 	/* remove port for register_host for testing nat acl take into account 
 	   ipv6 addresses which are required to have brackets around the addr 
 	*/
-	if ((p = strchr(register_host, ']')) && (*(p + 1) == ':')) {
-		*(p + 1) = '\0';
-	} else { 
+	
+	if ((p = strchr(register_host, ']'))) {
+		if (*(p + 1) == ':') {
+			*(p + 1) = '\0';
+		}
+	} else {
 		if ((p = strrchr(register_host, ':'))) {
 			*p = '\0';
 		}
