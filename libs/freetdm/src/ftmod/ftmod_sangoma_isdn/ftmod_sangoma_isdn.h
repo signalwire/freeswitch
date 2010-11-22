@@ -60,6 +60,7 @@
 #define SNGISDN_EVENT_QUEUE_SIZE	100
 #define SNGISDN_EVENT_POLL_RATE		100
 #define SNGISDN_NUM_LOCAL_NUMBERS	8
+#define SNGISDN_DCHAN_QUEUE_LEN		200
 
 /* TODO: rename all *_cc_* to *_an_*  */
 
@@ -168,6 +169,7 @@ typedef struct sngisdn_chan_data {
 /* Span specific data */
 typedef struct sngisdn_span_data {
 	ftdm_span_t		*ftdm_span;
+	ftdm_channel_t	*dchan;
 	uint8_t			link_id;
 	uint8_t 		switchtype;
 	uint8_t			signalling;			/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
@@ -268,27 +270,19 @@ extern ftdm_sngisdn_data_t	g_sngisdn_data;
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
 
 /* Support functions */
-FT_DECLARE(uint32_t) get_unique_suInstId(int16_t cc_id);
-FT_DECLARE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info);
-FT_DECLARE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+uint32_t get_unique_suInstId(int16_t cc_id);
+void clear_call_data(sngisdn_chan_data_t *sngisdn_info);
+void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+ftdm_status_t get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
+ftdm_status_t get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
+
+
+ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail);
+ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 
 
 void stack_hdr_init(Header *hdr);
 void stack_pst_init(Pst *pst);
-
-FT_DECLARE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
-FT_DECLARE(ftdm_status_t) get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
-FT_DECLARE(ftdm_status_t) sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
-
-FT_DECLARE(ftdm_status_t) cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-FT_DECLARE(ftdm_status_t) cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-FT_DECLARE(ftdm_status_t) cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-FT_DECLARE(ftdm_status_t) cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
-
-FT_DECLARE(ftdm_status_t) cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-FT_DECLARE(ftdm_status_t) cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-FT_DECLARE(ftdm_status_t) cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
-FT_DECLARE(ftdm_status_t) cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
 
 /* Outbound Call Control functions */
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
@@ -303,25 +297,30 @@ void sngisdn_snd_reset(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
+void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event);
 
 /* Inbound Call Control functions */
-void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt);
-void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt);
-void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt);
-void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
-void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
-void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
-void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
-void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
-void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_sta_cfm ( int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
-void sngisdn_rcv_srv_ind ( int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_srv_cfm ( int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_rst_cfm ( int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
-void sngisdn_rcv_rst_ind ( int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+void sngisdn_rcv_con_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_con_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_cnst_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_disc_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt);
+void sngisdn_rcv_rel_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt);
+void sngisdn_rcv_dat_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt);
+void sngisdn_rcv_sshl_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
+void sngisdn_rcv_sshl_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
+void sngisdn_rcv_rmrt_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
+void sngisdn_rcv_rmrt_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
+void sngisdn_rcv_flc_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
+void sngisdn_rcv_fac_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_sta_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
+void sngisdn_rcv_srv_ind(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_srv_cfm(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_rst_cfm(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+void sngisdn_rcv_rst_ind(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame);
+int16_t sngisdn_rcv_l1_cmd_req(uint16_t spId, sng_l1_cmd_t *l1_cmd);
+
 
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event);
 void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event);
@@ -359,6 +358,15 @@ void sngisdn_rcv_cc_ind(CcMngmt *status);
 void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_rcv_sng_assert(char *message);
 
+ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
+ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
+ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
+ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
+ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
+		
 uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);
 uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot);
 ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_user(uint8_t bearer_capability);
@@ -385,6 +393,7 @@ static __inline__ void sngisdn_set_flag(sngisdn_chan_data_t *sngisdn_info, sngis
 
 void handle_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t status);
+void sngisdn_delayed_setup(void* p_sngisdn_info);
 void sngisdn_delayed_release(void* p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
@@ -392,10 +401,10 @@ void sngisdn_facility_timeout(void* p_sngisdn_info);
 void sngisdn_t3_timeout(void* p_sngisdn_info);
 
 /* Stack management functions */
-ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_start(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_stop(ftdm_span_t *span);
-ftdm_status_t sng_isdn_wake_up_phy(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
+ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
 void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 void sngisdn_print_spans(ftdm_stream_handle_t *stream);

@@ -56,9 +56,11 @@ ftdm_status_t add_local_number(const char* val, ftdm_span_t *span)
 ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 {
 	unsigned i;
-
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;	
 	sngisdn_dchan_data_t *dchan_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+	
 	switch(span->trunk_type) {
 		case FTDM_TRUNK_T1:
 			if (!strcasecmp(switch_name, "ni2") ||
@@ -124,9 +126,9 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 	/* add this span to its ent_cc */
 	signal_data->cc_id = i;
 
-	/* create a new dchan */ /* for NFAS - no-dchan on b-channels only links */
+	/* create a new dchan */ /* for NFAS - no-dchan on b-channels-only links */
 	g_sngisdn_data.num_dchan++;
-	signal_data->dchan_id =  g_sngisdn_data.num_dchan;
+	signal_data->dchan_id = g_sngisdn_data.num_dchan;
 
 	dchan_data = &g_sngisdn_data.dchans[signal_data->dchan_id];
 	dchan_data->num_spans++;
@@ -138,16 +140,23 @@ ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span)
 	
 	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id);
 
-	/* Add the channels to the span */
-	for (i=1;i<=span->chan_count;i++) {
-		unsigned chan_id;
-		ftdm_channel_t *ftdmchan = span->channels[i];
-		/* NFAS is not supported on E1, so span_id will always be 1 for E1 so this will work for E1 as well */
-		chan_id = ((signal_data->span_id-1)*NUM_T1_CHANNELS_PER_SPAN)+ftdmchan->physical_chan_id;
-		dchan_data->channels[chan_id] = (sngisdn_chan_data_t*)ftdmchan->call_data;
-		dchan_data->num_chans++;
+	
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+		int32_t chan_id;
+		ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
+			/* set the d-channel */
+			signal_data->dchan = ftdmchan;
+		} else {
+			/* Add the channels to the span */
+			/* NFAS is not supported on E1, so span_id will always be 1 for E1 so this will work for E1 as well */
+			chan_id = ((signal_data->span_id-1)*NUM_T1_CHANNELS_PER_SPAN)+ftdmchan->physical_chan_id;
+			dchan_data->channels[chan_id] = (sngisdn_chan_data_t*)ftdmchan->call_data;
+			dchan_data->num_chans++;
+		}
 	}
-
+	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
 }
 

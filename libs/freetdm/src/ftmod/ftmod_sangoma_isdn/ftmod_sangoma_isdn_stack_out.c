@@ -34,13 +34,6 @@
 
 #include "ftmod_sangoma_isdn.h"
 
-void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_progress(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
-
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 {
 	ConEvnt conEvnt;
@@ -596,6 +589,73 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 	return;
 }
 
+/* We received an incoming frame on the d-channel, send data to the stack */
+void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
+{
+	sng_l1_frame_t l1_frame;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
+
+	memset(&l1_frame, 0, sizeof(l1_frame));
+	l1_frame.len = len;
+
+	memcpy(&l1_frame.data, data, len);
+
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_CRC)) {
+		l1_frame.flags |= SNG_L1FRAME_ERROR_CRC;
+	}
+
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_FRAME)) {
+		l1_frame.flags |= SNG_L1FRAME_ERROR_FRAME;
+	}
+	
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_ABORT)) {
+		l1_frame.flags |= SNG_L1FRAME_ERROR_ABORT;
+	}
+
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_FIFO)) {
+		l1_frame.flags |= SNG_L1FRAME_ERROR_FIFO;
+	}
+
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_DMA)) {
+		l1_frame.flags |= SNG_L1FRAME_ERROR_DMA;
+	}
+
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)) {
+		/* Should we trigger congestion here? */		
+		l1_frame.flags |= SNG_L1FRAME_QUEUE_THRES;
+	}
+
+	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL)) {
+		/* Should we trigger congestion here? */
+		l1_frame.flags |= SNG_L1FRAME_QUEUE_FULL;
+	}
+	
+	sng_isdn_data_ind(signal_data->link_id, &l1_frame);
+}
+
+void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
+{
+	sng_l1_event_t l1_event;
+	sngisdn_span_data_t *signal_data = NULL;
+	memset(&l1_event, 0, sizeof(l1_event));
+	
+	
+	signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
+	switch(event) {
+		case FTDM_OOB_ALARM_CLEAR:
+			l1_event.type = SNG_L1EVENT_ALARM_OFF;
+			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+			break;
+		case FTDM_OOB_ALARM_TRAP:
+			l1_event.type = SNG_L1EVENT_ALARM_ON;
+			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+			break;
+		default:
+			/* We do not care about the other OOB events for now */
+			return;
+	}
+	return;
+}
 
 
 /* For Emacs:

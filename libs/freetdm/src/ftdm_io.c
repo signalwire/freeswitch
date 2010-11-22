@@ -56,6 +56,9 @@
 #define FTDM_READ_TRACE_INDEX 0
 #define FTDM_WRITE_TRACE_INDEX 1
 
+ftdm_time_t time_last_throttle_log = 0;
+ftdm_time_t time_current_throttle_log = 0;
+
 static int time_is_init = 0;
 
 static void time_init(void)

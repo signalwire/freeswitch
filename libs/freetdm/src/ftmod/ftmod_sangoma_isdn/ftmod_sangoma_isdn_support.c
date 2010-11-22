@@ -39,7 +39,7 @@ ftdm_status_t sngisdn_check_free_ids(void);
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
 void get_memory_info(void);
 
-FT_DECLARE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info)
+void clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 {
 	uint32_t cc_id = ((sngisdn_span_data_t*)sngisdn_info->ftdmchan->span->signal_data)->cc_id;
 
@@ -56,7 +56,7 @@ FT_DECLARE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 	return;
 }
 
-FT_DECLARE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
+void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 {
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_DEBUG, "Clearing glare data (suId:%d suInstId:%u spInstId:%u actv-suInstId:%u  actv-spInstId:%u)\n",
 										sngisdn_info->glare.suId,
@@ -81,7 +81,7 @@ FT_DECLARE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info)
 }
 
 
-FT_DECLARE(uint32_t) get_unique_suInstId(int16_t cc_id)
+uint32_t get_unique_suInstId(int16_t cc_id)
 {
 	uint32_t suInstId;
 	ftdm_assert_return((cc_id > 0 && cc_id <=MAX_VARIANTS), FTDM_FAIL, "Invalid cc_id\n");
@@ -103,7 +103,7 @@ FT_DECLARE(uint32_t) get_unique_suInstId(int16_t cc_id)
 	return 0;
 }
 
-FT_DECLARE(ftdm_status_t) get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data)
+ftdm_status_t get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data)
 {
 	ftdm_assert_return((cc_id > 0 && cc_id <=MAX_VARIANTS), FTDM_FAIL, "Invalid cc_id\n");
 	ftdm_assert_return(g_sngisdn_data.ccs[cc_id].activation_done, FTDM_FAIL, "Trying to find call on unconfigured CC\n");
@@ -115,7 +115,7 @@ FT_DECLARE(ftdm_status_t) get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suIns
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data)
+ftdm_status_t get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data)
 {
 	ftdm_assert_return((cc_id > 0 && cc_id <=MAX_VARIANTS), FTDM_FAIL, "Invalid cc_id\n");
 	ftdm_assert_return(g_sngisdn_data.ccs[cc_id].activation_done, FTDM_FAIL, "Trying to find call on unconfigured CC\n");
@@ -127,7 +127,7 @@ FT_DECLARE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spIns
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
+ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
 {
 	
 	if (span->trunk_type == FTDM_TRUNK_BRI ||
@@ -147,7 +147,7 @@ ftdm_status_t sng_isdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
+ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
 {
 	if (cgPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -174,7 +174,7 @@ FT_DECLARE(ftdm_status_t) cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, C
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
+ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
 {
 	if (cdPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -196,7 +196,7 @@ FT_DECLARE(ftdm_status_t) cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, Cd
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
+ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
 {
 	if (redirNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -216,7 +216,7 @@ FT_DECLARE(ftdm_status_t) cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, Red
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display)
+ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display)
 {
 	if (display->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -229,7 +229,7 @@ FT_DECLARE(ftdm_status_t) cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, 
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->cid_num.digits);
 	if (!len) {
@@ -257,7 +257,7 @@ FT_DECLARE(ftdm_status_t) cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_cal
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->dnis.digits);
 	if (!len) {
@@ -287,7 +287,7 @@ FT_DECLARE(ftdm_status_t) cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_call
     return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->rdnis.digits);
 	if (!len) {
@@ -319,7 +319,7 @@ FT_DECLARE(ftdm_status_t) cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_calle
 }
 
 
-FT_DECLARE(ftdm_status_t) cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
+ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
 {
 	uint8_t len;
 	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
@@ -392,6 +392,17 @@ void sngisdn_t3_timeout(void* p_sngisdn_info)
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 	}	
 	ftdm_mutex_unlock(ftdmchan->mutex);
+}
+
+void sngisdn_delayed_setup(void* p_sngisdn_info)
+{
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
+	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	ftdm_mutex_lock(ftdmchan->mutex);
+	sngisdn_snd_setup(ftdmchan);
+	ftdm_mutex_unlock(ftdmchan->mutex);
+	return;
 }
 
 void sngisdn_delayed_release(void* p_sngisdn_info)
