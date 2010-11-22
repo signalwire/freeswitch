@@ -117,28 +117,28 @@ static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout
 	
 #ifdef LIBSANGOMA_VERSION
 	int err;
-    uint32_t inflags = *flags;
-    uint32_t outflags = 0;
-	sangoma_wait_obj_t *sangoma_wait_obj = ftdmchan->mod_data;
+	uint32_t inflags = *flags;
+	uint32_t outflags = 0;
+	sangoma_wait_obj_t *sangoma_wait_obj = ftdmchan->io_data;
 
 	err = sangoma_waitfor(sangoma_wait_obj, inflags, &outflags, timeout);
 	*flags = 0;
-    if (err == SANG_STATUS_SUCCESS) {
-        *flags = outflags;
-        err = 1; /* ideally should be the number of file descriptors with something to read */
-    }
-    if (err == SANG_STATUS_APIPOLL_TIMEOUT) {
-        err = 0;
-    }
-    return err;
+	if (err == SANG_STATUS_SUCCESS) {
+        	*flags = outflags;
+        	err = 1; /* ideally should be the number of file descriptors with something to read */
+	}
+	if (err == SANG_STATUS_APIPOLL_TIMEOUT) {
+		err = 0;
+	}
+	return err;
 #else
  	struct pollfd pfds[1];
-    int res;
+	int res;
 
-    memset(&pfds[0], 0, sizeof(pfds[0]));
-    pfds[0].fd = ftdmchan->sockfd;
-    pfds[0].events = *flags;
-    res = poll(pfds, 1, timeout);
+	memset(&pfds[0], 0, sizeof(pfds[0]));
+	pfds[0].fd = ftdmchan->sockfd;
+	pfds[0].events = *flags;
+	res = poll(pfds, 1, timeout);
 	*flags = 0;
 
 	if (pfds[0].revents & POLLERR) {
@@ -149,7 +149,7 @@ static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout
 		*flags = pfds[0].revents;
 	}
 
-    return res;
+	return res;
 #endif
 	
 }
@@ -252,7 +252,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				ftdm_log(FTDM_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
 				continue;
 			}
-			chan->mod_data = sangoma_wait_obj;
+			chan->io_data = sangoma_wait_obj;
 #endif
 			
 			chan->physical_span_id = spanno;
@@ -541,7 +541,7 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 static FIO_CLOSE_FUNCTION(wanpipe_close)
 {
 #ifdef LIBSANGOMA_VERSION
-	sangoma_wait_obj_t *waitobj = ftdmchan->mod_data;
+	sangoma_wait_obj_t *waitobj = ftdmchan->io_data;
 	/* kick any I/O waiters */
 	sangoma_wait_obj_signal(waitobj);
 #endif
@@ -895,10 +895,10 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	for(i = 1; i <= span->chan_count; i++) {
 		ftdm_channel_t *ftdmchan = span->channels[i];
 #ifdef LIBSANGOMA_VERSION
-		if (!ftdmchan->mod_data) {
+		if (!ftdmchan->io_data) {
 			continue; /* should never happen but happens when shutting down */
 		}
-		pfds[j] = ftdmchan->mod_data;
+		pfds[j] = ftdmchan->io_data;
 		inflags[j] = poll_events ? poll_events[j] : POLLPRI;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
@@ -1011,13 +1011,15 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	}
 	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
-#if 1 
-	/* DAVIDY - Temporary fix: in the current trunk of libsangoma, for BRI, 
+#ifdef WIN32
+	/* Temporary fix: in the current trunk of libsangoma, for BRI,
 		WAN_TE_BIT_ALARM_RED bit is set if the card is in disconnected state, but this has
 		not been ported to Windows-libsangoma yet */
-	if (alarms) {
-		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
-		alarms = 0;
+	if (FTDM_SPAN_IS_BRI(ftdmchan->span)) {
+		if (alarms) {
+			ftdmchan->alarm_flags |= FTDM_ALARM_RED;
+			alarms = 0;
+		}
 	}
 #endif
 
@@ -1027,6 +1029,7 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 		ftdmchan->alarm_flags |= FTDM_ALARM_RED;
 		alarms &= ~WAN_TE_BIT_ALARM_RED;
 	}
+		
 
 	if (alarms & WAN_TE_BIT_ALARM_AIS) {
 		ftdmchan->alarm_flags |= FTDM_ALARM_BLUE;
@@ -1231,10 +1234,10 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 #ifdef LIBSANGOMA_VERSION
-	if (ftdmchan->mod_data) {
+	if (ftdmchan->io_data) {
 		sangoma_wait_obj_t *sangoma_wait_obj;
-		sangoma_wait_obj = ftdmchan->mod_data;
-		ftdmchan->mod_data = NULL;
+		sangoma_wait_obj = ftdmchan->io_data;
+		ftdmchan->io_data = NULL;
 		sangoma_wait_obj_delete(&sangoma_wait_obj);
 	}
 #endif

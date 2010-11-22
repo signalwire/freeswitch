@@ -31,11 +31,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
 #ifdef __linux__
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE /* for strsep() */
+#endif
 #include <syscall.h>
 #include <poll.h>
+#include <string.h>
 #endif
+#include <stdio.h>
 #include <openr2.h>
 #include "freetdm.h"
 #include "private/ftdm_core.h"
@@ -879,7 +883,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 	ftdm_r2_call_t *r2call = NULL;
 	openr2_chan_t *r2chan = NULL;
 	openr2_log_level_t tmplevel;
-	char *clevel;
+	char *clevel = NULL;
 	char *logval = NULL;
 
 	ft_r2_conf_t r2conf = 
@@ -887,20 +891,21 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		/* .variant */ OR2_VAR_ITU,
 		/* .category */ OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
 		/* .loglevel */ OR2_LOG_ERROR | OR2_LOG_WARNING,
+		/* .logdir */ NULL,
+		/* .advanced_protocol_file */ NULL,
 		/* .max_ani */ 10,
 		/* .max_dnis */ 4,
 		/* .mfback_timeout */ -1,
 		/* .metering_pulse_timeout */ -1,
-		/* .allow_collect_calls */ -1,
 		/* .immediate_accept */ -1,
 		/* .skip_category */ -1,
-		/* .forced_release */ -1,
-		/* .charge_calls */ -1,
 		/* .get_ani_first */ -1,
 		/* .call_files */ 0,
 		/* .mf_files */ 0,
-		/* .logdir */ NULL,
-		/* .advanced_protocol_file */ NULL
+		/* .double_answer */ 0,
+		/* .charge_calls */ -1,
+		/* .forced_release */ -1,
+		/* .allow_collect_calls */ -1
 	};
 
 	assert(sig_cb != NULL);
@@ -982,15 +987,6 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 advanced_protocol_file parameter\n");
-				/* 
-				 * TODO: investigate this
-				 *
-				 * despite the fact advanced_protocol_file was initialized as NULL, it's now a bad
-				 * pointer - hence, this workaround.
-				 * this seems to happen only on windows.
-				 *
-				 */
-				r2conf.advanced_protocol_file = NULL;
 				continue;
 			}
 			r2conf.advanced_protocol_file = val;
@@ -1615,22 +1611,13 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 						r2data->loops,
 						r2data->monitor_thread_id);
 				stream->write_function(stream, "\n");
-				stream->write_function(stream, "%4s %-12.12s %-12.12s %6s %6s %6s %6s\n", "Channel", "Tx CAS", "Rx CAS", 
-						"Rx Avg", "Tx Avg", "Rx", "Tx");
+				stream->write_function(stream, "%4s %-12.12s %-12.12s\n", "Channel", "Tx CAS", "Rx CAS");
 				for (i = 1; i <= span->chan_count; i++) {
-					char rx_str[25];
-					char tx_str[25];
-					char rxavg_str[25];
-					char txavg_str[25];
 					r2chan = R2CALL(span->channels[i])->r2chan;
-					stream->write_function(stream, "%4d    %-12.12s %-12.12s %6s %6s %6s %6s\n", 
+					stream->write_function(stream, "%4d    %-12.12s %-12.12s\n", 
 							span->channels[i]->chan_id,
 							openr2_chan_get_tx_cas_string(r2chan),
-							openr2_chan_get_rx_cas_string(r2chan),
-							rxavg_str,
-							txavg_str,
-							rx_str,
-							tx_str);
+							openr2_chan_get_rx_cas_string(r2chan));
 				}
 				stream->write_function(stream, "\n");
 				stream->write_function(stream, "+OK.\n");

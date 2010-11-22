@@ -1347,7 +1347,7 @@ int ftmod_ss7_isup_isap_config(int id)
 		cfg.t.cfg.s.siSap.natAddrInd		= ADDR_NOTPRSNT;			/* SID Nature of Addres Indicator */
 		cfg.t.cfg.s.siSap.sidNPlan			= NP_ISDN;					/* SID Numbering Plan */
 		cfg.t.cfg.s.siSap.sidPresInd		= FALSE;					/* default presentation indicator */
-		cfg.t.cfg.s.siSap.incSidPresRes		= TRUE;						/* Presentation Restriction of incoming SID */
+		cfg.t.cfg.s.siSap.incSidPresRes		= FALSE;					/* Presentation Restriction of incoming SID */
 		cfg.t.cfg.s.siSap.sidPresRes		= 0;						/* Presentation Restriction */
 	}
 	cfg.t.cfg.s.siSap.reqOpt				= FALSE;					/* Request option */

@@ -41,7 +41,6 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
 
-
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 {
 	ConEvnt conEvnt;

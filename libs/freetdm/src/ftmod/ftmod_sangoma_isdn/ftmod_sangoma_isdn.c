@@ -47,6 +47,7 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span);
 
 ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
 static void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan);
+static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span);
 
 static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
@@ -235,6 +236,50 @@ static __inline__ void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftd
 	}
 }
 
+static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span)
+{
+	ftdm_status_t		ret_status;
+	ftdm_channel_t *ftdmchan;
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	
+	ret_status = ftdm_span_poll_event(span, 0, NULL);
+	switch(ret_status) {
+		case FTDM_SUCCESS:
+			{
+				ftdm_event_t *event;
+				while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS) {
+					
+					if (FTDM_SPAN_IS_BRI(span)) {
+						switch (event->enum_id) {
+							/* Check if the span woke up from power-saving mode */
+							case FTDM_OOB_ALARM_CLEAR:
+							{
+								chaniter = ftdm_span_get_chan_iterator(span, NULL);
+								for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+									ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+									sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
+									
+									if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)) {
+										ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
+										sngisdn_snd_setup((ftdm_channel_t*)ftdmchan);
+									}
+								}
+								ftdm_iterator_free(chaniter);
+							}
+						}
+					}
+				}
+			}
+			break;
+		case FTDM_TIMEOUT:
+			/* No events pending */
+			break;
+		default:
+			ftdm_log(FTDM_LOG_WARNING, "%s:Failed to poll span event\n", span->name);
+	}
+}
+
 static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 {
 	ftdm_interrupt_t	*ftdm_sangoma_isdn_int[2];
@@ -297,21 +342,8 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 		}
 
 		/* Poll for events, e.g HW DTMF */
-		ret_status = ftdm_span_poll_event(span, 0, NULL);
-		switch(ret_status) {
-			case FTDM_SUCCESS:
-				{
-					ftdm_event_t *event;
-					while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS);
-				}
-				break;
-			case FTDM_TIMEOUT:
-				/* No events pending */
-				break;
-			default:
-				ftdm_log(FTDM_LOG_WARNING, "%s:Failed to poll span event\n", span->name);
-		}
-			
+		ftdm_sangoma_isdn_poll_events(span);
+		
 		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
 			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
 				sleep = SNGISDN_EVENT_POLL_RATE;
@@ -495,8 +527,20 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		}
 		break;
 	case FTDM_CHANNEL_STATE_DIALING: /* outgoing call request */
-		{
-			sngisdn_snd_setup(ftdmchan);
+		{			
+			if (FTDM_SPAN_IS_BRI(ftdmchan->span) &&
+				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM) &&
+				ftdm_test_flag(ftdmchan->span, FTDM_SPAN_PWR_SAVING)) {
+
+				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+				
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Line activation\n");
+				sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);
+				sng_isdn_wake_up_phy(ftdmchan->span);
+				ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
+			} else {
+				sngisdn_snd_setup(ftdmchan);
+			}
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
@@ -853,8 +897,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
-
-		ftdm_set_flag(span, FTDM_SPAN_USE_AV_RATE);
+		
 		sng_isdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
 	}
 
@@ -911,7 +954,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	
 	/* initalize sng_isdn library */
 
-	ftdm_assert_return(!sng_isdn_init(&g_sngisdn_event_interface), FTDM_FAIL, "Failed to initialize stack\n");	
+	ftdm_assert_return(!sng_isdn_init(&g_sngisdn_event_interface), FTDM_FAIL, "Failed to initialize stack\n");
 	return FTDM_SUCCESS;
 }
 

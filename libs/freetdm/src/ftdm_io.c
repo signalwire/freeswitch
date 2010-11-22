@@ -1751,7 +1751,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 		goto done;
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM) && !ftdm_test_flag(ftdmchan->span, FTDM_SPAN_PWR_SAVING)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", "Channel is alarmed\n");
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Cannot open channel when is alarmed\n");
 		goto done;
@@ -3949,6 +3949,11 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 		if (span->fio->get_alarms(span->channels[chan_index]) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "%d:%d: Failed to get alarms\n", span->channels[chan_index]->physical_span_id, span->channels[chan_index]->physical_chan_id);
 			return FTDM_FAIL;
+		}
+		if (span->channels[chan_index]->alarm_flags) {
+			ftdm_set_flag_locked(span->channels[chan_index], FTDM_CHANNEL_IN_ALARM);
+		} else {
+			ftdm_clear_flag_locked(span->channels[chan_index], FTDM_CHANNEL_IN_ALARM);
 		}
 	}
 	return FTDM_SUCCESS;

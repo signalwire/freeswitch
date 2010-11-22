@@ -48,7 +48,6 @@
 #define LINE "--------------------------------------------------------------------------------"
 
 /* helper macros */
-#define FTDM_SPAN_IS_BRI(x)	((x)->trunk_type == FTDM_TRUNK_BRI || (x)->trunk_type == FTDM_TRUNK_BRI_PTMP)
 #define FTDM_SPAN_IS_NT(x)	(((ftdm_isdn_data_t *)(x)->signal_data)->mode == Q921_NT)
 
 #define DEFAULT_NATIONAL_PREFIX 	"0"
@@ -1081,8 +1080,8 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						isdn_data->channels_remote_crv[gen->CRV] = ftdmchan;
 						memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
 
-						if (ftdmchan->mod_data) {
-							memset(ftdmchan->mod_data, 0, sizeof(ftdm_isdn_bchan_data_t));
+						if (ftdmchan->call_data) {
+							memset(ftdmchan->call_data, 0, sizeof(ftdm_isdn_bchan_data_t));
 						}
 
 						/* copy number readd prefix as needed */
@@ -1214,7 +1213,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						 * overlap dial digit indication
 						 */
 						if (Q931IsIEPresent(gen->CalledNum)) {
-							ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)ftdmchan->mod_data;
+							ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)ftdmchan->call_data;
 							Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
 							int pos;
 
@@ -1370,7 +1369,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_DIALTONE:
 		{
-			ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)ftdmchan->mod_data;
+			ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)ftdmchan->call_data;
 
 			if (data) {
 				data->digit_timeout = ftdm_time_now() + isdn_data->digit_timeout;
@@ -1862,7 +1861,7 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 			switch (ftdm_channel_get_state(chan)) {
 			case FTDM_CHANNEL_STATE_DIALTONE:
 				{
-					ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)chan->mod_data;
+					ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)chan->call_data;
 					ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 					/* check overlap dial timeout first before generating tone */
@@ -2741,7 +2740,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
 			ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
 
 			if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B) {
-				chan->mod_data = data;
+				chan->call_data = data;
 				memset(data, 0, sizeof(ftdm_isdn_bchan_data_t));
 			}
 		}
