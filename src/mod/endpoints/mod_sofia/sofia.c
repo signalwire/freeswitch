@@ -5959,7 +5959,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		/* Barf if we didn't get our private */
 		assert(switch_core_session_get_private(session));
 		
-		if (sip->sip_content_type && 
+		if (sip->sip_content_type && sip->sip_content_type->c_subtype && sip->sip_content_type->c_type &&
 			!strncasecmp(sip->sip_content_type->c_type, "message", 7) &&
 			!strcasecmp(sip->sip_content_type->c_subtype, "update_display")) {
 			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
