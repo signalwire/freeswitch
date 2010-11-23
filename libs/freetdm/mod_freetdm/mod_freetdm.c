@@ -2032,6 +2032,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 
+		case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		{
+			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->sigstatus;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to: %s\n",
+					spanid, chanid, ftdm_signaling_status2str(sigstatus));
+		}
+		break;
+
 		default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled event %d from R2 for channel %d:%d\n",
