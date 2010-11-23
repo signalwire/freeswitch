@@ -220,6 +220,23 @@ static char *strsep(char **stringp, const char *delim)
 }
 #endif /* WIN32 */
 
+static void ftdm_r2_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
+{
+	ftdm_sigmsg_t sig;
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Signalling link status changed to %s\n", ftdm_signaling_status2str(status));
+
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = ftdmchan->chan_id;
+	sig.span_id = ftdmchan->span_id;
+	sig.channel = ftdmchan;
+	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+	sig.sigstatus = status;
+	if (ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to change channel status to %s\n", ftdm_signaling_status2str(status));
+	}
+	return;
+}
+
 static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, openr2_call_disconnect_cause_t cause)
 {
 	switch (cause) {
@@ -593,17 +610,14 @@ static void ftdm_r2_on_line_blocked(openr2_chan_t *r2chan)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end blocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
-	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
+	ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
 }
 
 static void ftdm_r2_on_line_idle(openr2_chan_t *r2chan)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end unblocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
-	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
-
-	 /* XXX when should we set/unset this flag? XXX */
-	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SIG_UP);
+	ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
 }
 
 static void ftdm_r2_write_log(openr2_log_level_t level, const char *file, const char *function, int line, const char *message)
@@ -1130,6 +1144,9 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
 
+	/* use signals queue */
+	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
+
 	return FTDM_SUCCESS;
 
 fail:
@@ -1439,6 +1456,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		} else if (status != FTDM_TIMEOUT) {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_span_poll_event returned %d.\n", status);
 		}
+		ftdm_span_trigger_signals(span);
 		ftdm_sleep(20);
 	}
 
