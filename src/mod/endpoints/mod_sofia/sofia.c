@@ -2156,6 +2156,30 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				sipip = profile->sipip;
 			}
 
+			gateway->extension = switch_core_strdup(gateway->pool, extension);
+
+
+			if (!strncasecmp(proxy, "sip:", 4)) {
+				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
+			} else {
+				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
+			}
+
+			/* This checks to make sure we provide the right contact on register for targets behind nat with us. */
+			if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+				char *register_host = NULL;
+
+				register_host = sofia_glue_get_register_host(gateway->register_proxy);
+
+				if (register_host && !sofia_glue_check_nat(profile, register_host)) {
+					sipip = profile->sipip;
+				}
+
+				switch_safe_free(register_host);
+			}
+
 			if (extension_in_contact) {
 				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 				gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
@@ -2168,16 +2192,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 																sipip,
 																sofia_glue_transport_has_tls(gateway->register_transport) ?
 																profile->tls_sip_port : profile->sip_port, params);
-			}
-
-			gateway->extension = switch_core_strdup(gateway->pool, extension);
-
-			if (!strncasecmp(proxy, "sip:", 4)) {
-				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
-			} else {
-				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
 			}
 
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);

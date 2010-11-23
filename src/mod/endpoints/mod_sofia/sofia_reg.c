@@ -152,7 +152,7 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
 
 			/* check for NAT and place a Via header if necessary (hostname or non-local IP) */
-			if (sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
+			if (register_host && sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
 
@@ -295,7 +295,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
 
 			/* check for NAT and place a Via header if necessary (hostname or non-local IP) */
-			if (sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
+			if (register_host && sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
 
@@ -358,7 +358,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
 
 			/* check for NAT and place a Via header if necessary (hostname or non-local IP) */
-			if (sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
+			if (register_host && sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
 
