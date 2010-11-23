@@ -1690,6 +1690,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
+    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
 
 	default:
 		{
@@ -1744,6 +1745,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
+    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
     case FTDM_SIGEVENT_STOP:
 		{
 			private_t *tech_pvt = NULL;
@@ -1966,6 +1968,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			status = ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
+		
+    		case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
 
 		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
@@ -2071,6 +2075,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
+
+    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+
     case FTDM_SIGEVENT_STOP:
     case FTDM_SIGEVENT_RESTART:
 		{

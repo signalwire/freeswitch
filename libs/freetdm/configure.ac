@@ -24,7 +24,12 @@ AC_PROG_MAKE_SET
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
-PKG_PROG_PKG_CONFIG
+
+# NOTE: pkg-config is used to detect libisdn
+m4_ifdef([PKG_PROG_PKG_CONFIG],
+	[PKG_PROG_PKG_CONFIG],
+	[AC_MSG_WARN([pkg-config missing (required for libisdn detection)])]
+)
 
 AX_COMPILER_VENDOR
 
@@ -305,41 +310,44 @@ AC_ARG_WITH([libisdn],
 if test "${with_libisdn}" != "no"
 then
 	AC_MSG_RESULT([${as_nl}<<>> ftmod_isdn (libisdn stack)])
-	PKG_CHECK_MODULES([libisdn],
-		[libisdn >= 0.0.1],
-		[AC_MSG_CHECKING([libisdn version])
-		 LIBISDN_VERSION="`${PKG_CONFIG} --modversion libisdn`"
-		 if test -z "${LIBISDN_VERSION}"; then
-			AC_MSG_ERROR([Failed to retrieve libisdn version])
-		 fi
-		 AC_MSG_RESULT([${LIBISDN_VERSION}])
+	m4_ifdef([PKG_CHECK_MODULES],
+		[PKG_CHECK_MODULES([libisdn],
+			[libisdn >= 0.0.1],
+			[AC_MSG_CHECKING([libisdn version])
+			 LIBISDN_VERSION="`${PKG_CONFIG} --modversion libisdn`"
+			 if test -z "${LIBISDN_VERSION}"; then
+				AC_MSG_ERROR([Failed to retrieve libisdn version])
+			 fi
+			 AC_MSG_RESULT([${LIBISDN_VERSION}])
 
-		 # check features
-		 AC_MSG_CHECKING([for new experimental API])
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM(
-				[#include <libisdn/version.h>
-				 #if !LIBISDN_FEATURE(API2)
-				 #error "libisdn API v2 not available"
-				 #endif
-				],
-				[;]
-			)],
-			[AC_MSG_RESULT([yes])],
-			[AC_MSG_RESULT([no])]
+			 # check features
+			 AC_MSG_CHECKING([for new experimental API])
+			 AC_COMPILE_IFELSE(
+				[AC_LANG_PROGRAM(
+					[#include <libisdn/version.h>
+					 #if !LIBISDN_FEATURE(API2)
+					 #error "libisdn API v2 not available"
+					 #endif
+					],
+					[;]
+				)],
+				[AC_MSG_RESULT([yes])],
+				[AC_MSG_RESULT([no])]
+			 )
+
+			 HAVE_LIBISDN="yes"
+			 AC_DEFINE([HAVE_LIBISDN], [1], [libisdn support])
+			 AC_SUBST([LIBISDN_CFLAGS],  [${libisdn_CFLAGS}])
+			 AC_SUBST([LIBISDN_CPPFLAGS],[${libisdn_CPPFLAGS}])
+			 AC_SUBST([LIBISDN_LDFLAGS], [${libisdn_LDFLAGS}])
+			 AC_SUBST([LIBISDN_LIBS],    [${libisdn_LIBS}])
+			 AC_SUBST([LIBISDN_VERSION])
+			],
+			[AC_MSG_ERROR([Need libisdn-0.0.1 or higher])]
 		 )
-
-		 HAVE_LIBISDN="yes"
-		 AC_DEFINE([HAVE_LIBISDN], [1], [libisdn support])
-		 AC_SUBST([LIBISDN_CFLAGS],  [${libisdn_CFLAGS}])
-		 AC_SUBST([LIBISDN_CPPFLAGS],[${libisdn_CPPFLAGS}])
-		 AC_SUBST([LIBISDN_LDFLAGS], [${libisdn_LDFLAGS}])
-		 AC_SUBST([LIBISDN_LIBS],    [${libisdn_LIBS}])
-		 AC_SUBST([LIBISDN_VERSION])
-		],
-		[AC_MSG_ERROR([Need libisdn-0.0.1 or higher])]
+		 AX_LIB_PCAP],
+		[AC_MSG_WARN([pkg-config missing (required for libisdn detection)])]
 	)
-	AX_LIB_PCAP
 fi
 AM_CONDITIONAL([HAVE_LIBISDN], [test "${HAVE_LIBISDN}" = "yes"])
 

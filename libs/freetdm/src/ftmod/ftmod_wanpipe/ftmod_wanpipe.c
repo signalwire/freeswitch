@@ -333,8 +333,8 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 					ftdm_log(FTDM_LOG_ERROR, "Failed to enable RBS/CAS events in device %d:%d fd:%d\n", chan->span_id, chan->chan_id, sockfd);
 					continue;
 				}
-				/* probably done by the driver but lets write defensive code this time */
 				sangoma_flush_bufs(chan->sockfd, &tdm_api);
+				sangoma_flush_event_bufs(chan->sockfd, &tdm_api);
 #else
 				/* 
 				 * With wanpipe 3.4.4.2 I get failure even though the events are enabled, /var/log/messages said:
@@ -514,9 +514,6 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 
 	memset(&tdm_api,0,sizeof(tdm_api));
 	sangoma_tdm_flush_bufs(ftdmchan->sockfd, &tdm_api);
-#ifdef LIBSANGOMA_VERSION
-	sangoma_flush_event_bufs(ftdmchan->sockfd, &tdm_api);
-#endif
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921 || ftdmchan->type == FTDM_CHAN_TYPE_DQ931) {
 		ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;

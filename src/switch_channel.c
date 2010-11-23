@@ -1971,7 +1971,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *channel, switch_event_t *event)
 {
 	switch_event_header_t *hi;
-	int x, global_verbose_events = 0;
+	int global_verbose_events = -1;
 
 	switch_mutex_lock(channel->profile_mutex);
 
@@ -2004,7 +2004,6 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_MEDIA_BUG_STOP || 
 		event->event_id == SWITCH_EVENT_CUSTOM) {
 
-		x = 0;
 		/* Index Variables */
 		if (channel->variables) {
 			for (hi = channel->variables->headers; hi; hi = hi->next) {
@@ -2013,8 +2012,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 
 				vvar = (char *) hi->name;
 				vval = (char *) hi->value;
-				x++;
-
+				
 				switch_assert(vvar && vval);
 				switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);

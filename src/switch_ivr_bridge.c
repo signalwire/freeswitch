@@ -1546,6 +1546,13 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		}
 	}
 
+	if ((var = switch_channel_get_variable(channel, "intercept_unanswered_only")) && switch_true(var)) {
+		if ((switch_channel_test_flag(rchannel, CF_ANSWERED))) {
+			switch_core_session_rwunlock(rsession);
+			return;
+		}
+	}
+
 	switch_channel_pre_answer(channel);
 
 	if (!zstr(buuid)) {

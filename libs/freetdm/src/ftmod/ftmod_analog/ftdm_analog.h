@@ -46,6 +46,7 @@ typedef enum {
 struct ftdm_analog_data {
 	uint32_t flags;
 	uint32_t max_dialstr;
+	uint32_t wait_dialtone_timeout;
 	uint32_t digit_timeout;
 	char hotline[FTDM_MAX_HOTLINE_STR];
 };
