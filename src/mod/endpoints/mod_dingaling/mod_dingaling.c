@@ -602,7 +602,7 @@ static void ipchanged_event_handler(switch_event_t *event)
 			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, NULL, NULL, &val);
 				profile = (mdl_profile_t *) val;
-				if (old_ip4 && !strcmp(profile->extip, old_ip4)) {
+				if (old_ip4 && profile->extip && !strcmp(profile->extip, old_ip4)) {
 					tmp = profile->extip;
 					profile->extip = strdup(new_ip4);
 					switch_safe_free(tmp);
