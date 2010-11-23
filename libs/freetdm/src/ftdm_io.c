@@ -2387,6 +2387,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 
 	ftdm_log(FTDM_LOG_DEBUG, "channel done %u:%u\n", ftdmchan->span_id, ftdmchan->chan_id);
 
+	if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+		ftdm_sigmsg_t sigmsg;
+		memset(&sigmsg, 0, sizeof(sigmsg));
+		sigmsg.span_id = ftdmchan->span_id;
+		sigmsg.chan_id = ftdmchan->chan_id;
+		sigmsg.channel = ftdmchan;
+		sigmsg.event_id = FTDM_SIGEVENT_RELEASED;
+		ftdm_span_send_signal(ftdmchan->span, &sigmsg);
+	}
+
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
 	return FTDM_SUCCESS;

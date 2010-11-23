@@ -1690,6 +1690,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
+    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
 
 	default:
 		{
@@ -1744,6 +1745,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
+    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
     case FTDM_SIGEVENT_STOP:
 		{
 			private_t *tech_pvt = NULL;
@@ -1966,6 +1968,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			status = ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
+		
+    		case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
 
 		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
@@ -2028,6 +2032,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 
+		case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		{
+			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->sigstatus;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to: %s\n",
+					spanid, chanid, ftdm_signaling_status2str(sigstatus));
+		}
+		break;
+
 		default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled event %d from R2 for channel %d:%d\n",
@@ -2063,6 +2075,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
+
+    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+
     case FTDM_SIGEVENT_STOP:
     case FTDM_SIGEVENT_RESTART:
 		{
