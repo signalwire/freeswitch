@@ -1616,7 +1616,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	}
 
-	/* commenting to test
+
 	if (helper->event){ 
 		const char *uuid = switch_event_get_header_nil(helper->event, "unique-id");
 
@@ -1625,7 +1625,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
-	*/
+
 
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 
