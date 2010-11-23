@@ -521,6 +521,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 				}
 			}
 			ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+			switch_safe_free(ffrom);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
 			return SWITCH_STATUS_FALSE;
