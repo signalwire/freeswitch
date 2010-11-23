@@ -130,7 +130,7 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *hashkey = NULL;
-	switch_bool_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	limit_hash_item_t *item = NULL;
 	time_t now = switch_epoch_time_now(NULL);
 	limit_hash_private_t *pvt = NULL;
