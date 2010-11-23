@@ -370,7 +370,7 @@ static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 
 static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 {
-	ftdm_interrupt_t	*ftdm_sangoma_isdn_int[2];
+	ftdm_interrupt_t	*ftdm_sangoma_isdn_int[3];
 	ftdm_status_t		ret_status;
 	ftdm_span_t		*span	= (ftdm_span_t *) obj;
 	ftdm_channel_t	*ftdmchan = NULL;
@@ -388,8 +388,13 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
  		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a ftdm_interrupt for span = %s!\n", span->name);
 		goto ftdm_sangoma_isdn_run_exit;
 	}
+	
+	if (ftdm_queue_get_interrupt(span->pendingsignals, &ftdm_sangoma_isdn_int[1]) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a signal interrupt for span = %s!\n", span->name);
+		goto ftdm_sangoma_isdn_run_exit;
+	}
 
-	if (ftdm_queue_get_interrupt(signal_data->event_queue, &ftdm_sangoma_isdn_int[1]) != FTDM_SUCCESS) {
+	if (ftdm_queue_get_interrupt(signal_data->event_queue, &ftdm_sangoma_isdn_int[2]) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a event interrupt for span = %s!\n", span->name);
 		goto ftdm_sangoma_isdn_run_exit;
 	}
@@ -398,8 +403,14 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 
 		/* Check if there are any timers to process */
 		ftdm_sched_run(signal_data->sched);
+		ftdm_span_trigger_signals(span);
 		
-		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 2, sleep);
+		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
+			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
+				sleep = SNGISDN_EVENT_POLL_RATE;
+			}
+		}
+		ret_status = ftdm_interrupt_multiple_wait(ftdm_sangoma_isdn_int, 3, sleep);
 		/* find out why we returned from the interrupt queue */
 		switch (ret_status) {
 			case FTDM_SUCCESS:  /* there was a state change on the span */
@@ -415,7 +426,6 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 					ftdm_sangoma_isdn_process_stack_event(span, sngisdn_event);
 					ftdm_safe_free(sngisdn_event);
 				}
-				ftdm_span_trigger_signals(span);
 				break;
 			case FTDM_TIMEOUT:
 				/* twiddle */
@@ -431,13 +441,6 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 
 		/* Poll for events, e.g HW DTMF */
 		ftdm_sangoma_isdn_poll_events(span);
-		ftdm_span_trigger_signals(span);
-		
-		if (ftdm_sched_get_time_to_next_timer(signal_data->sched, &sleep) == FTDM_SUCCESS) {
-			if (sleep < 0 || sleep > SNGISDN_EVENT_POLL_RATE) {
-				sleep = SNGISDN_EVENT_POLL_RATE;
-			}
-		}
 	}
 	
 	/* clear the IN_THREAD flag so that we know the thread is done */
