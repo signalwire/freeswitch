@@ -514,8 +514,13 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 				from = hint;
 			} else {
 				char *p;
-				ffrom = switch_mprintf("%s+%s", proto, from);
-				from = ffrom;
+				
+				if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
+					from = ffrom = strdup(profile->login);
+				} else {
+					from = ffrom = switch_mprintf("%s+%s", proto, from);
+				}
+				
 				if ((p = strchr(from, '/'))) {
 					*p = '\0';
 				}
