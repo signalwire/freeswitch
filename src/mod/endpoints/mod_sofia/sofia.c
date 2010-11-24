@@ -2173,7 +2173,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 				register_host = sofia_glue_get_register_host(gateway->register_proxy);
 
-				if (register_host && !sofia_glue_check_nat(profile, register_host)) {
+				if (register_host && switch_is_lan_addr(register_host)) {
 					sipip = profile->sipip;
 				}
 
