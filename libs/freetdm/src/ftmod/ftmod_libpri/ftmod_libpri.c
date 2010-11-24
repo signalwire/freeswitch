@@ -727,15 +727,13 @@ static __inline__ void check_state(ftdm_span_t *span)
 		for (j = 1; j <= ftdm_span_get_chan_count(span); j++) {
 			ftdm_channel_t *chan = ftdm_span_get_channel(span, j);
 
-			if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
-				ftdm_channel_lock(chan);
-
+			ftdm_channel_lock(chan);
+			while (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
 				ftdm_clear_flag(chan, FTDM_CHANNEL_STATE_CHANGE);
 				state_advance(chan);
 				ftdm_channel_complete_state(chan);
-
-				ftdm_channel_unlock(chan);
 			}
+			ftdm_channel_unlock(chan);
 		}
 	}
 }
