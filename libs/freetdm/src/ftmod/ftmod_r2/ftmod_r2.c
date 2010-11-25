@@ -889,7 +889,7 @@ static openr2_io_interface_t ftdm_r2_io_iface = {
 static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 	//ftdm_status_t (ftdm_span_t *span, fio_signal_cb_t sig_cb, va_list ap)
 {
-	int i = 0;
+	unsigned int i = 0;
 	int conf_failure = 0;
 	char *var = NULL;
 	char *val = NULL;
@@ -1107,11 +1107,6 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		openr2_chan_set_log_level(r2chan, r2conf.loglevel);
 		if (r2conf.call_files) {
 			openr2_chan_enable_call_files(r2chan);
-#if 0
-			if (r2conf.mf_files) {
-				openr2_chan_enable_mf_files(r2chan);
-			}
-#endif
 		}
 
 		r2call = ftdm_malloc(sizeof(*r2call));
@@ -1348,8 +1343,8 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_r2_data_t *r2data = span->signal_data;
 	int waitms = 20;
-	int i, res;
-	int ms;
+	unsigned int i;
+	int res, ms;
 	struct timeval start, end;
     short *poll_events = ftdm_malloc(sizeof(short)*span->chan_count);
 	ftdm_event_t *event = NULL;
@@ -1413,8 +1408,8 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		* XXX */
 		for (i = 1; i <= span->chan_count; i++) {
 			r2chan = R2CALL(span->channels[i])->r2chan;
-			r2call = R2CALL(ftdmchan);
 			ftdmchan = openr2_chan_get_client_data(r2chan);
+			r2call = R2CALL(ftdmchan);
 
 			ftdm_mutex_lock(ftdmchan->mutex);
 			ftdm_r2_state_advance(ftdmchan);
@@ -1487,8 +1482,8 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
 	int span_id = 0;
-	int chan_id = 0;
-	int i = 0;
+	unsigned int chan_id = 0;
+	unsigned int i = 0;
 	ftdm_r2_data_t *r2data = NULL;
 	openr2_chan_t *r2chan = NULL;
 	openr2_context_t *r2context = NULL;
