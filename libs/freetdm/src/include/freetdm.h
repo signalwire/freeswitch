@@ -888,6 +888,23 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 /*! \brief Remove the channel from a hunt group */
 FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ftdm_channel_t* ftdmchan);
 
+/*! 
+ * \brief Retrieves an event from the span
+ *
+ * \note
+ * 	This function is non-reentrant and not thread-safe. 
+ * 	The event returned may be modified if the function is called again 
+ * 	from a different thread or even the same. It is recommended to
+ * 	handle events from the same span in a single thread.
+ *
+ * \param span The channel to retrieve the event from
+ * \param event Pointer to store the pointer to the event
+ *
+ * \retval FTDM_SUCCESS success (at least one event available)
+ * \retval FTDM_FAIL failure
+ */
+FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm_event_t **event);
+
 /*! \brief Find a hunt group by id */
 FT_DECLARE(ftdm_status_t) ftdm_group_find(uint32_t id, ftdm_group_t **group);
 
