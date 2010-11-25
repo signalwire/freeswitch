@@ -425,8 +425,11 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
+	assert(tech_pvt->ftdmchan != NULL);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
+	
+	ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -852,7 +855,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
-			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS);
+			ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_RINGING);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
@@ -935,7 +938,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
 			!switch_channel_test_flag(channel, CF_RING_READY)
 			) {
-				ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_RING);
+				ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_RINGING);
 				switch_channel_mark_ring_ready(channel);
 		}
 		break;
@@ -2133,13 +2136,17 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					spanid, chanid, (uuid) ? uuid : "N/A");
 			}
 		}
-		break;
+		break;	
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{	
 			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->sigstatus;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
+		break;
+	case FTDM_SIGEVENT_PROCEED:
+	case FTDM_SIGEVENT_MSG:
+		/* FS does not have handlers for these messages, so ignore them for now */
 		break;
 	default:
 		{

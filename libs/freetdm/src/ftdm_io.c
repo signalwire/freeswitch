@@ -2033,7 +2033,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		goto done;
 	}
 
-
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 	}
@@ -2202,14 +2201,19 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 	switch (indication) {
 	/* FIXME: ring and busy cannot be used with all signaling stacks 
 	 * (particularly isdn stacks I think, we should emulate or just move to hangup with busy cause) */
-	case FTDM_CHANNEL_INDICATE_RING:
-		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RING, 1);
+	case FTDM_CHANNEL_INDICATE_RINGING:
+		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RINGING, 1);
 		break;
-
 	case FTDM_CHANNEL_INDICATE_BUSY:
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_BUSY, 1);
 		break;
-
+	case FTDM_CHANNEL_INDICATE_PROCEED:
+		if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE)) {
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_RING) {
+				ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROCEED, 1);
+			}
+		}
+		break;
 	case FTDM_CHANNEL_INDICATE_PROGRESS:
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
@@ -2217,7 +2221,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 		}
 		break;
-
 	case FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA:
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
@@ -2236,7 +2239,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
 		}
 		break;
-
 	default:
 		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "Do not know how to indicate %d\n", indication);
 		status = FTDM_FAIL;
