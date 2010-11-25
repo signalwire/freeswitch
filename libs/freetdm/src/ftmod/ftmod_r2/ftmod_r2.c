@@ -847,7 +847,7 @@ static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *e
     *event = OR2_OOB_EVENT_NONE;
     status = ftdm_channel_read_event(ftdmchan, &fevent);
     if (status != FTDM_SUCCESS) {
-		//ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "failed to retrieve freetdm event!\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "failed to retrieve freetdm event!\n");
         return -1;
     }
 	if (fevent->e_type != FTDM_EVENT_OOB)
@@ -1412,33 +1412,11 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			r2call = R2CALL(ftdmchan);
 			ftdmchan = openr2_chan_get_client_data(r2chan);
 
-			status = ftdm_channel_read_event(ftdmchan, &event);
 			ftdm_mutex_lock(ftdmchan->mutex);
-			if (status == FTDM_SUCCESS) {
-				switch (event->enum_id) {
-				case FTDM_OOB_CAS_BITS_CHANGE:
-					{
-						ftdm_log(FTDM_LOG_DEBUG, "Handling CAS on channel %d.\n", i);
-						openr2_chan_process_cas_signaling(r2chan);
-					}
-					break;
-				case FTDM_OOB_ALARM_TRAP:
-				case FTDM_OOB_ALARM_CLEAR:
-					{
-						ftdm_log(FTDM_LOG_DEBUG, "OOB EVENT: %s\n", ftdm_signal_event2str(event->enum_id));
-						openr2_chan_process_oob_events(r2chan);
-					}
-					break;
-				}
-			}
-
-			if (!ftdm_r2_state_advance(ftdmchan)) {
-				ftdm_mutex_unlock(ftdmchan->mutex);
-			}
+			ftdm_r2_state_advance(ftdmchan);
 			openr2_chan_process_signaling(r2chan);
-			if (!ftdm_r2_state_advance(ftdmchan)) {
-				ftdm_mutex_unlock(ftdmchan->mutex);
-			}
+			ftdm_r2_state_advance(ftdmchan);
+			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
 		ftdm_span_trigger_signals(span);
 	}
