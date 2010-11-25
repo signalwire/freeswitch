@@ -1131,10 +1131,8 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	status = sangoma_tdm_read_event(ftdmchan->sockfd, &tdm_api);
 	if (status != FTDM_SUCCESS) {
-#if 0
 		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to read event from channel: %s\n", strerror(errno));
-#endif
 		return FTDM_FAIL;
 	}
 
