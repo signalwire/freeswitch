@@ -1125,45 +1125,16 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	wanpipe_tdm_api_t tdm_api;
 	ftdm_span_t *span = ftdmchan->span;
 
-	if (ftdmchan->last_event_time && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
-		uint32_t diff = (uint32_t)(ftdm_current_time_in_ms() - ftdmchan->last_event_time);
-		/* XX printf("%u %u %u\n", diff, (unsigned)ftdm_current_time_in_ms(), (unsigned)ftdmchan->last_event_time); */
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_WINK)) {
-			if (diff > wp_globals.wink_ms) {
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_WINK);
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_FLASH);
-				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
-				event_id = FTDM_OOB_OFFHOOK;
-				goto event;
-			}
-		}
-
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_FLASH)) {
-			if (diff > wp_globals.flash_ms) {
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_FLASH);
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_WINK);
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
-				event_id = FTDM_OOB_ONHOOK;
-
-				if (ftdmchan->type == FTDM_CHAN_TYPE_FXO) {
-					wanpipe_tdm_api_t tdm_api;
-					memset(&tdm_api, 0, sizeof(tdm_api));
-
-					sangoma_tdm_txsig_onhook(ftdmchan->sockfd,&tdm_api);
-				}
-				goto event;
-			}
-		}
-	} 
-
-	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT))
-		return FTDM_FAIL;
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT))
+		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
 
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	status = sangoma_tdm_read_event(ftdmchan->sockfd, &tdm_api);
 	if (status != FTDM_SUCCESS) {
+#if 0
 		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to read event from channel: %s\n", strerror(errno));
+#endif
 		return FTDM_FAIL;
 	}
 
@@ -1276,8 +1247,6 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	}
 
 event:
-
-	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
 
 	ftdmchan->last_event_time = 0;
 	span->event_header.e_type = FTDM_EVENT_OOB;
