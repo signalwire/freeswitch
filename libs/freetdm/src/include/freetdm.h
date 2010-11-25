@@ -285,7 +285,7 @@ typedef enum {
 
 /*! \brief Signaling messages sent by the stacks */
 typedef enum {
-	FTDM_SIGEVENT_START, /*!< Incoming call (ie: incoming SETUP msg or Ring) */
+	FTDM_SIGEVENT_START,/*!< Incoming call (ie: incoming SETUP msg or Ring) */
 	FTDM_SIGEVENT_STOP, /*!< Hangup */
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
@@ -300,12 +300,12 @@ typedef enum {
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
-	FTDM_SIGEVENT_MSG, /* !< We received an in-call msg */
+	FTDM_SIGEVENT_MSG, /*!< We received an in-call msg */
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "INVALID"
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)

@@ -35,7 +35,6 @@
 #include "ftmod_sangoma_isdn.h"
 
 static void sngisdn_set_prog_desc(ProgInd *progInd, ftdm_sngisdn_progind_t prod_ind);
-static void sngisdn_set_facilityStr(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 {
@@ -136,12 +135,11 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	}
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Outgoing call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
-	cpy_called_num_from_user(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
-	cpy_calling_num_from_user(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
-	cpy_redir_num_from_user(&conEvnt.redirNmb, &ftdmchan->caller_data);
-	cpy_calling_name_from_user(&conEvnt, ftdmchan);
-
-	sngisdn_set_facilityStr(ftdmchan, &conEvnt.facilityStr);
+	set_called_num(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
+	set_calling_num(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
+	set_redir_num(&conEvnt.redirNmb, &ftdmchan->caller_data);
+	set_calling_name(&conEvnt, ftdmchan);
+	set_facility_ie(ftdmchan, &conEvnt.facilityStr);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -558,7 +556,8 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	discEvnt.causeDgn[0].recommend.pres = NOTPRSNT;
 	discEvnt.causeDgn[0].dgnVal.pres = NOTPRSNT;
 
-	sngisdn_set_facilityStr(ftdmchan, &discEvnt.facilityStr);
+	set_facility_ie(ftdmchan, &discEvnt.facilityStr);
+	
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 	if (sng_isdn_disc_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &discEvnt)) {
@@ -604,7 +603,7 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 		spInstId = sngisdn_info->spInstId;
 	}
 
-	sngisdn_set_facilityStr(ftdmchan, &relEvnt.facilityStr);
+	set_facility_ie(ftdmchan, &relEvnt.facilityStr);
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending RELEASE/RELEASE COMPLETE (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, suInstId, spInstId);
 
@@ -643,19 +642,6 @@ static void sngisdn_set_prog_desc(ProgInd *progInd, ftdm_sngisdn_progind_t prog_
 		case SNGISDN_PROGIND_IB_AVAIL:
 			progInd->progDesc.val = IN_PD_IBAVAIL;
 			break;
-	}
-	return;
-}
-
-static void sngisdn_set_facilityStr(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
-{
-	const char *facility_str = NULL;	
-	
-	facility_str = ftdm_channel_get_var(ftdmchan, "isdn.facility.val");
-	if (facility_str) {
-		facilityStr->eh.pres = PRSNT_NODEF;
-		facilityStr->facilityStr.len = strlen(facility_str);
-		memcpy(facilityStr->facilityStr.val, facility_str, facilityStr->facilityStr.len);
 	}
 	return;
 }
