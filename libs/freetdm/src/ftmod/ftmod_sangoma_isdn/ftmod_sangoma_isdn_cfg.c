@@ -190,6 +190,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->min_digits = 8;
 	signal_data->overlap_dial = SNGISDN_OPT_DEFAULT;
 	signal_data->setup_arb = SNGISDN_OPT_DEFAULT;
+	signal_data->facility_ie_decode = SNGISDN_OPT_TRUE;
 	signal_data->timer_t3 = 8;
 
 	signal_data->link_id = span->span_id;
@@ -288,6 +289,14 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			signal_data->facility_timeout = atoi(val);
 			if (signal_data->facility_timeout < 0) {
 				signal_data->facility_timeout = 0;
+			}
+		} else if (!strcasecmp(var, "facility-ie-decode")) {
+			if (!strcasecmp(val, "yes")) {
+				signal_data->facility_ie_decode = SNGISDN_OPT_TRUE;
+			} else if (!strcasecmp(val, "no")) {
+				signal_data->facility_ie_decode = SNGISDN_OPT_FALSE;
+			} else {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid value for parameter:%s:%s\n", var, val);
 			}
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);

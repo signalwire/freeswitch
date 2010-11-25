@@ -289,7 +289,8 @@ typedef enum {
 	FTDM_SIGEVENT_STOP, /*!< Hangup */
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
-	FTDM_SIGEVENT_FLASH, /*< Flash event  (typically on-hook/off-hook for analog devices) */
+	FTDM_SIGEVENT_FLASH, /*!< Flash event  (typically on-hook/off-hook for analog devices) */
+ 	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
@@ -299,9 +300,10 @@ typedef enum {
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
+	FTDM_SIGEVENT_MSG, /* !< We received an in-call msg */
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROGRESS", \
+#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "INVALID"
 
@@ -581,7 +583,7 @@ typedef enum {
  * This is used during incoming calls when you want to request the signaling stack
  * to notify about indications occurring locally */
 typedef enum {
-	FTDM_CHANNEL_INDICATE_RING,
+	FTDM_CHANNEL_INDICATE_RINGING,
 	FTDM_CHANNEL_INDICATE_PROCEED,
 	FTDM_CHANNEL_INDICATE_PROGRESS,
 	FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA,

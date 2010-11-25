@@ -229,6 +229,24 @@ ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *dis
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t cpy_facility_ie_from_stack(ftdm_caller_data_t *caller_data, uint8_t *data, uint32_t data_len)
+{
+	if (data_len > sizeof(caller_data->raw_data)-2) {
+		ftdm_log(FTDM_LOG_CRIT, "Length of Facility IE exceeds maximum length\n");
+		return FTDM_FAIL;
+	}
+	
+	memset(caller_data->raw_data, 0, sizeof(caller_data->raw_data));
+	/* Always include Facility IE identifier + len so this can be used as a sanity check by the user */
+	caller_data->raw_data[0] = 0x1C;
+	caller_data->raw_data[1] = data_len;
+	
+	memcpy(&caller_data->raw_data[2], data, data_len);
+	caller_data->raw_data_len = data_len+2;
+	
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
 {
 	uint8_t len = strlen(ftdm->cid_num.digits);

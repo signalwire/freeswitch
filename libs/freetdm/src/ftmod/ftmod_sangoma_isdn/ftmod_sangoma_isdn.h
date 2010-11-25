@@ -75,7 +75,8 @@ typedef enum {
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
 	FLAG_SEND_DISC  		= (1 << 9),
-	FLAG_ACTIVATING			= (1 << 10), /* Used for BRI only, flag is set after we request line CONNECTED */
+	/* Used for BRI only, flag is set after we request line CONNECTED */
+	FLAG_ACTIVATING			= (1 << 10), 
 } sngisdn_flag_t;
 
 
@@ -135,6 +136,21 @@ typedef enum {
 	SNGISDN_EVENT_RST_IND,
 } ftdm_sngisdn_event_id_t;
 
+typedef enum {
+	/* Call is not end-to-end ISDN */
+	SNGISDN_PROGIND_NETE_ISDN = 1,
+	/* Destination address is non-ISDN */
+	SNGISDN_PROGIND_DEST_NISDN,
+	/* Origination address is non-ISDN */
+	SNGISDN_PROGIND_ORIG_NISDN,
+	/* Call has returned to the ISDN */
+	SNGISDN_PROGIND_RET_ISDN,
+	/* Interworking as occured and has resulted in a telecommunication service change */
+	SNGISDN_PROGIND_SERV_CHANGE,
+ 	/* In-band information or an appropriate pattern is now available */
+	SNGISDN_PROGIND_IB_AVAIL, 
+} ftdm_sngisdn_progind_t;
+
 /* Only timers that can be cancelled are listed here */
 #define SNGISDN_NUM_TIMERS 1
 /* Increase NUM_TIMERS as number of ftdm_sngisdn_timer_t increases */
@@ -181,6 +197,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			trace_flags;		/* TODO: change to flags, so we can use ftdm_test_flag etc.. */
 	uint8_t			overlap_dial;
 	uint8_t			setup_arb;
+	uint8_t			facility_ie_decode;
 	uint8_t			facility;
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
@@ -288,13 +305,14 @@ void stack_pst_init(Pst *pst);
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_setup_ack(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_progress(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_alert(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
+void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
 void sngisdn_snd_reset(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
@@ -362,6 +380,8 @@ ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgP
 ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
 ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
 ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
+ftdm_status_t cpy_facility_ie_from_stack(ftdm_caller_data_t *ftdm, uint8_t *data, uint32_t data_len);
+
 ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
 ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
 ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
