@@ -265,7 +265,7 @@
 	<action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
 	<!--<action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
 	<action application="hash" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
-	<action application="bridge" data="{sip_invite_domain=$${domain}}user/${dialed_extension}@${domain_name}"/>
+	<action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="bridge" data="loopback/app=voicemail:default ${domain_name} ${dialed_extension}"/>
