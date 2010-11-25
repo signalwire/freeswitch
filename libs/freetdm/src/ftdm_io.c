@@ -2270,6 +2270,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 	UNREFERENCED_PARAMETER(line);
 #endif
 
+	ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 100);
+
 	ftdm_channel_unlock(ftdmchan);
 
 	return status;
