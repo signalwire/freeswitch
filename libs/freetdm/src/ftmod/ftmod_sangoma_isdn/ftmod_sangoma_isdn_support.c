@@ -412,14 +412,16 @@ ftdm_status_t set_calling_name(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
 }
 
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
-{	
+{
 	if (ftdmchan->caller_data.raw_data_len && 
 	    ftdmchan->caller_data.raw_data[0] == 0x1C) {
 		facilityStr->eh.pres = PRSNT_NODEF;
+		facilityStr->facilityStr.pres = PRSNT_NODEF;
 		facilityStr->facilityStr.len = ftdmchan->caller_data.raw_data_len-2;
 		memcpy(facilityStr->facilityStr.val, &ftdmchan->caller_data.raw_data[2], facilityStr->facilityStr.len);
 		return FTDM_SUCCESS;
 	}
+	
 	return FTDM_FAIL;
 }
 
