@@ -781,7 +781,7 @@ static int ftdm_r2_io_wait(openr2_chan_t *r2chan, int *flags, int block)
 	int32_t timeout;
 	ftdm_wait_flag_t ftdmflags = 0;
 
-	ftdm_channel_t *ftdm_chan = openr2_chan_get_fd(r2chan);
+	ftdm_channel_t *fchan = openr2_chan_get_fd(r2chan);
 	timeout = block ? -1 : 0;
 
 	if (*flags & OR2_IO_READ) {
@@ -794,9 +794,10 @@ static int ftdm_r2_io_wait(openr2_chan_t *r2chan, int *flags, int block)
 		ftdmflags |= FTDM_EVENTS;
 	}
 	
-	status = ftdm_channel_wait(ftdm_chan, &ftdmflags, timeout);
+	status = ftdm_channel_wait(fchan, &ftdmflags, timeout);
 
 	if (FTDM_SUCCESS != status && FTDM_TIMEOUT != status) {
+		ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Failed to wait for events on channel\n");
 		return -1;
 	}
 
@@ -869,7 +870,6 @@ static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *e
 			}
 			break;
 	}
-    ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "returning event: %s\n", ftdm_signal_event2str(*event));
     return 0;
 }
 
@@ -1212,6 +1212,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_INTERVAL, &interval);
 					ftdm_assert(interval != 0, "Invalid interval!");
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Starting processing of incoming call with interval %d\n", interval);
+					openr2_chan_enable_read(r2chan);
 				}
 				break;
 
@@ -1223,6 +1224,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					ftdm_assert(interval != 0, "Invalid interval!");
 					ftdm_log_chan(ftdmchan, 
 						FTDM_LOG_DEBUG, "Starting processing of outgoing call in channel with interval %d\n", interval);
+					openr2_chan_enable_read(r2chan);
 				}
 				break;
 
@@ -1289,7 +1291,6 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				{
 					openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
-					openr2_chan_enable_read(r2chan);
 					if (!R2CALL(ftdmchan)->disconnect_rcvd) {
 						/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 						openr2_chan_disconnect_call(r2chan, disconnect_cause);
@@ -1304,7 +1305,6 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 			case FTDM_CHANNEL_STATE_CANCEL:
 				{
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Unable to receive call\n");
-					openr2_chan_enable_read(r2chan);
 					openr2_chan_disconnect_call(r2chan, OR2_CAUSE_OUT_OF_ORDER);
 				}
 				break;
@@ -1316,6 +1316,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					if (R2CALL(ftdmchan)->txdrops) {
 						ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "dropped %d tx packets\n", R2CALL(ftdmchan)->txdrops);
 					}
+					openr2_chan_disable_read(r2chan);
 					ret = 1;
 				}
 				break;
@@ -1385,7 +1386,10 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		for (i = 0; i < span->chan_count; i++) {
 			r2chan = R2CALL(span->channels[(i+1)])->r2chan;
 			ftdmchan = openr2_chan_get_client_data(r2chan);
-			poll_events[i] = ftdmchan->state == FTDM_CHANNEL_STATE_DOWN ? POLLPRI : (POLLPRI | POLLIN | POLLOUT);
+			poll_events[i] = POLLPRI;
+			if (openr2_chan_get_read_enabled(r2chan)) {
+				poll_events[i] |= POLLIN;
+			}
 		}
 
 		status = ftdm_span_poll_event(span, waitms, poll_events);
@@ -1425,6 +1429,8 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		r2chan = R2CALL(span->channels[i])->r2chan;
 		openr2_chan_set_blocked(r2chan);
 	}
+
+	ftdm_safe_free(poll_events);
 
 	ftdm_clear_flag(r2data, FTDM_R2_RUNNING);
 	ftdm_log(FTDM_LOG_DEBUG, "R2 thread ending.\n");

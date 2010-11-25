@@ -2871,11 +2871,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_wait(ftdm_channel_t *ftdmchan, ftdm_wait_
 	assert(ftdmchan != NULL);
 	assert(ftdmchan->fio != NULL);
 
-    if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
-        return FTDM_FAIL;
-    }
-
 	if (!ftdmchan->fio->wait) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		return FTDM_FAIL;
