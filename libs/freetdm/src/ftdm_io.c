@@ -2033,6 +2033,11 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		goto done;
 	}
 
+#if 0 
+	/* DAVIDY - We will fail RFC's if we do that, but some modules apart from ftmod_sangoma_isdn 
+	 * expect the call to always to go PROGRESS and PROGRESS MEDIA state before going to UP, so 
+	 * remove this only in netborder branch for now */
+
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 	}
@@ -2052,7 +2057,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to UP\n");
 		goto done;
 	}
-
+#endif
 	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 1);
 
 done:

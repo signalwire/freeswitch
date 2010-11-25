@@ -377,18 +377,17 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 		
 			switch(ftdmchan->state) {
 				case FTDM_CHANNEL_STATE_DIALING:
-					if (evntType == MI_CALLPROC) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROCEED);
-					} else if (evntType == MI_PROGRESS ||
-						(cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL)) {
+					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+					} else 	if (evntType == MI_CALLPROC) {
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROCEED);
 					} else {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 					}
 					break;
+				case FTDM_CHANNEL_STATE_PROCEED:
 				case FTDM_CHANNEL_STATE_PROGRESS:
-					if (evntType == MI_PROGRESS ||
-						(cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL)) {
+					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 					}
 					break;
