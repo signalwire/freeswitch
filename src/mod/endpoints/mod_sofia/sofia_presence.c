@@ -567,7 +567,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
-				sql = switch_mprintf("select status,rpid from sip_dialogs where sip_from_user='%q' and sip_from_host='%q'", probe_euser, probe_host);
+				sql = switch_mprintf("select status,rpid from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
+									 probe_euser, probe_host, probe_euser, probe_host);
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 
 				h.profile = profile;
@@ -591,9 +592,11 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 "'%q','%q' "
 
 									 "from sip_registrations left join sip_dialogs on "
-									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
-									 "and (sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
-									 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
+									 "sip_dialogs.presence_id = sip_registrations.sip_user || '@' || sip_registrations.sip_host "
+
+
+									 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
+									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
  
 									 "left join sip_presence on "
 									 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
@@ -601,7 +604,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 "where sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 									 "(sip_registrations.orig_server_host='%q' or sip_registrations.sip_host='%q' "
 									 "or sip_registrations.presence_hosts like '%%%q%%'))",
-									 dh.status, dh.rpid, probe_euser, probe_host,  probe_euser, probe_host, probe_host, probe_host);
+									 dh.status, dh.rpid, 
+									 probe_euser, probe_host,  probe_euser, probe_host, probe_host, probe_host);
 				switch_assert(sql);
 				
 				if (mod_sofia_globals.debug_presence > 0) {
@@ -711,9 +715,10 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				sql = switch_mprintf("update sip_dialogs set call_info='%q',call_info_state='%q' where hostname='%q' and uuid='%q'",
 									 call_info, call_info_state, mod_sofia_globals.hostname, uuid);
 			} else {
-				sql = switch_mprintf("update sip_dialogs set call_info='%q', call_info_state='%q' where hostname='%q' and sip_dialogs.sip_from_user='%q' "
-									 "and sip_dialogs.sip_from_host='%q' and call_info='%q'",
-									 call_info, call_info_state, mod_sofia_globals.hostname, euser, host, call_info);
+				sql = switch_mprintf("update sip_dialogs set call_info='%q', call_info_state='%q' where hostname='%q' and "
+									 "((sip_dialogs.sip_from_user='%q' and sip_dialogs.sip_from_host='%q') or presence_id='%q@%q') and call_info='%q'",
+									 
+									 call_info, call_info_state, mod_sofia_globals.hostname, euser, host, euser, host, call_info);
 
 			}
 
@@ -737,7 +742,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
-		sql = switch_mprintf("select status,rpid from sip_dialogs where sip_from_user='%q' and sip_from_host='%q'", euser, host);
+		sql = switch_mprintf("select status,rpid from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
+							 euser, host, euser, host);
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 		switch_safe_free(sql);
 		
@@ -753,17 +759,20 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								  "sip_subscriptions.profile_name=sip_presence.profile_name) "
 								  "left join sip_dialogs on "
+								  
+								  "sip_dialogs.presence_id = sip_subscriptions.sub_to_user || '@' || sip_subscriptions.sub_to_host or "
 
+								  
 								  "(sip_dialogs.sip_from_user = sip_subscriptions.sub_to_user "
 								  "and sip_dialogs.sip_from_host = sip_subscriptions.sub_to_host) "
 								  
 								  "where sip_subscriptions.expires > -1 and "
-								  "(event='%q' or event='%q') and (sub_to_user='%q' or sip_dialogs.presence_id like '%q@%%') "
+								  "(event='%q' or event='%q') and sub_to_user='%q' "
 								  "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
 								  "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host)",
 								  switch_str_nil(status), switch_str_nil(rpid), host, 
 								  dh.status,dh.rpid,
-								  event_type, alt_event_type, euser, euser, host, host, profile->name))) {
+								  event_type, alt_event_type, euser, host, host, profile->name))) {
 			
 			struct presence_helper helper = { 0 };			
 
@@ -1918,7 +1927,8 @@ static void sync_sla(sofia_profile_t *profile, const char *to_user, const char *
 	switch_core_hash_init(&sh->hash, sh->pool);
 
 	sql = switch_mprintf("select sip_from_user,sip_from_host,call_info,call_info_state,uuid from sip_dialogs "
-						 "where hostname='%q' " "and sip_from_user='%q' and sip_from_host='%q' ", mod_sofia_globals.hostname, to_user, to_host);
+						 "where hostname='%q' " "and ((sip_from_user='%q' and sip_from_host='%q) or presence_id='%q@%q')' ", 
+						 mod_sofia_globals.hostname, to_user, to_host, to_user, to_host);
 
 
 	if (mod_sofia_globals.debug_sla > 1) {
@@ -1954,7 +1964,8 @@ static void sync_sla(sofia_profile_t *profile, const char *to_user, const char *
 
 
 	if (clear) {
-		sql = switch_mprintf("delete from sip_dialogs where sip_from_user='%q' and sip_from_host='%q' and call_info_state='seized'", to_user, to_host);
+		sql = switch_mprintf("delete from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+							 "and call_info_state='seized'", to_user, to_host, to_user, to_host);
 
 
 		if (mod_sofia_globals.debug_sla > 1) {
@@ -2326,8 +2337,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CANCEL LINE SEIZE\n");
 					}
 
-					sql = switch_mprintf("delete from sip_dialogs where sip_from_user='%q' and sip_from_host='%q' and call_info_state='seized'",
-										 to_user, to_host);
+					sql = switch_mprintf("delete from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+										 "and call_info_state='seized'",
+										 to_user, to_host, to_user, to_host);
 
 
 					if (mod_sofia_globals.debug_sla > 1) {
@@ -2360,8 +2372,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 
 
-					sql = switch_mprintf("delete from sip_dialogs where sip_from_user='%q' and sip_from_host='%q' and call_info_state='seized'",
-										 to_user, to_host);
+					sql = switch_mprintf("delete from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+										 "and call_info_state='seized'",
+										 to_user, to_host, to_user, to_host);
 
 
 					if (mod_sofia_globals.debug_sla > 1) {

@@ -2405,6 +2405,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						}
+					} else if (!strcasecmp(var, "presence-probe-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
+						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
@@ -3069,6 +3075,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						}
+					} else if (!strcasecmp(var, "presence-probe-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
@@ -4420,7 +4432,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 										 contact_host, astate, "outbound", user_agent,
 										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
 										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
-
 					switch_assert(sql);
 
 					sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
@@ -6872,8 +6883,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			sql =
 				switch_mprintf
-				("select call_id from sip_dialogs where call_info='%q' and sip_from_user='%q' and sip_from_host='%q' and call_id is not null",
-				 switch_str_nil(p), user, host);
+				("select call_id from sip_dialogs where call_info='%q' and ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+				 "and call_id is not null",
+				 switch_str_nil(p), user, host, user, host);
 
 			if ((str = sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, cid, sizeof(cid)))) {
 				bnh = nua_handle_by_call_id(nua, str);

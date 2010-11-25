@@ -3936,7 +3936,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			dest_num = p + 5;
 		}
 	}
-#endif
+
 
 	if (profile->pres_type) {
 		char *sql;
@@ -3957,6 +3957,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 		switch_safe_free(sql);
 	}
+#endif
 
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 
