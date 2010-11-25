@@ -127,10 +127,14 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
 #endif
 			/* Fill in call information */
-			cpy_calling_num_from_stack(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
-			cpy_called_num_from_stack(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
-			cpy_calling_name_from_stack(&ftdmchan->caller_data, &conEvnt->display);
-			cpy_redir_num_from_stack(&ftdmchan->caller_data, &conEvnt->redirNmb);
+			get_calling_num(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
+			get_called_num(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
+			get_redir_num(&ftdmchan->caller_data, &conEvnt->redirNmb);
+			
+			if (get_calling_name_from_display(&ftdmchan->caller_data, &conEvnt->display) != FTDM_SUCCESS) {
+				get_calling_name_from_usr_usr(&ftdmchan->caller_data, &conEvnt->usrUsr);
+			}
+			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
@@ -147,7 +151,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 
 				if (conEvnt->facilityStr.eh.pres) {
 					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						cpy_facility_ie_from_stack(&ftdmchan->caller_data, conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
+						get_facility_ie(&ftdmchan->caller_data, conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
 					} else if (signal_data->facility == SNGISDN_OPT_TRUE) {
 						/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 						uint16_t ret_val;
@@ -413,7 +417,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						ftdm_size_t min_digits = ((sngisdn_span_data_t*)ftdmchan->span->signal_data)->min_digits;
 						ftdm_size_t num_digits;
 
-						cpy_called_num_from_stack(&ftdmchan->caller_data, &cnStEvnt->cdPtyNmb);
+						get_called_num(&ftdmchan->caller_data, &cnStEvnt->cdPtyNmb);
 						num_digits = strlen(ftdmchan->caller_data.dnis.digits);
 
 						if (cnStEvnt->sndCmplt.eh.pres || num_digits >= min_digits) {
@@ -472,7 +476,7 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 		case FTDM_CHANNEL_STATE_UP:			
 			if (discEvnt->facilityStr.eh.pres) {
 				if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-					cpy_facility_ie_from_stack(&ftdmchan->caller_data, discEvnt->facilityStr.facilityStr.val, discEvnt->facilityStr.facilityStr.len);
+					get_facility_ie(&ftdmchan->caller_data, discEvnt->facilityStr.facilityStr.val, discEvnt->facilityStr.facilityStr.len);
 				} else {
 					/* Call libsng_isdn facility decode function and copy variables here */
 				}
@@ -569,7 +573,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 
 				if (relEvnt->facilityStr.eh.pres) {
 					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						cpy_facility_ie_from_stack(&ftdmchan->caller_data, relEvnt->facilityStr.facilityStr.val, relEvnt->facilityStr.facilityStr.len);
+						get_facility_ie(&ftdmchan->caller_data, relEvnt->facilityStr.facilityStr.val, relEvnt->facilityStr.facilityStr.len);
 					} else {
 						/* Call libsng_isdn facility decode function and copy variables here */
 					}
@@ -785,7 +789,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdm_sigmsg_t sigev;
 				if (facEvnt->facElmt.facStr.pres) {
 					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						cpy_facility_ie_from_stack(&ftdmchan->caller_data, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len);
+						get_facility_ie(&ftdmchan->caller_data, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len);
 					} else {
 						/* Call libsng_isdn facility decode function and copy variables here */
 					}

@@ -147,76 +147,79 @@ ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb)
+ftdm_status_t get_calling_num(ftdm_caller_data_t *caller_data, CgPtyNmb *cgPtyNmb)
 {
 	if (cgPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
 	}
 
 	if (cgPtyNmb->screenInd.pres == PRSNT_NODEF) {
-		ftdm->screen = cgPtyNmb->screenInd.val;
+		caller_data->screen = cgPtyNmb->screenInd.val;
 	}
 
 	if (cgPtyNmb->presInd0.pres == PRSNT_NODEF) {
-		ftdm->pres = cgPtyNmb->presInd0.val;
+		caller_data->pres = cgPtyNmb->presInd0.val;
 	}
 
 	if (cgPtyNmb->nmbPlanId.pres == PRSNT_NODEF) {
-		ftdm->cid_num.plan = cgPtyNmb->nmbPlanId.val;
+		caller_data->cid_num.plan = cgPtyNmb->nmbPlanId.val;
 	}
+		
 	if (cgPtyNmb->typeNmb1.pres == PRSNT_NODEF) {
-		ftdm->cid_num.type = cgPtyNmb->typeNmb1.val;
+		caller_data->cid_num.type = cgPtyNmb->typeNmb1.val;
 	}
 	
 	if (cgPtyNmb->nmbDigits.pres == PRSNT_NODEF) {
-		ftdm_copy_string(ftdm->cid_num.digits, (const char*)cgPtyNmb->nmbDigits.val, cgPtyNmb->nmbDigits.len+1);
+		ftdm_copy_string(caller_data->cid_num.digits, (const char*)cgPtyNmb->nmbDigits.val, cgPtyNmb->nmbDigits.len+1);
 	}
+	memcpy(&caller_data->ani, &caller_data->cid_num, sizeof(caller_data->ani));
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb)
+ftdm_status_t get_called_num(ftdm_caller_data_t *caller_data, CdPtyNmb *cdPtyNmb)
 {
 	if (cdPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
 	}
 
 	if (cdPtyNmb->nmbPlanId.pres == PRSNT_NODEF) {
-		ftdm->dnis.plan = cdPtyNmb->nmbPlanId.val;
+		caller_data->dnis.plan = cdPtyNmb->nmbPlanId.val;
 	}
 
 	if (cdPtyNmb->typeNmb0.pres == PRSNT_NODEF) {
-		ftdm->dnis.type = cdPtyNmb->typeNmb0.val;
+		caller_data->dnis.type = cdPtyNmb->typeNmb0.val;
 	}
 	
 	if (cdPtyNmb->nmbDigits.pres == PRSNT_NODEF) {
-		unsigned i = strlen(ftdm->dnis.digits);
+		/* In overlap receive mode, append the new digits to the existing dnis */
+		unsigned i = strlen(caller_data->dnis.digits);
 		
-		ftdm_copy_string(&ftdm->dnis.digits[i], (const char*)cdPtyNmb->nmbDigits.val, cdPtyNmb->nmbDigits.len+1);
+		ftdm_copy_string(&caller_data->dnis.digits[i], (const char*)cdPtyNmb->nmbDigits.val, cdPtyNmb->nmbDigits.len+1);
 	}
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb)
+ftdm_status_t get_redir_num(ftdm_caller_data_t *caller_data, RedirNmb *redirNmb)
 {
 	if (redirNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
 	}
 
 	if (redirNmb->nmbPlanId.pres == PRSNT_NODEF) {
-		ftdm->rdnis.plan = redirNmb->nmbPlanId.val;
+		caller_data->rdnis.plan = redirNmb->nmbPlanId.val;
 	}
 
 	if (redirNmb->typeNmb.pres == PRSNT_NODEF) {
-		ftdm->rdnis.type = redirNmb->typeNmb.val;
+		caller_data->rdnis.type = redirNmb->typeNmb.val;
 	}
 	
 	if (redirNmb->nmbDigits.pres == PRSNT_NODEF) {
-		ftdm_copy_string(ftdm->rdnis.digits, (const char*)redirNmb->nmbDigits.val, redirNmb->nmbDigits.len+1);
+		ftdm_copy_string(caller_data->rdnis.digits, (const char*)redirNmb->nmbDigits.val, redirNmb->nmbDigits.len+1);
 	}
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display)
+ftdm_status_t get_calling_name_from_display(ftdm_caller_data_t *caller_data, Display *display)
 {
 	if (display->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
@@ -225,11 +228,29 @@ ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *dis
 		return FTDM_FAIL;
 	}
 	
-	ftdm_copy_string(ftdm->cid_name, (const char*)display->dispInfo.val, display->dispInfo.len+1);
+	ftdm_copy_string(caller_data->cid_name, (const char*)display->dispInfo.val, display->dispInfo.len+1);
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_facility_ie_from_stack(ftdm_caller_data_t *caller_data, uint8_t *data, uint32_t data_len)
+ftdm_status_t get_calling_name_from_usr_usr(ftdm_caller_data_t *caller_data, UsrUsr *usrUsr)
+{
+	if (usrUsr->eh.pres != PRSNT_NODEF) {
+		return FTDM_FAIL;
+	}
+	
+	if (usrUsr->protocolDisc.val != PD_IA5) {
+		return FTDM_FAIL;
+	}
+		
+	if (usrUsr->usrInfo.pres != PRSNT_NODEF) {
+		return FTDM_FAIL;
+	}
+		
+	ftdm_copy_string(caller_data->cid_name, (const char*)usrUsr->usrInfo.val, usrUsr->usrInfo.len+1);
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t get_facility_ie(ftdm_caller_data_t *caller_data, uint8_t *data, uint32_t data_len)
 {
 	if (data_len > sizeof(caller_data->raw_data)-2) {
 		ftdm_log(FTDM_LOG_CRIT, "Length of Facility IE exceeds maximum length\n");
@@ -247,67 +268,67 @@ ftdm_status_t cpy_facility_ie_from_stack(ftdm_caller_data_t *caller_data, uint8_
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t set_calling_num(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *caller_data)
 {
-	uint8_t len = strlen(ftdm->cid_num.digits);
+	uint8_t len = strlen(caller_data->cid_num.digits);
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
 	cgPtyNmb->eh.pres			= PRSNT_NODEF;
 
 	cgPtyNmb->screenInd.pres	= PRSNT_NODEF;
-	cgPtyNmb->screenInd.val		= ftdm->screen;
+	cgPtyNmb->screenInd.val		= caller_data->screen;
 
 	cgPtyNmb->presInd0.pres     = PRSNT_NODEF;
-	cgPtyNmb->presInd0.val      = ftdm->pres;
-
+	cgPtyNmb->presInd0.val      = caller_data->pres;
+	
 	cgPtyNmb->nmbPlanId.pres	= PRSNT_NODEF;
-	cgPtyNmb->nmbPlanId.val		= ftdm->cid_num.plan;
+	cgPtyNmb->nmbPlanId.val		= caller_data->cid_num.plan;
 
 	cgPtyNmb->typeNmb1.pres		= PRSNT_NODEF;
-	cgPtyNmb->typeNmb1.val		= ftdm->cid_num.type;
+	cgPtyNmb->typeNmb1.val		= caller_data->cid_num.type;
 
 	cgPtyNmb->nmbDigits.pres	= PRSNT_NODEF;
 	cgPtyNmb->nmbDigits.len		= len;
 
-	memcpy(cgPtyNmb->nmbDigits.val, ftdm->cid_num.digits, len);
+	memcpy(cgPtyNmb->nmbDigits.val, caller_data->cid_num.digits, len);
 
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t set_called_num(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *caller_data)
 {
-	uint8_t len = strlen(ftdm->dnis.digits);
+	uint8_t len = strlen(caller_data->dnis.digits);
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
 	cdPtyNmb->eh.pres           = PRSNT_NODEF;
 
 	cdPtyNmb->nmbPlanId.pres      = PRSNT_NODEF;
-	if (ftdm->dnis.plan == FTDM_NPI_INVALID) {
+	if (caller_data->dnis.plan == FTDM_NPI_INVALID) {
 		cdPtyNmb->nmbPlanId.val       = FTDM_NPI_UNKNOWN;
 	} else {
-		cdPtyNmb->nmbPlanId.val       = ftdm->dnis.plan;
+		cdPtyNmb->nmbPlanId.val       = caller_data->dnis.plan;
 	}
 	
 	cdPtyNmb->typeNmb0.pres       = PRSNT_NODEF;
-	if (ftdm->dnis.type == FTDM_TON_INVALID) {
+	if (caller_data->dnis.type == FTDM_TON_INVALID) {
 		cdPtyNmb->typeNmb0.val        = FTDM_TON_UNKNOWN;
 	} else {
-		cdPtyNmb->typeNmb0.val        = ftdm->dnis.type;
+		cdPtyNmb->typeNmb0.val        = caller_data->dnis.type;
 	}
 
 	cdPtyNmb->nmbDigits.pres = PRSNT_NODEF;
 	cdPtyNmb->nmbDigits.len = len;
 
 	
-	memcpy(cdPtyNmb->nmbDigits.val, ftdm->dnis.digits, len);
+	memcpy(cdPtyNmb->nmbDigits.val, caller_data->dnis.digits, len);
     return FTDM_SUCCESS;
 }
 
-ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm)
+ftdm_status_t set_redir_num(RedirNmb *redirNmb, ftdm_caller_data_t *caller_data)
 {
-	uint8_t len = strlen(ftdm->rdnis.digits);
+	uint8_t len = strlen(caller_data->rdnis.digits);
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
@@ -315,36 +336,36 @@ ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ft
 	redirNmb->eh.pres 	= PRSNT_NODEF;
 
 	redirNmb->nmbPlanId.pres 	= PRSNT_NODEF;
-	if (ftdm->rdnis.plan == FTDM_NPI_INVALID) {
+	if (caller_data->rdnis.plan == FTDM_NPI_INVALID) {
 		redirNmb->nmbPlanId.val	= FTDM_NPI_UNKNOWN;
 	} else {
-		redirNmb->nmbPlanId.val = ftdm->rdnis.plan;
+		redirNmb->nmbPlanId.val = caller_data->rdnis.plan;
 	}
 
 	redirNmb->typeNmb.pres		= PRSNT_NODEF;
-	if (ftdm->rdnis.type == FTDM_TON_INVALID) {
+	if (caller_data->rdnis.type == FTDM_TON_INVALID) {
 		redirNmb->typeNmb.val		= FTDM_TON_UNKNOWN;
 	} else {
-		redirNmb->typeNmb.val		= ftdm->rdnis.type;
+		redirNmb->typeNmb.val		= caller_data->rdnis.type;
 	}
 
 	redirNmb->nmbDigits.pres = PRSNT_NODEF;
 	redirNmb->nmbDigits.len = len;
 
-	memcpy(redirNmb->nmbDigits.val, ftdm->rdnis.digits, len);
+	memcpy(redirNmb->nmbDigits.val, caller_data->rdnis.digits, len);
 
 	return FTDM_SUCCESS;
 }
 
 
-ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
+ftdm_status_t set_calling_name(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan)
 {
 	uint8_t len;
-	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	/* sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data; */
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
-	len = strlen(ftdm->cid_name); 
+	len = strlen(caller_data->cid_name);
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
@@ -359,7 +380,7 @@ ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmc
 		conEvnt->usrUsr.usrInfo.len = len;
 		/* in sangoma_brid we used to send usr-usr info as <cid_name>!<calling_number>,
 		change to previous style if current one does not work */
-		memcpy(conEvnt->usrUsr.usrInfo.val, ftdm->cid_name, len);
+		memcpy(conEvnt->usrUsr.usrInfo.val, caller_data->cid_name, len);
 	} else {
 		switch (signal_data->switchtype) {
 		case SNGISDN_SWITCH_NI2:
@@ -377,7 +398,7 @@ ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmc
 			conEvnt->display.eh.pres = PRSNT_NODEF;
 			conEvnt->display.dispInfo.pres = PRSNT_NODEF;
 			conEvnt->display.dispInfo.len = len;
-			memcpy(conEvnt->display.dispInfo.val, ftdm->cid_name, len);
+			memcpy(conEvnt->display.dispInfo.val, caller_data->cid_name, len);
 			break;
 		case SNGISDN_SWITCH_QSIG:
 			/* It seems like QSIG does not support Caller ID Name */
@@ -388,6 +409,20 @@ ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmc
 		}
 	}
 	return FTDM_SUCCESS;
+}
+
+ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
+{
+	const char *facility_str = NULL;
+	
+	facility_str = ftdm_channel_get_var(ftdmchan, "isdn.facility.val");
+	if (facility_str) {
+		facilityStr->eh.pres = PRSNT_NODEF;
+		facilityStr->facilityStr.len = strlen(facility_str);
+		memcpy(facilityStr->facilityStr.val, facility_str, facilityStr->facilityStr.len);
+		return FTDM_SUCCESS;
+	}
+	return FTDM_FAIL;
 }
 
 void sngisdn_t3_timeout(void* p_sngisdn_info)

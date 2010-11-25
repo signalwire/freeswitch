@@ -376,16 +376,18 @@ void sngisdn_rcv_cc_ind(CcMngmt *status);
 void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_rcv_sng_assert(char *message);
 
-ftdm_status_t cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-ftdm_status_t cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-ftdm_status_t cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-ftdm_status_t cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
-ftdm_status_t cpy_facility_ie_from_stack(ftdm_caller_data_t *ftdm, uint8_t *data, uint32_t data_len);
+ftdm_status_t get_calling_num(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
+ftdm_status_t get_called_num(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
+ftdm_status_t get_redir_num(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
+ftdm_status_t get_calling_name_from_display(ftdm_caller_data_t *ftdm, Display *display);
+ftdm_status_t get_calling_name_from_usr_usr(ftdm_caller_data_t *ftdm, UsrUsr *usrUsr);
+ftdm_status_t get_facility_ie(ftdm_caller_data_t *ftdm, uint8_t *data, uint32_t data_len);
 
-ftdm_status_t cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
+ftdm_status_t set_calling_num(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t set_called_num(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t set_redir_num(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
+ftdm_status_t set_calling_name(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
+ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 		
 uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);
 uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot);
