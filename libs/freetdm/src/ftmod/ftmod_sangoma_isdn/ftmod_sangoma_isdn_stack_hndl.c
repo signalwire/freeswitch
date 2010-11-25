@@ -142,21 +142,22 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdmchan->caller_data.bearer_capability = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].infoTranCap.val);
 			}
 			
-			if (signal_data->switchtype == SNGISDN_SWITCH_NI2) {
-				if (conEvnt->shift11.eh.pres && conEvnt->ni2OctStr.eh.pres) {
-					if (conEvnt->ni2OctStr.str.len == 4 && conEvnt->ni2OctStr.str.val[0] == 0x37) {
-						snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", conEvnt->ni2OctStr.str.val[3]);
-					}
+			
+			if (conEvnt->shift11.eh.pres && conEvnt->ni2OctStr.eh.pres) {
+				if (conEvnt->ni2OctStr.str.len == 4 && conEvnt->ni2OctStr.str.val[0] == 0x37) {
+					snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", conEvnt->ni2OctStr.str.val[3]);
 				}
+			}
 
-				if (conEvnt->facilityStr.eh.pres) {
-					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						get_facility_ie(&ftdmchan->caller_data, conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
-					} else if (signal_data->facility == SNGISDN_OPT_TRUE) {
+			if (conEvnt->facilityStr.eh.pres) {
+				if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
+					get_facility_ie(&ftdmchan->caller_data, conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
+				} else if (signal_data->facility == SNGISDN_OPT_TRUE) {
+					if (signal_data->switchtype == SNGISDN_SWITCH_NI2) {
 						/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 						uint16_t ret_val;
 						char retrieved_str[255];
-						
+
 						ret_val = sng_isdn_retrieve_facility_caller_name(conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len, retrieved_str);
 						/*
 							return values for "sng_isdn_retrieve_facility_information_following":
@@ -170,7 +171,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_GET_CALLERID);
 							/* Launch timer in case we never get a FACILITY msg */
 							if (signal_data->facility_timeout) {
-								ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout, 
+								ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout,
 										sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
 							}
 							break;

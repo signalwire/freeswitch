@@ -412,7 +412,6 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
-
 	cnStEvnt.chanId.eh.pres = PRSNT_NODEF;
 	cnStEvnt.chanId.prefExc.pres = PRSNT_NODEF;
 	cnStEvnt.chanId.prefExc.val = IN_PE_EXCLSVE;
@@ -557,7 +556,6 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	discEvnt.causeDgn[0].dgnVal.pres = NOTPRSNT;
 
 	set_facility_ie(ftdmchan, &discEvnt.facilityStr);
-	
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 	if (sng_isdn_disc_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &discEvnt)) {
