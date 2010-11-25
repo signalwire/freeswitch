@@ -495,6 +495,7 @@ static ftdm_state_map_t isdn_state_map = {
 /**
  * \brief Handler for channel state change
  * \param ftdmchan Channel to handle
+ * \note This function MUST be called with the channel locked
  */
 static __inline__ void state_advance(ftdm_channel_t *chan)
 {
@@ -989,7 +990,16 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 
 	if (!chan) {
 		ftdm_log(FTDM_LOG_ERROR, "-- Unable to get channel %d:%d\n", ftdm_span_get_id(span), pevent->ring.channel);
-		goto done;
+		return ret;
+	}
+
+	ftdm_channel_lock(chan);
+
+	if (chan->call_data) {
+		/* we could drop the incoming call, but most likely the pointer is just a ghost of the past, 
+		 * this check is just to detect potentially unreleased pointers */
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "channel already has call %p!\n", chan->call_data);
+		chan->call_data = NULL;
 	}
 
 	if (ftdm_channel_get_state(chan) != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(chan, FTDM_CHANNEL_INUSE)) {
@@ -1049,9 +1059,10 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	/* hurr, this is valid as along as nobody releases the call */
 	chan->call_data = pevent->ring.call;
 
-	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RING);
+	ftdm_set_state(chan, FTDM_CHANNEL_STATE_RING);
 
 done:
+	ftdm_channel_unlock(chan);
 	return ret;
 }
 
