@@ -152,7 +152,7 @@ static ftdm_hash_t *g_mod_data_hash;
 static ftdm_io_interface_t g_ftdm_r2_interface;
 
 static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan);
-static int ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan);
+static void ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan);
 
 
 /* functions not available on windows */
