@@ -655,32 +655,32 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 
 	memcpy(&l1_frame.data, data, len);
 
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_CRC)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_CRC)) {
 		l1_frame.flags |= SNG_L1FRAME_ERROR_CRC;
 	}
 
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_FRAME)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_FRAME)) {
 		l1_frame.flags |= SNG_L1FRAME_ERROR_FRAME;
 	}
 	
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_ABORT)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_ABORT)) {
 		l1_frame.flags |= SNG_L1FRAME_ERROR_ABORT;
 	}
 
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_FIFO)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_FIFO)) {
 		l1_frame.flags |= SNG_L1FRAME_ERROR_FIFO;
 	}
 
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_DMA)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_DMA)) {
 		l1_frame.flags |= SNG_L1FRAME_ERROR_DMA;
 	}
 
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)) {
 		/* Should we trigger congestion here? */		
 		l1_frame.flags |= SNG_L1FRAME_QUEUE_THRES;
 	}
 
-	if (ftdm_test_flag(&(dchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL)) {
+	if (ftdm_test_flag(&(dchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL)) {
 		/* Should we trigger congestion here? */
 		l1_frame.flags |= SNG_L1FRAME_QUEUE_FULL;
 	}

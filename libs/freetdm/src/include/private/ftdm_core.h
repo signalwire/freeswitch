@@ -368,30 +368,32 @@ typedef struct {
 } ftdm_channel_history_entry_t;
 
 typedef enum {
-	FTDM_IOSTATS_ERROR_CRC			= (1<<0),
-	FTDM_IOSTATS_ERROR_FRAME		= (1<<1),
-	FTDM_IOSTATS_ERROR_ABORT 		= (1<<2),
-	FTDM_IOSTATS_ERROR_FIFO 		= (1<<3),
-	FTDM_IOSTATS_ERROR_DMA			= (1<<4),
-	FTDM_IOSTATS_ERROR_QUEUE_THRES	= (1<<5), /* Queue reached high threshold */
-	FTDM_IOSTATS_ERROR_QUEUE_FULL	= (1<<6), /* Queue is full */
+	FTDM_IOSTATS_ERROR_CRC		= (1 << 0),
+	FTDM_IOSTATS_ERROR_FRAME	= (1 << 1),
+	FTDM_IOSTATS_ERROR_ABORT 	= (1 << 2),
+	FTDM_IOSTATS_ERROR_FIFO 	= (1 << 3),
+	FTDM_IOSTATS_ERROR_DMA		= (1 << 4),
+	FTDM_IOSTATS_ERROR_QUEUE_THRES	= (1 << 5), /* Queue reached high threshold */
+	FTDM_IOSTATS_ERROR_QUEUE_FULL	= (1 << 6), /* Queue is full */
 } ftdm_iostats_error_type_t;
 
 typedef struct {
-	union {
-		struct {
-			uint32_t	errors;
-			uint16_t	flags;
-			uint8_t		rx_queue_size;	/* max queue size configured */
-			uint8_t		rx_queue_len;	/* Current number of elements in queue */
-		} rx;
-		struct {
-			uint32_t	errors;
-			uint16_t	flags;
-			uint8_t		tx_queue_size;	/* max queue size configured */
-			uint8_t		tx_queue_len;	/* Current number of elements in queue */
-		} tx;
-	} stats;
+	struct {
+		uint32_t errors;
+		uint16_t flags;
+		uint8_t	 queue_size;	/* max queue size configured */
+		uint8_t	 queue_len;	/* Current number of elements in queue */
+		uint64_t packets;
+	} rx;
+
+	struct {
+		uint32_t errors;
+		uint16_t flags;
+		uint8_t  idle_packets;
+		uint8_t	 queue_size;	/* max queue size configured */
+		uint8_t	 queue_len;	/* Current number of elements in queue */
+		uint64_t packets;
+	} tx;
 } ftdm_channel_iostats_t;
 
 /* 2^8 table size, one for each byte (sample) value */
