@@ -377,17 +377,23 @@ typedef enum {
 	FTDM_IOSTATS_ERROR_QUEUE_FULL	= (1 << 6), /* Queue is full */
 } ftdm_iostats_error_type_t;
 
-typedef struct iostats_element {
-	uint32_t errors;
-	uint16_t flags;
-	uint8_t	 queue_size;	/* max queue size configured */
-	uint8_t	 queue_len;	/* Current number of elements in queue */
-	uint64_t packets;
-} iostats_element_t;
-
 typedef struct {
-	iostats_element_t rx;
-	iostats_element_t tx;
+	struct {
+		uint32_t errors;
+		uint16_t flags;
+		uint8_t	 queue_size;	/* max queue size configured */
+		uint8_t	 queue_len;	/* Current number of elements in queue */
+		uint64_t packets;
+	} rx;
+
+	struct {
+		uint32_t errors;
+		uint16_t flags;
+		uint8_t  idle_packets;
+		uint8_t	 queue_size;	/* max queue size configured */
+		uint8_t	 queue_len;	/* Current number of elements in queue */
+		uint64_t packets;
+	} tx;
 } ftdm_channel_iostats_t;
 
 /* 2^8 table size, one for each byte (sample) value */

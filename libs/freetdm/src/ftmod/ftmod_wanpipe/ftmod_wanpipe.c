@@ -783,6 +783,47 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 	return FTDM_SUCCESS;
 }
 
+static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *tx_stats)
+{
+	ftdmchan->iostats.tx.errors = tx_stats->wp_api_tx_hdr_errors;
+	ftdmchan->iostats.tx.queue_size = tx_stats->wp_api_tx_hdr_max_queue_length;
+	ftdmchan->iostats.tx.queue_len = tx_stats->wp_api_tx_hdr_number_of_frames_in_queue;
+	
+	if (ftdmchan->iostats.tx.queue_len >= (0.8 * ftdmchan->iostats.tx.queue_size)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx Queue length exceeded 80% threshold (%d/%d)\n",
+					  		ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
+		ftdm_set_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
+	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue length reduced 80% threshold (%d/%d)\n",
+					  		ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
+		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
+	}
+	
+	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.rx.queue_size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Tx Queue Full (%d/%d)\n",
+					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue no longer full (%d/%d)\n",
+					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
+		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+	}
+
+	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_number_of_frames_in_queue) {
+		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle:  %d\n", ftdmchan->iostats.tx.idle_packets);
+	}
+
+	if (!ftdmchan->iostats.tx.packets) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet write stats: Tx queue len: %d, Tx queue size: %d, Tx idle: %d\n", 
+				ftdmchan->iostats.tx.queue_len, 
+				ftdmchan->iostats.tx.queue_size,
+				ftdmchan->iostats.tx.idle_packets);
+	}
+
+	ftdmchan->iostats.tx.packets++;
+}
+
 static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx_stats)
 {
 	ftdmchan->iostats.rx.errors = rx_stats->wp_api_rx_hdr_errors;
@@ -906,6 +947,9 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 	/* should we be checking if bsent == *datalen here? */
 	if (bsent > 0) {
 		*datalen = bsent;
+		if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
+			wanpipe_write_stats(ftdmchan, &hdrframe);
+		}
 		return FTDM_SUCCESS;
 	}
 
