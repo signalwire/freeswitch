@@ -3294,12 +3294,18 @@ int alsa_write(private_t * tech_pvt, short *data, int datalen)
 	time_t now_timestamp;
 	/* size_t frames = 0; */
 	snd_pcm_state_t state;
-	snd_pcm_sframes_t delayp1;
-	snd_pcm_sframes_t delayp2;
+	snd_pcm_sframes_t delayp1=0;
+	snd_pcm_sframes_t delayp2=0;
 
 	if(tech_pvt->no_sound==1){
 		return res;
 	}
+
+
+	memset(sizbuf, 255, sizeof(sizbuf));
+	memset(sizbuf2, 255, sizeof(sizbuf));
+	memset(silencebuf, 255, sizeof(sizbuf));
+
 	//ERRORA("data=%p, datalen=%d\n", GSMOPEN_P_LOG, (void *)data, datalen);
 	/* We have to digest the frame in 160-byte portions */
 	if (datalen > sizeof(sizbuf) - sizpos) {
@@ -3307,8 +3313,11 @@ int alsa_write(private_t * tech_pvt, short *data, int datalen)
 		res = -1;
 	} else {
 		memcpy(sizbuf + sizpos, data, datalen);
+		memset(data, 255, datalen);
 		len += datalen;
 		pos = 0;
+
+
 #ifdef ALSA_MONITOR
 		alsa_monitor_write(sizbuf, len);
 #endif
@@ -3456,6 +3465,7 @@ int alsa_write(private_t * tech_pvt, short *data, int datalen)
 			if (res == -ESTRPIPE) {
 				ERRORA("You've got some big problems\n", GSMOPEN_P_LOG);
 			} else if (res == -EAGAIN) {
+				DEBUGA_GSMOPEN("Momentarily busy\n", GSMOPEN_P_LOG);
 				res = 0;
 			} else if (res < 0) {
 				ERRORA("Error %d on audio write: \"%s\"\n", GSMOPEN_P_LOG, res, snd_strerror(res));
@@ -3572,9 +3582,11 @@ int alsa_read(private_t * tech_pvt, short *data, int datalen)
 		return r;
 
 	} else if (r == -EAGAIN) {
-		DEBUGA_GSMOPEN("ALSA read -EAGAIN, the soundcard is not ready to be read by gsmopen\n", GSMOPEN_P_LOG);
+		int count=0;
 		while (r == -EAGAIN) {
-			gsmopen_sleep(1000);
+			gsmopen_sleep(10000);
+			DEBUGA_GSMOPEN("%d ALSA read -EAGAIN, the soundcard is not ready to be read by gsmopen\n", GSMOPEN_P_LOG, count);
+			count++;
 
 			if (tech_pvt->alsa_capture_is_mono) {
 				r = snd_pcm_readi(tech_pvt->alsac, buf + readpos, left);
