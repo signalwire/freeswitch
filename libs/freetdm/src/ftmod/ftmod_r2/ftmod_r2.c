@@ -123,11 +123,13 @@ typedef struct ftdm_r2_data_s {
 	/* whether accept the call when offered, or wait until the user decides to accept */
 	int accept_on_offer:1;
 	/* max time spent in ms doing real work in a single loop */
-	int jobmax;
-	/* total working loops */
-	unsigned long loops;
+	int32_t jobmax;
+	/* Total number of loops performed so far */
+	uint64_t total_loops;
+	/* number of loops per 10ms increment from 0-9ms, 10-19ms .. 100ms and above */
+	uint64_t loops[11];
 	/* LWP */
-	unsigned long monitor_thread_id;
+	uint32_t monitor_thread_id;
 } ftdm_r2_data_t;
 
 /* one element per span will be stored in g_mod_data_hash global var to keep track of them
@@ -1356,8 +1358,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	int waitms = 20;
 	unsigned int i;
 	int res, ms;
+	int index = 0;
 	struct timeval start, end;
-    short *poll_events = ftdm_malloc(sizeof(short)*span->chan_count);
+	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
 #ifdef __linux__
 	r2data->monitor_thread_id = syscall(SYS_gettid);	
@@ -1374,14 +1377,20 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	memset(&start, 0, sizeof(start));
 	memset(&end, 0, sizeof(end));
 	while (ftdm_running() && ftdm_test_flag(r2data, FTDM_R2_RUNNING)) {
-		r2data->loops++;
 		res = gettimeofday(&end, NULL);
 		if (start.tv_sec) {
 			ms = ((end.tv_sec - start.tv_sec) * 1000) 
 			    + ((( 1000000 + end.tv_usec - start.tv_usec) / 1000) - 1000);
+			if (ms < 0) {
+				ms = 0;
+			}
 			if (ms > r2data->jobmax) {
 				r2data->jobmax = ms;
 			}
+			index = (ms / 10);
+			index = (index > 10) ? 10 : index;
+			r2data->loops[index]++;
+			r2data->total_loops++;
 		}
 
 #ifndef WIN32
@@ -1576,7 +1585,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 					goto done;
 				}
 				if (!(r2data =  span->signal_data)) {
-					stream->write_function(stream, "-ERR invalid span. No R2 singal data in span.\n");
+					stream->write_function(stream, "-ERR invalid span. No R2 signal data in span.\n");
 					goto done;
 				}
 				r2context = r2data->r2context;
@@ -1587,19 +1596,17 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 						"Max DNIS: %d\n"
 						"ANI First: %s\n"
 						"Immediate Accept: %s\n"
-						"Side: %s\n"
+						"Job Thread: %lu\n"
 						"Job Max ms: %d\n"
-						"Job Loops: %lu\n"
-						"Monitor Thread: %lu\n",
+						"Job Loops: %lu\n",
 						openr2_proto_get_variant_string(r2variant),
 						openr2_context_get_max_ani(r2context),
 						openr2_context_get_max_dnis(r2context),
 						openr2_context_get_ani_first(r2context) ? "Yes" : "No",
 						openr2_context_get_immediate_accept(r2context) ? "Yes" : "No",
-                                                "no side",
+						r2data->monitor_thread_id,
 						r2data->jobmax, 
-						r2data->loops,
-						r2data->monitor_thread_id);
+						r2data->total_loops);
 				stream->write_function(stream, "\n");
 				stream->write_function(stream, "%4s %-12.12s %-12.12s\n", "Channel", "Tx CAS", "Rx CAS");
 				for (i = 1; i <= span->chan_count; i++) {
@@ -1608,6 +1615,37 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 							span->channels[i]->chan_id,
 							openr2_chan_get_tx_cas_string(r2chan),
 							openr2_chan_get_rx_cas_string(r2chan));
+				}
+				stream->write_function(stream, "\n");
+				stream->write_function(stream, "+OK.\n");
+				goto done;
+			} else {
+				stream->write_function(stream, "-ERR invalid span.\n");
+				goto done;
+			}
+		}
+
+		if (!strcasecmp(argv[0], "loopstats")) {
+			int range;
+			span_id = atoi(argv[1]);
+
+			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS || ftdm_span_find(span_id, &span) == FTDM_SUCCESS) {
+				if (span->start != ftdm_r2_start) {
+					stream->write_function(stream, "-ERR not an R2 span.\n");
+					goto done;
+				}
+				if (!(r2data =  span->signal_data)) {
+					stream->write_function(stream, "-ERR invalid span. No R2 signal data in span.\n");
+					goto done;
+				}
+				range = 0;
+				for (i = 0; i < ftdm_array_len(r2data->loops); i++) {
+					if ((i + 1) == ftdm_array_len(r2data->loops)) {
+						stream->write_function(stream, ">= %dms: %llu\n", range, r2data->loops[i]);
+					} else {
+						stream->write_function(stream, "%d-%dms: %llu\n", range, range + 9, r2data->loops[i]);
+					}
+					range += 10;
 				}
 				stream->write_function(stream, "\n");
 				stream->write_function(stream, "+OK.\n");
