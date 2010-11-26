@@ -1656,7 +1656,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 				}
 				range = 0;
 				for (i = 0; i < ftdm_array_len(r2data->loops); i++) {
-					pct = 100*r2data->loops[i]/r2data->total_loops;
+					pct = 100*(float)r2data->loops[i]/r2data->total_loops;
 					if ((i + 1) == ftdm_array_len(r2data->loops)) {
 						stream->write_function(stream, ">= %dms: %llu - %.03lf%%\n", range, r2data->loops[i], pct);
 					} else {
