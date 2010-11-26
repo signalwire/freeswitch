@@ -67,9 +67,9 @@ typedef struct ftdm_r2_call_t {
 	ftdm_r2_call_flag_t flags;
 	int accepted:1;
 	int answer_pending:1;
-	int state_ack_pending:1;
 	int disconnect_rcvd:1;
 	int ftdm_started:1;
+	int protocol_error:1;
 	ftdm_channel_state_t chanstate;
 	ftdm_size_t dnis_index;
 	ftdm_size_t ani_index;
@@ -456,10 +456,12 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 	openr2_chan_disable_read(r2chan);
 	R2CALL(ftdmchan)->accepted = 1;
 	if (OR2_DIR_BACKWARD == openr2_chan_get_direction(r2chan)) {
-		R2CALL(ftdmchan)->state_ack_pending = 1;
+		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+		ftdm_channel_complete_state(ftdmchan);
 		if (R2CALL(ftdmchan)->answer_pending) {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Answer was pending, answering now.\n");
 			ft_r2_answer_call(ftdmchan);
+			R2CALL(ftdmchan)->answer_pending = 0;
 			return;
 		}
 	} else {
@@ -522,7 +524,7 @@ static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call finished\n");
 
 	/* the call is done as far as the stack is concerned, lets move to down here */
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 	/* in some circumstances openr2 can call on_call_init right after this, so let's advance the state right here */
 	ftdm_r2_state_advance(ftdmchan);
@@ -560,6 +562,7 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Protocol error\n");
 
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
+	R2CALL(ftdmchan)->protocol_error = 1;
 
 	if (!R2CALL(ftdmchan)->ftdm_started) {
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
@@ -1173,13 +1176,13 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 
 	ret = 0;
 
-	if (R2CALL(ftdmchan)->state_ack_pending) {
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
-		ftdm_channel_complete_state(ftdmchan);
-		R2CALL(ftdmchan)->state_ack_pending = 0;
-	}
-
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE) && (R2CALL(ftdmchan)->chanstate != ftdmchan->state)) {
+	/* because we do not always acknowledge the state change (clearing the FTDM_CHANNEL_STATE_CHANGE flag) due to the accept
+	 * procedure described below, we need the chanstate member to NOT process some states twice, so is valid entering this 
+	 * function with the FTDM_CHANNEL_STATE_CHANGE flag set but with a state that was already processed and is just waiting
+	 * to complete (the processing is media-bound)
+	 * */
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE) 
+			&& (R2CALL(ftdmchan)->chanstate != ftdmchan->state)) {
 
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
 		R2CALL(ftdmchan)->chanstate = ftdmchan->state;
@@ -1188,10 +1191,15 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				(ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS ||
 				 ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
 				 ftdmchan->state == FTDM_CHANNEL_STATE_UP) ) {
-			/* if an accept ack will be required we should not acknowledge the state change just yet, 
-			   it will be done below after processing the MF signals, otherwise we have a race condition between freetdm calling
-			   openr2_chan_answer_call and openr2 accepting the call first, if freetdm calls openr2_chan_answer_call before the accept cycle
-			   completes, openr2 will fail to answer the call */
+			/* 
+			   Moving to PROGRESS, PROGRESS_MEDIA or UP means that we must accept the call, and accepting
+			   the call in R2 means sending a tone, then waiting for the acknowledge from the other end,
+			   since all of that requires sending and detecting tones, it takes a few milliseconds (I'd say around 100)
+			   which means during that time the user should not try to perform any operations like answer, hangup or anything
+			   else, therefore we DO NOT clear the FTDM_CHANNEL_STATE_CHANGE flag here, we rely on ftdm_io.c to block
+			   the user thread until we're done with the accept (see on_call_accepted callback) and then we clear the state change flag,
+			   otherwise we have a race condition between freetdm calling openr2_chan_answer_call and openr2 accepting the call first, 
+			   if freetdm calls openr2_chan_answer_call before the accept cycle completes, openr2 will fail to answer the call */
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "State ack for state %s will have to wait a bit\n", ftdm_channel_state2str(ftdmchan->state));
 		} else if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN){
 			ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
@@ -1289,9 +1297,12 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					if (!R2CALL(ftdmchan)->disconnect_rcvd) {
 						/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 						openr2_chan_disconnect_call(r2chan, disconnect_cause);
-					} else {
+					} else if (!R2CALL(ftdmchan)->protocol_error) {
 						/* just ack the hangup, on_call_end will be called by openr2 right after */
 						openr2_chan_disconnect_call(r2chan, disconnect_cause);
+					} else {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Clearing call due to protocol error\n");
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 					}
 				}
 				break;
@@ -1347,7 +1358,6 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	int res, ms;
 	struct timeval start, end;
     short *poll_events = ftdm_malloc(sizeof(short)*span->chan_count);
-	ftdm_event_t *event = NULL;
 
 #ifdef __linux__
 	r2data->monitor_thread_id = syscall(SYS_gettid);	
