@@ -516,6 +516,7 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 
 	memset(&tdm_api,0,sizeof(tdm_api));
 	sangoma_tdm_flush_bufs(ftdmchan->sockfd, &tdm_api);
+	sangoma_flush_stats(ftdmchan->sockfd, &tdm_api);
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921 || ftdmchan->type == FTDM_CHAN_TYPE_DQ931) {
 		ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
