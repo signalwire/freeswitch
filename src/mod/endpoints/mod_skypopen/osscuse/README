@@ -1,0 +1,119 @@
+
+ OSS Proxy - emulate OSS device using CUSE
+
+ Copyright (C) 2008-2009  SUSE Linux Products GmbH
+ Copyright (C) 2008-2009  Tejun Heo <tj@kernel.org>
+
+1. What is it?
+--------------
+
+Well, first, OSS refers to Open Sound System.  If it still doesn't
+ring a bell, think /dev/dsp, /dev/adsp and /dev/mixer.
+
+Currently, Linux supports two audio programming interface - ALSA and
+OSS.  The latter one is deprecated and has been that way for a long
+time but there still are applications which still use them including
+UML (usermode Linux) host sound support.
+
+ALSA contains OSS emulation but sadly the emulation is behind
+multiplexing layer (which is in userland) which means that if your
+sound card doesn't support multiple audio streams, only either one of
+ALSA or OSS interface would be usable at any given moment.
+
+There have been also attempts to emulate OSS in userland using dynamic
+library preloading - aoss and more recently padsp.  This works for
+many applications but it's just not easy to emulate everything using
+the technique.  Things like polling, signals, forking, privilege
+changes make it very difficult to emulate things reliably.
+
+OSS Proxy uses CUSE (extension of FUSE allowing character devices to
+be implemented in userspace) to implement OSS interface - /dev/dsp,
+/dev/adsp and /dev/mixer.  From the POV of the applications, these
+devices are proper character devices and behave exactly the same way
+so it can be made quite versatile.
+
+
+2. Hmmm... So, how does the whole thing work?
+---------------------------------------------
+
+The OSS Proxy daemon - osspd - should be started first.  Note that
+osspd will fail to start if sound device number regions are already
+occupied.  You'll need to turn off OSS or its emulation[1].
+
+On startup, osspd creates /dev/dsp, /dev/adsp and /dev/mixer using
+CUSE.  When an application access one of the devices, all IOs are
+redirected to osspd via CUSE.  Upon receiving a new DSP open request,
+osspd creates a slave process which drops the root privilege and
+assumes the opening process's credentials.  After handshaking, osspd
+forwards all relevant IOs to the slave which is responsible for
+actually playing the sound.
+
+Currently there's only one slave implemented - ossp-padsp, which as
+the name suggests forwards (again) the sound to pulseaudio.  To sum
+up, the whole pipe looks like the following.
+
+ App <-> /dev/dsp <-> CUSE <-> osspd <-> ossp-padsp <-> pulseaudio
+
+Which is a lot of forwarding, but on modern machines, it won't be too
+noticeable.
+
+
+3. What works?
+--------------
+
+Well, MIDI part isn't implemented and I doubt it will be in any near
+future but except that everything should work.  Playing, recording,
+5.1ch, A-V syncing, all should work.  If not, it's a bug, so please
+report.
+
+The mixer behaves a bit differently tho.  In the original OSS,
+/dev/mixer is the hardware mixer, so adjusting volumes there affects
+all audio streams.  When using ossp, each process group gets its own
+mixer and the mixer always contains only two knobs - PCM and IGAIN.
+Combined with per-stream volume control of pulseaudio, this scheme
+works quite well for applications with embedded volume control
+although it makes standalone OSS mixer programs virtually useless[2].
+
+
+4. How do I use it?
+-------------------
+
+First you need CUSE support in kernel which might land on 2.6.28 with
+sufficient luck[3] and then you also need libfuse which supports
+CUSE[4].  Once you have both, it should be easy.  First build it by
+running `make'.  You can set OSSPD_CFLAGS, OSSPD_LDFLAGS,
+OSSP_PADSP_CFLAGS and OSSP_PADSP_LDFLAGS if you have stuff at
+non-default locations.
+
+After build completes, there will be two executables - `osspd' and
+`ossp-padsp'.  Just copy them to where other system executables live.
+Specific location doesn't matter as long as both files end up in the
+same directory.
+
+Execute `osspd'.  It will create the device files and you're all set.
+`osspd' uses syslog with LOG_DAEMON facility, so if something doesn't
+work take a look at what osspd complains about.
+
+
+[1] As of this writing, turning on any sound support makes the
+    soundcore module claim OSS device regions.  Patch to make it claim
+    OSS device regions only when OSS support or emulation is enabled
+    is scheduled for 2.6.28.  Even with the patch, soundcore will
+    claim OSS device regions if OSS support or ALSA OSS emulation is
+    enabled.  Make sure they're turned off.
+
+[2] If you have a strong reason to use standalone OSS mixer program,
+    you can play some shell tricks to put it into the same process
+    group as the target audio application.  e.g. To use aumix with
+    mpg123 - `(mpg123 asdf.mp3 > /dev/null 2>&1 & aumix)', but
+    seriously, just use PA or ALSA one.
+
+[3] For the time being, here's the git tree with all the necessary
+    changes.  This tree is base on top of 2.6.27-rc3.
+
+    http://git.kernel.org/?p=linux/kernel/git/tj/misc.git;a=shortlog;h=cuse
+    git://git.kernel.org/pub/scm/linux/kernel/git/tj/misc.git cuse
+
+[4] And libfuse with the modifications can be found at...
+
+    http://userweb.kernel.org/~tj/ossp/fuse-cuse.tar.gz
