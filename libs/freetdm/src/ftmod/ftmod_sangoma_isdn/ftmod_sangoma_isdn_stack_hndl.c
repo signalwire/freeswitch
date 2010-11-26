@@ -127,13 +127,15 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
 #endif
 			/* Fill in call information */
-			get_calling_num(&ftdmchan->caller_data, &conEvnt->cgPtyNmb);
-			get_called_num(&ftdmchan->caller_data, &conEvnt->cdPtyNmb);
-			get_redir_num(&ftdmchan->caller_data, &conEvnt->redirNmb);
+			get_calling_num(ftdmchan, &conEvnt->cgPtyNmb);
+			get_called_num(ftdmchan, &conEvnt->cdPtyNmb);
+			get_redir_num(ftdmchan, &conEvnt->redirNmb);
+			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			
-			if (get_calling_name_from_display(&ftdmchan->caller_data, &conEvnt->display) != FTDM_SUCCESS) {
-				get_calling_name_from_usr_usr(&ftdmchan->caller_data, &conEvnt->usrUsr);
+			if (get_calling_name_from_display(ftdmchan, &conEvnt->display) != FTDM_SUCCESS) {
+				get_calling_name_from_usr_usr(ftdmchan, &conEvnt->usrUsr);
 			}
+			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
 			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
@@ -148,35 +150,35 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 						snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", conEvnt->ni2OctStr.str.val[3]);
 					}
 				}
+			}
 
-				if (conEvnt->facilityStr.eh.pres) {
-					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						get_facility_ie(&ftdmchan->caller_data, conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len);
-					} else if (signal_data->facility == SNGISDN_OPT_TRUE) {
-						/* Verify whether the Caller Name will come in a subsequent FACILITY message */
-						uint16_t ret_val;
-						char retrieved_str[255];
-						
-						ret_val = sng_isdn_retrieve_facility_caller_name(conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len, retrieved_str);
-						/*
-							return values for "sng_isdn_retrieve_facility_information_following":
-							If there will be no information following, or fails to decode IE, returns -1
-							If there will be no information following, but current FACILITY IE contains a caller name, returns 0
-							If there will be information following, returns 1
-						*/
+			if (conEvnt->facilityStr.eh.pres) {
+				if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
+					get_facility_ie(ftdmchan, &conEvnt->facilityStr);
+				} else if (signal_data->facility == SNGISDN_OPT_TRUE) {
+					/* Verify whether the Caller Name will come in a subsequent FACILITY message */
+					uint16_t ret_val;
+					char retrieved_str[255];
 
-						if (ret_val == 1) {
-							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Expecting Caller name in FACILITY\n");
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_GET_CALLERID);
-							/* Launch timer in case we never get a FACILITY msg */
-							if (signal_data->facility_timeout) {
-								ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout, 
-										sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
-							}
-							break;
-						} else if (ret_val == 0) {
-							strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
+					ret_val = sng_isdn_retrieve_facility_caller_name(conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len, retrieved_str);
+					/*
+						return values for "sng_isdn_retrieve_facility_information_following":
+						If there will be no information following, or fails to decode IE, returns -1
+						If there will be no information following, but current FACILITY IE contains a caller name, returns 0
+						If there will be information following, returns 1
+					*/
+
+					if (ret_val == 1) {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Expecting Caller name in FACILITY\n");
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_GET_CALLERID);
+						/* Launch timer in case we never get a FACILITY msg */
+						if (signal_data->facility_timeout) {
+							ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout,
+									sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
 						}
+						break;
+					} else if (ret_val == 0) {
+						strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 					}
 				}
 			}
@@ -254,8 +256,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 	
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	/* Function does not require any info from conStEvnt struct for now */
-	/* CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt; */	
+	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
 				
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	
@@ -281,6 +282,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 			case FTDM_CHANNEL_STATE_PROGRESS:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_DIALING:
+				get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 				break;
 			case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
@@ -344,9 +346,13 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 															suId, suInstId, spInstId, ces);
 	
 	switch(evntType) {
+		case MI_CALLPROC:			
 		case MI_PROGRESS:
-			if (signal_data->switchtype == SNGISDN_SWITCH_NI2 &&
-						 cnStEvnt->causeDgn[0].eh.pres && cnStEvnt->causeDgn[0].causeVal.pres) {
+		case MI_ALERTING:
+			get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
+
+			if (signal_data->ignore_cause_value != SNGISDN_OPT_TRUE &&
+				cnStEvnt->causeDgn[0].eh.pres && cnStEvnt->causeDgn[0].causeVal.pres) {
 
 				switch(cnStEvnt->causeDgn[0].causeVal.val) {
 					case 17:	/* User Busy */
@@ -371,24 +377,17 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						goto sngisdn_process_cnst_ind_end;
 				}
 			}
-			/* fall-through */
-		case MI_ALERTING:
-		case MI_CALLPROC:
-		
+				
 			switch(ftdmchan->state) {
 				case FTDM_CHANNEL_STATE_DIALING:
-					if (evntType == MI_CALLPROC) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROCEED);
-					} else if (evntType == MI_PROGRESS ||
-						(cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL)) {
+				case FTDM_CHANNEL_STATE_PROCEED:
+					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 					} else {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 					}
-					break;
 				case FTDM_CHANNEL_STATE_PROGRESS:
-					if (evntType == MI_PROGRESS ||
-						(cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL)) {
+					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 					}
 					break;
@@ -417,7 +416,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						ftdm_size_t min_digits = ((sngisdn_span_data_t*)ftdmchan->span->signal_data)->min_digits;
 						ftdm_size_t num_digits;
 
-						get_called_num(&ftdmchan->caller_data, &cnStEvnt->cdPtyNmb);
+						get_called_num(ftdmchan, &cnStEvnt->cdPtyNmb);
 						num_digits = strlen(ftdmchan->caller_data.dnis.digits);
 
 						if (cnStEvnt->sndCmplt.eh.pres || num_digits >= min_digits) {
@@ -476,7 +475,7 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 		case FTDM_CHANNEL_STATE_UP:			
 			if (discEvnt->facilityStr.eh.pres) {
 				if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-					get_facility_ie(&ftdmchan->caller_data, discEvnt->facilityStr.facilityStr.val, discEvnt->facilityStr.facilityStr.len);
+					get_facility_ie(ftdmchan, &discEvnt->facilityStr);
 				} else {
 					/* Call libsng_isdn facility decode function and copy variables here */
 				}
@@ -573,7 +572,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 
 				if (relEvnt->facilityStr.eh.pres) {
 					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						get_facility_ie(&ftdmchan->caller_data, relEvnt->facilityStr.facilityStr.val, relEvnt->facilityStr.facilityStr.len);
+						get_facility_ie(ftdmchan, &relEvnt->facilityStr);
 					} else {
 						/* Call libsng_isdn facility decode function and copy variables here */
 					}
@@ -789,7 +788,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdm_sigmsg_t sigev;
 				if (facEvnt->facElmt.facStr.pres) {
 					if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-						get_facility_ie(&ftdmchan->caller_data, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len);
+						get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len);
 					} else {
 						/* Call libsng_isdn facility decode function and copy variables here */
 					}

@@ -40,8 +40,8 @@
 #include <sys/mman.h>
 #endif
 
-static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj);
 
+static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj);
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span);
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span);
 
@@ -673,7 +673,8 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_RINGING:
 		{
-			sngisdn_snd_alert(ftdmchan, SNGISDN_PROGIND_NETE_ISDN);
+			ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+			sngisdn_snd_alert(ftdmchan, prog_ind);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
@@ -687,7 +688,8 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				/* If we already sent a PROCEED before, do not send a PROGRESS as there is nothing to indicate to the remote switch */
 				if (ftdmchan->last_state != FTDM_CHANNEL_STATE_PROCEED) {
 					/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
-					sngisdn_snd_progress(ftdmchan, SNGISDN_PROGIND_NETE_ISDN);
+					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+					sngisdn_snd_progress(ftdmchan, prog_ind);
 				}
 			}
 		}
@@ -699,7 +701,8 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
 				/* Send a progress message, indicating: In-band information/pattern available */
-				sngisdn_snd_progress(ftdmchan, SNGISDN_PROGIND_IB_AVAIL);
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_IB_AVAIL};
+				sngisdn_snd_progress(ftdmchan, prog_ind);
 			}
 		}
 		break; 

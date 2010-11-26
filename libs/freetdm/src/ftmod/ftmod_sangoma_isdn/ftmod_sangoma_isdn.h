@@ -138,17 +138,47 @@ typedef enum {
 
 typedef enum {
 	/* Call is not end-to-end ISDN */
-	SNGISDN_PROGIND_NETE_ISDN = 1,
+	SNGISDN_PROGIND_DESCR_NETE_ISDN,
 	/* Destination address is non-ISDN */
-	SNGISDN_PROGIND_DEST_NISDN,
+	SNGISDN_PROGIND_DESCR_DEST_NISDN,
 	/* Origination address is non-ISDN */
-	SNGISDN_PROGIND_ORIG_NISDN,
+	SNGISDN_PROGIND_DESCR_ORIG_NISDN,
 	/* Call has returned to the ISDN */
-	SNGISDN_PROGIND_RET_ISDN,
+	SNGISDN_PROGIND_DESCR_RET_ISDN,
 	/* Interworking as occured and has resulted in a telecommunication service change */
-	SNGISDN_PROGIND_SERV_CHANGE,
- 	/* In-band information or an appropriate pattern is now available */
-	SNGISDN_PROGIND_IB_AVAIL, 
+	SNGISDN_PROGIND_DESCR_SERV_CHANGE,
+	/* In-band information or an appropriate pattern is now available */
+	SNGISDN_PROGIND_DESCR_IB_AVAIL,
+	/* Invalid */
+	SNGISDN_PROGIND_DESCR_INVALID,
+} ftdm_sngisdn_progind_descr_t;
+#define SNGISDN_PROGIND_DESCR_STRINGS "not-end-to-end-isdn", "destination-is-non-isdn", "origination-is-non-isdn", "call-returned-to-isdn", "service-change", "inband-info-available", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t);
+
+typedef enum {
+	/* User */
+	SNGISDN_PROGIND_LOC_USER,
+	/* Private network serving the local user */
+	SNGISDN_PROGIND_LOC_PRIV_NET_LOCAL_USR,
+	/* Public network serving the local user */
+	SNGISDN_PROGIND_LOC_PUB_NET_LOCAL_USR,
+	/* Transit network */
+	SNGISDN_PROGIND_LOC_TRANSIT_NET,
+	/* Public network serving remote user */
+	SNGISDN_PROGIND_LOC_PUB_NET_REMOTE_USR,
+	/* Private network serving remote user */
+	SNGISDN_PROGIND_LOC_PRIV_NET_REMOTE_USR,
+	/* Network beyond the interworking point */
+	SNGISDN_PROGIND_LOC_NET_BEYOND_INTRW,
+	/* Invalid */
+	SNGISDN_PROGIND_LOC_INVALID,
+} ftdm_sngisdn_progind_loc_t;
+#define SNGISDN_PROGIND_LOC_STRINGS "user", "private-net-local-user", "public-net-local-user", "transit-network", "public-net-remote-user", "private-net-remote-user", "beyond-interworking", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t);
+
+typedef struct ftdm_sngisdn_prog_ind {
+	ftdm_sngisdn_progind_loc_t loc;		/* location */
+	ftdm_sngisdn_progind_descr_t descr;	/* description */
 } ftdm_sngisdn_progind_t;
 
 /* Only timers that can be cancelled are listed here */
@@ -201,6 +231,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			facility;
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
+	uint8_t 		ignore_cause_value;
 	uint8_t			timer_t3;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
@@ -376,18 +407,25 @@ void sngisdn_rcv_cc_ind(CcMngmt *status);
 void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_rcv_sng_assert(char *message);
 
-ftdm_status_t get_calling_num(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-ftdm_status_t get_called_num(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-ftdm_status_t get_redir_num(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-ftdm_status_t get_calling_name_from_display(ftdm_caller_data_t *ftdm, Display *display);
-ftdm_status_t get_calling_name_from_usr_usr(ftdm_caller_data_t *ftdm, UsrUsr *usrUsr);
-ftdm_status_t get_facility_ie(ftdm_caller_data_t *ftdm, uint8_t *data, uint32_t data_len);
+ftdm_status_t get_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t get_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
+ftdm_status_t get_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
+ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
+ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
+ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
+ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd);
+ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
+ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t data_len);
 
-ftdm_status_t set_calling_num(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t set_called_num(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t set_redir_num(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
-ftdm_status_t set_calling_name(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
+ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t set_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
+ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
+ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
+ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
+ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_sngisdn_progind_t prog_ind);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
+ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t *data_len);
+
 		
 uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);
 uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot);
