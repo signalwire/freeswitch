@@ -240,7 +240,8 @@ ftmod_sangoma_ss7_la_SOURCES = \
 	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_cfg.c \
 	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sta.c \
 	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_sts.c \
-	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_logger.c
+	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_logger.c \
+	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_relay.c
 
 ftmod_sangoma_ss7_la_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS) -D_GNU_SOURCE
 ftmod_sangoma_ss7_la_LDFLAGS = -shared -module -avoid-version -lsng_ss7

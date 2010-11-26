@@ -99,21 +99,21 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
+	if (sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE)) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx IAM (glare)\n", sngss7_info->circuit->cic);
 	} else {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx IAM\n", sngss7_info->circuit->cic);
 	}
 
 	/* check if the circuit has a remote block */
-	if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
-		(sngss7_test_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX)) ||
-		(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+	if ((sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+		(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX)) ||
+		(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 
 		/* as per Q.764, 2.8.2.3 xiv ... remove the block from this channel */
-		sngss7_clear_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
-		sngss7_clear_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
-		sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
 
 		/* KONRAD FIX ME : check in case there is a ckt and grp block */
 	}
@@ -134,7 +134,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 						ftdmchan->physical_chan_id);
 
 			 /* set the flag to indicate this hangup is started from the local side */
-			sngss7_set_flag(sngss7_info, FLAG_LOCAL_REL);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_LOCAL_REL);
 
 			ftdmchan->caller_data.hangup_cause = 41;
 
@@ -253,26 +253,26 @@ handle_glare:
 		sngss7_info->glare.circuit = circuit;
 		memcpy(&sngss7_info->glare.iam, siConEvnt, sizeof(*siConEvnt));
 
-		if (!(sngss7_test_flag(sngss7_info, FLAG_GLARE))) {
+		if (!(sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE))) {
 			/* glare, throw the flag */
-			sngss7_set_flag(sngss7_info, FLAG_GLARE);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_GLARE);
 		
 			/* setup the hangup cause */
 			ftdmchan->caller_data.hangup_cause = 34;	/* Circuit Congrestion */
 		
 			/* this is a remote hangup request */
-			sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
 		
 			/* move the state of the channel to Terminating to end the call */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-		} /* if (!(sngss7_test_flag(sngss7_info, FLAG_GLARE))) */
+		} /* if (!(sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE))) */
 		break;
 	/**************************************************************************/
 	default:	/* should not have gotten an IAM while in this state */
 		SS7_ERROR_CHAN(ftdmchan, "Got IAM on channel in invalid state(%s)...reset!\n", ftdm_channel_state2str (ftdmchan->state));
 
 		/* reset the cic */
-		sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 		/* move the state of the channel to RESTART to force a reset */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -341,7 +341,7 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 									ftdm_channel_state2str (ftdmchan->state));
 
 			/* reset the cic */
-			sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* go to RESTART */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -545,7 +545,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON\n", sngss7_info->circuit->cic);
 
 		/* throw the TX reset flag */
-		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
 
 		/* go to RESTART */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -597,7 +597,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		}
 
 		/* this is a remote hangup request */
-		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
 ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		/* move the state of the channel to CANCEL to end the call */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -618,7 +618,7 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		}
 
 		/* this is a remote hangup request */
-		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
 
 		/* move the state of the channel to TERMINATING to end the call */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -631,7 +631,7 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 
 		/* since we need to acknowledge the hang up set the flag for remote release */
-		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
 
 		/* go to hangup complete to send the RLC */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
@@ -645,7 +645,7 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 	default:
 
 		/* throw the reset flag */
-		sngss7_set_flag(sngss7_info, FLAG_RESET_RX);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_RX);
 
 		/* set the state to RESTART */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -1134,13 +1134,13 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	if (sngss7_test_flag(sngss7_info, FLAG_GLARE)) {
+	if (sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE)) {
 		/* the glare flag is already up so it was caught ... do nothing */
 		SS7_DEBUG_CHAN(ftdmchan, "Glare flag is already up...nothing to do!%s\n", " ");
 	} else {
 		SS7_DEBUG_CHAN(ftdmchan, "Glare flag is not up yet...indicating glare from reattempt!%s\n", " ");
 		/* glare, throw the flag */
-		sngss7_set_flag(sngss7_info, FLAG_GLARE);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_GLARE);
 
 		/* clear any existing glare data from the channel */
 		memset(&sngss7_info->glare, 0x0, sizeof(sngss7_glare_data_t));
@@ -1149,7 +1149,7 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		ftdmchan->caller_data.hangup_cause = 34;	/* Circuit Congrestion */
 
 		/* this is a remote hangup request */
-		sngss7_set_flag(sngss7_info, FLAG_REMOTE_REL);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
 
 		/* move the state of the channel to Terminating to end the call */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -1179,7 +1179,7 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 	sngss7_set_flag(&g_ftdm_sngss7_data.cfg.isupIntf[infId], SNGSS7_PAUSED);
 	
 	/* go through all the circuits now and find any other circuits on this infId */
-	i = 1;
+	i = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[i].id != 0) {
 		
 		/* check that the infId matches and that this is not a siglink */
@@ -1200,7 +1200,7 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 			if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_IN_THREAD)) {
 				SS7_DEBUG_CHAN(ftdmchan, "Rx PAUSE%s\n", "");
 				/* set the pause flag on the channel */
-				sngss7_set_flag(sngss7_info, FLAG_INFID_PAUSED);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			}
 	
 			/* unlock the channel again before we exit */
@@ -1234,7 +1234,7 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 	sngss7_clear_flag(&g_ftdm_sngss7_data.cfg.isupIntf[infId], SNGSS7_PAUSED);
 
 	/* go through all the circuits now and find any other circuits on this infId */
-	i = 1;
+	i = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[i].id != 0) {
 
 		/* check that the infId matches and that this is not a siglink */
@@ -1252,14 +1252,14 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 			ftdm_mutex_lock(ftdmchan->mutex);
 
 			/* only resume if we are paused */
-			if (sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) {
 				SS7_DEBUG_CHAN(ftdmchan, "Rx RESUME%s\n", "");
 
 				/* set the resume flag on the channel */
-				sngss7_set_flag(sngss7_info, FLAG_INFID_RESUME);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 
 				/* clear the paused flag */
-				sngss7_clear_flag(sngss7_info, FLAG_INFID_PAUSED);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			}
 			
 			/* unlock the channel again before we exit */
@@ -1421,12 +1421,12 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* check if the circuit is already blocked or not */
-	if (sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {
+	if (sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) {
 		SS7_WARN("Received BLO on circuit that is already blocked!\n");
 	}
 
 	/* throw the ckt block flag */
-	sngss7_set_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
 
 	/* set the channel to suspended state */
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1484,15 +1484,15 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* check if the channel is blocked */
-	if (!(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX))) {
+	if (!(sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX))) {
 		SS7_WARN("Received UBL on circuit that is not blocked!\n");
 	}
 
 	/* throw the unblock flag */
-	sngss7_set_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX);
 
 	/* clear the block flag */
-	sngss7_clear_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
 
 	/* set the channel to suspended state */
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1550,7 +1550,7 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* throw the reset flag */
-	sngss7_set_flag(sngss7_info, FLAG_RESET_RX);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_RX);
 
 	switch (ftdmchan->state) {
 	/**************************************************************************/
@@ -1595,7 +1595,7 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* throw the reset flag */
-	sngss7_set_flag(sngss7_info, FLAG_RESET_RX);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_RX);
 
 	switch (ftdmchan->state) {
 	/**************************************************************************/
@@ -1643,9 +1643,9 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**********************************************************************/
 	case FTDM_CHANNEL_STATE_RESTART:
 		
-		if ( sngss7_test_flag(sngss7_info, FLAG_RESET_TX) ) {
+		if ( sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX) ) {
 			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_RESET_TX_RSP);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP);
 
 			/* go to DOWN */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
@@ -1667,7 +1667,7 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 		
 		/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-		sngss7_set_flag(sngss7_info, FLAG_RESET_TX_RSP);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP);
 
 		/* go to DOWN */
 		/*ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);*/
@@ -1795,12 +1795,12 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* check if the circuit is already blocked or not */
-	if (sngss7_test_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX)) {
+	if (sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX)) {
 		SS7_WARN("Received local BLO on circuit that is already blocked!\n");
 	}
 
 	/* throw the ckt block flag */
-	sngss7_set_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
 
 	/* set the channel to suspended state */
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1831,12 +1831,12 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* check if the circuit is already blocked or not */
-	if (sngss7_test_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX)) {
+	if (sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX)) {
 		SS7_WARN("Received local UBL on circuit that is already unblocked!\n");
 	}
 
 	/* throw the ckt block flag */
-	sngss7_set_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX);
 
 	/* set the channel to suspended state */
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1878,7 +1878,7 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* throw the ckt block flag */
-	sngss7_set_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+	sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
 
 	/* set the channel to suspended state */
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1982,11 +1982,11 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			switch (blockType) {
 			/**********************************************************************/
 			case 0:	/* maintenance oriented */
-				sngss7_set_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
 				break;
 			/**********************************************************************/
 			case 1: /* hardware failure oriented */
-				sngss7_set_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
 				break;
 			/**********************************************************************/
 			case 2: /* reserved for national use */
@@ -2113,11 +2113,11 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			switch (blockType) {
 			/**********************************************************************/
 			case 0:	/* maintenance oriented */
-				sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
 				break;
 			/**********************************************************************/
 			case 1: /* hardware failure oriented */
-				sngss7_clear_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
 				break;
 			/**********************************************************************/
 			case 2: /* reserved for national use */

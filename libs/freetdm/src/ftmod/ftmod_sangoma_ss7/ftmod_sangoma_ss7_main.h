@@ -83,12 +83,6 @@ typedef enum {
 } sng_ckt_type_t;
 
 typedef enum {
-	CONFIGURED		= (1 << 0),
-	ACTIVE			= (1 << 1),
-	SNGSS7_PAUSED	= (1 << 7)
-} sng_flag_t;
-
-typedef enum {
 	SNGSS7_LPA_FOR_COT		= (1 << 0),	/* send LPA when COT arrives */
 	SNGSS7_ACM_OBCI_BITA	= (1 << 10)	/* in-band indication */
 } sng_intf_options_t;
@@ -98,84 +92,124 @@ typedef enum {
 	SNG_CALLING			= 2
 } sng_addr_type_t;
 
-typedef struct sng_mtp_link {
-	char			name[MAX_NAME_LEN];
-	uint32_t		id;
-	uint32_t		flags;
-	struct {
-		uint32_t	span;
-		uint32_t	chan;
-	} mtp1;
-	struct {
-		uint32_t	lssuLength;
-		uint32_t	errorType;
-		uint32_t	linkType;
-		uint32_t	mtp1Id;
-		uint32_t	t1;
-		uint32_t	t2;
-		uint32_t	t3;
-		uint32_t	t4n;
-		uint32_t	t4e;
-		uint32_t	t5;
-		uint32_t	t6;
-		uint32_t	t7;
-	} mtp2;
-	struct {
-		uint32_t	priority;
-		uint32_t	linkType;
-		uint32_t	switchType;
-		uint32_t	apc;
-		uint32_t	spc;
-		uint32_t	ssf;
-		uint32_t	slc;
-		uint32_t	linkSetId;
-		uint32_t	mtp2Id;
-		uint32_t	t1;
-		uint32_t	t2;
-		uint32_t	t3;
-		uint32_t	t4;
-		uint32_t	t5;
-		uint32_t	t6;
-		uint32_t	t7;
-		uint32_t	t8;
-		uint32_t	t9;
-		uint32_t	t10;
-		uint32_t	t11;
-		uint32_t	t12;
-		uint32_t	t13;
-		uint32_t	t14;
-		uint32_t	t15;
-		uint32_t	t16;
-		uint32_t	t17;
-		uint32_t	t18;
-		uint32_t	t19;
-		uint32_t	t20;
-		uint32_t	t21;
-		uint32_t	t22;
-		uint32_t	t23;
-		uint32_t	t24;
-		uint32_t	t25;
-		uint32_t	t27;
-		uint32_t	t28;
-		uint32_t	t29;
-		uint32_t	t30;
-		uint32_t	t31;
-		uint32_t	t32;
-		uint32_t	t33;
-		uint32_t	t34;
-		uint32_t	t35;
-		uint32_t	t36;
-		uint32_t	t37;
-		uint32_t	tcraft;
-		uint32_t	tflc;
-		uint32_t	tbnd;
-	} mtp3;
-} sng_mtp_link_t;
+typedef struct sng_mtp2_error_type {
+	int	init;
+	char sng_type[MAX_NAME_LEN];
+	uint32_t tril_type;
+} sng_mtp2_error_type_t;
+
+typedef struct sng_link_type {
+	int init;
+	char sng_type[MAX_NAME_LEN];
+	uint32_t tril_mtp2_type;
+	uint32_t tril_mtp3_type;
+} sng_link_type_t;
+
+typedef struct sng_switch_type {
+	int init;
+	char sng_type[MAX_NAME_LEN];
+	uint32_t tril_mtp3_type;
+	uint32_t tril_isup_type;
+} sng_switch_type_t;
+
+typedef struct sng_ssf_type {
+	int init;
+	char sng_type[MAX_NAME_LEN];
+	uint32_t tril_type;
+} sng_ssf_type_t;
+
+typedef struct sng_cic_cntrl_type {
+	int init;
+	char sng_type[MAX_NAME_LEN];
+	uint32_t tril_type;
+} sng_cic_cntrl_type_t;
+
+typedef struct sng_mtp1_link {
+	char		name[MAX_NAME_LEN];
+	uint32_t	flags;
+	uint32_t	id;
+	uint32_t	span;
+	uint32_t	chan;
+} sng_mtp1_link_t;
+
+typedef struct sng_mtp2_link {
+	char		name[MAX_NAME_LEN];
+	uint32_t	flags;
+	uint32_t	id;
+	uint32_t	lssuLength;
+	uint32_t	errorType;
+	uint32_t	linkType;
+	uint32_t	mtp1Id;
+	uint32_t	mtp1ProcId;
+	uint32_t	t1;
+	uint32_t	t2;
+	uint32_t	t3;
+	uint32_t	t4n;
+	uint32_t	t4e;
+	uint32_t	t5;
+	uint32_t	t6;
+	uint32_t	t7;
+} sng_mtp2_link_t;
+
+typedef struct sng_mtp3_link {
+	char		name[MAX_NAME_LEN];
+	uint32_t	flags;
+	uint32_t	id;
+	uint32_t	priority;
+	uint32_t	linkType;
+	uint32_t	switchType;
+	uint32_t	apc;
+	uint32_t	spc;
+	uint32_t	ssf;
+	uint32_t	slc;
+	uint32_t	linkSetId;
+	uint32_t	mtp2Id;
+	uint32_t	mtp2ProcId;
+	uint32_t	t1;
+	uint32_t	t2;
+	uint32_t	t3;
+	uint32_t	t4;
+	uint32_t	t5;
+	uint32_t	t6;
+	uint32_t	t7;
+	uint32_t	t8;
+	uint32_t	t9;
+	uint32_t	t10;
+	uint32_t	t11;
+	uint32_t	t12;
+	uint32_t	t13;
+	uint32_t	t14;
+	uint32_t	t15;
+	uint32_t	t16;
+	uint32_t	t17;
+	uint32_t	t18;
+	uint32_t	t19;
+	uint32_t	t20;
+	uint32_t	t21;
+	uint32_t	t22;
+	uint32_t	t23;
+	uint32_t	t24;
+	uint32_t	t25;
+	uint32_t	t27;
+	uint32_t	t28;
+	uint32_t	t29;
+	uint32_t	t30;
+	uint32_t	t31;
+	uint32_t	t32;
+	uint32_t	t33;
+	uint32_t	t34;
+	uint32_t	t35;
+	uint32_t	t36;
+	uint32_t	t37;
+	uint32_t	tcraft;
+	uint32_t	tflc;
+	uint32_t	tbnd;
+} sng_mtp3_link_t;
 
 typedef struct sng_link_set {
-	uint32_t		id;
 	char			name[MAX_NAME_LEN];
 	uint32_t		flags;
+	uint32_t		id;
 	uint32_t		apc;
 	uint32_t		linkType;
 	uint32_t		switchType;
@@ -186,9 +220,9 @@ typedef struct sng_link_set {
 } sng_link_set_t;
 
 typedef struct sng_route {
-	uint32_t		id;
 	char			name[MAX_NAME_LEN];
 	uint32_t		flags;
+	uint32_t		id;
 	uint32_t		dpc;
 	uint32_t		cmbLinkSetId;
 	uint32_t		linkSetId;
@@ -211,10 +245,10 @@ typedef struct sng_route {
 } sng_route_t;
 
 typedef struct sng_isup_intf {
-	uint32_t		id;
 	char			name[MAX_NAME_LEN];
 	uint32_t		options;
 	uint32_t		flags;
+	uint32_t		id;
 	uint32_t		spc;
 	uint32_t		dpc;
 	uint32_t		switchType;
@@ -222,9 +256,6 @@ typedef struct sng_isup_intf {
 	uint32_t		mtpRouteId;
 	uint32_t		ssf;
 	uint32_t		isap;
-	uint32_t		clg_nadi;
-	uint32_t		cld_nadi;
-	uint32_t		min_digits;
 	uint16_t		t4;
 	uint32_t		t10;
 	uint32_t		t11;
@@ -241,7 +272,6 @@ typedef struct sng_isup_intf {
 	uint32_t		t29;
 	uint32_t		t30;
 	uint32_t		t32;
-	uint32_t		t35;
 	uint32_t		t37;
 	uint32_t		t38;
 	uint32_t		t39;
@@ -251,15 +281,23 @@ typedef struct sng_isup_intf {
 } sng_isup_inf_t;
 
 typedef struct sng_isup_ckt {
-	uint32_t		id;
+	uint32_t		options;
 	uint32_t		flags;
+	uint32_t		ckt_flags;
+	uint32_t		procId;
+	uint32_t		id;
+	uint32_t		ccSpanId;
 	uint32_t		span;
 	uint32_t		chan;
 	uint32_t		type;	/* VOICE/SIG/HOLE */
 	uint32_t		cic;
 	uint32_t		infId;
-	uint32_t		ssf;
 	uint32_t		typeCntrl;
+	uint32_t		ssf;
+	uint32_t		switchType;
+	uint32_t		clg_nadi;
+	uint32_t		cld_nadi;
+	uint32_t		min_digits;
 	void			*obj;
 	uint16_t		t3;
 	uint16_t		t12;
@@ -268,12 +306,13 @@ typedef struct sng_isup_ckt {
 	uint16_t		t15;
 	uint16_t		t16;
 	uint16_t		t17;
+	uint32_t		t35;
 	uint16_t		tval;
 } sng_isup_ckt_t;
 
 typedef struct sng_nsap {
-	uint32_t		id;
 	uint32_t		flags;
+	uint32_t		id;
 	uint32_t		suId;
 	uint32_t		spId;
 	uint32_t		nwId;
@@ -311,15 +350,30 @@ typedef struct sng_isap {
 	uint32_t		tfnlrelrsp;
 } sng_isap_t;
 
+typedef struct sng_relay {
+	uint32_t		id;
+	char			name[MAX_NAME_LEN];
+	uint32_t		flags;
+	uint32_t		type;
+	uint32_t		port;
+	char			hostname[RY_REMHOSTNAME_SIZE];
+	uint32_t		procId;
+} sng_relay_t;
+
 typedef struct sng_ss7_cfg {
 	uint32_t			spc;
+	uint32_t			procId;
 	char				license[MAX_PATH];
 	char				signature[MAX_PATH];
-	sng_mtp_link_t		mtpLink[MAX_MTP_LINKS+1];
+	uint32_t			flags;
+	sng_relay_t			relay[MAX_RELAY_CHANNELS+1];
+	sng_mtp1_link_t		mtp1Link[MAX_MTP_LINKS+1];
+	sng_mtp2_link_t		mtp2Link[MAX_MTP_LINKS+1];
+	sng_mtp3_link_t		mtp3Link[MAX_MTP_LINKS+1];
 	sng_link_set_t		mtpLinkSet[MAX_MTP_LINKSETS+1];
 	sng_route_t			mtpRoute[MAX_MTP_ROUTES+1];
 	sng_isup_inf_t		isupIntf[MAX_ISUP_INFS+1];
-	sng_isup_ckt_t		isupCkt[MAX_ISUP_CKTS+1];
+	sng_isup_ckt_t		isupCkt[10000]; 	/* KONRAD - only need 2000 ( and 0-1000 aren't used) since other servers are registerd else where */
 	sng_nsap_t			nsap[MAX_NSAPS+1];
 	sng_isap_t			isap[MAX_ISAPS+1];	
 }sng_ss7_cfg_t;
@@ -365,7 +419,7 @@ typedef struct sngss7_chan_data {
 	uint32_t				spInstId;
 	uint32_t				spId;
 	uint8_t					globalFlg;
-	uint32_t				flags;
+	uint32_t				ckt_flags;
 	sngss7_glare_data_t		glare;
 	sngss7_timer_data_t		t35;
 }sngss7_chan_data_t;
@@ -407,8 +461,6 @@ typedef struct sngss7_event_data
 } sngss7_event_data_t;
 
 
-
-
 typedef enum {
 	FLAG_RESET_RX			= (1 << 0),
 	FLAG_RESET_TX			= (1 << 1),
@@ -439,15 +491,39 @@ typedef enum {
 	FLAG_GRP_MN_BLOCK_RX	= (1 << 26),
 	FLAG_GRP_MN_BLOCK_TX	= (1 << 27),
 	FLAG_GRP_HW_UNBLK_TX	= (1 << 28),
-	FLAG_GRP_MN_UNBLK_TX	= (1 << 29)
-} flag_t;
+	FLAG_GRP_MN_UNBLK_TX	= (1 << 29),
+	FLAG_RELAY_DOWN			= (1 << 30)
+} sng_ckt_flag_t;
+
+/* valid for every cfg array except circuits */
+typedef enum {
+	SNGSS7_CONFIGURED		= (1 << 0),
+	SNGSS7_ACTIVE			= (1 << 1),
+	SNGSS7_RELAY_INIT		= (1 << 3),
+	SNGSS7_PAUSED			= (1 << 7) /* for isup interfaces */
+} sng_cfg_flag_t;
+
+typedef enum {
+	SNGSS7_SM		= (1 << 0),
+	SNGSS7_RY		= (1 << 1),
+	SNGSS7_MTP1		= (1 << 2),
+	SNGSS7_MTP2		= (1 << 3),
+	SNGSS7_MTP3		= (1 << 4),
+	SNGSS7_ISUP		= (1 << 5),
+	SNGSS7_CC		= (1 << 6)
+} sng_task_flag_t;
 /******************************************************************************/
 
 /* GLOBALS ********************************************************************/
-extern ftdm_sngss7_data_t   g_ftdm_sngss7_data;
-extern uint32_t			 sngss7_id;
-extern ftdm_sched_t		 *sngss7_sched;
-extern int				cmbLinkSetId;
+extern ftdm_sngss7_data_t		g_ftdm_sngss7_data;
+extern sng_ssf_type_t			sng_ssf_type_map[];
+extern sng_switch_type_t		sng_switch_type_map[];
+extern sng_link_type_t			sng_link_type_map[];
+extern sng_mtp2_error_type_t	sng_mtp2_error_type_map[];
+extern sng_cic_cntrl_type_t 	sng_cic_cntrl_type_map[];
+extern uint32_t					sngss7_id;
+extern ftdm_sched_t				*sngss7_sched;
+extern int						cmbLinkSetId;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -461,6 +537,12 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta);
 void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta);
 void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta);
 void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta);
+void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta);
+
+/* in ftmod_sangoma_ss7_relay.c */
+ftdm_status_t handle_relay_connect(RyMngmt *sta);
+ftdm_status_t handle_relay_disconnect_on_down(RyMngmt *sta);
+ftdm_status_t handle_relay_disconnect_on_error(RyMngmt *sta);
 
 /* in ftmod_sangoma_ss7_cfg.c */
 int ft_to_sngss7_cfg_all(void);
@@ -484,20 +566,36 @@ int ftmod_ss7_cc_isap_config(int id);
 /* in ftmod_sangoma_ss7_cntrl.c */
 int  ft_to_sngss7_activate_all(void);
 
-int ftmod_ss7_inhibit_mtplink(uint32_t id);
-int ftmod_ss7_uninhibit_mtplink(uint32_t id);
-int ftmod_ss7_activate_mtplink(uint32_t id);
-int ftmod_ss7_deactivate_mtplink(uint32_t id);
-int ftmod_ss7_deactivate2_mtplink(uint32_t id);
+int ftmod_ss7_inhibit_mtp3link(uint32_t id);
+int ftmod_ss7_uninhibit_mtp3link(uint32_t id);
+int ftmod_ss7_bind_mtp3link(uint32_t id);
+int ftmod_ss7_unbind_mtp3link(uint32_t id);
+int ftmod_ss7_activate_mtp3link(uint32_t id);
+int ftmod_ss7_deactivate_mtp3link(uint32_t id);
+int ftmod_ss7_deactivate2_mtp3link(uint32_t id);
 int ftmod_ss7_activate_mtplinkSet(uint32_t id);
 int ftmod_ss7_deactivate_mtplinkSet(uint32_t id);
 int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
-int ftmod_ss7_lpo_mtplink(uint32_t id);
-int ftmod_ss7_lpr_mtplink(uint32_t id);
+int ftmod_ss7_lpo_mtp3link(uint32_t id);
+int ftmod_ss7_lpr_mtp3link(uint32_t id);
+
+int ftmod_ss7_shutdown_isup(void);
+int ftmod_ss7_shutdown_mtp3(void);
+int ftmod_ss7_shutdown_mtp2(void);
+int ftmod_ss7_shutdown_relay(void);
+
+int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId);
+int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
+
+int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
 
 /* in ftmod_sangoma_ss7_sta.c */
-int ftmod_ss7_mtplink_sta(uint32_t id, SnMngmt *cfm);
+int ftmod_ss7_mtp1link_sta(uint32_t id, L1Mngmt *cfm);
+int ftmod_ss7_mtp2link_sta(uint32_t id, SdMngmt *cfm);
+int ftmod_ss7_mtp3link_sta(uint32_t id, SnMngmt *cfm);
 int ftmod_ss7_mtplinkSet_sta(uint32_t id, SnMngmt *cfm);
+int ftmod_ss7_isup_intf_sta(uint32_t id, uint8_t *status);
+int ftmod_ss7_relay_status(uint32_t id, RyMngmt *cfm);
 
 
 /* in ftmod_sangoma_ss7_out.c */
@@ -606,6 +704,14 @@ ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 
 ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
 ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
+
+int find_mtp2_error_type_in_map(const char *err_type);
+int find_link_type_in_map(const char *linkType);
+int find_switch_type_in_map(const char *switchType);
+int find_ssf_type_in_map(const char *ssfType);
+int find_cic_cntrl_in_map(const char *cntrlType);
+
+ftdm_status_t check_status_of_all_isup_intf(void);
 
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
@@ -738,6 +844,10 @@ void handle_isup_t35(void *userdata);
 #define sngss7_test_flag(obj, flag)  ((obj)->flags & flag)
 #define sngss7_clear_flag(obj, flag) ((obj)->flags &= ~(flag))
 #define sngss7_set_flag(obj, flag)   ((obj)->flags |= (flag))
+
+#define sngss7_test_ckt_flag(obj, flag)  ((obj)->ckt_flags & flag)
+#define sngss7_clear_ckt_flag(obj, flag) ((obj)->ckt_flags &= ~(flag))
+#define sngss7_set_ckt_flag(obj, flag)   ((obj)->ckt_flags |= (flag))
 
 #define sngss7_test_options(obj, option) ((obj)->options & option)
 #define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))

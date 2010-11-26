@@ -46,6 +46,8 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 
 static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream);
 
+static ftdm_status_t handle_show_procId(ftdm_stream_handle_t *stream);
+
 static ftdm_status_t handle_set_function_trace(ftdm_stream_handle_t *stream, int on, int level);
 static ftdm_status_t handle_set_message_trace(ftdm_stream_handle_t *stream, int on, int level);
 static ftdm_status_t handle_set_inhibit(ftdm_stream_handle_t *stream, char *name);
@@ -67,6 +69,8 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
 static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
 
+static ftdm_status_t handle_bind_link(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_unbind_link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_activate_link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_deactivate_link(ftdm_stream_handle_t *stream, char *name);
 
@@ -76,8 +80,11 @@ static ftdm_status_t handle_deactivate_linkset(ftdm_stream_handle_t *stream, cha
 static ftdm_status_t handle_tx_lpo(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name);
 
-static ftdm_status_t handle_status_link(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_status_mtp3link(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_status_mtp2link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_status_linkset(ftdm_stream_handle_t *stream, char *name);
+
+static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *name);
 
 static ftdm_status_t extract_span_chan(char *argv[10], int pos, int *span, int *chan);
 static ftdm_status_t check_arg_count(int args, int min);
@@ -111,17 +118,28 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 
 		if (!strcasecmp(argv[c], "status")) {
 		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
 			c++;
 
-			if (!strcasecmp(argv[c], "link")) {
+			if (!strcasecmp(argv[c], "mtp3")) {
 			/******************************************************************/
 				c++;
-				handle_status_link(stream, argv[c]);
+				handle_status_mtp3link(stream, argv[c]);
+			/******************************************************************/
+			} else if (!strcasecmp(argv[c], "mtp2")) {
+			/******************************************************************/
+				c++;
+				handle_status_mtp2link(stream, argv[c]);
 			/******************************************************************/
 			} else if (!strcasecmp(argv[c], "linkset")) {
 			/******************************************************************/
 				c++;
 				handle_status_linkset(stream, argv[c]);
+			/******************************************************************/
+			} else if (!strcasecmp(argv[c], "relay")) {
+			/******************************************************************/
+				c++;
+				handle_status_relay(stream, argv[c]);
 			/******************************************************************/
 			} else if (!strcasecmp(argv[c], "span")) {
 			/******************************************************************/
@@ -255,6 +273,10 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 			stream->write_function(stream,"MTP1 rx stats:|rx_frm=%d|rx_err=%d|rx_fisu=%d|rx_lssu=%d|rx_msu=%d|\n",
 											sts.rx_frm, sts.rx_err, sts.rx_fisu, sts.rx_lssu, sts.rx_msu);
 */
+		/**********************************************************************/
+		} else if (!strcasecmp(argv[c], "procid")) {
+		/**********************************************************************/
+			handle_show_procId(stream);
 		/**********************************************************************/
 		} else {
 		/**********************************************************************/
@@ -534,6 +556,44 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		}
 	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "bind")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_bind_link(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"bind\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
+	/**************************************************************************/
+	} else if (!strcasecmp(argv[c], "unbind")) {
+	/**************************************************************************/
+		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		c++;
+
+		if (!strcasecmp(argv[c], "link")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			
+			handle_unbind_link(stream, argv[c]);
+		/**********************************************************************/
+		} else {
+		/**********************************************************************/
+			stream->write_function(stream, "Unknown \"bind\" command\n");
+			goto handle_cli_error;
+		/**********************************************************************/
+		}
+	/**************************************************************************/
 	} else if (!strcasecmp(argv[c], "activate")) {
 	/**************************************************************************/
 		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
@@ -650,6 +710,16 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 }
 
 /******************************************************************************/
+static ftdm_status_t handle_show_procId(ftdm_stream_handle_t *stream)
+{
+	int	procId = sng_get_procId();
+
+	stream->write_function(stream, "Local ProcId = %d\n", procId);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 static ftdm_status_t handle_set_function_trace(ftdm_stream_handle_t *stream, int on, int level)
 {
 	stream->write_function(stream, "ftmod_sangoma_ss7 Function Trace was %s, level = %d\n",
@@ -693,7 +763,7 @@ static ftdm_status_t handle_show_free(ftdm_stream_handle_t *stream, int span, in
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	free = 0;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
@@ -756,7 +826,7 @@ static ftdm_status_t handle_show_inuse(ftdm_stream_handle_t *stream, int span, i
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	in_use = 0;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
@@ -826,7 +896,7 @@ static ftdm_status_t handle_show_inreset(ftdm_stream_handle_t *stream, int span,
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	in_reset = 0;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
@@ -848,10 +918,10 @@ static ftdm_status_t handle_show_inreset(ftdm_stream_handle_t *stream, int span,
 			}
 
 			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
-				if ((sngss7_test_flag(ss7_info, FLAG_RESET_RX)) ||
-					(sngss7_test_flag(ss7_info, FLAG_RESET_TX)) ||
-					(sngss7_test_flag(ss7_info, FLAG_GRP_RESET_RX)) ||
-					(sngss7_test_flag(ss7_info, FLAG_GRP_RESET_TX))) {
+				if ((sngss7_test_ckt_flag(ss7_info, FLAG_RESET_RX)) ||
+					(sngss7_test_ckt_flag(ss7_info, FLAG_RESET_TX)) ||
+					(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_RESET_RX)) ||
+					(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_RESET_TX))) {
 					
 					if (verbose) {
 						stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|in_reset=Y\n",
@@ -862,7 +932,7 @@ static ftdm_status_t handle_show_inreset(ftdm_stream_handle_t *stream, int span,
 		
 					/*increment the count of circuits in reset */
 					in_reset++;
-				} /* if ((sngss7_test_flag(ss7_info, FLAG_RESET_RX) ... */
+				} /* if ((sngss7_test_ckt_flag(ss7_info, FLAG_RESET_RX) ... */
 			} /* if ( span and chan) */
 		} /* if ( cic != 0) */
 
@@ -885,7 +955,7 @@ static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, i
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
@@ -913,7 +983,7 @@ static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, i
 	
 				for (bit = 0; bit < 33; bit++) {
 					stream->write_function(stream, "|");
-					if (ss7_info->flags & ( 0x1 << bit)) {
+					if (ss7_info->ckt_flags & ( 0x1 << bit)) {
 						stream->write_function(stream, "%2d=1", bit);
 					} else {
 						stream->write_function(stream, "%2d=0", bit);
@@ -941,7 +1011,7 @@ static ftdm_status_t handle_show_blocks(ftdm_stream_handle_t *stream, int span, 
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
@@ -967,37 +1037,37 @@ static ftdm_status_t handle_show_blocks(ftdm_stream_handle_t *stream, int span, 
 							ftdmchan->physical_chan_id,
 							ss7_info->circuit->cic);
 
-				if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+				if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
 					stream->write_function(stream, "l_mn=Y|");
 				}else {
 					stream->write_function(stream, "l_mn=N|");
 				}
 
-				if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+				if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 					stream->write_function(stream, "r_mn=Y|");
 				}else {
 					stream->write_function(stream, "r_mn=N|");
 				}
 
-				if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+				if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
 					stream->write_function(stream, "l_hw=Y|");
 				}else {
 					stream->write_function(stream, "l_hw=N|");
 				}
 
-				if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
+				if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
 					stream->write_function(stream, "r_hw=Y|");
 				}else {
 					stream->write_function(stream, "r_hw=N|");
 				}
 
-				if(sngss7_test_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
+				if(sngss7_test_ckt_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
 					stream->write_function(stream, "l_mngmt=Y|");
 				}else {
 					stream->write_function(stream, "l_mngmt=N|");
 				}
 
-				if(sngss7_test_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
+				if(sngss7_test_ckt_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
 					stream->write_function(stream, "l_ucic=Y|");
 				}else {
 					stream->write_function(stream, "l_ucic=N|");
@@ -1026,7 +1096,7 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 	ftdm_signaling_status_t		sigstatus = FTDM_SIG_STATE_DOWN;
 	sng_isup_ckt_t				*ckt;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 			/* extract the circuit to make it easier to work with */
 			ckt = &g_ftdm_sngss7_data.cfg.isupCkt[x];
@@ -1071,43 +1141,37 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 													ftdm_signaling_status2str(sigstatus),
 													ftdm_channel_state2str(ftdmchan->state));
 	
-					if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+					if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
 						stream->write_function(stream, "l_mn=Y|");
 					}else {
 						stream->write_function(stream, "l_mn=N|");
 					}
 	
-					if((sngss7_test_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+					if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 						stream->write_function(stream, "r_mn=Y|");
 					}else {
 						stream->write_function(stream, "r_mn=N|");
 					}
 	
-					if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+					if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
 						stream->write_function(stream, "l_hw=Y|");
 					}else {
 						stream->write_function(stream, "l_hw=N|");
 					}
 	
-					if(sngss7_test_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
+					if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
 						stream->write_function(stream, "r_hw=Y|");
 					}else {
 						stream->write_function(stream, "r_hw=N|");
 					}
-	
-					if(sngss7_test_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
-						stream->write_function(stream, "l_mngmt=Y|");
+
+					if(sngss7_test_ckt_flag(ss7_info, FLAG_RELAY_DOWN)) {
+						stream->write_function(stream, "relay=Y|");
 					}else {
-						stream->write_function(stream, "l_mngmt=N|");
-					}
+						stream->write_function(stream, "relay=N|");
+					}		
 	
-					if(sngss7_test_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
-						stream->write_function(stream, "l_ucic=Y|");
-					}else {
-						stream->write_function(stream, "l_ucic=N|");
-					}				
-	
-					stream->write_function(stream, "flags=0x%X",ss7_info->flags);
+					stream->write_function(stream, "flags=0x%X",ss7_info->ckt_flags);
 	
 					stream->write_function(stream, "\n");
 				} /* if ( hole, sig, voice) */
@@ -1127,7 +1191,7 @@ static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int c
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
@@ -1162,7 +1226,7 @@ static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int c
 					continue;
 				} else {
 					/* throw the ckt block flag */
-					sngss7_set_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
+					sngss7_set_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
 
 					/* set the channel to suspended state */
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1193,7 +1257,7 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 	int				 lspan;
 	int				 lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
@@ -1228,10 +1292,10 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 					continue;
 				} else {
 					/* throw the ckt block flag */
-					sngss7_set_flag(ss7_info, FLAG_CKT_MN_UNBLK_TX);
+					sngss7_set_ckt_flag(ss7_info, FLAG_CKT_MN_UNBLK_TX);
 
 					/* clear the block flag */
-					sngss7_clear_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
+					sngss7_clear_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
 
 					/* set the channel to suspended state */
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1254,18 +1318,18 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 }
 
 /******************************************************************************/
-static ftdm_status_t handle_status_link(ftdm_stream_handle_t *stream, char *name)
+static ftdm_status_t handle_status_mtp3link(ftdm_stream_handle_t *stream, char *name)
 {
 	int 		x = 0;
 	SnMngmt		sta;
 	
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the status request */
-			if (ftmod_ss7_mtplink_sta(x, &sta)) {
+			if (ftmod_ss7_mtp3link_sta(x, &sta)) {
 				stream->write_function(stream, "Failed to read link=%s status\n", name);
 				return FTDM_FAIL;
 			}
@@ -1273,14 +1337,58 @@ static ftdm_status_t handle_status_link(ftdm_stream_handle_t *stream, char *name
 			/* print the results */
 			stream->write_function(stream, "%s|span=%d|chan=%d|sap=%d|state=%s|l_blk=%s|r_blk=%s|l_inhbt=%s|r_inhbt=%s\n",
 						name,
-						g_ftdm_sngss7_data.cfg.mtpLink[x].mtp1.span,
-						g_ftdm_sngss7_data.cfg.mtpLink[x].mtp1.chan,
-						g_ftdm_sngss7_data.cfg.mtpLink[x].id,
+						g_ftdm_sngss7_data.cfg.mtp1Link[x].span,
+						g_ftdm_sngss7_data.cfg.mtp1Link[x].chan,
+						g_ftdm_sngss7_data.cfg.mtp3Link[x].id,
 						DECODE_LSN_LINK_STATUS(sta.t.ssta.s.snDLSAP.state),
 						(sta.t.ssta.s.snDLSAP.locBlkd) ? "Y":"N",
 						(sta.t.ssta.s.snDLSAP.remBlkd) ? "Y":"N",
 						(sta.t.ssta.s.snDLSAP.locInhbt) ? "Y":"N",
 						(sta.t.ssta.s.snDLSAP.rmtInhbt) ? "Y":"N");
+
+			goto success;
+		}
+		
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_status_mtp2link(ftdm_stream_handle_t *stream, char *name)
+{
+	int 		x = 0;
+	SdMngmt		sta;
+	
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp2Link[x].name, name)) {
+
+			/* send the status request */
+			if (ftmod_ss7_mtp2link_sta(x, &sta)) {
+				stream->write_function(stream, "Failed to read link=%s status\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the results */
+			stream->write_function(stream, "%s|span=%d|chan=%d|sap=%d|state=%s|outsFrm=%d|drpdFrm=%d|lclStatus=%s|rmtStatus=%s|fsn=%d|bsn=%d\n",
+						name,
+						g_ftdm_sngss7_data.cfg.mtp1Link[x].span,
+						g_ftdm_sngss7_data.cfg.mtp1Link[x].chan,
+						g_ftdm_sngss7_data.cfg.mtp2Link[x].id,
+						DECODE_LSD_LINK_STATUS(sta.t.ssta.s.sdDLSAP.hlSt),
+						sta.t.ssta.s.sdDLSAP.psOutsFrm,
+						sta.t.ssta.s.sdDLSAP.cntMaDrop,
+						(sta.t.ssta.s.sdDLSAP.lclBsy) ? "Y":"N",
+						(sta.t.ssta.s.sdDLSAP.remBsy) ? "Y":"N",
+						sta.t.ssta.s.sdDLSAP.fsn,
+						sta.t.ssta.s.sdDLSAP.bsn);
 
 			goto success;
 		}
@@ -1338,17 +1446,17 @@ static ftdm_status_t handle_set_inhibit(ftdm_stream_handle_t *stream, char *name
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the inhibit request */
-			if (ftmod_ss7_inhibit_mtplink(x)) {
+			if (ftmod_ss7_inhibit_mtp3link(x)) {
 				stream->write_function(stream, "Failed to inhibit link=%s\n", name);
 				return FTDM_FAIL;
 			}
 
 			/* print the new status of the link */
-			handle_status_link(stream, &name[0]);
+			handle_status_mtp3link(stream, &name[0]);
 
 			goto success;
 		}
@@ -1370,17 +1478,17 @@ static ftdm_status_t handle_set_uninhibit(ftdm_stream_handle_t *stream, char *na
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
-			if (ftmod_ss7_uninhibit_mtplink(x)) {
+			if (ftmod_ss7_uninhibit_mtp3link(x)) {
 				stream->write_function(stream, "Failed to uninhibit link=%s\n", name);
 				return FTDM_FAIL;
 			}
 
 			/* print the new status of the link */
-			handle_status_link(stream, &name[0]);
+			handle_status_mtp3link(stream, &name[0]);
 
 			goto success;
 		}
@@ -1404,7 +1512,7 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 	int				 	lspan;
 	int				 	lchan;
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
@@ -1429,7 +1537,7 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* throw the reset flag */
-				sngss7_set_flag(sngss7_info, FLAG_RESET_TX);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 				switch (ftdmchan->state) {
 				/**************************************************************************/
@@ -1476,7 +1584,7 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 		return FTDM_SUCCESS;
 	}
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
@@ -1500,9 +1608,9 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 					continue;
 				} else {
 					/* throw the grp reset flag */
-					sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
 					if (ftdmchan->physical_chan_id == chan) {
-						sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+						sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE);
 						sngss7_span->tx_grs.circuit = sngss7_info->circuit->id;
 						sngss7_span->tx_grs.range = range-1;
 					}
@@ -1523,7 +1631,7 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
 	
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
@@ -1565,7 +1673,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 		return FTDM_SUCCESS;
 	}
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
@@ -1582,7 +1690,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* throw the grp maint. block flag */
-				sngss7_set_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
 
 				/* bring the sig status down */
 				sigev.chan_id = ftdmchan->chan_id;
@@ -1622,7 +1730,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 	/* send the circuit group block */
 	ft_to_sngss7_cgb(main_chan);
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
@@ -1665,7 +1773,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 		return FTDM_SUCCESS;
 	}
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
@@ -1682,7 +1790,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* throw the grp maint. block flag */
-				sngss7_clear_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
 
 				/* bring the sig status up */
 				sigev.chan_id = ftdmchan->chan_id;
@@ -1722,7 +1830,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 	/* send the circuit group block */
 	ft_to_sngss7_cgu(main_chan);
 
-	x=1;
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
@@ -1746,23 +1854,85 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 }
 
 /******************************************************************************/
+static ftdm_status_t handle_bind_link(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
+
+			/* send the uninhibit request */
+			if (ftmod_ss7_bind_mtp3link(g_ftdm_sngss7_data.cfg.mtp3Link[x].mtp2Id)) {
+				stream->write_function(stream, "Failed to bind link=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the link */
+			handle_status_mtp3link(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_unbind_link(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+
+	/* find the link request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
+
+			/* send the uninhibit request */
+			if (ftmod_ss7_unbind_mtp3link(g_ftdm_sngss7_data.cfg.mtp3Link[x].mtp2Id)) {
+				stream->write_function(stream, "Failed to bind link=%s\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the new status of the link */
+			handle_status_mtp3link(stream, &name[0]);
+			goto success;
+		}
+ 
+		/* move to the next link */
+		x++;
+	} /* while (id != 0) */
+
+	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
 static ftdm_status_t handle_activate_link(ftdm_stream_handle_t *stream, char *name)
 {
 	int		x = 0;
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
-			if (ftmod_ss7_activate_mtplink(x)) {
+			if (ftmod_ss7_activate_mtp3link(x)) {
 				stream->write_function(stream, "Failed to activate link=%s\n", name);
 				return FTDM_FAIL;
 			}
 
 			/* print the new status of the link */
-			handle_status_link(stream, &name[0]);
+			handle_status_mtp3link(stream, &name[0]);
 			goto success;
 		}
  
@@ -1783,17 +1953,17 @@ static ftdm_status_t handle_deactivate_link(ftdm_stream_handle_t *stream, char *
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the deactivate request */
-			if (ftmod_ss7_deactivate2_mtplink(x)) {
+			if (ftmod_ss7_deactivate2_mtp3link(x)) {
 				stream->write_function(stream, "Failed to deactivate link=%s\n", name);
 				return FTDM_FAIL;
 			}
 
 			/* print the new status of the link */
-			handle_status_link(stream, &name[0]);
+			handle_status_mtp3link(stream, &name[0]);
 			goto success;
 		}
  
@@ -1877,17 +2047,17 @@ static ftdm_status_t handle_tx_lpo(ftdm_stream_handle_t *stream, char *name)
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
-			if (ftmod_ss7_lpo_mtplink(x)) {
+			if (ftmod_ss7_lpo_mtp3link(x)) {
 				stream->write_function(stream, "Failed set LPO link=%s\n", name);
 				return FTDM_FAIL;
 			}
 
 			/* print the new status of the link */
-			handle_status_link(stream, &name[0]);
+			handle_status_mtp3link(stream, &name[0]);
 			goto success;
 		}
  
@@ -1908,17 +2078,17 @@ static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name)
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLink[x].name, name)) {
+	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
-			if (ftmod_ss7_lpr_mtplink(x)) {
+			if (ftmod_ss7_lpr_mtp3link(x)) {
 				stream->write_function(stream, "Failed set LPR link=%s\n", name);
 				return FTDM_FAIL;
 			}
 
 			/* print the new status of the link */
-			handle_status_link(stream, &name[0]);
+			handle_status_mtp3link(stream, &name[0]);
 			goto success;
 		}
  
@@ -1927,6 +2097,47 @@ static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name)
 	} /* while (id != 0) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
+
+success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *name)
+{
+	RyMngmt	sta;
+	int		x = 0;
+
+	memset(&sta, 0x0, sizeof(sta));
+
+
+	/* find the channel request by it's name */
+	x = 1;
+	while(g_ftdm_sngss7_data.cfg.relay[x].id != 0) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.relay[x].name, name)) {
+
+			if (ftmod_ss7_relay_status(g_ftdm_sngss7_data.cfg.relay[x].id, &sta)) {
+				stream->write_function(stream, "Failed to read relay =%s status\n", name);
+				return FTDM_FAIL;
+			}
+
+			/* print the results */
+			stream->write_function(stream, "%s|sap=%d|type=%d|port=%d|hostname=%s|procId=%d|status=%s\n",
+						name,
+						g_ftdm_sngss7_data.cfg.relay[x].id,	
+						g_ftdm_sngss7_data.cfg.relay[x].type,
+						g_ftdm_sngss7_data.cfg.relay[x].port,
+						g_ftdm_sngss7_data.cfg.relay[x].hostname,
+						g_ftdm_sngss7_data.cfg.relay[x].procId,
+						DECODE_LRY_CHAN_STATUS(sta.t.ssta.rySta.cStatus));
+
+			goto success;
+		}
+		
+		/* move to the next link */
+		x++;
+
+	} /* g_ftdm_sngss7_data.cfg.relay[x].id */
 
 success:
 	return FTDM_SUCCESS;
