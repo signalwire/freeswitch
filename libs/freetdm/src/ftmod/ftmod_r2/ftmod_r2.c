@@ -1642,6 +1642,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 
 		if (!strcasecmp(argv[0], "loopstats")) {
 			int range;
+			float pct;
 			span_id = atoi(argv[1]);
 
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS || ftdm_span_find(span_id, &span) == FTDM_SUCCESS) {
@@ -1655,10 +1656,11 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 				}
 				range = 0;
 				for (i = 0; i < ftdm_array_len(r2data->loops); i++) {
+					pct = 100*r2data->loops[i]/r2data->total_loops;
 					if ((i + 1) == ftdm_array_len(r2data->loops)) {
-						stream->write_function(stream, ">= %dms: %llu\n", range, r2data->loops[i]);
+						stream->write_function(stream, ">= %dms: %llu - %.03lf%%\n", range, r2data->loops[i], pct);
 					} else {
-						stream->write_function(stream, "%d-%dms: %llu\n", range, range + 9, r2data->loops[i]);
+						stream->write_function(stream, "%d-%dms: %llu - %.03lf%%\n", range, range + 9, r2data->loops[i], pct);
 					}
 					range += 10;
 				}
