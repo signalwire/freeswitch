@@ -152,6 +152,7 @@ static ftdm_hash_t *g_mod_data_hash;
 static ftdm_io_interface_t g_ftdm_r2_interface;
 
 static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan);
+static int ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan);
 
 
 /* functions not available on windows */
@@ -529,7 +530,7 @@ static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 	/* in some circumstances openr2 can call on_call_init right after this, so let's advance the state right here */
-	ftdm_r2_state_advance(ftdmchan);
+	ftdm_r2_state_advance_all(ftdmchan);
 }
 
 static void ftdm_r2_on_call_read(openr2_chan_t *r2chan, const unsigned char *buf, int buflen)
@@ -1347,6 +1348,20 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 	return ret;
 }
 
+/* the channel must be locked when calling this function */
+static void ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan)
+{
+	/* because we do not always acknowledge the state change (clearing the FTDM_CHANNEL_STATE_CHANGE flag) due to the accept
+	 * procedure described below, we need the chanstate member to NOT process some states twice, so is valid entering this 
+	 * function with the FTDM_CHANNEL_STATE_CHANGE flag set but with a state that was already processed and is just waiting
+	 * to complete (the processing is media-bound)
+	 * */
+	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)
+		&& (R2CALL(ftdmchan)->chanstate != ftdmchan->state)) {
+		ftdm_r2_state_advance(ftdmchan);
+	}
+}
+
 static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 {
 	openr2_chan_t *r2chan;
@@ -1431,9 +1446,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			r2call = R2CALL(ftdmchan);
 
 			ftdm_mutex_lock(ftdmchan->mutex);
-			ftdm_r2_state_advance(ftdmchan);
+			ftdm_r2_state_advance_all(ftdmchan);
 			openr2_chan_process_signaling(r2chan);
-			ftdm_r2_state_advance(ftdmchan);
+			ftdm_r2_state_advance_all(ftdmchan);
 			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
 		ftdm_span_trigger_signals(span);
