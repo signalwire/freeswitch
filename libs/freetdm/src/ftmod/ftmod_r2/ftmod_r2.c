@@ -892,27 +892,50 @@ static openr2_io_interface_t ftdm_r2_io_iface = {
 	/* .get_oob_event */ ftdm_r2_io_get_oob_event /* never called */
 };
 
-static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
-	//ftdm_status_t (ftdm_span_t *span, fio_signal_cb_t sig_cb, va_list ap)
+/* resolve a loglevel string, such as "debug,notice,warning",  to an openr2 log level integer */
+static openr2_log_level_t ftdm_r2_loglevel_from_string(const char *level)
+{
+	openr2_log_level_t tmplevel;
+	openr2_log_level_t newlevel = 0;
+	char *clevel = NULL;
+	char *logval = NULL;
+
+	logval = ftdm_malloc(strlen(level)+1); /* alloca man page scared me, so better to use good ol' malloc  */
+	if (!logval) {
+		ftdm_log(FTDM_LOG_WARNING, "Ignoring R2 logging parameter: '%s', failed to alloc memory\n", level);
+		return newlevel;
+	}
+	strcpy(logval, level);
+	while (logval) {
+		clevel = strsep(&logval, ",");
+		if (-1 == (tmplevel = openr2_log_get_level(clevel))) {
+			ftdm_log(FTDM_LOG_WARNING, "Ignoring invalid R2 logging level: '%s'\n", clevel);
+			continue;
+		}
+		newlevel |= tmplevel;
+	}
+	ftdm_safe_free(logval);
+	return newlevel;
+}
+
+static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 {
 	unsigned int i = 0;
 	int conf_failure = 0;
-	char *var = NULL;
-	char *val = NULL;
+	const char *var = NULL, *val = NULL;
+	const char *log_level = "notice,warning,error"; /* default loglevel, if none is read from conf */
 	ftdm_r2_data_t *r2data = NULL;
 	ftdm_r2_span_pvt_t *spanpvt = NULL;
 	ftdm_r2_call_t *r2call = NULL;
 	openr2_chan_t *r2chan = NULL;
-	openr2_log_level_t tmplevel;
-	char *clevel = NULL;
-	char *logval = NULL;
+	unsigned paramindex = 0;
 
 	ft_r2_conf_t r2conf = 
 	{
 		/* .variant */ OR2_VAR_ITU,
 		/* .category */ OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
 		/* .loglevel */ OR2_LOG_ERROR | OR2_LOG_WARNING,
-		/* .logdir */ NULL,
+		/* .logdir */ (char *)"/usr/local/freeswitch/log/", /* FIXME: get PREFIX variable */
 		/* .advanced_protocol_file */ NULL,
 		/* .max_ani */ 10,
 		/* .max_dnis */ 4,
@@ -923,7 +946,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		/* .get_ani_first */ -1,
 		/* .call_files */ 0,
 		/* .mf_files */ 0,
-		/* .double_answer */ 0,
+		/* .double_answer */ -1,
 		/* .charge_calls */ -1,
 		/* .forced_release */ -1,
 		/* .allow_collect_calls */ -1
@@ -936,10 +959,12 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		return FTDM_FAIL;
 	}
 
-	while ((var = va_arg(ap, char *))) {
+	for (; ftdm_parameters[paramindex].var; paramindex++) {
+		var = ftdm_parameters[paramindex].var;
+		val = ftdm_parameters[paramindex].val;
 		ftdm_log(FTDM_LOG_DEBUG, "Reading R2 parameter %s for span %d\n", var, span->span_id);
 		if (!strcasecmp(var, "variant")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
@@ -954,7 +979,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d for variant %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "category")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
@@ -969,87 +994,72 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with default category %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "logdir")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 logdir parameter\n");
 				continue;
 			}
-			r2conf.logdir = val;
+			r2conf.logdir = (char *)val;
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with logdir %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "logging")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 logging parameter\n");
 				continue;
 			}
-			logval = ftdm_malloc(strlen(val)+1); /* alloca man page scared me, so better to use good ol' malloc  */
-			if (!logval) {
-				ftdm_log(FTDM_LOG_WARNING, "Ignoring R2 logging parameter: '%s', failed to alloc memory\n", val);
-				continue;
-			}
-			strcpy(logval, val);
-			while (logval) {
-				clevel = strsep(&logval, ",");
-				if (-1 == (tmplevel = openr2_log_get_level(clevel))) {
-					ftdm_log(FTDM_LOG_WARNING, "Ignoring invalid R2 logging level: '%s'\n", clevel);
-					continue;
-				}
-				r2conf.loglevel |= tmplevel;
-				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with loglevel %s\n", span->span_id, clevel);
-			}
-			ftdm_safe_free(logval);
+			log_level = val;
 		} else if (!strcasecmp(var, "advanced_protocol_file")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 advanced_protocol_file parameter\n");
 				continue;
 			}
-			r2conf.advanced_protocol_file = val;
+			r2conf.advanced_protocol_file = (char *)val;
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with advanced protocol file %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "allow_collect_calls")) {
-			r2conf.allow_collect_calls = va_arg(ap, int);
+			r2conf.allow_collect_calls = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with allow collect calls max ani = %d\n", span->span_id, r2conf.allow_collect_calls);
 		} else if (!strcasecmp(var, "double_answer")) {
-			r2conf.double_answer = va_arg(ap, int);
+			r2conf.double_answer = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with double answer = %d\n", span->span_id, r2conf.double_answer);
 		} else if (!strcasecmp(var, "immediate_accept")) {
-			r2conf.immediate_accept = va_arg(ap, int);
+			r2conf.immediate_accept = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with immediate accept = %d\n", span->span_id, r2conf.immediate_accept);
 		} else if (!strcasecmp(var, "skip_category")) {
-			r2conf.skip_category = va_arg(ap, int);
+			r2conf.skip_category = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with skip category = %d\n", span->span_id, r2conf.skip_category);
 		} else if (!strcasecmp(var, "forced_release")) {
-			r2conf.forced_release = va_arg(ap, int);
+			r2conf.forced_release = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with forced release = %d\n", span->span_id, r2conf.forced_release);
 		} else if (!strcasecmp(var, "charge_calls")) {
-			r2conf.charge_calls = va_arg(ap, int);
+			r2conf.charge_calls = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with charge calls = %d\n", span->span_id, r2conf.charge_calls);
 		} else if (!strcasecmp(var, "get_ani_first")) {
-			r2conf.get_ani_first = va_arg(ap, int);
+			r2conf.get_ani_first = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with get ani first = %d\n", span->span_id, r2conf.get_ani_first);
 		} else if (!strcasecmp(var, "call_files")) {
-			r2conf.call_files = va_arg(ap, int);
+			r2conf.call_files = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with call files = %d\n", span->span_id, r2conf.call_files);
 		} else if (!strcasecmp(var, "mf_files")) {
-			r2conf.mf_files = va_arg(ap, int);
+			r2conf.mf_files = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with mf files = %d\n", span->span_id, r2conf.mf_files);
 		} else if (!strcasecmp(var, "mfback_timeout")) {
-			r2conf.mfback_timeout = va_arg(ap, int);
+			r2conf.mfback_timeout = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with MF backward timeout = %dms\n", span->span_id, r2conf.mfback_timeout);
 		} else if (!strcasecmp(var, "metering_pulse_timeout")) {
-			r2conf.metering_pulse_timeout = va_arg(ap, int);
+			r2conf.metering_pulse_timeout = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with metering pulse timeout = %dms\n", span->span_id, r2conf.metering_pulse_timeout);
 		} else if (!strcasecmp(var, "max_ani")) {
-			r2conf.max_ani = va_arg(ap, int);
+			r2conf.max_ani = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with max ani = %d\n", span->span_id, r2conf.max_ani);
 		} else if (!strcasecmp(var, "max_dnis")) {
-			r2conf.max_dnis = va_arg(ap, int);
+			r2conf.max_dnis = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with max dnis = %d\n", span->span_id, r2conf.max_dnis);
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown R2 parameter [%s]", var);
@@ -1061,6 +1071,10 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		snprintf(span->last_error, sizeof(span->last_error), "R2 configuration error");
 		return FTDM_FAIL;
 	}
+
+	/* set span log level */
+	r2conf.loglevel = ftdm_r2_loglevel_from_string(log_level);
+	ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with loglevel %s\n", span->span_id, log_level);
 
 	r2data = ftdm_malloc(sizeof(*r2data));
 	if (!r2data) {
@@ -1387,6 +1401,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		r2chan = R2CALL(span->channels[i])->r2chan;
 		openr2_chan_set_idle(r2chan);
 		openr2_chan_process_cas_signaling(r2chan);
+
+		ftdmchan = openr2_chan_get_client_data(r2chan);
+		ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	}
 
 	memset(&start, 0, sizeof(start));
@@ -1762,12 +1779,13 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
 }
 
 EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
-	"r2",
-	ftdm_r2_io_init,
-	NULL,
-	ftdm_r2_init,
-	ftdm_r2_configure_span,
-	ftdm_r2_destroy
+	/* .name */ "r2",
+	/* .io_load */ ftdm_r2_io_init,
+	/* .io_unload */ NULL,
+	/* .sig_load */ ftdm_r2_init,
+	/* .sig_configure */ NULL,
+	/* .sig_unload */ ftdm_r2_destroy,
+	/* .configure_span_signaling */ ftdm_r2_configure_span_signaling
 };
 	
 

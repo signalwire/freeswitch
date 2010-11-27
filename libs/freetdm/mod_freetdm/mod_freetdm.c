@@ -3212,29 +3212,6 @@ static switch_status_t load_config(void)
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			ftdm_status_t zstatus = FTDM_FAIL;
 
-			/* strings */
-			const char *variant = "itu";
-			const char *category = "national_subscriber";
-			const char *logdir = "/usr/local/freeswitch/log/"; /* FIXME: get PREFIX variable */
-			const char *logging = "notice,warning,error";
-			const char *advanced_protocol_file = "";
-
-			/* booleans */
-			int call_files = 0;
-			int get_ani_first = -1;
-			int immediate_accept = -1;
-			int double_answer = -1;
-			int skip_category = -1;
-			int forced_release = -1;
-			int charge_calls = -1;
-
-			/* integers */
-			int mfback_timeout = -1;
-			int metering_pulse_timeout = -1;
-			int allow_collect_calls = -1;
-			int max_ani = 10;
-			int max_dnis = 4;
-
 			/* common non r2 stuff */
 			const char *context = "default";
 			const char *dialplan = "XML";
@@ -3243,53 +3220,16 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 			ftdm_span_t *span = NULL;
 
+			ftdm_conf_parameter_t spanparameters[30];
+			unsigned paramindex = 0;
 
+			memset(spanparameters, 0, sizeof(spanparameters));
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				/* string parameters */
-				if (!strcasecmp(var, "variant")) {
-					variant = val;
-				} else if (!strcasecmp(var, "category")) {
-					category = val;
-				} else if (!strcasecmp(var, "logdir")) {
-					logdir = val;
-				} else if (!strcasecmp(var, "logging")) {
-					logging = val;
-				} else if (!strcasecmp(var, "advanced_protocol_file")) {
-					advanced_protocol_file = val;
-
-				/* booleans */
-				} else if (!strcasecmp(var, "allow_collect_calls")) {
-					allow_collect_calls = switch_true(val);
-				} else if (!strcasecmp(var, "immediate_accept")) {
-					immediate_accept = switch_true(val);
-				} else if (!strcasecmp(var, "double_answer")) {
-					double_answer = switch_true(val);
-				} else if (!strcasecmp(var, "skip_category")) {
-					skip_category = switch_true(var);
-				} else if (!strcasecmp(var, "forced_release")) {
-					forced_release = switch_true(val);
-				} else if (!strcasecmp(var, "charge_calls")) {
-					charge_calls = switch_true(val);
-				} else if (!strcasecmp(var, "get_ani_first")) {
-					get_ani_first = switch_true(val);
-				} else if (!strcasecmp(var, "call_files")) {
-					call_files = switch_true(val);
-
-				/* integers */
-				} else if (!strcasecmp(var, "mfback_timeout")) {
-					mfback_timeout = atoi(val);
-				} else if (!strcasecmp(var, "metering_pulse_timeout")) {
-					metering_pulse_timeout = atoi(val);
-				} else if (!strcasecmp(var, "max_ani")) {
-					max_ani = atoi(val);
-				} else if (!strcasecmp(var, "max_dnis")) {
-					max_dnis = atoi(val);
-
-				/* common non r2 stuff */
-				} else if (!strcasecmp(var, "context")) {
+				if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
@@ -3297,11 +3237,15 @@ static switch_status_t load_config(void)
 					dial_regex = val;
 				} else if (!strcasecmp(var, "fail-dial-regex")) {
 					fail_dial_regex = val;
+				} else {
+					spanparameters[paramindex].var = var;
+					spanparameters[paramindex].val = val;
+					paramindex++;
 				}
 			}
 
 			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "either 'id' or 'name' required params are missing\n");
 				continue;
 			}
 
@@ -3327,25 +3271,7 @@ static switch_status_t load_config(void)
 				span_id = ftdm_span_get_id(span);
 			}
 
-			if (ftdm_configure_span(span, "r2", on_r2_signal, 
-				"variant", variant, 
-				"max_ani", max_ani,
-				"max_dnis", max_dnis,
-				"category", category,
-				"logdir", logdir,
-				"logging", logging,
-				"advanced_protocol_file", advanced_protocol_file,
-				"allow_collect_calls", allow_collect_calls,
-				"immediate_accept", immediate_accept,
-				"double_answer", double_answer,
-				"skip_category", skip_category,
-				"forced_release", forced_release,
-				"charge_calls", charge_calls,
-				"get_ani_first", get_ani_first,
-				"call_files", call_files,
-				"mfback_timeout", mfback_timeout,
-				"metering_pulse_timeout", metering_pulse_timeout, 
-				FTDM_TAG_END) != FTDM_SUCCESS) {
+			if (ftdm_configure_span_signaling(span, "r2", on_r2_signal, spanparameters) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring R2 FreeTDM span %d, error: %s\n", 
 				span_id, ftdm_span_get_last_error(span));
 				continue;
