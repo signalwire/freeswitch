@@ -1403,6 +1403,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		openr2_chan_process_cas_signaling(r2chan);
 
 		ftdmchan = openr2_chan_get_client_data(r2chan);
+		ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	}
 
 	memset(&start, 0, sizeof(start));
@@ -1460,12 +1461,6 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			r2chan = R2CALL(span->channels[i])->r2chan;
 			ftdmchan = openr2_chan_get_client_data(r2chan);
 			r2call = R2CALL(ftdmchan);
-
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_UP)) {
-				ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
-			} else {
-				ftdm_channel_clear_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
-			}
 
 			ftdm_mutex_lock(ftdmchan->mutex);
 			ftdm_r2_state_advance_all(ftdmchan);
