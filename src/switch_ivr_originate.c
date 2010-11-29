@@ -635,8 +635,15 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				}
 			}
 		}
-
-		switch_ivr_parse_all_events(originate_status[i].peer_session);
+		
+		if (!switch_channel_test_flag(originate_status[i].peer_channel, CF_PARK) && 
+			!switch_channel_test_flag(originate_status[i].peer_channel, CF_CONSUME_ON_ORIGINATE)) {
+			if (switch_channel_test_flag(originate_status[i].peer_channel, CF_THREAD_SLEEPING)) {
+				switch_core_session_wake_session_thread(originate_status[i].peer_session);
+			} else {
+				switch_ivr_parse_all_events(originate_status[i].peer_session);
+			}
+		}
 
 		state = switch_channel_get_state(originate_status[i].peer_channel);
 		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(originate_status[i].peer_channel, CF_TRANSFER) ||
