@@ -349,7 +349,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			
 			if (exec_app) {
 				switch_event_t *execute_event;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_CRIT, "%s Bridge execute app %s(%s)\n", 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Bridge execute app %s(%s)\n", 
 								  switch_channel_get_name(chan_a), exec_app, exec_data);
 
 				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
@@ -1227,8 +1227,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				if ((data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data"))) {
 					switch_channel_set_variable(peer_channel, "bridge_pre_execute_data", data);
 				}
-				
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "APP [%s][%s]\n", app, switch_str_nil(data));
 				
 			}
 			
