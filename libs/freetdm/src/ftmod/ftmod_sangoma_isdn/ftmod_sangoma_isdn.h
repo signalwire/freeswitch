@@ -64,6 +64,33 @@
 
 /* TODO: rename all *_cc_* to *_an_*  */
 
+#define SNGISDN_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
+#define SNGISDN_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
+#define SNGISDN_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)    \
+        _TYPE _FUNC1 (const char *name)                                                         \
+{                                                                                                               \
+                int i;                                                                                          \
+                _TYPE t = _MAX ;                                                                        \
+                                                                                                                        \
+                for (i = 0; i < _MAX ; i++) {                                           \
+                        if (!strcasecmp(name, _STRINGS[i])) {                   \
+                                t = (_TYPE) i;                                                          \
+                                break;                                                                          \
+}                                                                                               \
+}                                                                                                       \
+                                                                                                                        \
+                return t;                                                                                       \
+}                                                                                                               \
+        const char * _FUNC2 (_TYPE type)                                                \
+{                                                                                                               \
+                if (type > _MAX) {                                                                      \
+                        type = _MAX;                                                                    \
+}                                                                                                       \
+                return _STRINGS[(int)type];                                                     \
+}                                                                                                               \
+
+
+
 typedef enum {
 	FLAG_RESET_RX           = (1 << 0),
 	FLAG_RESET_TX           = (1 << 1),
@@ -153,7 +180,7 @@ typedef enum {
 	SNGISDN_PROGIND_DESCR_INVALID,
 } ftdm_sngisdn_progind_descr_t;
 #define SNGISDN_PROGIND_DESCR_STRINGS "not-end-to-end-isdn", "destination-is-non-isdn", "origination-is-non-isdn", "call-returned-to-isdn", "service-change", "inband-info-available", "invalid"
-FTDM_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t);
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t);
 
 typedef enum {
 	/* User */
@@ -174,7 +201,7 @@ typedef enum {
 	SNGISDN_PROGIND_LOC_INVALID,
 } ftdm_sngisdn_progind_loc_t;
 #define SNGISDN_PROGIND_LOC_STRINGS "user", "private-net-local-user", "public-net-local-user", "transit-network", "public-net-remote-user", "private-net-remote-user", "beyond-interworking", "invalid"
-FTDM_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t);
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t);
 
 typedef struct ftdm_sngisdn_prog_ind {
 	ftdm_sngisdn_progind_loc_t loc;		/* location */
