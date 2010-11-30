@@ -150,6 +150,24 @@ FTDM_STR2ENUM(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t, CHA
 FTDM_ENUM_NAMES(SIGNALING_STATUS_NAMES, SIGSTATUS_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t, SIGNALING_STATUS_NAMES, FTDM_SIG_STATE_INVALID)
 
+FTDM_ENUM_NAMES(TON_NAMES, TON_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_ton, ftdm_ton2str, ftdm_ton_t, TON_NAMES, FTDM_TON_INVALID)
+
+FTDM_ENUM_NAMES(NPI_NAMES, NPI_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_npi, ftdm_npi2str, ftdm_npi_t, NPI_NAMES, FTDM_NPI_INVALID)
+
+FTDM_ENUM_NAMES(PRESENTATION_NAMES, PRESENTATION_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_presentation, ftdm_presentation2str, ftdm_presentation_t, PRESENTATION_NAMES, FTDM_PRES_INVALID)
+
+FTDM_ENUM_NAMES(SCREENING_NAMES, SCREENING_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_screening, ftdm_screening2str, ftdm_screening_t, SCREENING_NAMES, FTDM_SCREENING_INVALID)
+
+FTDM_ENUM_NAMES(BEARER_CAP_NAMES, BEARER_CAP_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_bearer_cap, ftdm_bearer_cap2str, ftdm_bearer_cap_t, BEARER_CAP_NAMES, FTDM_BEARER_CAP_INVALID)
+
+FTDM_ENUM_NAMES(USER_LAYER1_PROT_NAMES, USER_LAYER1_PROT_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t, USER_LAYER1_PROT_NAMES, FTDM_USER_LAYER1_PROT_INVALID)
+
 static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
 
 static const char *cut_path(const char *in)
@@ -4875,7 +4893,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	if (sigmsg->channel) {
 		ftdm_mutex_lock(sigmsg->channel->mutex);
 	}
-
+	
 	/* some core things to do on special events */
 	switch (sigmsg->event_id) {
 
