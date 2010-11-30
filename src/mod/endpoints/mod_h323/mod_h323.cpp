@@ -1148,7 +1148,7 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 			if (!mediaWaitForConnect) {
 				// create a new facility PDU if doing AnswerDeferredWithMedia
 				H323SignalPDU want245PDU;
-				//H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
+				want245PDU.BuildProgress(*this);
 				PBoolean sendPDU = TRUE;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"mediaWaitForConnect = FALSE\n");
 /*				if (SendFastStartAcknowledge(prog.m_fastStart)){
