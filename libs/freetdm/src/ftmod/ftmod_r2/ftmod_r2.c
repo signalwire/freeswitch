@@ -68,7 +68,7 @@ typedef struct ftdm_r2_call_t {
 	int accepted:1;
 	int answer_pending:1;
 	int disconnect_rcvd:1;
-	int ftdm_started:1;
+	int ftdm_call_started:1;
 	int protocol_error:1;
 	ftdm_channel_state_t chanstate;
 	ftdm_size_t dnis_index;
@@ -357,7 +357,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	}
 
 	ft_r2_clean_call(ftdmchan->call_data);
-	R2CALL(ftdmchan)->ftdm_started = 1;
+	R2CALL(ftdmchan)->ftdm_call_started = 1;
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
     ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
@@ -503,7 +503,7 @@ static void ftdm_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_discon
 	}
 
 	/* if the call has not been started yet we must go to HANGUP right here */ 
-	if (!R2CALL(ftdmchan)->ftdm_started) {
+	if (!R2CALL(ftdmchan)->ftdm_call_started) {
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 		return;
 	}
@@ -567,7 +567,7 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
 	R2CALL(ftdmchan)->protocol_error = 1;
 
-	if (!R2CALL(ftdmchan)->ftdm_started) {
+	if (!R2CALL(ftdmchan)->ftdm_call_started) {
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 		return;
 	}
@@ -1260,7 +1260,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 					break; 
 				}
-				R2CALL(ftdmchan)->ftdm_started = 1; 
+				R2CALL(ftdmchan)->ftdm_call_started = 1; 
 
 				break;
 
