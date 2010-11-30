@@ -36,6 +36,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}"
 	ProjectSection(SolutionItems) = preProject
 		conf\freeswitch.xml = conf\freeswitch.xml
+		conf\vars.xml = conf\vars.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{7BFD517E-7F8F-4A40-A78E-8D3632738227}"
@@ -56,6 +57,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build Sys
 		bootstrap.sh = bootstrap.sh
 		build\buildlib.sh = build\buildlib.sh
 		configure.in = configure.in
+		Makefile.am = Makefile.am
 		build\modmake.rules.in = build\modmake.rules.in
 		build\modules.conf.in = build\modules.conf.in
 		libs\win32\util.vbs = libs\win32\util.vbs
@@ -90,12 +92,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 		conf\autoload_configs\limit.conf.xml = conf\autoload_configs\limit.conf.xml
 		conf\autoload_configs\local_stream.conf.xml = conf\autoload_configs\local_stream.conf.xml
 		conf\autoload_configs\logfile.conf.xml = conf\autoload_configs\logfile.conf.xml
+		conf\autoload_configs\modules.conf.xml = conf\autoload_configs\modules.conf.xml
 		conf\autoload_configs\openmrcp.conf.xml = conf\autoload_configs\openmrcp.conf.xml
 		conf\autoload_configs\portaudio.conf.xml = conf\autoload_configs\portaudio.conf.xml
 		conf\autoload_configs\rss.conf.xml = conf\autoload_configs\rss.conf.xml
 		conf\autoload_configs\sofia.conf.xml = conf\autoload_configs\sofia.conf.xml
 		conf\autoload_configs\spidermonkey.conf.xml = conf\autoload_configs\spidermonkey.conf.xml
+		conf\autoload_configs\switch.conf.xml = conf\autoload_configs\switch.conf.xml
 		conf\autoload_configs\syslog.conf.xml = conf\autoload_configs\syslog.conf.xml
+		conf\autoload_configs\voicemail.conf.xml = conf\autoload_configs\voicemail.conf.xml
 		conf\autoload_configs\wanpipe.conf.xml = conf\autoload_configs\wanpipe.conf.xml
 		conf\autoload_configs\woomera.conf.xml = conf\autoload_configs\woomera.conf.xml
 		conf\autoload_configs\xml_cdr.conf.xml = conf\autoload_configs\xml_cdr.conf.xml
@@ -106,6 +111,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{C7E2382E-2C22-4D18-BF93-80C6A1FFA7AC}"
 	ProjectSection(SolutionItems) = preProject
+		conf\dialplan\default.xml = conf\dialplan\default.xml
 		conf\dialplan\public.xml = conf\dialplan\public.xml
 	EndProjectSection
 EndProject
@@ -117,6 +123,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{8E2E8798-8B6F-4A55-8E4F-4E6FDE40ED26}"
 	ProjectSection(SolutionItems) = preProject
 		conf\sip_profiles\external.xml = conf\sip_profiles\external.xml
+		conf\sip_profiles\internal.xml = conf\sip_profiles\internal.xml
 		conf\sip_profiles\nat.xml = conf\sip_profiles\nat.xml
 	EndProjectSection
 EndProject
@@ -301,6 +308,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{23874F4B-C0AF-4587-9F7E-DB0F06DE8CB4}"
+	ProjectSection(SolutionItems) = preProject
+		conf\dialplan\default.xml = conf\dialplan\default.xml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{19ED97F6-30D8-4FCE-AE1D-8B7FCB170D40}"
 	ProjectSection(SolutionItems) = preProject
@@ -1261,15 +1271,15 @@ Global
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.Build.0 = Release|Win32
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|x64.ActiveCfg = Release|x64
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|x64.Build.0 = Release|x64
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|Win32.ActiveCfg = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|Win32.Build.0 = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|x64.ActiveCfg = Release|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|Win32.ActiveCfg = Release|x64
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|x64.ActiveCfg = Release|x64
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|x64.Build.0 = Release|x64
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|Win32.Build.0 = Debug|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|x64.ActiveCfg = Debug|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|x64.ActiveCfg = Debug|x64
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|Win32.ActiveCfg = Release|Win32
 		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|Win32.Build.0 = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|x64.ActiveCfg = Release|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|x64.ActiveCfg = Release|x64
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.All|Win32.ActiveCfg = Release|x64
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.All|x64.ActiveCfg = Release|x64
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.All|x64.Build.0 = Release|x64
