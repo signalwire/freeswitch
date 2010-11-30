@@ -1439,6 +1439,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_session_execute_application_async(SWIGTYPE_p_switch_core_session session, string app, string arg) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_execute_application_async(SWIGTYPE_p_switch_core_session.getCPtr(session), app, arg);
+    return ret;
+  }
+
   public static switch_status_t switch_core_session_get_app_flags(string app, SWIGTYPE_p_int flags) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_app_flags(app, SWIGTYPE_p_int.getCPtr(flags));
     return ret;
@@ -1515,6 +1520,11 @@ public class freeswitch {
 
   public static uint switch_core_session_event_count(SWIGTYPE_p_switch_core_session session) {
     uint ret = freeswitchPINVOKE.switch_core_session_event_count(SWIGTYPE_p_switch_core_session.getCPtr(session));
+    return ret;
+  }
+
+  public static uint switch_core_session_messages_waiting(SWIGTYPE_p_switch_core_session session) {
+    uint ret = freeswitchPINVOKE.switch_core_session_messages_waiting(SWIGTYPE_p_switch_core_session.getCPtr(session));
     return ret;
   }
 
@@ -7449,6 +7459,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_execute_application_get_flags")]
   public static extern int switch_core_session_execute_application_get_flags(HandleRef jarg1, string jarg2, string jarg3, HandleRef jarg4);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_execute_application_async")]
+  public static extern int switch_core_session_execute_application_async(HandleRef jarg1, string jarg2, string jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_app_flags")]
   public static extern int switch_core_session_get_app_flags(string jarg1, HandleRef jarg2);
 
@@ -7496,6 +7509,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_event_count")]
   public static extern uint switch_core_session_event_count(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_messages_waiting")]
+  public static extern uint switch_core_session_messages_waiting(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_dequeue_event")]
   public static extern int switch_core_session_dequeue_event(HandleRef jarg1, HandleRef jarg2, int jarg3);

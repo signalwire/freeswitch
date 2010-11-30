@@ -7626,6 +7626,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_execute_application_get_fl
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_execute_application_async(void * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_core_session_execute_application_async(arg1,(char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_get_app_flags(char * jarg1, void * jarg2) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -7851,6 +7867,18 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_event_count(void
   
   arg1 = (switch_core_session_t *)jarg1; 
   result = (uint32_t)switch_core_session_event_count(arg1);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_messages_waiting(void * jarg1) {
+  unsigned long jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (uint32_t)switch_core_session_messages_waiting(arg1);
   jresult = (unsigned long)result; 
   return jresult;
 }
