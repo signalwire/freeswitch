@@ -171,6 +171,23 @@ typedef int ftdm_socket_t;
 #include <stdarg.h>
 #endif
 
+/*! \brief FreeTDM APIs possible return codes */
+typedef enum {
+	FTDM_SUCCESS, /*!< Success */
+	FTDM_FAIL, /*!< Failure, generic error return code, use ftdm_channel_get_last_error or ftdm_span_get_last_error for details */
+	FTDM_MEMERR, /*!< Memory error, most likely allocation failure */
+	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
+	FTDM_NOTIMPL, /*!< Operation not implemented */
+	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
+	FTDM_EINVAL /*!< Invalid argument */
+} ftdm_status_t;
+
+/*! \brief FreeTDM bool type. */
+typedef enum {
+	FTDM_FALSE,
+	FTDM_TRUE
+} ftdm_bool_t;
+
 /*! 
  * \brief FreeTDM channel.
  *        This is the basic data structure used to place calls and I/O operations

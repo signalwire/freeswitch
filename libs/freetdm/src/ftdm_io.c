@@ -56,6 +56,9 @@
 #define FTDM_READ_TRACE_INDEX 0
 #define FTDM_WRITE_TRACE_INDEX 1
 
+ftdm_time_t time_last_throttle_log = 0;
+ftdm_time_t time_current_throttle_log = 0;
+
 static int time_is_init = 0;
 
 static void time_init(void)
@@ -146,6 +149,24 @@ FTDM_STR2ENUM(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t, CHA
 
 FTDM_ENUM_NAMES(SIGNALING_STATUS_NAMES, SIGSTATUS_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t, SIGNALING_STATUS_NAMES, FTDM_SIG_STATE_INVALID)
+
+FTDM_ENUM_NAMES(TON_NAMES, TON_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_ton, ftdm_ton2str, ftdm_ton_t, TON_NAMES, FTDM_TON_INVALID)
+
+FTDM_ENUM_NAMES(NPI_NAMES, NPI_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_npi, ftdm_npi2str, ftdm_npi_t, NPI_NAMES, FTDM_NPI_INVALID)
+
+FTDM_ENUM_NAMES(PRESENTATION_NAMES, PRESENTATION_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_presentation, ftdm_presentation2str, ftdm_presentation_t, PRESENTATION_NAMES, FTDM_PRES_INVALID)
+
+FTDM_ENUM_NAMES(SCREENING_NAMES, SCREENING_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_screening, ftdm_screening2str, ftdm_screening_t, SCREENING_NAMES, FTDM_SCREENING_INVALID)
+
+FTDM_ENUM_NAMES(BEARER_CAP_NAMES, BEARER_CAP_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_bearer_cap, ftdm_bearer_cap2str, ftdm_bearer_cap_t, BEARER_CAP_NAMES, FTDM_BEARER_CAP_INVALID)
+
+FTDM_ENUM_NAMES(USER_LAYER1_PROT_NAMES, USER_LAYER1_PROT_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t, USER_LAYER1_PROT_NAMES, FTDM_USER_LAYER1_PROT_INVALID)
 
 static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
 
@@ -2030,6 +2051,10 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		goto done;
 	}
 
+#if 0 
+	/* DAVIDY - We will fail RFC's if we do that, but some modules apart from ftmod_sangoma_isdn 
+	 * expect the call to always to go PROGRESS and PROGRESS MEDIA state before going to UP, so 
+	 * remove this only in netborder branch for now */
 
 	if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
@@ -2050,7 +2075,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to UP\n");
 		goto done;
 	}
-
+#endif
 	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 1);
 
 done:
@@ -2199,14 +2224,19 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 	switch (indication) {
 	/* FIXME: ring and busy cannot be used with all signaling stacks 
 	 * (particularly isdn stacks I think, we should emulate or just move to hangup with busy cause) */
-	case FTDM_CHANNEL_INDICATE_RING:
-		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RING, 1);
+	case FTDM_CHANNEL_INDICATE_RINGING:
+		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RINGING, 1);
 		break;
-
 	case FTDM_CHANNEL_INDICATE_BUSY:
 		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_BUSY, 1);
 		break;
-
+	case FTDM_CHANNEL_INDICATE_PROCEED:
+		if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE)) {
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_RING) {
+				ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROCEED, 1);
+			}
+		}
+		break;
 	case FTDM_CHANNEL_INDICATE_PROGRESS:
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
@@ -2214,7 +2244,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 		}
 		break;
-
 	case FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA:
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
@@ -2233,7 +2262,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
 		}
 		break;
-
 	default:
 		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "Do not know how to indicate %d\n", indication);
 		status = FTDM_FAIL;
@@ -2385,6 +2413,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
 
 	ftdm_log(FTDM_LOG_DEBUG, "channel done %u:%u\n", ftdmchan->span_id, ftdmchan->chan_id);
+
+	if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+		ftdm_sigmsg_t sigmsg;
+		memset(&sigmsg, 0, sizeof(sigmsg));
+		sigmsg.span_id = ftdmchan->span_id;
+		sigmsg.chan_id = ftdmchan->chan_id;
+		sigmsg.channel = ftdmchan;
+		sigmsg.event_id = FTDM_SIGEVENT_RELEASED;
+		ftdm_span_send_signal(ftdmchan->span, &sigmsg);
+	}
 
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
@@ -2810,21 +2848,17 @@ done:
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_wait(ftdm_channel_t *ftdmchan, ftdm_wait_flag_t *flags, int32_t to)
 {
-	assert(ftdmchan != NULL);
-	assert(ftdmchan->fio != NULL);
+	ftdm_status_t status = FTDM_FAIL;
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel\n");
+	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "Null io interface\n");
+	ftdm_assert_return(ftdmchan->fio->wait != NULL, FTDM_NOTIMPL, "wait method not implemented\n");
 
-    if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
-        return FTDM_FAIL;
-    }
-
-	if (!ftdmchan->fio->wait) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
-		return FTDM_FAIL;
+	status = ftdmchan->fio->wait(ftdmchan, flags, to);
+	if (status == FTDM_TIMEOUT) {
+		/* make sure the flags are cleared on timeout */
+		*flags = 0;
 	}
-
-    return ftdmchan->fio->wait(ftdmchan, flags, to);
-
+	return status;
 }
 
 /*******************************/
@@ -4809,7 +4843,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	if (sigmsg->channel) {
 		ftdm_mutex_lock(sigmsg->channel->mutex);
 	}
-
+	
 	/* some core things to do on special events */
 	switch (sigmsg->event_id) {
 

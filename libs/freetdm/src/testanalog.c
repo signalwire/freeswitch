@@ -50,7 +50,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_signal)
 
 	switch(sigmsg->event_id) {
 	case FTDM_SIGEVENT_START:
-		ftdm_channel_call_indicate(sigmsg->channel, FTDM_CHANNEL_INDICATE_RING);
+		ftdm_channel_call_indicate(sigmsg->channel, FTDM_CHANNEL_INDICATE_RINGING);
 		ftdm_log(FTDM_LOG_DEBUG, "launching thread and indicating ring\n");
 		ftdm_thread_create_detached(test_call, sigmsg->channel);
 		break;
