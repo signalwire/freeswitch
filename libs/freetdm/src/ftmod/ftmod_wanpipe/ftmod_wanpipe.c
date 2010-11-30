@@ -789,16 +789,6 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 	ftdmchan->iostats.tx.queue_size = tx_stats->wp_api_tx_hdr_max_queue_length;
 	ftdmchan->iostats.tx.queue_len = tx_stats->wp_api_tx_hdr_number_of_frames_in_queue;
 	
-	if (ftdmchan->iostats.tx.queue_len >= (0.8 * ftdmchan->iostats.tx.queue_size)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx Queue length exceeded 80% threshold (%d/%d)\n",
-					  		ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
-		ftdm_set_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
-	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
-		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue length reduced 80% threshold (%d/%d)\n",
-					  		ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
-		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
-	}
-	
 	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.rx.queue_size) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Tx Queue Full (%d/%d)\n",
 					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
@@ -860,17 +850,6 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_FRAME);
 	}
 
-	if (ftdmchan->iostats.rx.queue_len >= (0.8 * ftdmchan->iostats.rx.queue_size)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Rx Queue length exceeded 80% threshold (%d/%d)\n",
-					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
-		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
-	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
-		/* any reason we have wanpipe_tdm_api_iface.h in ftmod_wanpipe/ dir? */
-		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Rx Queue length reduced 80% threshold (%d/%d)\n",
-					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
-		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
-	}
-	
 	if (ftdmchan->iostats.rx.queue_len >= ftdmchan->iostats.rx.queue_size) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Rx Queue Full (%d/%d)\n",
 					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
