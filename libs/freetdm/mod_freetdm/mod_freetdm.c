@@ -841,9 +841,9 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	assert(tech_pvt != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-        return SWITCH_STATUS_FALSE;
-    }
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+    	}
 
 	if (ftdm_channel_call_check_hangup(tech_pvt->ftdmchan)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -888,9 +888,9 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 	assert(tech_pvt != NULL);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-        return SWITCH_STATUS_FALSE;
-    }
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+    	}
 	
 	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		return SWITCH_STATUS_SUCCESS;
