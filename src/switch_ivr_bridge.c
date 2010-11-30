@@ -348,20 +348,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
 			
 			if (exec_app) {
-				switch_event_t *execute_event;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Bridge execute app %s(%s)\n", 
 								  switch_channel_get_name(chan_a), exec_app, exec_data);
 
-				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", exec_app);
-					if (exec_data) {
-						switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", exec_data);
-					}
-					//switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(session_a, &execute_event, SWITCH_FALSE);
-				}
+				switch_core_session_execute_application_async(session_a, exec_app, exec_data);
 				exec_app = exec_data = NULL;
 			}
 

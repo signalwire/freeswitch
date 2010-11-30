@@ -2518,7 +2518,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 			if ((arg = strchr(app, ' '))) {
 				*arg++ = '\0';
 			}
-			switch_core_session_execute_application(channel->session, app, arg);
+
+			if (switch_core_session_in_thread(channel->session)) {
+				switch_core_session_execute_application(channel->session, app, arg);
+			} else {
+				switch_core_session_execute_application_async(channel->session, app, arg);
+			}
 		}
 
 		return SWITCH_STATUS_SUCCESS;
@@ -2571,7 +2576,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			if ((arg = strchr(app, ' '))) {
 				*arg++ = '\0';
 			}
-			switch_core_session_execute_application(channel->session, app, arg);
+
+			if (switch_core_session_in_thread(channel->session)) {
+				switch_core_session_execute_application(channel->session, app, arg);
+			} else {
+				switch_core_session_execute_application_async(channel->session, app, arg);
+			}
 		}
 
 		if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
@@ -2750,7 +2760,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 			}
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)\n", channel->name, app,
 							  switch_str_nil(arg));
-			switch_core_session_execute_application(channel->session, app, arg);
+
+			if (switch_core_session_in_thread(channel->session)) {
+				switch_core_session_execute_application(channel->session, app, arg);
+			} else {
+				switch_core_session_execute_application_async(channel->session, app, arg);
+			}
 		}
 	}
 
