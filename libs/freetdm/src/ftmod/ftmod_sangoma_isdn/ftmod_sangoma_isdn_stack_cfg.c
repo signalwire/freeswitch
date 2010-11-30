@@ -686,7 +686,16 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 		cfg.t.cfg.s.inDLSAP.statEnqOpt = FALSE;
 		cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
 	}
-		
+
+	/* Override the restart options if user selected that option */
+	if (signal_data->restart_opt != SNGISDN_OPT_DEFAULT) {
+		if (signal_data->restart_opt == SNGISDN_OPT_TRUE) {
+			cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
+		} else {
+			cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
+		}
+	}
+	
 	for (i = 0; i < IN_MAXBCHNL; i++)
 	{
 		cfg.t.cfg.s.inDLSAP.bProf[i].profNmb = 0;

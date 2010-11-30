@@ -1,0 +1,75 @@
+diff --git a/src/mod/languages/mod_managed/Makefile b/src/mod/languages/mod_managed/Makefile
+index 0ac49b4..ec44ff5 100644
+--- a/src/mod/languages/mod_managed/Makefile
++++ b/src/mod/languages/mod_managed/Makefile
+@@ -1,6 +1,6 @@
+-LOCAL_INSERT_CFLAGS= /usr/bin/pkg-config mono --cflags
+-LOCAL_INSERT_LDFLAGS= /usr/bin/pkg-config mono --libs
+-#MOD_CFLAGS=-D_REENTRANT -pthread -I/opt/mono-1.9/lib/pkgconfig/../../include/mono-1.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lmono
++LOCAL_INSERT_CFLAGS= /usr/bin/pkg-config mono-2 --cflags
++LOCAL_INSERT_LDFLAGS= /usr/bin/pkg-config mono-2 --libs
++#MOD_CFLAGS=-D_REENTRANT -pthread -I/usr/lib/mono -lmono
+ BASE=../../../..
+ VERBOSE=1
+ include $(BASE)/build/modmake.rules
+diff --git a/src/mod/languages/mod_managed/freeswitch.i b/src/mod/languages/mod_managed/freeswitch.i
+index ffbdf9b..117d58c 100644
+--- a/src/mod/languages/mod_managed/freeswitch.i
++++ b/src/mod/languages/mod_managed/freeswitch.i
+@@ -8,7 +8,6 @@
+ 
+ /* Callback for returning strings to C# without leaking memory */
+ #ifndef _MANAGED
+-#include <glib.h>
+ #include <mono/jit/jit.h>
+ #include <mono/metadata/environment.h>
+ #include <mono/metadata/mono-config.h>
+diff --git a/src/mod/languages/mod_managed/freeswitch_managed.h b/src/mod/languages/mod_managed/freeswitch_managed.h
+index 1d0b6a7..13ffe5d 100644
+--- a/src/mod/languages/mod_managed/freeswitch_managed.h
++++ b/src/mod/languages/mod_managed/freeswitch_managed.h
+@@ -40,7 +40,6 @@ typedef void (*hangupFunction) (void);
+ typedef char *(*inputFunction) (void *, switch_input_type_t);
+ 
+ #ifndef _MANAGED
+-#include <glib.h>
+ #include <mono/jit/jit.h>
+ #include <mono/metadata/assembly.h>
+ #include <mono/metadata/environment.h>
+@@ -73,7 +72,7 @@ extern mod_managed_globals globals;
+ #ifdef WIN32
+ #define RESULT_FREE(x) CoTaskMemFree(x)
+ #else
+-#define RESULT_FREE(x) g_free(x)
++#define RESULT_FREE(x) mono_free(x)
+ #endif
+ 
+ SWITCH_END_EXTERN_C
+diff --git a/src/mod/languages/mod_managed/mod_managed.cpp b/src/mod/languages/mod_managed/mod_managed.cpp
+index ec2d866..87e831f 100644
+--- a/src/mod/languages/mod_managed/mod_managed.cpp
++++ b/src/mod/languages/mod_managed/mod_managed.cpp
+@@ -208,18 +208,13 @@ switch_status_t loadRuntime()
+ 	}
+ 
+ 	/* Already loaded? */
+-	MonoAssemblyName name;
+-	name.name = MOD_MANAGED_ASM_NAME;
+-	name.major = MOD_MANAGED_ASM_V1;
+-	name.minor = MOD_MANAGED_ASM_V2;
+-	name.revision = MOD_MANAGED_ASM_V3;
+-	name.build = MOD_MANAGED_ASM_V4;
+-	name.culture = "";
+-	name.hash_value = "";
+-
++	MonoAssemblyName *name = mono_assembly_name_new (MOD_MANAGED_ASM_NAME);
++	//Note also that it can't be allocated on the stack anymore and you'll need to create and destroy it with the following API:
++	//mono_assembly_name_free (name);
++	
+ 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded.\n");
+ 
+-	if (!(globals.mod_mono_asm = mono_assembly_loaded(&name))) {
++	if (!(globals.mod_mono_asm = mono_assembly_loaded(name))) {
+ 		/* Open the assembly */ 
+ 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_domain_assembly_open.\n");
+ 		globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);

@@ -2156,6 +2156,30 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				sipip = profile->sipip;
 			}
 
+			gateway->extension = switch_core_strdup(gateway->pool, extension);
+
+
+			if (!strncasecmp(proxy, "sip:", 4)) {
+				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
+			} else {
+				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
+			}
+
+			/* This checks to make sure we provide the right contact on register for targets behind nat with us. */
+			if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+				char *register_host = NULL;
+
+				register_host = sofia_glue_get_register_host(gateway->register_proxy);
+
+				if (register_host && switch_is_lan_addr(register_host)) {
+					sipip = profile->sipip;
+				}
+
+				switch_safe_free(register_host);
+			}
+
 			if (extension_in_contact) {
 				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 				gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
@@ -2168,16 +2192,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 																sipip,
 																sofia_glue_transport_has_tls(gateway->register_transport) ?
 																profile->tls_sip_port : profile->sip_port, params);
-			}
-
-			gateway->extension = switch_core_strdup(gateway->pool, extension);
-
-			if (!strncasecmp(proxy, "sip:", 4)) {
-				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
-			} else {
-				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
 			}
 
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
@@ -2390,6 +2404,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						}
+					} else if (!strcasecmp(var, "presence-probe-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
@@ -3055,6 +3075,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						}
+					} else if (!strcasecmp(var, "presence-probe-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
@@ -4406,7 +4432,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 										 contact_host, astate, "outbound", user_agent,
 										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
 										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
-
 					switch_assert(sql);
 
 					sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
@@ -5959,7 +5984,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 		/* Barf if we didn't get our private */
 		assert(switch_core_session_get_private(session));
 		
-		if (!strncasecmp(sip->sip_content_type->c_type, "message", 7) && !strcasecmp(sip->sip_content_type->c_subtype, "update_display")) {
+		if (sip->sip_content_type && sip->sip_content_type->c_subtype && sip->sip_content_type->c_type &&
+			!strncasecmp(sip->sip_content_type->c_type, "message", 7) &&
+			!strcasecmp(sip->sip_content_type->c_subtype, "update_display")) {
 			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 			goto end;
 		}
@@ -6856,8 +6883,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			sql =
 				switch_mprintf
-				("select call_id from sip_dialogs where call_info='%q' and sip_from_user='%q' and sip_from_host='%q' and call_id is not null",
-				 switch_str_nil(p), user, host);
+				("select call_id from sip_dialogs where call_info='%q' and ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+				 "and call_id is not null",
+				 switch_str_nil(p), user, host, user, host);
 
 			if ((str = sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, cid, sizeof(cid)))) {
 				bnh = nua_handle_by_call_id(nua, str);

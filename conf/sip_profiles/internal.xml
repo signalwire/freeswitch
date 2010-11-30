@@ -112,6 +112,8 @@
     <param name="record-template" value="${caller_id_number}.${target_domain}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
     <!--enable to use presence -->
     <param name="manage-presence" value="true"/>
+    <!-- send a presence probe on each register to query devices to send presence instead of sending presence with less info -->
+    <!--<param name="presence-probe-on-register" value="true"/>-->
     <!--<param name="manage-shared-appearance" value="true"/>-->
     <!-- used to share presence info across sofia profiles -->
     <!-- Name of the db to use for this profile -->

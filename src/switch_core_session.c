@@ -861,6 +861,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 	return status;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_messages_waiting(switch_core_session_t *session)
+{
+	int x = 0;
+
+	if (session->private_event_queue) {
+		x += switch_queue_size(session->private_event_queue);
+	}
+
+	if (session->message_queue) {
+		x += switch_queue_size(session->message_queue);
+	}
+
+	return x;
+}
+
 SWITCH_DECLARE(uint32_t) switch_core_session_event_count(switch_core_session_t *session)
 {
 	if (session->event_queue) {
@@ -1831,10 +1846,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
 						  app, switch_channel_get_name(session->channel));
 	} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
-						  app, switch_channel_get_name(session->channel));
-		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
+		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
+							  app, switch_channel_get_name(session->channel));
+			if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
+				switch_goto_status(SWITCH_STATUS_FALSE, done);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+							  "Cannot execute app '%s' media required on an outbound channel that does not have media established\n", app);
 			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 	}

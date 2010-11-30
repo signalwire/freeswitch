@@ -1024,6 +1024,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(_In_ switch_core
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_event_count(_In_ switch_core_session_t *session);
 
+/*
+  Number of parsable messages waiting on the session. 
+ */
+SWITCH_DECLARE(uint32_t) switch_core_session_messages_waiting(switch_core_session_t *session);
+
 /*! 
   \brief DE-Queue an event on a given session
   \param session the session to de-queue the message on

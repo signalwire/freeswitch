@@ -763,6 +763,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		write_frame.samples = write_frame.datalen / sizeof(int16_t);
 	}
 
+	if (switch_channel_test_flag(channel, CF_RECOVERED) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
+		switch_channel_clear_flag(channel, CF_CONTROLLED);
+	}
+
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
