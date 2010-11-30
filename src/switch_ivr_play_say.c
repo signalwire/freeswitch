@@ -913,6 +913,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_get_file_handle(switch_core_session_t *session, switch_file_handle_t **fh)
+{
+	switch_file_handle_t *fhp;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	*fh = NULL;
+	switch_core_session_io_read_lock(session);
+	
+	if ((fhp = switch_channel_get_private(channel, "__fh"))) {
+		*fh = fhp;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_core_session_io_rwunlock(session);
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_release_file_handle(switch_core_session_t *session, switch_file_handle_t **fh)
+{
+	*fh = NULL;
+	switch_core_session_io_rwunlock(session);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 #define FILE_STARTSAMPLES 1024 * 32
 #define FILE_BLOCKSIZE 1024 * 8
@@ -992,6 +1017,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	if (!strcasecmp(read_impl.iananame, "l16")) {
 		l16++;
 	}
+
+
 
 
 	if (play_delimiter) {
@@ -1134,6 +1161,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			status = SWITCH_STATUS_NOTFOUND;
 			continue;
 		}
+
+		switch_core_session_io_write_lock(session);
+		switch_channel_set_private(channel, "__fh", fh);
+		switch_core_session_io_rwunlock(session);
+
 		if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 			asis = 1;
 		}
@@ -1208,7 +1240,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+					switch_core_session_io_write_lock(session);
+					switch_channel_set_private(channel, "__fh", NULL);
+					switch_core_session_io_rwunlock(session);
+
 					switch_core_file_close(fh);
+
 					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 					status = SWITCH_STATUS_GENERR;
 					continue;
@@ -1228,6 +1265,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Setup timer failed!\n");
 				switch_core_codec_destroy(&codec);
+				switch_core_session_io_write_lock(session);
+				switch_channel_set_private(channel, "__fh", NULL);
+				switch_core_session_io_rwunlock(session);
 				switch_core_file_close(fh);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 				status = SWITCH_STATUS_GENERR;
@@ -1537,6 +1577,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_out / (read_impl.samples_per_second / 1000));
 		}
 		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_out);
+
+		switch_core_session_io_write_lock(session);
+		switch_channel_set_private(channel, "__fh", NULL);
+		switch_core_session_io_rwunlock(session);
 
 		switch_core_file_close(fh);
 
