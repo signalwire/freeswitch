@@ -36,80 +36,101 @@
 #include <ctype.h>
 
 
-FT_DECLARE(ftdm_status_t) ftdm_span_set_npi(const char *npi_string, uint8_t *target)
+FT_DECLARE(ftdm_status_t) ftdm_set_npi(const char *string, uint8_t *target)
 {
-	if (!strcasecmp(npi_string, "isdn") || !strcasecmp(npi_string, "e164")) {
-		*target = FTDM_NPI_ISDN;
-	} else if (!strcasecmp(npi_string, "data")) {
-		*target = FTDM_NPI_DATA;
-	} else if (!strcasecmp(npi_string, "telex")) {
-		*target = FTDM_NPI_TELEX;
-	} else if (!strcasecmp(npi_string, "national")) {
-		*target = FTDM_NPI_NATIONAL;
-	} else if (!strcasecmp(npi_string, "private")) {
-		*target = FTDM_NPI_PRIVATE;
-	} else if (!strcasecmp(npi_string, "reserved")) {
-		*target = FTDM_NPI_RESERVED;
-	} else if (!strcasecmp(npi_string, "unknown")) {
-		*target = FTDM_NPI_UNKNOWN;
-	} else {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid NPI value (%s)\n", npi_string);
-		*target = FTDM_NPI_UNKNOWN;
-		return FTDM_FAIL;
+	int val;
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	val = ftdm_str2ftdm_npi(string);
+	if (val == FTDM_NPI_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid NPI string (%s)\n", string);
+		status = FTDM_FAIL;
+		val = FTDM_NPI_UNKNOWN;
 	}
-	return FTDM_SUCCESS;
+	*target = val;
+	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_set_ton(const char *ton_string, uint8_t *target)
+FT_DECLARE(ftdm_status_t) ftdm_set_ton(const char *string, uint8_t *target)
 {
-	if (!strcasecmp(ton_string, "national")) {
-		*target = FTDM_TON_NATIONAL;
-	} else if (!strcasecmp(ton_string, "international")) {
-		*target = FTDM_TON_INTERNATIONAL;
-	} else if (!strcasecmp(ton_string, "local")) {
-		*target = FTDM_TON_SUBSCRIBER_NUMBER;
-	} else if (!strcasecmp(ton_string, "unknown")) {
-		*target = FTDM_TON_UNKNOWN;
-	} else {
-		ftdm_log(FTDM_LOG_WARNING, "Invalid TON value (%s)\n", ton_string);
-		*target = FTDM_TON_UNKNOWN;
-		return FTDM_FAIL;
+	int val;
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	val = ftdm_str2ftdm_ton(string);
+	if (val == FTDM_TON_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid TON string (%s)\n", string);
+		status = FTDM_FAIL;
+		val = FTDM_TON_UNKNOWN;
 	}
-	return FTDM_SUCCESS;
+	*target = val;
+	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_set_bearer_capability(const char *bc_string, ftdm_bearer_cap_t *target)
+FT_DECLARE(ftdm_status_t) ftdm_set_bearer_capability(const char *string, uint8_t *target)
 {
-	if (!strcasecmp(bc_string, "speech")) {
-		*target = FTDM_BEARER_CAP_SPEECH;
-	} else if (!strcasecmp(bc_string, "unrestricted-digital")) {
-		*target = FTDM_BEARER_CAP_64K_UNRESTRICTED;
-	} else if (!strcasecmp(bc_string, "3.1Khz")) {
-		*target = FTDM_BEARER_CAP_3_1KHZ_AUDIO;
-	} else {
-		ftdm_log(FTDM_LOG_WARNING, "Unsupported Bearer Capability value (%s)\n", bc_string);
-		return FTDM_FAIL;
+	int val;
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	val = ftdm_str2ftdm_bearer_cap(string);
+	if (val == FTDM_NPI_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid Bearer-Capability string (%s)\n", string);
+		status = FTDM_FAIL;
+		val = FTDM_BEARER_CAP_SPEECH;
 	}
-	return FTDM_SUCCESS;
+
+	*target = val;
+	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_span_set_bearer_layer1(const char *bc_string, ftdm_user_layer1_prot_t *target)
+FT_DECLARE(ftdm_status_t) ftdm_set_bearer_layer1(const char *string, uint8_t *target)
 {
-	if (!strcasecmp(bc_string, "v110")) {
-		*target = FTDM_USER_LAYER1_PROT_V110;
-	} else if (!strcasecmp(bc_string, "ulaw")) {
-		*target = FTDM_USER_LAYER1_PROT_ULAW;
-	} else if (!strcasecmp(bc_string, "alaw")) {
-		*target =FTDM_USER_LAYER1_PROT_ALAW ;
-	} else {
-		ftdm_log(FTDM_LOG_WARNING, "Unsupported Bearer Layer1 Prot value (%s)\n", bc_string);
-		return FTDM_FAIL;
+	int val;
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	val = ftdm_str2ftdm_usr_layer1_prot(string);
+	if (val == FTDM_USER_LAYER1_PROT_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid Bearer Layer 1 Protocol string (%s)\n", string);
+		status = FTDM_FAIL;
+		val = FTDM_USER_LAYER1_PROT_ULAW;
 	}
-	return FTDM_SUCCESS;
+
+	*target = val;
+	return status;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_set_screening_ind(const char *string, uint8_t *target)
+{
+	int val;
+	ftdm_status_t status = FTDM_SUCCESS;
 
-FT_DECLARE(ftdm_status_t) ftdm_is_number(char *number)
+	val = ftdm_str2ftdm_screening(string);
+	if (val == FTDM_SCREENING_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid screening indicator string (%s)\n", string);
+		status = FTDM_FAIL;
+		val = FTDM_SCREENING_NOT_SCREENED;
+	}
+
+	*target = val;
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_set_presentation_ind(const char *string, uint8_t *target)
+{
+	int val;
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	val = ftdm_str2ftdm_presentation(string);
+	if (val == FTDM_PRES_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid presentation string (%s)\n", string);
+		status = FTDM_FAIL;
+		val = FTDM_PRES_ALLOWED;
+	}
+
+	*target = val;
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_is_number(const char *number)
 {
 	if (!number) {
 		return FTDM_FAIL;

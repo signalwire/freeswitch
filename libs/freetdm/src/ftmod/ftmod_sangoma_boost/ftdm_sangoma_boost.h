@@ -58,7 +58,7 @@ typedef struct ftdm_sangoma_boost_trunkgroup {
 	ftdm_size_t size;			/* Number of b-channels in group */	
 	unsigned int last_used_index; /* index of last b-channel used */
 	ftdm_channel_t* ftdmchans[MAX_CHANS_PER_TRUNKGROUP];
-	//DAVIDY need to merge congestion timeouts to this struct
+	//TODO need to merge congestion timeouts to this struct
 } ftdm_sangoma_boost_trunkgroup_t;
 #endif
 

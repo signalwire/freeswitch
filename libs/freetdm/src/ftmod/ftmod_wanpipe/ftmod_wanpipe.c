@@ -801,10 +801,10 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	}
 	
-	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.rx.queue_size) {
+	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.tx.queue_size) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Tx Queue Full (%d/%d)\n",
-					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
-		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.tx.queue_size);
+		ftdm_set_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
 		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue no longer full (%d/%d)\n",
 					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
@@ -813,7 +813,10 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 
 	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_number_of_frames_in_queue) {
 		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle:  %d\n", ftdmchan->iostats.tx.idle_packets);
+		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle */
+		if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle:  %d\n", ftdmchan->iostats.tx.idle_packets);
+		}
 	}
 
 	if (!ftdmchan->iostats.tx.packets) {
