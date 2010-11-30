@@ -638,10 +638,12 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 		
 		if (!switch_channel_test_flag(originate_status[i].peer_channel, CF_PARK) && 
 			!switch_channel_test_flag(originate_status[i].peer_channel, CF_CONSUME_ON_ORIGINATE)) {
-			if (switch_channel_test_flag(originate_status[i].peer_channel, CF_THREAD_SLEEPING)) {
-				switch_core_session_wake_session_thread(originate_status[i].peer_session);
-			} else {
-				switch_ivr_parse_all_events(originate_status[i].peer_session);
+			if (switch_core_session_messages_waiting(originate_status[i].peer_session)) {
+				if (switch_channel_test_flag(originate_status[i].peer_channel, CF_THREAD_SLEEPING)) {
+					switch_core_session_wake_session_thread(originate_status[i].peer_session);
+				} else {
+					switch_ivr_parse_all_events(originate_status[i].peer_session);
+				}
 			}
 		}
 

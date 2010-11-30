@@ -861,6 +861,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 	return status;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_messages_waiting(switch_core_session_t *session)
+{
+	int x = 0;
+
+	if (session->private_event_queue) {
+		x += switch_queue_size(session->private_event_queue);
+	}
+
+	if (session->message_queue) {
+		x += switch_queue_size(session->message_queue);
+	}
+
+	return x;
+}
+
 SWITCH_DECLARE(uint32_t) switch_core_session_event_count(switch_core_session_t *session)
 {
 	if (session->event_queue) {
