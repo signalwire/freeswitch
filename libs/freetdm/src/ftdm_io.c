@@ -2828,21 +2828,17 @@ done:
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_wait(ftdm_channel_t *ftdmchan, ftdm_wait_flag_t *flags, int32_t to)
 {
-	assert(ftdmchan != NULL);
-	assert(ftdmchan->fio != NULL);
+	ftdm_status_t status = FTDM_FAIL;
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel\n");
+	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "Null io interface\n");
+	ftdm_assert_return(ftdmchan->fio->wait != NULL, FTDM_NOTIMPL, "wait method not implemented\n");
 
-    if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
-        return FTDM_FAIL;
-    }
-
-	if (!ftdmchan->fio->wait) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
-		return FTDM_FAIL;
+	status = ftdmchan->fio->wait(ftdmchan, flags, to);
+	if (status == FTDM_TIMEOUT) {
+		/* make sure the flags are cleared on timeout */
+		*flags = 0;
 	}
-
-    return ftdmchan->fio->wait(ftdmchan, flags, to);
-
+	return status;
 }
 
 /*******************************/
