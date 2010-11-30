@@ -121,6 +121,10 @@ static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout
 	uint32_t outflags = 0;
 	sangoma_wait_obj_t *sangoma_wait_obj = ftdmchan->io_data;
 
+	if (timeout == -1) {
+		timeout = SANGOMA_WAIT_INFINITE;
+	}
+
 	err = sangoma_waitfor(sangoma_wait_obj, inflags, &outflags, timeout);
 	*flags = 0;
 	if (err == SANG_STATUS_SUCCESS) {
