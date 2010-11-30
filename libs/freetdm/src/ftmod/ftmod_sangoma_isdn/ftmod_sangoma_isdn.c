@@ -799,9 +799,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_DOWN: /* the call is finished and removed */
 		{
-			uint8_t glare = 0;
-
-			glare = sngisdn_test_flag(sngisdn_info, FLAG_GLARE);
+			uint8_t glare = sngisdn_test_flag(sngisdn_info, FLAG_GLARE);
 			/* clear all of the call specific data store in the channel structure */
 			clear_call_data(sngisdn_info);
 

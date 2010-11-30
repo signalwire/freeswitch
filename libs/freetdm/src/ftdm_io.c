@@ -38,8 +38,6 @@
  */
 
 #define _GNU_SOURCE
-#ifndef WIN32
-#endif
 #include "private/ftdm_core.h"
 #include <stdarg.h>
 #ifdef WIN32

@@ -255,10 +255,9 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 	uint8_t ces = sngisdn_event->ces;
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
-	
-	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
+
+	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 				
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	
