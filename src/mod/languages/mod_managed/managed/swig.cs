@@ -4501,6 +4501,12 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_ivr_insert_file(SWIGTYPE_p_switch_core_session session, string file, string insert_file, SWIGTYPE_p_switch_size_t sample_point) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_insert_file(SWIGTYPE_p_switch_core_session.getCPtr(session), file, insert_file, SWIGTYPE_p_switch_size_t.getCPtr(sample_point));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public static switch_status_t switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_crypto_direction_t direction, uint index, switch_rtp_crypto_key_type_t type, SWIGTYPE_p_unsigned_char key, SWIGTYPE_p_switch_size_t keylen) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)direction, index, (int)type, SWIGTYPE_p_unsigned_char.getCPtr(key), SWIGTYPE_p_switch_size_t.getCPtr(keylen));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -12291,6 +12297,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_process_fh")]
   public static extern int switch_ivr_process_fh(HandleRef jarg1, string jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_insert_file")]
+  public static extern int switch_ivr_insert_file(HandleRef jarg1, string jarg2, string jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_BUF_LEN_get")]
   public static extern int SWITCH_RTP_MAX_BUF_LEN_get();
