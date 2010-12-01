@@ -38,7 +38,7 @@
 
 FT_DECLARE(ftdm_status_t) ftdm_set_npi(const char *string, uint8_t *target)
 {
-	int val;
+	uint8_t val;
 	ftdm_status_t status = FTDM_SUCCESS;
 
 	val = ftdm_str2ftdm_npi(string);
@@ -53,7 +53,7 @@ FT_DECLARE(ftdm_status_t) ftdm_set_npi(const char *string, uint8_t *target)
 
 FT_DECLARE(ftdm_status_t) ftdm_set_ton(const char *string, uint8_t *target)
 {
-	int val;
+	uint8_t val;
 	ftdm_status_t status = FTDM_SUCCESS;
 
 	val = ftdm_str2ftdm_ton(string);
@@ -68,7 +68,7 @@ FT_DECLARE(ftdm_status_t) ftdm_set_ton(const char *string, uint8_t *target)
 
 FT_DECLARE(ftdm_status_t) ftdm_set_bearer_capability(const char *string, uint8_t *target)
 {
-	int val;
+	uint8_t val;
 	ftdm_status_t status = FTDM_SUCCESS;
 
 	val = ftdm_str2ftdm_bearer_cap(string);
@@ -84,7 +84,7 @@ FT_DECLARE(ftdm_status_t) ftdm_set_bearer_capability(const char *string, uint8_t
 
 FT_DECLARE(ftdm_status_t) ftdm_set_bearer_layer1(const char *string, uint8_t *target)
 {
-	int val;
+	uint8_t val;
 	ftdm_status_t status = FTDM_SUCCESS;
 
 	val = ftdm_str2ftdm_usr_layer1_prot(string);
@@ -100,7 +100,7 @@ FT_DECLARE(ftdm_status_t) ftdm_set_bearer_layer1(const char *string, uint8_t *ta
 
 FT_DECLARE(ftdm_status_t) ftdm_set_screening_ind(const char *string, uint8_t *target)
 {
-	int val;
+	uint8_t val;
 	ftdm_status_t status = FTDM_SUCCESS;
 
 	val = ftdm_str2ftdm_screening(string);
@@ -116,7 +116,7 @@ FT_DECLARE(ftdm_status_t) ftdm_set_screening_ind(const char *string, uint8_t *ta
 
 FT_DECLARE(ftdm_status_t) ftdm_set_presentation_ind(const char *string, uint8_t *target)
 {
-	int val;
+	uint8_t val;
 	ftdm_status_t status = FTDM_SUCCESS;
 
 	val = ftdm_str2ftdm_presentation(string);
