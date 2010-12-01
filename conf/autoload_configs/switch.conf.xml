@@ -15,6 +15,11 @@
     <key name="12" value="version"/>
   </cli-keybindings> 
   
+  <default-ptimes>
+    <!-- set this to overide the 20ms assumption of various codecs in the sdp with no ptime defined -->
+    <!--<codec name="G729" ptime="40"/>-->
+  </default-ptimes>
+  
   <settings>
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
@@ -81,6 +86,7 @@
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
     <!-- The system will create all the db schemas automatically, set this to false to avoid this behaviour-->
     <!--<param name="auto-create-schemas" value="true"/>-->
+	 <!-- <param name="core-dbtype" value="MSSQL"/> -->
   </settings>
 
 </configuration>

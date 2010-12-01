@@ -613,6 +613,21 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 			return 0;
 			break;
 		case PROT_Q931_IE_CALLED_PARTY_SUBADDRESS:
+			{
+				uint8_t type;
+				uint8_t currentOct, j=0;
+				char calling_subaddr_string[82];
+				memset(calling_subaddr_string, 0, sizeof(calling_subaddr_string));
+				type = get_bits(OCTET(3),5,7);
+				currentOct = 3;
+				while(currentOct++ <= len+1) {
+						calling_subaddr_string[j++]=ia5[get_bits(OCTET(currentOct),1,4)][get_bits(OCTET(currentOct),5,8)];
+				}
+				calling_subaddr_string[j++]='\0';
+				*str_len += sprintf(&str[*str_len], "%s (l:%d) type:%s(%d) \n",
+														calling_subaddr_string, (j-1), get_code_2_str(type, dcodQ931TypeOfSubaddressTable), type);
+			}
+			break;
 		case PROT_Q931_IE_REDIRECTION_NUMBER:
 		case PROT_Q931_IE_NOTIFICATION_IND:
 		case PROT_Q931_IE_DATE_TIME:

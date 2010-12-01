@@ -142,15 +142,21 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 			int ss_state = nua_callstate_authenticating;
 			sub_state_t ostate = gw_sub_ptr->state;
 			char *user_via = NULL;
+			char *register_host = NULL;
 
 			if (!now) {
 				gw_sub_ptr->state = ostate = SUB_STATE_UNSUBED;
 				gw_sub_ptr->expires_str = "0";
 			}
 
-			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
+			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
+
+			/* check for NAT and place a Via header if necessary (hostname or non-local IP) */
+			if (register_host && sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
+
+			switch_safe_free(register_host);
 
 			switch (ostate) {
 			case SUB_STATE_NOSUB:
@@ -189,7 +195,15 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 				nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
 
 				if (now) {
-					nua_subscribe(gateway_ptr->sub_nh, NUTAG_URL(gateway_ptr->register_url), TAG_IF(user_via, SIPTAG_VIA_STR(user_via)), SIPTAG_EVENT_STR(gw_sub_ptr->event), SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type), SIPTAG_TO_STR(gateway_ptr->register_from), SIPTAG_FROM_STR(gateway_ptr->register_from), SIPTAG_CONTACT_STR(gateway_ptr->register_contact), SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),	// sofia stack bases its auto-refresh stuff on this
+					nua_subscribe(gateway_ptr->sub_nh,
+								  NUTAG_URL(gateway_ptr->register_url),
+								  TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+								  SIPTAG_EVENT_STR(gw_sub_ptr->event),
+								  SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
+								  SIPTAG_TO_STR(gateway_ptr->register_from),
+								  SIPTAG_FROM_STR(gateway_ptr->register_from),
+								  SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+								  SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),	/* sofia stack bases its auto-refresh stuff on this */
 								  TAG_NULL());
 					gw_sub_ptr->retry = now + gw_sub_ptr->retry_seconds;
 				} else {
@@ -266,6 +280,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		reg_state_t ostate = gateway_ptr->state;
 		char *user_via = NULL;
+		char *register_host = NULL;
 
 		if (!now) {
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
@@ -277,9 +292,14 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), TAG_END());
 			sofia_private_t *pvt;
 
-			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
+			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
+
+			/* check for NAT and place a Via header if necessary (hostname or non-local IP) */
+			if (register_host && sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
+
+			switch_safe_free(register_host);
 
 			pvt = malloc(sizeof(*pvt));
 			switch_assert(pvt);
@@ -335,9 +355,14 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				sofia_reg_new_handle(gateway_ptr, now ? 1 : 0);
 			}
 
-			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
+			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
+
+			/* check for NAT and place a Via header if necessary (hostname or non-local IP) */
+			if (register_host && sofia_glue_check_nat(gateway_ptr->profile, register_host)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
+
+			switch_safe_free(register_host);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registering %s\n", gateway_ptr->name);
 
@@ -1114,19 +1139,23 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
+			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+				if (regtype == REG_REGISTER) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP auth %s (REGISTER) on sofia profile '%s' "
+									  "for [%s@%s] from ip %s\n", forbidden ? "failure" : "challenge", profile->name, to_user, to_host, network_ip);
+				}
+			}
+
 			if (profile->debug) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s] from ip '%s'\n",
-								  forbidden ? "forbidden" : "challenge", to_user, to_host, network_ip);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s]\n",
+								  forbidden ? "forbidden" : "challenge", to_user, to_host);
 			}
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
-
+				
 				/* Log line added to support Fail2Ban */
 				if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-					if (regtype == REG_REGISTER) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (REGISTER) on sofia profile '%s' "
-										  "for [%s@%s] from ip %s\n", profile->name, to_user, to_host, network_ip);
-					} else if (regtype == REG_INVITE) {
+					if (regtype == REG_INVITE) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (INVITE) on sofia profile '%s' "
 										  "for [%s@%s] from ip %s\n", profile->name, to_user, to_host, network_ip);
 					}
@@ -1416,27 +1445,27 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				}
 			}
 
-
-#if 0
-			if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, sub_host);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-				switch_event_fire(&s_event);
+			if (sofia_test_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER)) {
+				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, sub_host);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+					switch_event_fire(&s_event);
+				}
+			} else {
+				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
+					switch_event_fire(&s_event);
+				}		
 			}
-#else
-			if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
-				switch_event_fire(&s_event);
-			}				
-#endif
+			
 		} else {
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);

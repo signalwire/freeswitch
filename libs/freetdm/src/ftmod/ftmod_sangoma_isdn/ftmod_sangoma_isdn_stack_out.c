@@ -36,9 +36,10 @@
 
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 {
-	ConEvnt conEvnt;
+	ConEvnt conEvnt;	
 	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
-	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;	
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
 
 	ftdm_assert((!sngisdn_info->suInstId && !sngisdn_info->spInstId), "Trying to call out, but call data was not cleared\n");
 	
@@ -116,14 +117,6 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 		conEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
 	}
 
-	conEvnt.progInd.eh.pres = PRSNT_NODEF;
-	conEvnt.progInd.location.pres = PRSNT_NODEF;
-	conEvnt.progInd.location.val = IN_LOC_USER;
-	conEvnt.progInd.codeStand0.pres = PRSNT_NODEF;
-	conEvnt.progInd.codeStand0.val = IN_CSTD_CCITT;
-	conEvnt.progInd.progDesc.pres = PRSNT_NODEF;
-	conEvnt.progInd.progDesc.val = IN_PD_NOTETEISDN; /* Not end-to-end ISDN */
-
 	if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
 		conEvnt.sndCmplt.eh.pres = PRSNT_NODEF;
 	}
@@ -133,10 +126,13 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	}
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Outgoing call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
-	cpy_called_num_from_user(&conEvnt.cdPtyNmb, &ftdmchan->caller_data);
-	cpy_calling_num_from_user(&conEvnt.cgPtyNmb, &ftdmchan->caller_data);
-	cpy_redir_num_from_user(&conEvnt.redirNmb, &ftdmchan->caller_data);
-	cpy_calling_name_from_user(&conEvnt, ftdmchan);
+	set_called_num(ftdmchan, &conEvnt.cdPtyNmb);
+	set_calling_num(ftdmchan, &conEvnt.cgPtyNmb);
+	set_calling_subaddr(ftdmchan, &conEvnt.cgPtySad);
+	set_redir_num(ftdmchan, &conEvnt.redirNmb);
+	set_calling_name(ftdmchan, &conEvnt);
+	set_facility_ie(ftdmchan, &conEvnt.facilityStr);
+	set_prog_ind_ie(ftdmchan, &conEvnt.progInd, prog_ind);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -323,14 +319,14 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan)
 	return;
 }
 
-void sngisdn_snd_progress(ftdm_channel_t *ftdmchan)
+void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind)
 {
 	CnStEvnt cnStEvnt;
 	
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending PROGRESS, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -344,14 +340,7 @@ void sngisdn_snd_progress(ftdm_channel_t *ftdmchan)
 	}
 
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));	
-
-	cnStEvnt.progInd.eh.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.location.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.location.val = IN_LOC_USER;
-	cnStEvnt.progInd.codeStand0.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.codeStand0.val = IN_CSTD_CCITT;
-	cnStEvnt.progInd.progDesc.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.progDesc.val = IN_PD_IBAVAIL;
+	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROGRESS (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_PROGRESS, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -360,14 +349,14 @@ void sngisdn_snd_progress(ftdm_channel_t *ftdmchan)
 	return;
 }
 
-void sngisdn_snd_alert(ftdm_channel_t *ftdmchan)
+void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind)
 {
 	CnStEvnt cnStEvnt;
 	
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending ALERT, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -376,13 +365,7 @@ void sngisdn_snd_alert(ftdm_channel_t *ftdmchan)
 
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
-	cnStEvnt.progInd.eh.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.location.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.location.val = IN_LOC_USER;
-	cnStEvnt.progInd.codeStand0.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.codeStand0.val = IN_CSTD_CCITT;
-	cnStEvnt.progInd.progDesc.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.progDesc.val = IN_PD_NOTETEISDN;
+	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending ALERT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -394,10 +377,10 @@ void sngisdn_snd_alert(ftdm_channel_t *ftdmchan)
 
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 {
-	CnStEvnt cnStEvnt;
-	
+	CnStEvnt cnStEvnt;	
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
 
  	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending CONNECT, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
@@ -407,7 +390,6 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	}
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
-
 
 	cnStEvnt.chanId.eh.pres = PRSNT_NODEF;
 	cnStEvnt.chanId.prefExc.pres = PRSNT_NODEF;
@@ -440,14 +422,8 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 		cnStEvnt.chanId.chanNmbSlotMap.len = 1;
 		cnStEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
 	}
-	
-	cnStEvnt.progInd.eh.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.location.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.location.val = IN_LOC_USER;
-	cnStEvnt.progInd.codeStand0.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.codeStand0.val = IN_CSTD_CCITT;
-	cnStEvnt.progInd.progDesc.pres = PRSNT_NODEF;
-	cnStEvnt.progInd.progDesc.val = IN_PD_NOTETEISDN; /* Not end-to-end ISDN */
+
+	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if (sng_isdn_con_response(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -456,6 +432,32 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	return;
 }
 
+void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
+{
+	FacEvnt facEvnt;
+	
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending FACILITY, but no call data, ignoring (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
+		return;
+	}
+		
+	memset(&facEvnt, 0, sizeof(facEvnt));
+	
+	set_facility_ie_str(ftdmchan, &facEvnt.facElmt.facStr.val[2], (ftdm_size_t*)&facEvnt.facElmt.facStr.len);
+	
+	facEvnt.facElmt.facStr.val[0] = 0x1C;
+	facEvnt.facElmt.facStr.val[1] = facEvnt.facElmt.facStr.len;
+	
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending FACILITY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+
+	if (sng_isdn_facility_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &facEvnt, MI_FACIL, signal_data->dchan_id, sngisdn_info->ces)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused FACILITY request\n");
+	}
+	return;
+}
 
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 {
@@ -510,7 +512,7 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending DISCONNECT, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
@@ -530,6 +532,8 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	discEvnt.causeDgn[0].causeVal.val = ftdmchan->caller_data.hangup_cause;
 	discEvnt.causeDgn[0].recommend.pres = NOTPRSNT;
 	discEvnt.causeDgn[0].dgnVal.pres = NOTPRSNT;
+
+	set_facility_ie(ftdmchan, &discEvnt.facilityStr);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 	if (sng_isdn_disc_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &discEvnt)) {
@@ -575,6 +579,8 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 		spInstId = sngisdn_info->spInstId;
 	}
 
+	set_facility_ie(ftdmchan, &relEvnt.facilityStr);
+	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending RELEASE/RELEASE COMPLETE (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, suInstId, spInstId);
 
 	if (glare) {
@@ -588,6 +594,7 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 	}	
 	return;
 }
+
 
 /* We received an incoming frame on the d-channel, send data to the stack */
 void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)

@@ -36,6 +36,46 @@
 #include "private/switch_core_pvt.h"
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_io_read_lock(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (session->io_rwlock) {
+		if (switch_thread_rwlock_tryrdlock(session->io_rwlock) == SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_io_write_lock(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (session->io_rwlock) {
+		switch_thread_rwlock_wrlock(session->io_rwlock);
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_io_rwunlock(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (session->io_rwlock) {
+		switch_thread_rwlock_unlock(session->io_rwlock);
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
+
+
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(switch_core_session_t *session, const char *file, const char *func, int line)
 #else

@@ -41,6 +41,7 @@
 
 
 #include "ftdm_declare.h"
+#include "ftdm_call_utils.h"
 
 /*! \brief Max number of channels per physical span */
 #define FTDM_MAX_CHANNELS_PHYSICAL_SPAN 32
@@ -61,23 +62,6 @@
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
 
 #define FTDM_INVALID_INT_PARM 0xFF
-
-/*! \brief FreeTDM APIs possible return codes */
-typedef enum {
-	FTDM_SUCCESS, /*!< Success */
-	FTDM_FAIL, /*!< Failure, generic error return code, use ftdm_channel_get_last_error or ftdm_span_get_last_error for details */
-	FTDM_MEMERR, /*!< Memory error, most likely allocation failure */
-	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
-	FTDM_NOTIMPL, /*!< Operation not implemented */
-	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
-	FTDM_EINVAL /*!< Invalid argument */
-} ftdm_status_t;
-
-/*! \brief FreeTDM bool type. */
-typedef enum {
-	FTDM_FALSE,
-	FTDM_TRUE
-} ftdm_bool_t;
 
 /*! \brief Thread/Mutex OS abstraction API. */
 #include "ftdm_os.h"
@@ -220,8 +204,10 @@ typedef enum {
 	FTDM_TON_SUBSCRIBER_NUMBER,
 	FTDM_TON_ABBREVIATED_NUMBER,
 	FTDM_TON_RESERVED,
-	FTDM_TON_INVALID = 255
+	FTDM_TON_INVALID
 } ftdm_ton_t;
+#define TON_STRINGS "unknown", "international", "national", "network-specific", "subscriber-number", "abbreviated-number", "reserved", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_ton, ftdm_ton2str, ftdm_ton_t)
 
 /*! Numbering Plan Identification (NPI) */
 typedef enum {
@@ -232,8 +218,52 @@ typedef enum {
 	FTDM_NPI_NATIONAL = 8,
 	FTDM_NPI_PRIVATE = 9,
 	FTDM_NPI_RESERVED = 10,
-	FTDM_NPI_INVALID = 255
+	FTDM_NPI_INVALID
 } ftdm_npi_t;
+#define NPI_STRINGS "unknown", "ISDN", "data", "telex", "national", "private", "reserved", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_npi, ftdm_npi2str, ftdm_npi_t)
+
+/*! Presentation Ind */
+typedef enum {
+	FTDM_PRES_ALLOWED,
+	FTDM_PRES_RESTRICTED,
+	FTDM_PRES_NOT_AVAILABLE,
+	FTDM_PRES_RESERVED,
+	FTDM_PRES_INVALID
+} ftdm_presentation_t;
+#define PRESENTATION_STRINGS "presentation-allowed", "presentation-restricted", "number-not-available", "reserved", "Invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_presentation, ftdm_presentation2str, ftdm_presentation_t)
+
+/*! Screening Ind */
+typedef enum {
+	FTDM_SCREENING_NOT_SCREENED,
+	FTDM_SCREENING_VERIFIED_PASSED,
+	FTDM_SCREENING_VERIFIED_FAILED,
+	FTDM_SCREENING_NETWORK_PROVIDED,
+	FTDM_SCREENING_INVALID
+} ftdm_screening_t;
+#define SCREENING_STRINGS "user-provided-not-screened", "user-provided-verified-and-passed", "user-provided-verified-and-failed", "network-provided", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_screening, ftdm_screening2str, ftdm_screening_t)
+
+/*! \brief bearer capability */
+typedef enum {
+	FTDM_BEARER_CAP_SPEECH = 0x00,
+	FTDM_BEARER_CAP_64K_UNRESTRICTED = 0x02,
+	FTDM_BEARER_CAP_3_1KHZ_AUDIO = 0x03,
+	FTDM_BEARER_CAP_INVALID
+} ftdm_bearer_cap_t;
+#define BEARER_CAP_STRINGS "speech", "unrestricted-digital-information", "3.1-Khz-audio", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_bearer_cap, ftdm_bearer_cap2str, ftdm_bearer_cap_t)
+
+/*! \brief user information layer 1 protocol */
+typedef enum {
+	FTDM_USER_LAYER1_PROT_V110 = 0x01,
+	FTDM_USER_LAYER1_PROT_ULAW = 0x02,
+	FTDM_USER_LAYER1_PROT_ALAW = 0x03,
+	FTDM_USER_LAYER1_PROT_INVALID
+} ftdm_user_layer1_prot_t;
+#define USER_LAYER1_PROT_STRINGS "V.110", "u-law", "a-law", "Invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t)
 
 /*! \brief Number abstraction */
 typedef struct {
@@ -241,20 +271,6 @@ typedef struct {
 	uint8_t type;
 	uint8_t plan;
 } ftdm_number_t;
-
-/*! \brief bearer capability */
-typedef enum {
-	FTDM_BEARER_CAP_SPEECH = 0x00,
-	FTDM_BEARER_CAP_64K_UNRESTRICTED = 0x02,
-	FTDM_BEARER_CAP_3_1KHZ_AUDIO = 0x03
-} ftdm_bearer_cap_t;
-
-/*! \brief user information layer 1 protocol */
-typedef enum {
-	FTDM_USER_LAYER1_PROT_V110 = 0x01,
-	FTDM_USER_LAYER1_PROT_ULAW = 0x02,
-	FTDM_USER_LAYER1_PROT_ALAW = 0x03,
-} ftdm_user_layer1_prot_t;
 
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
@@ -285,11 +301,12 @@ typedef enum {
 
 /*! \brief Signaling messages sent by the stacks */
 typedef enum {
-	FTDM_SIGEVENT_START, /*!< Incoming call (ie: incoming SETUP msg or Ring) */
+	FTDM_SIGEVENT_START,/*!< Incoming call (ie: incoming SETUP msg or Ring) */
 	FTDM_SIGEVENT_STOP, /*!< Hangup */
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
-	FTDM_SIGEVENT_FLASH, /*< Flash event  (typically on-hook/off-hook for analog devices) */
+	FTDM_SIGEVENT_FLASH, /*!< Flash event  (typically on-hook/off-hook for analog devices) */
+ 	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
@@ -299,11 +316,12 @@ typedef enum {
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
+	FTDM_SIGEVENT_MSG, /*!< We received an in-call msg */
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROGRESS", \
+#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "INVALID"
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
@@ -585,7 +603,7 @@ typedef enum {
  * This is used during incoming calls when you want to request the signaling stack
  * to notify about indications occurring locally */
 typedef enum {
-	FTDM_CHANNEL_INDICATE_RING,
+	FTDM_CHANNEL_INDICATE_RINGING,
 	FTDM_CHANNEL_INDICATE_PROCEED,
 	FTDM_CHANNEL_INDICATE_PROGRESS,
 	FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA,

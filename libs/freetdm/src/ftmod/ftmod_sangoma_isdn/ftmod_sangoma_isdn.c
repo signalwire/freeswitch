@@ -40,8 +40,8 @@
 #include <sys/mman.h>
 #endif
 
-static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj);
 
+static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj);
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span);
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span);
 
@@ -115,7 +115,20 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_RING, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_END}
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_END}
+	},
+	{
+		ZSD_INBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_PROCEED, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA,
+		 FTDM_CHANNEL_STATE_UP, FTDM_END}
+	},
+	{
+		ZSD_INBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RINGING, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 	},
 	{
 		ZSD_INBOUND,
@@ -189,9 +202,17 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS,
-		 FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
+		 FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP,
+		 FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
+	{
+		ZSD_OUTBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_PROCEED, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
+		 FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+		},
 	{
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
@@ -604,13 +625,15 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_GET_CALLERID:
 		{
-			sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
-			sngisdn_snd_proceed(ftdmchan);
+			if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+				sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
+				sngisdn_snd_proceed(ftdmchan);
+			}
 			/* Wait in this state until we get FACILITY msg */			
 		}
 		break;
 	case FTDM_CHANNEL_STATE_RING: /* incoming call request */
-		{
+		{			
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending incoming call from %s to %s to FTDM core\n", ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.dnis.digits);
 
 			/* we have enough information to inform FTDM of the call*/
@@ -635,6 +658,26 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			}
 		}
 		break;
+	case FTDM_CHANNEL_STATE_PROCEED:
+		{
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				/*OUTBOUND...so we were told by the line of this so noifiy the user*/
+				sigev.event_id = FTDM_SIGEVENT_PROCEED;
+				ftdm_span_send_signal(ftdmchan->span, &sigev);
+			} else {
+				if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+					sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
+					sngisdn_snd_proceed(ftdmchan);
+				}
+			}
+		}
+		break;
+	case FTDM_CHANNEL_STATE_RINGING:
+		{
+			ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+			sngisdn_snd_alert(ftdmchan, prog_ind);
+		}
+		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
 		{
 			/*check if the channel is inbound or outbound*/
@@ -642,9 +685,13 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				/*OUTBOUND...so we were told by the line of this so noifiy the user*/
 				sigev.event_id = FTDM_SIGEVENT_PROGRESS;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
-			} else if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
-				sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
-				sngisdn_snd_proceed(ftdmchan);
+			} else {
+				/* If we already sent a PROCEED before, do not send a PROGRESS as there is nothing to indicate to the remote switch */
+				if (ftdmchan->last_state != FTDM_CHANNEL_STATE_PROCEED) {
+					/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
+					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+					sngisdn_snd_progress(ftdmchan, prog_ind);
+				}
 			}
 		}
 		break;
@@ -654,7 +701,9 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
-				sngisdn_snd_progress(ftdmchan);
+				/* Send a progress message, indicating: In-band information/pattern available */
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_IB_AVAIL};
+				sngisdn_snd_progress(ftdmchan, prog_ind);
 			}
 		}
 		break; 
@@ -750,9 +799,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_DOWN: /* the call is finished and removed */
 		{
-			uint8_t glare = 0;
-
-			glare = sngisdn_test_flag(sngisdn_info, FLAG_GLARE);
+			uint8_t glare = sngisdn_test_flag(sngisdn_info, FLAG_GLARE);
 			/* clear all of the call specific data store in the channel structure */
 			clear_call_data(sngisdn_info);
 
@@ -992,6 +1039,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->state_map	= &sangoma_isdn_state_map;
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
+	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {

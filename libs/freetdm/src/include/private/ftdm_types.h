@@ -181,6 +181,8 @@ typedef enum {
 	 * after having called ftdm_send_span_signal(), which with this flag it will just enqueue the signal
 	 * for later delivery */
 	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 10),
+	/* If this flag is set, channel will be moved to proceed state when calls goes to routing */
+	FTDM_SPAN_USE_PROCEED_STATE = (1 << 11),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
@@ -204,6 +206,7 @@ typedef enum {
 	FTDM_CHANNEL_STATE_DIALTONE,
 	FTDM_CHANNEL_STATE_COLLECT,
 	FTDM_CHANNEL_STATE_RING,
+	FTDM_CHANNEL_STATE_RINGING,
 	FTDM_CHANNEL_STATE_BUSY,
 	FTDM_CHANNEL_STATE_ATTN,
 	FTDM_CHANNEL_STATE_GENRING,
@@ -211,6 +214,7 @@ typedef enum {
 	FTDM_CHANNEL_STATE_GET_CALLERID,
 	FTDM_CHANNEL_STATE_CALLWAITING,
 	FTDM_CHANNEL_STATE_RESTART,
+	FTDM_CHANNEL_STATE_PROCEED,
 	FTDM_CHANNEL_STATE_PROGRESS,
 	FTDM_CHANNEL_STATE_PROGRESS_MEDIA,
 	FTDM_CHANNEL_STATE_UP,
@@ -223,8 +227,8 @@ typedef enum {
 	FTDM_CHANNEL_STATE_INVALID
 } ftdm_channel_state_t;
 #define CHANNEL_STATE_STRINGS "DOWN", "HOLD", "SUSPENDED", "DIALTONE", "COLLECT", \
-		"RING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
-		"RESTART", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", \
+		"RING", "RINGING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
+		"RESTART", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", \
 		"HANGUP", "HANGUP_COMPLETE", "IN_LOOP", "INVALID"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channel_state_t)
 
