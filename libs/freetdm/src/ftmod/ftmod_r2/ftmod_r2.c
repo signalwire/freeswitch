@@ -56,15 +56,10 @@ typedef enum {
 	FTDM_R2_RUNNING = (1 << 0),
 } ftdm_r2_flag_t;
 
-typedef enum {
-	FTDM_R2_WAITING_ACK = (1 << 0),
-} ftdm_r2_call_flag_t;
-
 /* private call information stored in ftdmchan->call_data void* ptr */
 #define R2CALL(ftdmchan) ((ftdm_r2_call_t*)((ftdmchan)->call_data))
 typedef struct ftdm_r2_call_t {
 	openr2_chan_t *r2chan;
-	ftdm_r2_call_flag_t flags;
 	int accepted:1;
 	int answer_pending:1;
 	int disconnect_rcvd:1;
@@ -154,6 +149,12 @@ static ftdm_io_interface_t g_ftdm_r2_interface;
 static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan);
 static void ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan);
 
+/* whether R2 call accept process is pending */
+#define IS_ACCEPTING_PENDING(ftdmchan) \
+		( (!ftdm_test_flag((ftdmchan), FTDM_CHANNEL_OUTBOUND)) && !R2CALL((ftdmchan))->accepted && \
+				((ftdmchan)->state == FTDM_CHANNEL_STATE_PROGRESS || \
+				 (ftdmchan)->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA || \
+				 (ftdmchan)->state == FTDM_CHANNEL_STATE_UP) )
 
 /* functions not available on windows */
 #ifdef WIN32
@@ -374,7 +375,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	if (ftdmchan->state !=  FTDM_CHANNEL_STATE_DIALING) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Collision after call attempt, try another channel, new state = %s\n",
 				ftdm_channel_state2str(ftdmchan->state));
-		ftdm_clear_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
 		return FTDM_BREAK;
 	}
 
@@ -451,16 +451,43 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
 }
 
+/*
+ * Accepting a call in R2 is a lengthy process due to MF tones,
+ * when the user sends PROGRESS indication (implicitly moving the
+ * ftdm channel to PROGRESS state) the R2 processing loop
+ * does not clear FTDM_CHANNEL_STATE_CHANGE immediately as it does
+ * for all the other states, instead has to wait for on_call_accepted
+ * callback from openr2, which means the MF has ended and the progress
+ * indication is done, in order to clear the flag. However, if
+ * a protocol error or call disconnection (which is indicated using CAS bits)
+ * occurrs while accepting, we must clear the pending flag, this function
+ * takes care of that
+ * */
+static void clear_accept_pending(ftdm_channel_t *fchan)
+{
+	if (IS_ACCEPTING_PENDING(fchan)) {
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
+		ftdm_channel_complete_state(fchan);
+	} else if (ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "State change flag set in state %s, last state = %s\n", 
+				ftdm_channel_state2str(fchan->state), ftdm_channel_state2str(fchan->last_state));
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
+		ftdm_channel_complete_state(fchan);
+	}
+}
+
 static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t mode)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call accepted\n");
+
+	clear_accept_pending(ftdmchan);
+
 	/* at this point the MF signaling has ended and there is no point on keep reading */
 	openr2_chan_disable_read(r2chan);
 	R2CALL(ftdmchan)->accepted = 1;
+
 	if (OR2_DIR_BACKWARD == openr2_chan_get_direction(r2chan)) {
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
-		ftdm_channel_complete_state(ftdmchan);
 		if (R2CALL(ftdmchan)->answer_pending) {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Answer was pending, answering now.\n");
 			ft_r2_answer_call(ftdmchan);
@@ -492,6 +519,8 @@ static void ftdm_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_discon
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call disconnected\n");
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Got openr2 disconnection, clearing call\n");
+
+	clear_accept_pending(ftdmchan);
 
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
 
@@ -563,6 +592,8 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 	}
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Protocol error\n");
+
+	clear_accept_pending(ftdmchan);
 
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
 	R2CALL(ftdmchan)->protocol_error = 1;
@@ -1204,12 +1235,9 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
 		R2CALL(ftdmchan)->chanstate = ftdmchan->state;
 
-		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) && !R2CALL(ftdmchan)->accepted &&
-				(ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS ||
-				 ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
-				 ftdmchan->state == FTDM_CHANNEL_STATE_UP) ) {
+		if (IS_ACCEPTING_PENDING(ftdmchan)) {
 			/* 
-			   Moving to PROGRESS, PROGRESS_MEDIA or UP means that we must accept the call, and accepting
+			   Moving to PROGRESS, PROGRESS_MEDIA or UP means that we must accept the call first, and accepting
 			   the call in R2 means sending a tone, then waiting for the acknowledge from the other end,
 			   since all of that requires sending and detecting tones, it takes a few milliseconds (I'd say around 100)
 			   which means during that time the user should not try to perform any operations like answer, hangup or anything
