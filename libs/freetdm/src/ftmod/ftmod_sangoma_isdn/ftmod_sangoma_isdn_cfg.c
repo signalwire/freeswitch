@@ -280,7 +280,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 		} else if (!strcasecmp(var, "outbound-bearer_cap")) {
 			ftdm_set_bearer_capability(val, (uint8_t*)&span->default_caller_data.bearer_capability);
 		} else if (!strcasecmp(var, "outbound-bearer_layer1")) {
-			ftdm_set_bearer_layer1(val, &span->default_caller_data.bearer_layer1);
+			ftdm_set_bearer_layer1(val, (uint8_t*)&span->default_caller_data.bearer_layer1);
 		} else if (!strcasecmp(var, "channel-restart-on-link-up")) {
 			parse_yesno(var, val, &signal_data->restart_opt);
 		} else if (!strcasecmp(var, "local-number")) {			
