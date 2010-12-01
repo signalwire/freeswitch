@@ -198,6 +198,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			num_local_numbers;
 	uint8_t 		ignore_cause_value;
 	uint8_t			timer_t3;
+	uint8_t 		restart_opt;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
