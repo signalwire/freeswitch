@@ -1303,6 +1303,10 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 						} 
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Notifying progress\n");
+						sigev.event_id = FTDM_SIGEVENT_PROCEED;
+						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
+							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+						}
 						sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
 						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
@@ -1417,6 +1421,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	int res, ms;
 	int index = 0;
 	struct timeval start, end;
+	ftdm_iterator_t *chaniter = NULL;
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
 #ifdef __linux__
@@ -1436,6 +1441,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 	memset(&start, 0, sizeof(start));
 	memset(&end, 0, sizeof(end));
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	while (ftdm_running() && ftdm_test_flag(r2data, FTDM_R2_RUNNING)) {
 		res = gettimeofday(&end, NULL);
 		if (start.tv_sec) {
@@ -1457,9 +1463,10 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
-		for (i = 0; i < span->chan_count; i++) {
-			r2chan = R2CALL(span->channels[(i+1)])->r2chan;
-			ftdmchan = openr2_chan_get_client_data(r2chan);
+		chaniter = ftdm_span_get_chan_iterator(span, chaniter);
+		for (i = 0; chaniter; chaniter = ftdm_iterator_next(chaniter), i++) {
+			ftdmchan = ftdm_iterator_current(chaniter);
+			r2chan = R2CALL(ftdmchan)->r2chan;
 			poll_events[i] = POLLPRI;
 			if (openr2_chan_get_read_enabled(r2chan)) {
 				poll_events[i] |= POLLIN;
@@ -1481,29 +1488,36 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
-		/* XXX
-		* when ftdm_span_poll_event() returns FTDM_SUCCESS, means there are events pending on the span.
-		* is it possible to know on which channels those events are pending, without traversing the span?
-		* XXX */
-		for (i = 1; i <= span->chan_count; i++) {
-			r2chan = R2CALL(span->channels[i])->r2chan;
-			ftdmchan = openr2_chan_get_client_data(r2chan);
-			r2call = R2CALL(ftdmchan);
+		/* this main loop takes care of MF and CAS signaling during call setup and tear down
+		 * for every single channel in the span, do not perform blocking operations here! */
+		chaniter = ftdm_span_get_chan_iterator(span, chaniter);
+		for ( ; chaniter; chaniter = ftdm_iterator_next(chaniter)) {
+			ftdmchan = ftdm_iterator_current(chaniter);
 
 			ftdm_mutex_lock(ftdmchan->mutex);
+
+			r2chan = R2CALL(span->channels[i])->r2chan;
+
 			ftdm_r2_state_advance_all(ftdmchan);
+
 			openr2_chan_process_signaling(r2chan);
+
 			ftdm_r2_state_advance_all(ftdmchan);
+
 			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
+		/* deliver the actual events to the user now without any channel locking */
 		ftdm_span_trigger_signals(span);
 	}
-
-	for (i = 1; i <= span->chan_count; i++) {
-		r2chan = R2CALL(span->channels[i])->r2chan;
+	
+	chaniter = ftdm_span_get_chan_iterator(span, chaniter);
+	for ( ; chaniter; chaniter = ftdm_iterator_next(chaniter)) {
+		ftdmchan = ftdm_iterator_current(chaniter);
+		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_blocked(r2chan);
 	}
 
+	ftdm_iterator_free(chaniter);
 	ftdm_safe_free(poll_events);
 
 	ftdm_clear_flag(r2data, FTDM_R2_RUNNING);
