@@ -2681,6 +2681,162 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 	
 }
 
+#define START_SAMPLES 32768
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *session, const char *file, const char *insert_file, switch_size_t sample_point)
+{
+	switch_file_handle_t orig_fh = { 0 };
+	switch_file_handle_t new_fh = { 0 };
+	switch_codec_implementation_t read_impl = { 0 };
+	char *tmp_file;
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	int16_t *abuf = NULL;
+	switch_size_t olen = 0;
+	int asis = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_size_t sample_count = 0;
+	uint32_t pos = 0;
+	char *ext;
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+
+	if ((ext = strrchr(file, '.'))) {
+		ext++;
+	} else {
+		ext = "wav";
+	}
+	
+	tmp_file = switch_core_session_sprintf(session, "%s%smsg_%s.%s", 
+										   SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str, ext);	
+	
+	switch_core_session_get_read_impl(session, &read_impl);
+	
+	new_fh.channels = read_impl.number_of_channels;
+	new_fh.native_rate = read_impl.actual_samples_per_second;
+
+
+	if (switch_core_file_open(&new_fh,
+							  tmp_file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", tmp_file);
+		goto end;
+	}
+
+
+	if (switch_core_file_open(&orig_fh,
+							  file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", file);
+		goto end;
+	}
+
+
+	switch_zmalloc(abuf, START_SAMPLES * sizeof(*abuf));
+
+	if (switch_test_flag((&orig_fh), SWITCH_FILE_NATIVE)) {
+		asis = 1;
+	}
+
+	while (switch_channel_ready(channel)) {
+		olen = START_SAMPLES;
+
+		if (!asis) {
+			olen /= 2;
+		}
+
+		if ((sample_count + olen) > sample_point) {
+			olen = sample_point - sample_count;
+		}
+
+		if (!olen || switch_core_file_read(&orig_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+			break;
+		}
+
+		sample_count += olen;
+
+		switch_core_file_write(&new_fh, abuf, &olen);
+	}
+
+	switch_core_file_close(&orig_fh);
+
+
+	if (switch_core_file_open(&orig_fh,
+							  insert_file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", file);
+		goto end;
+	}
+
+
+	while (switch_channel_ready(channel)) {
+		olen = START_SAMPLES;
+
+		if (!asis) {
+			olen /= 2;
+		}
+
+		if (switch_core_file_read(&orig_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+			break;
+		}
+
+		sample_count += olen;
+
+		switch_core_file_write(&new_fh, abuf, &olen);
+	}
+
+	switch_core_file_close(&orig_fh);
+
+	if (switch_core_file_open(&orig_fh,
+							  file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", file);
+		goto end;
+	}
+
+	pos = 0;
+	switch_core_file_seek(&orig_fh, &pos, sample_point, SEEK_SET);
+
+	while (switch_channel_ready(channel)) {
+		olen = START_SAMPLES;
+
+		if (!asis) {
+			olen /= 2;
+		}
+
+		if (switch_core_file_read(&orig_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+			break;
+		}
+
+		sample_count += olen;
+
+		switch_core_file_write(&new_fh, abuf, &olen);
+	}
+
+ end:
+
+	if (switch_test_flag((&orig_fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&orig_fh);
+	}
+
+	if (switch_test_flag((&new_fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&new_fh);
+	}
+
+	switch_file_rename(tmp_file, file, switch_core_session_get_pool(session));
+	unlink(tmp_file);
+
+	switch_safe_free(abuf);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 
 /* For Emacs:
  * Local Variables:
