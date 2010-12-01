@@ -115,15 +115,21 @@ bool BoardGSM::KhompPvtGSM::onCallSuccess(K3L_EVENT *e)
 
         if (call()->_pre_answer)
         {
-            dtmfSuppression(Opt::_out_of_band_dtmfs);
+            dtmfSuppression(Opt::_options._out_of_band_dtmfs());
 
             startListen();
             startStream();
+            switch_channel_mark_pre_answered(getFSChannel());
         }
     }
     catch (ScopedLockFailed & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(GSM) r (unable to lock %s!)") % err._msg.c_str() );
+        return false;
+    }
+    catch (Board::KhompPvt::InvalidSwitchChannel & err)
+    {
+        LOG(ERROR, PVT_FMT(target(), "(GSM) r (%s)") % err._msg.c_str() );
         return false;
     }
         
@@ -401,14 +407,14 @@ bool BoardGSM::KhompPvtGSM::setupConnection()
     }
 
     bool res_out_of_band_dtmf = (call()->_var_dtmf_state == T_UNKNOWN ?
-        Opt::_suppression_delay && Opt::_out_of_band_dtmfs : (call()->_var_dtmf_state == T_TRUE));
+        Opt::_options._suppression_delay() && Opt::_options._out_of_band_dtmfs() : (call()->_var_dtmf_state == T_TRUE));
 
     bool res_echo_cancellator = (call()->_var_echo_state == T_UNKNOWN ?
-        Opt::_echo_canceller : (call()->_var_echo_state == T_TRUE));
+        Opt::_options._echo_canceller() : (call()->_var_echo_state == T_TRUE));
 
 
     bool res_auto_gain_cntrol = (call()->_var_gain_state == T_UNKNOWN ?
-        Opt::_auto_gain_control : (call()->_var_gain_state == T_TRUE));
+        Opt::_options._auto_gain_control() : (call()->_var_gain_state == T_TRUE));
 
 
     if (!call()->_flags.check(Kflags::REALLY_CONNECTED))
@@ -516,6 +522,11 @@ bool BoardGSM::KhompPvtGSM::validContexts(
 {
     DBG(FUNC,PVT_FMT(_target,"(GSM) c"));
 
+    if(!_group_context.empty())
+    {
+        contexts.push_back(_group_context);
+    }
+
     if (!extra_context.empty())
     {    
         if (!_group_context.empty())
@@ -526,25 +537,25 @@ bool BoardGSM::KhompPvtGSM::validContexts(
             contexts.push_back(pvt_context);
         }    
 
-        if (!Opt::_context_gsm_call.empty())
+        if (!Opt::_options._context_gsm_call().empty())
         {    
-            std::string context(Opt::_context_gsm_call);
+            std::string context(Opt::_options._context_gsm_call());
             context += "-"; 
             context += extra_context;
             contexts.push_back(_group_context);
         }
 
-        if (!Opt::_context2_gsm_call.empty())
+        if (!Opt::_options._context2_gsm_call().empty())
         {    
-            std::string context(Opt::_context2_gsm_call);
+            std::string context(Opt::_options._context2_gsm_call());
             context += "-"; 
             context += extra_context;
             contexts.push_back(_group_context);
         }    
     }  
 
-    contexts.push_back(Opt::_context_gsm_call);
-    contexts.push_back(Opt::_context2_gsm_call);
+    contexts.push_back(Opt::_options._context_gsm_call());
+    contexts.push_back(Opt::_options._context2_gsm_call());
 
     for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
         replaceTemplate((*i), "CC", _target.object);

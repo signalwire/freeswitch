@@ -96,16 +96,6 @@ should be opened for the channel. Limited to 25ms min, 500ms max.
 -->
 
 <!--
-Enable/disable native bridge mode (known in pt_BR as "trombone") for calls
-in the Khomp channel, passing the audio inside the board when both channels
-(incoming and outgoing) are of type Khomp. This reduces the echo and the
-audio delay, and frees the host from most audio processing.
-(default = yes)
-
-<param name="native-bridge" value="yes"/>
--->
-
-<!--
 Defines the incoming context for calls on E1 channels. Some wildcards are
 accepted, and described in the bottom of this file.
 (default = khomp-DD-LL)
@@ -240,47 +230,29 @@ is enabled on the board configuration. Possible values:
 -->
 
 <!--
-Sets the default AMA flags, affecting the categorization of entries in 
-the call detail records.
-(default = default)
-
-<param name="amaflags" value="default"/>
--->
-
-<!--
 Sets the account code for calls placed on the channel. The account code may
 be any alphanumeric string
-(default = KhompBoard)
+default = <empty>)
 
-<param name="accountcode" value="KhompBoard"/>
+<param name="accountcode" value=""/>
 -->
 
 <!--
 Set the language of the channel (useful for selecting audio messages of a
 specific language on answer).
+
 (default = <empty>)
 
 <param name="language" value="pt_BR"/>
 -->
 
 <!--
-Set the music on hold class of the channel (useful for selecting a group of
-songs to play on hold).
-(default = default)
-
-<param name="mohclass" value="default"/>
--->
-
-<!--
 Sets the global orig (CALLERID) base for FXS boards. This number is added
 to a sequencial number, which is incremented for each FXS board and FXS
 channel in the system.
-
-For more example of how to use this option, see channel README file,
-section 'Opcoes do application Bridge', item '<action application="bridge" data="Khomp/r304" />'.
 (default = 0)
 
-<param name="fxs-global-orig" value="0200"/>
+<param name="fxs-global-orig" value="0"/>
 -->
 
 <!--
@@ -298,14 +270,6 @@ a FXS branch.
 (default = yes)
 
 <param name="fxs-bina" value="yes"/>
--->
-
-<!--
-Enable/disable using CTbus for Khomp CTI boards in native bridge.
-(WARNING: just used for internal testings!)
-(default = no)
-
-<param name="has-ctbus" value="no"/>
 -->
 
 <!--
@@ -335,18 +299,6 @@ not have any tone. Values are in milliseconds.
 (default = 2500)
 
 <param name="delay-ringback-pbx" value="2500"/>
--->
-
-<!--
-Defines if the channel should optimize audio delay by droping longstanding
-packets from audio buffer. This guarantees the minimal audio delay for the
-user, and avoid delays associated with miscoded SIP clients. However,
-depending on the system's scheduling policy (some 2.6 kernel releases),
-this may result on excessive drop of packets, and audible audio skipping.
-This should not be changed naively.
-(default = no)
-
-<param name="optimize-audio-path" value="no"/>
 -->
 
 <!--
@@ -526,9 +478,8 @@ In the example above, the branch numbered 804 will have specific
 configuration for default output volume set to +2.
 
 Possible values to options is:
-context, input-volume, output-volume language,
-mohclass, amaflags, accountcode, calleridnum, 
-calleridname, mailbox, flash-to-digits.
+context, input-volume, output-volume, language,
+accountcode, calleridnum, calleridname, flash-to-digits.
 -->
 </fxs-options>
 
