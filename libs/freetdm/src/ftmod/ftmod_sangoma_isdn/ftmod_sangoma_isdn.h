@@ -47,11 +47,12 @@
 #include <ctype.h>
 
 #include "private/ftdm_core.h"
+#include "ftmod_sangoma_isdn_user.h"
 
 #include <sng_isdn.h>
 
 /* Theoretical limit for MAX_SPANS_PER_NFAS_LINK is 31,
-   but set to 8 for now to save some memor */
+   but set to 8 for now to save some memory */
 
 #define MAX_SPANS_PER_NFAS_LINK	  	8 
 #define NUM_E1_CHANNELS_PER_SPAN 	32
@@ -63,31 +64,6 @@
 #define SNGISDN_DCHAN_QUEUE_LEN		200
 
 /* TODO: rename all *_cc_* to *_an_*  */
-
-#define SNGISDN_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
-#define SNGISDN_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
-#define SNGISDN_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)    \
-        _TYPE _FUNC1 (const char *name)                                                         \
-{                                                                                                               \
-                int i;                                                                                          \
-                _TYPE t = _MAX ;                                                                        \
-                                                                                                                        \
-                for (i = 0; i < _MAX ; i++) {                                           \
-                        if (!strcasecmp(name, _STRINGS[i])) {                   \
-                                t = (_TYPE) i;                                                          \
-                                break;                                                                          \
-}                                                                                               \
-}                                                                                                       \
-                                                                                                                        \
-                return t;                                                                                       \
-}                                                                                                               \
-        const char * _FUNC2 (_TYPE type)                                                \
-{                                                                                                               \
-                if (type > _MAX) {                                                                      \
-                        type = _MAX;                                                                    \
-}                                                                                                       \
-                return _STRINGS[(int)type];                                                     \
-}                                                                                                               \
 
 
 
@@ -163,45 +139,7 @@ typedef enum {
 	SNGISDN_EVENT_RST_IND,
 } ftdm_sngisdn_event_id_t;
 
-typedef enum {
-	/* Call is not end-to-end ISDN */
-	SNGISDN_PROGIND_DESCR_NETE_ISDN,
-	/* Destination address is non-ISDN */
-	SNGISDN_PROGIND_DESCR_DEST_NISDN,
-	/* Origination address is non-ISDN */
-	SNGISDN_PROGIND_DESCR_ORIG_NISDN,
-	/* Call has returned to the ISDN */
-	SNGISDN_PROGIND_DESCR_RET_ISDN,
-	/* Interworking as occured and has resulted in a telecommunication service change */
-	SNGISDN_PROGIND_DESCR_SERV_CHANGE,
-	/* In-band information or an appropriate pattern is now available */
-	SNGISDN_PROGIND_DESCR_IB_AVAIL,
-	/* Invalid */
-	SNGISDN_PROGIND_DESCR_INVALID,
-} ftdm_sngisdn_progind_descr_t;
-#define SNGISDN_PROGIND_DESCR_STRINGS "not-end-to-end-isdn", "destination-is-non-isdn", "origination-is-non-isdn", "call-returned-to-isdn", "service-change", "inband-info-available", "invalid"
-SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t);
 
-typedef enum {
-	/* User */
-	SNGISDN_PROGIND_LOC_USER,
-	/* Private network serving the local user */
-	SNGISDN_PROGIND_LOC_PRIV_NET_LOCAL_USR,
-	/* Public network serving the local user */
-	SNGISDN_PROGIND_LOC_PUB_NET_LOCAL_USR,
-	/* Transit network */
-	SNGISDN_PROGIND_LOC_TRANSIT_NET,
-	/* Public network serving remote user */
-	SNGISDN_PROGIND_LOC_PUB_NET_REMOTE_USR,
-	/* Private network serving remote user */
-	SNGISDN_PROGIND_LOC_PRIV_NET_REMOTE_USR,
-	/* Network beyond the interworking point */
-	SNGISDN_PROGIND_LOC_NET_BEYOND_INTRW,
-	/* Invalid */
-	SNGISDN_PROGIND_LOC_INVALID,
-} ftdm_sngisdn_progind_loc_t;
-#define SNGISDN_PROGIND_LOC_STRINGS "user", "private-net-local-user", "public-net-local-user", "transit-network", "public-net-remote-user", "private-net-remote-user", "beyond-interworking", "invalid"
-SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t);
 
 typedef struct ftdm_sngisdn_prog_ind {
 	ftdm_sngisdn_progind_loc_t loc;		/* location */
@@ -499,3 +437,15 @@ void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 
 #endif /* __FTMOD_SNG_ISDN_H__ */
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
+
+/******************************************************************************/
