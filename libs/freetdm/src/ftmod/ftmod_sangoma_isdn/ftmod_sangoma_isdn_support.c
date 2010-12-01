@@ -37,11 +37,11 @@
 
 /* ftmod_sangoma_isdn specific enum look-up functions */
 
-FTDM_ENUM_NAMES(SNGISDN_PROGIND_DESCR_NAMES, SNGISDN_PROGIND_DESCR_STRINGS)
-FTDM_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t, SNGISDN_PROGIND_DESCR_NAMES, SNGISDN_PROGIND_DESCR_INVALID)
+SNGISDN_ENUM_NAMES(SNGISDN_PROGIND_DESCR_NAMES, SNGISDN_PROGIND_DESCR_STRINGS)
+SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t, SNGISDN_PROGIND_DESCR_NAMES, SNGISDN_PROGIND_DESCR_INVALID)
 
-FTDM_ENUM_NAMES(SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_STRINGS)
-FTDM_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t, SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_INVALID)
+SNGISDN_ENUM_NAMES(SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_STRINGS)
+SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t, SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_INVALID)
 
 ftdm_status_t sngisdn_check_free_ids(void);
 
