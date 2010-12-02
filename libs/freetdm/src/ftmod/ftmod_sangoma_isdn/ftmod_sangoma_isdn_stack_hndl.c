@@ -33,6 +33,7 @@
  */
 
 #include "ftmod_sangoma_isdn.h"
+ftdm_status_t sngisdn_cause_val_requires_disconnect(ftdm_channel_t *ftdmchan, CauseDgn *causeDgn);
 
 /* Remote side transmit a SETUP */
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
@@ -352,33 +353,15 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 		case MI_ALERTING:
 			get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 
-			if (signal_data->ignore_cause_value != SNGISDN_OPT_TRUE &&
-				cnStEvnt->causeDgn[0].eh.pres && cnStEvnt->causeDgn[0].causeVal.pres) {
-
-				switch(cnStEvnt->causeDgn[0].causeVal.val) {
-					case 17:	/* User Busy */
-					case 18:	/* No User responding */
-					case 19:	/* User alerting, no answer */
-					case 21:	/* Call rejected, the called party does not with to accept this call */
-					case 27:	/* Destination out of order */
-					case 31:	/* Normal, unspecified */
-					case 34:	/* Circuit/Channel congestion */
-					case 41:	/* Temporary failure */
-					case 42:	/* Switching equipment is experiencing a period of high traffic */
-					case 47:	/* Resource unavailable */
-					case 58:	/* Bearer Capability not available */
-					case 63:	/* Service or option not available */
-					case 65:	/* Bearer Cap not implemented, not supported */
-					case 79:	/* Service or option not implemented, unspecified */
-						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Cause requires disconnect (cause:%d)\n", cnStEvnt->causeDgn[0].causeVal.val);
-						ftdmchan->caller_data.hangup_cause = cnStEvnt->causeDgn[0].causeVal.val;
+			if (sngisdn_cause_val_requires_disconnect(ftdmchan, &cnStEvnt->causeDgn[0]) == FTDM_SUCCESS) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Cause requires disconnect (cause:%d)\n", cnStEvnt->causeDgn[0].causeVal.val);
+				ftdmchan->caller_data.hangup_cause = cnStEvnt->causeDgn[0].causeVal.val;
 						
-						sngisdn_set_flag(sngisdn_info, FLAG_SEND_DISC);
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-						goto sngisdn_process_cnst_ind_end;
-				}
+				sngisdn_set_flag(sngisdn_info, FLAG_SEND_DISC);
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+				goto sngisdn_process_cnst_ind_end;
 			}
-				
+			
 			switch(ftdmchan->state) {
 				case FTDM_CHANNEL_STATE_DIALING:
 				case FTDM_CHANNEL_STATE_PROCEED:
@@ -1119,8 +1102,44 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 													(evntType == IN_LNK_DWN)?"LNK_DOWN":
 													(evntType == IN_LNK_UP)?"LNK_UP":
 													(evntType == IN_INDCHAN)?"b-channel":
-													(evntType == IN_LNK_DWN_DM_RLS)?"Nfas service procedures":
+													(evntType == IN_LNK_DWN_DM_RLS)?"NFAS service procedures":
 													(evntType == IN_SWCHD_BU_DCHAN)?"NFAS switchover to backup":"Unknown");
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 	return;
+}
+
+ftdm_status_t sngisdn_cause_val_requires_disconnect(ftdm_channel_t *ftdmchan, CauseDgn *causeDgn)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	
+	if (signal_data->ignore_cause_value == SNGISDN_OPT_TRUE) {
+		return FTDM_FAIL;
+	}
+
+	/* By default, we only evaluate cause value on 5ESS switches */
+	if (signal_data->ignore_cause_value == SNGISDN_OPT_DEFAULT &&
+		signal_data->switchtype != SNGISDN_SWITCH_5ESS) {
+
+		return FTDM_FAIL;
+	}
+
+	/* ignore_cause_value = SNGISDN_OPT_FALSE or switchtype == 5ESS */
+	switch(causeDgn->causeVal.val) {
+		case 17:	/* User Busy */
+		case 18:	/* No User responding */
+		case 19:	/* User alerting, no answer */
+		case 21:	/* Call rejected, the called party does not with to accept this call */
+		case 27:	/* Destination out of order */
+		case 31:	/* Normal, unspecified */
+		case 34:	/* Circuit/Channel congestion */
+		case 41:	/* Temporary failure */
+		case 42:	/* Switching equipment is experiencing a period of high traffic */
+		case 47:	/* Resource unavailable */
+		case 58:	/* Bearer Capability not available */
+		case 63:	/* Service or option not available */
+		case 65:	/* Bearer Cap not implemented, not supported */
+		case 79:	/* Service or option not implemented, unspecified */
+			return FTDM_SUCCESS;
+	}
+	return FTDM_FAIL;
 }
