@@ -1511,7 +1511,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		openr2_chan_process_cas_signaling(r2chan);
 
 		ftdmchan = openr2_chan_get_client_data(r2chan);
-		ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+		//ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	}
 
 	memset(&start, 0, sizeof(start));
