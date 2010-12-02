@@ -445,7 +445,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 }
 
 /*
@@ -492,7 +492,7 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 			return;
 		}
 	} else {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	}
 }
 
@@ -502,15 +502,13 @@ static void ftdm_r2_on_call_answered(openr2_chan_t *r2chan)
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call answered\n");
 	/* notify the upper layer of progress in the outbound call */
 	if (OR2_DIR_FORWARD == openr2_chan_get_direction(r2chan)) {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 	}
 }
 
 /* may be called in the signaling or media thread depending on whether the hangup is product of MF or CAS signaling */
 static void ftdm_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_disconnect_cause_t cause)
 {
-	ftdm_sigmsg_t sigev;
-	ftdm_r2_data_t *r2data;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call disconnected\n");
@@ -523,28 +521,13 @@ static void ftdm_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_discon
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Call had been disconnected already by the user\n");
-		/* just ack the hangup to go down */
+		/* just ack the hangup to trigger the on_call_end callback and go down */
 		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_NORMAL_CLEARING);
 		return;
 	}
 
-	/* if the call has not been started yet we must go to HANGUP right here */ 
-	if (!R2CALL(ftdmchan)->ftdm_call_started) {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-		return;
-	}
-
 	ftdmchan->caller_data.hangup_cause  = ftdm_r2_cause_to_ftdm_cause(ftdmchan, cause);
-
-	/* notify the user of the call terminating */
-	memset(&sigev, 0, sizeof(sigev));
-	sigev.chan_id = ftdmchan->chan_id;
-	sigev.span_id = ftdmchan->span_id;
-	sigev.channel = ftdmchan;
-	sigev.event_id = FTDM_SIGEVENT_STOP;
-	r2data = ftdmchan->span->signal_data;
-
-	ftdm_span_send_signal(ftdmchan->span, &sigev);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 }
 
 static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
@@ -580,8 +563,6 @@ static void ftdm_r2_on_os_error(openr2_chan_t *r2chan, int errorcode)
 
 static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_error_t reason)
 {
-	ftdm_sigmsg_t sigev;
-	ftdm_r2_data_t *r2data;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
@@ -595,22 +576,14 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
 	R2CALL(ftdmchan)->protocol_error = 1;
 
-	if (!R2CALL(ftdmchan)->ftdm_call_started) {
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "The user already hung up, finishing call in protocol error\n");
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		return;
 	}
 
 	ftdmchan->caller_data.hangup_cause  = FTDM_CAUSE_PROTOCOL_ERROR; 
-
-	/* FIXME: go to terminating and notify the user from the terminating handler instead of notifying here */
-	memset(&sigev, 0, sizeof(sigev));
-	sigev.chan_id = ftdmchan->chan_id;
-	sigev.span_id = ftdmchan->span_id;
-	sigev.channel = ftdmchan;
-	sigev.event_id = FTDM_SIGEVENT_STOP;
-	r2data = ftdmchan->span->signal_data;
-
-	ftdm_span_send_signal(ftdmchan->span, &sigev);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 }
 
 static void ftdm_r2_on_line_blocked(openr2_chan_t *r2chan)
@@ -669,14 +642,13 @@ static void ftdm_r2_on_chan_log(openr2_chan_t *r2chan, const char *file, const c
 	openr2_log_level_t level, const char *fmt, va_list ap)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-#define CHAN_TAG "Chan "
-	char logmsg[512];
-	char completemsg[sizeof(logmsg) + sizeof(CHAN_TAG) - 1];
+	char logmsg[1024];
+	char completemsg[sizeof(logmsg)];
 	vsnprintf(logmsg, sizeof(logmsg), fmt, ap);
-	snprintf(completemsg, sizeof(completemsg), CHAN_TAG "%d:%d [%s] %s", 
-			ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state), logmsg);
+	snprintf(completemsg, sizeof(completemsg), "[s%dc%d] [%d:%d] [%s] %s", 
+			ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->physical_span_id, ftdmchan->physical_chan_id,
+			ftdm_channel_state2str(ftdmchan->state), logmsg);
 	ftdm_r2_write_log(level, file, function, line, completemsg);
-#undef CHAN_TAG
 }
 
 static int ftdm_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
@@ -1301,13 +1273,10 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Notifying progress\n");
 						sigev.event_id = FTDM_SIGEVENT_PROCEED;
-						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-						}
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
+
 						sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
-						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-						}
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
 					}
 				}
 				break;
@@ -1328,27 +1297,40 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Notifying of call answered\n");
 						sigev.event_id = FTDM_SIGEVENT_UP;
-						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-						}
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
 					}
 				}
 				break;
 
 				/* just got hangup */
-			case FTDM_CHANNEL_STATE_HANGUP: 
+			case FTDM_CHANNEL_STATE_HANGUP:
 				{
-					openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
-					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 					if (!R2CALL(ftdmchan)->disconnect_rcvd) {
+						openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 						/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 						openr2_chan_disconnect_call(r2chan, disconnect_cause);
 					} else if (!R2CALL(ftdmchan)->protocol_error) {
 						/* just ack the hangup, on_call_end will be called by openr2 right after */
-						openr2_chan_disconnect_call(r2chan, disconnect_cause);
+						openr2_chan_disconnect_call(r2chan, OR2_CAUSE_NORMAL_CLEARING);
 					} else {
-						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Clearing call due to protocol error\n");
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Clearing call due to protocol error\n");
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+					}
+				}
+				break;
+
+			case FTDM_CHANNEL_STATE_TERMINATING:
+				{
+					/* if the call has not been started yet we must go to HANGUP right here */ 
+					if (!R2CALL(ftdmchan)->ftdm_call_started) {
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					} else {
+						openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
+						/* notify the user of the call terminating and we wait for the user to move us to hangup */
+						sigev.event_id = FTDM_SIGEVENT_STOP;
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
 					}
 				}
 				break;
@@ -1408,7 +1390,6 @@ static void ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan)
 static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 {
 	openr2_chan_t *r2chan;
-	ftdm_r2_call_t *r2call = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_status_t status;
 	ftdm_span_t *span = (ftdm_span_t *) obj;
