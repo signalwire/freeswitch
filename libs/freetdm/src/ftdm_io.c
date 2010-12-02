@@ -1004,6 +1004,51 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
 	return status;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm_event_t **event)
+{
+	ftdm_status_t status = FTDM_FAIL;
+	ftdm_sigmsg_t sigmsg;
+	ftdm_span_t *span = ftdmchan->span;
+	ftdm_assert_return(span->fio != NULL, FTDM_FAIL, "No I/O module attached to this span!\n");
+
+	if (!span->fio->channel_next_event) {
+		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!", span->fio->name);
+		return FTDM_NOTIMPL;
+	}
+
+	status = span->fio->channel_next_event(ftdmchan, event);
+	if (status != FTDM_SUCCESS) {
+		return status;
+	}
+
+	/* before returning the event to the user we do some core operations with certain OOB events */
+	memset(&sigmsg, 0, sizeof(sigmsg));
+	sigmsg.span_id = span->span_id;
+	sigmsg.chan_id = (*event)->channel->chan_id;
+	sigmsg.channel = (*event)->channel;
+	switch ((*event)->enum_id) {
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			sigmsg.event_id = FTDM_SIGEVENT_ALARM_CLEAR;
+			ftdm_clear_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
+			ftdm_span_send_signal(span, &sigmsg);
+		}
+		break;
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			sigmsg.event_id = FTDM_SIGEVENT_ALARM_TRAP;
+			ftdm_set_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
+			ftdm_span_send_signal(span, &sigmsg);
+		}
+		break;
+	default:
+		/* NOOP */
+		break;
+	}
+
+	return status;
+}
+
 static ftdm_status_t ftdmchan_fsk_write_sample(int16_t *buf, ftdm_size_t buflen, void *user_data)
 {
 	ftdm_channel_t *ftdmchan = (ftdm_channel_t *) user_data;
