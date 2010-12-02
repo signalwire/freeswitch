@@ -316,9 +316,9 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 
 static void ft_r2_clean_call(ftdm_r2_call_t *call)
 {
-    openr2_chan_t *r2chan = call->r2chan;
-    memset(call, 0, sizeof(*call));
-    call->r2chan = r2chan;
+	openr2_chan_t *r2chan = call->r2chan;
+	memset(call, 0, sizeof(*call));
+	call->r2chan = r2chan;
 }
 
 static void ft_r2_accept_call(ftdm_channel_t *ftdmchan)
@@ -360,27 +360,24 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	ft_r2_clean_call(ftdmchan->call_data);
 	R2CALL(ftdmchan)->ftdm_call_started = 1;
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
-    ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
 			ftdmchan->caller_data.cid_num.digits, 
 			ftdmchan->caller_data.dnis.digits, 
 			OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER);
 
-    if (callstatus) {
-        ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
-        return FTDM_FAIL;
-    }
+	if (callstatus) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
+		return FTDM_FAIL;
+	}
 
 	if (ftdmchan->state !=  FTDM_CHANNEL_STATE_DIALING) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Collision after call attempt, try another channel, new state = %s\n",
 				ftdm_channel_state2str(ftdmchan->state));
 		return FTDM_BREAK;
 	}
-
-    /* non-threaded implementation, we're done here */
-    ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "R2 call placed in non-threaded mode\n");
-    return FTDM_SUCCESS;
+	return FTDM_SUCCESS;
 }
 
 static ftdm_status_t ftdm_r2_start(ftdm_span_t *span)
@@ -447,7 +444,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Priority = (%d)\n", ani, dnis, category);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
 	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
 }
 
