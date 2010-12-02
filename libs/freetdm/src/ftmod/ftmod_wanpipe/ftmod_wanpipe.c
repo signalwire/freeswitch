@@ -796,7 +796,7 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 	/* we don't test for 80% full in tx since is typically full for voice channels, should we test tx 80% full for D-channels? */
 	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.tx.queue_size) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Tx Queue Full (%d/%d)\n",
-					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.tx.queue_size);
+					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
 		ftdm_set_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
 		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue no longer full (%d/%d)\n",
