@@ -495,7 +495,7 @@ switch_status_t callprogress_detector_stop(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_bug_t *bug = switch_channel_get_private(channel, TONE_PRIVATE);
 	if (bug) {
-		switch_core_media_bug_close(&bug);
+		switch_core_media_bug_remove(session, &bug);
 		switch_channel_set_private(channel, TONE_PRIVATE, NULL);
 	}
 	return SWITCH_STATUS_SUCCESS;
