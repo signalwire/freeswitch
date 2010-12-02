@@ -431,9 +431,38 @@ typedef enum {
 	FTDM_COMMAND_WINK,
 	FTDM_COMMAND_ENABLE_PROGRESS_DETECT,
 	FTDM_COMMAND_DISABLE_PROGRESS_DETECT,
+
+	/*!< Start tracing input and output from channel to the given file */
 	FTDM_COMMAND_TRACE_INPUT,
 	FTDM_COMMAND_TRACE_OUTPUT,
+
+	/*!< Stop both Input and Output trace, closing the files */
 	FTDM_COMMAND_TRACE_END_ALL,
+
+	/*!< Enable DTMF debugging */
+	FTDM_COMMAND_ENABLE_DEBUG_DTMF,
+
+	/*!< Disable DTMF debugging (if not disabled explicitly, it is disabled automatically when calls hangup) */
+	FTDM_COMMAND_DISABLE_DEBUG_DTMF,
+
+	/*!< Start dumping all input to a circular buffer. The size of the circular buffer can be specified, default used otherwise */
+	FTDM_COMMAND_ENABLE_INPUT_DUMP,
+
+	/*!< Stop dumping all input to a circular buffer. */
+	FTDM_COMMAND_DISABLE_INPUT_DUMP,
+
+	/*!< Start dumping all output to a circular buffer. The size of the circular buffer can be specified, default used otherwise */
+	FTDM_COMMAND_ENABLE_OUTPUT_DUMP,
+
+	/*!< Stop dumping all output to a circular buffer. */
+	FTDM_COMMAND_DISABLE_OUTPUT_DUMP,
+
+	/*!< Dump the current input circular buffer to the specified FILE* structure */
+	FTDM_COMMAND_DUMP_INPUT,
+
+	/*!< Dump the current output circular buffer to the specified FILE* structure */
+	FTDM_COMMAND_DUMP_OUTPUT,
+
 	FTDM_COMMAND_ENABLE_CALLERID_DETECT,
 	FTDM_COMMAND_DISABLE_CALLERID_DETECT,
 	FTDM_COMMAND_ENABLE_ECHOCANCEL,
