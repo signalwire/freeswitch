@@ -915,7 +915,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ft
  * 	from a different thread or even the same. It is recommended to
  * 	handle events from the same span in a single thread.
  *
- * \param span The channel to retrieve the event from
+ * \param ftdmchan The channel to retrieve the event from
  * \param event Pointer to store the pointer to the event
  *
  * \retval FTDM_SUCCESS success (at least one event available)
