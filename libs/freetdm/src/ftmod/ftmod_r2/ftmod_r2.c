@@ -1496,10 +1496,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 			ftdm_mutex_lock(ftdmchan->mutex);
 
-			r2chan = R2CALL(span->channels[i])->r2chan;
-
 			ftdm_r2_state_advance_all(ftdmchan);
 
+			r2chan = R2CALL(ftdmchan)->r2chan;
 			openr2_chan_process_signaling(r2chan);
 
 			ftdm_r2_state_advance_all(ftdmchan);
