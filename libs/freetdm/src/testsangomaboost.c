@@ -45,10 +45,14 @@
 
 #include <signal.h>
 
-#include "freetdm.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef __linux__
+#define __USE_BSD
+#include <unistd.h>
+#endif
+#include "freetdm.h"
 
 
 /* arbitrary limit for max calls in this sample program */
@@ -338,9 +342,9 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	if (!strcasecmp(argv[2], "cpe")) {
+	if (!strcmp(argv[2], "cpe")) {
 		sigtype = "pri_cpe";
-	} else if (!strcasecmp(argv[2], "net")) {
+	} else if (!strcmp(argv[2], "net")) {
 		sigtype = "pri_net";
 	} else {
 		fprintf(stderr, "Valid signaling types are cpe and net only\n");

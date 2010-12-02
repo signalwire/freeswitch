@@ -221,6 +221,37 @@ struct KhompPvt
                 return strBuffer;
             }
 
+            switch_xml_t getDetailedXML()
+            {
+                /* very very important yet! */
+                idle();
+
+                std::string str_incoming_time = timeToString(_total_time_incoming);
+                std::string str_outgoing_time = timeToString(_total_time_outgoing);
+                std::string str_idle_time     = timeToString(_total_idle_time);
+
+                /* total */
+                switch_xml_t xtotal = switch_xml_new("total");
+
+                /* total/incoming_time */
+                switch_xml_t xin_time = switch_xml_add_child_d(xtotal,"incoming_time",0);
+                switch_xml_set_txt_d(xin_time, str_incoming_time.c_str());
+
+                /* total/outgoing_time */
+                switch_xml_t xout_time = switch_xml_add_child_d(xtotal,"outgoing_time",0);
+                switch_xml_set_txt_d(xout_time, str_outgoing_time.c_str());
+
+                /* total/idle_time */
+                switch_xml_t xidle_time = switch_xml_add_child_d(xtotal,"idle_time",0);
+                switch_xml_set_txt_d(xidle_time, str_idle_time.c_str());
+
+                /* total/channel_fails */
+                switch_xml_t xchannel_fails = switch_xml_add_child_d(xtotal,"channel_fails",0);
+                switch_xml_set_txt_d(xchannel_fails, STR(FMT("%d") % _channel_fails));
+
+                return xtotal;
+            }
+
             void clear()
             {   
                 time(&_base_time);
@@ -373,7 +404,7 @@ struct KhompPvt
 public:
 
     /* KhompPvt constructor */
-    KhompPvt(K3LAPI::target & target);
+    KhompPvt(K3LAPIBase::GenericTarget & target);
 
     /* KhompPvt destructor */
     virtual ~KhompPvt()
@@ -388,8 +419,14 @@ public:
             _pvt(pvt) {}
 
         std::string getDetailedRates();
+        switch_xml_t getDetailedRatesXML();
+
         std::string getDetailed();
+        switch_xml_t getDetailedXML();
+
         std::string getRow();
+        switch_xml_t getNode();
+
 
         void clear()
         {
@@ -569,6 +606,7 @@ public:
 
     /* statistics functions */
     virtual std::string getStatistics(Statistics::Type type);
+    virtual switch_xml_t getStatisticsXML(Statistics::Type type);
     virtual void clearStatistics()
     {
         _pvt_statistics->clear();   
@@ -649,7 +687,7 @@ public:
         return pvt_locked;
     }
 
-    K3LAPI::target & target()
+    K3LAPIBase::GenericTarget & target()
     {
         return _target;
     }
@@ -996,18 +1034,20 @@ public:
     {
         DBG(FUNC,PVT_FMT(_target,"c"));
 
+        /*
         if(!_group_context.empty())
         {
             contexts.insert(contexts.begin(), _group_context);
             //contexts.push_back(_group_context);
         }
+        */
     
         for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
             replaceTemplate((*i),  "DD", _target.device);
 
         BEGIN_CONTEXT  
         {    
-            K3L_DEVICE_CONFIG & dev_cfg = Globals::k3lapi.device_config(_target.device);
+            const K3L_DEVICE_CONFIG & dev_cfg = Globals::k3lapi.device_config(_target);
 
             for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
                 replaceTemplate((*i), "SSSS", atoi(dev_cfg.SerialNumber));
@@ -1048,7 +1088,7 @@ public:
 
     Call * call() { return _call; }
 
-    K3LAPI::target           _target;    /*!< The device/channel pair to bind this pvt to */
+    K3LAPIBase::GenericTarget           _target;    /*!< The device/channel pair to bind this pvt to */
     ChanLockType             _mutex;     /*!< Used for *our* internal locking */
     Call                    *_call;
     switch_core_session_t   *_session;   /*!< The session to which this pvt is associated with */
@@ -1066,6 +1106,10 @@ public:
     std::string              _group_context;
 
     PvtStatistics           *_pvt_statistics;
+
+    std::string              _mohclass;
+    std::string              _language;
+    std::string              _accountcode;
 };
 
 /******************************************************************************/
@@ -1115,7 +1159,7 @@ public:
         }
         catch (...)
         {
-            throw K3LAPI::invalid_channel(_device_id, obj);
+            throw K3LAPITraits::invalid_channel(_device_id, obj);
         }
     }
 
@@ -1141,7 +1185,7 @@ public:
             {
                 ret = channel(obj)->eventHandler(e);
             }
-            catch (K3LAPI::invalid_channel & invalid)
+            catch (K3LAPITraits::invalid_channel & invalid)
             {
                 LOG(ERROR, OBJ_FMT(_device_id,obj,"(Generic Board) r (invalid channel on event '%s')") 
                 % Verbose::eventName(e->Code).c_str());
@@ -1191,7 +1235,7 @@ public:
       \return KhompPvt to be used on the call.
       */
     static KhompPvt * find_channel(char* allocation_string, switch_core_session_t * new_session, switch_call_cause_t * cause);
-    static void khomp_add_event_board_data(const K3LAPI::target target, switch_event_t *event);
+    static void khomp_add_event_board_data(const K3LAPIBase::GenericTarget target, switch_event_t *event);
 
     static Board * board(int dev)
     {
@@ -1208,7 +1252,7 @@ public:
         }
         catch(...)
         {
-            throw K3LAPI::invalid_device(dev);
+            throw K3LAPITraits::invalid_device(dev);
         }
     }
 
@@ -1223,11 +1267,11 @@ public:
         }
         catch(...)
         {
-            throw K3LAPI::invalid_channel(device, object);
+            throw K3LAPITraits::invalid_channel(device, object);
         }
     }
 
-    static KhompPvt * get(K3LAPI::target & target)
+    static KhompPvt * get(K3LAPIBase::GenericTarget & target)
     {
         //if (!Globals::k3lapi.valid_channel(target.device, target.object))
         //    throw K3LAPI::invalid_channel(target.device, target.object);
@@ -1252,7 +1296,7 @@ public:
         {
             stats = Globals::k3lapi.channel_stats(device, object, index);
         }
-        catch(K3LAPI::invalid_channel & err)
+        catch(K3LAPITraits::invalid_channel & err)
         {
         //K::logger::logg(C_WARNING, B(dev,channel, "Command get_stats has failed with error '%s'.") %
         //                          Verbose::status((KLibraryStatus) stt_res));

@@ -1,1 +1,1 @@
-#define MOD_KHOMP_VERSION "1.0 - (rev: 5841)"
+#define MOD_KHOMP_VERSION "1.0 - (rev: 5891)"

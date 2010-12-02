@@ -121,15 +121,16 @@ bool BoardE1::KhompPvtE1::onCallSuccess(K3L_EVENT *e)
 
         if (call()->_pre_answer)
         {
-            dtmfSuppression(Opt::_out_of_band_dtmfs && !call()->_flags.check(Kflags::FAX_DETECTED));     
+            dtmfSuppression(Opt::_options._out_of_band_dtmfs()&& !call()->_flags.check(Kflags::FAX_DETECTED));     
 
             startListen();
             startStream();
+            switch_channel_mark_pre_answered(getFSChannel());
         }
         else
         {
             call()->_flags.set(Kflags::GEN_PBX_RING);
-            call()->_idx_pbx_ring = Board::board(_target.device)->_timers.add(Opt::_ringback_pbx_delay,
+            call()->_idx_pbx_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_pbx_delay(),
                                              &Board::KhompPvt::pbxRingGen,this, TM_VAL_CALL);
         }
 
@@ -139,7 +140,7 @@ bool BoardE1::KhompPvtE1::onCallSuccess(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(E1) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(E1) r (unable to get device: %d!)") % err.device);
         return false;
@@ -152,7 +153,7 @@ bool BoardE1::KhompPvtE1::onCallSuccess(K3L_EVENT *e)
 
 bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
 {
-    //DBG(FUNC, PVT_FMT(_target, "(E1) c"));
+    DBG(STRM, PVT_FMT(_target, "(E1) c"));
 
     try
     {
@@ -160,15 +161,26 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
 
         if(e->AddInfo == kmtFax)
         {
-            DBG(FUNC, PVT_FMT(_target, "Fax detected"));
+            DBG(STRM, PVT_FMT(_target, "Fax detected"));
 
+            /* hadn't we did this already? */
             bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);            
+
+            time_t time_was = call()->_call_statistics->_base_time;
+            time_t time_now = time(NULL);
+
+            bool detection_timeout = (time_now > (time_was + (time_t) (Opt::_options._fax_adjustment_timeout())));
+            
+            DBG(STRM, PVT_FMT(_target, "is set? (%s) timeout? (%s)")
+                            % (already_detected ? "true" : "false") % (detection_timeout ? "true" : "false"));
+
             BEGIN_CONTEXT
             {
-                if(already_detected)
-                    break;
-                    
                 ScopedPvtLock lock(this);
+
+                /* already adjusted? do not adjust again. */
+                if (already_detected || detection_timeout)
+                    break;
 
                 if (callE1()->_call_info_drop != 0 || callE1()->_call_info_report)
                 {    
@@ -182,7 +194,7 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
                     }    
                 }
 
-                if (Opt::_auto_fax_adjustment)
+                if (Opt::_options._auto_fax_adjustment())
                 {
                     DBG(FUNC, PVT_FMT(_target, "communication will be adjusted for fax!"));
                     _fax->adjustForFax();
@@ -207,7 +219,7 @@ bool BoardE1::KhompPvtE1::onAudioStatus(K3L_EVENT *e)
 
     bool ret = KhompPvt::onAudioStatus(e);
     
-    //DBG(FUNC, PVT_FMT(_target, "(E1) r"));
+    DBG(STRM, PVT_FMT(_target, "(E1) r"));
 
     return ret;
 }
@@ -283,7 +295,7 @@ bool BoardE1::KhompPvtE1::onDisconnect(K3L_EVENT *e)
         if (call()->_flags.check(Kflags::IS_OUTGOING) ||
             call()->_flags.check(Kflags::IS_INCOMING))
         {
-            if(Opt::_disconnect_delay == 0)
+            if(Opt::_options._disconnect_delay()== 0)
             {
                 DBG(FUNC, PVT_FMT(_target, "queueing disconnecting outgoing channel!"));
                 command(KHOMP_LOG, CM_DISCONNECT);       
@@ -291,7 +303,7 @@ bool BoardE1::KhompPvtE1::onDisconnect(K3L_EVENT *e)
             else
             {
                 callE1()->_idx_disconnect = Board::board(_target.device)->_timers.add(
-                    1000 * Opt::_disconnect_delay,&BoardE1::KhompPvtE1::delayedDisconnect,this);
+                    1000 * Opt::_options._disconnect_delay(),&BoardE1::KhompPvtE1::delayedDisconnect,this);
             }
         }
         else
@@ -309,7 +321,7 @@ bool BoardE1::KhompPvtE1::onDisconnect(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(E1) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(E1) r (unable to get device: %d!)") % err.device);
         return false;
@@ -767,13 +779,13 @@ bool BoardE1::KhompPvtE1::setupConnection()
     bool fax_detected = callE1()->_flags.check(Kflags::FAX_DETECTED) || (callE1()->_var_fax_adjust == T_TRUE);
     
     bool res_out_of_band_dtmf = (call()->_var_dtmf_state == T_UNKNOWN || fax_detected ?
-        Opt::_suppression_delay && Opt::_out_of_band_dtmfs && !fax_detected : (call()->_var_dtmf_state == T_TRUE));
+        Opt::_options._suppression_delay()&& Opt::_options._out_of_band_dtmfs()&& !fax_detected : (call()->_var_dtmf_state == T_TRUE));
     
     bool res_echo_cancellator = (call()->_var_echo_state == T_UNKNOWN || fax_detected ?
-        Opt::_echo_canceller && !fax_detected : (call()->_var_echo_state == T_TRUE));
+        Opt::_options._echo_canceller()&& !fax_detected : (call()->_var_echo_state == T_TRUE));
 
     bool res_auto_gain_cntrol = (call()->_var_gain_state == T_UNKNOWN || fax_detected ?
-        Opt::_auto_gain_control && !fax_detected : (call()->_var_gain_state == T_TRUE));
+        Opt::_options._auto_gain_control()&& !fax_detected : (call()->_var_gain_state == T_TRUE));
 
     if (!call()->_flags.check(Kflags::REALLY_CONNECTED))
     {
@@ -823,7 +835,12 @@ bool BoardE1::KhompPvtE1::validContexts(
 {
     DBG(FUNC,PVT_FMT(_target, "(E1) c"));
 
-    contexts.push_back(Opt::_context_digital);
+    if(!_group_context.empty())
+    {
+        contexts.push_back(_group_context);
+    }
+
+    contexts.push_back(Opt::_options._context_digital());
 
     for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++) 
     {    
@@ -1122,7 +1139,7 @@ void BoardE1::KhompPvtR2::reportFailToReceive(int fail_code)
 {
     KhompPvt::reportFailToReceive(fail_code);
 
-    if (Opt::_r2_strict_behaviour && fail_code != -1)
+    if (Opt::_options._r2_strict_behaviour()&& fail_code != -1)
     {
         DBG(FUNC,PVT_FMT(_target, "sending a 'unknown number' message/audio")); 
 
@@ -1586,7 +1603,7 @@ bool BoardE1::KhompPvtR2::sendPreAudio(int rb_value)
     DBG(FUNC,PVT_FMT(_target, "doing the R2 pre_connect wait..."));   
 
     /* wait some ms, just to be sure the command has been sent. */
-    usleep(Opt::_r2_preconnect_wait * 1000);
+    usleep(Opt::_options._r2_preconnect_wait()* 1000);
 
     if (call()->_flags.check(Kflags::HAS_PRE_AUDIO))
     {
@@ -1654,7 +1671,7 @@ bool BoardE1::KhompPvtR2::indicateRinging()
         {    
             int ringback_value = RingbackDefs::RB_SEND_DEFAULT;
 
-            bool do_drop_call = Opt::_drop_collect_call
+            bool do_drop_call = Opt::_options._drop_collect_call()
                                         || call()->_flags.check(Kflags::DROP_COLLECT);
 
             if (do_drop_call && call()->_collect_call)
@@ -1679,7 +1696,7 @@ bool BoardE1::KhompPvtR2::indicateRinging()
                         % condition_string);
             }    
 
-            if (Opt::_r2_strict_behaviour)
+            if (Opt::_options._r2_strict_behaviour())
             {
                 /* send ringback too? */
                 send_ringback = sendPreAudio(ringback_value);
@@ -1700,7 +1717,7 @@ bool BoardE1::KhompPvtR2::indicateRinging()
             DBG(FUNC, PVT_FMT(_target, "Send ringback!"));
 
             call()->_flags.set(Kflags::GEN_CO_RING);
-            call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_ringback_co_delay, &Board::KhompPvt::coRingGen,this);
+            call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_co_delay(), &Board::KhompPvt::coRingGen,this);
 
             /* start grabbing audio */
             startListen();
@@ -1722,7 +1739,7 @@ bool BoardE1::KhompPvtR2::indicateRinging()
         LOG(ERROR,PVT_FMT(_target, "(R2) r (%s)") % err._msg.c_str());
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(R2) r (unable to get device: %d!)") % err.device);
         return false;
@@ -1768,9 +1785,9 @@ bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
         if(!ret)
             return false;
 
-        if (!Opt::_r2_strict_behaviour)
+        if (!Opt::_options._r2_strict_behaviour())
         {
-            bool do_drop_collect = Opt::_drop_collect_call;
+            bool do_drop_collect = Opt::_options._drop_collect_call();
             const char* drop_str = getFSGlobalVar("KDropCollectCall");
 
             if(checkTrueString(drop_str))
@@ -1936,7 +1953,7 @@ bool BoardE1::KhompPvtR2::onNumberDetected(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "unable to lock %s!") % err._msg.c_str() );
         return false;
     }    
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
         return false;
@@ -1973,32 +1990,32 @@ bool BoardE1::KhompPvtFlash::sendDtmf(std::string digit)
     return ret;
 }
 
-Opt::OrigToNseqMapType BoardE1::KhompPvtFXS::generateNseqMap()
+OrigToNseqMapType BoardE1::KhompPvtFXS::generateNseqMap()
 {
-    Opt::OrigToNseqMapType fxs_nseq; /* sequence numbers on FXS */
+    OrigToNseqMapType fxs_nseq; /* sequence numbers on FXS */
 
-    fxs_nseq.insert(Opt::OrigToNseqPairType("", 0)); /* global sequence */
+    fxs_nseq.insert(OrigToNseqPairType("", 0)); /* global sequence */
 
-    for (Opt::BoardToOrigMapType::iterator i = Opt::_fxs_orig_base.begin(); i != Opt::_fxs_orig_base.end(); i++)
+    for (BoardToOrigMapType::iterator i = Opt::_fxs_orig_base.begin(); i != Opt::_fxs_orig_base.end(); i++)
     {
-        fxs_nseq.insert(Opt::OrigToNseqPairType((*i).second, 0));
+        fxs_nseq.insert(OrigToNseqPairType((*i).second, 0));
     }
 
     return fxs_nseq;
 }
 
 
-void BoardE1::KhompPvtFXS::load(Opt::OrigToNseqMapType & fxs_nseq)
+void BoardE1::KhompPvtFXS::load(OrigToNseqMapType & fxs_nseq)
 {
-    Opt::BoardToOrigMapType::iterator it1 = Opt::_fxs_orig_base.find(_target.device);
-    Opt::OrigToNseqMapType::iterator  it2;
+    BoardToOrigMapType::iterator it1 = Opt::_fxs_orig_base.find(_target.device);
+    OrigToNseqMapType::iterator  it2;
 
     std::string orig_base("invalid"); /* will have orig base */
 
     if (it1 == Opt::_fxs_orig_base.end())
     {
         it2 = fxs_nseq.find("");
-        orig_base = Opt::_fxs_global_orig_base;
+        orig_base = Opt::_options._fxs_global_orig_base();
     }
     else
     {
@@ -2024,8 +2041,8 @@ void BoardE1::KhompPvtFXS::load(Opt::OrigToNseqMapType & fxs_nseq)
             loadOptions();
 
             /* makes a "reverse mapping" for Dial using 'r' identifiers */
-            Opt::_fxs_branch_map.insert(Opt::BranchToObjectPairType(_fxs_orig_addr,
-                Opt::ObjectIdType(_target.device, _target.object)));
+            Opt::_fxs_branch_map.insert(BranchToObjectPairType(_fxs_orig_addr,
+                ObjectIdType(_target.device, _target.object)));
 
             /* increment sequence number */
             ++((*it2).second);
@@ -2045,19 +2062,16 @@ void BoardE1::KhompPvtFXS::loadOptions()
 
     /* Initialize fxs default options */
     _calleridname.clear();
-    _amaflags = Opt::_amaflags;
-    _callgroup = Opt::_callgroup;
-    _pickupgroup = Opt::_pickupgroup;
+    //_amaflags = Opt::_amaflags;
+    _callgroup = Opt::_options._callgroup();
+    _pickupgroup = Opt::_options._pickupgroup();
     _context.clear();
-    _input_volume = Opt::_input_volume;
-    _output_volume = Opt::_output_volume;
-    _mohclass = Opt::_global_mohclass;
-    _language = Opt::_global_language;
-    _accountcode = Opt::_accountcode;
+    _input_volume = Opt::_options._input_volume();
+    _output_volume = Opt::_options._output_volume();
     _mailbox.clear();
-    _flash = Opt::_flash;
+    _flash = Opt::_options._flash();
 
-    Opt::BranchToOptMapType::iterator it3 = Opt::_branch_options.find(_fxs_orig_addr);
+    BranchToOptMapType::iterator it3 = Opt::_branch_options.find(_fxs_orig_addr);
 
     if (it3 != Opt::_branch_options.end())
     {
@@ -2066,9 +2080,9 @@ void BoardE1::KhompPvtFXS::loadOptions()
 
     //TODO: Implementar o setVolume para levar em consideracao que o 
     //       padrao pode ser o da FXS
-    if (_input_volume != Opt::_input_volume)
+    if (_input_volume != Opt::_options._input_volume())
         setVolume("input", _input_volume);
-    if (_output_volume != Opt::_output_volume)
+    if (_output_volume != Opt::_options._output_volume())
         setVolume("output", _output_volume);
 }
 
@@ -2163,11 +2177,11 @@ bool BoardE1::KhompPvtFXS::parseBranchOptions(std::string options_str)
             }
             else if (opt_name == "calleridnum") // conscious ultra chuncho!
             {
-                Opt::BranchToOptMapType::iterator it3 = Opt::_branch_options.find(_fxs_orig_addr);
+                BranchToOptMapType::iterator it3 = Opt::_branch_options.find(_fxs_orig_addr);
 
                 if (it3 != Opt::_branch_options.end())
                 {
-                    Opt::_branch_options.insert(Opt::BranchToOptPairType(opt_value, it3->second));
+                    Opt::_branch_options.insert(BranchToOptPairType(opt_value, it3->second));
 
                     Opt::_branch_options.erase(it3);
                 }
@@ -2221,10 +2235,11 @@ bool BoardE1::KhompPvtFXS::alloc()
     startStream();
 
     /* do this procedures early (as audio is already being heard) */
-    dtmfSuppression(Opt::_out_of_band_dtmfs && !callFXS()->_flags.check(Kflags::FAX_DETECTED));
-    echoCancellation(Opt::_echo_canceller && !callFXS()->_flags.check(Kflags::FAX_DETECTED));
-    autoGainControl(Opt::_auto_gain_control && !callFXS()->_flags.check(Kflags::FAX_DETECTED));
+    dtmfSuppression(Opt::_options._out_of_band_dtmfs() && !callFXS()->_flags.check(Kflags::FAX_DETECTED));
+    echoCancellation(Opt::_options._echo_canceller() && !callFXS()->_flags.check(Kflags::FAX_DETECTED));
+    autoGainControl(Opt::_options._auto_gain_control() && !callFXS()->_flags.check(Kflags::FAX_DETECTED));
 
+    //TODO: NEED RECORD HERE !?
     /* if it does not need context, probably it's a pickupcall and will
        not pass throw setup_connection, so we start recording here*/
     //if (!need_context && K::opt::recording && !pvt->is_recording)
@@ -2233,7 +2248,6 @@ bool BoardE1::KhompPvtFXS::alloc()
     DBG(FUNC, "(FXS) r");
     return true;
 }
-
 
 bool BoardE1::KhompPvtFXS::onSeizureStart(K3L_EVENT *e)
 {
@@ -2260,13 +2274,13 @@ bool BoardE1::KhompPvtFXS::onSeizureStart(K3L_EVENT *e)
             return false;
         }
 
-        /* desabilita para evitar problemas de detecção de DTMF */
+        /* disable to avoid problems with DTMF detection */
         echoCancellation(false);
         autoGainControl(false);
 
         call()->_orig_addr = _fxs_orig_addr;
 
-        Opt::OrigToDestMapType::iterator i = Opt::_fxs_hotline.find(_fxs_orig_addr);
+        OrigToDestMapType::iterator i = Opt::_fxs_hotline.find(_fxs_orig_addr);
 
         if (i != Opt::_fxs_hotline.end())
         {
@@ -2285,7 +2299,6 @@ bool BoardE1::KhompPvtFXS::onSeizureStart(K3L_EVENT *e)
             call()->_flags.clear(Kflags::FXS_DIAL_ONGOING);
             call()->_flags.set(Kflags::FXS_OFFHOOK);
         }
-
     }
     catch (ScopedLockFailed & err)
     {
@@ -2312,16 +2325,17 @@ bool BoardE1::KhompPvtFXS::onCallSuccess(K3L_EVENT *e)
 
         if (call()->_pre_answer)
         {
-            dtmfSuppression(Opt::_out_of_band_dtmfs);     
+            dtmfSuppression(Opt::_options._out_of_band_dtmfs());     
 
             startListen();
             startStream();
+            switch_channel_mark_pre_answered(getFSChannel());
         }
         else
         {
             call()->_flags.set(Kflags::GEN_PBX_RING);
             call()->_idx_pbx_ring = Board::board(_target.device)->_timers.add(
-                    Opt::_ringback_pbx_delay,
+                    Opt::_options._ringback_pbx_delay(),
                     &Board::KhompPvt::pbxRingGen, 
                     this, 
                     TM_VAL_CALL);
@@ -2333,9 +2347,14 @@ bool BoardE1::KhompPvtFXS::onCallSuccess(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to get device: %d!)") % err.device);
+        return false;
+    }
+    catch (Board::KhompPvt::InvalidSwitchChannel & err)
+    {
+        LOG(ERROR, PVT_FMT(target(), "(FXS) r (%s)") % err._msg.c_str() );
         return false;
     }
     
@@ -2536,7 +2555,7 @@ bool BoardE1::KhompPvtFXS::startTransfer()
     
         startCadence(PLAY_PBX_TONE);
 
-        callFXS()->_idx_transfer = Board::board(_target.device)->_timers.add(Opt::_fxs_digit_timeout * 1000, &BoardE1::KhompPvtFXS::transferTimer, this, TM_VAL_CALL);        
+        callFXS()->_idx_transfer = Board::board(_target.device)->_timers.add(Opt::_options._fxs_digit_timeout()* 1000, &BoardE1::KhompPvtFXS::transferTimer, this, TM_VAL_CALL);        
 
     }
     catch(Board::KhompPvt::InvalidSwitchChannel & err)
@@ -2545,7 +2564,7 @@ bool BoardE1::KhompPvtFXS::startTransfer()
         LOG(ERROR, PVT_FMT(target(), "r (no valid partner %s!)") % err._msg.c_str());
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
     }
@@ -2570,7 +2589,7 @@ bool BoardE1::KhompPvtFXS::stopTransfer()
     {
         Board::board(_target.device)->_timers.del(callFXS()->_idx_transfer);
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
     }
@@ -2690,7 +2709,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
     {
         Board::board(_target.device)->_timers.del(callFXS()->_idx_transfer);
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
     }
@@ -2709,7 +2728,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
         if(blind)
         {
             DBG(FUNC, PVT_FMT(_target, "Blind Transfer"));
-            switch_ivr_session_transfer(peer_session, number.c_str(), Opt::_dialplan.c_str(), context.c_str());
+            switch_ivr_session_transfer(peer_session, number.c_str(), Opt::_options._dialplan().c_str(), context.c_str());
         }
         else
         {
@@ -2748,7 +2767,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             switch_channel_set_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
             switch_core_event_hook_add_state_change(session(), xferHook);
 
-            switch_ivr_session_transfer(session(), number.c_str(), Opt::_dialplan.c_str(), context.c_str());
+            switch_ivr_session_transfer(session(), number.c_str(), Opt::_options._dialplan().c_str(), context.c_str());
 
             DBG(FUNC, PVT_FMT(target(), "Generating ring"));
             call()->_indication = INDICA_RING;
@@ -2758,9 +2777,9 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             /*
             try
             {
-                call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_ringback_co_delay, &Board::KhompPvt::coRingGen,this);
+                call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_co_delay(), &Board::KhompPvt::coRingGen,this);
             }
-            catch (K3LAPI::invalid_device & err)
+            catch (K3LAPITraits::invalid_device & err)
             {
                 LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
             }
@@ -2816,7 +2835,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
 
                 mixer(KHOMP_LOG, 1, kmsGenerator, kmtSilence);
 
-                callFXS()->_idx_dial = Board::board(_target.device)->_timers.add(Opt::_fxs_digit_timeout * 1000, &BoardE1::KhompPvtFXS::dialTimer, this, TM_VAL_CALL);
+                callFXS()->_idx_dial = Board::board(_target.device)->_timers.add(Opt::_options._fxs_digit_timeout()* 1000, &BoardE1::KhompPvtFXS::dialTimer, this, TM_VAL_CALL);
             }
             else
             {
@@ -2849,7 +2868,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     DBG(FUNC, PVT_FMT(target(), "match more..."));
 
                     /* can match, will match more, and it's an external call? */
-                    for (Opt::DestVectorType::iterator i = Opt::_fxs_co_dialtone.begin(); i != Opt::_fxs_co_dialtone.end(); i++)
+                    for (DestVectorType::const_iterator i = Opt::_options._fxs_co_dialtone().begin(); i != Opt::_options._fxs_co_dialtone().end(); i++)
                     {
                         if (callFXS()->_incoming_exten == (*i))
                         {
@@ -2931,7 +2950,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     DBG(FUNC, PVT_FMT(target(), "match more..."));
 
                     /* can match, will match more, and it's an external call? */
-                    for (Opt::DestVectorType::iterator i = Opt::_fxs_co_dialtone.begin(); i != Opt::_fxs_co_dialtone.end(); i++)
+                    for (DestVectorType::const_iterator i = Opt::_options._fxs_co_dialtone().begin(); i != Opt::_options._fxs_co_dialtone().end(); i++)
                     {
                         if (callFXS()->_flash_transfer == (*i))
                         {
@@ -2967,7 +2986,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(FXS) r (unable to get device: %d!)") % err.device);
         return false;
@@ -3080,7 +3099,7 @@ int BoardE1::KhompPvtFXS::makeCall(std::string params)
     /* we always have audio */
     call()->_flags.set(Kflags::HAS_PRE_AUDIO);
     
-    if (Opt::_fxs_bina && !call()->_orig_addr.empty())
+    if (Opt::_options._fxs_bina()&& !call()->_orig_addr.empty())
     {
         /* Sending Bina DTMF*/
         callFXS()->_flags.set(Kflags::WAIT_SEND_DTMF);
@@ -3163,6 +3182,11 @@ bool BoardE1::KhompPvtFXS::doChannelAnswer(CommandRequest &cmd)
     catch (ScopedLockFailed & err)
     {
         LOG(ERROR,PVT_FMT(_target, "(FXS) r (unable to lock %s!)") % err._msg.c_str() );
+        return false;
+    }
+    catch (Board::KhompPvt::InvalidSwitchChannel & err)
+    {
+        LOG(ERROR, PVT_FMT(target(), "r (%s)") % err._msg.c_str() );
         return false;
     }
 
@@ -3276,14 +3300,14 @@ bool BoardE1::KhompPvtFXS::setupConnection()
     }
 
     bool res_out_of_band_dtmf = (call()->_var_dtmf_state == T_UNKNOWN ?
-        Opt::_suppression_delay && Opt::_out_of_band_dtmfs : (call()->_var_dtmf_state == T_TRUE));
+        Opt::_options._suppression_delay() && Opt::_options._out_of_band_dtmfs(): (call()->_var_dtmf_state == T_TRUE));
 
     bool res_echo_cancellator = (call()->_var_echo_state == T_UNKNOWN ?
-        Opt::_echo_canceller : (call()->_var_echo_state == T_TRUE));
+        Opt::_options._echo_canceller() : (call()->_var_echo_state == T_TRUE));
 
 
     bool res_auto_gain_cntrol = (call()->_var_gain_state == T_UNKNOWN ?
-        Opt::_auto_gain_control : (call()->_var_gain_state == T_TRUE));
+        Opt::_options._auto_gain_control() : (call()->_var_gain_state == T_TRUE));
 
 
     if (!call()->_flags.check(Kflags::REALLY_CONNECTED))
@@ -3408,8 +3432,13 @@ bool BoardE1::KhompPvtFXS::validContexts(
     if(!_context.empty())
         contexts.push_back(_context);
 
-    contexts.push_back(Opt::_context_fxs);
-    contexts.push_back(Opt::_context2_fxs);
+    if(!_group_context.empty())
+    {
+        contexts.push_back(_group_context);
+    }
+
+    contexts.push_back(Opt::_options._context_fxs());
+    contexts.push_back(Opt::_options._context2_fxs());
 
     for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {

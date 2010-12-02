@@ -354,6 +354,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void);
 ///\ingroup core1
 ///\{
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_io_read_lock(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_io_write_lock(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_io_rwunlock(switch_core_session_t *session);
+
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(_In_ switch_core_session_t *session, const char *file, const char *func, int line);
 #endif
@@ -881,6 +886,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(_In_ switch_core_sessio
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(_In_ switch_core_session_t *session,
 																				  _In_ const char *app, _In_opt_z_ const char *arg, _Out_opt_ int32_t *flags);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(switch_core_session_t *session, const char *app, const char *arg);
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *app, int32_t *flags);
 

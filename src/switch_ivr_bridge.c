@@ -348,20 +348,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
 			
 			if (exec_app) {
-				switch_event_t *execute_event;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Bridge execute app %s(%s)\n", 
 								  switch_channel_get_name(chan_a), exec_app, exec_data);
 
-				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", exec_app);
-					if (exec_data) {
-						switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", exec_data);
-					}
-					//switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(session_a, &execute_event, SWITCH_FALSE);
-				}
+				switch_core_session_execute_application_async(session_a, exec_app, exec_data);
 				exec_app = exec_data = NULL;
 			}
 
@@ -443,19 +433,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (ans_a != ans_b) {
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
+			switch_channel_t *a = un == chan_b ? chan_a : chan_b;
 
 			if (!switch_channel_test_flag(un, CF_OUTBOUND)) {
-				switch_channel_pass_callee_id(un == chan_b ? chan_a : chan_b, un);
+				if (switch_channel_test_flag(a, CF_OUTBOUND) || (un == chan_a && !originator)) {
+					switch_channel_pass_callee_id(a, un);
+				}
+
 				if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
 					goto end_of_bridge_loop;
 				}
-			}
 
-			if (ans_a)
-				ans_b = 1;
-			else
-				ans_a = 1;
+				if (ans_a) {
+					ans_b = 1;
+				} else {
+					ans_a = 1;
+				}
+			}
 		}
 
 		if (originator && !sent_update && ans_a && ans_b && switch_channel_media_ack(chan_a) && switch_channel_media_ack(chan_b)) {
@@ -1561,7 +1556,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		}
 	}
 
-	switch_channel_pre_answer(channel);
+	switch_channel_answer(channel);
 
 	if (!zstr(buuid)) {
 		if ((bsession = switch_core_session_locate(buuid))) {

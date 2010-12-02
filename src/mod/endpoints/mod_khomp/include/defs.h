@@ -58,10 +58,10 @@
     "%s (d=%02d,c=%03d) " msg, __SWITCH_FUNC__, dev, obj
 
 #define PVT_FMT(tgt,msg) \
-    FMT("%s (d=%02hu,c=%03hu) " msg) % __SWITCH_FUNC__ % tgt.device % tgt.object
+    FMT("%s (d=%02d,c=%03d) " msg) % __SWITCH_FUNC__ % tgt.device % tgt.object
 
 #define PVT_MSG(tgt,msg) \
-    "%s (d=%02hu,c=%03hu) " msg, __SWITCH_FUNC__, tgt.device, tgt.object
+    "%s (d=%02d,c=%03d) " msg, __SWITCH_FUNC__, tgt.device, tgt.object
 
 #define D(x) ( FMT( "%s: " x ) % __func__ )
 

@@ -114,7 +114,7 @@ struct KhompPvtFXO: public KhompPvt
             _call_info_report = false;
             _call_info_drop = 0;
 
-            _user_xfer_digits = Opt::_user_xfer;
+            _user_xfer_digits = Opt::_options._user_xfer_digits();
             _user_xfer_buffer.clear();
             _digits_buffer.clear();
 
@@ -141,7 +141,7 @@ struct KhompPvtFXO: public KhompPvt
         //ChanTimer::Index _idx_disconnect;        
     };
 /******************************************************************************/
-    KhompPvtFXO(K3LAPI::target & target) : KhompPvt(target) 
+    KhompPvtFXO(K3LAPIBase::GenericTarget & target) : KhompPvt(target) 
     {
         _fax = new Fax(this);
         _transfer = new Transfer<CallFXO>(this);
@@ -323,7 +323,7 @@ struct KhompPvtFXO: public KhompPvt
 
         for (unsigned obj = 0; obj < Globals::k3lapi.channel_count(_device_id); obj++)
         {
-            K3LAPI::target tgt(Globals::k3lapi, K3LAPI::target::CHANNEL, _device_id, obj);
+            K3LAPIBase::GenericTarget tgt(Globals::k3lapi, K3LAPIBase::GenericTarget::CHANNEL, _device_id, obj);
             KhompPvt * pvt;
 
             switch(Globals::k3lapi.channel_config(_device_id, obj).Signaling)

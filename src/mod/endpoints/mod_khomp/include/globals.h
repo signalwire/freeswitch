@@ -98,7 +98,9 @@ struct Globals
     static Mutex                             khomp_alloc_mutex;
 
     /* Config options class */
-    static ConfigOptions                     options;
+    static Config::Options                   options;
+
+    static const Regex::Expression           regex_allocation;
 
     /* FreeSWITCH Articular Ligaments */ 
     static switch_endpoint_interface_t     * khomp_endpoint_interface;

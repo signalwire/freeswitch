@@ -3900,7 +3900,26 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_channel_set_variable_printf(nchannel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
 	switch_channel_set_variable(nchannel, "sip_profile_name", profile_name);
 
-	switch_split_user_domain(switch_core_session_strdup(nsession, tech_pvt->dest), NULL, &tech_pvt->remote_ip);
+	if (switch_stristr("fs_path", tech_pvt->dest)) {
+		char *remote_host = NULL;
+		const char *s;
+		
+		if ((s = switch_stristr("fs_path=", tech_pvt->dest))) {
+			s += 8;
+		}
+
+		if (s) {
+			remote_host = switch_core_session_strdup(nsession, s);
+			switch_url_decode(remote_host);
+		}
+		if (!zstr(remote_host)) {
+			switch_split_user_domain(remote_host, NULL, &tech_pvt->remote_ip);
+		}
+	} 
+
+	if (zstr(tech_pvt->remote_ip)) {
+		switch_split_user_domain(switch_core_session_strdup(nsession, tech_pvt->dest), NULL, &tech_pvt->remote_ip);
+	}
 
 	if (dest_to) {
 		if (strchr(dest_to, '@')) {

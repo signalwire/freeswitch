@@ -855,6 +855,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 		if (switch_queue_trypush(session->event_queue, *event) == SWITCH_STATUS_SUCCESS) {
 			*event = NULL;
 			status = SWITCH_STATUS_SUCCESS;
+
+			if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
+				switch_core_session_wake_session_thread(session);
+			}
 		}
 	}
 
@@ -1323,6 +1327,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 {
 	switch_event_t *event;
 	switch_core_session_message_t msg = { 0 };
+	switch_caller_profile_t *profile;
 
 	switch_assert(use_uuid);
 
@@ -1338,6 +1343,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	msg.string_array_arg[0] = session->uuid_str;
 	msg.string_array_arg[1] = use_uuid;
 	switch_core_session_receive_message(session, &msg);
+
+	if ((profile = switch_channel_get_caller_profile(session->channel))) {
+		profile->uuid = switch_core_strdup(profile->pool, use_uuid);
+	}
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
@@ -1663,6 +1672,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
+	switch_thread_rwlock_create(&session->io_rwlock, session->pool);
 	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
@@ -1813,6 +1823,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *ap
 	return status;
 
 }
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(switch_core_session_t *session, const char *app, const char *arg)
+{
+	switch_event_t *execute_event;
+	
+	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+
+		if (arg) {
+			switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", arg);
+		}
+		
+		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+		switch_core_session_queue_private_event(session, &execute_event, SWITCH_FALSE);
+		
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,
 																				  const char *arg, int32_t *flags)
