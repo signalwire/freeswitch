@@ -435,8 +435,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
 			switch_channel_t *a = un == chan_b ? chan_a : chan_b;
 
-			if ((!switch_channel_test_flag(un, CF_OUTBOUND) && switch_channel_test_flag(a, CF_OUTBOUND)) || (un == chan_a && !originator)) {
-				switch_channel_pass_callee_id(a, un);
+			if (!switch_channel_test_flag(un, CF_OUTBOUND)) {
+				if (switch_channel_test_flag(a, CF_OUTBOUND) || (un == chan_a && !originator)) {
+					switch_channel_pass_callee_id(a, un);
+				}
+
 				if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
 					goto end_of_bridge_loop;
@@ -1553,7 +1556,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		}
 	}
 
-	switch_channel_pre_answer(channel);
+	switch_channel_answer(channel);
 
 	if (!zstr(buuid)) {
 		if ((bsession = switch_core_session_locate(buuid))) {
