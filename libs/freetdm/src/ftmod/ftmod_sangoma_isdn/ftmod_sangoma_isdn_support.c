@@ -394,10 +394,19 @@ ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->presInd0.val      = caller_data->pres;
 	
 	cgPtyNmb->nmbPlanId.pres	= PRSNT_NODEF;
-	cgPtyNmb->nmbPlanId.val		= caller_data->cid_num.plan;
+	if (caller_data->cid_num.plan >= FTDM_NPI_INVALID) {
+		cgPtyNmb->nmbPlanId.val		= FTDM_NPI_UNKNOWN;
+	} else {
+		cgPtyNmb->nmbPlanId.val		= caller_data->cid_num.plan;
+	}
 
 	cgPtyNmb->typeNmb1.pres		= PRSNT_NODEF;
-	cgPtyNmb->typeNmb1.val		= caller_data->cid_num.type;
+
+	if (caller_data->cid_num.type >= FTDM_TON_INVALID) {
+		cgPtyNmb->typeNmb1.val		= FTDM_TON_UNKNOWN;
+	} else {
+		cgPtyNmb->typeNmb1.val		= caller_data->cid_num.type;
+	}
 
 	cgPtyNmb->nmbDigits.pres	= PRSNT_NODEF;
 	cgPtyNmb->nmbDigits.len		= len;
@@ -418,14 +427,14 @@ ftdm_status_t set_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb)
 	cdPtyNmb->eh.pres           = PRSNT_NODEF;
 
 	cdPtyNmb->nmbPlanId.pres      = PRSNT_NODEF;
-	if (caller_data->dnis.plan == FTDM_NPI_INVALID) {
+	if (caller_data->dnis.plan >= FTDM_NPI_INVALID) {
 		cdPtyNmb->nmbPlanId.val       = FTDM_NPI_UNKNOWN;
 	} else {
 		cdPtyNmb->nmbPlanId.val       = caller_data->dnis.plan;
 	}
 	
 	cdPtyNmb->typeNmb0.pres       = PRSNT_NODEF;
-	if (caller_data->dnis.type == FTDM_TON_INVALID) {
+	if (caller_data->dnis.type >= FTDM_TON_INVALID) {
 		cdPtyNmb->typeNmb0.val        = FTDM_TON_UNKNOWN;
 	} else {
 		cdPtyNmb->typeNmb0.val        = caller_data->dnis.type;
@@ -450,14 +459,14 @@ ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb)
 	redirNmb->eh.pres 	= PRSNT_NODEF;
 
 	redirNmb->nmbPlanId.pres 	= PRSNT_NODEF;
-	if (caller_data->rdnis.plan == FTDM_NPI_INVALID) {
+	if (caller_data->rdnis.plan >= FTDM_NPI_INVALID) {
 		redirNmb->nmbPlanId.val	= FTDM_NPI_UNKNOWN;
 	} else {
 		redirNmb->nmbPlanId.val = caller_data->rdnis.plan;
 	}
 
 	redirNmb->typeNmb.pres		= PRSNT_NODEF;
-	if (caller_data->rdnis.type == FTDM_TON_INVALID) {
+	if (caller_data->rdnis.type >= FTDM_TON_INVALID) {
 		redirNmb->typeNmb.val		= FTDM_TON_UNKNOWN;
 	} else {
 		redirNmb->typeNmb.val		= caller_data->rdnis.type;
