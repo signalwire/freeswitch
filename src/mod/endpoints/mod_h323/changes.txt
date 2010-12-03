@@ -1,3 +1,5 @@
+Adds an extra switch_rtp_destroy or switch_rtp_release_port when a session ends 
+    - to make sure the port is returned to FS. thx to Peter Olsson.
 fix issues with Progress message type if pre_answer enabled
 fix crashes on FSH323Connection calls in on_hangup routine in different threads.
 move PTrace level set to FSH323EndPoint::Initialise
