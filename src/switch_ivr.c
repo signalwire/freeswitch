@@ -763,6 +763,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		write_frame.samples = write_frame.datalen / sizeof(int16_t);
 	}
 
+	if (switch_channel_test_flag(channel, CF_RECOVERED) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
+		switch_channel_clear_flag(channel, CF_CONTROLLED);
+	}
+
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
@@ -2557,6 +2561,124 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid)
 	}
 
 	return exists;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp)
+{
+    if (zstr(cmd)) {
+		return SWITCH_STATUS_SUCCESS;	
+    }
+
+	if (fhp) {
+		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (!strncasecmp(cmd, "speed", 5)) {
+			char *p;
+		
+			if ((p = strchr(cmd, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fhp->speed += step;
+				} else {
+					int speed = atoi(p);
+					fhp->speed = speed;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			return SWITCH_STATUS_FALSE;
+
+		} else if (!strncasecmp(cmd, "volume", 6)) {
+			char *p;
+			
+			if ((p = strchr(cmd, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fhp->vol += step;
+				} else {
+					int vol = atoi(p);
+					fhp->vol = vol;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+			
+			if (fhp->vol) {
+				switch_normalize_volume(fhp->vol);
+			}
+			
+			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(cmd, "pause")) {
+			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
+			} else {
+				switch_set_flag(fhp, SWITCH_FILE_PAUSE);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strcasecmp(cmd, "stop")) {
+			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(cmd, "truncate")) {
+			switch_core_file_truncate(fhp, 0);
+		} else if (!strcasecmp(cmd, "restart")) {
+			unsigned int pos = 0;
+			fhp->speed = 0;
+			switch_core_file_seek(fhp, &pos, 0, SEEK_SET);
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strncasecmp(cmd, "seek", 4)) {
+			switch_codec_t *codec;
+			unsigned int samps = 0;
+			unsigned int pos = 0;
+			char *p;
+			codec = switch_core_session_get_read_codec(session);
+			
+			if ((p = strchr(cmd, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					int32_t target;
+					if (!(step = atoi(p))) {
+						step = 1000;
+					}
+
+					samps = step * (codec->implementation->samples_per_second / 1000);
+					target = (int32_t)fhp->pos + samps;
+
+					if (target < 0) {
+						target = 0;
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", target);
+					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
+
+				} else {
+					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
+					if (samps < 0) {
+						samps = 0;
+					}
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
+					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
+				}
+			}
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+    if (!strcmp(cmd, "true") || !strcmp(cmd, "undefined")) {
+		return SWITCH_STATUS_SUCCESS;
+    }
+
+    return SWITCH_STATUS_FALSE;
+	
 }
 
 

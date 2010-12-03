@@ -373,6 +373,11 @@ if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO(SWITCH_AM_LDFLAGS, -lz)
 fi
 
+AC_CHECK_LIB(resolv, res_init, have_libresolv=yes, have_libresolv=no)
+if test "x$have_libresolv" = "xyes"  ; then
+APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
+fi
+
 ESL_LDFLAGS=
 PLATFORM_CORE_DEPLIBS=
 # tweak platform specific flags

@@ -204,6 +204,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->facility_ie_decode = SNGISDN_OPT_DEFAULT;
 	signal_data->ignore_cause_value = SNGISDN_OPT_DEFAULT;
 	signal_data->timer_t3 = 8;
+	signal_data->restart_opt = SNGISDN_OPT_DEFAULT;
 
 	signal_data->link_id = span->span_id;
 	span->default_caller_data.bearer_capability = IN_ITC_SPEECH;

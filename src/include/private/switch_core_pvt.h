@@ -135,6 +135,7 @@ struct switch_core_session {
 	switch_mutex_t *frame_read_mutex;
 
 	switch_thread_rwlock_t *rwlock;
+	switch_thread_rwlock_t *io_rwlock;
 
 	void *streams[SWITCH_MAX_STREAMS];
 	int stream_count;

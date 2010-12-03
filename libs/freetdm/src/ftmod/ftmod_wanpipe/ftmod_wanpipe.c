@@ -123,6 +123,10 @@ static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout
 	uint32_t outflags = 0;
 	sangoma_wait_obj_t *sangoma_wait_obj = ftdmchan->io_data;
 
+	if (timeout == -1) {
+		timeout = SANGOMA_WAIT_INFINITE;
+	}
+
 	err = sangoma_waitfor(sangoma_wait_obj, inflags, &outflags, timeout);
 	*flags = 0;
 	if (err == SANG_STATUS_SUCCESS) {
@@ -515,7 +519,10 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 	wanpipe_tdm_api_t tdm_api;
 
 	memset(&tdm_api,0,sizeof(tdm_api));
+
 	sangoma_tdm_flush_bufs(ftdmchan->sockfd, &tdm_api);
+	sangoma_flush_stats(ftdmchan->sockfd, &tdm_api);
+	memset(&ftdmchan->iostats, 0, sizeof(ftdmchan->iostats));
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921 || ftdmchan->type == FTDM_CHAN_TYPE_DQ931) {
 		ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
@@ -752,6 +759,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 	case FTDM_COMMAND_FLUSH_IOSTATS:
 		{
 			err = sangoma_flush_stats(ftdmchan->sockfd, &tdm_api);
+			memset(&ftdmchan->iostats, 0, sizeof(ftdmchan->iostats));
 		}
 		break;
 	case FTDM_COMMAND_SET_RX_QUEUE_SIZE:
@@ -779,44 +787,103 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 	return FTDM_SUCCESS;
 }
 
+static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *tx_stats)
+{
+	ftdmchan->iostats.tx.errors = tx_stats->wp_api_tx_hdr_errors;
+	ftdmchan->iostats.tx.queue_size = tx_stats->wp_api_tx_hdr_max_queue_length;
+	ftdmchan->iostats.tx.queue_len = tx_stats->wp_api_tx_hdr_number_of_frames_in_queue;
+	
+	/* we don't test for 80% full in tx since is typically full for voice channels, should we test tx 80% full for D-channels? */
+	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.tx.queue_size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Tx Queue Full (%d/%d)\n",
+					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
+		ftdm_set_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue no longer full (%d/%d)\n",
+					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
+		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+	}
+
+	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_number_of_frames_in_queue) {
+		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
+		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle */
+		if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle:  %d\n", ftdmchan->iostats.tx.idle_packets);
+		}
+	}
+
+	if (!ftdmchan->iostats.tx.packets) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet write stats: Tx queue len: %d, Tx queue size: %d, Tx idle: %d\n", 
+				ftdmchan->iostats.tx.queue_len, 
+				ftdmchan->iostats.tx.queue_size,
+				ftdmchan->iostats.tx.idle_packets);
+	}
+
+	ftdmchan->iostats.tx.packets++;
+}
+
 static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx_stats)
 {
-	ftdmchan->iostats.stats.rx.flags = 0;
-
-	ftdmchan->iostats.stats.rx.errors = rx_stats->wp_api_rx_hdr_errors;
-	ftdmchan->iostats.stats.rx.rx_queue_size = rx_stats->wp_api_rx_hdr_max_queue_length;
-	ftdmchan->iostats.stats.rx.rx_queue_len = rx_stats->wp_api_rx_hdr_number_of_frames_in_queue;
+	ftdmchan->iostats.rx.errors = rx_stats->wp_api_rx_hdr_errors;
+	ftdmchan->iostats.rx.queue_size = rx_stats->wp_api_rx_hdr_max_queue_length;
+	ftdmchan->iostats.rx.queue_len = rx_stats->wp_api_rx_hdr_number_of_frames_in_queue;
 	
-	if (rx_stats->wp_api_rx_hdr_error_map & (1<<WP_ABORT_ERROR_BIT)) {
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_ABORT);
-	}
-	if (rx_stats->wp_api_rx_hdr_error_map & (1<<WP_DMA_ERROR_BIT)) {
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_DMA);
-	}
-	if (rx_stats->wp_api_rx_hdr_error_map & (1<<WP_FIFO_ERROR_BIT)) {
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_FIFO);
-	}
-	if (rx_stats->wp_api_rx_hdr_error_map & (1<<WP_CRC_ERROR_BIT)) {
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_CRC);
-	}
-	if (rx_stats->wp_api_rx_hdr_error_map & (1<<WP_FRAME_ERROR_BIT)) {
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_FRAME);
+	if ((rx_stats->wp_api_rx_hdr_error_map & (1 << WP_ABORT_ERROR_BIT))) {
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_ABORT);
+	} else {
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_ABORT);
 	}
 
-	if (ftdmchan->iostats.stats.rx.rx_queue_len >= (0.8*ftdmchan->iostats.stats.rx.rx_queue_size)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Rx Queue length exceeded threshold (%d/%d)\n",
-					  								ftdmchan->iostats.stats.rx.rx_queue_len, ftdmchan->iostats.stats.rx.rx_queue_size);
-		
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
+	if ((rx_stats->wp_api_rx_hdr_error_map & (1 << WP_DMA_ERROR_BIT))) {
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_DMA);
+	} else {
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_DMA);
+	}
+
+	if ((rx_stats->wp_api_rx_hdr_error_map & (1 << WP_FIFO_ERROR_BIT))) {
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_FIFO);
+	} else {
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_FIFO);
+	}
+
+	if ((rx_stats->wp_api_rx_hdr_error_map & (1 << WP_CRC_ERROR_BIT))) {
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_CRC);
+	} else {
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_CRC);
+	}
+
+	if ((rx_stats->wp_api_rx_hdr_error_map & (1 << WP_FRAME_ERROR_BIT))) {
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_FRAME);
+	} else {
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_FRAME);
+	}
+
+	if (ftdmchan->iostats.rx.queue_len >= (0.8 * ftdmchan->iostats.rx.queue_size)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Rx Queue length exceeded 80% threshold (%d/%d)\n",
+					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
+	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Rx Queue length reduced 80% threshold (%d/%d)\n",
+					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	}
 	
-	if (ftdmchan->iostats.stats.rx.rx_queue_len >= ftdmchan->iostats.stats.rx.rx_queue_size) {
+	if (ftdmchan->iostats.rx.queue_len >= ftdmchan->iostats.rx.queue_size) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Rx Queue Full (%d/%d)\n",
-					  ftdmchan->iostats.stats.rx.rx_queue_len, ftdmchan->iostats.stats.rx.rx_queue_size);
-		
-		ftdm_set_flag(&(ftdmchan->iostats.stats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
+		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
+	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Rx Queue no longer full (%d/%d)\n",
+					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
+		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	}
-	return;
+
+	if (!ftdmchan->iostats.rx.packets) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet read stats: Rx queue len: %d, Rx queue size: %d\n", 
+				ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
+	}
+
+	ftdmchan->iostats.rx.packets++;
 }
 
 /**
@@ -877,6 +944,9 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 	/* should we be checking if bsent == *datalen here? */
 	if (bsent > 0) {
 		*datalen = bsent;
+		if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
+			wanpipe_write_stats(ftdmchan, &hdrframe);
+		}
 		return FTDM_SUCCESS;
 	}
 

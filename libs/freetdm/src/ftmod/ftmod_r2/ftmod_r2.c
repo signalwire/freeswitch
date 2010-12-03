@@ -56,19 +56,14 @@ typedef enum {
 	FTDM_R2_RUNNING = (1 << 0),
 } ftdm_r2_flag_t;
 
-typedef enum {
-	FTDM_R2_WAITING_ACK = (1 << 0),
-} ftdm_r2_call_flag_t;
-
 /* private call information stored in ftdmchan->call_data void* ptr */
 #define R2CALL(ftdmchan) ((ftdm_r2_call_t*)((ftdmchan)->call_data))
 typedef struct ftdm_r2_call_t {
 	openr2_chan_t *r2chan;
-	ftdm_r2_call_flag_t flags;
 	int accepted:1;
 	int answer_pending:1;
 	int disconnect_rcvd:1;
-	int ftdm_started:1;
+	int ftdm_call_started:1;
 	int protocol_error:1;
 	ftdm_channel_state_t chanstate;
 	ftdm_size_t dnis_index;
@@ -123,11 +118,13 @@ typedef struct ftdm_r2_data_s {
 	/* whether accept the call when offered, or wait until the user decides to accept */
 	int accept_on_offer:1;
 	/* max time spent in ms doing real work in a single loop */
-	int jobmax;
-	/* total working loops */
-	unsigned long loops;
+	int32_t jobmax;
+	/* Total number of loops performed so far */
+	uint64_t total_loops;
+	/* number of loops per 10ms increment from 0-9ms, 10-19ms .. 100ms and above */
+	uint64_t loops[11];
 	/* LWP */
-	unsigned long monitor_thread_id;
+	uint32_t monitor_thread_id;
 } ftdm_r2_data_t;
 
 /* one element per span will be stored in g_mod_data_hash global var to keep track of them
@@ -150,7 +147,14 @@ static ftdm_hash_t *g_mod_data_hash;
 static ftdm_io_interface_t g_ftdm_r2_interface;
 
 static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan);
+static void ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan);
 
+/* whether R2 call accept process is pending */
+#define IS_ACCEPTING_PENDING(ftdmchan) \
+		( (!ftdm_test_flag((ftdmchan), FTDM_CHANNEL_OUTBOUND)) && !R2CALL((ftdmchan))->accepted && \
+				((ftdmchan)->state == FTDM_CHANNEL_STATE_PROGRESS || \
+				 (ftdmchan)->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA || \
+				 (ftdmchan)->state == FTDM_CHANNEL_STATE_UP) )
 
 /* functions not available on windows */
 #ifdef WIN32
@@ -312,9 +316,9 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 
 static void ft_r2_clean_call(ftdm_r2_call_t *call)
 {
-    openr2_chan_t *r2chan = call->r2chan;
-    memset(call, 0, sizeof(*call));
-    call->r2chan = r2chan;
+	openr2_chan_t *r2chan = call->r2chan;
+	memset(call, 0, sizeof(*call));
+	call->r2chan = r2chan;
 }
 
 static void ft_r2_accept_call(ftdm_channel_t *ftdmchan)
@@ -354,30 +358,26 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	}
 
 	ft_r2_clean_call(ftdmchan->call_data);
-	R2CALL(ftdmchan)->ftdm_started = 1;
+	R2CALL(ftdmchan)->ftdm_call_started = 1;
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
-    ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
 			ftdmchan->caller_data.cid_num.digits, 
 			ftdmchan->caller_data.dnis.digits, 
 			OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER);
 
-    if (callstatus) {
-        ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
-        return FTDM_FAIL;
-    }
+	if (callstatus) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
+		return FTDM_FAIL;
+	}
 
 	if (ftdmchan->state !=  FTDM_CHANNEL_STATE_DIALING) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Collision after call attempt, try another channel, new state = %s\n",
 				ftdm_channel_state2str(ftdmchan->state));
-		ftdm_clear_flag(R2CALL(ftdmchan), FTDM_R2_WAITING_ACK);
 		return FTDM_BREAK;
 	}
-
-    /* non-threaded implementation, we're done here */
-    ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "R2 call placed in non-threaded mode\n");
-    return FTDM_SUCCESS;
+	return FTDM_SUCCESS;
 }
 
 static ftdm_status_t ftdm_r2_start(ftdm_span_t *span)
@@ -444,20 +444,47 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Priority = (%d)\n", ani, dnis, category);
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+}
+
+/*
+ * Accepting a call in R2 is a lengthy process due to MF tones,
+ * when the user sends PROGRESS indication (implicitly moving the
+ * ftdm channel to PROGRESS state) the R2 processing loop
+ * does not clear FTDM_CHANNEL_STATE_CHANGE immediately as it does
+ * for all the other states, instead has to wait for on_call_accepted
+ * callback from openr2, which means the MF has ended and the progress
+ * indication is done, in order to clear the flag. However, if
+ * a protocol error or call disconnection (which is indicated using CAS bits)
+ * occurrs while accepting, we must clear the pending flag, this function
+ * takes care of that
+ * */
+static void clear_accept_pending(ftdm_channel_t *fchan)
+{
+	if (IS_ACCEPTING_PENDING(fchan)) {
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
+		ftdm_channel_complete_state(fchan);
+	} else if (ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "State change flag set in state %s, last state = %s\n", 
+				ftdm_channel_state2str(fchan->state), ftdm_channel_state2str(fchan->last_state));
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
+		ftdm_channel_complete_state(fchan);
+	}
 }
 
 static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t mode)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call accepted\n");
+
+	clear_accept_pending(ftdmchan);
+
 	/* at this point the MF signaling has ended and there is no point on keep reading */
 	openr2_chan_disable_read(r2chan);
 	R2CALL(ftdmchan)->accepted = 1;
+
 	if (OR2_DIR_BACKWARD == openr2_chan_get_direction(r2chan)) {
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
-		ftdm_channel_complete_state(ftdmchan);
 		if (R2CALL(ftdmchan)->answer_pending) {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Answer was pending, answering now.\n");
 			ft_r2_answer_call(ftdmchan);
@@ -465,7 +492,7 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 			return;
 		}
 	} else {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	}
 }
 
@@ -475,47 +502,30 @@ static void ftdm_r2_on_call_answered(openr2_chan_t *r2chan)
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call answered\n");
 	/* notify the upper layer of progress in the outbound call */
 	if (OR2_DIR_FORWARD == openr2_chan_get_direction(r2chan)) {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 	}
 }
 
 /* may be called in the signaling or media thread depending on whether the hangup is product of MF or CAS signaling */
 static void ftdm_r2_on_call_disconnect(openr2_chan_t *r2chan, openr2_call_disconnect_cause_t cause)
 {
-	ftdm_sigmsg_t sigev;
-	ftdm_r2_data_t *r2data;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call disconnected\n");
 
-	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Got openr2 disconnection, clearing call\n");
+	clear_accept_pending(ftdmchan);
 
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Call had been disconnected already by the user\n");
-		/* just ack the hangup to go down */
+		/* just ack the hangup to trigger the on_call_end callback and go down */
 		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_NORMAL_CLEARING);
 		return;
 	}
 
-	/* if the call has not been started yet we must go to HANGUP right here */ 
-	if (!R2CALL(ftdmchan)->ftdm_started) {
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-		return;
-	}
-
 	ftdmchan->caller_data.hangup_cause  = ftdm_r2_cause_to_ftdm_cause(ftdmchan, cause);
-
-	/* notify the user of the call terminating */
-	memset(&sigev, 0, sizeof(sigev));
-	sigev.chan_id = ftdmchan->chan_id;
-	sigev.span_id = ftdmchan->span_id;
-	sigev.channel = ftdmchan;
-	sigev.event_id = FTDM_SIGEVENT_STOP;
-	r2data = ftdmchan->span->signal_data;
-
-	ftdm_span_send_signal(ftdmchan->span, &sigev);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 }
 
 static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
@@ -527,7 +537,7 @@ static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 	/* in some circumstances openr2 can call on_call_init right after this, so let's advance the state right here */
-	ftdm_r2_state_advance(ftdmchan);
+	ftdm_r2_state_advance_all(ftdmchan);
 }
 
 static void ftdm_r2_on_call_read(openr2_chan_t *r2chan, const unsigned char *buf, int buflen)
@@ -551,8 +561,6 @@ static void ftdm_r2_on_os_error(openr2_chan_t *r2chan, int errorcode)
 
 static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_error_t reason)
 {
-	ftdm_sigmsg_t sigev;
-	ftdm_r2_data_t *r2data;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
@@ -561,25 +569,19 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Protocol error\n");
 
+	clear_accept_pending(ftdmchan);
+
 	R2CALL(ftdmchan)->disconnect_rcvd = 1;
 	R2CALL(ftdmchan)->protocol_error = 1;
 
-	if (!R2CALL(ftdmchan)->ftdm_started) {
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "The user already hung up, finishing call in protocol error\n");
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		return;
 	}
 
 	ftdmchan->caller_data.hangup_cause  = FTDM_CAUSE_PROTOCOL_ERROR; 
-
-	/* FIXME: go to terminating and notify the user from the terminating handler instead of notifying here */
-	memset(&sigev, 0, sizeof(sigev));
-	sigev.chan_id = ftdmchan->chan_id;
-	sigev.span_id = ftdmchan->span_id;
-	sigev.channel = ftdmchan;
-	sigev.event_id = FTDM_SIGEVENT_STOP;
-	r2data = ftdmchan->span->signal_data;
-
-	ftdm_span_send_signal(ftdmchan->span, &sigev);
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 }
 
 static void ftdm_r2_on_line_blocked(openr2_chan_t *r2chan)
@@ -638,14 +640,13 @@ static void ftdm_r2_on_chan_log(openr2_chan_t *r2chan, const char *file, const c
 	openr2_log_level_t level, const char *fmt, va_list ap)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-#define CHAN_TAG "Chan "
-	char logmsg[512];
-	char completemsg[sizeof(logmsg) + sizeof(CHAN_TAG) - 1];
+	char logmsg[1024];
+	char completemsg[sizeof(logmsg)];
 	vsnprintf(logmsg, sizeof(logmsg), fmt, ap);
-	snprintf(completemsg, sizeof(completemsg), CHAN_TAG "%d:%d [%s] %s", 
-			ftdmchan->span_id, ftdmchan->chan_id, ftdm_channel_state2str(ftdmchan->state), logmsg);
+	snprintf(completemsg, sizeof(completemsg), "[s%dc%d] [%d:%d] [%s] %s", 
+			ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->physical_span_id, ftdmchan->physical_chan_id,
+			ftdm_channel_state2str(ftdmchan->state), logmsg);
 	ftdm_r2_write_log(level, file, function, line, completemsg);
-#undef CHAN_TAG
 }
 
 static int ftdm_r2_on_dnis_digit_received(openr2_chan_t *r2chan, char digit)
@@ -889,27 +890,147 @@ static openr2_io_interface_t ftdm_r2_io_iface = {
 	/* .get_oob_event */ ftdm_r2_io_get_oob_event /* never called */
 };
 
-static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
-	//ftdm_status_t (ftdm_span_t *span, fio_signal_cb_t sig_cb, va_list ap)
+/* resolve a loglevel string, such as "debug,notice,warning",  to an openr2 log level integer */
+static openr2_log_level_t ftdm_r2_loglevel_from_string(const char *level)
+{
+	openr2_log_level_t tmplevel;
+	openr2_log_level_t newlevel = 0;
+	char *clevel = NULL;
+	char *logval = NULL;
+
+	logval = ftdm_malloc(strlen(level)+1); /* alloca man page scared me, so better to use good ol' malloc  */
+	if (!logval) {
+		ftdm_log(FTDM_LOG_WARNING, "Ignoring R2 logging parameter: '%s', failed to alloc memory\n", level);
+		return newlevel;
+	}
+	strcpy(logval, level);
+	while (logval) {
+		clevel = strsep(&logval, ",");
+		if (-1 == (tmplevel = openr2_log_get_level(clevel))) {
+			ftdm_log(FTDM_LOG_WARNING, "Ignoring invalid R2 logging level: '%s'\n", clevel);
+			continue;
+		}
+		newlevel |= tmplevel;
+	}
+	ftdm_safe_free(logval);
+	return newlevel;
+}
+
+static ftdm_state_map_t r2_state_map = {
+	{
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+			{FTDM_CHANNEL_STATE_COLLECT, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_COLLECT, FTDM_END},
+			{FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_RING, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END},
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_UP, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
+		},
+		
+		/* Outbound states */
+		
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+			{FTDM_CHANNEL_STATE_DIALING, FTDM_END}
+		},
+
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END}
+		},
+
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END},
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+		},
+
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END}
+		},
+
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END}
+		},
+
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_UP, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		},
+	}
+};
+
+static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 {
 	unsigned int i = 0;
 	int conf_failure = 0;
-	char *var = NULL;
-	char *val = NULL;
+	const char *var = NULL, *val = NULL;
+	const char *log_level = "notice,warning,error"; /* default loglevel, if none is read from conf */
 	ftdm_r2_data_t *r2data = NULL;
 	ftdm_r2_span_pvt_t *spanpvt = NULL;
 	ftdm_r2_call_t *r2call = NULL;
 	openr2_chan_t *r2chan = NULL;
-	openr2_log_level_t tmplevel;
-	char *clevel = NULL;
-	char *logval = NULL;
+	unsigned paramindex = 0;
 
 	ft_r2_conf_t r2conf = 
 	{
 		/* .variant */ OR2_VAR_ITU,
 		/* .category */ OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
 		/* .loglevel */ OR2_LOG_ERROR | OR2_LOG_WARNING,
-		/* .logdir */ NULL,
+		/* .logdir */ (char *)"/usr/local/freeswitch/log/", /* FIXME: get PREFIX variable */
 		/* .advanced_protocol_file */ NULL,
 		/* .max_ani */ 10,
 		/* .max_dnis */ 4,
@@ -920,7 +1041,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		/* .get_ani_first */ -1,
 		/* .call_files */ 0,
 		/* .mf_files */ 0,
-		/* .double_answer */ 0,
+		/* .double_answer */ -1,
 		/* .charge_calls */ -1,
 		/* .forced_release */ -1,
 		/* .allow_collect_calls */ -1
@@ -933,10 +1054,12 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		return FTDM_FAIL;
 	}
 
-	while ((var = va_arg(ap, char *))) {
+	for (; ftdm_parameters[paramindex].var; paramindex++) {
+		var = ftdm_parameters[paramindex].var;
+		val = ftdm_parameters[paramindex].val;
 		ftdm_log(FTDM_LOG_DEBUG, "Reading R2 parameter %s for span %d\n", var, span->span_id);
 		if (!strcasecmp(var, "variant")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
@@ -951,7 +1074,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d for variant %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "category")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
@@ -966,87 +1089,72 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with default category %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "logdir")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 logdir parameter\n");
 				continue;
 			}
-			r2conf.logdir = val;
+			r2conf.logdir = (char *)val;
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with logdir %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "logging")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 logging parameter\n");
 				continue;
 			}
-			logval = ftdm_malloc(strlen(val)+1); /* alloca man page scared me, so better to use good ol' malloc  */
-			if (!logval) {
-				ftdm_log(FTDM_LOG_WARNING, "Ignoring R2 logging parameter: '%s', failed to alloc memory\n", val);
-				continue;
-			}
-			strcpy(logval, val);
-			while (logval) {
-				clevel = strsep(&logval, ",");
-				if (-1 == (tmplevel = openr2_log_get_level(clevel))) {
-					ftdm_log(FTDM_LOG_WARNING, "Ignoring invalid R2 logging level: '%s'\n", clevel);
-					continue;
-				}
-				r2conf.loglevel |= tmplevel;
-				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with loglevel %s\n", span->span_id, clevel);
-			}
-			ftdm_safe_free(logval);
+			log_level = val;
 		} else if (!strcasecmp(var, "advanced_protocol_file")) {
-			if (!(val = va_arg(ap, char *))) {
+			if (!val) {
 				break;
 			}
 			if (ftdm_strlen_zero_buf(val)) {
 				ftdm_log(FTDM_LOG_NOTICE, "Ignoring empty R2 advanced_protocol_file parameter\n");
 				continue;
 			}
-			r2conf.advanced_protocol_file = val;
+			r2conf.advanced_protocol_file = (char *)val;
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with advanced protocol file %s\n", span->span_id, val);
 		} else if (!strcasecmp(var, "allow_collect_calls")) {
-			r2conf.allow_collect_calls = va_arg(ap, int);
+			r2conf.allow_collect_calls = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with allow collect calls max ani = %d\n", span->span_id, r2conf.allow_collect_calls);
 		} else if (!strcasecmp(var, "double_answer")) {
-			r2conf.double_answer = va_arg(ap, int);
+			r2conf.double_answer = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with double answer = %d\n", span->span_id, r2conf.double_answer);
 		} else if (!strcasecmp(var, "immediate_accept")) {
-			r2conf.immediate_accept = va_arg(ap, int);
+			r2conf.immediate_accept = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with immediate accept = %d\n", span->span_id, r2conf.immediate_accept);
 		} else if (!strcasecmp(var, "skip_category")) {
-			r2conf.skip_category = va_arg(ap, int);
+			r2conf.skip_category = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with skip category = %d\n", span->span_id, r2conf.skip_category);
 		} else if (!strcasecmp(var, "forced_release")) {
-			r2conf.forced_release = va_arg(ap, int);
+			r2conf.forced_release = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with forced release = %d\n", span->span_id, r2conf.forced_release);
 		} else if (!strcasecmp(var, "charge_calls")) {
-			r2conf.charge_calls = va_arg(ap, int);
+			r2conf.charge_calls = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with charge calls = %d\n", span->span_id, r2conf.charge_calls);
 		} else if (!strcasecmp(var, "get_ani_first")) {
-			r2conf.get_ani_first = va_arg(ap, int);
+			r2conf.get_ani_first = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with get ani first = %d\n", span->span_id, r2conf.get_ani_first);
 		} else if (!strcasecmp(var, "call_files")) {
-			r2conf.call_files = va_arg(ap, int);
+			r2conf.call_files = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with call files = %d\n", span->span_id, r2conf.call_files);
 		} else if (!strcasecmp(var, "mf_files")) {
-			r2conf.mf_files = va_arg(ap, int);
+			r2conf.mf_files = ftdm_true(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with mf files = %d\n", span->span_id, r2conf.mf_files);
 		} else if (!strcasecmp(var, "mfback_timeout")) {
-			r2conf.mfback_timeout = va_arg(ap, int);
+			r2conf.mfback_timeout = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with MF backward timeout = %dms\n", span->span_id, r2conf.mfback_timeout);
 		} else if (!strcasecmp(var, "metering_pulse_timeout")) {
-			r2conf.metering_pulse_timeout = va_arg(ap, int);
+			r2conf.metering_pulse_timeout = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with metering pulse timeout = %dms\n", span->span_id, r2conf.metering_pulse_timeout);
 		} else if (!strcasecmp(var, "max_ani")) {
-			r2conf.max_ani = va_arg(ap, int);
+			r2conf.max_ani = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with max ani = %d\n", span->span_id, r2conf.max_ani);
 		} else if (!strcasecmp(var, "max_dnis")) {
-			r2conf.max_dnis = va_arg(ap, int);
+			r2conf.max_dnis = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with max dnis = %d\n", span->span_id, r2conf.max_dnis);
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown R2 parameter [%s]", var);
@@ -1058,6 +1166,10 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 		snprintf(span->last_error, sizeof(span->last_error), "R2 configuration error");
 		return FTDM_FAIL;
 	}
+
+	/* set span log level */
+	r2conf.loglevel = ftdm_r2_loglevel_from_string(log_level);
+	ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with loglevel %s\n", span->span_id, log_level);
 
 	r2data = ftdm_malloc(sizeof(*r2data));
 	if (!r2data) {
@@ -1143,6 +1255,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_r2_configure_span)
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
 
+	span->state_map = &r2_state_map;
+
 	/* use signals queue */
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 
@@ -1187,12 +1301,9 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
 		R2CALL(ftdmchan)->chanstate = ftdmchan->state;
 
-		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) && !R2CALL(ftdmchan)->accepted &&
-				(ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS ||
-				 ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA ||
-				 ftdmchan->state == FTDM_CHANNEL_STATE_UP) ) {
+		if (IS_ACCEPTING_PENDING(ftdmchan)) {
 			/* 
-			   Moving to PROGRESS, PROGRESS_MEDIA or UP means that we must accept the call, and accepting
+			   Moving to PROGRESS, PROGRESS_MEDIA or UP means that we must accept the call first, and accepting
 			   the call in R2 means sending a tone, then waiting for the acknowledge from the other end,
 			   since all of that requires sending and detecting tones, it takes a few milliseconds (I'd say around 100)
 			   which means during that time the user should not try to perform any operations like answer, hangup or anything
@@ -1243,7 +1354,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 					break; 
 				}
-				R2CALL(ftdmchan)->ftdm_started = 1; 
+				R2CALL(ftdmchan)->ftdm_call_started = 1; 
 
 				break;
 
@@ -1258,10 +1369,11 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 						} 
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Notifying progress\n");
+						sigev.event_id = FTDM_SIGEVENT_PROCEED;
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
+
 						sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
-						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-						}
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
 					}
 				}
 				break;
@@ -1282,27 +1394,40 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Notifying of call answered\n");
 						sigev.event_id = FTDM_SIGEVENT_UP;
-						if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
-						}
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
 					}
 				}
 				break;
 
 				/* just got hangup */
-			case FTDM_CHANNEL_STATE_HANGUP: 
+			case FTDM_CHANNEL_STATE_HANGUP:
 				{
-					openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
-					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 					if (!R2CALL(ftdmchan)->disconnect_rcvd) {
+						openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 						/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 						openr2_chan_disconnect_call(r2chan, disconnect_cause);
 					} else if (!R2CALL(ftdmchan)->protocol_error) {
 						/* just ack the hangup, on_call_end will be called by openr2 right after */
-						openr2_chan_disconnect_call(r2chan, disconnect_cause);
+						openr2_chan_disconnect_call(r2chan, OR2_CAUSE_NORMAL_CLEARING);
 					} else {
-						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Clearing call due to protocol error\n");
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Clearing call due to protocol error\n");
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+					}
+				}
+				break;
+
+			case FTDM_CHANNEL_STATE_TERMINATING:
+				{
+					/* if the call has not been started yet we must go to HANGUP right here */ 
+					if (!R2CALL(ftdmchan)->ftdm_call_started) {
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					} else {
+						openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
+						/* notify the user of the call terminating and we wait for the user to move us to hangup */
+						sigev.event_id = FTDM_SIGEVENT_STOP;
+						ftdm_span_send_signal(ftdmchan->span, &sigev);
 					}
 				}
 				break;
@@ -1345,10 +1470,23 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 	return ret;
 }
 
+/* the channel must be locked when calling this function */
+static void ftdm_r2_state_advance_all(ftdm_channel_t *ftdmchan)
+{
+	/* because we do not always acknowledge the state change (clearing the FTDM_CHANNEL_STATE_CHANGE flag) due to the accept
+	 * procedure described below, we need the chanstate member to NOT process some states twice, so is valid entering this 
+	 * function with the FTDM_CHANNEL_STATE_CHANGE flag set but with a state that was already processed and is just waiting
+	 * to complete (the processing is media-bound)
+	 * */
+	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)
+		&& (R2CALL(ftdmchan)->chanstate != ftdmchan->state)) {
+		ftdm_r2_state_advance(ftdmchan);
+	}
+}
+
 static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 {
 	openr2_chan_t *r2chan;
-	ftdm_r2_call_t *r2call = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_status_t status;
 	ftdm_span_t *span = (ftdm_span_t *) obj;
@@ -1356,8 +1494,10 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	int waitms = 20;
 	unsigned int i;
 	int res, ms;
+	int index = 0;
 	struct timeval start, end;
-    short *poll_events = ftdm_malloc(sizeof(short)*span->chan_count);
+	ftdm_iterator_t *chaniter = NULL;
+	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
 #ifdef __linux__
 	r2data->monitor_thread_id = syscall(SYS_gettid);	
@@ -1369,28 +1509,39 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		r2chan = R2CALL(span->channels[i])->r2chan;
 		openr2_chan_set_idle(r2chan);
 		openr2_chan_process_cas_signaling(r2chan);
+
+		ftdmchan = openr2_chan_get_client_data(r2chan);
+		//ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	}
 
 	memset(&start, 0, sizeof(start));
 	memset(&end, 0, sizeof(end));
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	while (ftdm_running() && ftdm_test_flag(r2data, FTDM_R2_RUNNING)) {
-		r2data->loops++;
 		res = gettimeofday(&end, NULL);
 		if (start.tv_sec) {
 			ms = ((end.tv_sec - start.tv_sec) * 1000) 
 			    + ((( 1000000 + end.tv_usec - start.tv_usec) / 1000) - 1000);
+			if (ms < 0) {
+				ms = 0;
+			}
 			if (ms > r2data->jobmax) {
 				r2data->jobmax = ms;
 			}
+			index = (ms / 10);
+			index = (index > 10) ? 10 : index;
+			r2data->loops[index]++;
+			r2data->total_loops++;
 		}
 
 #ifndef WIN32
 		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
-		for (i = 0; i < span->chan_count; i++) {
-			r2chan = R2CALL(span->channels[(i+1)])->r2chan;
-			ftdmchan = openr2_chan_get_client_data(r2chan);
+		chaniter = ftdm_span_get_chan_iterator(span, chaniter);
+		for (i = 0; chaniter; chaniter = ftdm_iterator_next(chaniter), i++) {
+			ftdmchan = ftdm_iterator_current(chaniter);
+			r2chan = R2CALL(ftdmchan)->r2chan;
 			poll_events[i] = POLLPRI;
 			if (openr2_chan_get_read_enabled(r2chan)) {
 				poll_events[i] |= POLLIN;
@@ -1412,29 +1563,35 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
-		/* XXX
-		* when ftdm_span_poll_event() returns FTDM_SUCCESS, means there are events pending on the span.
-		* is it possible to know on which channels those events are pending, without traversing the span?
-		* XXX */
-		for (i = 1; i <= span->chan_count; i++) {
-			r2chan = R2CALL(span->channels[i])->r2chan;
-			ftdmchan = openr2_chan_get_client_data(r2chan);
-			r2call = R2CALL(ftdmchan);
+		/* this main loop takes care of MF and CAS signaling during call setup and tear down
+		 * for every single channel in the span, do not perform blocking operations here! */
+		chaniter = ftdm_span_get_chan_iterator(span, chaniter);
+		for ( ; chaniter; chaniter = ftdm_iterator_next(chaniter)) {
+			ftdmchan = ftdm_iterator_current(chaniter);
 
 			ftdm_mutex_lock(ftdmchan->mutex);
-			ftdm_r2_state_advance(ftdmchan);
+
+			ftdm_r2_state_advance_all(ftdmchan);
+
+			r2chan = R2CALL(ftdmchan)->r2chan;
 			openr2_chan_process_signaling(r2chan);
-			ftdm_r2_state_advance(ftdmchan);
+
+			ftdm_r2_state_advance_all(ftdmchan);
+
 			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
+		/* deliver the actual events to the user now without any channel locking */
 		ftdm_span_trigger_signals(span);
 	}
-
-	for (i = 1; i <= span->chan_count; i++) {
-		r2chan = R2CALL(span->channels[i])->r2chan;
+	
+	chaniter = ftdm_span_get_chan_iterator(span, chaniter);
+	for ( ; chaniter; chaniter = ftdm_iterator_next(chaniter)) {
+		ftdmchan = ftdm_iterator_current(chaniter);
+		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_blocked(r2chan);
 	}
 
+	ftdm_iterator_free(chaniter);
 	ftdm_safe_free(poll_events);
 
 	ftdm_clear_flag(r2data, FTDM_R2_RUNNING);
@@ -1576,7 +1733,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 					goto done;
 				}
 				if (!(r2data =  span->signal_data)) {
-					stream->write_function(stream, "-ERR invalid span. No R2 singal data in span.\n");
+					stream->write_function(stream, "-ERR invalid span. No R2 signal data in span.\n");
 					goto done;
 				}
 				r2context = r2data->r2context;
@@ -1587,19 +1744,17 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 						"Max DNIS: %d\n"
 						"ANI First: %s\n"
 						"Immediate Accept: %s\n"
-						"Side: %s\n"
+						"Job Thread: %lu\n"
 						"Job Max ms: %d\n"
-						"Job Loops: %lu\n"
-						"Monitor Thread: %lu\n",
+						"Job Loops: %lu\n",
 						openr2_proto_get_variant_string(r2variant),
 						openr2_context_get_max_ani(r2context),
 						openr2_context_get_max_dnis(r2context),
 						openr2_context_get_ani_first(r2context) ? "Yes" : "No",
 						openr2_context_get_immediate_accept(r2context) ? "Yes" : "No",
-                                                "no side",
+						r2data->monitor_thread_id,
 						r2data->jobmax, 
-						r2data->loops,
-						r2data->monitor_thread_id);
+						r2data->total_loops);
 				stream->write_function(stream, "\n");
 				stream->write_function(stream, "%4s %-12.12s %-12.12s\n", "Channel", "Tx CAS", "Rx CAS");
 				for (i = 1; i <= span->chan_count; i++) {
@@ -1608,6 +1763,39 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 							span->channels[i]->chan_id,
 							openr2_chan_get_tx_cas_string(r2chan),
 							openr2_chan_get_rx_cas_string(r2chan));
+				}
+				stream->write_function(stream, "\n");
+				stream->write_function(stream, "+OK.\n");
+				goto done;
+			} else {
+				stream->write_function(stream, "-ERR invalid span.\n");
+				goto done;
+			}
+		}
+
+		if (!strcasecmp(argv[0], "loopstats")) {
+			int range;
+			float pct;
+			span_id = atoi(argv[1]);
+
+			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS || ftdm_span_find(span_id, &span) == FTDM_SUCCESS) {
+				if (span->start != ftdm_r2_start) {
+					stream->write_function(stream, "-ERR not an R2 span.\n");
+					goto done;
+				}
+				if (!(r2data =  span->signal_data)) {
+					stream->write_function(stream, "-ERR invalid span. No R2 signal data in span.\n");
+					goto done;
+				}
+				range = 0;
+				for (i = 0; i < ftdm_array_len(r2data->loops); i++) {
+					pct = 100*(float)r2data->loops[i]/r2data->total_loops;
+					if ((i + 1) == ftdm_array_len(r2data->loops)) {
+						stream->write_function(stream, ">= %dms: %llu - %.03lf%%\n", range, r2data->loops[i], pct);
+					} else {
+						stream->write_function(stream, "%d-%dms: %llu - %.03lf%%\n", range, range + 9, r2data->loops[i], pct);
+					}
+					range += 10;
 				}
 				stream->write_function(stream, "\n");
 				stream->write_function(stream, "+OK.\n");
@@ -1707,12 +1895,13 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
 }
 
 EX_DECLARE_DATA ftdm_module_t ftdm_module = { 
-	"r2",
-	ftdm_r2_io_init,
-	NULL,
-	ftdm_r2_init,
-	ftdm_r2_configure_span,
-	ftdm_r2_destroy
+	/* .name */ "r2",
+	/* .io_load */ ftdm_r2_io_init,
+	/* .io_unload */ NULL,
+	/* .sig_load */ ftdm_r2_init,
+	/* .sig_configure */ NULL,
+	/* .sig_unload */ ftdm_r2_destroy,
+	/* .configure_span_signaling */ ftdm_r2_configure_span_signaling
 };
 	
 

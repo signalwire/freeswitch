@@ -5734,6 +5734,48 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	return ret;
 }
 
+char *sofia_glue_get_register_host(const char *uri)
+{
+	char *register_host = NULL;
+	const char *s;
+	char *p = NULL;
+
+	if (zstr(uri)) {
+		return NULL;
+	}
+
+	if ((s = switch_stristr("sip:", uri))) {
+		s += 4;
+	} else if ((s = switch_stristr("sips:", uri))) {
+		s += 5;
+	}
+
+	if (!s) {
+		return NULL;
+	}
+
+	register_host = strdup(s);
+	
+	/* remove port for register_host for testing nat acl take into account 
+	   ipv6 addresses which are required to have brackets around the addr 
+	*/
+	
+	if ((p = strchr(register_host, ']'))) {
+		if (*(p + 1) == ':') {
+			*(p + 1) = '\0';
+		}
+	} else {
+		if ((p = strrchr(register_host, ':'))) {
+			*p = '\0';
+		}
+	}
+	
+	/* register_proxy should always start with "sip:" or "sips:" */
+	assert(register_host);
+
+	return register_host;
+}
+
 const char *sofia_glue_strip_proto(const char *uri)
 {
 	char *p;
@@ -5982,7 +6024,6 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		switch_core_session_rwunlock(other_session);
 	}
 }
-
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl)
 {
