@@ -565,6 +565,7 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Got protocol error when we're already down!\n");
+		return;
 	}
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Protocol error\n");
