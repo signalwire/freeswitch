@@ -3321,7 +3321,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 		} else {
 			ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, ftdmchan->dtmfdbg.file);
-			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumped initial DTMF output to %s\n", dfile);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped initial DTMF output to %s\n", dfile);
 		}
 	} else {
 		ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
