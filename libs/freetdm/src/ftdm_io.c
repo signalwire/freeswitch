@@ -91,6 +91,10 @@ static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char
 	int windex = dump->windex;
 	int avail = dump->size - windex;
 
+	if (!dump->buffer) {
+		return;
+	}
+
 	if (dlen > avail) {
 		int diff = dlen - avail;
 		
