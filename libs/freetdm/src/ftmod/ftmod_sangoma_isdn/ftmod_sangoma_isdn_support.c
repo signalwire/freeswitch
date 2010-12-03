@@ -283,7 +283,7 @@ ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 }
 
 ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
-{	
+{
 	if (!facilityStr->eh.pres) {
 		return FTDM_FAIL;
 	}
@@ -294,18 +294,25 @@ ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t data_len)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
-	if (data_len > sizeof(caller_data->raw_data)-2) {
-		ftdm_log(FTDM_LOG_CRIT, "Length of Facility IE exceeds maximum length\n");
-		return FTDM_FAIL;
-	}
-
-	memset(caller_data->raw_data, 0, sizeof(caller_data->raw_data));
-	/* Always include Facility IE identifier + len so this can be used as a sanity check by the user */
-	caller_data->raw_data[0] = SNGISDN_Q931_FACILITY_IE_ID;
-	caller_data->raw_data[1] = data_len;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	
-	memcpy(&caller_data->raw_data[2], data, data_len);
-	caller_data->raw_data_len = data_len+2;
+	if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
+		if (data_len > sizeof(caller_data->raw_data)-2) {
+			ftdm_log(FTDM_LOG_CRIT, "Length of Facility IE exceeds maximum length\n");
+			return FTDM_FAIL;
+		}
+
+		memset(caller_data->raw_data, 0, sizeof(caller_data->raw_data));
+		/* Always include Facility IE identifier + len so this can be used as a sanity check by the user */
+		caller_data->raw_data[0] = SNGISDN_Q931_FACILITY_IE_ID;
+		caller_data->raw_data[1] = data_len;
+	
+		memcpy(&caller_data->raw_data[2], data, data_len);
+		caller_data->raw_data_len = data_len+2;
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Raw Facility IE copied available\n");
+	} else {
+		/* Call libsng_isdn to process facility IE's here */
+	}
 	return FTDM_SUCCESS;
 }
 
