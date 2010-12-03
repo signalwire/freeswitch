@@ -945,7 +945,10 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 	if (bsent > 0) {
 		*datalen = bsent;
 		if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
-			wanpipe_write_stats(ftdmchan, &hdrframe);
+			/* BRI cards do not support TX queues for now */
+			if(!FTDM_SPAN_IS_BRI(ftdmchan->span)) {
+				wanpipe_write_stats(ftdmchan, &hdrframe);
+			}
 		}
 		return FTDM_SUCCESS;
 	}
