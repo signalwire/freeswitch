@@ -2537,9 +2537,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
 
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_DTMF, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
-	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_DTMF, NULL);
 
 	if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 		ftdm_sigmsg_t sigmsg;
@@ -2722,6 +2722,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable rx dump for DTMF debugging\n");	
 			}
 			ftdmchan->dtmfdbg.enabled = 1;
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled DTMF debugging\n");	
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
@@ -2738,6 +2739,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			GOTO_STATUS(done, FTDM_SUCCESS);
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled DTMF debugging\n");	
 		}
 		break;
 
@@ -3295,7 +3297,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "No channel\n");
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s\n", dtmf);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s (debug = %d)\n", dtmf, ftdmchan->dtmfdbg.enabled);
 
 	if (!ftdmchan->dtmfdbg.enabled) {
 		goto skipdebug;
@@ -3319,6 +3321,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 		} else {
 			ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, ftdmchan->dtmfdbg.file);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumped initial DTMF output to %s\n", dfile);
 		}
 	} else {
 		ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
@@ -4206,6 +4209,7 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, unsigned *configured)
 {
 	int currindex;
+	unsigned chan_index = 0;
 
 	ftdm_assert_return(span != NULL, FTDM_EINVAL, "span is null\n");
 	ftdm_assert_return(chan_config != NULL, FTDM_EINVAL, "config is null\n");
@@ -4239,6 +4243,14 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		return FTDM_FAIL;
 	}
 
+	if (chan_config->debugdtmf) {
+		for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
+			if (!FTDM_IS_VOICE_CHANNEL(span->channels[chan_index])) {
+				continue;
+			}
+			span->channels[chan_index]->dtmfdbg.requested = 1;
+		}
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -4257,7 +4269,7 @@ static ftdm_status_t load_config(void)
 	ftdm_channel_config_t chan_config;
 
 	memset(&chan_config, 0, sizeof(chan_config));
-	sprintf(chan_config.group_name,"default");
+	sprintf(chan_config.group_name, "__default");
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
@@ -4294,6 +4306,9 @@ static ftdm_status_t load_config(void)
 				if (ftdm_span_create(type, name, &span) == FTDM_SUCCESS) {
 					ftdm_log(FTDM_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
 					d = 0;
+					/* it is confusing that parameters from one span affect others, so let's clear them */
+					memset(&chan_config, 0, sizeof(chan_config));
+					sprintf(chan_config.group_name, "__default");
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span of type %s\n", type);
 					span = NULL;
@@ -4417,6 +4432,9 @@ static ftdm_status_t load_config(void)
 				if (sscanf(val, "%f", &(chan_config.rxgain)) != 1) {
 					ftdm_log(FTDM_LOG_ERROR, "invalid rxgain: '%s'\n", val);
 				}
+			} else if (!strcasecmp(var, "debugdtmf")) {
+				chan_config.debugdtmf = ftdm_true(val);
+				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
 			} else if (!strcasecmp(var, "group")) {
 				len = strlen(val);
 				if (len >= FTDM_MAX_NAME_STR_SZ) {
@@ -5068,6 +5086,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	case FTDM_SIGEVENT_START:
 		{
 			ftdm_set_echocancel_call_begin(sigmsg->channel);
+			if (sigmsg->channel->dtmfdbg.requested) {
+				ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL);
+			}
 
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
 			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if

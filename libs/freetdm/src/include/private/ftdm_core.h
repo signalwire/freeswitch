@@ -355,6 +355,7 @@ typedef struct {
 #define DTMF_DEBUG_TIMEOUT 250
 typedef struct {
 	uint8_t enabled;
+	uint8_t requested;
 	FILE *file;
 	int32_t closetimeout;
 	ftdm_mutex_t *mutex;
