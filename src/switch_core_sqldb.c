@@ -913,7 +913,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	uint32_t target = 20000;
 	switch_size_t len = 0, sql_len = runtime.sql_buffer_len;
 	char *tmp, *sqlbuf = (char *) malloc(sql_len);
-	char *sql = NULL;
+	char *sql = NULL, *save_sql = NULL;
 	switch_size_t newlen;
 	int lc = 0;
 	uint32_t sanity = 120;
@@ -938,11 +938,16 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	switch_mutex_lock(sql_manager.cond_mutex);
 
 	while (sql_manager.thread_running == 1) {
-		if (sql || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
+		if (save_sql || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
 			switch_queue_trypop(sql_manager.sql_queue[1], &pop) == SWITCH_STATUS_SUCCESS) {
 
-			if (!sql) sql = (char *) pop;
-
+			if (save_sql) {
+				sql = save_sql;
+				save_sql = NULL;
+			} else if ((sql = (char *) pop)) {
+				pop = NULL;
+			}
+			
 			if (sql) {
 				newlen = strlen(sql) + 2;
 
@@ -971,6 +976,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
 										  "SAVE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
 #endif
+						save_sql = sql;
+						sql = NULL;
 						goto skip;
 					}
 				}
@@ -988,7 +995,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 	skip:
 		
-		lc = sql ? 1 : 0 + switch_queue_size(sql_manager.sql_queue[0]) + switch_queue_size(sql_manager.sql_queue[1]);
+		lc = switch_queue_size(sql_manager.sql_queue[0]) + switch_queue_size(sql_manager.sql_queue[1]);
 		
 		if (trans && iterations && (iterations > target || !lc)) {
 #ifdef DEBUG_SQL
