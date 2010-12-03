@@ -91,6 +91,10 @@ static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char
 	int windex = dump->windex;
 	int avail = dump->size - windex;
 
+	if (!dump->buffer) {
+		return;
+	}
+
 	if (dlen > avail) {
 		int diff = dlen - avail;
 		
@@ -101,7 +105,7 @@ static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char
 		memcpy(&dump->buffer[0], &dataptr[avail], diff);
 		windex = diff;
 
-		ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p up to index %d\n\n", dump, windex);
+		/*ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p up to index %d\n\n", dump, windex);*/
 		dump->wrapped = 1;
 	} else {
 		memcpy(&dump->buffer[windex], dataptr, dlen);
@@ -109,7 +113,7 @@ static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char
 	}
 
 	if (windex == dump->size) {
-		ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p\n", dump);
+		/*ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p\n", dump);*/
 		windex = 0;
 		dump->wrapped = 1;
 	}
@@ -2525,7 +2529,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
 	ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
-	disable_dtmf_debug(ftdmchan);
 	ftdm_channel_clear_vars(ftdmchan);
 	if (ftdmchan->hangup_timer) {
 		ftdm_sched_cancel_timer(globals.timingsched, ftdmchan->hangup_timer);
@@ -2534,8 +2537,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
 
-	stop_chan_io_dump(&ftdmchan->txdump);
-	stop_chan_io_dump(&ftdmchan->rxdump);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_DTMF, NULL);
 
 	if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 		ftdm_sigmsg_t sigmsg;
@@ -2741,6 +2745,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_ENABLE_INPUT_DUMP:
 		{
 			ftdm_size_t size = obj ? FTDM_COMMAND_OBJ_SIZE : FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
+			if (ftdmchan->rxdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Input dump is already enabled\n");
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
 			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, size)) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
@@ -2753,6 +2761,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	/*!< Stop dumping all input to a circular buffer. */
 	case FTDM_COMMAND_DISABLE_INPUT_DUMP:
 		{
+			if (!ftdmchan->rxdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No need to disable input dump\n");
+				GOTO_STATUS(done, FTDM_SUCCESS);
+			}
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled input dump of size %zd\n", ftdmchan->rxdump.size);
 			stop_chan_io_dump(&ftdmchan->rxdump);
 			GOTO_STATUS(done, FTDM_SUCCESS);
@@ -2763,6 +2775,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_ENABLE_OUTPUT_DUMP:
 		{
 			ftdm_size_t size = obj ? FTDM_COMMAND_OBJ_SIZE : FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
+			if (ftdmchan->txdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Output dump is already enabled\n");
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
 			if (start_chan_io_dump(ftdmchan, &ftdmchan->txdump, size)) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
@@ -2775,6 +2791,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	/*!< Stop dumping all output to a circular buffer. */
 	case FTDM_COMMAND_DISABLE_OUTPUT_DUMP:
 		{
+			if (!ftdmchan->txdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No need to disable output dump\n");
+				GOTO_STATUS(done, FTDM_SUCCESS);
+			}
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled output dump of size %zd\n", ftdmchan->rxdump.size);
 			stop_chan_io_dump(&ftdmchan->txdump);
 			GOTO_STATUS(done, FTDM_SUCCESS);
@@ -3349,12 +3369,13 @@ skipdebug:
 
 static FIO_WRITE_FUNCTION(ftdm_raw_write)
 {
+	int dlen = (int) *datalen;
 	if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > -1) {
-		int dlen = (int) *datalen;
 		if ((write(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX], data, dlen)) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
+	write_chan_io_dump(ftdmchan, &ftdmchan->txdump, data, dlen);
 	return ftdmchan->fio->write(ftdmchan, data, datalen);
 }
 
