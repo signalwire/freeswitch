@@ -397,6 +397,17 @@ static ftdm_status_t ftdm_r2_stop(ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
+static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
+{
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+		*status = FTDM_SIG_STATE_UP;
+	} else {
+		*status = FTDM_SIG_STATE_DOWN;
+	}
+
+	return FTDM_SUCCESS;
+}
+
 /* always called from the monitor thread */
 static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 {
@@ -1249,6 +1260,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	span->start = ftdm_r2_start;
 	span->stop = ftdm_r2_stop;
 	span->sig_read = NULL;
+
+	/* let the core set the states, we just read them */
+	span->get_channel_sig_status = ftdm_r2_get_channel_sig_status;
 
 	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_R2;
