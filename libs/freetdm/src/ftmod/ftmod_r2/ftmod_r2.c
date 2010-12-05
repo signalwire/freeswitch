@@ -1210,6 +1210,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	openr2_context_set_metering_pulse_timeout(r2data->r2context, r2conf.metering_pulse_timeout);
 	openr2_context_set_double_answer(r2data->r2context, r2conf.double_answer);
 	openr2_context_set_immediate_accept(r2data->r2context, r2conf.immediate_accept);
+	openr2_context_set_span_id(r2data->r2context, span->span_id);
 
 	if (r2conf.logdir && r2conf.logdir[0]) {
 		ftdm_log(FTDM_LOG_DEBUG, "Setting openr2 for span %s logdir to %s\n", span->name, r2conf.logdir);
