@@ -48,6 +48,10 @@
 #endif
 #include "ftdm_cpu_monitor.h"
 
+#ifndef localtime_r
+struct tm *localtime_r(const time_t *clock, struct tm *result);
+#endif
+
 #define FORCE_HANGUP_TIMER 3000
 #define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
 #define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
@@ -86,10 +90,10 @@ FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void)
 #endif
 }
 
-static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char *dataptr, int dlen)
+static void write_chan_io_dump(ftdm_io_dump_t *dump, char *dataptr, int dlen)
 {
 	int windex = dump->windex;
-	int avail = dump->size - windex;
+	int avail = (int)dump->size - windex;
 
 	if (!dump->buffer) {
 		return;
@@ -124,8 +128,8 @@ static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char
 static void dump_chan_io_to_file(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, FILE *file)
 {
 	/* write the saved audio buffer */
-	int rc = 0;
-	int towrite = dump->size - dump->windex;
+	size_t rc = 0;
+	size_t towrite = dump->size - dump->windex;
 	if (dump->wrapped) {
 		rc = fwrite(&dump->buffer[dump->windex], 1, towrite, file);
 		if (rc != towrite) {
@@ -2740,7 +2744,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			GOTO_STATUS(done, FTDM_SUCCESS);
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled DTMF debugging\n");	
 		}
 		break;
 
@@ -3310,7 +3313,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 		char dfile[512];
 
 		currsec = time(NULL);
+
+#ifdef WIN32
+		_tzset();
+		_localtime64_s(&currtime, &currsec);
+#else
 		localtime_r(&currsec, &currtime);
+#endif
 
 		snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
 				ftdmchan->span_id, ftdmchan->chan_id, 
@@ -3379,7 +3388,7 @@ static FIO_WRITE_FUNCTION(ftdm_raw_write)
 			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
-	write_chan_io_dump(ftdmchan, &ftdmchan->txdump, data, dlen);
+	write_chan_io_dump(&ftdmchan->txdump, data, dlen);
 	return ftdmchan->fio->write(ftdmchan, data, datalen);
 }
 
@@ -3399,9 +3408,9 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 
 	if (status == FTDM_SUCCESS) {
 		int dlen = (int) *datalen;
-		int rc = 0;
+		size_t rc = 0;
 
-		write_chan_io_dump(ftdmchan, &ftdmchan->rxdump, data, dlen);
+		write_chan_io_dump(&ftdmchan->rxdump, data, dlen);
 
 		/* if dtmf debug is enabled and initialized, write there too */
 		if (ftdmchan->dtmfdbg.file) {
