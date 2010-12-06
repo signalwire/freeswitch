@@ -1263,7 +1263,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	openr2_context_set_metering_pulse_timeout(r2data->r2context, r2conf.metering_pulse_timeout);
 	openr2_context_set_double_answer(r2data->r2context, r2conf.double_answer);
 	openr2_context_set_immediate_accept(r2data->r2context, r2conf.immediate_accept);
-	openr2_context_set_span_id(r2data->r2context, span->span_id);
 
 	ftdm_log(FTDM_LOG_DEBUG, "Setting span %s logdir to %s\n", span->name, r2conf.logdir);
 	openr2_context_set_log_directory(r2data->r2context, r2conf.logdir);
@@ -1579,6 +1578,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		r2chan = R2CALL(span->channels[i])->r2chan;
 		openr2_chan_set_idle(r2chan);
 		openr2_chan_process_cas_signaling(r2chan);
+
+		/* set r2chan span id */
+		openr2_chan_set_span_id(r2chan, span->span_id);
 
 		ftdmchan = openr2_chan_get_client_data(r2chan);
 		//ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
