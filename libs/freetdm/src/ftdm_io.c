@@ -152,19 +152,19 @@ static void stop_chan_io_dump(ftdm_io_dump_t *dump)
 	memset(dump, 0, sizeof(dump));
 }
 
-static int start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *dump, ftdm_size_t size)
+static ftdm_status_t start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *dump, ftdm_size_t size)
 {
 	if (dump->buffer) {
 		ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "IO dump is already started\n");
-		return -1;
+		return FTDM_FAIL;
 	}
 	memset(dump, 0, sizeof(*dump));
 	dump->buffer = ftdm_malloc(size);
 	if (!dump->buffer) {
-		return -1;
+		return FTDM_FAIL;
 	}
 	dump->size = size;
-	return 0;
+	return FTDM_SUCCESS;
 }
 
 
@@ -177,21 +177,21 @@ static void close_dtmf_debug_file(ftdm_channel_t *ftdmchan)
 	}
 }
 
-static int disable_dtmf_debug(ftdm_channel_t *ftdmchan)
+static ftdm_status_t disable_dtmf_debug(ftdm_channel_t *ftdmchan)
 {
 	if (!ftdmchan->dtmfdbg.enabled) {
-		return 0;
+		return FTDM_SUCCESS;
 	}
 
 	if (!ftdmchan->rxdump.buffer) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "DTMF debug enabled but no rx dump?\n");	
-		return -1;
+		return FTDM_FAIL;
 	}
 
 	close_dtmf_debug_file(ftdmchan);
 	stop_chan_io_dump(&ftdmchan->rxdump);
 	ftdmchan->dtmfdbg.enabled = 0;
-	return 0;
+	return FTDM_SUCCESS;
 }
 
 typedef struct {
@@ -2718,8 +2718,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Cannot debug DTMF if Rx dumping is already enabled\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
-			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, FTDM_IO_DUMP_DEFAULT_BUFF_SIZE)) {
+			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, FTDM_IO_DUMP_DEFAULT_BUFF_SIZE) != FTDM_SUCCESS) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable rx dump for DTMF debugging\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			ftdmchan->dtmfdbg.enabled = 1;
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled DTMF debugging\n");	
@@ -2734,7 +2735,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "DTMF debug is already disabled\n");	
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
-			if (disable_dtmf_debug(ftdmchan)) {
+			if (disable_dtmf_debug(ftdmchan) != FTDM_SUCCESS) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to disable DTMF debug\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
@@ -2751,7 +2752,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Input dump is already enabled\n");
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
-			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, size)) {
+			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, size) != FTDM_SUCCESS) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
@@ -2781,7 +2782,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Output dump is already enabled\n");
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
-			if (start_chan_io_dump(ftdmchan, &ftdmchan->txdump, size)) {
+			if (start_chan_io_dump(ftdmchan, &ftdmchan->txdump, size) != FTDM_SUCCESS) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
