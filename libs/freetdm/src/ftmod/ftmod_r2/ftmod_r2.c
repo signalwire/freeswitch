@@ -1576,14 +1576,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	r2chan = NULL;
 	for (i = 1; i <= span->chan_count; i++) {
 		r2chan = R2CALL(span->channels[i])->r2chan;
+		openr2_chan_set_span_id(r2chan, span->span_id);
 		openr2_chan_set_idle(r2chan);
 		openr2_chan_process_cas_signaling(r2chan);
-
-		/* set r2chan span id */
-		openr2_chan_set_span_id(r2chan, span->span_id);
-
-		ftdmchan = openr2_chan_get_client_data(r2chan);
-		//ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	}
 
 	memset(&start, 0, sizeof(start));
