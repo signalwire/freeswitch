@@ -1181,7 +1181,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 			r2conf.mf_dump_size = atoi(val);
 			if (r2conf.mf_dump_size < 0) {
 				r2conf.mf_dump_size = FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
-				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with default mf_dumps = %d bytes\n", span->name, r2conf.mf_dump_size);
+				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with default mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
 			} else {
 				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
 			}
