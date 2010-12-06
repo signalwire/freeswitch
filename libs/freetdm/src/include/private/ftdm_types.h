@@ -58,6 +58,7 @@ typedef int ftdm_filehandle_t;
 extern "C" {
 #endif
 
+#define FTDM_COMMAND_OBJ_SIZE *((ftdm_size_t *)obj)
 #define FTDM_COMMAND_OBJ_INT *((int *)obj)
 #define FTDM_COMMAND_OBJ_CHAR_P (char *)obj
 #define FTDM_COMMAND_OBJ_FLOAT *(float *)obj

@@ -68,6 +68,7 @@ typedef struct ftdm_r2_call_t {
 	ftdm_channel_state_t chanstate;
 	ftdm_size_t dnis_index;
 	ftdm_size_t ani_index;
+	char logname[255];
 	char name[10];
 	unsigned long txdrops;
 } ftdm_r2_call_t;
@@ -88,13 +89,13 @@ typedef struct ft_r2_conf_s {
 	int32_t max_dnis;
 	int32_t mfback_timeout; 
 	int32_t metering_pulse_timeout;
+	int32_t mf_dump_size;
 
 	/* booleans */
 	int immediate_accept;
 	int skip_category;
 	int get_ani_first;
 	int call_files;
-	int mf_files;
 	int double_answer;
 	int charge_calls;
 	int forced_release;
@@ -117,6 +118,8 @@ typedef struct ftdm_r2_data_s {
 	int forced_release:1;
 	/* whether accept the call when offered, or wait until the user decides to accept */
 	int accept_on_offer:1;
+	/* Size of multi-frequency (or any media) dumps used during protocol errors */
+	int32_t mf_dump_size;
 	/* max time spent in ms doing real work in a single loop */
 	int32_t jobmax;
 	/* Total number of loops performed so far */
@@ -125,6 +128,8 @@ typedef struct ftdm_r2_data_s {
 	uint64_t loops[11];
 	/* LWP */
 	uint32_t monitor_thread_id;
+	/* Logging directory */
+	char logdir[512];
 } ftdm_r2_data_t;
 
 /* one element per span will be stored in g_mod_data_hash global var to keep track of them
@@ -409,10 +414,11 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
 }
 
 /* always called from the monitor thread */
-static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
+static void ftdm_r2_on_call_init(openr2_chan_t *r2chan, const char *logname)
 {
 	ftdm_r2_call_t *r2call;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Received request to start call\n");
 
@@ -441,12 +447,15 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	ft_r2_clean_call(ftdmchan->call_data);
 	r2call = R2CALL(ftdmchan);
 
-	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
-		R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
-	} else {
-		R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DIALING;
+	snprintf(r2call->logname, sizeof(r2call->logname), "%s", logname);
+
+	/* start io dump */
+	if (r2data->mf_dump_size) {
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_INPUT_DUMP, &r2data->mf_dump_size);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_OUTPUT_DUMP, &r2data->mf_dump_size);
 	}
 
+	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
 }
 
@@ -454,9 +463,16 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, const char *dnis, openr2_calling_party_category_t category)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+
+	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
+	if (r2data->mf_dump_size) {
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+	}
 }
 
 /*
@@ -484,6 +500,32 @@ static void clear_accept_pending(ftdm_channel_t *fchan)
 	}
 }
 
+static void dump_mf(openr2_chan_t *r2chan)
+{
+	char dfile[512];
+	FILE *f = NULL;
+	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
+	if (r2data->mf_dump_size) {
+		char *logname = R2CALL(ftdmchan)->logname;
+		
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", logname);
+		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
+				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
+		f = fopen(dfile, "w");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
+		fclose(f);
+
+		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
+				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
+		f = fopen(dfile, "w");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
+		fclose(f);
+	}
+}
+
 static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t mode)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
@@ -493,6 +535,7 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 
 	/* at this point the MF signaling has ended and there is no point on keep reading */
 	openr2_chan_disable_read(r2chan);
+	
 	R2CALL(ftdmchan)->accepted = 1;
 
 	if (OR2_DIR_BACKWARD == openr2_chan_get_direction(r2chan)) {
@@ -579,7 +622,7 @@ static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_err
 		return;
 	}
 
-	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Protocol error\n");
+	dump_mf(r2chan);
 
 	clear_accept_pending(ftdmchan);
 
@@ -1042,24 +1085,28 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		/* .variant */ OR2_VAR_ITU,
 		/* .category */ OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER,
 		/* .loglevel */ OR2_LOG_ERROR | OR2_LOG_WARNING,
-		/* .logdir */ (char *)"/usr/local/freeswitch/log/", /* FIXME: get PREFIX variable */
+#ifdef WIN32
+		/* .logdir */ (char *)"c:\\", 
+#else
+		/* .logdir */ (char *)"/tmp", 
+#endif
 		/* .advanced_protocol_file */ NULL,
 		/* .max_ani */ 10,
 		/* .max_dnis */ 4,
 		/* .mfback_timeout */ -1,
 		/* .metering_pulse_timeout */ -1,
+		/* .mf_dump_size */ 0,
 		/* .immediate_accept */ -1,
 		/* .skip_category */ -1,
 		/* .get_ani_first */ -1,
 		/* .call_files */ 0,
-		/* .mf_files */ 0,
 		/* .double_answer */ -1,
 		/* .charge_calls */ -1,
 		/* .forced_release */ -1,
 		/* .allow_collect_calls */ -1
 	};
 
-	assert(sig_cb != NULL);
+	ftdm_assert_return(sig_cb != NULL, FTDM_FAIL, "No signaling cb provided\n");
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling.");
@@ -1119,6 +1166,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 				continue;
 			}
 			log_level = val;
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with loglevel %s\n", span->name, val);
 		} else if (!strcasecmp(var, "advanced_protocol_file")) {
 			if (!val) {
 				break;
@@ -1128,46 +1176,51 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 				continue;
 			}
 			r2conf.advanced_protocol_file = (char *)val;
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with advanced protocol file %s\n", span->span_id, val);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with advanced protocol file %s\n", span->name, val);
+		} else if (!strcasecmp(var, "mf_dump_size")) {
+			r2conf.mf_dump_size = atoi(val);
+			if (r2conf.mf_dump_size < 0) {
+				r2conf.mf_dump_size = FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
+				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with default mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
+			} else {
+				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
+			}
 		} else if (!strcasecmp(var, "allow_collect_calls")) {
 			r2conf.allow_collect_calls = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with allow collect calls max ani = %d\n", span->span_id, r2conf.allow_collect_calls);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with allow collect calls max ani = %d\n", span->name, r2conf.allow_collect_calls);
 		} else if (!strcasecmp(var, "double_answer")) {
 			r2conf.double_answer = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with double answer = %d\n", span->span_id, r2conf.double_answer);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with double answer = %d\n", span->name, r2conf.double_answer);
 		} else if (!strcasecmp(var, "immediate_accept")) {
 			r2conf.immediate_accept = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with immediate accept = %d\n", span->span_id, r2conf.immediate_accept);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with immediate accept = %d\n", span->name, r2conf.immediate_accept);
 		} else if (!strcasecmp(var, "skip_category")) {
 			r2conf.skip_category = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with skip category = %d\n", span->span_id, r2conf.skip_category);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with skip category = %d\n", span->name, r2conf.skip_category);
 		} else if (!strcasecmp(var, "forced_release")) {
 			r2conf.forced_release = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with forced release = %d\n", span->span_id, r2conf.forced_release);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with forced release = %d\n", span->name, r2conf.forced_release);
 		} else if (!strcasecmp(var, "charge_calls")) {
 			r2conf.charge_calls = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with charge calls = %d\n", span->span_id, r2conf.charge_calls);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with charge calls = %d\n", span->name, r2conf.charge_calls);
 		} else if (!strcasecmp(var, "get_ani_first")) {
 			r2conf.get_ani_first = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with get ani first = %d\n", span->span_id, r2conf.get_ani_first);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with get ani first = %d\n", span->name, r2conf.get_ani_first);
 		} else if (!strcasecmp(var, "call_files")) {
 			r2conf.call_files = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with call files = %d\n", span->span_id, r2conf.call_files);
-		} else if (!strcasecmp(var, "mf_files")) {
-			r2conf.mf_files = ftdm_true(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with mf files = %d\n", span->span_id, r2conf.mf_files);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with call files = %d\n", span->name, r2conf.call_files);
 		} else if (!strcasecmp(var, "mfback_timeout")) {
 			r2conf.mfback_timeout = atoi(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with MF backward timeout = %dms\n", span->span_id, r2conf.mfback_timeout);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with MF backward timeout = %dms\n", span->name, r2conf.mfback_timeout);
 		} else if (!strcasecmp(var, "metering_pulse_timeout")) {
 			r2conf.metering_pulse_timeout = atoi(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with metering pulse timeout = %dms\n", span->span_id, r2conf.metering_pulse_timeout);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with metering pulse timeout = %dms\n", span->name, r2conf.metering_pulse_timeout);
 		} else if (!strcasecmp(var, "max_ani")) {
 			r2conf.max_ani = atoi(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with max ani = %d\n", span->span_id, r2conf.max_ani);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with max ani = %d\n", span->name, r2conf.max_ani);
 		} else if (!strcasecmp(var, "max_dnis")) {
 			r2conf.max_dnis = atoi(val);
-			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %d with max dnis = %d\n", span->span_id, r2conf.max_dnis);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with max dnis = %d\n", span->name, r2conf.max_dnis);
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown R2 parameter [%s]", var);
 			return FTDM_FAIL;
@@ -1212,10 +1265,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	openr2_context_set_immediate_accept(r2data->r2context, r2conf.immediate_accept);
 	openr2_context_set_span_id(r2data->r2context, span->span_id);
 
-	if (r2conf.logdir && r2conf.logdir[0]) {
-		ftdm_log(FTDM_LOG_DEBUG, "Setting openr2 for span %s logdir to %s\n", span->name, r2conf.logdir);
-		openr2_context_set_log_directory(r2data->r2context, r2conf.logdir);
-	}
+	ftdm_log(FTDM_LOG_DEBUG, "Setting span %s logdir to %s\n", span->name, r2conf.logdir);
+	openr2_context_set_log_directory(r2data->r2context, r2conf.logdir);
+	snprintf(r2data->logdir, sizeof(r2data->logdir), "%s", r2conf.logdir);
+
 	if (r2conf.advanced_protocol_file) {
 		openr2_context_configure_from_advanced_file(r2data->r2context, r2conf.advanced_protocol_file);
 	}
@@ -1253,6 +1306,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		hashtable_insert(spanpvt->r2calls, (void *)r2call->name, r2call, HASHTABLE_FLAG_FREE_VALUE);
 
 	}
+	r2data->mf_dump_size = r2conf.mf_dump_size;
 	r2data->flags = 0;
 	spanpvt->r2context = r2data->r2context;
 

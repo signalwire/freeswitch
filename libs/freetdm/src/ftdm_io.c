@@ -86,6 +86,114 @@ FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void)
 #endif
 }
 
+static void write_chan_io_dump(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, char *dataptr, int dlen)
+{
+	int windex = dump->windex;
+	int avail = dump->size - windex;
+
+	if (!dump->buffer) {
+		return;
+	}
+
+	if (dlen > avail) {
+		int diff = dlen - avail;
+		
+		ftdm_assert(diff < dump->size, "Very small buffer or very big IO chunk!\n");
+
+		/* write only what we can and the rest at the beginning of the buffer */
+		memcpy(&dump->buffer[windex], dataptr, avail);
+		memcpy(&dump->buffer[0], &dataptr[avail], diff);
+		windex = diff;
+
+		/*ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p up to index %d\n\n", dump, windex);*/
+		dump->wrapped = 1;
+	} else {
+		memcpy(&dump->buffer[windex], dataptr, dlen);
+		windex += dlen;
+	}
+
+	if (windex == dump->size) {
+		/*ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p\n", dump);*/
+		windex = 0;
+		dump->wrapped = 1;
+	}
+
+	dump->windex = windex;
+}
+
+static void dump_chan_io_to_file(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, FILE *file)
+{
+	/* write the saved audio buffer */
+	int rc = 0;
+	int towrite = dump->size - dump->windex;
+	if (dump->wrapped) {
+		rc = fwrite(&dump->buffer[dump->windex], 1, towrite, file);
+		if (rc != towrite) {
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
+		}
+	}
+	if (dump->windex) {
+		towrite = dump->windex;
+		rc = fwrite(&dump->buffer[0], 1, towrite, file);
+		if (rc != towrite) {
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
+		}
+	}
+	dump->windex = 0;
+	dump->wrapped = 0;
+}
+
+static void stop_chan_io_dump(ftdm_io_dump_t *dump)
+{
+	if (!dump->buffer) {
+		return;
+	}
+	ftdm_safe_free(dump->buffer);
+	memset(dump, 0, sizeof(dump));
+}
+
+static ftdm_status_t start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *dump, ftdm_size_t size)
+{
+	if (dump->buffer) {
+		ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "IO dump is already started\n");
+		return FTDM_FAIL;
+	}
+	memset(dump, 0, sizeof(*dump));
+	dump->buffer = ftdm_malloc(size);
+	if (!dump->buffer) {
+		return FTDM_FAIL;
+	}
+	dump->size = size;
+	return FTDM_SUCCESS;
+}
+
+
+static void close_dtmf_debug_file(ftdm_channel_t *ftdmchan)
+{
+	if (ftdmchan->dtmfdbg.file) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "closing debug dtmf file\n");
+		fclose(ftdmchan->dtmfdbg.file);
+		ftdmchan->dtmfdbg.file = NULL;
+	}
+}
+
+static ftdm_status_t disable_dtmf_debug(ftdm_channel_t *ftdmchan)
+{
+	if (!ftdmchan->dtmfdbg.enabled) {
+		return FTDM_SUCCESS;
+	}
+
+	if (!ftdmchan->rxdump.buffer) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "DTMF debug enabled but no rx dump?\n");	
+		return FTDM_FAIL;
+	}
+
+	close_dtmf_debug_file(ftdmchan);
+	stop_chan_io_dump(&ftdmchan->rxdump);
+	ftdmchan->dtmfdbg.enabled = 0;
+	return FTDM_SUCCESS;
+}
+
 typedef struct {
 	uint8_t 	enabled;
 	uint8_t         running;
@@ -447,10 +555,6 @@ static ftdm_status_t ftdm_channel_destroy(ftdm_channel_t *ftdmchan)
 			ftdm_log(FTDM_LOG_INFO, "Waiting for thread to exit on channel %u:%u\n", ftdmchan->span_id, ftdmchan->chan_id);
 			ftdm_sleep(500);
 		}
-
-#ifdef FTDM_DEBUG_DTMF
-		ftdm_mutex_destroy(&ftdmchan->dtmfdbg.mutex);
-#endif
 
 		ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 		ftdm_buffer_destroy(&ftdmchan->pre_buffer);
@@ -870,9 +974,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 
 		ftdm_mutex_create(&new_chan->mutex);
 		ftdm_mutex_create(&new_chan->pre_buffer_mutex);
-#ifdef FTDM_DEBUG_DTMF
-		ftdm_mutex_create(&new_chan->dtmfdbg.mutex);
-#endif
 
 		ftdm_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		ftdm_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
@@ -2400,23 +2501,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signa
 	}
 }
 
-#ifdef FTDM_DEBUG_DTMF
-static void close_dtmf_debug(ftdm_channel_t *ftdmchan)
-{
-	ftdm_mutex_lock(ftdmchan->dtmfdbg.mutex);
-
-	if (ftdmchan->dtmfdbg.file) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "closing debug dtmf file\n");
-		fclose(ftdmchan->dtmfdbg.file);
-		ftdmchan->dtmfdbg.file = NULL;
-	}
-	ftdmchan->dtmfdbg.windex = 0;
-	ftdmchan->dtmfdbg.wrapped = 0;
-
-	ftdm_mutex_unlock(ftdmchan->dtmfdbg.mutex);
-}
-#endif
-
 static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
 FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 {
@@ -2445,9 +2529,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
 	ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
-#ifdef FTDM_DEBUG_DTMF
-	close_dtmf_debug(ftdmchan);
-#endif
 	ftdm_channel_clear_vars(ftdmchan);
 	if (ftdmchan->hangup_timer) {
 		ftdm_sched_cancel_timer(globals.timingsched, ftdmchan->hangup_timer);
@@ -2456,7 +2537,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
 
-	ftdm_log(FTDM_LOG_DEBUG, "channel done %u:%u\n", ftdmchan->span_id, ftdmchan->chan_id);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_DTMF, NULL);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
 
 	if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 		ftdm_sigmsg_t sigmsg;
@@ -2468,6 +2551,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 	}
 
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
+
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
 	return FTDM_SUCCESS;
@@ -2476,7 +2561,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 FT_DECLARE(ftdm_status_t) ftdm_channel_use(ftdm_channel_t *ftdmchan)
 {
 
-	assert(ftdmchan != NULL);
+	ftdm_assert(ftdmchan != NULL, "Null channel\n");
 
 	ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_INUSE);
 
@@ -2550,8 +2635,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 {
 	ftdm_status_t status = FTDM_FAIL;
 	
-	assert(ftdmchan != NULL);
-	assert(ftdmchan->fio != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "No channel\n");
+	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "No IO attached to channel\n");
 
 	ftdm_mutex_lock(ftdmchan->mutex);
 
@@ -2578,7 +2663,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		break;
 	case FTDM_COMMAND_TRACE_INPUT:
 		{
-			char *path = (char *) obj;
+			char *path = FTDM_COMMAND_OBJ_CHAR_P;
 			if (ftdmchan->fds[FTDM_READ_TRACE_INDEX] > 0) {
 				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
 				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
@@ -2621,6 +2706,128 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
+
+	/*!< Enable DTMF debugging */
+	case FTDM_COMMAND_ENABLE_DEBUG_DTMF:
+		{
+			if (ftdmchan->dtmfdbg.enabled) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Cannot enable debug DTMF again\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			if (ftdmchan->rxdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Cannot debug DTMF if Rx dumping is already enabled\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, FTDM_IO_DUMP_DEFAULT_BUFF_SIZE) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable rx dump for DTMF debugging\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			ftdmchan->dtmfdbg.enabled = 1;
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled DTMF debugging\n");	
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Disable DTMF debugging (if not disabled explicitly, it is disabled automatically when calls hangup) */
+	case FTDM_COMMAND_DISABLE_DEBUG_DTMF:
+		{
+			if (!ftdmchan->dtmfdbg.enabled) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "DTMF debug is already disabled\n");	
+				GOTO_STATUS(done, FTDM_SUCCESS);
+			}
+			if (disable_dtmf_debug(ftdmchan) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to disable DTMF debug\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			GOTO_STATUS(done, FTDM_SUCCESS);
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled DTMF debugging\n");	
+		}
+		break;
+
+	/*!< Start dumping all input to a circular buffer. The size of the circular buffer can be specified, default used otherwise */
+	case FTDM_COMMAND_ENABLE_INPUT_DUMP:
+		{
+			ftdm_size_t size = obj ? FTDM_COMMAND_OBJ_SIZE : FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
+			if (ftdmchan->rxdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Input dump is already enabled\n");
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, size) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled input dump with size %zd\n", size);
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Stop dumping all input to a circular buffer. */
+	case FTDM_COMMAND_DISABLE_INPUT_DUMP:
+		{
+			if (!ftdmchan->rxdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No need to disable input dump\n");
+				GOTO_STATUS(done, FTDM_SUCCESS);
+			}
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled input dump of size %zd\n", ftdmchan->rxdump.size);
+			stop_chan_io_dump(&ftdmchan->rxdump);
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Start dumping all output to a circular buffer. The size of the circular buffer can be specified, default used otherwise */
+	case FTDM_COMMAND_ENABLE_OUTPUT_DUMP:
+		{
+			ftdm_size_t size = obj ? FTDM_COMMAND_OBJ_SIZE : FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
+			if (ftdmchan->txdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Output dump is already enabled\n");
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			if (start_chan_io_dump(ftdmchan, &ftdmchan->txdump, size) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled output dump with size %zd\n", size);
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Stop dumping all output to a circular buffer. */
+	case FTDM_COMMAND_DISABLE_OUTPUT_DUMP:
+		{
+			if (!ftdmchan->txdump.buffer) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No need to disable output dump\n");
+				GOTO_STATUS(done, FTDM_SUCCESS);
+			}
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled output dump of size %zd\n", ftdmchan->rxdump.size);
+			stop_chan_io_dump(&ftdmchan->txdump);
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Dump the current input circular buffer to the specified FILE* structure */
+	case FTDM_COMMAND_DUMP_INPUT:
+		{
+			if (!obj) {
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			dump_chan_io_to_file(ftdmchan, &ftdmchan->rxdump, obj);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %zd to file %p\n", ftdmchan->rxdump.size, obj);
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Dump the current output circular buffer to the specified FILE* structure */
+	case FTDM_COMMAND_DUMP_OUTPUT:
+		{
+			if (!obj) {
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			dump_chan_io_to_file(ftdmchan, &ftdmchan->txdump, obj);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %zd to file %p\n", ftdmchan->txdump.size, obj);
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
 	case FTDM_COMMAND_SET_INTERVAL:
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL)) {
@@ -3089,12 +3296,14 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	ftdm_size_t wr = 0;
 	const char *p;
 	
-	assert(ftdmchan != NULL);
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "No channel\n");
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s\n", dtmf);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s (debug = %d)\n", dtmf, ftdmchan->dtmfdbg.enabled);
 
-#ifdef FTDM_DEBUG_DTMF
-	ftdm_mutex_lock(ftdmchan->dtmfdbg.mutex);
+	if (!ftdmchan->dtmfdbg.enabled) {
+		goto skipdebug;
+	}
+
 	if (!ftdmchan->dtmfdbg.file) {
 		struct tm currtime;
 		time_t currsec;
@@ -3107,37 +3316,19 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 				ftdmchan->span_id, ftdmchan->chan_id, 
 				currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
 				currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
-		ftdmchan->dtmfdbg.file = fopen(dfile, "w");
+		ftdmchan->dtmfdbg.file = fopen(dfile, "w");	
 		if (!ftdmchan->dtmfdbg.file) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to open debug dtmf file %s\n", dfile);
 		} else {
-			/* write the saved audio buffer */
-			int rc = 0;
-			int towrite = sizeof(ftdmchan->dtmfdbg.buffer) - ftdmchan->dtmfdbg.windex;
-		
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "created debug DTMF file %s\n", dfile);
 			ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
-			if (ftdmchan->dtmfdbg.wrapped) {
-				rc = fwrite(&ftdmchan->dtmfdbg.buffer[ftdmchan->dtmfdbg.windex], 1, towrite, ftdmchan->dtmfdbg.file);
-				if (rc != towrite) {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
-				}
-			}
-			if (ftdmchan->dtmfdbg.windex) {
-				towrite = ftdmchan->dtmfdbg.windex;
-				rc = fwrite(&ftdmchan->dtmfdbg.buffer[0], 1, towrite, ftdmchan->dtmfdbg.file);
-				if (rc != towrite) {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
-				}
-			}
-			ftdmchan->dtmfdbg.windex = 0;
-			ftdmchan->dtmfdbg.wrapped = 0;
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, ftdmchan->dtmfdbg.file);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped initial DTMF output to %s\n", dfile);
 		}
 	} else {
-			ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
+		ftdmchan->dtmfdbg.closetimeout = DTMF_DEBUG_TIMEOUT;
 	}
-	ftdm_mutex_unlock(ftdmchan->dtmfdbg.mutex);
-#endif
+
+skipdebug:
 
 	if (ftdmchan->pre_buffer) {
 		ftdm_buffer_zero(ftdmchan->pre_buffer);
@@ -3182,15 +3373,15 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 
 static FIO_WRITE_FUNCTION(ftdm_raw_write)
 {
+	int dlen = (int) *datalen;
 	if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > -1) {
-		int dlen = (int) *datalen;
 		if ((write(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX], data, dlen)) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
+	write_chan_io_dump(ftdmchan, &ftdmchan->txdump, data, dlen);
 	return ftdmchan->fio->write(ftdmchan, data, datalen);
 }
-
 
 static FIO_READ_FUNCTION(ftdm_raw_read)
 {
@@ -3206,48 +3397,24 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 		ftdmchan->span->sig_read(ftdmchan, data, *datalen);
 	}
 
-#ifdef FTDM_DEBUG_DTMF
 	if (status == FTDM_SUCCESS) {
 		int dlen = (int) *datalen;
 		int rc = 0;
-		ftdm_mutex_lock(ftdmchan->dtmfdbg.mutex);
-		if (!ftdmchan->dtmfdbg.file) {
-			/* no file yet, write to our circular buffer */
-			int windex = ftdmchan->dtmfdbg.windex;
-			int avail = sizeof(ftdmchan->dtmfdbg.buffer) - windex;
-			char *dataptr = data;
 
-			if (dlen > avail) {
-				int diff = dlen - avail;
-				/* write only what we can and the rest at the beginning of the buffer */
-				memcpy(&ftdmchan->dtmfdbg.buffer[windex], dataptr, avail);
-				memcpy(&ftdmchan->dtmfdbg.buffer[0], &dataptr[avail], diff);
-				windex = diff;
-				/*ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "wrapping around dtmf read buffer up to index %d\n\n", windex);*/
-				ftdmchan->dtmfdbg.wrapped = 1;
-			} else {
-				memcpy(&ftdmchan->dtmfdbg.buffer[windex], dataptr, dlen);
-				windex += dlen;
-			}
-			if (windex == sizeof(ftdmchan->dtmfdbg.buffer)) {
-				/*ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "wrapping around dtmf read buffer\n");*/
-				windex = 0;
-				ftdmchan->dtmfdbg.wrapped = 1;
-			}
-			ftdmchan->dtmfdbg.windex = windex;
-		} else {
+		write_chan_io_dump(ftdmchan, &ftdmchan->rxdump, data, dlen);
+
+		/* if dtmf debug is enabled and initialized, write there too */
+		if (ftdmchan->dtmfdbg.file) {
 			rc = fwrite(data, 1, dlen, ftdmchan->dtmfdbg.file);
 			if (rc != dlen) {
 				ftdm_log(FTDM_LOG_WARNING, "DTMF debugger wrote only %d out of %d bytes: %s\n", rc, datalen, strerror(errno));
 			}
 			ftdmchan->dtmfdbg.closetimeout--;
 			if (!ftdmchan->dtmfdbg.closetimeout) {
-				close_dtmf_debug(ftdmchan);
+				close_dtmf_debug_file(ftdmchan);
 			}
 		}
-		ftdm_mutex_unlock(ftdmchan->dtmfdbg.mutex);
 	}
-#endif
 	return status;
 }
 
@@ -4043,6 +4210,7 @@ static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) 
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, unsigned *configured)
 {
 	int currindex;
+	unsigned chan_index = 0;
 
 	ftdm_assert_return(span != NULL, FTDM_EINVAL, "span is null\n");
 	ftdm_assert_return(chan_config != NULL, FTDM_EINVAL, "config is null\n");
@@ -4076,6 +4244,14 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		return FTDM_FAIL;
 	}
 
+	if (chan_config->debugdtmf) {
+		for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
+			if (!FTDM_IS_VOICE_CHANNEL(span->channels[chan_index])) {
+				continue;
+			}
+			span->channels[chan_index]->dtmfdbg.requested = 1;
+		}
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -4094,7 +4270,7 @@ static ftdm_status_t load_config(void)
 	ftdm_channel_config_t chan_config;
 
 	memset(&chan_config, 0, sizeof(chan_config));
-	sprintf(chan_config.group_name,"default");
+	sprintf(chan_config.group_name, "__default");
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
@@ -4131,6 +4307,9 @@ static ftdm_status_t load_config(void)
 				if (ftdm_span_create(type, name, &span) == FTDM_SUCCESS) {
 					ftdm_log(FTDM_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
 					d = 0;
+					/* it is confusing that parameters from one span affect others, so let's clear them */
+					memset(&chan_config, 0, sizeof(chan_config));
+					sprintf(chan_config.group_name, "__default");
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span of type %s\n", type);
 					span = NULL;
@@ -4254,6 +4433,9 @@ static ftdm_status_t load_config(void)
 				if (sscanf(val, "%f", &(chan_config.rxgain)) != 1) {
 					ftdm_log(FTDM_LOG_ERROR, "invalid rxgain: '%s'\n", val);
 				}
+			} else if (!strcasecmp(var, "debugdtmf")) {
+				chan_config.debugdtmf = ftdm_true(val);
+				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
 			} else if (!strcasecmp(var, "group")) {
 				len = strlen(val);
 				if (len >= FTDM_MAX_NAME_STR_SZ) {
@@ -4905,6 +5087,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	case FTDM_SIGEVENT_START:
 		{
 			ftdm_set_echocancel_call_begin(sigmsg->channel);
+			if (sigmsg->channel->dtmfdbg.requested) {
+				ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL);
+			}
 
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
 			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
