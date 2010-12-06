@@ -167,17 +167,6 @@ AC_ARG_WITH([pritap],
 HAVE_PRITAP="${enable_pritap}"
 AM_CONDITIONAL([HAVE_PRITAP],[test "${enable_pritap}" = "yes"])
 
-# debug dtmf?
-AC_ARG_WITH([debugdtmf],
-	[AS_HELP_STRING([--with-debugdtmf], [Debug DTMF])],
-	[case "${withval}" in
-	 no)	enable_debugdtmf="no" ;;
-	 *)	enable_debugdtmf="yes" ;;
-	 esac],
-	[enable_debugdtmf="no"]
-)
-AM_CONDITIONAL([WANT_DEBUGDTMF], [test "${enable_debugdtmf}" = "yes"])
-
 ##
 # OpenR2 stack
 #
