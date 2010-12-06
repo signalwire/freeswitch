@@ -97,7 +97,7 @@ struct FrameStorage
 template < int S >
 struct FrameManager: protected FrameStorage
 {
-    typedef char Packet[ S ];
+    typedef const char Packet[ S ];
 
     typedef Ringbuffer < Packet >  AudioBuffer;
 

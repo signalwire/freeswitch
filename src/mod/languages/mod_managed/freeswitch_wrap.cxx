@@ -28397,6 +28397,30 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_process_fh(void * jarg1, char * jar
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_insert_file(void * jarg1, char * jarg2, char * jarg3, void * jarg4) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_size_t arg4 ;
+  switch_status_t result;
+  switch_size_t *argp4 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  argp4 = (switch_size_t *)jarg4; 
+  if (!argp4) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg4 = *argp4; 
+  result = (switch_status_t)switch_ivr_insert_file(arg1,(char const *)arg2,(char const *)arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_MAX_BUF_LEN_get() {
   int jresult ;
   int result;

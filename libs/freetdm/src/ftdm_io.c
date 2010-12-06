@@ -426,43 +426,43 @@ static ftdm_status_t ftdm_set_caller_data(ftdm_span_t *span, ftdm_caller_data_t 
 		return FTDM_FAIL;
 	}
 
-	if (caller_data->dnis.plan == FTDM_NPI_INVALID) {
+	if (caller_data->dnis.plan >= FTDM_NPI_INVALID) {
 		caller_data->dnis.plan = span->default_caller_data.dnis.plan;
 	}
 
-	if (caller_data->dnis.type == FTDM_TON_INVALID) {
+	if (caller_data->dnis.type >= FTDM_TON_INVALID) {
 		caller_data->dnis.type = span->default_caller_data.dnis.type;
 	}
 
-	if (caller_data->cid_num.plan == FTDM_NPI_INVALID) {
+	if (caller_data->cid_num.plan >= FTDM_NPI_INVALID) {
 		caller_data->cid_num.plan = span->default_caller_data.cid_num.plan;
 	}
 
-	if (caller_data->cid_num.type == FTDM_TON_INVALID) {
+	if (caller_data->cid_num.type >= FTDM_TON_INVALID) {
 		caller_data->cid_num.type = span->default_caller_data.cid_num.type;
 	}
 
-	if (caller_data->ani.plan == FTDM_NPI_INVALID) {
+	if (caller_data->ani.plan >= FTDM_NPI_INVALID) {
 		caller_data->ani.plan = span->default_caller_data.ani.plan;
 	}
 
-	if (caller_data->ani.type == FTDM_TON_INVALID) {
+	if (caller_data->ani.type >= FTDM_TON_INVALID) {
 		caller_data->ani.type = span->default_caller_data.ani.type;
 	}
 
-	if (caller_data->rdnis.plan == FTDM_NPI_INVALID) {
+	if (caller_data->rdnis.plan >= FTDM_NPI_INVALID) {
 		caller_data->rdnis.plan = span->default_caller_data.rdnis.plan;
 	}
 
-	if (caller_data->rdnis.type == FTDM_NPI_INVALID) {
+	if (caller_data->rdnis.type >= FTDM_NPI_INVALID) {
 		caller_data->rdnis.type = span->default_caller_data.rdnis.type;
 	}
 
-	if (caller_data->bearer_capability == FTDM_INVALID_INT_PARM) {
+	if (caller_data->bearer_capability >= FTDM_INVALID_INT_PARM) {
 		caller_data->bearer_capability = span->default_caller_data.bearer_capability;
 	}
 
-	if (caller_data->bearer_layer1 == FTDM_INVALID_INT_PARM) {
+	if (caller_data->bearer_layer1 >= FTDM_INVALID_INT_PARM) {
 		caller_data->bearer_layer1 = span->default_caller_data.bearer_layer1;
 	}
 

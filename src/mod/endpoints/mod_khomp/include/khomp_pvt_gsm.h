@@ -115,7 +115,7 @@ struct KhompPvtGSM: public KhompPvt
     };
 
 /******************************************************************************/
-    KhompPvtGSM(K3LAPI::target & target) : KhompPvt(target) 
+    KhompPvtGSM(K3LAPIBase::GenericTarget & target) : KhompPvt(target) 
     {
         _sms = new SMS(this);
         command(KHOMP_LOG, CM_ENABLE_CALL_ANSWER_INFO);
@@ -278,7 +278,7 @@ struct KhompPvtGSM: public KhompPvt
 
         for (unsigned obj = 0; obj < Globals::k3lapi.channel_count(_device_id); obj++)
         {
-            K3LAPI::target tgt(Globals::k3lapi, K3LAPI::target::CHANNEL, _device_id, obj);
+            K3LAPIBase::GenericTarget tgt(Globals::k3lapi, K3LAPIBase::GenericTarget::CHANNEL, _device_id, obj);
             KhompPvt * pvt;
 
             switch(Globals::k3lapi.channel_config(_device_id, obj).Signaling)

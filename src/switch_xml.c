@@ -1980,19 +1980,16 @@ static char not_so_threadsafe_error_buffer[256] = "";
 SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
 {
 	char path_buf[1024];
-	uint8_t hasmain = 0, errcnt = 0;
+	uint8_t errcnt = 0;
 	switch_xml_t new_main, r = NULL;
 
 	switch_mutex_lock(XML_LOCK);
 
 	if (MAIN_XML_ROOT) {
-		hasmain++;
-
 		if (!reload) {
 			r = switch_xml_root();
 			goto done;
 		}
-		switch_thread_rwlock_wrlock(RWLOCK);
 	}
 
 	switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
@@ -2007,19 +2004,21 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		} else {
 			switch_xml_t old_root;
 			*err = "Success";
+
+			switch_thread_rwlock_wrlock(RWLOCK);
+
 			old_root = MAIN_XML_ROOT;
 			MAIN_XML_ROOT = new_main;
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+
+			switch_thread_rwlock_unlock(RWLOCK);
+
 			switch_xml_free(old_root);
 			/* switch_xml_free_in_thread(old_root); */
 		}
 	} else {
 		*err = "Cannot Open log directory or XML Root!";
 		errcnt++;
-	}
-
-	if (hasmain) {
-		switch_thread_rwlock_unlock(RWLOCK);
 	}
 
 	if (errcnt == 0) {

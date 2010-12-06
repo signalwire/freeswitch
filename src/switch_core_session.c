@@ -1327,6 +1327,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 {
 	switch_event_t *event;
 	switch_core_session_message_t msg = { 0 };
+	switch_caller_profile_t *profile;
 
 	switch_assert(use_uuid);
 
@@ -1342,6 +1343,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	msg.string_array_arg[0] = session->uuid_str;
 	msg.string_array_arg[1] = use_uuid;
 	switch_core_session_receive_message(session, &msg);
+
+	if ((profile = switch_channel_get_caller_profile(session->channel))) {
+		profile->uuid = switch_core_strdup(profile->pool, use_uuid);
+	}
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);

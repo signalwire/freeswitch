@@ -93,12 +93,12 @@ void Cli::registerCommands(APIFunc func,switch_loadable_module_interface_t **mod
 " khomp set <option> <value>\n"                                                \
 " khomp show calls [<board> [<channel>]]\n"                                    \
 " khomp show channels [{<board> [<channel>]} | \n"                             \
-"                               {{concise|verbose} [<board> [<channel>]]}]\n"  \
-" khomp show links [[errors] [{<board>} | {{concise|verbose} [<board>]}]]\n"   \
-" khomp show statistics [{verbose [<board> [<channel>]]} | \n"                 \
+"                      {{concise|verbose|xml} [<board> [<channel>]]}]\n"       \
+" khomp show links [[errors] [{<board>} | {{concise|verbose|xml}[<board>]}]]\n"\
+" khomp show statistics [{{verbose|xml} [<board> [<channel>]]} | \n"           \
 "                        {detailed <board> <channel>}]\n"                      \
 " khomp sms <device> <destination> <message..>\n"                              \
-" khomp summary [concise]\n"                                                   \
+" khomp summary [concise|verbose|xml]\n"                                       \
 "---------------------------------------------------------------------------\n\n";
 
     /* we need this module_inteface, is used by SWITCH_ADD_API, there's no escape */
@@ -319,13 +319,18 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
         return false;
     }
 
-    /* show concise ? */
-    bool concise = ARG_CMP(1, "concise") ? true:false;
-
+    Cli::OutputType output_type = Cli::VERBOSE;
+    if(ARG_CMP(1, "concise")) output_type = Cli::CONCISE;
+    if(ARG_CMP(1, "xml")) 
+    {
+        output_type = Cli::XML;
+        createRoot("summary");
+    }
+        
     class_type classe = ( !_on_cli_term ? C_MESSAGE : C_CLI );
     K3L_API_CONFIG apiCfg;
 
-    if (!concise)
+    if (output_type == Cli::VERBOSE)
     {
         K::Logger::Logg2(classe, stream, " ------------------------------------------------------------------");
         K::Logger::Logg2(classe, stream, "|---------------------- Khomp System Summary ----------------------|");
@@ -334,17 +339,41 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
 
     if (k3lGetDeviceConfig(-1, ksoAPI, &apiCfg, sizeof(apiCfg)) == ksSuccess)
     {
-        if (concise)
+        switch(output_type)
         {
-            K::Logger::Logg2(classe, stream, FMT("%d.%d.%d;%d;%s")
+            case Cli::VERBOSE:
+            {
+                K::Logger::Logg2(classe, stream, FMT("| K3L API %d.%d.%d [m.VPD %d] - %-38s |")
                         % apiCfg.MajorVersion % apiCfg.MinorVersion % apiCfg.BuildVersion
                         % apiCfg.VpdVersionNeeded % apiCfg.StrVersion);
-        }
-        else
-        {
-            K::Logger::Logg2(classe, stream, FMT("| K3L API %d.%d.%d [m.VPD %d] - %-38s |")
+            } break;
+
+            case Cli::CONCISE:
+            {
+                K::Logger::Logg2(classe, stream, FMT("%d.%d.%d;%d;%s")
                         % apiCfg.MajorVersion % apiCfg.MinorVersion % apiCfg.BuildVersion
                         % apiCfg.VpdVersionNeeded % apiCfg.StrVersion);
+            } break;
+
+            case Cli::XML:
+            {
+                /* summary/k3lapi */
+                switch_xml_t xk3lapi = switch_xml_add_child_d(root, "k3lapi",0);
+                
+                /* summary/k3lapi/version */
+                switch_xml_t xk3l_version = switch_xml_add_child_d(xk3lapi,"version", 0);
+                switch_xml_set_attr_d(xk3l_version,"major",STR(FMT("%d") % apiCfg.MajorVersion));
+                switch_xml_set_attr_d(xk3l_version,"minor",STR(FMT("%d") % apiCfg.MinorVersion));
+                switch_xml_set_attr_d(xk3l_version,"build",STR(FMT("%d") % apiCfg.BuildVersion));
+                switch_xml_set_attr_d(xk3l_version,"vpd",STR(FMT("%d")   % apiCfg.VpdVersionNeeded));
+
+                /* summary/k3lapi/version/revision */
+                switch_xml_t xk3l_rev = switch_xml_add_child_d(xk3l_version,"revision",0);
+                switch_xml_set_txt_d(xk3l_rev,STR(FMT("%s") % apiCfg.StrVersion));
+            } break;
+
+            default:
+                break;
         }
     }
 
@@ -359,25 +388,54 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
     std::string khomp_endpoint_rev(MOD_KHOMP_VERSION);
     std::string freeswitch_rev(SWITCH_VERSION_FULL);
 
-    if (concise)
+    switch(output_type)
     {
-        K::Logger::Logg2(classe, stream, FMT("%s") % khomp_endpoint_rev);
-        K::Logger::Logg2(classe, stream, FMT("%s") % freeswitch_rev);
-    }
-    else
-    {
-        K::Logger::Logg2(classe, stream, FMT("| Khomp Endpoint - %-47s |") % khomp_endpoint_rev);
-        K::Logger::Logg2(classe, stream, FMT("| FreeSWITCH - %-51s |") % freeswitch_rev);
+        case Cli::VERBOSE:
+        {
+            K::Logger::Logg2(classe, stream, FMT("| Khomp Endpoint - %-47s |") % khomp_endpoint_rev);
+            K::Logger::Logg2(classe, stream, FMT("| FreeSWITCH - %-51s |") % freeswitch_rev);
+        } break;
+
+        case Cli::CONCISE:
+        {
+            K::Logger::Logg2(classe, stream, FMT("%s") % khomp_endpoint_rev);
+            K::Logger::Logg2(classe, stream, FMT("%s") % freeswitch_rev);
+        } break;
+
+        case Cli::XML:
+        {
+            /* summary/mod_khomp */
+            switch_xml_t xmod_khomp = switch_xml_add_child_d(root,"mod_khomp",0);
+
+            /* summary/mod_khomp/revision */
+            switch_xml_t xrevision  = switch_xml_add_child_d(xmod_khomp,"revision",0);
+            switch_xml_set_txt_d(xrevision, khomp_endpoint_rev.c_str());
+
+            /* summary/freeswitch */
+            switch_xml_t xfs = switch_xml_add_child_d(root,"freeswitch",0);
+
+            /* summary/freeswitch/revision */
+            switch_xml_t xfs_rev = switch_xml_add_child_d(xfs,"revision",0);
+            switch_xml_set_txt_d(xfs_rev, freeswitch_rev.c_str());
+        } break;
+
+        default:
+            break;
     }
 
+    if (output_type == Cli::XML)
+    {
+        /* summary/board */
+        xdevs = switch_xml_add_child_d(root,"devices",0);
+    }
 
     for (unsigned int i = 0; i < Globals::k3lapi.device_count(); i++)
     {
-        K3L_DEVICE_CONFIG & devCfg = Globals::k3lapi.device_config(i);
+        const K3L_DEVICE_CONFIG & devCfg = Globals::k3lapi.device_config(i);
 
         std::string tipo = Verbose::deviceName((KDeviceType)Globals::k3lapi.device_type(i), devCfg.DeviceModel);
 
-        if (!concise)
+        if (output_type == Cli::VERBOSE)
             K::Logger::Logg2(classe, stream, " ------------------------------------------------------------------");
 
         switch (Globals::k3lapi.device_type(i))
@@ -400,29 +458,92 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
                 if ((k3lGetDeviceConfig(i, ksoFirmware + kfiE1600A, &dspAcfg, sizeof(dspAcfg)) == ksSuccess) &&
                     (k3lGetDeviceConfig(i, ksoFirmware + kfiE1600B, &dspBcfg, sizeof(dspBcfg)) == ksSuccess))
                 {
-                    if (concise)
+                    switch(output_type)
                     {
-                        K::Logger::Logg2(classe, stream, FMT("%02u;%s;%d;%d;%d;%s;%s;%02d;%02d;%s;%s;%s;%s")
+                        case Cli::VERBOSE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("| [[ %02u ]] %s, serial '%s', %02d channels, %d links.%s|")
+                                    % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount % devCfg.LinkCount
+                                    % std::string(std::max<int>(0, 22 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
+                            K::Logger::Logg2(classe, stream, FMT("| * DSP A: %s, DSP B: %s - PCI bus: %02d, PCI slot: %02d %s|")
+                                    % dspAcfg.DspVersion % dspBcfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
+                                    % std::string(18 - strlen(dspAcfg.DspVersion) - strlen(dspBcfg.DspVersion), ' '));
+                            K::Logger::Logg2(classe, stream, FMT("| * %-62s |") % dspAcfg.FwVersion);
+                            K::Logger::Logg2(classe, stream, FMT("| * %-62s |") % dspBcfg.FwVersion);
+
+                            K::Logger::Logg2(classe, stream, FMT("| * Echo Canceller: %-20s - Location: %-12s  |")
+                                    % Verbose::echoCancellerConfig(devCfg.EchoConfig)
+                                    % Verbose::echoLocation(devCfg.EchoLocation));
+                        } break;
+
+                        case Cli::CONCISE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("%02u;%s;%d;%d;%d;%s;%s;%02d;%02d;%s;%s;%s;%s")
                                     % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount % devCfg.LinkCount
                                     % dspAcfg.DspVersion % dspBcfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
                                     % dspAcfg.FwVersion % dspBcfg.FwVersion
                                     % Verbose::echoCancellerConfig(devCfg.EchoConfig)
                                     % Verbose::echoLocation(devCfg.EchoLocation));
-                    }
-                    else
-                    {
-                        K::Logger::Logg2(classe, stream, FMT("| [[ %02u ]] %s, serial '%s', %02d channels, %d links.%s|")
-                                    % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount % devCfg.LinkCount
-                                    % std::string(std::max<int>(0, 22 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
-                        K::Logger::Logg2(classe, stream, FMT("| * DSP A: %s, DSP B: %s - PCI bus: %02d, PCI slot: %02d %s|")
-                                    % dspAcfg.DspVersion % dspBcfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
-                                    % std::string(18 - strlen(dspAcfg.DspVersion) - strlen(dspBcfg.DspVersion), ' '));
-                        K::Logger::Logg2(classe, stream, FMT("| * %-62s |") % dspAcfg.FwVersion);
-                        K::Logger::Logg2(classe, stream, FMT("| * %-62s |") % dspBcfg.FwVersion);
+                        } break;
 
-                        K::Logger::Logg2(classe, stream, FMT("| * Echo Canceller: %-20s - Location: %-12s  |")
-                                    % Verbose::echoCancellerConfig(devCfg.EchoConfig)
-                                    % Verbose::echoLocation(devCfg.EchoLocation));
+                        case Cli::XML:
+                        {
+                            /* boards/board */
+                            switch_xml_t xdev = switch_xml_add_child_d(xdevs,"device",0);
+                            switch_xml_set_attr_d(xdev,"id",STR(FMT("%02u") % i));
+
+                            /* boards/board/general */
+                            switch_xml_t xgeneral = switch_xml_add_child_d(xdev,"general",0);
+    
+                            /* boards/board/general/type */
+                            switch_xml_t xtype = switch_xml_add_child_d(xgeneral,"type",0);
+                            switch_xml_set_txt_d(xtype,tipo.c_str());
+
+                            /* boards/board/general/serial */
+                            switch_xml_t xserial = switch_xml_add_child_d(xgeneral,"serial",0);
+                            switch_xml_set_txt_d(xserial, devCfg.SerialNumber);
+
+                            /* boards/board/general/channels */
+                            switch_xml_t xchannels = switch_xml_add_child_d(xgeneral,"channels",0);
+                            switch_xml_set_txt_d(xchannels, STR(FMT("%02d") % devCfg.ChannelCount));
+
+                            /* boards/board/general/links */
+                            switch_xml_t xlinks = switch_xml_add_child_d(xgeneral,"links",0);
+                            switch_xml_set_txt_d(xlinks, STR(FMT("%d") % devCfg.LinkCount));
+
+                            /* boards/board/hardware */
+                            switch_xml_t xhardware = switch_xml_add_child_d(xdev,"hardware",0);
+
+                            /* boards/board/hardware/dsps */
+                            switch_xml_t xdsps = switch_xml_add_child_d(xhardware,"dsps",0);
+                           
+                            /* boards/board/hardware/dsps/dsp (0) */
+                            switch_xml_t xdsp0 = switch_xml_add_child_d(xdsps,"dsp",0);
+                            switch_xml_set_attr_d(xdsp0,"id","0");
+
+                            /* boards/board/hardware/dsps/dsp/version */
+                            switch_xml_t xversion0 = switch_xml_add_child_d(xdsp0,"version",0);
+                            switch_xml_set_txt_d(xversion0, dspAcfg.DspVersion);
+
+                            /* boards/board/hardware/dsps/dsp/firmware */
+                            switch_xml_t xfirmware0 = switch_xml_add_child_d(xdsp0,"firmware",0);
+                            switch_xml_set_txt_d(xfirmware0,dspAcfg.FwVersion);
+
+                            /* boards/board/hardware/dsps/dsp (1) */
+                            switch_xml_t xdsp1 = switch_xml_add_child_d(xdsps,"dsp",0);
+                            switch_xml_set_attr_d(xdsp1,"id","1");
+
+                            /* boards/board/hardware/dsps/dsp/version */
+                            switch_xml_t xversion1 = switch_xml_add_child_d(xdsp1,"version",0);
+                            switch_xml_set_txt_d(xversion1, dspBcfg.DspVersion);
+
+                            /* boards/board/hardware/dsps/dsp/firmware */
+                            switch_xml_t xfirmware1 = switch_xml_add_child_d(xdsp1,"firmware",0);
+                            switch_xml_set_txt_d(xfirmware1,dspBcfg.FwVersion);
+                        } break;
+
+                        default:
+                            break;
                     }
                 }
 
@@ -442,28 +563,84 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
 
                 if (k3lGetDeviceConfig(i, ksoFirmware + kfiFXO80, &dspCfg, sizeof(dspCfg)) == ksSuccess)
                 {
-                    if (concise)
+                    switch(output_type)
                     {
-                        K::Logger::Logg2(classe, stream, FMT("%02u;%s;%d;%d;%s;%02d;%02d;%s")
-                                    % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount
-                                    % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
-                                    % dspCfg.FwVersion);
-                    }
-                    else
-                    {
-                        K::Logger::Logg2(classe, stream, FMT("| [[ %02u ]] %s, serial '%s', %02d channels. %s|")
-                                    % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount
-                                    % std::string(std::max<int>(0, 30 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
-                        K::Logger::Logg2(classe, stream, FMT("| * DSP: %s - PCI bus: %02d, PCI slot: %02d%s|")
-                                    % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
-                                    % std::string(30 - strlen(dspCfg.DspVersion), ' '));
-                        K::Logger::Logg2(classe, stream, FMT("| * %-63s|") % dspCfg.FwVersion);
+                        case Cli::VERBOSE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("| [[ %02u ]] %s, serial '%s', %02d channels. %s|")
+                                        % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount
+                                        % std::string(std::max<int>(0, 30 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
+                            K::Logger::Logg2(classe, stream, FMT("| * DSP: %s - PCI bus: %02d, PCI slot: %02d%s|")
+                                        % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
+                                        % std::string(30 - strlen(dspCfg.DspVersion), ' '));
+                            K::Logger::Logg2(classe, stream, FMT("| * %-63s|") % dspCfg.FwVersion);
+                        } break;
+
+                        case Cli::CONCISE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("%02u;%s;%d;%d;%s;%02d;%02d;%s")
+                                        % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount
+                                        % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
+                                        % dspCfg.FwVersion);
+                        } break;
+
+                        case Cli::XML:
+                        {
+                            /* boards/board  */
+                            switch_xml_t xdev = switch_xml_add_child_d(xdevs,"device",0);
+                            switch_xml_set_attr_d(xdev,"id",STR(FMT("%02u") % i));
+
+                            /* boards/board/general  */
+                            switch_xml_t xgeneral = switch_xml_add_child_d(xdev,"general",0);
+    
+                            /* boards/board/general/type  */
+                            switch_xml_t xtype = switch_xml_add_child_d(xgeneral,"type",0);
+                            switch_xml_set_txt_d(xtype,tipo.c_str());
+
+                            /* boards/board/general/serial */
+                            switch_xml_t xserial = switch_xml_add_child_d(xgeneral,"serial",0);
+                            switch_xml_set_txt_d(xserial, devCfg.SerialNumber);
+
+                            /* boards/board/general/channels */
+                            switch_xml_t xchannels = switch_xml_add_child_d(xgeneral,"channels",0);
+                            switch_xml_set_txt_d(xchannels, STR(FMT("%02d") % devCfg.ChannelCount));
+
+                            /* boards/board/general/links */
+                            switch_xml_t xlinks = switch_xml_add_child_d(xgeneral,"links",0);
+                            switch_xml_set_txt_d(xlinks, STR(FMT("%d") % devCfg.LinkCount));
+
+                            /* boards/hardware */
+                            switch_xml_t xhardware = switch_xml_add_child_d(xdev,"hardware",0);
+                            
+                            /* boards/board/hardware/dsps */
+                            switch_xml_t xdsps = switch_xml_add_child_d(xhardware,"dsps",0);
+
+                            /* boards/board/hardware/dsps/dsp */
+                            switch_xml_t xdsp = switch_xml_add_child_d(xdsps,"dsp",0);
+                            switch_xml_set_attr_d(xdsp,"id","0");
+
+                            /* boards/board/hardware/dsps/dsps/version */
+                            switch_xml_t xversion_a = switch_xml_add_child_d(xdsp,"version",0);
+                            switch_xml_set_txt_d(xversion_a, dspCfg.DspVersion);
+
+                            /* boards/board/hardware/dsps/dsps/firmare */
+                            switch_xml_t xfirmware = switch_xml_add_child_d(xdsp,"firmware",0);
+                            switch_xml_set_txt_d(xfirmware,dspCfg.FwVersion);
+
+                            /* boards/board/hardware/pci */
+                            switch_xml_t xpci = switch_xml_add_child_d(xhardware,"pci",0);
+                            switch_xml_set_attr_d(xpci,"bus" ,STR(FMT("%02d") % devCfg.PciBus ));
+                            switch_xml_set_attr_d(xpci,"slot",STR(FMT("%02d") % devCfg.PciSlot));
+                        } break;
+
+                        default:
+                            break;
                     }
                 }
 
                 if (Globals::k3lapi.device_type(i) == kdtFXOVoIP)
                 {
-                    if (!concise)
+                    if (output_type == Cli::VERBOSE)
                     {
                         K::Logger::Logg2(classe, stream, FMT("| * Echo Canceller: %-20s - Location: %-12s  |")
                             % Verbose::echoCancellerConfig(devCfg.EchoConfig)
@@ -480,24 +657,80 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
 
                 if (k3lGetDeviceConfig(i, ksoFirmware + kfiGSM40, &dspCfg, sizeof(dspCfg)) == ksSuccess)
                 {
-                    if (concise)
+                    switch(output_type)
                     {
-                        K::Logger::Logg2(classe, stream, FMT("%02d;%s;%d;%d;%s;%02d;%02d;%s")
-                                    % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount
-                                    % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
-                                    % dspCfg.FwVersion);
-                    }
-                    else
-                    {
-                        K::Logger::Logg2(classe, stream, FMT("| [[ %02d ]] %s, serial '%s', %02d channels. %s|")
-                            % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount
-                            % std::string(std::max<int>(0, 30 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
+                        case Cli::VERBOSE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("| [[ %02d ]] %s, serial '%s', %02d channels. %s|")
+                                % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount
+                                % std::string(std::max<int>(0, 30 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
 
-                        K::Logger::Logg2(classe, stream, FMT("| * DSP: %s - PCI bus: %02d, PCI slot: %02d%s|")
-                                    % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
-                                    % std::string(std::max<int>(30 - strlen(dspCfg.DspVersion), 0), ' '));
+                            K::Logger::Logg2(classe, stream, FMT("| * DSP: %s - PCI bus: %02d, PCI slot: %02d%s|")
+                                        % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
+                                        % std::string(std::max<int>(30 - strlen(dspCfg.DspVersion), 0), ' '));
 
-                        K::Logger::Logg2(classe, stream, FMT("| * %-62s |") % dspCfg.FwVersion);
+                            K::Logger::Logg2(classe, stream, FMT("| * %-62s |") % dspCfg.FwVersion);
+                        } break;
+
+                        case Cli::CONCISE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("%02d;%s;%d;%d;%s;%02d;%02d;%s")
+                                        % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount
+                                        % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
+                                        % dspCfg.FwVersion);
+                        } break;
+
+                        case Cli::XML:
+                        {
+                            /* boards/board */
+                            switch_xml_t xdev = switch_xml_add_child_d(xdev,"device",0);
+                            switch_xml_set_attr_d(xdev,"id",STR(FMT("%02u") % i));
+
+                            /* boards/board/general */
+                            switch_xml_t xgeneral = switch_xml_add_child_d(xdev,"general",0);
+    
+                            /* boards/board/general/type */
+                            switch_xml_t xtype = switch_xml_add_child_d(xgeneral,"type",0);
+                            switch_xml_set_txt_d(xtype,tipo.c_str());
+
+                            /* boards/board/general/serial */
+                            switch_xml_t xserial = switch_xml_add_child_d(xgeneral,"serial",0);
+                            switch_xml_set_txt_d(xserial, devCfg.SerialNumber);
+
+                            /* boards/board/general/channels */
+                            switch_xml_t xchannels = switch_xml_add_child_d(xgeneral,"channels",0);
+                            switch_xml_set_txt_d(xchannels, STR(FMT("%02d") % devCfg.ChannelCount));
+
+                            /* boards/board/general/links */
+                            switch_xml_t xlinks = switch_xml_add_child_d(xgeneral,"links",0);
+                            switch_xml_set_txt_d(xlinks, STR(FMT("%d") % devCfg.LinkCount));
+
+                            /* boards/board/hardware */
+                            switch_xml_t xhardware = switch_xml_add_child_d(xdev,"hardware",0);
+
+                            /* boards/board/hardware/dsps */
+                            switch_xml_t xdsps = switch_xml_add_child_d(xhardware,"dsps",0);
+
+                            /* boards/board/hardware/dsps/dsp */
+                            switch_xml_t xdsp = switch_xml_add_child_d(xdsps,"dsp",0);
+                            switch_xml_set_attr_d(xdsp,"id","0");
+
+                            /* boards/board/hardware/dsps/dsp/version */
+                            switch_xml_t xversion_a = switch_xml_add_child_d(xdsp,"version",0);
+                            switch_xml_set_txt_d(xversion_a, dspCfg.DspVersion);
+
+                            /* boards/board/hardware/dsps/dsp/firmware*/
+                            switch_xml_t xfirmware = switch_xml_add_child_d(xdsp,"firmware",0);
+                            switch_xml_set_txt_d(xfirmware,dspCfg.FwVersion);
+
+                            /* boards/board/hardware/dsps/dsp/pci */
+                            switch_xml_t xpci = switch_xml_add_child_d(xhardware,"pci",0);
+                            switch_xml_set_attr_d(xpci,"bus" ,STR(FMT("%02d") % devCfg.PciBus ));
+                            switch_xml_set_attr_d(xpci,"slot",STR(FMT("%02d") % devCfg.PciSlot));
+                        } break;
+
+                        default:
+                            break;
                     }
                 }
 
@@ -510,24 +743,71 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
 
                 if (k3lGetDeviceConfig(i, ksoFirmware + kfiGSMUSB, &dspCfg, sizeof(dspCfg)) == ksSuccess)
                 {
-                    if (concise)
+                    switch(output_type)
                     {
-                        K::Logger::Logg2(classe, stream, FMT("%02d;%s;%d;%d;%s;%02d;%02d;%s")
-                                    % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount
-                                    % dspCfg.DspVersion % devCfg.PciBus % devCfg.PciSlot
-                                    % dspCfg.FwVersion);
-                    }
-                    else
-                    {
-                        K::Logger::Logg2(classe, stream, FMT("| [[ %02d ]] %s, serial '%s', %02d channels. %s|")
-                            % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount
-                            % std::string(std::max<int>(0, 30 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
+                        case Cli::VERBOSE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("| [[ %02d ]] %s, serial '%s', %02d channels. %s|")
+                                % i % tipo % devCfg.SerialNumber % devCfg.ChannelCount
+                                % std::string(std::max<int>(0, 30 - tipo.size() - strlen(devCfg.SerialNumber)), ' '));
 
-                        int size = strlen(dspCfg.DspVersion) + strlen(dspCfg.FwVersion);
+                            int size = strlen(dspCfg.DspVersion) + strlen(dspCfg.FwVersion);
 
-                        K::Logger::Logg2(classe, stream, FMT("| * DSP: %s - %s%s|")
-                            % dspCfg.DspVersion % dspCfg.FwVersion
-                            % std::string(std::max<int>(55 - size, 0), ' '));
+                            K::Logger::Logg2(classe, stream, FMT("| * DSP: %s - %s%s|")
+                                % dspCfg.DspVersion % dspCfg.FwVersion
+                                % std::string(std::max<int>(55 - size, 0), ' '));
+                            
+                        } break;
+
+                        case Cli::CONCISE:
+                        {
+                            K::Logger::Logg2(classe, stream, FMT("%02d;%s;%d;%d;%s;%s")
+                                        % i % tipo % atoi(devCfg.SerialNumber) % devCfg.ChannelCount
+                                        % dspCfg.DspVersion % dspCfg.FwVersion);
+                        } break;
+
+                        case Cli::XML:
+                        {
+                            /* boards/board */
+                            switch_xml_t xdev = switch_xml_add_child_d(xdev,"device",0);
+                            switch_xml_set_attr_d(xdev,"id",STR(FMT("%02u") % i));
+
+                            /* boards/board/general */
+                            switch_xml_t xgeneral = switch_xml_add_child_d(xdev,"general",0);
+    
+                            /* boards/board/general/type */
+                            switch_xml_t xtype = switch_xml_add_child_d(xgeneral,"type",0);
+                            switch_xml_set_txt_d(xtype,tipo.c_str());
+
+                            /* boards/board/general/serial */
+                            switch_xml_t xserial = switch_xml_add_child_d(xgeneral,"serial",0);
+                            switch_xml_set_txt_d(xserial, devCfg.SerialNumber);
+
+                            /* boards/board/general/channels */
+                            switch_xml_t xchannels = switch_xml_add_child_d(xgeneral,"channels",0);
+                            switch_xml_set_txt_d(xchannels, STR(FMT("%02d") % devCfg.ChannelCount));
+
+                            /* boards/board/hardware */
+                            switch_xml_t xhardware = switch_xml_add_child_d(xdev,"hardware",0);
+                            
+                            /* boards/board/hardware/dsps */
+                            switch_xml_t xdsps = switch_xml_add_child_d(xhardware,"dsps",0);
+
+                            /* boards/board/hardware/dsp */
+                            switch_xml_t xdsp = switch_xml_add_child_d(xdsps,"dsp",0);
+                            switch_xml_set_attr_d(xdsp,"id","0");
+
+                            /* boards/board/hardware/dsps/dsp/version */
+                            switch_xml_t xversion_a = switch_xml_add_child_d(xdsp,"version",0);
+                            switch_xml_set_txt_d(xversion_a, dspCfg.DspVersion);
+
+                            /* boards/board/hardware/dsps/dsp/firmware */
+                            switch_xml_t xfirmware = switch_xml_add_child_d(xdsp,"firmware",0);
+                            switch_xml_set_txt_d(xfirmware,dspCfg.FwVersion);
+                        } break;
+
+                        default:
+                            break;
                     }
                 }
 
@@ -541,8 +821,14 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
         }
     }
 
-    if (!concise)
+    if (output_type == Cli::VERBOSE)
         K::Logger::Logg2(classe,stream, " ------------------------------------------------------------------");
+      
+    if (output_type == Cli::XML)
+    {
+        printXMLOutput(stream);
+        clearRoot();
+    }
 
     return true;
 }
@@ -622,7 +908,7 @@ bool Cli::_KhompShowCalls::execute(int argc, char *argv[])
             }    
         }
     }
-    catch(K3LAPI::invalid_channel & err)
+    catch(K3LAPITraits::invalid_channel & err)
     {
         K::Logger::Logg2(C_CLI, stream, "ERROR: No such chanel");
         return false;
@@ -653,9 +939,9 @@ bool Cli::_KhompChannelsDisconnect::forceDisconnect(unsigned int device, unsigne
         ret = pvt->command(KHOMP_LOG,CM_DISCONNECT);
         DBG(FUNC,PVT_FMT(pvt->target(),"Command CM_DISCONNECT sent!"));
     }
-    catch (K3LAPI::invalid_channel & err)
+    catch (K3LAPITraits::invalid_channel & err)
     {
-        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.channel % err.device );
+        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
     }
     catch (ScopedLockFailed & err)
     {
@@ -835,35 +1121,69 @@ bool Cli::_KhompChannelsUnblock::execute(int argc, char *argv[])
     return true;
 }
 
-void Cli::_KhompShowStatistics::cliStatistics(unsigned int device)
+void Cli::_KhompShowStatistics::cliStatistics(unsigned int device, OutputType output_type)
 {
+    if(output_type == Cli::XML)
+    {
+        /* device */
+        xdevs = switch_xml_add_child_d(root,"device",0);
+        switch_xml_set_attr_d(xdevs,"id",STR(FMT("%d") % device));
+    }
+
     for (unsigned int channel = 0; channel < Globals::k3lapi.channel_count(device); channel++)
     {
         try
         {
             Board::KhompPvt *pvt = Board::get(device, channel);
-            K::Logger::Logg2(C_CLI,stream,pvt->getStatistics(Statistics::ROW).c_str());
+            switch(output_type)
+            {
+                case Cli::VERBOSE:
+                    K::Logger::Logg2(C_CLI,stream,pvt->getStatistics(Statistics::ROW).c_str());
+                    break;
+                case Cli::CONCISE:
+                    /* do we need concise ? */
+                    break;
+                case Cli::XML:
+                    switch_xml_insert(pvt->getStatisticsXML(Statistics::ROW),xdevs,0);
+                    break;
+            }
         }
-        catch (K3LAPI::invalid_channel & err)
+        catch (K3LAPITraits::invalid_channel & err)
         {
-            K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.channel % err.device );
+            K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
         }
     }    
 }
 
-void Cli::_KhompShowStatistics::cliDetailedStatistics(unsigned int device, unsigned int channel)
+void Cli::_KhompShowStatistics::cliDetailedStatistics(unsigned int device, unsigned int channel, OutputType output_type)
 {
     try
     {
         Board::KhompPvt *pvt = Board::get(device, channel);
-        K::Logger::Logg2(C_CLI,stream,"----------------------------------------------");
-        K::Logger::Logg2(C_CLI,stream,FMT("Detailed statistics of: Device %02d - Channel %02d") % pvt->target().device % pvt->target().object);
-        K::Logger::Logg2(C_CLI,stream,pvt->getStatistics(Statistics::DETAILED).c_str());
-        K::Logger::Logg2(C_CLI,stream,"----------------------------------------------");
+        switch(output_type)
+        {
+            case Cli::DETAILED:
+            {
+                K::Logger::Logg2(C_CLI,stream,"----------------------------------------------");
+                K::Logger::Logg2(C_CLI,stream,FMT("Detailed statistics of: Device %02d - Channel %02d") % pvt->target().device % pvt->target().object);
+                K::Logger::Logg2(C_CLI,stream,pvt->getStatistics(Statistics::DETAILED).c_str());
+                K::Logger::Logg2(C_CLI,stream,"----------------------------------------------");
+            } break;
+
+            case Cli::CONCISE:
+            {
+                /* We don't have xml, need concise yet ? */
+            } break;
+
+            case Cli::XML:
+            {
+                /* We don't have concise, need XML yet ? */
+            } break;
+        }
     }
-    catch (K3LAPI::invalid_channel & err)
+    catch (K3LAPITraits::invalid_channel & err)
     {
-        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.channel % err.device );
+        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
     }
 }
 
@@ -874,19 +1194,21 @@ bool Cli::_KhompShowStatistics::execute(int argc, char *argv[])
         printUsage(stream);
         return false;
     }
+
     unsigned int dev = UINT_MAX;
     unsigned int obj = UINT_MAX;
-    int detailed = 0, verbose  = 0; 
+    int detailed = 0, verbose  = 0, as_xml = 0; 
+    OutputType output_type = Cli::VERBOSE;
 
     detailed = ((argc > 2)  && (!strcasecmp(argv[2], "detailed")) ? 1 : 0 ); 
     verbose  = ((argc > 2)  && (!strcasecmp(argv[2], "verbose"))  ? 1 : 0 ); 
+    as_xml   = ((argc > 2)  && (!strcasecmp(argv[2], "xml"))      ? 1 : 0 ); 
 
     try  
     {   
-
-        if(argc > (2+detailed+verbose))
+        if(argc > (2+detailed+verbose+as_xml))
         {
-            dev = Strings::tolong(argv[2+detailed+verbose]);
+            dev = Strings::tolong(argv[2+detailed+verbose+as_xml]);
             if (!Globals::k3lapi.valid_device(dev))
             {    
                 K::Logger::Logg2(C_CLI, stream, "ERROR: No such device!");
@@ -894,9 +1216,9 @@ bool Cli::_KhompShowStatistics::execute(int argc, char *argv[])
             }    
         }
 
-        if (argc > (3+detailed+verbose))
+        if (argc > (3+detailed+verbose+as_xml))
         {   
-            std::string object(argv[3+detailed+verbose]);
+            std::string object(argv[3+detailed+verbose+as_xml]);
             obj = Strings::tolong(object);
 
             if (!Globals::k3lapi.valid_channel(dev, obj))
@@ -910,7 +1232,14 @@ bool Cli::_KhompShowStatistics::execute(int argc, char *argv[])
     {    
         K::Logger::Logg2(C_CLI, stream, "ERROR: Invalid numeric value!");
         return false;
-    }    
+    }
+
+    if(detailed) output_type = Cli::DETAILED;
+    if(as_xml) 
+    {
+        createRoot("statistics");
+        output_type = Cli::XML;
+    }
     
     std::string header;
     header.append( " ------------------------------------------------------------------------------------\n");
@@ -926,42 +1255,92 @@ bool Cli::_KhompShowStatistics::execute(int argc, char *argv[])
     {
         if (obj != UINT_MAX)
         {
-            if(detailed != 0)
+            switch(output_type)
             {
-                cliDetailedStatistics (dev, obj);
-            }
-            else
-            {
-                K::Logger::Logg2(C_CLI,stream,header.c_str());
-                Board::KhompPvt *pvt = Board::get(dev, obj);
-                K::Logger::Logg2(C_CLI,stream,pvt->getStatistics(Statistics::ROW).c_str());
-                K::Logger::Logg2(C_CLI,stream,footer.c_str());
+                case Cli::VERBOSE:
+                {
+                    K::Logger::Logg2(C_CLI,stream,header.c_str());
+                    Board::KhompPvt *pvt = Board::get(dev, obj);
+                    K::Logger::Logg2(C_CLI,stream,pvt->getStatistics(Statistics::ROW).c_str());
+                    K::Logger::Logg2(C_CLI,stream,footer.c_str());
+                } break;
+
+                case Cli::DETAILED:
+                {
+                    cliDetailedStatistics (dev, obj, output_type);
+                } break;
+
+                case Cli::XML:
+                {
+                    /* no problem, nothing created */
+                    switch_xml_t xboard = NULL;
+
+                    /* device */
+                    xdevs = switch_xml_add_child_d(root,"device",0);
+                    switch_xml_set_attr_d(xdevs,"id",STR(FMT("%d") % dev));
+
+                    try
+                    {
+                        Board::KhompPvt *pvt = Board::get(dev, obj);
+                        switch_xml_insert(pvt->getStatisticsXML(Statistics::ROW),xdevs,0);
+                    }
+                    catch (K3LAPITraits::invalid_channel & err)
+                    {
+                        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
+                    }
+
+                    printXMLOutput(stream);
+                    clearRoot();
+                } break;
             }
         }
         else
         {
-            if(detailed != 0)
+            switch(output_type)
             {
-                printUsage(stream);
-                return false;
-            }
+                case Cli::VERBOSE:
+                {
+                    K::Logger::Logg2(C_CLI,stream,header.c_str());
 
-            K::Logger::Logg2(C_CLI,stream,header.c_str());
+                    if (dev == UINT_MAX)
+                    {
+                        for (dev = 0; dev < Globals::k3lapi.device_count(); dev++)
+                            cliStatistics (dev, output_type);
+                    }
+                    else
+                    {
+                        cliStatistics (dev, output_type);
+                    }
 
-            if (dev == UINT_MAX)
-            {
-                for (dev = 0; dev < Globals::k3lapi.device_count(); dev++)
-                    cliStatistics (dev);
+                    K::Logger::Logg2(C_CLI,stream,footer.c_str());
+                } break;
+
+                case Cli::XML:
+                {
+                    if (dev == UINT_MAX)
+                    {
+                        for (dev = 0; dev < Globals::k3lapi.device_count(); dev++)
+                            cliStatistics (dev, output_type);
+                    }
+                    else
+                    {
+                        cliStatistics (dev, output_type);
+                    }
+
+                    printXMLOutput(stream);
+                    clearRoot();
+
+                } break;
+
+                case Cli::DETAILED:
+                {
+                    printUsage(stream);
+                    return false;
+                } break;
             }
-            else
-            {
-                cliStatistics (dev);
-            }
-        
-            K::Logger::Logg2(C_CLI,stream,footer.c_str());
         }
     }
-    catch(K3LAPI::invalid_channel &e)
+    catch(K3LAPITraits::invalid_channel &e)
     {
         K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % obj % dev );
     }
@@ -969,11 +1348,10 @@ bool Cli::_KhompShowStatistics::execute(int argc, char *argv[])
     return true;
 }
 
-void Cli::_KhompShowChannels::showChannel(unsigned int device, bool concise, unsigned int channel)
+void Cli::_KhompShowChannels::showChannel(unsigned int device, unsigned int channel, OutputType output_type)
 {
     try
     {
-
         Board::KhompPvt *pvt = Board::get(device, channel);
 
         DBG(FUNC, PVT_FMT(pvt->target(), "found channel.."));
@@ -990,78 +1368,129 @@ void Cli::_KhompShowChannels::showChannel(unsigned int device, bool concise, uns
         std::string tmp_call = Globals::k3lutil.callStatus(
                 pvt->target().device, 
                 pvt->target().object, 
-                (concise ? Verbose::EXACT : Verbose::HUMAN));
+                (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
 
         std::string tmp_chan = Globals::k3lutil.channelStatus(
                 pvt->target().device, 
                 pvt->target().object, 
-                (concise ? Verbose::EXACT : Verbose::HUMAN));
+                (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
 
-        if (concise)
-        {   
-            std::string state = pvt->getStateString();
 
-            if (pvt->getSignaling() == ksigGSM)
-            {    
-                K3L_GSM_CHANNEL_STATUS gsmStatus;
+        switch(output_type)
+        {
+            case Cli::VERBOSE:
+            {
+                if (pvt->getSignaling() == ksigGSM)
+                {    
+                    K3L_GSM_CHANNEL_STATUS gsmStatus;
 
-                if (k3lGetDeviceStatus(device, channel + ksoGsmChannel, &gsmStatus, sizeof(gsmStatus)) != ksSuccess)
-                    return;
+                    if (k3lGetDeviceStatus(device, channel + ksoGsmChannel, &gsmStatus, sizeof(gsmStatus)) != ksSuccess)
+                        return;
 
-                const unsigned int sign_numb = (gsmStatus.SignalStrength != 255 ? gsmStatus.SignalStrength : 0);
+                    const unsigned int sign_numb = (gsmStatus.SignalStrength != 255 ? gsmStatus.SignalStrength : 0);
 
-                std::string gsm_registry = (strlen(gsmStatus.OperName) != 0 ? gsmStatus.OperName : "<none>");
+                    const unsigned int full_size = 10;
+                    const unsigned int sign_size = std::min((sign_numb * full_size) / 100, full_size);
 
-                K::Logger::Logg2(C_CLI, stream, FMT("B%02dC%02d:%s:%s:%s:%d%%:%s")
-                        % device % channel % state % tmp_call % tmp_chan
-                        % sign_numb % gsm_registry);
-            }    
-            else 
-            {    
-                K::Logger::Logg2(C_CLI, stream, FMT("B%02dC%02d:%s:%s:%s")
-                        % device % channel %  state % tmp_call % tmp_chan);
-            }    
-        }    
-        else 
-        {    
-            if (pvt->getSignaling() == ksigGSM)
-            {    
-                K3L_GSM_CHANNEL_STATUS gsmStatus;
+                    std::string tmp_antenna_level;
 
-                if (k3lGetDeviceStatus(device, channel + ksoGsmChannel, &gsmStatus, sizeof(gsmStatus)) != ksSuccess)
-                    return;
+                    for (unsigned int i = 0; i < sign_size; i++) 
+                        tmp_antenna_level += '*'; 
 
-                const unsigned int sign_numb = (gsmStatus.SignalStrength != 255 ? gsmStatus.SignalStrength : 0);
+                    for (unsigned int i = sign_size; i < full_size; i++) 
+                        tmp_antenna_level += ' '; 
 
-                const unsigned int full_size = 10;
-                const unsigned int sign_size = std::min((sign_numb * full_size) / 100, full_size);
+                    tmp_chan += " (";
+                    tmp_chan += (strlen(gsmStatus.OperName) != 0 ? gsmStatus.OperName : "...");
+                    tmp_chan += ")"; 
 
-                std::string tmp_antenna_level;
+                    K::Logger::Logg2(C_CLI, stream, FMT("| %d,%02d | %8s | %8s | %-23s | %02d%% |%s|")
+                            % device % channel %  pvt->getStateString() % tmp_call % tmp_chan
+                            % sign_numb % tmp_antenna_level);
+                }    
+                else 
+                {    
+                    K::Logger::Logg2(C_CLI, stream, FMT("| %d,%02d | %8s | %8s | %-40s |")
+                            % device % channel % pvt->getStateString() % tmp_call % tmp_chan);
+                }    
 
-                for (unsigned int i = 0; i < sign_size; i++) 
-                    tmp_antenna_level += '*'; 
+            } break;
 
-                for (unsigned int i = sign_size; i < full_size; i++) 
-                    tmp_antenna_level += ' '; 
+            case Cli::CONCISE:   
+            {
+                std::string state = pvt->getStateString();
 
-                tmp_chan += " (";
-                tmp_chan += (strlen(gsmStatus.OperName) != 0 ? gsmStatus.OperName : "...");
-                tmp_chan += ")"; 
+                if (pvt->getSignaling() == ksigGSM)
+                {    
+                    K3L_GSM_CHANNEL_STATUS gsmStatus;
 
-                K::Logger::Logg2(C_CLI, stream, FMT("| %d,%02d | %8s | %8s | %-23s | %02d%% |%s|")
-                        % device % channel %  pvt->getStateString() % tmp_call % tmp_chan
-                        % sign_numb % tmp_antenna_level);
-            }    
-            else 
-            {    
-                K::Logger::Logg2(C_CLI, stream, FMT("| %d,%02d | %8s | %8s | %-40s |")
-                        % device % channel % pvt->getStateString() % tmp_call % tmp_chan);
-            }    
-        }    
+                    if (k3lGetDeviceStatus(device, channel + ksoGsmChannel, &gsmStatus, sizeof(gsmStatus)) != ksSuccess)
+                        return;
+
+                    const unsigned int sign_numb = (gsmStatus.SignalStrength != 255 ? gsmStatus.SignalStrength : 0);
+
+                    std::string gsm_registry = (strlen(gsmStatus.OperName) != 0 ? gsmStatus.OperName : "<none>");
+
+                    K::Logger::Logg2(C_CLI, stream, FMT("B%02dC%02d:%s:%s:%s:%d%%:%s")
+                            % device % channel % state % tmp_call % tmp_chan
+                            % sign_numb % gsm_registry);
+                }    
+                else 
+                {    
+                    K::Logger::Logg2(C_CLI, stream, FMT("B%02dC%02d:%s:%s:%s")
+                            % device % channel %  state % tmp_call % tmp_chan);
+                }    
+
+            } break;
+
+            case Cli::XML:
+            {
+                /* device/channel */
+                switch_xml_t xchannel = switch_xml_add_child_d(xdev,"channel",0);
+                switch_xml_set_attr_d(xchannel,"id",STR(FMT("%d") % channel));
+
+                /* device/channel/fs_state */
+                switch_xml_t xstate = switch_xml_add_child_d(xchannel,"fs_state",0);
+                switch_xml_set_txt_d(xstate, pvt->getStateString().c_str());
+               
+                /* device/channel/call */
+                switch_xml_t xcall = switch_xml_add_child_d(xchannel,"call",0);
+                switch_xml_set_txt_d(xcall, tmp_call.c_str());
+
+                /* device/channel/status */
+                switch_xml_t xstatus = switch_xml_add_child_d(xchannel,"status",0);
+                switch_xml_set_txt_d(xstatus, tmp_chan.c_str());
+
+                if (pvt->getSignaling() == ksigGSM)
+                {   
+                    K3L_GSM_CHANNEL_STATUS gsmStatus;
+
+                    if (k3lGetDeviceStatus(device, channel + ksoGsmChannel, &gsmStatus, sizeof(gsmStatus)) != ksSuccess)
+                        return;
+
+                    const unsigned int sign_numb = (gsmStatus.SignalStrength != 255 ? gsmStatus.SignalStrength : 0);
+                    std::string gsm_registry = (strlen(gsmStatus.OperName) != 0 ? gsmStatus.OperName : "<none>");
+
+                    /* device/channel/signal */
+                    switch_xml_t xsign_numb = switch_xml_add_child_d(xchannel, "signal", 0);
+                    switch_xml_set_txt_d(xsign_numb, STR(FMT("%d") % sign_numb));
+
+                    /* device/channel/registry */
+                    switch_xml_t xgsm_registry = switch_xml_add_child_d(xchannel, "registry", 9);
+                    switch_xml_set_txt_d(xgsm_registry, gsm_registry.c_str());
+                }    
+            
+            } break;
+
+            default:
+                /* do nothing */ 
+                break;
+        }
+
     }    
-    catch (K3LAPI::invalid_channel & err)
+    catch (K3LAPITraits::invalid_channel & err)
     {
-        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.channel % err.device );
+        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
     }
     catch (...)
     {    
@@ -1069,18 +1498,26 @@ void Cli::_KhompShowChannels::showChannel(unsigned int device, bool concise, uns
     }   
 }
 
-void Cli::_KhompShowChannels::showChannels(unsigned int device, bool concise)
+void Cli::_KhompShowChannels::showChannels(unsigned int device, OutputType output_type)
 {
+    if(output_type == Cli::XML)
+    {
+        /* channels/device */
+        xdev = switch_xml_add_child_d(root,"device",0);
+        switch_xml_set_attr_d(xdev, "id", STR(FMT("%d") % device));
+    }
+
     for (unsigned int channel = 0; channel < Globals::k3lapi.channel_count(device); channel++)
     {
-        showChannel(device, concise, channel);
+        showChannel(device, channel, output_type);
     }
 }
 
 bool Cli::_KhompShowChannels::execute(int argc, char *argv[])
 {
     unsigned int dev = UINT_MAX;
-    int concise = 0, verbose = 0; 
+    int concise = 0, verbose = 0, as_xml = 0;
+    OutputType output_type = Cli::VERBOSE;
 
     bool onlyShowOneChannel = false;
     unsigned int channelToShow = 0; 
@@ -1093,10 +1530,11 @@ bool Cli::_KhompShowChannels::execute(int argc, char *argv[])
 
     concise = ( ((argc == 3) || (argc == 4) || (argc == 5) ) && (ARG_CMP(2, "concise")) ? 1 : 0 ); 
     verbose = ( ((argc == 3) || (argc == 4) || (argc == 5) ) && (ARG_CMP(2, "verbose")) ? 1 : 0 ); 
+    as_xml  = ( ((argc == 3) || (argc == 4) || (argc == 5) ) && (ARG_CMP(2, "xml"))     ? 1 : 0 ); 
 
-    if (argc >= (3 + concise + verbose))
+    if (argc >= (3 + concise + verbose + as_xml))
     {    
-        dev = atoi (argv[2 + concise + verbose]);
+        dev = atoi (argv[2 + concise + verbose + as_xml]);
 
         if (!Globals::k3lapi.valid_device(dev))
         {    
@@ -1104,14 +1542,14 @@ bool Cli::_KhompShowChannels::execute(int argc, char *argv[])
             return false;
         }    
         
-        if (argc == ( 4 + concise + verbose ))
+        if (argc == ( 4 + concise + verbose + as_xml))
         {
             onlyShowOneChannel = true;
-            channelToShow = atoi (argv[3 + concise + verbose]);
+            channelToShow = atoi (argv[3 + concise + verbose + as_xml]);
         }    
     }    
 
-    if (concise == 0)
+    if (concise == 0 && as_xml == 0)
     {    
         K::Logger::Logg2(C_CLI, stream, " -----------------------------------------------------------------------");
         K::Logger::Logg2(C_CLI, stream, "|-------------------- Khomp Channels and Connections -------------------|");
@@ -1119,13 +1557,29 @@ bool Cli::_KhompShowChannels::execute(int argc, char *argv[])
         K::Logger::Logg2(C_CLI, stream, "|  hw  |freeSWITCH|   call   |                   channel                |");
         K::Logger::Logg2(C_CLI, stream, "|  id  |  status  |  status  |                   status                 |");
         K::Logger::Logg2(C_CLI, stream, " -----------------------------------------------------------------------");
-    }    
+    } 
+
+    if (concise != 0) output_type = Cli::CONCISE;
+    if (as_xml  != 0) 
+    {
+        output_type = Cli::XML;
+
+        /* channels */
+        createRoot("channels");
+    }
 
     if ( onlyShowOneChannel )
     {    
         if ( channelToShow <  Globals::k3lapi.channel_count(dev) )
         {    
-            showChannel (dev,(concise == 0 ? false : true), channelToShow);
+            if(output_type == Cli::XML)
+            {
+                /* channels/device */
+                xdev = switch_xml_add_child_d(root,"device",0);
+                switch_xml_set_attr_d(xdev, "id", STR(FMT("%d") % dev));
+            }
+
+            showChannel (dev, channelToShow, output_type);
         }    
         else 
         {    
@@ -1136,74 +1590,173 @@ bool Cli::_KhompShowChannels::execute(int argc, char *argv[])
     {    
         for (dev = 0; dev < Globals::k3lapi.device_count(); dev++)
         {
-            showChannels(dev, (concise == 0 ? false : true));
+            showChannels(dev, output_type);
         }
     }    
     else 
     {    
-        showChannels ( dev, (concise == 0 ? false : true));
+        showChannels ( dev, output_type);
     }
 
-    if (concise == 0)
+    if (concise == 0 && as_xml == 0)
         K::Logger::Logg2(C_CLI, stream, " -----------------------------------------------------------------------");
+
+    if(output_type == Cli::XML)
+    {
+        printXMLOutput(stream);
+        clearRoot();
+    }
 
     return true;
 }
 
-void Cli::_KhompShowLinks::showLinks(unsigned int device, bool concise)
+std::string Cli::_KhompShowLinks::getLinkStatus(int dev, int obj, Verbose::Presentation fmt)
 {
-    if (!concise)
+    switch(Globals::k3lapi.device_type(dev))
+    {
+        case kdtE1FXSSpx:
+            if (obj == 1)
+                return Globals::k3lutil.linkStatus(dev, obj, fmt, ksigAnalogTerminal, true);
+        default:
+            break;
+    }
+
+    std::string res;
+
+    try  
+    {    
+        const K3L_LINK_CONFIG & conf = Globals::k3lapi.link_config(dev, obj);
+        
+        res = Globals::k3lutil.linkStatus(dev, obj, fmt);
+
+        if (conf.ReceivingClock & 0x01)
+           res += (fmt == Verbose::EXACT ? ",sync" : " (sync)");
+    }    
+    catch (K3LAPITraits::invalid_target & e) 
+    {    
+        res = "<error>";
+    }    
+
+    return res; 
+}
+
+void Cli::_KhompShowLinks::showLinks(unsigned int device, OutputType output_type)
+{
+    if (output_type != Cli::CONCISE && output_type != Cli::XML)
         K::Logger::Logg2(C_CLI, stream, "|------------------------------------------------------------------------|");
 
     switch (Globals::k3lutil.physicalLinkCount(device, true))
     {
         case 1:
         {
-            std::string str_link0 = Globals::k3lutil.getLinkStatus(device, 0, (concise ? Verbose::EXACT : Verbose::HUMAN));
+            std::string str_link0 = getLinkStatus(device, 0, (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
+        
+            switch(output_type)
+            {
+                case Cli::VERBOSE:
+                {
+                    K::Logger::Logg2(C_CLI, stream, FMT("| Link '0' on board '%d': %-47s |") % device % str_link0);
+                } break;
 
-            if (concise)
-                K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dL00:%s") % device % str_link0);
-            else
-                K::Logger::Logg2(C_CLI, stream, FMT("| Link '0' on board '%d': %-47s |") % device % str_link0);
+                case Cli::CONCISE:
+                {
+                    K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dL00:%s") % device % str_link0);
+                } break;
+
+                case Cli::XML:
+                {
+                    /* device */
+                    xdev = switch_xml_add_child_d(root,"device",0);
+                    switch_xml_set_attr_d(xdev,"id",STR(FMT("%d") % device));
+                  
+                    /* device/links */
+                    switch_xml_t xlinks = switch_xml_add_child_d(xdev,"links",0);
+
+                    /* device/links/link */
+                    switch_xml_t xlink = switch_xml_add_child_d(xlinks,"link",0);
+                    switch_xml_set_attr_d(xlink, "id", "0");
+                    switch_xml_set_txt_d(xlink, str_link0.c_str());
+                } break;
+            }
+
             break;
         }
 
         case 2:
         {
-            std::string str_link0 = Globals::k3lutil.getLinkStatus(device, 0, (concise ? Verbose::EXACT : Verbose::HUMAN));
-            std::string str_link1 = Globals::k3lutil.getLinkStatus(device, 1, (concise ? Verbose::EXACT : Verbose::HUMAN));
+            std::string str_link0 = getLinkStatus(device, 0, (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
+            std::string str_link1 = getLinkStatus(device, 1, (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
 
-            if (concise)
+            switch(output_type)
             {
-                K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dL00:%s") % device % str_link0);
-                K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dL01:%s") % device % str_link1);
-            }
-            else
-            {
-                K::Logger::Logg2(C_CLI, stream, FMT("|------ Link '0' on board '%d' ------||------ Link '1' on board '%d' ------|")
-                    % device % device);
+                case Cli::VERBOSE:
+                {
+                    K::Logger::Logg2(C_CLI, stream, FMT("|------ Link '0' on board '%d' ------||------ Link '1' on board '%d' ------|")
+                        % device % device);
 
-                K::Logger::Logg2(C_CLI, stream, FMT("| %-33s || %-33s |") % str_link0 % str_link1);
+                    K::Logger::Logg2(C_CLI, stream, FMT("| %-33s || %-33s |") % str_link0 % str_link1);
+                } break;
+
+                case Cli::CONCISE:
+                {
+                    K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dL00:%s") % device % str_link0);
+                    K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dL01:%s") % device % str_link1);
+                } break;
+
+                case Cli::XML:
+                {
+                    /* device */
+                    xdev = switch_xml_add_child_d(root,"device",0);
+                    switch_xml_set_attr_d(xdev,"id",STR(FMT("%d") % device));
+                  
+                    /* device/links */
+                    switch_xml_t xlinks = switch_xml_add_child_d(xdev,"links",0);
+
+                    /* device/links/link (0) */
+                    switch_xml_t xlink = switch_xml_add_child_d(xlinks,"link",0);
+                    switch_xml_set_attr_d(xlink, "id", "0");
+                    switch_xml_set_txt_d(xlink, str_link0.c_str());
+
+                    /* device/links/link (1) */
+                    switch_xml_t xlink1 = switch_xml_add_child_d(xlinks,"link",0);
+                    switch_xml_set_attr_d(xlink1, "id", "1");
+                    switch_xml_set_txt_d(xlink1, str_link0.c_str());
+                } break;
             }
 
             break;
         }
         default:
         {
-            if (concise)
-                K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dLXX:NoLinksAvailable") % device);
-            else
-                K::Logger::Logg2(C_CLI, stream, FMT("| Board '%d': %-59s |") % device % "No links available.");
+            switch(output_type)
+            {
+                case Cli::VERBOSE:
+                {
+                    K::Logger::Logg2(C_CLI, stream, FMT("| Board '%d': %-59s |") % device % "No links available.");
+                } break;
+
+                case Cli::CONCISE:
+                {
+                    K::Logger::Logg2(C_MESSAGE, stream, FMT("B%02dLXX:NoLinksAvailable") % device);
+                } break;
+
+                case Cli::XML:
+                {
+                    /* device */
+                    xdev = switch_xml_add_child_d(root,"device",0);
+                    switch_xml_set_attr_d(xdev,"id",STR(FMT("%d") % device));
+                    switch_xml_set_txt_d(xdev,"NoLinksAvailable");
+                } break;
+            }
+
             break;
         }
     }
-
 }
 
-void Cli::_KhompShowLinks::showErrors(unsigned int device, bool concise)
+void Cli::_KhompShowLinks::showErrors(unsigned int device, OutputType output_type)
 {
-
-    if (!concise)
+    if (output_type != Cli::CONCISE && output_type != Cli::XML)
         K::Logger::Logg2(C_CLI, stream, "|-----------------------------------------------------------------------|");
 
     switch (Globals::k3lutil.physicalLinkCount(device, true))
@@ -1211,33 +1764,77 @@ void Cli::_KhompShowLinks::showErrors(unsigned int device, bool concise)
         case 2:
         {
             K3LUtil::ErrorCountType link0 = Globals::k3lutil.linkErrorCount(
-                    device, 0, (concise ? Verbose::EXACT : Verbose::HUMAN));
+                    device, 0, (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
             K3LUtil::ErrorCountType link1 = Globals::k3lutil.linkErrorCount(
-                    device, 1, (concise ? Verbose::EXACT : Verbose::HUMAN));
+                    device, 1, (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
 
-            if (concise)
+            switch(output_type)
             {
-                for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
-                    K::Logger::Logg2(C_CLI, stream, FMT("%d:0:%s:%d") % device % i->first % i->second);
-
-                for (K3LUtil::ErrorCountType::iterator i = link1.begin(); i != link1.end(); i++)
-                    K::Logger::Logg2(C_CLI, stream, FMT("%d:1:%s:%d") % device % i->first % i->second);
-            }
-            else
-            {
-                K::Logger::Logg2(C_CLI, stream, FMT("|----- Link '0' on board '%d' ------| |----- Link '1' on board '%d' ------|") % device % device);
-                K::Logger::Logg2(C_CLI, stream, "|----------------------------------| |----------------------------------|");
-                K::Logger::Logg2(C_CLI, stream, "|       Error type       | Number  | |       Error type       | Number  |");
-                K::Logger::Logg2(C_CLI, stream, "|----------------------------------| |----------------------------------|");
-
-                K3LUtil::ErrorCountType::iterator i = link0.begin();
-                K3LUtil::ErrorCountType::iterator j = link1.begin();
-
-                for (; i != link0.end() && j != link1.end(); i++, j++)
+                case Cli::VERBOSE:
                 {
-                    K::Logger::Logg2(C_CLI, stream, FMT("| %22s | %-7d | | %22s | %-7d |")
-                       % i->first % i->second % j->first % j->second);
-                }
+                    K::Logger::Logg2(C_CLI, stream, FMT("|----- Link '0' on board '%d' ------| |----- Link '1' on board '%d' ------|") % device % device);
+                    K::Logger::Logg2(C_CLI, stream, "|----------------------------------| |----------------------------------|");
+                    K::Logger::Logg2(C_CLI, stream, "|       Error type       | Number  | |       Error type       | Number  |");
+                    K::Logger::Logg2(C_CLI, stream, "|----------------------------------| |----------------------------------|");
+
+                    K3LUtil::ErrorCountType::iterator i = link0.begin();
+                    K3LUtil::ErrorCountType::iterator j = link1.begin();
+
+                    for (; i != link0.end() && j != link1.end(); i++, j++)
+                    {
+                        K::Logger::Logg2(C_CLI, stream, FMT("| %22s | %-7d | | %22s | %-7d |")
+                           % i->first % i->second % j->first % j->second);
+                    }
+                } break;
+
+                case Cli::CONCISE:
+                {
+                    for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
+                        K::Logger::Logg2(C_CLI, stream, FMT("%d:0:%s:%d") % device % i->first % i->second);
+
+                    for (K3LUtil::ErrorCountType::iterator i = link1.begin(); i != link1.end(); i++)
+                        K::Logger::Logg2(C_CLI, stream, FMT("%d:1:%s:%d") % device % i->first % i->second);
+                } break;
+
+                case Cli::XML:
+                {
+                    /* device */
+                    xdev = switch_xml_add_child_d(root,"device",0);
+                    switch_xml_set_attr_d(xdev,"id",STR(FMT("%d") % device));
+                  
+                    /* device/errors */
+                    switch_xml_t xerrors = switch_xml_add_child_d(xdev,"errors",0);
+
+                    /* device/errors/link (0) */ 
+                    switch_xml_t xlinks0 = switch_xml_add_child_d(xerrors,"link",0);
+                    switch_xml_set_attr_d(xlinks0,"id","0");
+
+                    for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
+                    {
+                        /* device/errors/link/type */
+                        switch_xml_t xtype0 = switch_xml_add_child_d(xlinks0,"type",0);
+                        switch_xml_set_txt_d(xtype0,i->first.c_str());
+
+                        /* device/errors/link/number */
+                        switch_xml_t xnumber0  = switch_xml_add_child_d(xlinks0,"number",0);
+                        switch_xml_set_txt_d(xnumber0,STR(FMT("%d") % i->second));
+                    }
+
+                    /* device/errors/link (1) */ 
+                    switch_xml_t xlinks1 = switch_xml_add_child_d(xerrors,"link",0);
+                    switch_xml_set_attr_d(xlinks1,"id","1");
+
+                    for (K3LUtil::ErrorCountType::iterator i = link1.begin(); i != link1.end(); i++)
+                    {
+                        /* device/errors/link/type */
+                        switch_xml_t xtype1 = switch_xml_add_child_d(xlinks1,"type",0);
+                        switch_xml_set_txt_d(xtype1,i->first.c_str());
+
+                        /* device/errors/link/number */
+                        switch_xml_t xnumber1  = switch_xml_add_child_d(xlinks1,"number",0);
+                        switch_xml_set_txt_d(xnumber1,STR(FMT("%d") % i->second));
+                    }
+                } break;
             }
 
             break;
@@ -1245,22 +1842,51 @@ void Cli::_KhompShowLinks::showErrors(unsigned int device, bool concise)
 
         case 1:
         {
-            K3LUtil::ErrorCountType link0 = Globals::k3lutil.linkErrorCount(device, 0, (concise ? Verbose::EXACT : Verbose::HUMAN));
+            K3LUtil::ErrorCountType link0 = Globals::k3lutil.linkErrorCount(device, 0, (output_type == Cli::CONCISE ? Verbose::EXACT : Verbose::HUMAN));
 
-            if (concise)
+            switch(output_type)
             {
-                for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
-                    K::Logger::Logg2(C_CLI, stream, FMT("%d:0:%s:%d") % device % i->first % i->second);
-            }
-            else
-            {
-                K::Logger::Logg2(C_CLI, stream, FMT("|------------------------ Link '0' on board '%d' ------------------------|") % device);
-                K::Logger::Logg2(C_CLI, stream, "|-----------------------------------------------------------------------|");
-                K::Logger::Logg2(C_CLI, stream, "|                      Error type                      |     Number     |");
-                K::Logger::Logg2(C_CLI, stream, "|-----------------------------------------------------------------------|");
+                case Cli::VERBOSE:
+                {
+                    K::Logger::Logg2(C_CLI, stream, FMT("|------------------------ Link '0' on board '%d' ------------------------|") % device);
+                    K::Logger::Logg2(C_CLI, stream, "|-----------------------------------------------------------------------|");
+                    K::Logger::Logg2(C_CLI, stream, "|                      Error type                      |     Number     |");
+                    K::Logger::Logg2(C_CLI, stream, "|-----------------------------------------------------------------------|");
 
-                for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
-                    K::Logger::Logg2(C_CLI, stream, FMT("| %52s | %-14d |") % i->first % i->second);
+                    for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
+                        K::Logger::Logg2(C_CLI, stream, FMT("| %52s | %-14d |") % i->first % i->second);
+                } break;
+
+                case Cli::CONCISE:
+                {
+                    for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
+                        K::Logger::Logg2(C_CLI, stream, FMT("%d:0:%s:%d") % device % i->first % i->second);
+                } break;
+
+                case Cli::XML:
+                {
+                    /* device */
+                    xdev = switch_xml_add_child_d(root,"device",0);
+                    switch_xml_set_attr_d(xdev,"id",STR(FMT("%d") % device));
+                  
+                    /* device/errors */
+                    switch_xml_t xerrors = switch_xml_add_child_d(xdev,"errors",0);
+
+                    /* device/errors/link (0) */ 
+                    switch_xml_t xlinks0 = switch_xml_add_child_d(xerrors,"link",0);
+                    switch_xml_set_attr_d(xlinks0,"id","0");
+
+                    for (K3LUtil::ErrorCountType::iterator i = link0.begin(); i != link0.end(); i++)
+                    {
+                        /* device/errors/link/type */
+                        switch_xml_t xtype0 = switch_xml_add_child_d(xlinks0,"type",0);
+                        switch_xml_set_txt_d(xtype0,i->first.c_str());
+
+                        /* device/errors/link/number */
+                        switch_xml_t xnumber0  = switch_xml_add_child_d(xlinks0,"number",0);
+                        switch_xml_set_txt_d(xnumber0,STR(FMT("%d") % i->second));
+                    }
+                } break;
             }
 
             break;
@@ -1268,7 +1894,7 @@ void Cli::_KhompShowLinks::showErrors(unsigned int device, bool concise)
 
         case 0:
         {
-            if (!concise)
+            if (output_type != Cli::XML && output_type != Cli::CONCISE)
                 K::Logger::Logg2(C_CLI, stream, FMT("|                     No links detected on board %d!                     |") % device);
 
             break;
@@ -1285,16 +1911,18 @@ bool Cli::_KhompShowLinks::execute(int argc, char *argv[])
     }
 
     unsigned int dev = UINT_MAX;
-    int concise = 0, verbose = 0, errors = 0;
+    int concise = 0, verbose = 0, as_xml = 0, errors = 0;
+    OutputType output_type = Cli::VERBOSE;
 
     errors = ( (argc > 2) && (!strcasecmp(argv[2],"errors")) ? 1 : 0 );
 
     concise = ( (argc > (2+errors)) && (!strcasecmp(argv[(2+errors)],"concise")) ? 1 : 0 );
     verbose = ( (argc > (2+errors)) && (!strcasecmp(argv[(2+errors)],"verbose")) ? 1 : 0 );
+    as_xml  = ( (argc > (2+errors)) && (!strcasecmp(argv[(2+errors)],"xml"))     ? 1 : 0 );
 
-    if(argc > (2+errors+concise+verbose))
+    if(argc > (2+errors+concise+verbose+as_xml))
     {
-        dev = atoi(argv[(2+errors+concise+verbose)]);
+        dev = atoi(argv[(2+errors+concise+verbose+as_xml)]);
 
         if (!Globals::k3lapi.valid_device(dev))
         {
@@ -1303,7 +1931,8 @@ bool Cli::_KhompShowLinks::execute(int argc, char *argv[])
         }
     }
 
-    if (!concise)
+
+    if (!concise && !as_xml)
     {
         K::Logger::Logg2(C_CLI, stream, " ------------------------------------------------------------------------");
         if(!errors)
@@ -1316,17 +1945,24 @@ bool Cli::_KhompShowLinks::execute(int argc, char *argv[])
         }
     }
 
+    if(concise) output_type = Cli::CONCISE;
+    if(as_xml)
+    {
+        output_type = Cli::XML;
+        createRoot("links");
+    }
+
     if (dev == UINT_MAX)
     {
         for (dev = 0; dev < Globals::k3lapi.device_count(); dev++)
         {
             if(!errors)
             {
-                showLinks (dev, (concise == 1));
+                showLinks (dev, output_type);
             }
             else
             {
-                showErrors(dev, (concise == 1));
+                showErrors(dev, output_type);
             }
         }
     }
@@ -1334,17 +1970,23 @@ bool Cli::_KhompShowLinks::execute(int argc, char *argv[])
     {
         if(!errors)
         {
-            showLinks (dev, (concise == 1));
+            showLinks (dev, output_type);
         }
         else
         {
-            showErrors(dev, (concise == 1));
+            showErrors(dev, output_type);
         }
     }
 
-    if (!concise)
+    if (!concise && !as_xml)
     {
         K::Logger::Logg2(C_CLI, stream, " ------------------------------------------------------------------------");
+    }
+
+    if (as_xml) 
+    {
+        printXMLOutput(stream);
+        clearRoot();
     }
 
     return true;
@@ -1503,9 +2145,9 @@ bool Cli::_KhompClearStatistics::execute(int argc, char *argv[])
     }
 
     }
-    catch (K3LAPI::invalid_channel & err)
+    catch (K3LAPITraits::invalid_channel & err)
     {
-        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.channel % err.device );
+        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
         return false;
     }
 
@@ -1636,7 +2278,7 @@ bool Cli::_KhompSMS::execute(int argc, char *argv[])
     }
 
     std::string complete = begin + devs + "/" + numb + "/" + mesg;
-    int cause;
+    int cause = (int)SWITCH_CAUSE_NONE;
 
     try
     {
@@ -1922,7 +2564,7 @@ bool Cli::_KhompLogTraceISDN::execute(int argc, char *argv[])
 
     std::string what;
 
-    for (unsigned int i = 4; i < (unsigned int)argc; i++)
+    for (unsigned int i = 3; i < (unsigned int)argc; i++)
     {
         what += argv[i];
         what += ",";
@@ -2045,10 +2687,10 @@ bool Cli::_KhompGet::execute(int argc, char *argv[])
 
     try  
     {    
-       std::string res = Globals::options.get((const char*) argv[1]);
+       std::string res = Globals::options.get(&Opt::_options, (const char*) argv[1]);
        K::Logger::Logg2(C_CLI, stream, FMT("Result for command %s is %s.") % std::string(argv[1]) % res);
-    }catch(ConfigProcessFailure &e){ 
-       K::Logger::Logg2(C_CLI, stream, (char*) e.msg.c_str());
+    }catch(Config::Failure &e){ 
+       K::Logger::Logg2(C_CLI, stream, e.what());
     }    
 
     return true;
@@ -2075,11 +2717,11 @@ bool Cli::_KhompSet::execute(int argc, char *argv[])
 
     try  
     {    
-        Globals::options.process((const char *) argv[1], (const char *) args.c_str());
+        Globals::options.process(&Opt::_options, (const char *) argv[1], (const char *) args.c_str());
     }    
-    catch (ConfigProcessFailure &e)
+    catch (Config::Failure &e)
     {    
-        K::Logger::Logg2(C_CLI,stream, FMT("config processing error: %s.") % e.msg.c_str());
+        K::Logger::Logg2(C_CLI,stream, FMT("config processing error: %s.") % e.what());
     }    
 
     return true;
@@ -2256,9 +2898,9 @@ bool Cli::_KhompSelectSim::execute(int argc, char *argv[])
         K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Invalid number '%s'!") % e.value());
         return false;
     }
-    catch (K3LAPI::invalid_channel & err)
+    catch (K3LAPITraits::invalid_channel & err)
     {
-        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.channel % err.device );
+        K::Logger::Logg2(C_CLI, stream, FMT("ERROR: Unable to find channel %d on device %d!") % err.object % err.device );
         return false;
     }
     catch(...)
@@ -2284,7 +2926,7 @@ bool Cli::_KhompKommuterOnOff::execute(int argc, char *argv[])
         case 0:  K::Logger::Logg2(C_CLI, stream, "ERROR: none Kommuter was found on the system." );              return false;
     }
     
-    if (Opt::_kommuter_activation == "auto")
+    if (Opt::_options._kommuter_activation() == "auto")
     {
         K::Logger::Logg2(C_CLI, stream, "ERROR: Kommuter is set to be started automatically by kommuter-activation configuration.");
         return false;
@@ -2295,7 +2937,7 @@ bool Cli::_KhompKommuterOnOff::execute(int argc, char *argv[])
     int ret = 0;
     if (on_off)
     {
-        int timeout = Opt::_kommuter_timeout;
+        int timeout = Opt::_options._kommuter_timeout();
         K::Logger::Logg2(C_CLI, stream, FMT("NOTICE: Activating Kommuters with timeout of %d seconds .") % timeout);
         bool start_timer = false;
 

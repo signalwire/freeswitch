@@ -60,7 +60,11 @@ Logfile::~Logfile()
     /* nothing for now */
 };
 
+#if COMMONS_AT_LEAST(1,1)
+bool Logfile::select(Section ** ptr, const std::string & str)
+#else
 bool Logfile::select(Section ** ptr, std::string str)
+#endif
 {
     // default section, needed for API compliance.
     if (str == "")
