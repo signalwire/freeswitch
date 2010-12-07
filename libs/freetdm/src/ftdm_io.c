@@ -102,7 +102,7 @@ static void write_chan_io_dump(ftdm_io_dump_t *dump, char *dataptr, int dlen)
 	if (dlen > avail) {
 		int diff = dlen - avail;
 		
-		ftdm_assert(diff < dump->size, "Very small buffer or very big IO chunk!\n");
+		ftdm_assert(diff < (int)dump->size, "Very small buffer or very big IO chunk!\n");
 
 		/* write only what we can and the rest at the beginning of the buffer */
 		memcpy(&dump->buffer[windex], dataptr, avail);
@@ -116,7 +116,7 @@ static void write_chan_io_dump(ftdm_io_dump_t *dump, char *dataptr, int dlen)
 		windex += dlen;
 	}
 
-	if (windex == dump->size) {
+	if (windex == (int)dump->size) {
 		/*ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "wrapping around dump buffer %p\n", dump);*/
 		windex = 0;
 		dump->wrapped = 1;
@@ -3398,8 +3398,8 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 {
 	ftdm_status_t  status = ftdmchan->fio->read(ftdmchan, data, datalen);
 	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
-		int dlen = (int) *datalen;
-		if (write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, dlen) != dlen) {
+		ftdm_size_t dlen = *datalen;
+		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, dlen) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
@@ -3409,8 +3409,8 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 	}
 
 	if (status == FTDM_SUCCESS) {
-		int dlen = (int) *datalen;
-		size_t rc = 0;
+		ftdm_size_t dlen = *datalen;
+		ftdm_size_t rc = 0;
 
 		write_chan_io_dump(&ftdmchan->rxdump, data, dlen);
 
