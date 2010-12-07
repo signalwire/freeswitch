@@ -163,6 +163,8 @@ static ftdm_status_t start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *du
 		return FTDM_FAIL;
 	}
 	memset(dump, 0, sizeof(*dump));
+	/* on 64bits, we get a weird number if we don't cast to uint here 
+	 * which is what size_t will be anyway */
 	dump->buffer = ftdm_malloc((uint32_t)size);
 	if (!dump->buffer) {
 		return FTDM_FAIL;

@@ -489,8 +489,6 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 
-	dump_mf(r2chan);
-
 	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
 	if (r2data->mf_dump_size) {
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
