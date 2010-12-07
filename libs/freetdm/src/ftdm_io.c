@@ -163,7 +163,7 @@ static ftdm_status_t start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *du
 		return FTDM_FAIL;
 	}
 	memset(dump, 0, sizeof(*dump));
-	dump->buffer = ftdm_malloc(size);
+	dump->buffer = ftdm_malloc((uint32_t)size);
 	if (!dump->buffer) {
 		return FTDM_FAIL;
 	}
@@ -2814,7 +2814,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			dump_chan_io_to_file(ftdmchan, &ftdmchan->rxdump, obj);
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %zd to file %p\n", ftdmchan->rxdump.size, obj);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %d to file %p\n", ftdmchan->rxdump.size, obj);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
