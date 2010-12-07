@@ -351,6 +351,7 @@ typedef struct ftdm_channel_config {
 	ftdm_chan_type_t type;
 	float rxgain;
 	float txgain;
+	uint8_t debugdtmf;
 } ftdm_channel_config_t;
 
 /*!
@@ -431,9 +432,38 @@ typedef enum {
 	FTDM_COMMAND_WINK,
 	FTDM_COMMAND_ENABLE_PROGRESS_DETECT,
 	FTDM_COMMAND_DISABLE_PROGRESS_DETECT,
+
+	/*!< Start tracing input and output from channel to the given file */
 	FTDM_COMMAND_TRACE_INPUT,
 	FTDM_COMMAND_TRACE_OUTPUT,
+
+	/*!< Stop both Input and Output trace, closing the files */
 	FTDM_COMMAND_TRACE_END_ALL,
+
+	/*!< Enable DTMF debugging */
+	FTDM_COMMAND_ENABLE_DEBUG_DTMF,
+
+	/*!< Disable DTMF debugging (if not disabled explicitly, it is disabled automatically when calls hangup) */
+	FTDM_COMMAND_DISABLE_DEBUG_DTMF,
+
+	/*!< Start dumping all input to a circular buffer. The size of the circular buffer can be specified, default used otherwise */
+	FTDM_COMMAND_ENABLE_INPUT_DUMP,
+
+	/*!< Stop dumping all input to a circular buffer. */
+	FTDM_COMMAND_DISABLE_INPUT_DUMP,
+
+	/*!< Start dumping all output to a circular buffer. The size of the circular buffer can be specified, default used otherwise */
+	FTDM_COMMAND_ENABLE_OUTPUT_DUMP,
+
+	/*!< Stop dumping all output to a circular buffer. */
+	FTDM_COMMAND_DISABLE_OUTPUT_DUMP,
+
+	/*!< Dump the current input circular buffer to the specified FILE* structure */
+	FTDM_COMMAND_DUMP_INPUT,
+
+	/*!< Dump the current output circular buffer to the specified FILE* structure */
+	FTDM_COMMAND_DUMP_OUTPUT,
+
 	FTDM_COMMAND_ENABLE_CALLERID_DETECT,
 	FTDM_COMMAND_DISABLE_CALLERID_DETECT,
 	FTDM_COMMAND_ENABLE_ECHOCANCEL,
@@ -483,6 +513,7 @@ struct ftdm_memory_handler {
 #define FIO_SPAN_GET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t *status)
 #define FIO_SPAN_POLL_EVENT_ARGS (ftdm_span_t *span, uint32_t ms, short *poll_events)
 #define FIO_SPAN_NEXT_EVENT_ARGS (ftdm_span_t *span, ftdm_event_t **event)
+#define FIO_CHANNEL_NEXT_EVENT_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t **event)
 #define FIO_SIGNAL_CB_ARGS (ftdm_sigmsg_t *sigmsg)
 #define FIO_EVENT_CB_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t *event)
 #define FIO_CONFIGURE_SPAN_ARGS (ftdm_span_t *span, const char *str, ftdm_chan_type_t type, char *name, char *number)
@@ -514,6 +545,7 @@ typedef ftdm_status_t (*fio_span_set_sig_status_t) FIO_SPAN_SET_SIG_STATUS_ARGS;
 typedef ftdm_status_t (*fio_span_get_sig_status_t) FIO_SPAN_GET_SIG_STATUS_ARGS;
 typedef ftdm_status_t (*fio_span_poll_event_t) FIO_SPAN_POLL_EVENT_ARGS ;
 typedef ftdm_status_t (*fio_span_next_event_t) FIO_SPAN_NEXT_EVENT_ARGS ;
+typedef ftdm_status_t (*fio_channel_next_event_t) FIO_CHANNEL_NEXT_EVENT_ARGS ;
 typedef ftdm_status_t (*fio_signal_cb_t) FIO_SIGNAL_CB_ARGS ;
 typedef ftdm_status_t (*fio_event_cb_t) FIO_EVENT_CB_ARGS ;
 typedef ftdm_status_t (*fio_configure_span_t) FIO_CONFIGURE_SPAN_ARGS ;
@@ -546,6 +578,7 @@ typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
 #define FIO_SPAN_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_SPAN_GET_SIG_STATUS_ARGS
 #define FIO_SPAN_POLL_EVENT_FUNCTION(name) ftdm_status_t name FIO_SPAN_POLL_EVENT_ARGS
 #define FIO_SPAN_NEXT_EVENT_FUNCTION(name) ftdm_status_t name FIO_SPAN_NEXT_EVENT_ARGS
+#define FIO_CHANNEL_NEXT_EVENT_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_NEXT_EVENT_ARGS
 #define FIO_SIGNAL_CB_FUNCTION(name) ftdm_status_t name FIO_SIGNAL_CB_ARGS
 #define FIO_EVENT_CB_FUNCTION(name) ftdm_status_t name FIO_EVENT_CB_ARGS
 #define FIO_CONFIGURE_SPAN_FUNCTION(name) ftdm_status_t name FIO_CONFIGURE_SPAN_ARGS
@@ -584,6 +617,7 @@ struct ftdm_io_interface {
 	fio_write_t write; /*!< Write data to the channel */
 	fio_span_poll_event_t poll_event; /*!< Poll for events on the whole span */
 	fio_span_next_event_t next_event; /*!< Retrieve an event from the span */
+	fio_channel_next_event_t channel_next_event; /*!< Retrieve an event from channel */
 	fio_api_t api; /*!< Execute a text command */
 };
 
@@ -901,6 +935,23 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 
 /*! \brief Remove the channel from a hunt group */
 FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ftdm_channel_t* ftdmchan);
+
+/*! 
+ * \brief Retrieves an event from the span
+ *
+ * \note
+ * 	This function is non-reentrant and not thread-safe. 
+ * 	The event returned may be modified if the function is called again 
+ * 	from a different thread or even the same. It is recommended to
+ * 	handle events from the same span in a single thread.
+ *
+ * \param ftdmchan The channel to retrieve the event from
+ * \param event Pointer to store the pointer to the event
+ *
+ * \retval FTDM_SUCCESS success (at least one event available)
+ * \retval FTDM_FAIL failure
+ */
+FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm_event_t **event);
 
 /*! \brief Find a hunt group by id */
 FT_DECLARE(ftdm_status_t) ftdm_group_find(uint32_t id, ftdm_group_t **group);

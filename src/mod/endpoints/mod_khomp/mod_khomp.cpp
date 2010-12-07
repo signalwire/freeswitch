@@ -269,22 +269,22 @@ switch_status_t khompExecute(switch_core_session_t *session)
 
 switch_status_t khompHangup(switch_core_session_t *session)
 {
-    DBG(FUNC, D("c"));
-
     Board::KhompPvt *tech_pvt = NULL;
 
     if(!session)
     {
-        LOG(ERROR, D("r (Session is NULL)"));
-        return SWITCH_STATUS_SUCCESS;
+        LOG(ERROR, D("cr (Session is NULL)"));
+        return SWITCH_STATUS_FALSE;
     }
     
     tech_pvt = static_cast<Board::KhompPvt*>(switch_core_session_get_private(session));
     if(!tech_pvt)
     {
-        DBG(FUNC, D("r (pvt is NULL)"));
+        LOG(ERROR, D("cr (pvt is NULL)"));
         return SWITCH_STATUS_FALSE;
     }
+    
+    DBG(FUNC, PVT_FMT(tech_pvt->target(), "c"));
 
     try
     {       
@@ -312,13 +312,13 @@ switch_status_t khompHangup(switch_core_session_t *session)
         LOG(ERROR, PVT_FMT(tech_pvt->target(), "r (unable to lock: %s!)") %  err._msg.c_str());
         return SWITCH_STATUS_FALSE;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(tech_pvt->target(), "r (unable to get device: %d!)") % err.device);
         return SWITCH_STATUS_FALSE;
     }
 
-    DBG(FUNC, D("r"))
+    DBG(FUNC, PVT_FMT(tech_pvt->target(), "r"))
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -331,12 +331,10 @@ switch_status_t khompPRHangup(switch_core_session_t *session)
 
 switch_status_t khompDestroy(switch_core_session_t *session)
 {
-    DBG(FUNC, D("c"))
-
     if(!session)
     {
-        DBG(FUNC, D("r (session is null)"))
-        return SWITCH_STATUS_SUCCESS;
+        LOG(ERROR, D("cr (session is null)"))
+        return SWITCH_STATUS_FALSE;
     }
     
     Board::KhompPvt *tech_pvt = NULL;
@@ -345,24 +343,36 @@ switch_status_t khompDestroy(switch_core_session_t *session)
 
     if(!tech_pvt)
     {
-        DBG(FUNC, D("r (pvt is null)"))
+        LOG(ERROR, D("cr (pvt is null)"))
         return SWITCH_STATUS_FALSE;
     }
-    try
-    {       
-        ScopedPvtLock lock(tech_pvt);
 
-        switch_core_session_set_private(session, NULL);
-        tech_pvt->destroyAll();
-    }
-    catch (ScopedLockFailed & err)
+    DBG(FUNC, PVT_FMT(tech_pvt->target(), "c"))
+
+    do
     {
-        DBG(FUNC, PVT_FMT(tech_pvt->target(), "r (unable to lock: %s!)") %  err._msg.c_str());
+        try
+        {
+            ScopedPvtLock lock(tech_pvt);
+
+            switch_core_session_set_private(session, NULL);
+            tech_pvt->destroyAll();
+            
+            DBG(FUNC, PVT_FMT(tech_pvt->target(), "r"));
+
+            return SWITCH_STATUS_SUCCESS;
+        }
+        catch (ScopedLockFailed & err)
+        {
+            LOG(ERROR, PVT_FMT(tech_pvt->target(), "unable to lock: %s!: try again...") %  err._msg.c_str());
+        }
+
     }
+    while(true);
+            
+    DBG(FUNC, PVT_FMT(tech_pvt->target(), "r (unable to lock!)"));
 
-    DBG(FUNC, D("r"))
-
-    return SWITCH_STATUS_SUCCESS;
+    return SWITCH_STATUS_FALSE;
 }
 
 switch_status_t khompSMSDestroy(switch_core_session_t *session)
@@ -372,7 +382,7 @@ switch_status_t khompSMSDestroy(switch_core_session_t *session)
     if(!session)
     {
         DBG(FUNC, D("r (session is null)"))
-        return SWITCH_STATUS_SUCCESS;
+        return SWITCH_STATUS_FALSE;
     }
 /*    
     Board::KhompPvt *tech_pvt = NULL;
@@ -569,7 +579,7 @@ switch_status_t khompWrite(switch_core_session_t *session, switch_frame_t *frame
             {
                 Board::board(tech_pvt->target().device)->_timers.del(tech_pvt->call()->_idx_co_ring);
             }
-            catch (K3LAPI::invalid_device & err)
+            catch (K3LAPITraits::invalid_device & err)
             {
                 LOG(ERROR, PVT_FMT(tech_pvt->target(), "Unable to get device: %d!") % err.device);
             }
@@ -666,7 +676,7 @@ switch_status_t khompAnswer(switch_core_session_t *session)
 
 
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, D("unable to get device: %d!") % err.device);
         return SWITCH_STATUS_FALSE;
@@ -826,7 +836,7 @@ switch_call_cause_t khompCall
     }
 
     Board::KhompPvt *tech_pvt;
-    int cause = (int)SWITCH_CAUSE_SUCCESS;
+    int cause = (int)SWITCH_CAUSE_NONE;
     
     try
     {
@@ -882,7 +892,7 @@ switch_call_cause_t khompCall
     {
         if(err._fail == ScopedLockFailed::ALLOC_FAILED)
         {
-            LOG(ERROR, PVT_FMT(tech_pvt->target(), "unable to global alloc lock"));
+            LOG(ERROR, D("unable to global alloc lock: %s!") % err._msg.c_str());
         }
         else
         {
@@ -1295,7 +1305,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_khomp_load)
     }
 
     /* apply global volume now */
-    if(Opt::_input_volume != 0 || Opt::_output_volume != 0)
+    if(Opt::_options._input_volume() != 0 || Opt::_options._output_volume() != 0)
         Board::applyGlobalVolume();
 
     Opt::commit();
@@ -1320,6 +1330,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_khomp_load)
 
     /* Register cli commands */
     Cli::registerCommands(apiKhomp,module_interface);
+    
+    ESL::registerEvents();
 
     /* Add applications */
     SWITCH_ADD_APP(Globals::khomp_app_inteface, "KLog", "KLog", "KLog log every string to khomp log system", klogFunction, "<value>", SAF_SUPPORT_NOMEDIA);
@@ -1352,6 +1364,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_khomp_shutdown)
     Board::kommuter.stop();
 
     Cli::unregisterCommands();
+    
+    ESL::unregisterEvents();
+
 
     /* Finnish him! */
     DBG(FUNC, "Unloading mod_khomp...")
@@ -1412,7 +1427,7 @@ extern "C" void Kstdcall khompAudioListener (int32 deviceid, int32 objectid, byt
     try
     {
     
-    //If NULL get throws K3LAPI::invalid_channel exception.
+    //If NULL get throws K3LAPITraits::invalid_channel exception.
     Board::KhompPvt * pvt = Board::get(deviceid, objectid);
 
     /* add listener audio to the read buffer */
@@ -1485,7 +1500,7 @@ extern "C" void Kstdcall khompAudioListener (int32 deviceid, int32 objectid, byt
     }
 
     }
-    catch (K3LAPI::invalid_channel & err)
+    catch (K3LAPITraits::invalid_channel & err)
     {
         LOG(ERROR, OBJ_FMT(deviceid, objectid, "Invalid channel..."));
         return;

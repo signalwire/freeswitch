@@ -43,6 +43,7 @@
 #include <stdexcept>
 #pragma GCC visibility pop
 
+#include <config_commons.hpp>
 #include <format.hpp>
 
 #include <configurator/configfile.hpp>
@@ -57,7 +58,12 @@ struct Logfile: public Configfile
     Logfile();
     ~Logfile();
 
+#if COMMONS_AT_LEAST(1,1)
+    bool select(Section **, const std::string & str = "");
+#else
     bool select(Section **, std::string str = "");
+#endif
+
     bool serialize(std::ofstream &);
 
     Section & root() { return _logoptions; };

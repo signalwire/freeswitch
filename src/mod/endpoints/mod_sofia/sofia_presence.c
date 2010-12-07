@@ -86,6 +86,10 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *to_uri = NULL;
 	switch_console_callback_match_t *list = NULL;
 	switch_console_callback_match_node_t *m;
+	char *remote_ip = NULL;
+	char *user_via = NULL;
+	char *contact_str = NULL;
+	char *dup_dest = NULL;
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -181,12 +185,80 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	
 		/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
 
+		remote_ip = malloc(sizeof(80));
+		dup_dest = strdup(dst->contact);
+
+		if (switch_stristr("fs_path", dst->contact)) {
+			char *remote_host = NULL;
+			const char *s;
+
+			if ((s = switch_stristr("fs_path=", dst->contact))) {
+				s += 8;
+			}
+			if (s) {
+				remote_host = strdup(s);
+				switch_url_decode(remote_host);
+			}
+			if (!zstr(remote_host)) {
+				switch_split_user_domain(remote_host, NULL, &remote_ip);
+			}
+			switch_safe_free(remote_host);
+		}
+
+		if (zstr(remote_ip)) {
+			switch_split_user_domain(dup_dest, NULL, &remote_ip);
+		}
+
+		if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
+			char *ptr = NULL;
+			const char *transport_str = NULL;
+			if ((ptr = sofia_glue_find_parameter(dst->contact, "transport="))) {
+				sofia_transport_t transport = sofia_glue_str2transport(ptr);
+				transport_str = sofia_glue_transport2str(transport);
+				switch (transport) {
+				case SOFIA_TRANSPORT_TCP:
+					contact_str = profile->tcp_public_contact;
+					break;
+				case SOFIA_TRANSPORT_TCP_TLS:
+					contact_str = profile->tls_public_contact;
+					break;
+				default:
+					contact_str = profile->public_url;
+					break;
+				}
+				user_via = sofia_glue_create_external_via(NULL, profile, transport);
+			} else {
+				user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
+				contact_str = profile->public_url;
+			}
+		} else {
+			contact_str = profile->url;
+		}
+
+		switch_safe_free(dup_dest);
+		free(remote_ip);
+
 		status = SWITCH_STATUS_SUCCESS;
+
 		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
-		msg_nh = nua_handle(profile->nua, NULL, TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-							SIPTAG_FROM_STR(from), TAG_IF(contact, NUTAG_URL(contact)), SIPTAG_TO_STR(dst->to), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+
+		msg_nh = nua_handle(profile->nua, NULL,
+							TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
+							TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+							SIPTAG_FROM_STR(from),
+							TAG_IF(contact, NUTAG_URL(contact)),
+							SIPTAG_TO_STR(dst->to),
+							SIPTAG_CONTACT_STR(contact_str),
+							TAG_END());
+
 		nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
-		nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
+		
+		nua_message(msg_nh,
+					TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+					SIPTAG_CONTENT_TYPE_STR(ct),
+					SIPTAG_PAYLOAD_STR(body),
+					TAG_END());
+
 		sofia_glue_free_destination(dst);
 	}		
 	
@@ -197,6 +269,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	switch_safe_free(contact);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
+
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
 	}

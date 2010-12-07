@@ -99,11 +99,51 @@ struct Command
     std::string usage;                 /* usage of the command, a help */
 };
 
+struct CommandXMLOutput : public Command
+{
+    void createRoot(const char *name)
+    {
+        root = switch_xml_new(name);
+    }
+
+    void insertXML(switch_xml_t xml)
+    {
+        switch_xml_insert(xml,root,0);
+    }
+
+    void clearRoot()
+    {
+        if(root) 
+        {
+            switch_xml_free(root);
+            root = NULL;
+        }
+    }
+
+    void printXMLOutput(switch_stream_handle_t *stream)
+    {
+        K::Logger::Logg2(C_CLI,stream,switch_xml_toxml(root,SWITCH_FALSE)); 
+    }
+
+    CommandXMLOutput() : root(NULL) {};
+
+    switch_xml_t root;                 /* for commands that ouput as xml */
+};
+
 struct Cli 
 {
     /* Useful definitions --------------------------------------------------- */
     typedef switch_status_t (APIFunc)(const char*, switch_core_session_t*, switch_stream_handle_t*);
     typedef std::vector<Command*> Commands;
+
+    /* Define the output types form commands */
+    typedef enum 
+    {
+        VERBOSE = 1,
+        CONCISE,
+        DETAILED,
+        XML
+    } OutputType;
 
     /* register our commands, but you must create the command function */
     static void registerCommands(APIFunc func,switch_loadable_module_interface_t **mod_int);
@@ -145,27 +185,31 @@ struct Cli
     /* The Commands --------------------------------------------------------- */
 
     /* khomp summary */
-    static struct _KhompSummary : public Command
+    static struct _KhompSummary : public CommandXMLOutput
     {
         _KhompSummary(bool on_cli_term = true):
-        _on_cli_term(on_cli_term)
+        CommandXMLOutput(),
+        _on_cli_term(on_cli_term),
+        xdevs(NULL)
         {
             complete_name = "summary";
 
             options.push_back("verbose");
             options.push_back("concise");
+            options.push_back("xml");
 
             brief = "Print system info.";                                            
             usage =                                                            \
 "Prints detailed info about the system like API version and \n"                \
 "boards characteristics like DSPs version.\n\n"                                \
-"Usage: khomp summary [concise]";
+"Usage: khomp summary [concise|verbose|xml]";
 
             _commands.push_back(this);
         };
 
         bool execute(int argc, char *argv[]);
-        bool _on_cli_term; /* indicates if message is sent to fs_cli */
+        bool _on_cli_term;     /* indicates if message is sent to fs_cli */
+        switch_xml_t xdevs;  /* support xml needed to help the interation */
     } KhompSummary;
 
     /* khomp show calls */
@@ -239,21 +283,22 @@ struct Cli
     } KhompChannelsUnblock;
 
     /* khomp show statistics */
-    static struct _KhompShowStatistics : public Command 
+    static struct _KhompShowStatistics : public CommandXMLOutput
     {
-        _KhompShowStatistics()
+        _KhompShowStatistics() : CommandXMLOutput(), xdevs(NULL)
         {
             complete_name = "show statistics";
 
             options.push_back("verbose");
             options.push_back("detailed");
+            options.push_back("xml");
 
             brief = "Shows statistics of the channels.";
 
             usage =                                                            \
 "Shows statistics of the channels, like number of calls incoming \n"           \
 "and outgoing, status, status time.\n\n"                                       \
-"Usage: khomp show statistics [{verbose [<board> [<channel>]]} | \n"           \
+"Usage: khomp show statistics [{{verbose|xml} [<board> [<channel>]]} | \n"     \
 "                              {detailed <board> <channel>}]\n"                \
 "\tboard   -- Number of the board (start from 0).\n"                           \
 "\tchannel -- Number of the channel (start from 0).\n"                         \
@@ -274,20 +319,22 @@ struct Cli
         bool execute(int argc, char *argv[]);
 
         /* support functions */
-        void cliStatistics(unsigned int device);
-        void cliDetailedStatistics(unsigned int device, unsigned int channel);
+        void cliStatistics(unsigned int device, OutputType output_type);
+        void cliDetailedStatistics(unsigned int device, unsigned int channel, OutputType output_type);
+        switch_xml_t xdevs;  /* support xml needed to help the interation */
 
     } KhompShowStatistics;
 
     /* khomp show channels */
-    static struct _KhompShowChannels: public Command
+    static struct _KhompShowChannels: public CommandXMLOutput
     {
-        _KhompShowChannels()
+        _KhompShowChannels() : CommandXMLOutput(), xdev(NULL)
         {
             complete_name = "show channels";
 
             options.push_back("verbose");
             options.push_back("concise");
+            options.push_back("xml");
 
             brief = "Show all channels status.";                                                                               
             usage =                                                            \
@@ -295,34 +342,40 @@ struct Cli
 "khomp API point of view.\n\n"                                                 \
 "Usage: \n"                                                                    \
 "khomp show channels [{<board> [<channel>]} | \n"                              \
-                              "{{concise|verbose} [<board> [<channel>]]}]\n"   \
+                          "{{concise|verbose|xml} [<board> [<channel>]]}]\n"   \
 "\tboard -- Number of the board (start from 0).\n"                             \
 "e.g. khomp show channels - List status of all channels of all boards.\n"      \
 "e.g. khomp show channels concise 0 - List status of all channels of \n"       \
-"                                     board 0 in a concise way.";
+"                                     board 0 in a concise way.\n"             \
+"e.g. khomp show channels xml 0     - List status of all channels of \n"       \
+"                                     board 0 in a xml structure.";
 
             _commands.push_back(this);
         };
 
         /* support function for _KhompShowChannels */
-        void showChannel(unsigned int device, bool concise, unsigned int channel);
-        void showChannels(unsigned int device, bool concise);
+        void showChannel(unsigned int device, unsigned int channel, OutputType output_type = Cli::VERBOSE);
+        void showChannels(unsigned int device, OutputType output_type = Cli::VERBOSE);
 
         bool execute(int argc, char *argv[]);
+        switch_xml_t xdev; /* support xml needed to help the interation */
+
     } KhompShowChannels;
     
     /* khomp show links */
-    static struct _KhompShowLinks: public Command
+    static struct _KhompShowLinks: public CommandXMLOutput
     {
-        _KhompShowLinks()
+        _KhompShowLinks() : CommandXMLOutput(), xdev(NULL)
         {
             complete_name = "show links";
 
             options.push_back("verbose");
             options.push_back("concise");
+            options.push_back("xml");
             options.push_back("errors");
             options.push_back("errors verbose");
             options.push_back("errors concise");
+            options.push_back("errors xml");
 
             brief = "Show E1 link(s) status/errors counters in a concise \n"   \
             "way or not.";
@@ -332,8 +385,9 @@ struct Cli
 "status/the error counters of each link on the board. It prints in \n"         \
 "a concise way for parsing facilities.\n\n"                                    \
 "Usage: \n"                                                                    \
-"khomp show links [[errors] [{<board>} | {{concise|verbose} [<board>]}]]\n"    \
+"khomp show links [[errors] [{<board>} | {{concise|verbose|xml} [<board>]}]]\n"\
 "e.g. khomp show links          - Show all links of all boards.\n"             \
+"e.g. khomp show links xml      - Show all links of all boards in xml.\n"      \
 "e.g. khomp show links errors   - Show error counters of all links of \n"      \
 "                                 all boards.\n"                               \
 "e.g. khomp show links errors 0 - Show error counters of all links of \n"      \
@@ -343,10 +397,12 @@ struct Cli
         };
 
         /* support function for _KhompShowLinks */
-        void showLinks(unsigned int device, bool concise);
-        void showErrors(unsigned int device, bool concise);
+        void showLinks(unsigned int device, OutputType output_type = Cli::VERBOSE);
+        void showErrors(unsigned int device, OutputType output_type = Cli::VERBOSE);
+        std::string getLinkStatus(int dev, int obj, Verbose::Presentation fmt);
 
         bool execute(int argc, char *argv[]);
+        switch_xml_t xdev; /* support xml needed to help the interation */
     } KhompShowLinks;
 
     /* khomp clear links */
@@ -653,24 +709,41 @@ struct Cli
         {
             complete_name = "get";
 
+            options.push_back("dialplan");
             options.push_back("echo-canceller");
+            options.push_back("auto-gain-control");
             options.push_back("out-of-band-dtmfs");
+            options.push_back("suppression-delay");
             options.push_back("auto-fax-adjustment");
+            options.push_back("fax-adjustment-timeout");
             options.push_back("pulse-forwarding");
             options.push_back("r2-strict-behaviour");
             options.push_back("r2-preconnect-wait");
-            options.push_back("native-bridge");
-            options.push_back("suppression-delay");
-            options.push_back("context-fxo");
-            options.push_back("context-fxo-alt");
-            options.push_back("context-fxs");
-            options.push_back("context-fxs-alt");
-            options.push_back("context-gsm-call");
-            options.push_back("context-gsm-call-alt");
-            options.push_back("context-gsm-sms");
             options.push_back("context-digital");
+            options.push_back("context-fxs");
+            options.push_back("context-fxo");
+            options.push_back("context-gsm-call");
+            options.push_back("context-gsm-sms");
+            options.push_back("context-pr");
+            options.push_back("log-to-console");
+            options.push_back("log-to-disk");
+            options.push_back("trace");
             options.push_back("output-volume");
             options.push_back("input-volume");
+            options.push_back("fxs-global-orig");
+            options.push_back("fxs-co-dialtone");
+            options.push_back("fxs-bina");
+            options.push_back("disconnect-delay");
+            options.push_back("delay-ringback-co");
+            options.push_back("delay-ringback-pbx");
+            options.push_back("ignore-letter-dtmfs");
+            options.push_back("fxo-send-pre-audio");
+            options.push_back("fxs-digit-timeout");
+            options.push_back("drop-collect-call");
+            options.push_back("kommuter-activation");
+            options.push_back("kommuter-timeout");
+            options.push_back("user-transfer-digits");
+            options.push_back("flash-to-digits");
 
             brief = "Get configuration options in the Khomp channel.";
 
@@ -678,36 +751,37 @@ struct Cli
 "Usage: khomp get <option>\n"                                                  \
 "<option>  -- Shown below, with a short description each.\n\n"                 \
 "Option               Description\n"                                           \
+"dialplan             Gets the Name of the dialplan module in use.\n"          \
 "echo-canceller       Gets the echo cancellation procedures if they are \n"    \
-"                     avaliable.\n"                                            \
+"                      avaliable.\n"                                           \
+"auto-gain-control    Gets the AGC procedures if they are avaliable.\n"        \
 "out-of-band-dtmfs    Gets DTMFs to be sent out-of-band (using ast_frames) \n" \
-"                     instead of in-band (audio).\n"                           \
+"                      instead of in-band (audio).\n"                          \
+"suppression-delay    Enable/disable the internal buffer for DTMF \n"          \
+"                      suppression.\n"                                         \
 "auto-fax-adjustment  Gets the automatic adjustment for FAX (mainly, \n"       \
-"                     disables the echo canceller).\n"                         \
+"                      disables the echo canceller).\n"                        \
+//"fax-adjustment-timeout"
 "pulse-forwarding     Gets the forwarding of detected pulses as DTMF tones.\n" \
 "r2-strict-behaviour  Gets the R2 protocol behavior while answering lines.\n"  \
-"r2-preconnect-wait   Sets the R2 protocol delay to pre-connect after \n"      \
-"                     sending ringback signal.\n"                              \
-"native-bridge        Enable/disable the native bridge mode for the channel.\n"\
-"suppression-delay    Enable/disable the internal buffer for DTMF \n"          \
-"                     suppression.\n"                                          \
-"context-fxo          Context (may be a template) for receiving FXO calls.\n"  \
-"context-fxo-alt      Alternative context (may be a template) for \n"          \
-"                     receiving FXO calls.\n"                                  \
-"context-fxs          Context (may be a template) for receiving FXS calls.\n"  \
-"context-fxs-alt      Alternative context (may be a template) for \n"          \
-"                     receiving FXS calls.\n"                                  \
-"context-gsm-call     Context (may be a template) for receiving GSM calls.\n"  \
-"context-gsm-call-alt Alternative context (may be a template) for \n"          \
-"                     receiving GSM calls.\n"                                  \
-"context-gsm-sms      Context (may be a template) for receiving GSM \n"        \
-"                     messages.\n"                                             \
+"r2-preconnect-wait   Gets the R2 protocol delay to pre-connect after \n"      \
+"                      sending ringback signal.\n"                             \
 "context-digital      Context (may be a template) for receiving digital \n"    \
-"                     (E1) calls.\n"                                           \
+"                      (E1) calls.\n"                                          \
+"context-fxs          Context (may be a template) for receiving FXS calls.\n"  \
+"context-fxo          Context (may be a template) for receiving FXO calls.\n"  \
+"context-gsm-call     Context (may be a template) for receiving GSM calls.\n"  \
+"context-gsm-sms      Context (may be a template) for receiving GSM \n"        \
+"                      messages.\n"                                            \
+"context-pr           Context (may be a template) for receiving calls on \n"   \
+"                      Passive Record boards.\n"                               \
+"log-to-console       Gets the logging of messages to console.\n"              \
+"log-to-disk          Gets the logging of messages to disk.\n"                 \
+"trace                Gets the low level tracing.\n"                           \
 "output-volume        Gets the volume multiplier to be applied by the \n"      \
-"                     board over the output audio.\n"                          \
+"                      board over the output audio.\n"                         \
 "input-volume         Gets the volume multiplier to be applied by the \n"      \
-"                     board over the input audio.\n\n"                         \
+"                      board over the input audio.\n\n"                        \
 "FOR ALL COMMANDS, CHECK THE DOCUMENTATION.";
 
             _commands.push_back(this);
@@ -723,24 +797,42 @@ struct Cli
         {
             complete_name = "set";
 
+            options.push_back("dialplan");
             options.push_back("echo-canceller");
+            options.push_back("auto-gain-control");
             options.push_back("out-of-band-dtmfs");
+            options.push_back("suppression-delay");
             options.push_back("auto-fax-adjustment");
+            options.push_back("fax-adjustment-timeout");
             options.push_back("pulse-forwarding");
             options.push_back("r2-strict-behaviour");
             options.push_back("r2-preconnect-wait");
-            options.push_back("native-bridge");
-            options.push_back("suppression-delay");
-            options.push_back("context-fxo");
-            options.push_back("context-fxo-alt");
-            options.push_back("context-fxs");
-            options.push_back("context-fxs-alt");
-            options.push_back("context-gsm-call");
-            options.push_back("context-gsm-call-alt");
-            options.push_back("context-gsm-sms");
             options.push_back("context-digital");
+            options.push_back("context-fxs");
+            options.push_back("context-fxo");
+            options.push_back("context-gsm-call");
+            options.push_back("context-gsm-sms");
+            options.push_back("context-pr");
+            options.push_back("log-to-console");
+            options.push_back("log-to-disk");
+            options.push_back("trace");
             options.push_back("output-volume");
             options.push_back("input-volume");
+            options.push_back("fxs-global-orig");
+            options.push_back("fxs-co-dialtone");
+            options.push_back("fxs-bina");
+            options.push_back("disconnect-delay");
+            options.push_back("delay-ringback-co");
+            options.push_back("delay-ringback-pbx");
+            options.push_back("ignore-letter-dtmfs");
+            options.push_back("fxo-send-pre-audio");
+            options.push_back("fxs-digit-timeout");
+            options.push_back("drop-collect-call");
+            options.push_back("kommuter-activation");
+            options.push_back("kommuter-timeout");
+            options.push_back("user-transfer-digits");
+            options.push_back("flash-to-digits");
+
             brief = "Ajust configuration options in the Khomp channel.";
 
             usage =                                                            \
@@ -749,36 +841,36 @@ struct Cli
 "\t<value>   -- Depends on the option. Check the documentation for \n"         \
 "\t             more info.\n\n"                                                \
 "Option               Description\n"                                           \
+"dialplan             Sets the Name of the dialplan module in use.\n"          \
 "echo-canceller       Sets the echo cancellation procedures if they are \n"    \
-"                     avaliable.\n"                                            \
+"                      avaliable.\n"                                           \
+"auto-gain-control    Sets the AGC procedures if they are avaliable.\n"        \
 "out-of-band-dtmfs    Sets DTMFs to be sent out-of-band (using ast_frames) \n" \
-"                     instead of in-band (audio).\n"                           \
+"                      instead of in-band (audio).\n"                          \
+"suppression-delay    Enable/disable the internal buffer for DTMF \n"          \
+"                      suppression.\n"                                         \
 "auto-fax-adjustment  Sets the automatic adjustment for FAX (mainly, \n"       \
-"                     disables the echo canceller).\n"                         \
+"                      disables the echo canceller).\n"                        \
 "pulse-forwarding     Sets the forwarding of detected pulses as DTMF tones.\n" \
 "r2-strict-behaviour  Sets the R2 protocol behavior while answering lines.\n"  \
 "r2-preconnect-wait   Sets the R2 protocol delay to pre-connect after \n"      \
-"                     sending ringback signal.\n"                              \
-"native-bridge        Enable/disable the native bridge mode for the channel.\n"\
-"suppression-delay    Enable/disable the internal buffer for DTMF \n"          \
-"                     suppression.\n"                                          \
-"context-fxo          Context (may be a template) for receiving FXO calls.\n"  \
-"context-fxo-alt      Alternative context (may be a template) for \n"          \
-"                     receiving FXO calls.\n"                                  \
-"context-fxs          Context (may be a template) for receiving FXS calls.\n"  \
-"context-fxs-alt      Alternative context (may be a template) for \n"          \
-"                     receiving FXS calls.\n"                                  \
-"context-gsm-call     Context (may be a template) for receiving GSM calls.\n"  \
-"context-gsm-call-alt Alternative context (may be a template) for \n"          \
-"                     receiving GSM calls.\n"                                  \
-"context-gsm-sms      Context (may be a template) for receiving GSM \n"        \
-"                     messages.\n"                                             \
+"                      sending ringback signal.\n"                             \
 "context-digital      Context (may be a template) for receiving digital \n"    \
-"                     (E1) calls.\n"                                           \
+"                      (E1) calls.\n"                                          \
+"context-fxs          Context (may be a template) for receiving FXS calls.\n"  \
+"context-fxo          Context (may be a template) for receiving FXO calls.\n"  \
+"context-gsm-call     Context (may be a template) for receiving GSM calls.\n"  \
+"context-gsm-sms      Context (may be a template) for receiving GSM \n"        \
+"                      messages.\n"                                            \
+"context-pr           Context (may be a template) for receiving calls on \n"   \
+"                      Passive Record boards.\n"                               \
+"log-to-console       Sets the logging of messages to console.\n"              \
+"log-to-disk          Sets the logging of messages to disk.\n"                 \
+"trace                Sets the low level tracing.\n"                           \
 "output-volume        Sets the volume multiplier to be applied by the \n"      \
-"                     board over the output audio.\n"                          \
+"                      board over the output audio.\n"                         \
 "input-volume         Sets the volume multiplier to be applied by the \n"      \
-"                     board over the input audio.\n\n"                         \
+"                      board over the input audio.\n\n"                        \
 "FOR ALL COMMANDS, CHECK THE DOCUMENTATION.";
 
             _commands.push_back(this);

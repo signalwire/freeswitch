@@ -1005,7 +1005,7 @@ int main(int argc, char *argv[])
 	int temp_log = -1;
 	int argv_error = 0;
 	int argv_exec = 0;
-	char argv_command[256] = "";
+	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
 	int loops = 2, reconnect = 0;

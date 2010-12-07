@@ -341,8 +341,8 @@ static void send_caller_id(ftdm_channel_t *ftdmchan)
 static void analog_dial(ftdm_channel_t *ftdmchan, uint32_t *state_counter, uint32_t *dial_timeout)
 {
 	if (ftdm_strlen_zero(ftdmchan->caller_data.dnis.digits)) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "No Digits to send!\n");
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No digits to send, moving to UP!\n");
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
 	} else {
 		if (ftdm_channel_command(ftdmchan, FTDM_COMMAND_SEND_DTMF, ftdmchan->caller_data.dnis.digits) != FTDM_SUCCESS) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Send Digits Failed [%s]\n", ftdmchan->last_error);

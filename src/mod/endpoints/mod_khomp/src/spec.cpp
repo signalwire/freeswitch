@@ -66,7 +66,7 @@ static SpecRetType processSpecAtom(std::string & atom, SpecFlagsType & flags, Sp
     {
    		std::string group_name = allocstr.substr(1);
 
-		Opt::GroupToDestMapType::iterator it = Opt::_groups.find(group_name);
+		GroupToDestMapType::iterator it = Opt::_groups.find(group_name);
 
 		if (it == Opt::_groups.end())
 		{
@@ -78,9 +78,9 @@ static SpecRetType processSpecAtom(std::string & atom, SpecFlagsType & flags, Sp
 		return processSpecAtoms(allocstr, flags, fun);
     }
 
-    Regex::Expression e("(((([bB])[ ]*([0-9]+))|(([sS])[ ]*([0-9]+)))[ ]*(([cClL])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)?)|(([rR])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)", Regex::E_EXTENDED);
+    //Regex::Expression e("(((([bB])[ ]*([0-9]+))|(([sS])[ ]*([0-9]+)))[ ]*(([cClL])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)?)|(([rR])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)", Regex::E_EXTENDED);
 
-	Regex::Match what(allocstr, e);
+	Regex::Match what(allocstr, Globals::regex_allocation);
 
 	if (!what.matched())
 	{
@@ -170,7 +170,7 @@ static SpecRetType processSpecAtom(std::string & atom, SpecFlagsType & flags, Sp
 					for (unsigned int i = branch_id; i <= branch2_id; i++)
 					{
 						std::string call_addr = BoardE1::KhompPvtFXS::padOrig(base_addr, i - branch_id);
-						Opt::BranchToObjectMapType::iterator i = Opt::_fxs_branch_map.find(call_addr);
+						BranchToObjectMapType::iterator i = Opt::_fxs_branch_map.find(call_addr);
 
 						if (i == Opt::_fxs_branch_map.end())
 						{
@@ -188,7 +188,7 @@ static SpecRetType processSpecAtom(std::string & atom, SpecFlagsType & flags, Sp
 					{
 						std::string call_addr = BoardE1::KhompPvtFXS::padOrig(base_addr, i - branch_id);
 
-						Opt::BranchToObjectMapType::iterator i = Opt::_fxs_branch_map.find(call_addr);
+						BranchToObjectMapType::iterator i = Opt::_fxs_branch_map.find(call_addr);
 
 						if (i == Opt::_fxs_branch_map.end())
 						{
@@ -205,7 +205,7 @@ static SpecRetType processSpecAtom(std::string & atom, SpecFlagsType & flags, Sp
 			{
 				DBG(FUNC, D("branch matched: %s") % base_addr);
 
-				Opt::BranchToObjectMapType::iterator i = Opt::_fxs_branch_map.find(base_addr);
+				BranchToObjectMapType::iterator i = Opt::_fxs_branch_map.find(base_addr);
 
 				if (i == Opt::_fxs_branch_map.end())
 				{
@@ -440,7 +440,7 @@ struct funProcessCallChannelString
 		    if (_all_fail)
 			    _all_fail = (tmp ? !tmp->isOK() : true);
         }
-        catch (K3LAPI::invalid_channel & err)
+        catch (K3LAPITraits::invalid_channel & err)
         {
             _all_fail = true;
         }
@@ -599,7 +599,7 @@ struct FunProcessGroupString
 
             if (pvt) pvt->_group_context = _ctx;
         }
-        catch (K3LAPI::invalid_channel & err)
+        catch (K3LAPITraits::invalid_channel & err)
         {
         }
 
@@ -634,8 +634,13 @@ static bool processCallChannelString(std::string & str, Board::KhompPvt *& pvt, 
             pvt = proc.pvt(flags);
 			DBG(FUNC, D("pvt = %p") % pvt);
 
-			if (!pvt && cause && !(*cause))
-				*cause = SWITCH_CAUSE_INTERWORKING;
+			if (cause && !(*cause))
+            {
+    			if (!pvt)
+			    	*cause = SWITCH_CAUSE_INTERWORKING;
+                else
+			    	*cause = SWITCH_CAUSE_SUCCESS;
+            }
 
 			ret = true;
             break;
@@ -663,9 +668,14 @@ bool processSMSChannelString(std::string & str, Board::KhompPvt *& pvt, int *cau
         case SPR_CONTINUE:
             pvt = proc.pvt(flags);
             DBG(FUNC, FMT("pvt = %p") % pvt);
-
-            if (!pvt && cause && !(*cause))
-                *cause = SWITCH_CAUSE_INTERWORKING;
+			
+            if (cause && !(*cause))
+            {
+    			if (!pvt)
+			    	*cause = SWITCH_CAUSE_INTERWORKING;
+                else
+			    	*cause = SWITCH_CAUSE_SUCCESS;
+            }
 
             return true;
     }    
@@ -685,7 +695,7 @@ Board::KhompPvt * processDialString (const char *dial_charv, int *cause)
 
     DBG(FUNC, FMT("processing dial string [%d] : '%s'") % dial_args.size() % dial_string);
 
-	if ((dial_args.size() < 1 && dial_args.size() > 3))
+	if ((dial_args.size() < 1 || dial_args.size() > 3))
 	{
 		LOG(ERROR, FMT("invalid dial string '%s': wrong number of separators ('/').") % dial_string);
 		return NULL;
@@ -837,7 +847,7 @@ Board::KhompPvt * processSMSString (const char *sms_charv, int *cause)
 
 void processGroupString()
 {
-    for (Opt::GroupToDestMapType::iterator i = Opt::_groups.begin(); i != Opt::_groups.end(); i++)
+    for (GroupToDestMapType::iterator i = Opt::_groups.begin(); i != Opt::_groups.end(); i++)
     {
         const std::string & name = (*i).first;
         std::string & opts = (*i).second;

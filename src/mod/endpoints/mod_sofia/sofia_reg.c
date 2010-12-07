@@ -511,7 +511,7 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 	const char *contenttype = "application/simple-message-summary";
 	const char *body = "";
 
-	if (switch_stristr("snom", user_agent)) {
+	if (switch_stristr("snom", user_agent) || switch_stristr("yealink", user_agent)) {
 		event = "check-sync;reboot=true";
 	} else if (switch_stristr("linksys", user_agent)) {
 		event = "reboot_now";

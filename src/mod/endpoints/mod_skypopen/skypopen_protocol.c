@@ -846,7 +846,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 		if (!(running && tech_pvt->running))
 			break;
 		FD_ZERO(&fsgio);
-		togio.tv_usec = 20000;	//20msec
+		togio.tv_usec = MS_SKYPOPEN * 1000;
 		togio.tv_sec = 0;
 		fdselectgio = s;
 		FD_SET(fdselectgio, &fsgio);
@@ -888,14 +888,14 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 					fdselect = fd;
 					FD_ZERO(&fs);
 					FD_SET(fdselect, &fs);
-					to.tv_usec = 60000;	//60 msec
+					to.tv_usec = MS_SKYPOPEN * 1000 * 3;
 					to.tv_sec = 0;
 
 					rt = select(fdselect + 1, &fs, NULL, NULL, &to);
 					if (rt > 0) {
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
-							len = recv(fd, (char *) srv_in, 640, 0);
+							len = recv(fd, (char *) srv_in, BYTES_PER_FRAME, 0);
 						} else {
 							skypopen_sleep(10000);
 							continue;
@@ -916,13 +916,15 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 							if (tech_pvt->read_buffer) {
 								if (switch_buffer_freespace(tech_pvt->read_buffer) < len) {
 									switch_buffer_zero(tech_pvt->read_buffer);
+									switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 									nospace = 1;
+								} else {
+									switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 								}
-								switch_buffer_write(tech_pvt->read_buffer, srv_in, len);
 							}
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 							if (nospace) {
-								DEBUGA_SKYPE("NO SPACE READ: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
+								WARNINGA("NO SPACE READ: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
 							}
 						} else if (len == 0) {
 							DEBUGA_SKYPE("CLOSED\n", SKYPOPEN_P_LOG);
@@ -1005,7 +1007,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 		if (!(running && tech_pvt->running))
 			break;
 		FD_ZERO(&fsgio);
-		togio.tv_usec = 60000;	//60msec
+		togio.tv_usec = MS_SKYPOPEN * 1000 * 3;	
 		togio.tv_sec = 0;
 		fdselectgio = s;
 		FD_SET(fdselectgio, &fsgio);
@@ -1048,7 +1050,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 
 					if (tech_pvt->begin_to_write == 0) {
 						memset(cli_out, 255, sizeof(cli_out));
-						bytes_to_write = 640;
+						bytes_to_write = BYTES_PER_FRAME;
 						len = send(fd, (char *) cli_out, bytes_to_write, 0);
 						if (len == -1) {
 							DEBUGA_SKYPE("len=%d, error: %s\n", SKYPOPEN_P_LOG, len, strerror(errno));
@@ -1065,14 +1067,14 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 						}
 						switch_mutex_lock(tech_pvt->mutex_audio_cli);
 						if (tech_pvt->write_buffer && switch_buffer_inuse(tech_pvt->write_buffer)) {
-							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, 640);
+							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, BYTES_PER_FRAME);
 						}
 						switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 
 						if (!bytes_to_write) {
 							if (tech_pvt->write_silence_when_idle) {
 								memset(cli_out, 255, sizeof(cli_out));
-								bytes_to_write = 640;
+								bytes_to_write = BYTES_PER_FRAME;
 								//DEBUGA_SKYPE("WRITE Silence!\n", SKYPOPEN_P_LOG);
 							} else {
 								continue;
@@ -1118,8 +1120,12 @@ int skypopen_senddigit(private_t *tech_pvt, char digit)
 	char msg_to_skype[1024];
 
 	DEBUGA_SKYPE("DIGIT received: %c\n", SKYPOPEN_P_LOG, digit);
-	sprintf(msg_to_skype, "SET CALL %s DTMF %c", tech_pvt->skype_call_id, digit);
-	skypopen_signaling_write(tech_pvt, msg_to_skype);
+	if(digit != 'a' && digit != 'A'  && digit != 'b' && digit != 'B' && digit != 'c' && digit != 'C' && digit != 'd' && digit != 'D'){
+		sprintf(msg_to_skype, "SET CALL %s DTMF %c", tech_pvt->skype_call_id, digit);
+		skypopen_signaling_write(tech_pvt, msg_to_skype);
+	} else {
+		WARNINGA("Received DTMF DIGIT \"%c\", but not relayed to Skype client because Skype client accepts only 0-9*#\n", SKYPOPEN_P_LOG, digit);
+	}
 
 	return 0;
 }
