@@ -56,7 +56,10 @@ typedef enum {
 	FTDM_R2_RUNNING = (1 << 0),
 } ftdm_r2_flag_t;
 
-/* private call information stored in ftdmchan->call_data void* ptr */
+/* private call information stored in ftdmchan->call_data void* ptr,
+ * remember that each time you add a new member to this structure
+ * most likely you want to clear it in ft_r2_clean_call function
+ * */
 #define R2CALL(ftdmchan) ((ftdm_r2_call_t*)((ftdmchan)->call_data))
 typedef struct ftdm_r2_call_t {
 	openr2_chan_t *r2chan;
@@ -322,8 +325,20 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 static void ft_r2_clean_call(ftdm_r2_call_t *call)
 {
 	openr2_chan_t *r2chan = call->r2chan;
-	memset(call, 0, sizeof(*call));
+	
+	/* Do not memset call structure, that clears values we do not want to clear, 
+	 * like the log name set in on_call_log_created() */
 	call->r2chan = r2chan;
+	call->accepted = 0;
+	call->answer_pending = 0;
+	call->disconnect_rcvd = 0;
+	call->ftdm_call_started = 0;
+	call->protocol_error = 0;
+	call->chanstate = FTDM_CHANNEL_STATE_DOWN;
+	call->dnis_index = 0;
+	call->ani_index = 0;
+	call->name[0] = 0;
+	call->txdrops = 0;
 }
 
 static void ft_r2_accept_call(ftdm_channel_t *ftdmchan)
@@ -367,6 +382,12 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
+	/* start io dump */
+	if (r2data->mf_dump_size) {
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_INPUT_DUMP, &r2data->mf_dump_size);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_OUTPUT_DUMP, &r2data->mf_dump_size);
+	}
+
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
 			ftdmchan->caller_data.cid_num.digits, 
 			ftdmchan->caller_data.dnis.digits, 
@@ -382,6 +403,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 				ftdm_channel_state2str(ftdmchan->state));
 		return FTDM_BREAK;
 	}
+
 	return FTDM_SUCCESS;
 }
 
@@ -414,7 +436,7 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
 }
 
 /* always called from the monitor thread */
-static void ftdm_r2_on_call_init(openr2_chan_t *r2chan, const char *logname)
+static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 {
 	ftdm_r2_call_t *r2call;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
@@ -447,8 +469,6 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan, const char *logname)
 	ft_r2_clean_call(ftdmchan->call_data);
 	r2call = R2CALL(ftdmchan);
 
-	snprintf(r2call->logname, sizeof(r2call->logname), "%s", logname);
-
 	/* start io dump */
 	if (r2data->mf_dump_size) {
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_INPUT_DUMP, &r2data->mf_dump_size);
@@ -459,6 +479,7 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan, const char *logname)
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
 }
 
+static void dump_mf(openr2_chan_t *r2chan);
 /* only called for incoming calls when the ANI, DNIS etc is complete and the user has to decide either to accept or reject the call */
 static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, const char *dnis, openr2_calling_party_category_t category)
 {
@@ -467,6 +488,8 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+
+	dump_mf(r2chan);
 
 	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
 	if (r2data->mf_dump_size) {
@@ -759,6 +782,16 @@ static void ftdm_r2_on_ani_digit_received(openr2_chan_t *r2chan, char digit)
 	R2CALL(ftdmchan)->ani_index = collected_len;
 }
 
+static void ftdm_r2_on_billing_pulse(openr2_chan_t *r2chan) {}
+
+static void ftdm_r2_on_call_log_created(openr2_chan_t *r2chan, const char *logname)
+{
+	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_r2_call_t *r2call = R2CALL(ftdmchan);
+	/* this is used when dumping I/O for debugging */
+	snprintf(r2call->logname, sizeof(r2call->logname), "%s", logname);
+}
+
 static openr2_event_interface_t ftdm_r2_event_iface = {
 	/* .on_call_init */ ftdm_r2_on_call_init,
 	/* .on_call_offered */ ftdm_r2_on_call_offered,
@@ -779,7 +812,8 @@ static openr2_event_interface_t ftdm_r2_event_iface = {
 	/* .on_ani_digit_received */ ftdm_r2_on_ani_digit_received,
 
 	/* so far we do nothing with billing pulses */
-	/* .on_billing_pulse_received */ NULL,
+	/* .on_billing_pulse_received */ ftdm_r2_on_billing_pulse,
+	/* .on_call_log_created */ ftdm_r2_on_call_log_created,
 };
 
 static int ftdm_r2_io_set_cas(openr2_chan_t *r2chan, int cas)
