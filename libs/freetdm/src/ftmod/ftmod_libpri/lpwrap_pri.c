@@ -134,17 +134,18 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	spri->errs = 0;
 	res = (int)len;
 
-	memset(&((unsigned char*)buf)[res], 0, 2);
-	res += 2;
-
+	if (res > 0) {
+		memset(&((unsigned char*)buf)[res], 0, 2);
+		res += 2;
 #ifdef IODEBUG
-	{
-		char bb[2048] = { 0 };
+		{
+			char bb[2048] = { 0 };
 
-		print_hex_bytes(buf, res - 2, bb, sizeof(bb));
-		ftdm_log(FTDM_LOG_DEBUG, "READ %d\n", res - 2);
-	}
+			print_hex_bytes(buf, res - 2, bb, sizeof(bb));
+			ftdm_log(FTDM_LOG_DEBUG, "READ %d\n", res - 2);
+		}
 #endif
+	}
 	return res;
 }
 
