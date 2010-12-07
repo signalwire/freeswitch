@@ -7001,6 +7001,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (tech_pvt->caller_profile) {
 
+		int first_history_info = 1;
+
 		if (rpid) {
 			if (rpid->rpid_privacy) {
 				if (!strcasecmp(rpid->rpid_privacy, "yes")) {
@@ -7045,7 +7047,25 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					}
 				}
 			} else if (!strncasecmp(un->un_name, "History-Info", 12)) {
-				switch_channel_set_variable(channel, "sip_history_info", un->un_value);
+				if (first_history_info) {
+					/* If the header exists first time, make sure to remove old info and re-set the variable */
+					switch_channel_set_variable(channel, "sip_history_info", un->un_value);
+					first_history_info = 0;
+				} else {
+					/* Append the History-Info into one long string */
+					const char *history_var = switch_channel_get_variable(channel, "sip_history_info");
+					if (!zstr(history_var)) {
+						char *tmp_str;
+						if ((tmp_str = switch_mprintf("%s, %s", history_var, un->un_value))) {
+							switch_channel_set_variable(channel, "sip_history_info", tmp_str);
+							free(tmp_str);
+						} else {
+							switch_channel_set_variable(channel, "sip_history_info", un->un_value);
+						}
+					} else {
+						switch_channel_set_variable(channel, "sip_history_info", un->un_value);
+					}
+				}
 			} else if (!strcasecmp(un->un_name, "X-FS-Support")) {
 				tech_pvt->x_freeswitch_support_remote = switch_core_session_strdup(session, un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {

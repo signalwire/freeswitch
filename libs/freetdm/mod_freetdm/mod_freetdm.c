@@ -1417,6 +1417,24 @@ fail:
 
 }
 
+static void ftdm_enable_channel_dtmf(ftdm_channel_t *fchan, switch_channel_t *channel)
+{
+	if (channel) {
+		const char *var;
+		if ((var = switch_channel_get_variable(channel, "freetdm_disable_dtmf"))) {
+			if (switch_true(var)) {
+				ftdm_channel_command(fchan, FTDM_COMMAND_DISABLE_DTMF_DETECT, NULL);
+				ftdm_log(FTDM_LOG_INFO, "DTMF detection disabled in channel %d:%d\n", ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
+				return;
+			}
+		}
+		/* the variable is not present or has a negative value then proceed to enable DTMF ... */
+	}
+	if (ftdm_channel_command(fchan, FTDM_COMMAND_ENABLE_DTMF_DETECT, NULL) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to enable DTMF detection in channel %d:%d\n", ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
+	}
+}
+
 ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session_t **sp)
 {
 	switch_core_session_t *session = NULL;
@@ -1440,6 +1458,9 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		return FTDM_FAIL;
 	}
 	
+	/* I guess we always want DTMF detection */
+	ftdm_enable_channel_dtmf(sigmsg->channel, NULL);
+
 	switch_core_session_add_stream(session, NULL);
 	
 	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
@@ -1631,24 +1652,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 	switch_event_fire(&event);
 
 	return FTDM_BREAK;
-}
-
-static void ftdm_enable_channel_dtmf(ftdm_channel_t *fchan, switch_channel_t *channel)
-{
-	if (channel) {
-		const char *var;
-		if ((var = switch_channel_get_variable(channel, "freetdm_disable_dtmf"))) {
-			if (switch_true(var)) {
-				ftdm_channel_command(fchan, FTDM_COMMAND_DISABLE_DTMF_DETECT, NULL);
-				ftdm_log(FTDM_LOG_INFO, "DTMF detection disabled in channel %d:%d\n", ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
-				return;
-			}
-		}
-		/* the variable is not present or has a negative value then proceed to enable DTMF ... */
-	}
-	if (ftdm_channel_command(fchan, FTDM_COMMAND_ENABLE_DTMF_DETECT, NULL) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to enable DTMF detection in channel %d:%d\n", ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
-	}
 }
 
 static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
@@ -2059,6 +2062,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 
+		case FTDM_SIGEVENT_PROCEED:{} break;
+
 		default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled event %d from R2 for channel %d:%d\n",
@@ -2092,8 +2097,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		{
 			ftdm_channel_add_var(sigmsg->channel, "screening_ind", ftdm_screening2str(caller_data->screen));
 			ftdm_channel_add_var(sigmsg->channel, "presentation_ind", ftdm_presentation2str(caller_data->pres));
-			
-			ftdm_enable_channel_dtmf(sigmsg->channel, NULL);
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
@@ -3234,8 +3237,8 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "r2_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
+			char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
 			ftdm_status_t zstatus = FTDM_FAIL;
 
 			/* common non r2 stuff */
@@ -3249,7 +3252,20 @@ static switch_status_t load_config(void)
 			ftdm_conf_parameter_t spanparameters[30];
 			unsigned paramindex = 0;
 
+			if (!name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "'name' attribute required for R2 spans!\n");
+				continue;
+			}
+
 			memset(spanparameters, 0, sizeof(spanparameters));
+
+			if (configname) {
+				paramindex = add_profile_parameters(cfg, configname, spanparameters, ftdm_array_len(spanparameters));
+				if (paramindex) {
+					ftdm_log(FTDM_LOG_DEBUG, "Added %d parameters from profile %s for span %d\n", paramindex, configname, span_id);
+				}
+			}
+
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -3270,36 +3286,16 @@ static switch_status_t load_config(void)
 				}
 			}
 
-			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "either 'id' or 'name' required params are missing\n");
-				continue;
-			}
-
-			if (name) {
-				zstatus = ftdm_span_find_by_name(name, &span);
-			} else {
-				if (switch_is_number(id)) {
-					span_id = atoi(id);
-					zstatus = ftdm_span_find(span_id, &span);
-				}
-
-				if (zstatus != FTDM_SUCCESS) {
-					zstatus = ftdm_span_find_by_name(id, &span);
-				}
-			}
-
+			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM R2 Span '%s'\n", name);
 				continue;
 			}
-
-			if (!span_id) {
-				span_id = ftdm_span_get_id(span);
-			}
+			span_id = ftdm_span_get_id(span);
 
 			if (ftdm_configure_span_signaling(span, "r2", on_r2_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring R2 FreeTDM span %d, error: %s\n", 
-				span_id, ftdm_span_get_last_error(span));
+				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM R2 span %s, error: %s\n", 
+				name, ftdm_span_get_last_error(span));
 				continue;
 			}
 
@@ -3314,10 +3310,10 @@ static switch_status_t load_config(void)
 			SPAN_CONFIG[span_id].span = span;
 			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
 			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
-			switch_copy_string(SPAN_CONFIG[span_id].type, "r2", sizeof(SPAN_CONFIG[span_id].type));
+			switch_copy_string(SPAN_CONFIG[span_id].type, "R2", sizeof(SPAN_CONFIG[span_id].type));
 
 			if (ftdm_span_start(span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting R2 FreeTDM span %d, error: %s\n", span_id, ftdm_span_get_last_error(span));
+				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
 				continue;
 			}
 		}

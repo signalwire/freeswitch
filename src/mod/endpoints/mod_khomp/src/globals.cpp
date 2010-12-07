@@ -52,7 +52,9 @@ Globals::GlobalTimer           * Globals::global_timer = NULL;
 
 Globals::Mutex                   Globals::khomp_alloc_mutex;
 
-ConfigOptions                    Globals::options;
+Config::Options                  Globals::options;
+
+const Regex::Expression          Globals::regex_allocation("(((([bB])[ ]*([0-9]+))|(([sS])[ ]*([0-9]+)))[ ]*(([cClL])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)?)|(([rR])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)", Regex::E_EXTENDED);
 
 switch_endpoint_interface_t    * Globals::khomp_endpoint_interface     = NULL;
 switch_endpoint_interface_t    * Globals::khomp_sms_endpoint_interface = NULL;

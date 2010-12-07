@@ -162,7 +162,6 @@ Global
 		{08C3EA27-A51D-47F8-B47D-B189C649CF30}.Debug|Win32.ActiveCfg = Debug|Win32
 		{08C3EA27-A51D-47F8-B47D-B189C649CF30}.Debug|x64.ActiveCfg = Debug|Win32
 		{08C3EA27-A51D-47F8-B47D-B189C649CF30}.Release|Win32.ActiveCfg = Release|Win32
-		{08C3EA27-A51D-47F8-B47D-B189C649CF30}.Release|Win32.Build.0 = Release|Win32
 		{08C3EA27-A51D-47F8-B47D-B189C649CF30}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution

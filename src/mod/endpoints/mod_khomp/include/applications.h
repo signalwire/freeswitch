@@ -268,7 +268,7 @@ struct Transfer
             if (!(_call->_flags.check(Kflags::XFER_DIALING)))
             {
                 _call->_flags.set(Kflags::XFER_DIALING);
-                _idx_xfer_dial = Board::board(_pvt->target().device)->_timers.add(Opt::_transferdigittimeout, &userXferTimer, _pvt, TM_VAL_CALL);
+                _idx_xfer_dial = Board::board(_pvt->target().device)->_timers.add(Opt::_options._transferdigittimeout(), &userXferTimer, _pvt, TM_VAL_CALL);
             }
             else
             {
@@ -280,7 +280,7 @@ struct Transfer
         }
 
         }
-        catch (K3LAPI::invalid_device & err)
+        catch (K3LAPITraits::invalid_device & err)
         {
             LOG(ERROR, PVT_FMT(_pvt->target(), "Unable to get device: %d!") % err.device);
         }
@@ -506,7 +506,7 @@ struct Transfer<T, false>
             if (!(_call->_flags.check(Kflags::XFER_DIALING) || _call->_flags.check(Kflags::XFER_QSIG_DIALING)))
             {
                 _call->_flags.set(Kflags::XFER_DIALING);
-                _idx_xfer_dial = Board::board(_pvt->target().device)->_timers.add(Opt::_transferdigittimeout, &userXferTimer, _pvt, TM_VAL_CALL);
+                _idx_xfer_dial = Board::board(_pvt->target().device)->_timers.add(Opt::_options._transferdigittimeout(), &userXferTimer, _pvt, TM_VAL_CALL);
             }
             else
             {
@@ -530,7 +530,7 @@ struct Transfer<T, false>
         }
         
         }
-        catch (K3LAPI::invalid_device & err)
+        catch (K3LAPITraits::invalid_device & err)
         {
             LOG(ERROR, PVT_FMT(_pvt->target(), "Unable to get device: %d!") % err.device);
         }
@@ -735,6 +735,9 @@ struct Transfer<T, false>
 };
 
 /*************************** SMS **********************************************/
+#define ESL_SMS_RECEIVED "khomp::sms_received"
+#define ESL_SMS_SENT     "khomp::sms_sent"
+
 struct SMS : public Application
 {
     typedef std::list< switch_core_session_t *> OwnersList;
@@ -888,6 +891,78 @@ struct SMS : public Application
         std::string _body;
         bool        _conf;
     };
+
+    static struct _SMSEvent : public ESL
+    {
+
+        _SMSEvent() : ESL("khomp::sms") 
+        {
+            if(_events)
+            {
+                _events->push_back(ESL_SMS_RECEIVED);
+                _events->push_back(ESL_SMS_SENT);
+            }
+        }
+
+        ~_SMSEvent()
+        {
+            if(_events)
+            {
+                //Remove two from vector
+                _events->pop_back();
+                _events->pop_back();
+            }
+        }
+        
+        bool operator()(Board::KhompPvt * pvt, ReceiveData & data)
+        {
+            switch_event_t *event = create(ESL_SMS_RECEIVED);
+
+            if(!event)
+            {
+                LOG(ERROR, "Cannot create SMS ESL");
+                return false;
+            }
+
+            add(event, pvt->target());
+            add(event, "Type", data._type);
+            add(event, "From", data._from);
+            add(event, "Date", data._date);
+            add(event, "Size", data._size);
+            add(event, "Coding", data._coding);
+            add(event, "Serial", data._serial);
+            add(event, "Id", data._id);
+            add(event, "Page", data._page);
+            add(event, "Pages", data._pages);
+            add(event, "Sc_date", data._sc_date);
+            add(event, "Status", data._status);
+            add(event, "Body", data._body);
+
+            return fire(&event);
+        }
+        
+        bool operator()(Board::KhompPvt * pvt, SendData & data)
+        {
+            switch_event_t *event = create(ESL_SMS_SENT);
+
+            if(!event)
+            {
+                LOG(ERROR, "Cannot create SMS ESL");
+                return false;
+            }
+
+            add(event, pvt->target());
+            add(event, "Dest", data._dest);
+            add(event, "Body", data._body);
+            add(event, "Confirmation?", (data._conf ? "Yes" : "No"));
+
+
+            return fire(&event);
+        }
+
+
+
+    } SMSEvent;
 
     struct Request
     {

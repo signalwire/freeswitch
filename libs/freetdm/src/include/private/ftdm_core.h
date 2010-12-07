@@ -342,21 +342,24 @@ typedef enum {
 	FTDM_TYPE_CHANNEL
 } ftdm_data_type_t;
 
-#ifdef FTDM_DEBUG_DTMF
-/* number of bytes for the circular buffer (5 seconds worth of audio) */
-#define DTMF_DEBUG_SIZE 8 * 5000
-/* number of 20ms cycles before timeout and close the debug dtmf file (5 seconds) */
-#define DTMF_DEBUG_TIMEOUT 250
+/* number of bytes for the IO dump circular buffer (5 seconds worth of audio by default) */
+#define FTDM_IO_DUMP_DEFAULT_BUFF_SIZE 8 * 5000
 typedef struct {
-	FILE *file;
-	char buffer[DTMF_DEBUG_SIZE];
+	char *buffer;
+	ftdm_size_t size;
 	int windex;
 	int wrapped;
-	int closetimeout;
+} ftdm_io_dump_t;
+
+/* number of interval cycles before timeout and close the debug dtmf file (5 seconds if interval is 20) */
+#define DTMF_DEBUG_TIMEOUT 250
+typedef struct {
+	uint8_t enabled;
+	uint8_t requested;
+	FILE *file;
+	int32_t closetimeout;
 	ftdm_mutex_t *mutex;
 } ftdm_dtmf_debug_t;
-#endif
-
 
 typedef struct {
 	const char *file;
@@ -471,9 +474,9 @@ struct ftdm_channel {
 	void *user_private;
 	ftdm_timer_id_t hangup_timer;
 	ftdm_channel_iostats_t iostats;
-#ifdef FTDM_DEBUG_DTMF
 	ftdm_dtmf_debug_t dtmfdbg;
-#endif
+	ftdm_io_dump_t rxdump;
+	ftdm_io_dump_t txdump;
 };
 
 struct ftdm_span {

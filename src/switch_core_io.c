@@ -110,6 +110,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_assert(session != NULL);
 
+
+	if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_mutex_unlock(session->codec_read_mutex);
+	} else {
+		switch_cond_next();
+		*frame = &runtime.dummy_cng_frame;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!(session->read_codec && session->read_codec->implementation && switch_core_codec_ready(session->read_codec))) {
 		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_get_state(session->channel) == CS_HIBERNATE) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s reading on a session with no media!\n",
@@ -641,11 +650,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_mutex_unlock(session->codec_write_mutex);
+	} else {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (switch_test_flag(frame, SFF_CNG)) {
 		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) {
 			pass_cng = 1;
+		} else {
+			return SWITCH_STATUS_SUCCESS;
 		}
-		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(session->write_codec && switch_core_codec_ready(session->write_codec)) && !pass_cng) {

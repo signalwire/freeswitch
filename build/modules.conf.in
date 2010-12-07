@@ -62,6 +62,7 @@ endpoints/mod_loopback
 #endpoints/mod_skinny
 #endpoints/mod_skypopen
 #endpoints/mod_h323
+#endpoints/mod_khomp
 #../../libs/openzap/mod_openzap
 #../../libs/freetdm/mod_freetdm
 #asr_tts/mod_unimrcp
@@ -105,5 +106,4 @@ say/mod_say_ru
 #say/mod_say_th
 
 ## Experimental Modules (don't cry if they're broken)
-#endpoints/mod_khomp
 #../../contrib/mod/xml_int/mod_xml_odbc
