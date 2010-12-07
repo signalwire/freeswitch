@@ -48,7 +48,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#ifdef __linux__
+#if defined(__linux__) && !defined(__USE_BSD)
 #define __USE_BSD
 #include <unistd.h>
 #endif

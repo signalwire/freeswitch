@@ -328,8 +328,6 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
 	
-	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
-	
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
