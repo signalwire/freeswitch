@@ -54,7 +54,7 @@ char                Board::_cng_buffer[Globals::cng_buffer_size];
 Kommuter            Board::kommuter;
 
 
-Board::KhompPvt::KhompPvt(K3LAPI::target & target) :
+Board::KhompPvt::KhompPvt(K3LAPIBase::GenericTarget & target) :
   _target(target),
   _mutex(Globals::module_pool),
   _session(NULL),
@@ -66,6 +66,10 @@ Board::KhompPvt::KhompPvt(K3LAPI::target & target) :
     _write_codec.implementation = NULL;
 
     _pvt_statistics = new PvtStatistics(this);
+
+    _mohclass    = Opt::_options._global_mohclass();
+    _language    = Opt::_options._global_language();
+    _accountcode = Opt::_options._accountcode();
 }
 
 bool Board::initializeK3L(void)
@@ -82,7 +86,7 @@ bool Board::initializeK3L(void)
     }
     catch (K3LAPI::start_failed & e)
     {
-        LOG(ERROR,FMT("loading K3L API failed: %s") % e.msg);
+        LOG(ERROR,FMT("loading K3L API failed: %s") % e.what());
         return false;
     }
 
@@ -236,7 +240,7 @@ void Board::initializeChannels(void)
 
     for (unsigned obj = 0; obj < Globals::k3lapi.channel_count(_device_id); obj++)
     {
-        K3LAPI::target tgt(Globals::k3lapi, K3LAPI::target::CHANNEL, _device_id, obj);
+        K3LAPIBase::GenericTarget tgt(Globals::k3lapi, K3LAPIBase::GenericTarget::CHANNEL, _device_id, obj);
 
         KhompPvt * pvt;
 
@@ -328,7 +332,25 @@ bool Board::initialize(void)
 {
     initializeCngBuffer();
 
-    initializeBoards();
+    try
+    {
+       initializeBoards();
+    }
+    catch(K3LAPITraits::invalid_device & err)
+    {
+        LOG(ERROR, FMT("Invalid device at initialize boards: %s") %  err.what());
+        return false;
+    }
+    catch(K3LAPITraits::invalid_channel & err)
+    {
+        LOG(ERROR, FMT("Invalid channel at initialize boards: %s") %  err.what());
+        return false;
+    }
+    catch(K3LAPITraits::invalid_link & err)
+    {
+        LOG(ERROR, FMT("Invalid link at initialize boards: %s") %  err.what());
+        return false;
+    }
 
     return true;
 }
@@ -340,7 +362,7 @@ bool Board::finalize(void)
     return finalizeK3L();
 }
 
-void Board::khomp_add_event_board_data(const K3LAPI::target target, switch_event_t *event)
+void Board::khomp_add_event_board_data(const K3LAPIBase::GenericTarget target, switch_event_t *event)
 {
 
     //if (!event) {
@@ -349,7 +371,7 @@ void Board::khomp_add_event_board_data(const K3LAPI::target target, switch_event
 
     try
     {
-        if (target.type == K3LAPI::target::CHANNEL)
+        if (target.type == K3LAPIBase::GenericTarget::CHANNEL)
         {
             switch_core_session_t * s = get(target.device, target.object)->session();
             switch_channel_event_set_data(Board::KhompPvt::getFSChannel(s), event);
@@ -358,7 +380,7 @@ void Board::khomp_add_event_board_data(const K3LAPI::target target, switch_event
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Khomp-DeviceId", "%u", target.device);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Khomp-Object", "%u", target.object);
     }
-    catch(K3LAPI::invalid_channel & err)
+    catch(K3LAPITraits::invalid_channel & err)
     {
         LOG(ERROR, PVT_FMT(target, "Invalid channel"));
     }
@@ -382,6 +404,23 @@ std::string Board::KhompPvt::getStatistics(Statistics::Type type)
         }
         default:
             return "";
+    }
+}
+
+switch_xml_t Board::KhompPvt::getStatisticsXML(Statistics::Type type)
+{
+    switch(type)
+    {
+        case Statistics::DETAILED:
+        {
+            return _pvt_statistics->getDetailedXML();
+        }
+        case Statistics::ROW:
+        {
+            return _pvt_statistics->getNode();
+        }
+        default:
+            return NULL;
     }
 }
 
@@ -429,6 +468,49 @@ std::string Board::KhompPvt::PvtStatistics::getDetailedRates()
     return strBuffer;
 }
 
+switch_xml_t Board::KhompPvt::PvtStatistics::getDetailedRatesXML()
+{
+    switch_xml_t xrates = switch_xml_new("rates");
+
+    /* this values come from kserver */
+    unsigned int call_incoming = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiInbound);
+    unsigned int call_outgoing = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiOutbound);
+
+    float occupation_rate = 100.0;
+
+    if (_pvt->call()->statistics()->_total_idle_time > 0)
+    {
+        occupation_rate = 100 * (
+            _pvt->call()->statistics()->_total_time_incoming + 
+            _pvt->call()->statistics()->_total_time_outgoing
+            ) / (
+            _pvt->call()->statistics()->_total_idle_time + 
+            _pvt->call()->statistics()->_total_time_incoming + 
+            _pvt->call()->statistics()->_total_time_outgoing);
+    }
+
+    switch_xml_t xoccupation = switch_xml_add_child_d(xrates,"oucpation",0);
+    switch_xml_set_txt_d(xoccupation,STR(FMT("%d") % occupation_rate));
+
+    if (call_incoming > 0) 
+    {    
+        std::string str_calls_incoming_mean = timeToString ( (time_t) (_pvt->call()->statistics()->_total_time_incoming / call_incoming) );
+        switch_xml_t xmean_in = switch_xml_add_child_d(xrates,"incoming",0);
+        switch_xml_set_txt_d(xmean_in,str_calls_incoming_mean.c_str());
+    }    
+
+    if (call_outgoing > 0) 
+    {    
+        std::string str_calls_outgoing_mean = timeToString ( (time_t) (_pvt->call()->statistics()->_total_time_outgoing / call_outgoing) );
+        switch_xml_t xmean_out = switch_xml_add_child_d(xrates,"outgoing",0);
+        switch_xml_set_txt_d(xmean_out,str_calls_outgoing_mean.c_str());
+    }    
+
+    return xrates;
+}
+
 std::string Board::KhompPvt::PvtStatistics::getDetailed()
 { 
     /* skip inactive channels */
@@ -454,6 +536,34 @@ std::string Board::KhompPvt::PvtStatistics::getDetailed()
     strBuffer.append(getDetailedRates());
     
     return strBuffer;
+}
+
+
+switch_xml_t Board::KhompPvt::PvtStatistics::getDetailedXML()
+{
+    switch_xml_t xch = _pvt->call()->statistics()->getDetailedXML();
+
+    /* this values come from kserver */
+    unsigned int call_incoming = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiInbound);
+    unsigned int call_outgoing = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiOutbound);
+    unsigned int call_fails    = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiOutFailed);
+
+    /* total/call_incoming */
+    switch_xml_t xin_calls = switch_xml_add_child_d(xch,"calls_incoming",0);
+    switch_xml_set_txt_d(xin_calls,STR(FMT("%d") % call_incoming));
+
+    /* total/call_outgoing */
+    switch_xml_t xout_calls = switch_xml_add_child_d(xch,"calls_outgoing",0);
+    switch_xml_set_txt_d(xout_calls,STR(FMT("%d") % call_outgoing));
+
+    /* total/calls_failed */
+    switch_xml_t xfailed_calls = switch_xml_add_child_d(xch,"calls_failed",0);
+    switch_xml_set_txt_d(xfailed_calls,STR(FMT("%d") % call_fails));
+
+    return xch;
 }
 
 std::string Board::KhompPvt::PvtStatistics::getRow() 
@@ -496,6 +606,71 @@ std::string Board::KhompPvt::PvtStatistics::getRow()
             % _pvt->getStateString() 
             % call_type 
             % string_time);
+}
+
+switch_xml_t Board::KhompPvt::PvtStatistics::getNode()
+{
+    time_t action_time;
+    time (&action_time);
+   
+    action_time -= _pvt->call()->statistics()->_base_time;
+
+    uint32 calls_incoming = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiInbound);
+    uint32 calls_outgoing = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiOutbound);
+    uint32 call_fails     = Globals::k3lapi.channel_stats(
+            _pvt->target().device, _pvt->target().object, kcsiOutFailed);
+    
+    std::string string_time = "  n/a  ";
+    std::string call_type   = "  none  ";
+
+    if (_pvt->call()->_flags.check(Kflags::IS_INCOMING))
+        call_type = "incoming";
+    else if (_pvt->call()->_flags.check(Kflags::IS_OUTGOING))
+        call_type = "outgoing";
+
+    if (_pvt->owner())
+    {    
+        string_time = timeToString(action_time);
+    }    
+
+    /* device/channel */
+    switch_xml_t xchn = switch_xml_new("channel");
+    switch_xml_set_attr_d(xchn,"id",STR(FMT("%d") % _pvt->target().object));
+
+    /* device/channel/details */
+    switch_xml_t xdetails = switch_xml_add_child_d(xchn,"details",0);
+
+    /* device/channel/details/calls_incomming */
+    switch_xml_t xin_calls = switch_xml_add_child_d(xdetails,"calls_incoming",0);
+    switch_xml_set_txt_d(xin_calls,STR(FMT("%d") % calls_incoming));
+
+    /* device/channel/details/calls_outgoing */
+    switch_xml_t xout_calls = switch_xml_add_child_d(xdetails,"calls_incoming",0);
+    switch_xml_set_txt_d(xout_calls,STR(FMT("%d") % calls_outgoing));
+
+    /* device/channel/details/channel_fails */
+    switch_xml_t xchn_fails = switch_xml_add_child_d(xdetails,"channel_fails",0);
+    switch_xml_set_txt_d(xchn_fails,STR(FMT("%d") % _pvt->call()->statistics()->_channel_fails));
+
+    /* device/channel/details/calls_fails */
+    switch_xml_t xcall_fails = switch_xml_add_child_d(xdetails,"calls_fails",0);
+    switch_xml_set_txt_d(xcall_fails,STR(FMT("%d") % call_fails));
+
+    /* device/channel/details/state */
+    switch_xml_t xstate = switch_xml_add_child_d(xdetails,"state",0);
+    switch_xml_set_txt_d(xstate,_pvt->getStateString().c_str());
+
+    /* device/channel/details/call_type */
+    switch_xml_t xcall_type = switch_xml_add_child_d(xdetails,"call_type",0);
+    switch_xml_set_txt_d(xcall_type,call_type.c_str());
+
+    /* device/channel/details/time */
+    switch_xml_t xtime = switch_xml_add_child_d(xdetails,"time",0);
+    switch_xml_set_txt_d(xtime,string_time.c_str());
+
+    return xchn;
 }
 
 switch_status_t Board::KhompPvt::justAlloc(bool is_answering, switch_memory_pool_t **pool)
@@ -572,6 +747,20 @@ switch_status_t Board::KhompPvt::justAlloc(bool is_answering, switch_memory_pool
         return SWITCH_STATUS_FALSE;
     }
 
+    try
+    {
+        /* accounttcode for CDR identification */
+        setFSChannelVar(getFSChannel(),"accountcode",_accountcode.c_str());
+
+        /* language for IVR machine */
+        setFSChannelVar(getFSChannel(),"language",_language.c_str());
+    }
+    catch (Board::KhompPvt::InvalidSwitchChannel & err)
+    {
+        LOG(ERROR, PVT_FMT(target(), "(%s)") % err._msg.c_str() );
+        return SWITCH_STATUS_FALSE;
+    }
+
     DBG(FUNC, PVT_FMT(target(), "r"));
     return SWITCH_STATUS_SUCCESS;
 }
@@ -612,7 +801,7 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
                                 % _call->_dest_addr % (contexts.size() >= 1 ? contexts[0] : "default"));
                         return SWITCH_STATUS_FALSE; 
                     default:
-                        DBG(FUNC, PVT_FMT(_target, "our: dialplan '%s', context '%s', exten '%s'") % Opt::_dialplan % context % exten);
+                        DBG(FUNC, PVT_FMT(_target, "our: dialplan '%s', context '%s', exten '%s'") % Opt::_options._dialplan() % context % exten);
                         break;
                 }
 
@@ -621,12 +810,12 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
             else
             {
                 exten = call()->_dest_addr;
-                DBG(FUNC, PVT_FMT(target(), "already found our: dialplan '%s', context '%s', exten '%s'") % Opt::_dialplan % call()->_incoming_context % exten);
+                DBG(FUNC, PVT_FMT(target(), "already found our: dialplan '%s', context '%s', exten '%s'") % Opt::_options._dialplan() % call()->_incoming_context % exten);
             }
             
             _caller_profile = switch_caller_profile_new(switch_core_session_get_pool(_session),
                     "Khomp",                           //username
-                    Opt::_dialplan.c_str(),            //dialplan
+                    Opt::_options._dialplan().c_str(), //dialplan
                     NULL,                              //caller_id_name
                     _call->_orig_addr.c_str(),         //caller_id_number
                     NULL,                              //network_addr
@@ -645,7 +834,7 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
                 return SWITCH_STATUS_FALSE;
             }
 
-            std::string name = STG(FMT("Khomp/%hu/%hu/%s")
+            std::string name = STG(FMT("Khomp/%d/%d/%s")
                     % target().device
                     % target().object
                     % _call->_dest_addr);
@@ -672,7 +861,7 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
             if(_call->_orig_addr.empty())
                 _call->_orig_addr = profile->caller_id_number;
 
-            switch_channel_set_name(channel, STG(FMT("Khomp/%hu/%hu/%s")
+            switch_channel_set_name(channel, STG(FMT("Khomp/%d/%d/%s")
                         % target().device
                         % target().object
                         % (!_call->_dest_addr.empty() ? _call->_dest_addr.c_str() : "")).c_str());
@@ -772,7 +961,7 @@ bool Board::KhompPvt::indicateBusyUnlocked(int cause, bool sent_signaling)
                 Board::board(_target.device)->_timers.del(call()->_idx_pbx_ring);
                 Board::board(_target.device)->_timers.del(call()->_idx_co_ring);
             }
-            catch (K3LAPI::invalid_device & err)
+            catch (K3LAPITraits::invalid_device & err)
             {
                 LOG(ERROR, PVT_FMT(_target, "Unable to get device: %d!") % err.device);
             }
@@ -824,6 +1013,8 @@ void Board::KhompPvt::destroyAll()
         switch_core_session_set_private(_session, NULL);
         _session = NULL;
     }
+    
+    owner(NULL);
 
     if(_caller_profile)
     {
@@ -854,8 +1045,6 @@ void Board::KhompPvt::destroyAll()
 
 void Board::KhompPvt::doHangup()
 {
-    owner(NULL);
-
     try
     {
         switch_channel_t *channel = getFSChannel();
@@ -903,7 +1092,7 @@ bool Board::KhompPvt::cleanup(CleanupType type)
         Board::board(_target.device)->_timers.del(call()->_idx_pbx_ring);
         Board::board(_target.device)->_timers.del(call()->_idx_co_ring);
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "Unable to get device: %d!") % err.device);
     }
@@ -939,10 +1128,10 @@ bool Board::KhompPvt::cleanup(CleanupType type)
         }
 
         if(call()->_input_volume >= -10 && call()->_input_volume <= 10)
-            setVolume("input" , Opt::_input_volume);
+            setVolume("input" , Opt::_options._input_volume());
 
         if(call()->_output_volume >= -10 && call()->_output_volume <= 10)
-            setVolume("output", Opt::_output_volume);        
+            setVolume("output", Opt::_options._output_volume());        
 
         return _call->clear();
     case CLN_SOFT:
@@ -1037,7 +1226,7 @@ void Board::queueAddChannel(PriorityCallQueue &pqueue, unsigned int board, unsig
         KhompPvt * pvt = get(board, object);
         pqueue.insert(pvt);
     }
-    catch(K3LAPI::invalid_channel & err)
+    catch(K3LAPITraits::invalid_channel & err)
     {
         //...
     }
@@ -1050,7 +1239,7 @@ Board::KhompPvt * Board::findFree(unsigned int board, unsigned int object, bool 
         KhompPvt * pvt = get(board, object);
         return ((fully_available ? pvt->isFree() : pvt->isOK()) ? pvt : NULL);
     }
-    catch(K3LAPI::invalid_channel & err)
+    catch(K3LAPITraits::invalid_channel & err)
     {
     }
     return NULL;
@@ -1066,10 +1255,10 @@ void Board::applyGlobalVolume(void)
         {
             try
             {
-                Board::get(dev,obj)->setVolume("input", Opt::_input_volume);
-                Board::get(dev,obj)->setVolume("output",Opt::_output_volume);
+                Board::get(dev,obj)->setVolume("input", Opt::_options._input_volume());
+                Board::get(dev,obj)->setVolume("output",Opt::_options._output_volume());
             }
-            catch(K3LAPI::invalid_channel & err)
+            catch(K3LAPITraits::invalid_channel & err)
             {
                 DBG(FUNC, OBJ_FMT(dev, obj, "Channel not found"));
             }
@@ -1096,7 +1285,7 @@ bool Board::KhompPvt::startCadence(CadencesType type)
     {    
         call()->_cadence = type;
 
-        Opt::CadencesMapType::iterator i = Opt::_cadences.find(tone);
+        CadencesMapType::iterator i = Opt::_cadences.find(tone);
         std::string cmd_params;
 
         if (i != Opt::_cadences.end())
@@ -1220,9 +1409,10 @@ bool Board::KhompPvt::obtainRX(bool with_delay)
     }
     catch(K3LAPI::failed_raw_command & e)
     {
-        LOG(ERROR, PVT_FMT(target(), "ERROR sending mixer record command!"));
+        LOG(ERROR, PVT_FMT(target(), "ERROR sending mixer command!"));
         return false;
     }    
+
     return true;
 }
 
@@ -1236,7 +1426,7 @@ bool Board::KhompPvt::obtainTX()
 
     try
     {
-        int dsp = Globals::k3lapi.get_dsp(_target.device, K3LAPI::DSP_AUDIO);
+        int dsp = Globals::k3lapi.get_dsp(_target, K3LAPI::DSP_AUDIO);
 
         Globals::k3lapi.raw_command(_target.device, dsp, cmd1, sizeof(cmd1));
 
@@ -1347,7 +1537,7 @@ bool Board::KhompPvt::dtmfSuppression(bool enable)
 
 bool Board::KhompPvt::echoCancellation(bool enable)
 {
-    K3L_DEVICE_CONFIG & devCfg = Globals::k3lapi.device_config(_target.device);
+    const K3L_DEVICE_CONFIG & devCfg = Globals::k3lapi.device_config(_target);
 
     /* echo canceller should not be used for non-echo cancellable channels */
     switch (devCfg.EchoConfig)
@@ -1432,8 +1622,8 @@ bool Board::KhompPvt::setCollectCall()
     const char * tmp_var = NULL;
 
     // get option configuration value
-    confvalues.push_back(Opt::_drop_collect_call ? T_TRUE : T_FALSE);
-    DBG(FUNC, PVT_FMT(_target, "option drop collect call is '%s'") % (Opt::_drop_collect_call ? "yes" : "no"));
+    confvalues.push_back(Opt::_options._drop_collect_call() ? T_TRUE : T_FALSE);
+    DBG(FUNC, PVT_FMT(_target, "option drop collect call is '%s'") % (Opt::_options._drop_collect_call() ? "yes" : "no"));
 
     // get global filter configuration value
     tmp_var = switch_core_get_variable("KDropCollectCall");
@@ -1622,7 +1812,7 @@ bool Board::KhompPvt::onAudioStatus(K3L_EVENT *e)
 
                 if (!call()->_flags.check(Kflags::CONNECTED))
                 {
-                    obtainRX(Opt::_suppression_delay);
+                    obtainRX(Opt::_options._suppression_delay());
             
                     //Marcar para o Freeswitch que jah tem audio passando
                     if (call()->_flags.check(Kflags::IS_OUTGOING))
@@ -1660,7 +1850,7 @@ bool Board::KhompPvt::onAudioStatus(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "r (%s)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "r (unable to get device: %d!)") % err.device);
         return false;
@@ -1679,7 +1869,7 @@ bool Board::KhompPvt::onCollectCall(K3L_EVENT *e)
         //K::internal::ami_event(pvt, EVENT_FLAG_CALL, "CollectCall",
           //      STG(FMT("Channel: Khomp/B%dC%d\r\n") % pvt->boardid % pvt->objectid));
 
-        if (Opt::_drop_collect_call || _call->_flags.check(Kflags::DROP_COLLECT))
+        if (Opt::_options._drop_collect_call() || _call->_flags.check(Kflags::DROP_COLLECT))
         {     
             /* disconnect! */
             //TODO: SCE_HIDE !?
@@ -1790,7 +1980,7 @@ bool Board::KhompPvt::onConnect(K3L_EVENT *e)
         LOG(ERROR, PVT_FMT(target(), "r (%s)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "r (unable to get device: %d!)") % err.device);
         return false;
@@ -1896,7 +2086,7 @@ bool Board::KhompPvt::onDtmfDetected(K3L_EVENT *e)
                 return true;
             }    
 
-            if (Opt::_ignore_letter_dtmfs)
+            if (Opt::_options._ignore_letter_dtmfs())
             {    
                 switch (e->AddInfo)
                 {    
@@ -2105,7 +2295,7 @@ bool Board::KhompPvt::indicateRinging()
         {    
             int ringback_value = RingbackDefs::RB_SEND_DEFAULT;
 
-            bool do_drop_call = Opt::_drop_collect_call
+            bool do_drop_call = Opt::_options._drop_collect_call()
                                         || call()->_flags.check(Kflags::DROP_COLLECT);
 
             if (do_drop_call && call()->_collect_call)
@@ -2128,7 +2318,7 @@ bool Board::KhompPvt::indicateRinging()
         if (send_ringback)
         {    
             call()->_flags.set(Kflags::GEN_CO_RING);
-            call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_ringback_co_delay, &Board::KhompPvt::coRingGen,this);
+            call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_co_delay(), &Board::KhompPvt::coRingGen,this);
 
             /* start grabbing audio */
             startListen();
@@ -2145,7 +2335,7 @@ bool Board::KhompPvt::indicateRinging()
         LOG(ERROR, PVT_FMT(_target, "r (unable to lock %s!)") % err._msg.c_str() );
         return false;
     }
-    catch (K3LAPI::invalid_device & err)
+    catch (K3LAPITraits::invalid_device & err)
     {
         LOG(ERROR, PVT_FMT(_target, "r (unable to get device: %d!)") % err.device);
         return false;
@@ -2333,7 +2523,7 @@ int Board::eventThread(void *void_evt)
                         % Globals::verbose.event(evt.obj(), evt.event()));
             }
         }
-        catch (K3LAPI::invalid_device & invalid)
+        catch (K3LAPITraits::invalid_device & invalid)
         {
             LOG(ERROR, D("invalid device on event '%s'") 
                 % Verbose::eventName(evt.event()->Code).c_str());
@@ -2378,7 +2568,7 @@ int Board::commandThread(void *void_evt)
                 LOG(ERROR, D("(d=%d) Error on command(%d)") % devid % cmd.code());
             }
         }
-        catch (K3LAPI::invalid_channel & invalid)
+        catch (K3LAPITraits::invalid_channel & invalid)
         {
             LOG(ERROR, OBJ_FMT(devid,cmd.obj(), "invalid device on command '%d'") %  cmd.code());
         }
@@ -2418,7 +2608,7 @@ extern "C" int32 Kstdcall khompEventCallback(int32 obj, K3L_EVENT * e)
             EventRequest e_req(obj, e);
             Board::board(e->DeviceId)->chanEventHandler()->write(e_req);
         }
-        catch (K3LAPI::invalid_device & err)
+        catch (K3LAPITraits::invalid_device & err)
         {
             LOG(ERROR, D("Unable to get device: %d!") % err.device);
             return ksFail;

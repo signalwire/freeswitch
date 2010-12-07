@@ -687,7 +687,97 @@ struct Statistics
     virtual std::string getDetailed() { return ""; }
     virtual void clear() {}
 };
+/******************************************************************************/
+/****************************** ESL - Events **********************************/
+    
+struct ESL 
+{
+
+    typedef std::vector <std::string> VectorEvents;
+    
+    ESL(std::string type);
+
+    ~ESL();
+    
+    switch_event_t * create(const std::string type)
+    {
+        switch_event_t *event;
+
+        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, type.c_str()) != SWITCH_STATUS_SUCCESS)
+        {
+            return NULL;
+        }
+
+        return event;
+    }
+    
+    switch_event_t * create()
+    {
+        return create(_type);
+    }
+
+    bool add(switch_event_t *event, const std::string key, 
+                                    const std::string value) const
+    {
+        if(!event) return false;
+
+        switch_status_t res = switch_event_add_header_string(event, 
+                SWITCH_STACK_BOTTOM,
+                key.c_str(), 
+                value.c_str());
+
+        return (res == SWITCH_STATUS_SUCCESS ? true : false);
+    }
+
+    bool add(switch_event_t *event, K3LAPIBase::GenericTarget & target)
+    {
+        bool ok = add(event, "Device", STR(FMT("%d") % target.device));
+
+        if(!ok)
+            return ok;
+
+        std::string type;
+
+        switch(target.type)
+        {
+            case K3LAPIBase::GenericTarget::CHANNEL:
+                type = "Channel";
+                break;
+            case K3LAPIBase::GenericTarget::MIXER:
+                type = "Mixer";
+                break;
+            case K3LAPIBase::GenericTarget::LINK:
+                type = "Link";
+                break;
+            default:
+                type = "Other";
+                break;
+        }        
+
+        return add(event, type, STR(FMT("%d") % target.object));
+    }
+
+    bool fire(switch_event_t **event) const
+    {
+        if(!event || !*event) return false;
+
+        switch_status_t res = switch_event_fire(event);
+
+        *event = NULL;
+
+        return (res == SWITCH_STATUS_SUCCESS ? true : false);
+    }
+
+    static bool registerEvents();
+
+    static bool unregisterEvents();
+
+protected:
+    const std::string _type;
+    static VectorEvents * _events;
+};
 
 /******************************************************************************/
 /******************************************************************************/
+
 #endif  /* _UTILS_H_ */

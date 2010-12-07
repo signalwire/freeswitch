@@ -47,8 +47,31 @@
 #include <string>
 #include <map>
 #include <vector>
+
+#include <config_options.hpp>
+
 #include "switch.h"
 #include "utils.h"
+
+typedef std::map    < std::string, std::string >       OrigToDestMapType;
+typedef std::pair   < std::string, std::string >      OrigToDestPairType;
+typedef std::vector < std::string >                       DestVectorType;
+
+typedef std::map    < unsigned int, std::string >     BoardToOrigMapType;
+typedef std::pair   < unsigned int, std::string >    BoardToOrigPairType;
+
+typedef std::map    < std::string, unsigned int >      OrigToNseqMapType;
+typedef std::pair   < std::string, unsigned int >     OrigToNseqPairType;
+
+typedef std::pair   < unsigned int,unsigned int >           ObjectIdType;
+typedef std::pair   < std::string, ObjectIdType > BranchToObjectPairType;
+typedef std::map    < std::string, ObjectIdType >  BranchToObjectMapType;
+
+typedef std::map    < std::string, std::string >      BranchToOptMapType;
+typedef std::pair   < std::string, std::string >     BranchToOptPairType;
+
+typedef std::map    < std::string, std::string >      GroupToDestMapType;
+typedef std::pair   < std::string, std::string >     GroupToDestPairType;
 
 struct CadenceType
 {
@@ -67,182 +90,171 @@ struct CadenceType
     unsigned int ring_ext_s;
 };
 
-struct CSpan {
-    std::string _dialplan;
-    std::string _context;
-    std::string _dialstring;
+typedef std::pair < std::string, CadenceType > CadencesPairType;
+typedef std::map  < std::string, CadenceType >  CadencesMapType;
+
+struct Options
+{
+    Config::Value< bool >        _debug;
+    Config::Value< std::string > _dialplan;
+    Config::Value< std::string > _context;
+    
+    Config::Value< bool > _echo_canceller;
+    Config::Value< bool > _auto_gain_control;
+    Config::Value< bool > _out_of_band_dtmfs;
+    Config::Value< bool > _suppression_delay;
+    Config::Value< bool > _pulse_forwarding;
+    Config::Value< bool > _native_bridge;
+    Config::Value< bool > _recording;
+    Config::Value< bool > _has_ctbus;
+    Config::Value< bool > _fxs_bina;
+    Config::Value< bool > _fxo_send_pre_audio;
+    Config::Value< bool > _drop_collect_call;
+    Config::Value< bool > _ignore_letter_dtmfs;
+    Config::Value< bool > _optimize_audio_path;
+
+    Config::Value< bool         > _auto_fax_adjustment;
+    Config::Value< unsigned int > _fax_adjustment_timeout;
+
+    Config::Value< bool         > _r2_strict_behaviour;
+    Config::Value< unsigned int > _r2_preconnect_wait;
+
+    Config::Value< unsigned int > _fxs_digit_timeout;
+    Config::Value< unsigned int > _transferdigittimeout;
+
+    Config::Value< std::string > _flash;
+    Config::Value< std::string > _blindxfer;
+    Config::Value< std::string > _atxfer;
+
+    Config::Value< unsigned int > _ringback_co_delay;
+    Config::Value< unsigned int > _ringback_pbx_delay;
+
+    Config::Value< unsigned int > _disconnect_delay;
+
+    Config::Value< int > _input_volume;
+    Config::Value< int > _output_volume;
+
+    struct CentralOfficeDialtone : public Config::FunctionValue
+    {   
+        void operator ()(const Config::StringType &); 
+        const DestVectorType & operator()(void) const { return _value; };
+        void clear(void)
+        {   
+            _value.clear();
+        }   
+
+    protected:
+        DestVectorType _value;
+    } _fxs_co_dialtone;
+
+    struct LogDiskOption : public Config::FunctionValue
+    {
+        void operator ()(const Config::StringType &);
+    } _log_disk_option;
+
+    /*
+    struct CallGroupOption: public Config::FunctionValue
+    {   
+        void operator ()(const Config::StringType &); 
+        const std::string operator()(void) const { return _groups; };
+    protected:
+        std::string _groups;
+    } _callgroup;
+
+    struct PickupGroupOption: public Config::FunctionValue
+    { 
+        void operator ()(const Config::StringType &); 
+        const std::string operator()(void) const { return _groups; };
+    protected:
+        std::string _groups;
+    } _pickupgroup; // or intercept 
+    */
+
+    struct LogConsoleOption : public Config::FunctionValue
+    {
+        void operator ()(const Config::StringType &);
+    } _log_console_option;
+
+    struct LogTraceOption : public Config::FunctionValue
+    {
+        void operator ()(const Config::StringType &);
+    } _log_trace_option;
+
+    struct RecordPrefixOption: public Config::FunctionValue
+    {   
+        void operator ()(const Config::StringType &); 
+        const std::string & operator()(void) const { return _value; };
+
+    protected:
+        std::string _value;
+    } _record_prefix;
+
+    Config::Value< std::string > _user_xfer_digits;
+    Config::Value< std::string > _fxs_global_orig_base;
+
+    Config::Value< std::string > _global_mohclass;
+    Config::Value< std::string > _global_language;
+
+    Config::Value< std::string > _context_gsm_call;
+    Config::Value< std::string > _context2_gsm_call;
+    Config::Value< std::string > _context_gsm_sms;
+    Config::Value< std::string > _context_fxo;
+    Config::Value< std::string > _context2_fxo;
+    Config::Value< std::string > _context_fxs;
+    Config::Value< std::string > _context2_fxs;
+    Config::Value< std::string > _context_digital;
+    Config::Value< std::string > _context_pr;
+
+    Config::Value< std::string > _callgroup;
+    Config::Value< std::string > _pickupgroup; /* or intercept */
+    Config::Value< std::string > _accountcode;
+    
+    Config::Value< unsigned int > _kommuter_timeout;
+    Config::Value< std::string  > _kommuter_activation;
+
+    Config::Value< unsigned int > _audio_packet_size;
 };
 
 struct Opt
 {
-    typedef std::pair   < std::string, CadenceType >  CadencesPairType;
-    typedef std::map    < std::string, CadenceType >  CadencesMapType;
+    /* here we load [cadences] */
+    static CadencesMapType        _cadences;
 
-    typedef std::map    < std::string, std::string >  OrigToDestMapType;
-    typedef std::pair   < std::string, std::string >  OrigToDestPairType;
-    typedef std::vector < std::string >               DestVectorType;
+    /* here we load [groups] */
+    static GroupToDestMapType     _groups;
 
-    typedef std::map    < unsigned int, std::string > BoardToOrigMapType;
-    typedef std::pair   < unsigned int, std::string > BoardToOrigPairType;
+    /* here we load [fxs-hotlines] */
+    static OrigToDestMapType      _fxs_hotline;
 
-    typedef std::map    < std::string, unsigned int > OrigToNseqMapType;
-    typedef std::pair   < std::string, unsigned int > OrigToNseqPairType;
+    /* here we load [fxs-branches] */
+    static BoardToOrigMapType     _fxs_orig_base;
 
-    typedef std::pair   < unsigned int,unsigned int > ObjectIdType;
-    typedef std::pair   < std::string, ObjectIdType > BranchToObjectPairType;
-    typedef std::map    < std::string, ObjectIdType > BranchToObjectMapType;
+    /* here we load [fxs-options] */
+    static BranchToOptMapType     _branch_options;
 
-    typedef std::map    < std::string, std::string >  BranchToOptMapType;
-    typedef std::pair   < std::string, std::string >  BranchToOptPairType;
-    
-    typedef std::map    < std::string, std::string >  GroupToDestMapType;
-    typedef std::pair   < std::string, std::string >  GroupToDestPairType;
+    /* here we load ... hannnn */
+    static BranchToObjectMapType  _fxs_branch_map;
 
-    typedef std::pair   < std::string, CSpan >        SpanPairType;
+    static Options _options;
 
-    typedef enum
-    {
-            GFLAG_MY_CODEC_PREFS = (1 << 0)
-    }
-    GFLAGS;
-
+    /* Member functions */
     static void initialize(void);
     static void obtain(void);
     static void commit(void);
-    static void printConfiguration(switch_stream_handle_t*);
 
-protected:
+    //TODO: reload options at reloadxml ?
+    static void reload(void); 
 
+    protected:
     static void loadConfiguration(const char *, const char **, bool show_errors = true);
     static void cleanConfiguration(void);
-    
+
     static switch_xml_t processSimpleXML(switch_xml_t &xml, const std::string& child_name);
     static void processGroupXML(switch_xml_t &xml);
     static void processCadenceXML(switch_xml_t &xml);
     static void processFXSBranchesXML(switch_xml_t &xml);
     static void processFXSHotlines(switch_xml_t &xml);
     static void processFXSOptions(switch_xml_t &xml);
-
-public:
-    static bool                            _debug;
-    static std::string                     _dialplan;
-    static std::string                     _context;
-    static std::map < std::string, CSpan > _spans;
-	static GroupToDestMapType              _groups;
-	static CadencesMapType                 _cadences;
-    
-    static bool  _echo_canceller;
-    static bool  _auto_gain_control;
-    static bool  _out_of_band_dtmfs;
-    static bool  _suppression_delay;
-    static bool  _pulse_forwarding;
-    static bool  _native_bridge;
-    static bool  _recording;
-    static bool  _has_ctbus;
-    static bool  _fxs_bina;
-    static bool  _fxo_send_pre_audio;
-    static bool  _drop_collect_call;
-    static bool  _ignore_letter_dtmfs;
-    static bool  _optimize_audio_path;
-
-    static bool         _auto_fax_adjustment;
-    static unsigned int _fax_adjustment_timeout;
-
-    static bool         _r2_strict_behaviour;
-    static unsigned int _r2_preconnect_wait;
-
-    static unsigned int _fxs_digit_timeout;
-
-    static unsigned int _transferdigittimeout;
-
-    static std::string _flash;
-    static std::string _blindxfer;
-    static std::string _atxfer;
-
-    static unsigned int _ringback_co_delay;
-    static unsigned int _ringback_pbx_delay;
-
-    static unsigned int _disconnect_delay;
-
-    static int _input_volume;
-    static int _output_volume;
-
-    static DestVectorType    _fxs_co_dialtone;
-    static OrigToDestMapType _fxs_hotline;
-    static std::string       _fxs_global_orig_base;
-
-    static BoardToOrigMapType    _fxs_orig_base;
-    static BranchToObjectMapType _fxs_branch_map;
-    static BranchToOptMapType    _branch_options;
-
-    static std::string _global_mohclass;
-    static std::string _global_language;
-
-    static std::string _record_prefix;
-
-    static std::string  _context_gsm_call;
-    static std::string  _context2_gsm_call;
-    static std::string  _context_gsm_sms;
-    static std::string  _context_fxo;
-    static std::string  _context2_fxo;
-    static std::string  _context_fxs;
-    static std::string  _context2_fxs;
-    static std::string  _context_digital;
-    static std::string  _context_pr;
-    static std::string  _user_xfer;
-
-    static int                _amaflags;
-    static std::string _callgroup;
-    static std::string _pickupgroup; /* or intercept */
-
-    static std::string _accountcode;
-    
-    static unsigned int _kommuter_timeout;
-    static std::string  _kommuter_activation;
-
-    static unsigned int _audio_packet_size;
-
-protected:
-
-    struct ProcessFXSCODialtone
-    {
-        void operator()(std::string options);
-    };
-
-    struct ProcessRecordPrefix
-    {
-        void operator()(std::string path);
-    };
-
-    struct ProcessAMAFlags
-    {
-        void operator()(std::string options);
-    };
-
-    struct ProcessCallGroup
-    {
-        void operator()(std::string options);
-    };
-
-    struct ProcessPickupGroup
-    {
-        void operator()(std::string options);
-    };
-
-    struct ProcessLogOptions
-    {
-        ProcessLogOptions(output_type output): _output(output) {}; 
-
-        void operator()(std::string options); 
-
-        protected:
-            output_type _output;
-    };
-
-    struct ProcessTraceOptions
-    {
-        void operator()(std::string options);
-    };
 };
 
 

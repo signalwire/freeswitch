@@ -261,7 +261,7 @@ switch_status_t skypopen_tech_init(private_t *tech_pvt, switch_core_session_t *s
 		ERRORA("skypopen_tech_init: no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
-	if (skypopen_codec(tech_pvt, SAMPLERATE_SKYPOPEN, 20) != SWITCH_STATUS_SUCCESS) {
+	if (skypopen_codec(tech_pvt, SAMPLERATE_SKYPOPEN, MS_SKYPOPEN) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("skypopen_tech_init: skypopen_codec FAILED\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -822,23 +822,23 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt->read_frame.flags = SFF_NONE;
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		switch_sleep(20000);
+		switch_sleep(MS_SKYPOPEN * 1000);
 		return SWITCH_STATUS_FALSE;
 	}
 	if (!switch_channel_ready(channel)) {
 		ERRORA("channel not ready \n", SKYPOPEN_P_LOG);
-		switch_sleep(20000);
+		switch_sleep(MS_SKYPOPEN * 1000);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
 		//DEBUGA_SKYPE("CHANNEL READ FRAME in TFLAG_PROGRESS goto CNG\n", SKYPOPEN_P_LOG);
-		switch_sleep(20000);
+		switch_sleep(MS_SKYPOPEN * 1000);
 		goto cng;
 	}
 
 	if (!tech_pvt->read_buffer) {
-		int32_t max_len = 640 * 10;
+		int32_t max_len = BYTES_PER_FRAME * 10;
 
 		switch_buffer_create(skypopen_module_pool, &tech_pvt->read_buffer, max_len);
 		switch_assert(tech_pvt->read_buffer);
@@ -861,7 +861,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			|| tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 		switch_mutex_lock(tech_pvt->mutex_audio_srv);
 		if (tech_pvt->read_buffer && switch_buffer_inuse(tech_pvt->read_buffer)) {
-			bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, 640);
+			bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, BYTES_PER_FRAME);
 			tech_pvt->read_frame.datalen = bytes_read;
 		}
 		switch_mutex_unlock(tech_pvt->mutex_audio_srv);
@@ -873,13 +873,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			if (try < 5)
 				goto read;
 			DEBUGA_SKYPE("skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
-			memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
-			tech_pvt->read_frame.datalen = 640;
+			memset(tech_pvt->read_frame.data, 255, BYTES_PER_FRAME);
+			tech_pvt->read_frame.datalen = BYTES_PER_FRAME;
 
 		}
 	} else {
-		memset(tech_pvt->read_frame.data, 255, SAMPLES_PER_FRAME * sizeof(short));
-		tech_pvt->read_frame.datalen = 640;
+		memset(tech_pvt->read_frame.data, 255, BYTES_PER_FRAME);
+		tech_pvt->read_frame.datalen = BYTES_PER_FRAME;
 	}
 
 	switch_mutex_lock(tech_pvt->flag_mutex);
@@ -1002,7 +1002,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 	if (!tech_pvt->write_buffer) {
-		int32_t max_len = 640 * 3;
+		int32_t max_len = BYTES_PER_FRAME * 3;
 
 		switch_buffer_create(skypopen_module_pool, &tech_pvt->write_buffer, max_len);
 		switch_assert(tech_pvt->write_buffer);
@@ -1017,7 +1017,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 	if (no_space) {
-		switch_sleep(20000);
+		switch_sleep(MS_SKYPOPEN * 1000);
 	} else {
 		tech_pvt->begin_to_write = 1;
 	}
@@ -2161,14 +2161,14 @@ int start_audio_threads(private_t *tech_pvt)
 	tech_pvt->begin_to_write = 0;
 	tech_pvt->begin_to_read = 0;
 
-	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, 320, skypopen_module_pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", MS_SKYPOPEN, SAMPLES_PER_FRAME, skypopen_module_pool) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_core_timer_sync(&tech_pvt->timer_read);
 
-	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", 20, 320, skypopen_module_pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", MS_SKYPOPEN, SAMPLES_PER_FRAME, skypopen_module_pool) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}

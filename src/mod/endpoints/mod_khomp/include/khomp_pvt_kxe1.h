@@ -122,7 +122,7 @@ struct KhompPvtE1: public KhompPvt
     
     };
 /******************************************************************************/
-    KhompPvtE1(K3LAPI::target & target) : KhompPvt(target)
+    KhompPvtE1(K3LAPIBase::GenericTarget & target) : KhompPvt(target)
     {
         _fax = new Fax(this);
         command(KHOMP_LOG,CM_ENABLE_CALL_ANSWER_INFO); 
@@ -219,7 +219,7 @@ struct KhompPvtE1: public KhompPvt
         {
             Board::board(_target.device)->_timers.del(callE1()->_idx_disconnect);
         }
-        catch (K3LAPI::invalid_device & err)
+        catch (K3LAPITraits::invalid_device & err)
         {
             LOG(ERROR, PVT_FMT(target(), "Unable to get device: %d!") % err.device);
         }
@@ -310,7 +310,7 @@ struct KhompPvtISDN: public KhompPvtE1
             _uui_information.clear();
             _isdn_cause = -1;
 
-            _user_xfer_digits = Opt::_user_xfer;
+            _user_xfer_digits = Opt::_options._user_xfer_digits();
             _user_xfer_buffer.clear();
             _digits_buffer.clear();
             _qsig_number.clear();
@@ -332,7 +332,7 @@ struct KhompPvtISDN: public KhompPvtE1
 
     };
 /******************************************************************************/
-    KhompPvtISDN(K3LAPI::target & target) : KhompPvtE1(target) 
+    KhompPvtISDN(K3LAPIBase::GenericTarget & target) : KhompPvtE1(target) 
     {
         _transfer = new Transfer<CallISDN, false>(this);
     }
@@ -496,7 +496,7 @@ struct KhompPvtR2: public KhompPvtE1
         std::string _incoming_exten;
     };
 /******************************************************************************/
-    KhompPvtR2(K3LAPI::target & target) : KhompPvtE1(target) 
+    KhompPvtR2(K3LAPIBase::GenericTarget & target) : KhompPvtE1(target) 
     {
         K3L_E1600A_FW_CONFIG dspAcfg;
 
@@ -672,7 +672,7 @@ struct KhompPvtFlash: public KhompPvtR2
         
         bool clear()
         {
-            _user_xfer_digits = Opt::_user_xfer;
+            _user_xfer_digits = Opt::_options._user_xfer_digits();
             _user_xfer_buffer.clear();
             _digits_buffer.clear();
 
@@ -686,7 +686,7 @@ struct KhompPvtFlash: public KhompPvtR2
 
     };
 /******************************************************************************/
-    KhompPvtFlash(K3LAPI::target & target) : KhompPvtR2(target) 
+    KhompPvtFlash(K3LAPIBase::GenericTarget & target) : KhompPvtR2(target) 
     {
         _transfer = new Transfer<CallFlash>(this);
     }
@@ -796,7 +796,7 @@ struct KhompPvtFXS: public KhompPvt
             }
             else if (name == "ring_cadence")
             {
-                Opt::CadencesMapType::iterator i = Opt::_cadences.find(value);
+                CadencesMapType::iterator i = Opt::_cadences.find(value);
 
                 if (i != Opt::_cadences.end())
                 {
@@ -858,11 +858,11 @@ struct KhompPvtFXS: public KhompPvt
 
     };
 /******************************************************************************/
-    KhompPvtFXS(K3LAPI::target & target) : KhompPvt(target)
+    KhompPvtFXS(K3LAPIBase::GenericTarget & target) : KhompPvt(target)
     {
        //command(KHOMP_LOG,CM_ENABLE_CALL_ANSWER_INFO);
        /* sequence numbers on FXS */
-       static Opt::OrigToNseqMapType fxs_nseq = generateNseqMap();
+       static OrigToNseqMapType fxs_nseq = generateNseqMap();
 
        load(fxs_nseq);
     }
@@ -926,7 +926,7 @@ struct KhompPvtFXS: public KhompPvt
     }
 
     bool setupConnection();
-    void load(Opt::OrigToNseqMapType & fxs_nseq);
+    void load(OrigToNseqMapType & fxs_nseq);
     void loadOptions();
     bool parseBranchOptions(std::string options_str);
     bool alloc();
@@ -991,13 +991,10 @@ struct KhompPvtFXS: public KhompPvt
     std::string _context;
     int         _input_volume;
     int         _output_volume;
-    std::string _mohclass;
-    std::string _language;
-    std::string _accountcode;
     std::string _mailbox;
     std::string _flash;
 
-    static Opt::OrigToNseqMapType generateNseqMap();
+    static OrigToNseqMapType generateNseqMap();
     static void dialTimer(KhompPvt * pvt);
     static void transferTimer(KhompPvt * pvt);
 
@@ -1044,7 +1041,7 @@ struct KhompPvtFXS: public KhompPvt
 
         for (unsigned obj = 0; obj < Globals::k3lapi.channel_count(_device_id); obj++)
         {
-            K3LAPI::target tgt(Globals::k3lapi, K3LAPI::target::CHANNEL, _device_id, obj);
+            K3LAPIBase::GenericTarget tgt(Globals::k3lapi, K3LAPIBase::GenericTarget::CHANNEL, _device_id, obj);
             KhompPvt * pvt;
 
             switch(Globals::k3lapi.channel_config(_device_id, obj).Signaling)
