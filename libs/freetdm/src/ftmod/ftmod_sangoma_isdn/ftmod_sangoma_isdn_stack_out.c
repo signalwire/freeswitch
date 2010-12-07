@@ -341,6 +341,7 @@ void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_
 
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));	
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
+	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROGRESS (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_PROGRESS, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -366,6 +367,7 @@ void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
+	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending ALERT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -424,6 +426,7 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	}
 
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
+	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if (sng_isdn_con_response(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -522,7 +525,8 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	
 	memset(&discEvnt, 0, sizeof(discEvnt));
 	
-	/* Fill discEvnt here */	
+	/* Fill discEvnt here */
+	/* TODO move this to set_cause_ie function */
   	discEvnt.causeDgn[0].eh.pres = PRSNT_NODEF;
 	discEvnt.causeDgn[0].location.pres = PRSNT_NODEF;
 	discEvnt.causeDgn[0].location.val = IN_LOC_PRIVNETLU;
@@ -559,7 +563,7 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 	
 	memset(&relEvnt, 0, sizeof(relEvnt));
 	
-	/* Fill discEvnt here */	
+	/* Fill relEvnt here */
   	relEvnt.causeDgn[0].eh.pres = PRSNT_NODEF;
 	relEvnt.causeDgn[0].location.pres = PRSNT_NODEF;
 	relEvnt.causeDgn[0].location.val = IN_LOC_PRIVNETLU;

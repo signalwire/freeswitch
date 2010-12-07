@@ -560,9 +560,8 @@ ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t *data_len)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
-	
-	if (caller_data->raw_data_len > 0 && caller_data->raw_data[0] == SNGISDN_Q931_FACILITY_IE_ID) {
 
+	if (caller_data->raw_data_len > 0 && caller_data->raw_data[0] == SNGISDN_Q931_FACILITY_IE_ID) {
 		*data_len = caller_data->raw_data[1];
 		memcpy(data, &caller_data->raw_data[2], *data_len);
 		return FTDM_SUCCESS;
