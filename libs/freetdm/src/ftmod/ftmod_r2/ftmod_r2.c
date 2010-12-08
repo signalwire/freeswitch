@@ -382,9 +382,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	}
 
 	ft_r2_clean_call(ftdmchan->call_data);
-	R2CALL(ftdmchan)->ftdm_call_started = 1;
-	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
-	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
 	/* start io dump */
 	if (r2data->mf_dump_size) {
@@ -395,18 +392,16 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
 			ftdmchan->caller_data.cid_num.digits, 
 			ftdmchan->caller_data.dnis.digits, 
-			OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER);
+			r2data->category);
 
 	if (callstatus) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
 		return FTDM_FAIL;
 	}
 
-	if (ftdmchan->state !=  FTDM_CHANNEL_STATE_DIALING) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Collision after call attempt, try another channel, new state = %s\n",
-				ftdm_channel_state2str(ftdmchan->state));
-		return FTDM_BREAK;
-	}
+	R2CALL(ftdmchan)->ftdm_call_started = 1;
+	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
 	ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_FLUSH_TX_BUFFERS, NULL);
@@ -1354,6 +1349,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		hashtable_insert(spanpvt->r2calls, (void *)r2call->name, r2call, HASHTABLE_FLAG_FREE_VALUE);
 	}
 	r2data->mf_dump_size = r2conf.mf_dump_size;
+	r2data->category = r2conf.category;
 	r2data->flags = 0;
 	spanpvt->r2context = r2data->r2context;
 
