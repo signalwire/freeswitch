@@ -133,14 +133,16 @@ static void dump_chan_io_to_file(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, FI
 	if (dump->wrapped) {
 		rc = fwrite(&dump->buffer[dump->windex], 1, towrite, file);
 		if (rc != towrite) {
-			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in io dump buffer\n", 
+					rc, towrite, strerror(errno));
 		}
 	}
 	if (dump->windex) {
 		towrite = dump->windex;
 		rc = fwrite(&dump->buffer[0], 1, towrite, file);
 		if (rc != towrite) {
-			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in DTMF debug buffer\n", rc, towrite);
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in io dump buffer: %s\n", 
+					rc, towrite, strerror(errno));
 		}
 	}
 	dump->windex = 0;

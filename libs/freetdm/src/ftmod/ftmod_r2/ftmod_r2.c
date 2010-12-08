@@ -73,6 +73,7 @@ typedef struct ftdm_r2_call_t {
 	ftdm_size_t ani_index;
 	char logname[255];
 	char name[10];
+	ftdm_timer_id_t protocol_error_recovery_timer;
 } ftdm_r2_call_t;
 
 /* this is just used as place holder in the stack when configuring the span to avoid using bunch of locals */
@@ -334,7 +335,7 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 static void ft_r2_clean_call(ftdm_r2_call_t *call)
 {
 	openr2_chan_t *r2chan = call->r2chan;
-	
+
 	/* Do not memset call structure, that clears values we do not want to clear, 
 	 * like the log name set in on_call_log_created() */
 	call->r2chan = r2chan;
@@ -347,6 +348,7 @@ static void ft_r2_clean_call(ftdm_r2_call_t *call)
 	call->dnis_index = 0;
 	call->ani_index = 0;
 	call->name[0] = 0;
+	call->protocol_error_recovery_timer = 0;
 }
 
 static void ft_r2_accept_call(ftdm_channel_t *ftdmchan)
@@ -450,6 +452,18 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Received request to start call\n");
+
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_HANGUP) {
+		r2call = R2CALL(ftdmchan);
+		if (r2call->protocol_error) {
+			/* we had a protocol error and we were giving some recovery time, cancel the recovery timer now
+			 * that is obvious that the other side recovered */
+			ftdm_sched_cancel_timer(r2data->sched, r2call->protocol_error_recovery_timer);
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Cancelled protocol error recovery timer\n");
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_r2_state_advance_all(ftdmchan);
+		}
+	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Cannot start call when channel is in use (state = %s)\n", ftdm_channel_state2str(ftdmchan->state));
@@ -658,6 +672,7 @@ static void ftdm_r2_recover_from_protocol_error(void *data)
 		goto done;
 	}
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+	ftdm_r2_state_advance_all(ftdmchan);
 done:
 	ftdm_channel_unlock(ftdmchan);
 }
@@ -960,36 +975,37 @@ static int ftdm_r2_io_setup(openr2_chan_t *r2chan)
 
 static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *event)
 {
-    ftdm_status_t status;
-    ftdm_event_t *fevent = NULL;
-    ftdm_channel_t *ftdmchan = openr2_chan_get_fd(r2chan);
+	ftdm_status_t status;
+	ftdm_event_t *fevent = NULL;
+	ftdm_channel_t *ftdmchan = openr2_chan_get_fd(r2chan);
 
-    *event = OR2_OOB_EVENT_NONE;
-    status = ftdm_channel_read_event(ftdmchan, &fevent);
-    if (status != FTDM_SUCCESS) {
+	*event = OR2_OOB_EVENT_NONE;
+
+	status = ftdm_channel_read_event(ftdmchan, &fevent);
+
+	if (status != FTDM_SUCCESS) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "failed to retrieve freetdm event!\n");
-        return -1;
-    }
-	if (fevent->e_type != FTDM_EVENT_OOB)
-		return 0;
-	switch (fevent->enum_id) {
-		case FTDM_OOB_CAS_BITS_CHANGE:
-			{
-				*event = OR2_OOB_EVENT_CAS_CHANGE;
-			}
-			break;
-		case FTDM_OOB_ALARM_TRAP:
-			{
-				*event = OR2_OOB_EVENT_ALARM_ON;
-			}
-			break;
-		case FTDM_OOB_ALARM_CLEAR:
-			{
-				*event = OR2_OOB_EVENT_ALARM_OFF;
-			}
-			break;
+		return -1;
 	}
-    return 0;
+
+	switch (fevent->enum_id) {
+	case FTDM_OOB_CAS_BITS_CHANGE:
+		{
+			*event = OR2_OOB_EVENT_CAS_CHANGE;
+		}
+		break;
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			*event = OR2_OOB_EVENT_ALARM_ON;
+		}
+		break;
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			*event = OR2_OOB_EVENT_ALARM_OFF;
+		}
+		break;
+	}
+	return 0;
 }
 
 static openr2_io_interface_t ftdm_r2_io_iface = {
@@ -1419,7 +1435,8 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 {
 	ftdm_sigmsg_t sigev;
 	int ret;
-	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
+	ftdm_r2_call_t *r2call = R2CALL(ftdmchan);
+	openr2_chan_t *r2chan = r2call->r2chan;
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	memset(&sigev, 0, sizeof(sigev));
@@ -1435,10 +1452,10 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 	 * to complete (the processing is media-bound)
 	 * */
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE) 
-			&& (R2CALL(ftdmchan)->chanstate != ftdmchan->state)) {
+			&& (r2call->chanstate != ftdmchan->state)) {
 
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
-		R2CALL(ftdmchan)->chanstate = ftdmchan->state;
+		r2call->chanstate = ftdmchan->state;
 
 		if (IS_ACCEPTING_PENDING(ftdmchan)) {
 			/* 
@@ -1487,13 +1504,8 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				/* notify the user about the new call */
 				sigev.event_id = FTDM_SIGEVENT_START;
 
-				if (ftdm_span_send_signal(ftdmchan->span, &sigev) != FTDM_SUCCESS) {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Failed to handle call offered\n");
-					openr2_chan_disconnect_call(r2chan, OR2_CAUSE_OUT_OF_ORDER);
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
-					break; 
-				}
-				R2CALL(ftdmchan)->ftdm_call_started = 1; 
+				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				r2call->ftdm_call_started = 1; 
 
 				break;
 
@@ -1502,7 +1514,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 				{
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-						if (!R2CALL(ftdmchan)->accepted) {
+						if (!r2call->accepted) {
 							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Accepting call\n");
 							ft_r2_accept_call(ftdmchan);
 						} 
@@ -1522,11 +1534,11 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				{
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Call was answered\n");
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-						if (!R2CALL(ftdmchan)->accepted) {
+						if (!r2call->accepted) {
 							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Call has not been accepted, need to accept first\n");
 							// the answering will be done in the on_call_accepted handler
 							ft_r2_accept_call(ftdmchan);
-							R2CALL(ftdmchan)->answer_pending = 1;
+							r2call->answer_pending = 1;
 						} else {
 							ft_r2_answer_call(ftdmchan);
 						}
@@ -1541,19 +1553,19 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				/* just got hangup */
 			case FTDM_CHANNEL_STATE_HANGUP:
 				{
-					if (!R2CALL(ftdmchan)->disconnect_rcvd) {
+					if (!r2call->disconnect_rcvd) {
 						openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
 						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 						/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 						openr2_chan_disconnect_call(r2chan, disconnect_cause);
-					} else if (!R2CALL(ftdmchan)->protocol_error) {
+					} else if (!r2call->protocol_error) {
 						/* just ack the hangup, on_call_end will be called by openr2 right after */
 						openr2_chan_disconnect_call(r2chan, OR2_CAUSE_NORMAL_CLEARING);
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Clearing call due to protocol error\n");
 						/* do not set to down yet, give some time for recovery */
 						ftdm_sched_timer(r2data->sched, "protocolerr_recover", 100, 
-								ftdm_r2_recover_from_protocol_error, r2chan, NULL);
+								ftdm_r2_recover_from_protocol_error, r2chan, &r2call->protocol_error_recovery_timer);
 					}
 				}
 				break;
@@ -1561,7 +1573,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 			case FTDM_CHANNEL_STATE_TERMINATING:
 				{
 					/* if the call has not been started yet we must go to HANGUP right here */ 
-					if (!R2CALL(ftdmchan)->ftdm_call_started) {
+					if (!r2call->ftdm_call_started) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 					} else {
 						openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
@@ -1573,19 +1585,10 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				}
 				break;
 
-				/* just got hangup from the freetdm side due to abnormal failure */
-			case FTDM_CHANNEL_STATE_CANCEL:
-				{
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Unable to receive call\n");
-					openr2_chan_disconnect_call(r2chan, OR2_CAUSE_OUT_OF_ORDER);
-				}
-				break;
-
 				/* finished call for good */
 			case FTDM_CHANNEL_STATE_DOWN: 
 				{
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "R2 Call is down\n");
-					openr2_chan_disable_read(r2chan);
 					ret = 1;
 				}
 				break;
