@@ -1328,7 +1328,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	}
 
 	for (i = 1; (i <= span->chan_count) && (i <= FTDM_MAX_CHANNELS_SPAN); i++) {
-		r2chan = openr2_chan_new_from_fd(r2data->r2context, span->channels[i], span->channels[i]->physical_chan_id);
+		r2chan = openr2_chan_new_from_fd(r2data->r2context, span->channels[i], span->channels[i]->chan_id);
 		if (!r2chan) {
 			snprintf(span->last_error, sizeof(span->last_error), "Cannot create all openr2 channels for span.");
 			goto fail;
