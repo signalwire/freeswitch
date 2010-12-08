@@ -399,12 +399,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 		return FTDM_FAIL;
 	}
 
-	if (ftdmchan->state !=  FTDM_CHANNEL_STATE_DIALING) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Collision after call attempt, try another channel, new state = %s\n",
-				ftdm_channel_state2str(ftdmchan->state));
-		return FTDM_BREAK;
-	}
-
 	R2CALL(ftdmchan)->ftdm_call_started = 1;
 	R2CALL(ftdmchan)->chanstate = FTDM_CHANNEL_STATE_DOWN;
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
