@@ -756,6 +756,16 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			err = sangoma_flush_bufs(ftdmchan->sockfd, &tdm_api);
 		}
 		break;
+	case FTDM_COMMAND_FLUSH_RX_BUFFERS:
+		{
+			err = sangoma_flush_rx_bufs(ftdmchan->sockfd, &tdm_api);
+		}
+	case FTDM_COMMAND_FLUSH_TX_BUFFERS:
+		break;
+		{
+			err = sangoma_flush_tx_bufs(ftdmchan->sockfd, &tdm_api);
+		}
+		break;
 	case FTDM_COMMAND_FLUSH_IOSTATS:
 		{
 			err = sangoma_flush_stats(ftdmchan->sockfd, &tdm_api);
@@ -775,12 +785,13 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		}
 		break;
 	default:
+		err = FTDM_NOTIMPL;
 		break;
 	};
 
 	if (err) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
-		return FTDM_FAIL;
+		return err;
 	}
 
 
