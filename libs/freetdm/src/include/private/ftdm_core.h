@@ -477,6 +477,8 @@ struct ftdm_channel {
 	ftdm_dtmf_debug_t dtmfdbg;
 	ftdm_io_dump_t rxdump;
 	ftdm_io_dump_t txdump;
+	int32_t txdrops;
+	int32_t rxdrops;
 };
 
 struct ftdm_span {
@@ -509,6 +511,7 @@ struct ftdm_span {
 	ftdm_span_start_t start;
 	ftdm_span_stop_t stop;
 	ftdm_channel_sig_read_t sig_read;
+	ftdm_channel_sig_write_t sig_write;
 	/* Private I/O data per span. Do not touch unless you are an I/O module */
 	void *io_data;
 	char *type;

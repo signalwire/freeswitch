@@ -2254,7 +2254,7 @@ static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const c
 	} else {
 		/* the signaling stack did not touch the state, 
 		 * core is responsible from clearing flags and stuff */
-		ftdm_channel_done(chan);
+		ftdm_channel_close(&chan);
 	}
 	return FTDM_SUCCESS;
 }
@@ -2557,7 +2557,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 	}
 
+	if (ftdmchan->txdrops || ftdmchan->rxdrops) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "channel dropped data: txdrops = %d, rxdrops = %d\n", 
+				ftdmchan->txdrops, ftdmchan->rxdrops);
+	}
+
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
+
 
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
@@ -3385,6 +3391,16 @@ skipdebug:
 static FIO_WRITE_FUNCTION(ftdm_raw_write)
 {
 	int dlen = (int) *datalen;
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TX_DISABLED)) {
+		ftdmchan->txdrops++;
+		if (ftdmchan->txdrops <= 10) {
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "cannot write in channel with tx disabled\n");
+		} 
+		if (ftdmchan->txdrops == 10) {
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Too many tx drops, not printing anymore\n");
+		}
+		return FTDM_FAIL;
+	}
 	if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > -1) {
 		if ((write(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX], data, dlen)) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %zd bytes\n", dlen);
@@ -3553,6 +3569,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 	if (!ftdmchan->fio->read) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "read method not implemented\n");
+		status = FTDM_FAIL;
+		goto done;
+	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_RX_DISABLED)) {
+		ftdmchan->rxdrops++;
+		if (ftdmchan->rxdrops <= 10) {
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "cannot read from channel with rx disabled\n");
+		}
+		if (ftdmchan->rxdrops == 10) {
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "too many rx drops, not logging anymore\n");
+		}
 		status = FTDM_FAIL;
 		goto done;
 	}
@@ -3756,7 +3784,7 @@ done:
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t datasize, ftdm_size_t *datalen)
 {
-	ftdm_status_t status = FTDM_FAIL;
+	ftdm_status_t status = FTDM_SUCCESS;
 	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = datasize;
 	unsigned int i = 0;
@@ -3764,22 +3792,28 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel on write!\n");
 	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "null I/O on write!\n");
 
+	ftdm_channel_lock(ftdmchan);
+
 	if (!ftdmchan->buffer_delay && 
 		((ftdmchan->dtmf_buffer && ftdm_buffer_inuse(ftdmchan->dtmf_buffer)) ||
 		 (ftdmchan->fsk_buffer && ftdm_buffer_inuse(ftdmchan->fsk_buffer)))) {
 		/* read size writing DTMF ATM */
-		return FTDM_SUCCESS;
+		goto done;
 	}
 
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "cannot write in channel not open\n");
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
-		return FTDM_FAIL;
+		status = FTDM_FAIL;
+		goto done;
 	}
 
 	if (!ftdmchan->fio->write) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "write method not implemented\n");
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
-		return FTDM_FAIL;
+		status = FTDM_FAIL;
+		goto done;
 	}
 	
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
@@ -3796,10 +3830,13 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 		if (codec_func) {
 			status = codec_func(data, max, datalen);
 		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Do not know how to handle transcoding from %d to %d\n", 
+					ftdmchan->effective_codec, ftdmchan->native_codec);
 			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 			status = FTDM_FAIL;
+			goto done;
 		}
-	}	
+	}
 	
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_TX_GAIN) 
 		&& (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
@@ -3809,7 +3846,19 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 		}
 	}
 
+	if (ftdmchan->span->sig_write) {
+		status = ftdmchan->span->sig_write(ftdmchan, data, datalen);
+		if (status == FTDM_BREAK) {
+			/* signaling module decided to drop user frame */
+			status = FTDM_SUCCESS;
+			goto done;
+		}
+	}
+
 	status = ftdm_raw_write(ftdmchan, data, datalen);
+
+done:
+	ftdm_channel_unlock(ftdmchan);
 
 	return status;
 }
