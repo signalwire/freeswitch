@@ -138,6 +138,8 @@ typedef struct ftdm_r2_data_s {
 	uint32_t monitor_thread_id;
 	/* Logging directory */
 	char logdir[512];
+	/* scheduling context */
+	ftdm_sched_t *sched;
 } ftdm_r2_data_t;
 
 /* one element per span will be stored in g_mod_data_hash global var to keep track of them
@@ -145,6 +147,7 @@ typedef struct ftdm_r2_data_s {
 typedef struct ftdm_r2_span_pvt_s {
 	openr2_context_t *r2context; /* r2 context allocated for this span */
 	ftdm_hash_t *r2calls; /* hash table of allocated call data per channel for this span */
+	ftdm_sched_t *sched; /* schedule for the span */
 } ftdm_r2_span_pvt_t;
 
 /* span monitor thread */
@@ -312,6 +315,7 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 
 	case FTDM_CAUSE_NETWORK_OUT_OF_ORDER:
 	case FTDM_CAUSE_SERVICE_UNAVAILABLE:
+	case FTDM_CAUSE_PROTOCOL_ERROR:
 		return OR2_CAUSE_OUT_OF_ORDER;
 
 	case FTDM_CAUSE_NO_ANSWER:
@@ -642,6 +646,20 @@ static void ftdm_r2_on_os_error(openr2_chan_t *r2chan, int errorcode)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "OS error: %s\n", strerror(errorcode));
+}
+
+static void ftdm_r2_recover_from_protocol_error(void *data)
+{
+	openr2_chan_t *r2chan = data;
+	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_channel_lock(ftdmchan);
+	if (ftdmchan->state != FTDM_CHANNEL_STATE_HANGUP) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Recovering from protocol error but state is %s!\n", ftdm_channel_state2str(ftdmchan->state));
+		goto done;
+	}
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+done:
+	ftdm_channel_unlock(ftdmchan);
 }
 
 static void ftdm_r2_on_protocol_error(openr2_chan_t *r2chan, openr2_protocol_error_t reason)
@@ -1115,6 +1133,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	unsigned int i = 0;
 	int conf_failure = 0;
 	int intval = 0;
+	char schedname[255];
 	const char *var = NULL, *val = NULL;
 	const char *log_level = "notice,warning,error"; /* default loglevel, if none is read from conf */
 	ftdm_r2_data_t *r2data = NULL;
@@ -1374,6 +1393,11 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	/* use signals queue */
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 
+	/* setup the scheduler */
+	snprintf(schedname, sizeof(schedname), "ftmod_r2_%s", span->name);
+	ftdm_assert(ftdm_sched_create(&r2data->sched, schedname) == FTDM_SUCCESS, "Failed to create schedule!\n");
+	spanpvt->sched = r2data->sched;
+
 	return FTDM_SUCCESS;
 
 fail:
@@ -1396,6 +1420,7 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 	ftdm_sigmsg_t sigev;
 	int ret;
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	memset(&sigev, 0, sizeof(sigev));
 	sigev.chan_id = ftdmchan->chan_id;
@@ -1526,7 +1551,9 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 						openr2_chan_disconnect_call(r2chan, OR2_CAUSE_NORMAL_CLEARING);
 					} else {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Clearing call due to protocol error\n");
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+						/* do not set to down yet, give some time for recovery */
+						ftdm_sched_timer(r2data->sched, "protocolerr_recover", 100, 
+								ftdm_r2_recover_from_protocol_error, r2chan, NULL);
 					}
 				}
 				break;
@@ -1650,6 +1677,11 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			r2data->total_loops++;
 		}
 
+		/* run any span timers */
+		ftdm_sched_run(r2data->sched);
+
+		/* deliver the actual channel events to the user now without any channel locking */
+		ftdm_span_trigger_signals(span);
 #ifndef WIN32
 		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
@@ -1668,6 +1700,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 #else
 		status = ftdm_span_poll_event(span, waitms, NULL);
 #endif
+
+		/* run any span timers */
+		ftdm_sched_run(r2data->sched);
 
 		res = gettimeofday(&start, NULL);
 		if (res) {
@@ -1722,8 +1757,6 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
-		/* deliver the actual events to the user now without any channel locking */
-		ftdm_span_trigger_signals(span);
 	}
 	
 	chaniter = ftdm_span_get_chan_iterator(span, chaniter);
@@ -2046,6 +2079,7 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
 			spanpvt = val;
 			openr2_context_delete(spanpvt->r2context);
 			hashtable_destroy(spanpvt->r2calls);
+			ftdm_sched_destroy(&spanpvt->sched);
 		}
 	}
 	hashtable_destroy(g_mod_data_hash);
