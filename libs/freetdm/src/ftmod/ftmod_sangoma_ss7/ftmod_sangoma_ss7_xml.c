@@ -142,7 +142,7 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 
 		if (!strcasecmp(var, "ch_map")) {
 		/**********************************************************************/
-			strcpy(isupCkt.ch_map, val);
+			strncpy(isupCkt.ch_map, val, MAX_CIC_MAP_LENGTH-1);
 			SS7_DEBUG("\tFound channel map \"%s\"\n", isupCkt.ch_map);
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "typeCntrl")) {
@@ -393,7 +393,7 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 	for (i = 0; i < num_parms; i++) {
 		/**********************************************************************/
 		if (!strcasecmp(parm->var, "name")) {
-			strcpy((char *)mtpLinkSet.name, parm->val);
+			strncpy((char *)mtpLinkSet.name, parm->val, MAX_NAME_LEN-1);
 			SS7_DEBUG("\tFound an \"mtp_linkset\" named = %s\n", mtpLinkSet.name);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "apc")) {
@@ -508,7 +508,7 @@ static int ftmod_ss7_parse_mtp_link(ftdm_conf_node_t *mtp_link, sng_mtp_link_t *
 		/* try to match the parameter to what we expect */
 		/**********************************************************************/
 		if (!strcasecmp(parm->var, "name")) {
-			strcpy((char *)mtpLink->name, parm->val);
+			strncpy((char *)mtpLink->name, parm->val, MAX_NAME_LEN-1);
 			SS7_DEBUG("\tFound an \"mtp_link\" named = %s\n", mtpLink->name);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "span")) {
@@ -827,7 +827,7 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 		/* try to match the parameter to what we expect */
 		/**********************************************************************/
 		if (!strcasecmp(parm->var, "name")) {
-			strcpy((char *)mtpRoute.name, parm->val);
+			strncpy((char *)mtpRoute.name, parm->val, MAX_NAME_LEN-1);
 			SS7_DEBUG("\tFound an \"mtp_route\" named = %s\n", mtpRoute.name);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "dpc")) {
@@ -999,7 +999,7 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 		/* try to match the parameter to what we expect */
 		/**********************************************************************/
 		if (!strcasecmp(parm->var, "name")) {
-			strcpy((char *)sng_isup.name, parm->val);
+			strncpy((char *)sng_isup.name, parm->val, MAX_NAME_LEN-1);
 			SS7_DEBUG("\tFound an \"isup_interface\" named = %s\n", sng_isup.name);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "spc")) {
@@ -1047,6 +1047,11 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 				SS7_DEBUG("\tFound MTP3 Route = %s\n", parm->val);
 			}
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "min_digits")) {
+			sng_isup.min_digits = atoi(parm->val);
+
+			SS7_DEBUG("\tFound min_digits = %d\n", sng_isup.min_digits);
+		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "ssf")) {
 			if (!strcasecmp(parm->val, "nat")) {
 				sng_isup.ssf = SSF_NAT;
@@ -1067,8 +1072,8 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "license")) {
 		/**********************************************************************/
-			strcpy(g_ftdm_sngss7_data.cfg.license, parm->val);
-			strcpy(g_ftdm_sngss7_data.cfg.signature, parm->val);
+			strncpy(g_ftdm_sngss7_data.cfg.license, parm->val, MAX_PATH-1);
+			strncpy(g_ftdm_sngss7_data.cfg.signature, parm->val, MAX_PATH-1);
 			strcat(g_ftdm_sngss7_data.cfg.signature, ".sig");
 			SS7_DEBUG("\tFound license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("\tFound signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
@@ -1304,6 +1309,13 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 		sng_isup.clg_nadi = 0x03;
 	}
 
+	/* check if the user requested min_digits value */
+	if (sng_isup.min_digits == 0) {
+		/* default to 7 */
+		sng_isup.min_digits = 7;
+	}
+		
+
 	/* trickle down the SPC to all sub entities */
 	linkSetId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].linkSetId;
 
@@ -1359,7 +1371,7 @@ static int ftmod_ss7_fill_in_mtpLink(sng_mtp_link_t *mtpLink)
 	}
 
 	/* fill in the information */
-	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpLink[i].name, (char *)mtpLink->name);
+	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpLink[i].name, (char *)mtpLink->name, MAX_NAME_LEN-1);
 
 	g_ftdm_sngss7_data.cfg.mtpLink[i].id				= mtpLink->id;
 
@@ -1521,7 +1533,7 @@ static int ftmod_ss7_fill_in_mtpLinkSet(sng_link_set_t *mtpLinkSet)
 {
 	int	i = mtpLinkSet->id;
 
-	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpLinkSet[i].name, (char *)mtpLinkSet->name);
+	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpLinkSet[i].name, (char *)mtpLinkSet->name, MAX_NAME_LEN-1);
 
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].id			= mtpLinkSet->id;
 	g_ftdm_sngss7_data.cfg.mtpLinkSet[i].apc		= mtpLinkSet->apc;
@@ -1559,7 +1571,7 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 		SS7_DEBUG("found existing mtp3_route, id is = %d\n", mtp3_route->id);
 	}
 
-	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[i].name, (char *)mtp3_route->name);
+	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[i].name, (char *)mtp3_route->name, MAX_NAME_LEN-1);
 
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].id			= mtp3_route->id;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc			= mtp3_route->dpc;
@@ -1693,7 +1705,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 		SS7_DEBUG("found existing isup interface, id is = %d\n", sng_isup->id);
 	}
 
-	strcpy((char *)g_ftdm_sngss7_data.cfg.isupIntf[i].name, (char *)sng_isup->name);
+	strncpy((char *)g_ftdm_sngss7_data.cfg.isupIntf[i].name, (char *)sng_isup->name, MAX_NAME_LEN-1);
 
 	g_ftdm_sngss7_data.cfg.isupIntf[i].id			= sng_isup->id;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].mtpRouteId	= sng_isup->mtpRouteId;
@@ -1705,6 +1717,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	g_ftdm_sngss7_data.cfg.isupIntf[i].isap			= sng_isup->isap;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].cld_nadi		= sng_isup->cld_nadi;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].clg_nadi		= sng_isup->clg_nadi;
+	g_ftdm_sngss7_data.cfg.isupIntf[i].min_digits	= sng_isup->min_digits;
 	g_ftdm_sngss7_data.cfg.isupIntf[i].options		= sng_isup->options;
 	if (sng_isup->t4 != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= sng_isup->t4;
@@ -1976,7 +1989,7 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 		return FTDM_FAIL;
 	}
 
-	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[0].name, "self-rt");
+	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[0].name, "self-route", MAX_NAME_LEN-1);
 
 	g_ftdm_sngss7_data.cfg.mtpRoute[0].id			= 0;
 	g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc			= spc;
@@ -2230,7 +2243,7 @@ static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot)
 	int			lower;
 	int			upper;
 	char		tmp[5]; /*KONRAD FIX ME*/
-	char		new_ch_map[MAX_CIC_LENGTH];
+	char		new_ch_map[MAX_CIC_MAP_LENGTH];
 
 	memset(&tmp[0], '\0', sizeof(tmp));
 	memset(&new_ch_map[0], '\0', sizeof(new_ch_map));
@@ -2337,7 +2350,9 @@ static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot)
 		/* the the rest of ch_map to new_ch_map */
 		strncat(new_ch_map, &ch_map[x], strlen(&ch_map[x]));
 
+
 		/* set the new cic map to ch_map*/
+		memset(ch_map, '\0', sizeof(ch_map));
 		strcpy(ch_map, new_ch_map);
 
 	} else if (ch_map[x] == ',') {
@@ -2345,16 +2360,21 @@ static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot)
 		x++;
 
 		/* copy the rest of the list to new_ch_map */
+		memset(new_ch_map, '\0', sizeof(new_ch_map));
 		strcpy(new_ch_map, &ch_map[x]);
 
 		/* copy the new_ch_map over the old one */
+		memset(ch_map, '\0', sizeof(ch_map));
 		strcpy(ch_map, new_ch_map);
 
 	} else if (ch_map[x] == '\0') {
+
 		/* we're at the end of the string...copy the rest of the list to new_ch_map */
+		memset(new_ch_map, '\0', sizeof(new_ch_map));
 		strcpy(new_ch_map, &ch_map[x]);
 
 		/* set the new cic map to ch_map*/
+		memset(ch_map, '\0', sizeof(ch_map));
 		strcpy(ch_map, new_ch_map);
 	} else { 
 		/* nothing to do */
