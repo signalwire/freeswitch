@@ -163,9 +163,7 @@ static ftdm_status_t start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *du
 		return FTDM_FAIL;
 	}
 	memset(dump, 0, sizeof(*dump));
-	/* on 64bits, we get a weird number if we don't cast to uint here 
-	 * which is what size_t will be anyway */
-	dump->buffer = ftdm_malloc((uint32_t)size);
+	dump->buffer = ftdm_malloc(size);
 	if (!dump->buffer) {
 		return FTDM_FAIL;
 	}
@@ -350,7 +348,7 @@ static __inline__ void *ftdm_std_malloc(void *pool, ftdm_size_t size)
 {
 	void *ptr = malloc(size);
 	pool = NULL; /* fix warning */
-	ftdm_assert_return(ptr != NULL, NULL, "Out of memory");
+	ftdm_assert_return(ptr != NULL, NULL, "Out of memory\n");
 	return ptr;
 }
 
@@ -358,7 +356,7 @@ static __inline__ void *ftdm_std_calloc(void *pool, ftdm_size_t elements, ftdm_s
 {
 	void *ptr = calloc(elements, size);
 	pool = NULL;
-	ftdm_assert_return(ptr != NULL, NULL, "Out of memory");
+	ftdm_assert_return(ptr != NULL, NULL, "Out of memory\n");
 	return ptr;
 }
 
@@ -366,7 +364,7 @@ static __inline__ void *ftdm_std_realloc(void *pool, void *buff, ftdm_size_t siz
 {
 	buff = realloc(buff, size);
 	pool = NULL;
-	ftdm_assert_return(buff != NULL, NULL, "Out of memory");
+	ftdm_assert_return(buff != NULL, NULL, "Out of memory\n");
 	return buff;
 }
 
@@ -2764,7 +2762,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, size) != FTDM_SUCCESS) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump\n");	
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump of size %zd\n", size);
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled input dump with size %zd\n", size);
@@ -2794,7 +2792,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			if (start_chan_io_dump(ftdmchan, &ftdmchan->txdump, size) != FTDM_SUCCESS) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump\n");	
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump of size %d\n", size);	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled output dump with size %zd\n", size);
@@ -3847,7 +3845,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 	}
 
 	if (ftdmchan->span->sig_write) {
-		status = ftdmchan->span->sig_write(ftdmchan, data, datalen);
+		status = ftdmchan->span->sig_write(ftdmchan, data, *datalen);
 		if (status == FTDM_BREAK) {
 			/* signaling module decided to drop user frame */
 			status = FTDM_SUCCESS;

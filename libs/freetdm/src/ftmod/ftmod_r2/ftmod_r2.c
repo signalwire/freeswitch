@@ -91,7 +91,7 @@ typedef struct ft_r2_conf_s {
 	int32_t max_dnis;
 	int32_t mfback_timeout; 
 	int32_t metering_pulse_timeout;
-	int32_t mf_dump_size;
+	ftdm_size_t mf_dump_size;
 
 	/* booleans */
 	int immediate_accept;
@@ -121,7 +121,7 @@ typedef struct ftdm_r2_data_s {
 	/* whether accept the call when offered, or wait until the user decides to accept */
 	int accept_on_offer:1;
 	/* Size of multi-frequency (or any media) dumps used during protocol errors */
-	int32_t mf_dump_size;
+	ftdm_size_t mf_dump_size;
 	/* max time spent in ms doing real work in a single loop */
 	int32_t jobmax;
 	/* Total number of loops performed so far */
@@ -473,7 +473,6 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	memset(ftdmchan->caller_data.dnis.digits, 0, sizeof(ftdmchan->caller_data.collected));
 	memset(ftdmchan->caller_data.ani.digits, 0, sizeof(ftdmchan->caller_data.collected));
 
-	/* clean the call data structure but keep the R2 processing flag on! */
 	ft_r2_clean_call(ftdmchan->call_data);
 	r2call = R2CALL(ftdmchan);
 
@@ -1120,6 +1119,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 {
 	unsigned int i = 0;
 	int conf_failure = 0;
+	int intval = 0;
 	const char *var = NULL, *val = NULL;
 	const char *log_level = "notice,warning,error"; /* default loglevel, if none is read from conf */
 	ftdm_r2_data_t *r2data = NULL;
@@ -1226,11 +1226,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 			r2conf.advanced_protocol_file = (char *)val;
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with advanced protocol file %s\n", span->name, val);
 		} else if (!strcasecmp(var, "mf_dump_size")) {
-			r2conf.mf_dump_size = atoi(val);
-			if (r2conf.mf_dump_size < 0) {
+			intval = atoi(val);
+			if (intval < 0) {
 				r2conf.mf_dump_size = FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
 				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with default mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
 			} else {
+				r2conf.mf_dump_size = intval;
 				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
 			}
 		} else if (!strcasecmp(var, "allow_collect_calls")) {
@@ -1612,6 +1613,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	int index = 0;
 	struct timeval start, end;
 	ftdm_iterator_t *chaniter = NULL;
+	uint32_t txqueue_size = 4;
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
 #ifdef __linux__
@@ -1620,18 +1622,23 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	
 	ftdm_log(FTDM_LOG_DEBUG, "OpenR2 monitor thread %lu started.\n", r2data->monitor_thread_id);
 	r2chan = NULL;
-	for (i = 1; i <= span->chan_count; i++) {
-		r2chan = R2CALL(span->channels[i])->r2chan;
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (i = 1; chaniter; chaniter = ftdm_iterator_next(chaniter), i++) {
+		ftdmchan = ftdm_iterator_current(chaniter);
+		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_span_id(r2chan, span->span_id);
 		openr2_chan_set_idle(r2chan);
 		openr2_chan_process_cas_signaling(r2chan);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txqueue_size);
 	}
 
 	memset(&start, 0, sizeof(start));
 	memset(&end, 0, sizeof(end));
-	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	while (ftdm_running() && ftdm_test_flag(r2data, FTDM_R2_RUNNING)) {
 		res = gettimeofday(&end, NULL);
+		if (res) {
+			ftdm_log(FTDM_LOG_CRIT, "Failure gettimeofday [%s]\n", strerror(errno));
+		}
 		if (start.tv_sec) {
 			ms = ((end.tv_sec - start.tv_sec) * 1000) 
 			    + ((( 1000000 + end.tv_usec - start.tv_usec) / 1000) - 1000);

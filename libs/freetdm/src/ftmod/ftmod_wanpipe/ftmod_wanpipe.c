@@ -760,8 +760,8 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		{
 			err = sangoma_flush_rx_bufs(ftdmchan->sockfd, &tdm_api);
 		}
-	case FTDM_COMMAND_FLUSH_TX_BUFFERS:
 		break;
+	case FTDM_COMMAND_FLUSH_TX_BUFFERS:
 		{
 			err = sangoma_flush_tx_bufs(ftdmchan->sockfd, &tdm_api);
 		}
@@ -806,20 +806,17 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 	
 	/* we don't test for 80% full in tx since is typically full for voice channels, should we test tx 80% full for D-channels? */
 	if (ftdmchan->iostats.tx.queue_len >= ftdmchan->iostats.tx.queue_size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Tx Queue Full (%d/%d)\n",
-					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
 		ftdm_set_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
-		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Tx Queue no longer full (%d/%d)\n",
-					  ftdmchan->iostats.tx.queue_len, ftdmchan->iostats.tx.queue_size);
 		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	}
 
 	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_number_of_frames_in_queue) {
 		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
-		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle */
-		if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle:  %d\n", ftdmchan->iostats.tx.idle_packets);
+		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle
+		 * also do not report idle warning when we just started transmitting */
+		if (ftdmchan->iostats.tx.packets && FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle: %d\n", ftdmchan->iostats.tx.idle_packets);
 		}
 	}
 
@@ -942,7 +939,9 @@ static FIO_READ_FUNCTION(wanpipe_read)
  */
 static FIO_WRITE_FUNCTION(wanpipe_write)
 {
-	int bsent;
+	int bsent = 0;
+	int err = 0;
+	ftdm_time_t ms = 0;
 	wp_tdm_api_tx_hdr_t hdrframe;
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
@@ -950,6 +949,17 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 	if (*datalen == 0) {
 		return FTDM_SUCCESS;
 	}
+
+	if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS) && !ftdmchan->iostats.tx.packets) {
+		wanpipe_tdm_api_t tdm_api;
+		memset(&tdm_api, 0, sizeof(tdm_api));
+		/* if this is the first write ever, flush the tx first to have clean stats */
+		err = sangoma_flush_tx_bufs(ftdmchan->sockfd, &tdm_api);
+		if (err) {
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to flush on first write\n");
+		}
+	}
+
 	bsent = sangoma_writemsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (unsigned short)(*datalen),0);
 
 	/* should we be checking if bsent == *datalen here? */
