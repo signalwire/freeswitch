@@ -4073,6 +4073,52 @@ static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
 
+static void print_channels_by_flag(ftdm_stream_handle_t *stream, uint32_t flag, int not, int *count)
+{
+	ftdm_hash_iterator_t *i = NULL;
+	ftdm_span_t *span;
+	ftdm_channel_t *fchan = NULL;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *curr = NULL;
+	const void *key = NULL;
+	void *val = NULL;
+
+	*count = 0;
+
+	ftdm_mutex_lock(globals.mutex);
+
+	for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
+		hashtable_this(i, &key, NULL, &val);
+		if (!key || !val) {
+			break;
+		}
+		span = val;
+		citer = ftdm_span_get_chan_iterator(span, NULL);
+		if (!citer) {
+			continue;
+		}
+		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
+			fchan = ftdm_iterator_current(curr);
+			if (not && !ftdm_test_flag(fchan, flag)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] has not flag %d\n", 
+						fchan->span_id, fchan->chan_id, 
+						fchan->physical_span_id, fchan->physical_chan_id, 
+						flag);
+				(*count)++;
+			} else if (!not && ftdm_test_flag(fchan, flag)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] has flag %d\n", 
+						fchan->span_id, fchan->chan_id, 
+						fchan->physical_span_id, fchan->physical_chan_id, 
+						flag);
+				(*count)++;
+			}
+		}
+		ftdm_iterator_free(citer);
+	}
+
+	ftdm_mutex_unlock(globals.mutex);
+}
+
 static void print_channels_by_state(ftdm_stream_handle_t *stream, ftdm_channel_state_t state, int not, int *count)
 {
 	ftdm_hash_iterator_t *i = NULL;
@@ -4125,6 +4171,8 @@ static char *handle_core_command(const char *cmd)
 	int not = 0;
 	char *argv[10] = { 0 };
 	char *state = NULL;
+	char *flag = NULL;
+	uint32_t flagval = 0;
 	ftdm_channel_state_t i = FTDM_CHANNEL_STATE_INVALID;
 	ftdm_stream_handle_t stream = { 0 };
 
@@ -4159,6 +4207,19 @@ static char *handle_core_command(const char *cmd)
 		}
 		print_channels_by_state(&stream, i, not, &count);
 		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "not in state" : "in state", ftdm_channel_state2str(i), count);
+	} else if (!strcasecmp(argv[0], "flag")) {
+		if (argc < 2) {
+			stream.write_function(&stream, "core state command requires an argument\n");
+			goto done;
+		}
+		flag = argv[1];
+		if (argv[1][0] == '!') {
+			not = 1;
+			flag++;
+		}
+		flagval = atoi(flag);
+		print_channels_by_flag(&stream, flagval, not, &count);
+		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "without flag" : "with flag", flagval, count);
 	} else {
 		stream.write_function(&stream, "invalid core command %s\n", argv[0]);
 	}

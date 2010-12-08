@@ -266,6 +266,7 @@ typedef enum {
 	FTDM_CHANNEL_USER_HANGUP = (1 << 29),
 	FTDM_CHANNEL_RX_DISABLED = (1 << 30),
 	FTDM_CHANNEL_TX_DISABLED = (1 << 31),
+	/* ok, when we reach 32, we need to move to uint64_t all the flag stuff */
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 
