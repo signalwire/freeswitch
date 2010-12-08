@@ -2033,11 +2033,20 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		break;
 
 		case FTDM_SIGEVENT_PROGRESS:
-		case FTDM_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_ring_ready(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+
+		case FTDM_SIGEVENT_PROGRESS_MEDIA:
+		{
+			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_pre_answered(channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
