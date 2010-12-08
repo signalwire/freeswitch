@@ -4073,7 +4073,7 @@ static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
 
-static void print_channels_by_flag(ftdm_stream_handle_t *stream, uint32_t flag, int not, int *count)
+static void print_channels_by_flag(ftdm_stream_handle_t *stream, int32_t flagval, int not, int *count)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	ftdm_span_t *span;
@@ -4082,6 +4082,7 @@ static void print_channels_by_flag(ftdm_stream_handle_t *stream, uint32_t flag, 
 	ftdm_iterator_t *curr = NULL;
 	const void *key = NULL;
 	void *val = NULL;
+	uint32_t flag = (1 << flagval);
 
 	*count = 0;
 
@@ -4103,13 +4104,13 @@ static void print_channels_by_flag(ftdm_stream_handle_t *stream, uint32_t flag, 
 				stream->write_function(stream, "[s%dc%d][%d:%d] has not flag %d\n", 
 						fchan->span_id, fchan->chan_id, 
 						fchan->physical_span_id, fchan->physical_chan_id, 
-						flag);
+						flagval);
 				(*count)++;
 			} else if (!not && ftdm_test_flag(fchan, flag)) {
 				stream->write_function(stream, "[s%dc%d][%d:%d] has flag %d\n", 
 						fchan->span_id, fchan->chan_id, 
 						fchan->physical_span_id, fchan->physical_chan_id, 
-						flag);
+						flagval);
 				(*count)++;
 			}
 		}
@@ -4219,7 +4220,7 @@ static char *handle_core_command(const char *cmd)
 		}
 		flagval = atoi(flag);
 		print_channels_by_flag(&stream, flagval, not, &count);
-		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "without flag" : "with flag", flagval, count);
+		stream.write_function(&stream, "\nTotal channels %s %d: %d\n", not ? "without flag" : "with flag", flagval, count);
 	} else {
 		stream.write_function(&stream, "invalid core command %s\n", argv[0]);
 	}
