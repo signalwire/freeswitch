@@ -184,6 +184,9 @@ typedef enum {
 	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 10),
 	/* If this flag is set, channel will be moved to proceed state when calls goes to routing */
 	FTDM_SPAN_USE_PROCEED_STATE = (1 << 11),
+	/* If this flag is set, the signalling module supports jumping directly to state up, without
+		going through PROGRESS/PROGRESS_MEDIA */
+	FTDM_SPAN_USE_SKIP_STATES = (1 << 12),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
