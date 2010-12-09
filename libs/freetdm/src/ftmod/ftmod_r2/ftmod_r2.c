@@ -988,6 +988,10 @@ static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *e
 		return -1;
 	}
 
+	if (fevent->e_type != FTDM_EVENT_OOB) {
+		return 0;
+	}
+
 	switch (fevent->enum_id) {
 	case FTDM_OOB_CAS_BITS_CHANGE:
 		{

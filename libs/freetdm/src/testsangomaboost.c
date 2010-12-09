@@ -52,7 +52,6 @@
 #define __USE_BSD
 #endif
 #include <unistd.h>
-#endif
 #include "freetdm.h"
 
 
