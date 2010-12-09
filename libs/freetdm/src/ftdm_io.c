@@ -128,8 +128,15 @@ static void write_chan_io_dump(ftdm_io_dump_t *dump, char *dataptr, int dlen)
 static void dump_chan_io_to_file(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, FILE *file)
 {
 	/* write the saved audio buffer */
-	size_t rc = 0;
-	size_t towrite = dump->size - dump->windex;
+	ftdm_size_t rc = 0;
+	ftdm_size_t towrite = 0;
+
+	if (!dump->buffer) {
+		return;
+	}
+
+	towrite = dump->size - dump->windex;
+
 	if (dump->wrapped) {
 		rc = fwrite(&dump->buffer[dump->windex], 1, towrite, file);
 		if (rc != towrite) {
@@ -2821,6 +2828,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			if (!obj) {
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
+			if (!ftdmchan->rxdump.buffer) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Not dumped input to file %p, input dump is not enabled\n", obj);
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
 			dump_chan_io_to_file(ftdmchan, &ftdmchan->rxdump, obj);
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %d to file %p\n", ftdmchan->rxdump.size, obj);
 			GOTO_STATUS(done, FTDM_SUCCESS);
@@ -2831,6 +2842,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_DUMP_OUTPUT:
 		{
 			if (!obj) {
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			if (!ftdmchan->txdump.buffer) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Not dumped output to file %p, output dump is not enabled\n", obj);
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			dump_chan_io_to_file(ftdmchan, &ftdmchan->txdump, obj);
