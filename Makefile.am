@@ -90,6 +90,8 @@ $(RECURSIVE_TARGETS):
 	fi; \
 	if test -z "$$fail" ; then \
 	   cd $(top_builddir)/build && $(MAKE) $(AM_MAKEFLAGS) $$target || exit 1; \
+	else \
+	   exit 1; \
 	fi ;
 
 CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`

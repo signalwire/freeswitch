@@ -2491,23 +2491,46 @@ SWITCH_STANDARD_API(uuid_display_function)
 #define SIMPLIFY_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_simplify_function)
 {
+	char *mydata = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
-	} else {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		goto error;
+	}
+	if (argv[0]) {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
-		msg.string_arg = cmd;
+		msg.string_arg = argv[0];
 		msg.from = __FILE__;
 
-		if ((lsession = switch_core_session_locate(cmd))) {
+		if ((lsession = switch_core_session_locate(argv[0]))) {
 			status = switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_rwunlock(lsession);
 		}
+		goto ok;
+	} else {
+		goto error;
 	}
+
+  error:
+	stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+  ok:
+	switch_safe_free(mydata);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK Success\n");
@@ -4853,6 +4876,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_session_heartbeat ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar_multi ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar ::console::list_uuid");
+	switch_console_set_complete("add uuid_simplify ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
 	switch_console_set_complete("add version");

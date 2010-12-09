@@ -160,11 +160,6 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		strcpy((char *) sql, "select 1");
 	}
 
-	if (stmt) {
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-		stmt = NULL;
-	}
-
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
 		code = __LINE__;
 		goto error;
@@ -227,6 +222,11 @@ static int db_is_up(switch_odbc_handle_t *handle)
 
 	if (!max_tries) {
 		goto done;
+	}
+
+	if (stmt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		stmt = NULL;
 	}
 
 	switch_safe_free(err_str);
