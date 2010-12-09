@@ -1177,7 +1177,6 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 		return ESL_FAIL;
 	}
 
-	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_sr_event);
 
 	*handle->last_sr_reply = '\0';
