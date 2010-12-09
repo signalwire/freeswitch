@@ -3906,7 +3906,7 @@ done:
 FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data)
 {
 	ftdm_call_clear_vars(caller_data);
-	memset(caller_data.raw_data, 0, sizeof(raw_data));
+	memset(&caller_data->raw_data, 0, sizeof(caller_data->raw_data));
 	caller_data->raw_data_len = 0;
 	return;
 }
