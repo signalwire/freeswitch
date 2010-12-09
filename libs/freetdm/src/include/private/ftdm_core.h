@@ -501,6 +501,7 @@ struct ftdm_span {
 	teletone_multi_tone_t tone_finder[FTDM_TONEMAP_INVALID+1];
 	ftdm_channel_t *channels[FTDM_MAX_CHANNELS_SPAN+1];
 	fio_channel_outgoing_call_t outgoing_call;
+	fio_channel_send_msg_t send_msg;
 	fio_channel_set_sig_status_t set_channel_sig_status;
 	fio_channel_get_sig_status_t get_channel_sig_status;
 	fio_span_set_sig_status_t set_span_sig_status;

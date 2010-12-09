@@ -185,6 +185,39 @@ ftdm_status_t get_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t get_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
+{
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	if (cgPtyNmb->eh.pres != PRSNT_NODEF) {
+		return FTDM_FAIL;
+	}
+
+	if (cgPtyNmb->screenInd.pres == PRSNT_NODEF) {
+		ftdm_call_add_var(caller_data, "isdn.cg_pty2.screen_ind", ftdm_screening2str(cgPtyNmb->screenInd.val));
+	}
+
+	if (cgPtyNmb->presInd0.pres == PRSNT_NODEF) {
+		ftdm_call_add_var(caller_data, "isdn.cg_pty2.presentation_ind", ftdm_presentation2str(cgPtyNmb->presInd0.val));
+	}
+
+	if (cgPtyNmb->nmbPlanId.pres == PRSNT_NODEF) {
+		ftdm_call_add_var(caller_data, "isdn.cg_pty2.npi", ftdm_npi2str(cgPtyNmb->nmbPlanId.val));
+	}
+		
+	if (cgPtyNmb->typeNmb1.pres == PRSNT_NODEF) {
+		ftdm_call_add_var(caller_data, "isdn.cg_pty2.ton", ftdm_ton2str(cgPtyNmb->typeNmb1.val));
+	}
+	
+	if (cgPtyNmb->nmbDigits.pres == PRSNT_NODEF) {
+		char digits_string [32];
+		memcpy(digits_string, (const char*)cgPtyNmb->nmbDigits.val, cgPtyNmb->nmbDigits.len);
+		digits_string[cgPtyNmb->nmbDigits.len] = '\0';
+		ftdm_call_add_var(caller_data, "isdn.cg_pty2.digits", digits_string);
+	}
+	memcpy(&caller_data->ani, &caller_data->cid_num, sizeof(caller_data->ani));
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t get_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
@@ -278,7 +311,7 @@ ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 		
 	memcpy(subaddress, (char*)cgPtySad->sadInfo.val, cgPtySad->sadInfo.len);
 	subaddress[cgPtySad->sadInfo.len] = '\0';
-	ftdm_channel_add_var(ftdmchan, "isdn.calling_subaddr", subaddress);
+	ftdm_call_add_var(&ftdmchan->caller_data, "isdn.calling_subaddr", subaddress);
 	return FTDM_SUCCESS;
 }
 
@@ -291,17 +324,16 @@ ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 	return get_facility_ie_str(ftdmchan, facilityStr->facilityStr.val, facilityStr->facilityStr.len);
 }
 
-ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t data_len)
+ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t data_len)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	
 	if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-		if (data_len > sizeof(caller_data->raw_data)-2) {
-			ftdm_log(FTDM_LOG_CRIT, "Length of Facility IE exceeds maximum length\n");
-			return FTDM_FAIL;
-		}
-
+		/* size of facilityStr->facilityStr.len is a uint8_t so no need to check
+		for overflow here as facilityStr->facilityStr.len will always be smaller
+		than sizeof(caller_data->raw_data) */
+		
 		memset(caller_data->raw_data, 0, sizeof(caller_data->raw_data));
 		/* Always include Facility IE identifier + len so this can be used as a sanity check by the user */
 		caller_data->raw_data[0] = SNGISDN_Q931_FACILITY_IE_ID;
@@ -348,7 +380,7 @@ ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd)
 				val = SNGISDN_PROGIND_DESCR_INVALID;
 				break;
 		}
-		ftdm_channel_add_var(ftdmchan, "isdn.prog_ind.descr", ftdm_sngisdn_progind_descr2str(val));
+		ftdm_call_add_var(&ftdmchan->caller_data, "isdn.prog_ind.descr", ftdm_sngisdn_progind_descr2str(val));
 	}
 	
 	if (progInd->location.pres) {
@@ -379,7 +411,7 @@ ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd)
 				val = SNGISDN_PROGIND_LOC_INVALID;
 				break;
 		}
-		ftdm_channel_add_var(ftdmchan, "isdn.prog_ind.loc", ftdm_sngisdn_progind_loc2str(val));
+		ftdm_call_add_var(&ftdmchan->caller_data, "isdn.prog_ind.loc", ftdm_sngisdn_progind_loc2str(val));
 	}	
 	return FTDM_SUCCESS;
 }
@@ -420,6 +452,89 @@ ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 
 	memcpy(cgPtyNmb->nmbDigits.val, caller_data->cid_num.digits, len);
 
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
+{
+	const char* string = NULL;
+	uint8_t len,val;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	
+	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.digits");
+	if ((string == NULL) || !(*string)) {
+		return FTDM_FAIL;
+	}
+
+	cgPtyNmb->eh.pres			= PRSNT_NODEF;
+	
+	len = strlen(string);
+	cgPtyNmb->nmbDigits.len		= len;
+
+	cgPtyNmb->nmbDigits.pres	= PRSNT_NODEF;
+	memcpy(cgPtyNmb->nmbDigits.val, string, len);
+
+	/* Screening Indicator */
+	cgPtyNmb->screenInd.pres	= PRSNT_NODEF;
+
+	val = FTDM_SCREENING_INVALID;
+	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.screening_ind");
+	if ((string != NULL) && (*string)) {
+		val = ftdm_str2ftdm_screening(string);
+	}
+
+	/* isdn.cg_pty2.screen_ind does not exist or we could not parse its value */
+	if (val == FTDM_SCREENING_INVALID) {		
+		/* default to caller data screening ind */
+		cgPtyNmb->screenInd.val = caller_data->screen;
+	} else {
+		cgPtyNmb->screenInd.val = val;
+	}
+
+	/* Presentation Indicator */
+	cgPtyNmb->presInd0.pres = PRSNT_NODEF;
+	
+	val = FTDM_PRES_INVALID;
+	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.presentation_ind");
+	if ((string != NULL) && (*string)) {
+		val = ftdm_str2ftdm_presentation(string);
+	}
+
+	if (val == FTDM_PRES_INVALID) {
+		cgPtyNmb->presInd0.val = caller_data->pres;
+	} else {
+		cgPtyNmb->presInd0.val = val;
+	}
+
+	/* Numbering Plan Indicator */
+	cgPtyNmb->nmbPlanId.pres	= PRSNT_NODEF;
+	
+	val = FTDM_NPI_INVALID;
+	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.npi");
+	if ((string != NULL) && (*string)) {
+		val = ftdm_str2ftdm_npi(string);
+	}
+
+	if (val == FTDM_NPI_INVALID) {
+		cgPtyNmb->nmbPlanId.val = caller_data->cid_num.plan;
+	} else {
+		cgPtyNmb->nmbPlanId.val	= val;
+	}
+
+	cgPtyNmb->typeNmb1.pres		= PRSNT_NODEF;
+
+	/* Type of Number */
+	val = FTDM_TON_INVALID;
+	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.ton");
+	if ((string != NULL) && (*string)) {
+		val = ftdm_str2ftdm_ton(string);
+	}
+
+	if (val == FTDM_TON_INVALID) {
+		cgPtyNmb->typeNmb1.val = caller_data->cid_num.type;
+	} else {
+		cgPtyNmb->typeNmb1.val = val;
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -544,7 +659,7 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 {
 	const char* clg_subaddr = NULL;
-	clg_subaddr = ftdm_channel_get_var(ftdmchan, "isdn.calling_subaddr");
+	clg_subaddr = ftdm_call_get_var(&ftdmchan->caller_data, "isdn.calling_subaddr");
 	if ((clg_subaddr != NULL) && (*clg_subaddr)) {
 		unsigned len = strlen (clg_subaddr);
 		cgPtySad->eh.pres = PRSNT_NODEF;
@@ -565,7 +680,7 @@ ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
 {
 	ftdm_status_t status;
-	status = set_facility_ie_str(ftdmchan, facilityStr->facilityStr.val, (ftdm_size_t*)&facilityStr->facilityStr.len);
+	status = set_facility_ie_str(ftdmchan, facilityStr->facilityStr.val, (uint8_t*)&(facilityStr->facilityStr.len));
 	if (status == FTDM_SUCCESS) {
 		facilityStr->eh.pres = PRSNT_NODEF;
 		facilityStr->facilityStr.pres = PRSNT_NODEF;
@@ -573,14 +688,15 @@ ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 	return status;
 }
 
-ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t *data_len)
+ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len)
 {
+	int len;
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	
 	if (caller_data->raw_data_len > 0 && caller_data->raw_data[0] == SNGISDN_Q931_FACILITY_IE_ID) {
-
-		*data_len = caller_data->raw_data[1];
-		memcpy(data, &caller_data->raw_data[2], *data_len);
+		len = caller_data->raw_data[1];
+		memcpy(data, &caller_data->raw_data[2], len);
+		*data_len = len;
 		return FTDM_SUCCESS;
 	}	
 	return FTDM_FAIL;
@@ -592,7 +708,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	int descr = prog_ind.descr;
 	int loc = prog_ind.loc;
 	
-	str = ftdm_channel_get_var(ftdmchan, "isdn.prog_ind.descr");	
+	str = ftdm_call_get_var(&ftdmchan->caller_data, "isdn.prog_ind.descr");
 	if (str && *str) {
 		/* User wants to override progress indicator */
 		descr = ftdm_str2ftdm_sngisdn_progind_descr(str);
@@ -603,8 +719,8 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 		return FTDM_SUCCESS;
 	}
 
-	str = ftdm_channel_get_var(ftdmchan, "isdn.prog_ind.loc");
-	if (str && *str) {		
+	str = ftdm_call_get_var(&ftdmchan->caller_data, "isdn.prog_ind.loc");
+	if (str && *str) {
 		loc = ftdm_str2ftdm_sngisdn_progind_loc(str);
 	}
 	if (loc == SNGISDN_PROGIND_LOC_INVALID) {

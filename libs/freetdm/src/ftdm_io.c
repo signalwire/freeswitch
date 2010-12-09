@@ -61,6 +61,8 @@ struct tm *localtime_r(const time_t *clock, struct tm *result);
 ftdm_time_t time_last_throttle_log = 0;
 ftdm_time_t time_current_throttle_log = 0;
 
+static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
+
 static int time_is_init = 0;
 
 static void time_init(void)
@@ -1884,7 +1886,9 @@ static ftdm_status_t ftdm_channel_reset(ftdm_channel_t *ftdmchan)
 	if (!ftdmchan->dtmf_off) {
 		ftdmchan->dtmf_off = FTDM_DEFAULT_DTMF_OFF;
 	}
-	
+
+	ftdm_call_clear_vars(&ftdmchan->caller_data);
+			
 	memset(ftdmchan->dtmf_hangup_buf, '\0', ftdmchan->span->dtmf_hangup_len);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE)) {
@@ -2421,6 +2425,27 @@ done:
 	ftdm_channel_unlock(ftdmchan);
 
 	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_send_msg(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_sigmsg_t *sigmsg)
+{
+	ftdm_status_t status = FTDM_FAIL;
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(file);
+	UNREFERENCED_PARAMETER(func);
+	UNREFERENCED_PARAMETER(line);
+#endif
+
+	ftdm_channel_lock(ftdmchan);
+	if (ftdmchan->span->send_msg) {
+		status = ftdmchan->span->send_msg(ftdmchan, sigmsg);
+	} else {
+		status = FTDM_NOTIMPL;
+		ftdm_log(FTDM_LOG_ERROR, "send_msg method not implemented in this span!\n");
+	}
+	ftdm_channel_unlock(ftdmchan);
+	return status;
 }
 
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
@@ -3812,6 +3837,100 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 	return status;
 }
 
+FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data)
+{
+	ftdm_call_clear_vars(caller_data);
+	memset(caller_data.raw_data, 0, sizeof(raw_data));
+	caller_data->raw_data_len = 0;
+	return;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_call_clear_vars(ftdm_caller_data_t *caller_data)
+{
+	if (caller_data->variables) {
+		hashtable_destroy(caller_data->variables);
+	}
+	caller_data->variables = NULL;
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_call_remove_var(ftdm_caller_data_t *caller_data, const char *var_name)
+{
+	if (caller_data->variables) {
+		hashtable_remove(caller_data->variables, (void *)var_name);
+	}
+	
+	return FTDM_SUCCESS;
+}
+
+
+FT_DECLARE(ftdm_status_t) ftdm_call_add_var(ftdm_caller_data_t *caller_data, const char *var_name, const char *value)
+{
+	char *t_name = 0, *t_val = 0;
+
+	if (!var_name || !value) {
+		return FTDM_FAIL;
+	}
+	
+	if (!caller_data->variables) {
+		/* initialize on first use */
+		caller_data->variables = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+		ftdm_assert_return(caller_data->variables, FTDM_FAIL, "Failed to create hash table\n");
+	}
+	
+	t_name = ftdm_strdup(var_name);
+	t_val = ftdm_strdup(value);
+	hashtable_insert(caller_data->variables, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE);
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(const char *) ftdm_call_get_var(ftdm_caller_data_t *caller_data, const char *var_name)
+{
+	const char *var = NULL;
+	
+	if (!caller_data->variables || !var_name) {
+		return NULL;
+	}
+
+	var = (const char *)hashtable_search(((struct hashtable*)caller_data->variables), (void *)var_name);
+	return var;
+}
+
+FT_DECLARE(ftdm_iterator_t *) ftdm_call_get_var_iterator(const ftdm_caller_data_t *caller_data, ftdm_iterator_t *iter)
+{
+	ftdm_hash_iterator_t *hashiter = NULL;
+	hashiter = caller_data->variables == NULL ? NULL : hashtable_first(caller_data->variables);
+	
+	if (hashiter == NULL) {
+		return NULL;
+	}
+	
+	if (!(iter = get_iterator(FTDM_ITERATOR_VARS, iter))) {
+		return NULL;
+	}
+	iter->pvt.hashiter = hashiter;
+	return iter;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_call_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val)
+{
+	const void *key = NULL;
+	void *val = NULL;
+
+	*var_name = NULL;
+	*var_val = NULL;
+
+	ftdm_assert_return(iter && (iter->type == FTDM_ITERATOR_VARS) && iter->pvt.hashiter, FTDM_FAIL, "Cannot get variable from invalid iterator!\n");
+
+	hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
+
+	*var_name = key;
+	*var_val = val;
+
+	return FTDM_SUCCESS;
+}
+
+
 static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan)
 {
 	ftdm_channel_lock(ftdmchan);
@@ -3857,6 +3976,7 @@ done:
 
 	return status;
 }
+
 
 FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name)
 {
@@ -5037,7 +5157,11 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 
 static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
-	return span->signal_cb(sigmsg);
+	ftdm_status_t status = span->signal_cb(sigmsg);
+	if (sigmsg->channel) {
+		ftdm_call_clear_data(&(sigmsg->channel->caller_data));
+	}
+	return status;
 }
 
 static ftdm_status_t ftdm_span_queue_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
@@ -5141,6 +5265,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	}
 
 done:
+	
 	if (sigmsg->channel) {
 		ftdm_mutex_unlock(sigmsg->channel->mutex);
 	}
