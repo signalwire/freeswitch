@@ -363,7 +363,7 @@ void stack_pst_init(Pst *pst);
 /* Outbound Call Control functions */
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_setup_ack(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
@@ -436,6 +436,7 @@ void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_rcv_sng_assert(char *message);
 
 ftdm_status_t get_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t get_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
 ftdm_status_t get_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
 ftdm_status_t get_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
 ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
@@ -443,16 +444,17 @@ ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *us
 ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd);
 ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
-ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t data_len);
+ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t data_len);
 
 ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
 ftdm_status_t set_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
 ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
 ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_sngisdn_progind_t prog_ind);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
-ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, ftdm_size_t *data_len);
+ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
 
 		
 uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);

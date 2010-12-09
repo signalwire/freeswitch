@@ -429,7 +429,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	assert(tech_pvt->ftdmchan != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
-	
+
 	ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1329,7 +1329,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			char *v = h->name + FREETDM_VAR_PREFIX_LEN;
 			if (!zstr(v)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s=%s to channel %d:%d\n", v, h->value, span_id, chan_id);
-				ftdm_channel_add_var(ftdmchan, v, h->value);
+				ftdm_call_add_var(&caller_data, v, h->value);
 			}
 		}
 	}
@@ -1528,6 +1528,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);	
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_layer1", "%d", channel_caller_data->bearer_layer1);
+	
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);	
@@ -1561,8 +1562,18 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		ftdm_channel_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
+	}	
+	
+	/* Add any call variable to the dial plan */
+	iter = ftdm_call_get_var_iterator(channel_caller_data, iter);
+	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_call_get_current_var(curr, &var_name, &var_value);
+		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
+		switch_channel_set_variable_printf(channel, name, "%s", var_value);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s=%s\n", name, var_value);
 	}
 	ftdm_iterator_free(iter);
+	
 
 	switch_channel_set_state(channel, CS_INIT);
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
@@ -1661,11 +1672,11 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	ftdm_status_t status;
 	uint32_t spanid;
 	uint32_t chanid;
-	ftdm_caller_data_t *callerdata;
+	ftdm_caller_data_t *caller_data;
 
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	chanid = ftdm_channel_get_id(sigmsg->channel);
-	callerdata = ftdm_channel_get_caller_data(sigmsg->channel);
+	caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 
 	ftdm_log(FTDM_LOG_DEBUG, "got FXO sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
 
@@ -1688,7 +1699,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				ftdm_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, callerdata->hangup_cause);
+				switch_channel_hangup(channel, caller_data->hangup_cause);
 				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
@@ -1712,8 +1723,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
-
+	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+	
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
@@ -1767,7 +1778,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+	
     case FTDM_SIGEVENT_STOP:
 		{
 			private_t *tech_pvt = NULL;
@@ -1991,8 +2003,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 		
-    		case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
-
+		case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+		
 		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
 		{
@@ -2104,14 +2116,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_START:
 		{
-			ftdm_channel_add_var(sigmsg->channel, "screening_ind", ftdm_screening2str(caller_data->screen));
-			ftdm_channel_add_var(sigmsg->channel, "presentation_ind", ftdm_presentation2str(caller_data->pres));
+			ftdm_call_add_var(caller_data, "screening_ind", ftdm_screening2str(caller_data->screen));
+			ftdm_call_add_var(caller_data, "presentation_ind", ftdm_presentation2str(caller_data->pres));
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
 
-    case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
-
+	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+		
     case FTDM_SIGEVENT_STOP:
     case FTDM_SIGEVENT_RESTART:
 		{
@@ -2176,7 +2188,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		}
 		break;
 	case FTDM_SIGEVENT_PROCEED:
-	case FTDM_SIGEVENT_MSG:
+	case FTDM_SIGEVENT_FACILITY:
 		/* FS does not have handlers for these messages, so ignore them for now */
 		break;
 	default:
