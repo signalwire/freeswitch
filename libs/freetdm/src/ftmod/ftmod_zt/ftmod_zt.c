@@ -983,7 +983,7 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 }
 
 /**
- * \brief Retrieves an event from a ftdmtel span
+ * \brief Retrieves an event from a ftdm channel
  * \param ftdmchan Channel to retrieve event from
  * \param event FreeTDM event to return
  * \return Success or failure
