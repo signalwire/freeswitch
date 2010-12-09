@@ -4278,20 +4278,32 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	char *format = NULL;
 	const char *tz_name = NULL;
 	char date[80] = "";
+	char *mycmd = NULL, *p;
+	switch_time_t when = 0;
 
-	if (!zstr(cmd)) {
-		format = strchr(cmd, ' ');
-		tz_name = cmd;
-		if (format) {
+	if (cmd) mycmd = strdup(cmd);
+
+	if (!zstr(mycmd)) {
+		tz_name = mycmd;
+
+		if ((format = strchr(mycmd, ' '))) {
 			*format++ = '\0';
+		}
+		
+		if ((p = strchr(format, '|'))) {
+			*p++ = '\0';
+			when = atol(format);
+			format = p;
 		}
 	}
 
-	if (switch_strftime_tz(tz_name, format, date, sizeof(date), 0) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
+	if (switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
 		stream->write_function(stream, "%s", date);
 	} else {
 		stream->write_function(stream, "-ERR Invalid Timezone\n");
 	}
+
+	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4715,7 +4727,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sql_escape", "Escape a string to prevent sql injection", sql_escape, SQL_ESCAPE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
-	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
+	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [<epoch>|][format string]");
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss> [count]");
