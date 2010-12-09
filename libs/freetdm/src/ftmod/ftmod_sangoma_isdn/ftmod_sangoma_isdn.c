@@ -915,7 +915,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
-
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_chan_sig_status)
 {
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
