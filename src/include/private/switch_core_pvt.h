@@ -31,6 +31,7 @@
  * this file does not exist!!!!
  *
  */
+#define SPANDSP_NO_TIFF 1
 #include "spandsp.h"
 #include "switch_profile.h"
 
