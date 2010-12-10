@@ -515,12 +515,19 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
-	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 
 	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
 	if (r2data->mf_dump_size) {
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+	}
+
+	/* check if this is a collect call and if we should accept it */
+	if (!r2data->allow_collect_calls && category == OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Rejecting collect call\n");
+		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_COLLECT_CALL_REJECTED);
+	} else {
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 	}
 }
 
