@@ -811,13 +811,14 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	}
 
-	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_number_of_frames_in_queue) {
-		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
+	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_tx_idle_packets) {
 		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle
 		 * also do not report idle warning when we just started transmitting */
 		if (ftdmchan->iostats.tx.packets && FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle: %d\n", ftdmchan->iostats.tx.idle_packets);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle changed from %d to %d\n", 
+					ftdmchan->iostats.tx.idle_packets, tx_stats->wp_api_tx_hdr_tx_idle_packets);
 		}
+		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
 	}
 
 	if (!ftdmchan->iostats.tx.packets) {
@@ -941,7 +942,6 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 {
 	int bsent = 0;
 	int err = 0;
-	ftdm_time_t ms = 0;
 	wp_tdm_api_tx_hdr_t hdrframe;
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
