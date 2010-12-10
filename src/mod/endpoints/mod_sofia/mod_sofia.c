@@ -906,7 +906,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			tech_pvt->read_frame.flags = SFF_NONE;
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
-
+			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
 
@@ -1328,6 +1328,49 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
 				} else {
 					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+				}
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
+		{
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				int len, maxlen = 0, qlen = 0, maxqlen = 50;
+
+				if (msg->string_arg) {
+					char *p;
+					
+					if ((len = atoi(msg->string_arg))) {
+						qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+					}
+					
+					if (qlen) {
+						if ((p = strchr(msg->string_arg, ':'))) {
+							p++;
+							maxlen = atol(p);
+						}
+					}
+
+
+					if (maxlen) {
+						maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+					}
+				}
+
+				if (qlen) {
+					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
+														  tech_pvt->read_impl.samples_per_packet, 
+														  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", len, qlen, maxqlen);
+						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+					}
+					
+				} else {
+					switch_rtp_deactivate_jitter_buffer(tech_pvt->rtp_session);
 				}
 			}
 		}

@@ -31,7 +31,7 @@
  * this file does not exist!!!!
  *
  */
-
+#include "spandsp.h"
 #include "switch_profile.h"
 
 #ifndef WIN32
@@ -169,6 +169,7 @@ struct switch_core_session {
 	switch_log_level_t loglevel;
 	uint32_t soft_lock;
 	switch_ivr_dmachine_t *dmachine;
+	plc_state_t *plc;
 };
 
 struct switch_media_bug {
