@@ -900,7 +900,7 @@ static int ftdm_r2_io_write(openr2_chan_t *r2chan, const void *buf, int size)
 	if (FTDM_FAIL == status) {
 		return -1;
 	}
-	return outsize;
+	return (int)outsize;
 }
 
 static int ftdm_r2_io_read(openr2_chan_t *r2chan, const void *buf, int size)
@@ -911,7 +911,7 @@ static int ftdm_r2_io_read(openr2_chan_t *r2chan, const void *buf, int size)
 	if (FTDM_FAIL == status) {
 		return -1;
 	}
-	return outsize;
+	return (int)outsize;
 }
 
 static int ftdm_r2_io_wait(openr2_chan_t *r2chan, int *flags, int block)
