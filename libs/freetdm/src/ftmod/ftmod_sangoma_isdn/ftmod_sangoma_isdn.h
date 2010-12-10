@@ -60,8 +60,36 @@
 #define SNGISDN_EVENT_QUEUE_SIZE	100
 #define SNGISDN_EVENT_POLL_RATE		100
 #define SNGISDN_NUM_LOCAL_NUMBERS	8
+#define SNGISDN_DCHAN_QUEUE_LEN		200
 
 /* TODO: rename all *_cc_* to *_an_*  */
+
+#define SNGISDN_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
+#define SNGISDN_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
+#define SNGISDN_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)    \
+        _TYPE _FUNC1 (const char *name)                                                         \
+{                                                                                                               \
+                int i;                                                                                          \
+                _TYPE t = _MAX ;                                                                        \
+                                                                                                                        \
+                for (i = 0; i < _MAX ; i++) {                                           \
+                        if (!strcasecmp(name, _STRINGS[i])) {                   \
+                                t = (_TYPE) i;                                                          \
+                                break;                                                                          \
+}                                                                                               \
+}                                                                                                       \
+                                                                                                                        \
+                return t;                                                                                       \
+}                                                                                                               \
+        const char * _FUNC2 (_TYPE type)                                                \
+{                                                                                                               \
+                if (type > _MAX) {                                                                      \
+                        type = _MAX;                                                                    \
+}                                                                                                       \
+                return _STRINGS[(int)type];                                                     \
+}                                                                                                               \
+
+
 
 typedef enum {
 	FLAG_RESET_RX           = (1 << 0),
@@ -74,7 +102,8 @@ typedef enum {
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
 	FLAG_SEND_DISC  		= (1 << 9),
-	FLAG_ACTIVATING			= (1 << 10), /* Used for BRI only, flag is set after we request line CONNECTED */
+	/* Used for BRI only, flag is set after we request line CONNECTED */
+	FLAG_ACTIVATING			= (1 << 10), 
 } sngisdn_flag_t;
 
 
@@ -134,6 +163,51 @@ typedef enum {
 	SNGISDN_EVENT_RST_IND,
 } ftdm_sngisdn_event_id_t;
 
+typedef enum {
+	/* Call is not end-to-end ISDN */
+	SNGISDN_PROGIND_DESCR_NETE_ISDN,
+	/* Destination address is non-ISDN */
+	SNGISDN_PROGIND_DESCR_DEST_NISDN,
+	/* Origination address is non-ISDN */
+	SNGISDN_PROGIND_DESCR_ORIG_NISDN,
+	/* Call has returned to the ISDN */
+	SNGISDN_PROGIND_DESCR_RET_ISDN,
+	/* Interworking as occured and has resulted in a telecommunication service change */
+	SNGISDN_PROGIND_DESCR_SERV_CHANGE,
+	/* In-band information or an appropriate pattern is now available */
+	SNGISDN_PROGIND_DESCR_IB_AVAIL,
+	/* Invalid */
+	SNGISDN_PROGIND_DESCR_INVALID,
+} ftdm_sngisdn_progind_descr_t;
+#define SNGISDN_PROGIND_DESCR_STRINGS "not-end-to-end-isdn", "destination-is-non-isdn", "origination-is-non-isdn", "call-returned-to-isdn", "service-change", "inband-info-available", "invalid"
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr2str, ftdm_sngisdn_progind_descr_t);
+
+typedef enum {
+	/* User */
+	SNGISDN_PROGIND_LOC_USER,
+	/* Private network serving the local user */
+	SNGISDN_PROGIND_LOC_PRIV_NET_LOCAL_USR,
+	/* Public network serving the local user */
+	SNGISDN_PROGIND_LOC_PUB_NET_LOCAL_USR,
+	/* Transit network */
+	SNGISDN_PROGIND_LOC_TRANSIT_NET,
+	/* Public network serving remote user */
+	SNGISDN_PROGIND_LOC_PUB_NET_REMOTE_USR,
+	/* Private network serving remote user */
+	SNGISDN_PROGIND_LOC_PRIV_NET_REMOTE_USR,
+	/* Network beyond the interworking point */
+	SNGISDN_PROGIND_LOC_NET_BEYOND_INTRW,
+	/* Invalid */
+	SNGISDN_PROGIND_LOC_INVALID,
+} ftdm_sngisdn_progind_loc_t;
+#define SNGISDN_PROGIND_LOC_STRINGS "user", "private-net-local-user", "public-net-local-user", "transit-network", "public-net-remote-user", "private-net-remote-user", "beyond-interworking", "invalid"
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t);
+
+typedef struct ftdm_sngisdn_prog_ind {
+	ftdm_sngisdn_progind_loc_t loc;		/* location */
+	ftdm_sngisdn_progind_descr_t descr;	/* description */
+} ftdm_sngisdn_progind_t;
+
 /* Only timers that can be cancelled are listed here */
 #define SNGISDN_NUM_TIMERS 1
 /* Increase NUM_TIMERS as number of ftdm_sngisdn_timer_t increases */
@@ -168,6 +242,7 @@ typedef struct sngisdn_chan_data {
 /* Span specific data */
 typedef struct sngisdn_span_data {
 	ftdm_span_t		*ftdm_span;
+	ftdm_channel_t	*dchan;
 	uint8_t			link_id;
 	uint8_t 		switchtype;
 	uint8_t			signalling;			/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
@@ -179,10 +254,13 @@ typedef struct sngisdn_span_data {
 	uint8_t			trace_flags;		/* TODO: change to flags, so we can use ftdm_test_flag etc.. */
 	uint8_t			overlap_dial;
 	uint8_t			setup_arb;
+	uint8_t			facility_ie_decode;
 	uint8_t			facility;
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
+	uint8_t 		ignore_cause_value;
 	uint8_t			timer_t3;
+	uint8_t			restart_opt;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
@@ -268,60 +346,58 @@ extern ftdm_sngisdn_data_t	g_sngisdn_data;
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span);
 
 /* Support functions */
-FT_DECLARE(uint32_t) get_unique_suInstId(int16_t cc_id);
-FT_DECLARE(void) clear_call_data(sngisdn_chan_data_t *sngisdn_info);
-FT_DECLARE(void) clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+uint32_t get_unique_suInstId(int16_t cc_id);
+void clear_call_data(sngisdn_chan_data_t *sngisdn_info);
+void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
+ftdm_status_t get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
+ftdm_status_t get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
+
+
+ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail);
+ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 
 
 void stack_hdr_init(Header *hdr);
 void stack_pst_init(Pst *pst);
 
-FT_DECLARE(ftdm_status_t) get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
-FT_DECLARE(ftdm_status_t) get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
-FT_DECLARE(ftdm_status_t) sng_isdn_set_avail_rate(ftdm_span_t *ftdmspan, sngisdn_avail_t avail);
-
-FT_DECLARE(ftdm_status_t) cpy_calling_num_from_stack(ftdm_caller_data_t *ftdm, CgPtyNmb *cgPtyNmb);
-FT_DECLARE(ftdm_status_t) cpy_called_num_from_stack(ftdm_caller_data_t *ftdm, CdPtyNmb *cdPtyNmb);
-FT_DECLARE(ftdm_status_t) cpy_redir_num_from_stack(ftdm_caller_data_t *ftdm, RedirNmb *redirNmb);
-FT_DECLARE(ftdm_status_t) cpy_calling_name_from_stack(ftdm_caller_data_t *ftdm, Display *display);
-
-FT_DECLARE(ftdm_status_t) cpy_calling_num_from_user(CgPtyNmb *cgPtyNmb, ftdm_caller_data_t *ftdm);
-FT_DECLARE(ftdm_status_t) cpy_called_num_from_user(CdPtyNmb *cdPtyNmb, ftdm_caller_data_t *ftdm);
-FT_DECLARE(ftdm_status_t) cpy_redir_num_from_user(RedirNmb *redirNmb, ftdm_caller_data_t *ftdm);
-FT_DECLARE(ftdm_status_t) cpy_calling_name_from_user(ConEvnt *conEvnt, ftdm_channel_t *ftdmchan);
-
 /* Outbound Call Control functions */
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_setup_ack(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_progress(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_alert(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
+void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
+void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
 void sngisdn_snd_reset(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
+void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event);
 
 /* Inbound Call Control functions */
-void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_disc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt);
-void sngisdn_rcv_rel_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt);
-void sngisdn_rcv_dat_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt);
-void sngisdn_rcv_sshl_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
-void sngisdn_rcv_sshl_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
-void sngisdn_rcv_rmrt_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
-void sngisdn_rcv_rmrt_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
-void sngisdn_rcv_flc_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
-void sngisdn_rcv_fac_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_sta_cfm ( int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
-void sngisdn_rcv_srv_ind ( int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_srv_cfm ( int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
-void sngisdn_rcv_rst_cfm ( int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
-void sngisdn_rcv_rst_ind ( int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+void sngisdn_rcv_con_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_con_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_cnst_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, CnStEvnt *cnStEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_disc_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, DiscEvnt *discEvnt);
+void sngisdn_rcv_rel_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, RelEvnt *relEvnt);
+void sngisdn_rcv_dat_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, InfoEvnt *infoEvnt);
+void sngisdn_rcv_sshl_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
+void sngisdn_rcv_sshl_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, SsHlEvnt *ssHlEvnt, uint8_t action);
+void sngisdn_rcv_rmrt_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
+void sngisdn_rcv_rmrt_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, RmRtEvnt *rmRtEvnt, uint8_t action);
+void sngisdn_rcv_flc_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
+void sngisdn_rcv_fac_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, FacEvnt *facEvnt, uint8_t evntType, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_sta_cfm(int16_t suId, uint32_t suInstId, uint32_t spInstId, StaEvnt *staEvnt);
+void sngisdn_rcv_srv_ind(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_srv_cfm(int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces);
+void sngisdn_rcv_rst_cfm(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+void sngisdn_rcv_rst_ind(int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType);
+int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame);
+int16_t sngisdn_rcv_l1_cmd_req(uint16_t spId, sng_l1_cmd_t *l1_cmd);
+
 
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event);
 void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event);
@@ -359,6 +435,28 @@ void sngisdn_rcv_cc_ind(CcMngmt *status);
 void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_rcv_sng_assert(char *message);
 
+ftdm_status_t get_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t get_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t get_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
+ftdm_status_t get_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
+ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
+ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
+ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
+ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd);
+ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
+ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t data_len);
+
+ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
+ftdm_status_t set_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
+ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
+ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
+ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
+ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_sngisdn_progind_t prog_ind);
+ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
+ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
+
+		
 uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);
 uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot);
 ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_user(uint8_t bearer_capability);
@@ -385,6 +483,7 @@ static __inline__ void sngisdn_set_flag(sngisdn_chan_data_t *sngisdn_info, sngis
 
 void handle_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t status);
+void sngisdn_delayed_setup(void* p_sngisdn_info);
 void sngisdn_delayed_release(void* p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
@@ -392,10 +491,10 @@ void sngisdn_facility_timeout(void* p_sngisdn_info);
 void sngisdn_t3_timeout(void* p_sngisdn_info);
 
 /* Stack management functions */
-ftdm_status_t sng_isdn_stack_cfg(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_start(ftdm_span_t *span);
-ftdm_status_t sng_isdn_stack_stop(ftdm_span_t *span);
-ftdm_status_t sng_isdn_wake_up_phy(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
+ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
+ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
 void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 void sngisdn_print_spans(ftdm_stream_handle_t *stream);

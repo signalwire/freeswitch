@@ -305,15 +305,21 @@ bool BoardFXO::KhompPvtFXO::onCallSuccess(K3L_EVENT *e)
 
         if (call()->_pre_answer)
         {
-            dtmfSuppression(Opt::_out_of_band_dtmfs && !call()->_flags.check(Kflags::FAX_DETECTED));
+            dtmfSuppression(Opt::_options._out_of_band_dtmfs() && !call()->_flags.check(Kflags::FAX_DETECTED));
 
             startListen();
             startStream();
+            switch_channel_mark_pre_answered(getFSChannel());
         }
     }
     catch (ScopedLockFailed & err)
     {
         LOG(ERROR, PVT_FMT(_target, "(FXO) r (unable to lock %s!)") % err._msg.c_str() );
+        return false;
+    }
+    catch (Board::KhompPvt::InvalidSwitchChannel & err)
+    {
+        LOG(ERROR, PVT_FMT(target(), "(FXO) r (%s)") % err._msg.c_str() );
         return false;
     }
         
@@ -355,15 +361,23 @@ bool BoardFXO::KhompPvtFXO::onAudioStatus(K3L_EVENT *e)
 
         if(e->AddInfo == kmtFax)
         {
-            DBG(FUNC, PVT_FMT(_target, "Fax detected"));
+            DBG(STRM, PVT_FMT(_target, "Fax detected"));
 
-            bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);  
+            /* hadn't we did this already? */
+            bool already_detected = call()->_flags.check(Kflags::FAX_DETECTED);            
+
+            time_t time_was = call()->_call_statistics->_base_time;
+            time_t time_now = time(NULL);
+
+            bool detection_timeout = (time_now > (time_was + (time_t) (Opt::_options._fax_adjustment_timeout())));
+            
             BEGIN_CONTEXT
             {
-                if(already_detected)
-                    break;
-
                 ScopedPvtLock lock(this);
+
+                /* already adjusted? do not adjust again. */
+                if (already_detected || detection_timeout)
+                    break;
 
                 if (callFXO()->_call_info_drop != 0 || callFXO()->_call_info_report)
                 {
@@ -377,7 +391,7 @@ bool BoardFXO::KhompPvtFXO::onAudioStatus(K3L_EVENT *e)
                     }
                 }
 
-                if (Opt::_auto_fax_adjustment)
+                if (Opt::_options._auto_fax_adjustment())
                 {
                     DBG(FUNC, PVT_FMT(_target, "communication will be adjusted for fax!"));
                     _fax->adjustForFax();
@@ -483,9 +497,9 @@ bool BoardFXO::KhompPvtFXO::onDtmfSendFinish(K3L_EVENT *e)
             /* activate resources early... */
             bool fax_detected = callFXO()->_flags.check(Kflags::FAX_DETECTED);
 
-            bool res_out_of_band_dtmf = Opt::_suppression_delay && Opt::_out_of_band_dtmfs && !fax_detected;
-            bool res_echo_cancellator = Opt::_echo_canceller && !fax_detected;
-            bool res_auto_gain_cntrol = Opt::_auto_gain_control && !fax_detected;
+            bool res_out_of_band_dtmf = Opt::_options._suppression_delay() && Opt::_options._out_of_band_dtmfs() && !fax_detected;
+            bool res_echo_cancellator = Opt::_options._echo_canceller() && !fax_detected;
+            bool res_auto_gain_cntrol = Opt::_options._auto_gain_control() && !fax_detected;
 
             if (!call()->_flags.check(Kflags::KEEP_DTMF_SUPPRESSION))
                 dtmfSuppression(res_out_of_band_dtmf);
@@ -497,7 +511,7 @@ bool BoardFXO::KhompPvtFXO::onDtmfSendFinish(K3L_EVENT *e)
                 autoGainControl(res_auto_gain_cntrol);
 
             /* start sending audio if wanted so */
-            if (Opt::_fxo_send_pre_audio)
+            if (Opt::_options._fxo_send_pre_audio())
                 startStream();
 
             //TODO: Verificar isso aqui
@@ -624,13 +638,13 @@ bool BoardFXO::KhompPvtFXO::setupConnection()
     bool fax_detected = callFXO()->_flags.check(Kflags::FAX_DETECTED) || (callFXO()->_var_fax_adjust == T_TRUE);
 
     bool res_out_of_band_dtmf = (call()->_var_dtmf_state == T_UNKNOWN || fax_detected ?
-        Opt::_suppression_delay && Opt::_out_of_band_dtmfs && !fax_detected : (call()->_var_dtmf_state == T_TRUE));
+        Opt::_options._suppression_delay() && Opt::_options._out_of_band_dtmfs() && !fax_detected : (call()->_var_dtmf_state == T_TRUE));
 
     bool res_echo_cancellator = (call()->_var_echo_state == T_UNKNOWN || fax_detected ?
-        Opt::_echo_canceller && !fax_detected : (call()->_var_echo_state == T_TRUE));
+        Opt::_options._echo_canceller() && !fax_detected : (call()->_var_echo_state == T_TRUE));
 
     bool res_auto_gain_cntrol = (call()->_var_gain_state == T_UNKNOWN || fax_detected ?
-        Opt::_auto_gain_control && !fax_detected : (call()->_var_gain_state == T_TRUE));
+        Opt::_options._auto_gain_control() && !fax_detected : (call()->_var_gain_state == T_TRUE));
 
     if (!call()->_flags.check(Kflags::REALLY_CONNECTED))
     {
@@ -739,8 +753,13 @@ bool BoardFXO::KhompPvtFXO::validContexts(
 {
     DBG(FUNC,PVT_FMT(_target,"(FXO) c"));
 
-    contexts.push_back(Opt::_context_fxo);
-    contexts.push_back(Opt::_context2_fxo);
+    if(!_group_context.empty())
+    {
+        contexts.push_back(_group_context);
+    }
+
+    contexts.push_back(Opt::_options._context_fxo());
+    contexts.push_back(Opt::_options._context2_fxo());
 
     for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {

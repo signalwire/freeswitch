@@ -336,6 +336,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\asr_tts\mod_cepstral\mod_cepstral.2010.vcxproj">
+      <Name>mod_cepstral</Name>
+      <Project>{692f6330-4d87-4c82-81df-40db5892636e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\asr_tts\mod_pocketsphinx\mod_pocketsphinx.2010.vcxproj">
       <Name>mod_pocketsphinx</Name>
       <Project>{2286da73-9fc5-45bc-a508-85994c3317ab}</Project>
@@ -591,6 +600,51 @@
     <ProjectReference Include="..\..\src\mod\languages\mod_managed\mod_managed.2010.vcxproj">
       <Name>mod_managed</Name>
       <Project>{7b42bda1-72c0-4378-a9b6-5c530f8cd61e}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey.2010.vcxproj">
+      <Name>mod_spidermonkey</Name>
+      <Project>{1ad3f51e-bbb6-4090-ba39-9dfab1ef1f5f}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_core_db.2010.vcxproj">
+      <Name>mod_spidermonkey_core_db</Name>
+      <Project>{acfff684-4d19-4d48-af12-88ea1d778bdf}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_odbc.2010.vcxproj">
+      <Name>mod_spidermonkey_odbc</Name>
+      <Project>{0a6b5ea5-6e9b-4a51-931f-ed25aa87b4df}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_socket.2010.vcxproj">
+      <Name>mod_spidermonkey_socket</Name>
+      <Project>{028c7278-05d7-4e18-82fe-be231b844f41}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey_teletone.2010.vcxproj">
+      <Name>mod_spidermonkey_teletone</Name>
+      <Project>{8f992c49-6c51-412f-b2a3-34eab708eb65}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>

@@ -47,6 +47,7 @@ struct stfu_instance {
 	struct stfu_queue *in_queue;
 	struct stfu_queue *out_queue;
     struct stfu_frame *last_frame;
+	uint32_t cur_ts;
 	uint32_t last_wr_ts;
 	uint32_t last_rd_ts;
 	uint32_t interval;
@@ -267,27 +268,26 @@ static int stfu_n_find_frame(stfu_queue_t *queue, uint32_t ts, stfu_frame_t **r_
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 {
 	uint32_t index;
-	uint32_t should_have = 0;
 	stfu_frame_t *rframe = NULL;
-
+    
 	if (((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
 		return NULL;
 	}
 
-	if (i->last_wr_ts) {
-		should_have = i->last_wr_ts + i->interval;
-	} else {
-		should_have = i->out_queue->array[0].ts;
-	}
+    if (i->cur_ts == 0) {
+		i->cur_ts = i->out_queue->array[0].ts;
+    } else {
+		i->cur_ts += i->interval;
+    }
+    
 
-    if (stfu_n_find_frame(i->out_queue, should_have, &rframe, &index) || stfu_n_find_frame(i->in_queue, should_have, &rframe, &index)) {
+    if (stfu_n_find_frame(i->out_queue, i->cur_ts, &rframe, &index) || stfu_n_find_frame(i->in_queue, i->cur_ts, &rframe, &index)) {
         i->last_frame = rframe;
 		i->out_queue->wr_len++;
 		i->last_wr_ts = rframe->ts;
-		rframe->was_read = 1;
 		i->miss_count = 0;
     } else {
-        i->last_wr_ts = should_have;
+        i->last_wr_ts = i->cur_ts;
         rframe = &i->out_queue->int_frame;
 
         if (i->last_frame && i->last_frame != rframe) {
@@ -296,12 +296,11 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             memcpy(rframe->data, i->last_frame->data, rframe->dlen);
         }
 
-        rframe->ts = should_have;
+        rframe->ts = i->cur_ts;
 
         if (++i->miss_count > i->max_plc) {
-            i->interval = 0;
             i->out_queue->wr_len = i->out_queue->array_size;
-            i->last_wr_ts = 0;
+            i->cur_ts = 0;
             rframe = NULL;
         }
     }

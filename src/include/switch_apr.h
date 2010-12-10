@@ -593,6 +593,22 @@ SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, uns
 SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t *queue, void **data);
 
 /**
+ * pop/get an object from the queue, blocking if the queue is already empty
+ *
+ * @param queue the queue
+ * @param data the data
+ * @param timeout The amount of time in microseconds to wait. This is
+ *        a maximum, not a minimum. If the condition is signaled, we
+ *        will wake up before this time, otherwise the error APR_TIMEUP
+ *        is returned.
+ * @returns APR_TIMEUP the request timed out
+ * @returns APR_EINTR the blocking was interrupted (try again)
+ * @returns APR_EOF if the queue has been terminated
+ * @returns APR_SUCCESS on a successfull pop
+ */
+SWITCH_DECLARE(switch_status_t) switch_queue_pop_timeout(switch_queue_t *queue, void **data, switch_interval_time_t timeout);
+
+/**
  * push/add a object to the queue, blocking if the queue is already full
  *
  * @param queue the queue

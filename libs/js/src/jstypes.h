@@ -77,35 +77,25 @@
 **
 ***********************************************************************/
 #ifdef WIN32
+
 /* These also work for __MWERKS__ */
-#define JS_EXTERN_API(__type) extern __declspec(dllexport) __type
-#define JS_EXPORT_API(__type) __declspec(dllexport) __type
-#define JS_EXTERN_DATA(__type) extern __declspec(dllexport) __type
-#define JS_EXPORT_DATA(__type) __declspec(dllexport) __type
+# define JS_EXTERN_API(__type)  extern __declspec(dllexport) __type
+# define JS_EXPORT_API(__type)  __declspec(dllexport) __type
+# define JS_EXTERN_DATA(__type) extern __declspec(dllexport) __type
+# define JS_EXPORT_DATA(__type) __declspec(dllexport) __type
 
-#define JS_DLL_CALLBACK
-#define JS_STATIC_DLL_CALLBACK(__x) static __x
+# define JS_DLL_CALLBACK
+# define JS_STATIC_DLL_CALLBACK(__x)    static __x
 
-#elif defined(WIN16)
+#elif defined(XP_OS2) && defined(__declspec)
 
-#ifdef _WINDLL
-#define JS_EXTERN_API(__type) extern __type _cdecl _export _loadds
-#define JS_EXPORT_API(__type) __type _cdecl _export _loadds
-#define JS_EXTERN_DATA(__type) extern __type _export
-#define JS_EXPORT_DATA(__type) __type _export
+# define JS_EXTERN_API(__type)  extern __declspec(dllexport) __type
+# define JS_EXPORT_API(__type)  __declspec(dllexport) __type
+# define JS_EXTERN_DATA(__type) extern __declspec(dllexport) __type
+# define JS_EXPORT_DATA(__type) __declspec(dllexport) __type
 
-#define JS_DLL_CALLBACK             __cdecl __loadds
-#define JS_STATIC_DLL_CALLBACK(__x) static __x CALLBACK
-
-#else /* this must be .EXE */
-#define JS_EXTERN_API(__type) extern __type _cdecl _export
-#define JS_EXPORT_API(__type) __type _cdecl _export
-#define JS_EXTERN_DATA(__type) extern __type _export
-#define JS_EXPORT_DATA(__type) __type _export
-
-#define JS_DLL_CALLBACK             __cdecl __loadds
-#define JS_STATIC_DLL_CALLBACK(__x) __x JS_DLL_CALLBACK
-#endif /* _WINDLL */
+# define JS_DLL_CALLBACK
+# define JS_STATIC_DLL_CALLBACK(__x)    static __x
 
 #else /* Unix */
 
@@ -126,44 +116,57 @@
 #endif
 
 #ifdef _WIN32
-#  if defined(__MWERKS__) || defined(__GNUC__)
-#    define JS_IMPORT_API(__x)      __x
-#  else
-#    define JS_IMPORT_API(__x)      __declspec(dllimport) __x
-#  endif
+# if defined(__MWERKS__) || defined(__GNUC__)
+#  define JS_IMPORT_API(__x)    __x
+# else
+#  define JS_IMPORT_API(__x)    __declspec(dllimport) __x
+# endif
+#elif defined(XP_OS2) && defined(__declspec)
+# define JS_IMPORT_API(__x)     __declspec(dllimport) __x
 #else
-#    define JS_IMPORT_API(__x)      JS_EXPORT_API (__x)
+# define JS_IMPORT_API(__x)     JS_EXPORT_API (__x)
 #endif
 
 #if defined(_WIN32) && !defined(__MWERKS__)
-#    define JS_IMPORT_DATA(__x)      __declspec(dllimport) __x
+# define JS_IMPORT_DATA(__x)      __declspec(dllimport) __x
+#elif defined(XP_OS2) && defined(__declspec)
+# define JS_IMPORT_DATA(__x)      __declspec(dllimport) __x
 #else
-#    define JS_IMPORT_DATA(__x)     JS_EXPORT_DATA (__x)
+# define JS_IMPORT_DATA(__x)     JS_EXPORT_DATA (__x)
 #endif
 
 /*
  * The linkage of JS API functions differs depending on whether the file is
- * used within the JS library or not.  Any source file within the JS
+ * used within the JS library or not. Any source file within the JS
  * interpreter should define EXPORT_JS_API whereas any client of the library
- * should not.
+ * should not. STATIC_JS_API is used to build JS as a static library.
  */
-#ifdef EXPORT_JS_API
-#define JS_PUBLIC_API(t)    JS_EXPORT_API(t)
-#define JS_PUBLIC_DATA(t)   JS_EXPORT_DATA(t)
+#if defined(STATIC_JS_API)
+
+# define JS_PUBLIC_API(t)   t
+# define JS_PUBLIC_DATA(t)  t
+
+#elif defined(EXPORT_JS_API)
+
+# define JS_PUBLIC_API(t)   JS_EXPORT_API(t)
+# define JS_PUBLIC_DATA(t)  JS_EXPORT_DATA(t)
+
 #else
-#define JS_PUBLIC_API(t)    JS_IMPORT_API(t)
-#define JS_PUBLIC_DATA(t)   JS_IMPORT_DATA(t)
+
+# define JS_PUBLIC_API(t)   JS_IMPORT_API(t)
+# define JS_PUBLIC_DATA(t)  JS_IMPORT_DATA(t)
+
 #endif
 
 #define JS_FRIEND_API(t)    JS_PUBLIC_API(t)
 #define JS_FRIEND_DATA(t)   JS_PUBLIC_DATA(t)
 
-#ifdef _WIN32
-#   define JS_INLINE __inline
+#if defined(_MSC_VER)
+# define JS_INLINE __forceinline
 #elif defined(__GNUC__)
 #   define JS_INLINE
 #else
-#   define JS_INLINE
+# define JS_INLINE
 #endif
 
 /***********************************************************************
@@ -174,7 +177,14 @@
 **      behave syntactically more like functions when called.
 ***********************************************************************/
 #define JS_BEGIN_MACRO  do {
-#define JS_END_MACRO    } while (0)
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+# define JS_END_MACRO                                                         \
+    } __pragma(warning(push)) __pragma(warning(disable:4127))                 \
+    while (0) __pragma(warning(pop))
+#else
+# define JS_END_MACRO   } while (0)
+#endif
 
 /***********************************************************************
 ** MACROS:      JS_BEGIN_EXTERN_C
@@ -183,11 +193,15 @@
 **      Macro shorthands for conditional C++ extern block delimiters.
 ***********************************************************************/
 #ifdef __cplusplus
-#define JS_BEGIN_EXTERN_C       extern "C" {
-#define JS_END_EXTERN_C         }
+
+# define JS_BEGIN_EXTERN_C      extern "C" {
+# define JS_END_EXTERN_C        }
+
 #else
-#define JS_BEGIN_EXTERN_C
-#define JS_END_EXTERN_C
+
+# define JS_BEGIN_EXTERN_C
+# define JS_END_EXTERN_C
+
 #endif
 
 /***********************************************************************
@@ -226,12 +240,12 @@
 #define JS_MAX(x,y)     ((x)>(y)?(x):(y))
 
 #if (defined(XP_WIN) && !defined(CROSS_COMPILE)) || defined (WINCE)
-#    include "jscpucfg.h"        /* Use standard Mac or Windows configuration */
+# include "jscpucfg.h"      /* Use standard Mac or Windows configuration */
 #elif defined(XP_UNIX) || defined(XP_BEOS) || defined(XP_OS2) || defined(CROSS_COMPILE)
-#    include "jsautocfg.h"       /* Use auto-detected configuration */
+# include "jsautocfg.h"     /* Use auto-detected configuration */
 #    include "jsosdep.h"         /* ...and platform-specific flags */
 #else
-#    error "Must define one of XP_BEOS, XP_OS2, XP_WIN or XP_UNIX"
+# error "Must define one of XP_BEOS, XP_OS2, XP_WIN or XP_UNIX"
 #endif
 
 JS_BEGIN_EXTERN_C
@@ -247,7 +261,7 @@ JS_BEGIN_EXTERN_C
 typedef unsigned char JSUint8;
 typedef signed char JSInt8;
 #else
-#error No suitable type for JSInt8/JSUint8
+# error No suitable type for JSInt8/JSUint8
 #endif
 
 /************************************************************************
@@ -260,7 +274,7 @@ typedef signed char JSInt8;
 typedef unsigned short JSUint16;
 typedef short JSInt16;
 #else
-#error No suitable type for JSInt16/JSUint16
+# error No suitable type for JSInt16/JSUint16
 #endif
 
 /************************************************************************
@@ -272,15 +286,15 @@ typedef short JSInt16;
 #if JS_BYTES_PER_INT == 4
 typedef unsigned int JSUint32;
 typedef int JSInt32;
-#define JS_INT32(x)  x
-#define JS_UINT32(x) x ## U
+# define JS_INT32(x)    x
+# define JS_UINT32(x)   x ## U
 #elif JS_BYTES_PER_LONG == 4
 typedef unsigned long JSUint32;
 typedef long JSInt32;
-#define JS_INT32(x)  x ## L
-#define JS_UINT32(x) x ## UL
+# define JS_INT32(x)    x ## L
+# define JS_UINT32(x)   x ## UL
 #else
-#error No suitable type for JSInt32/JSUint32
+# error No suitable type for JSInt32/JSUint32
 #endif
 
 /************************************************************************
@@ -294,28 +308,32 @@ typedef long JSInt32;
 **      the JSLL_ macros (see jslong.h).
 ************************************************************************/
 #ifdef JS_HAVE_LONG_LONG
-#if JS_BYTES_PER_LONG == 8
+
+# if JS_BYTES_PER_LONG == 8
 typedef long JSInt64;
 typedef unsigned long JSUint64;
-#elif defined(WIN16)
+# elif defined(WIN16)
 typedef __int64 JSInt64;
 typedef unsigned __int64 JSUint64;
-#elif defined(WIN32) && !defined(__GNUC__)
+# elif defined(WIN32) && !defined(__GNUC__)
 typedef __int64  JSInt64;
 typedef unsigned __int64 JSUint64;
-#else
+# else
 typedef long long JSInt64;
 typedef unsigned long long JSUint64;
-#endif /* JS_BYTES_PER_LONG == 8 */
+# endif /* JS_BYTES_PER_LONG == 8 */
+
 #else  /* !JS_HAVE_LONG_LONG */
+
 typedef struct {
-#ifdef IS_LITTLE_ENDIAN
+# ifdef IS_LITTLE_ENDIAN
     JSUint32 lo, hi;
-#else
+# else
     JSUint32 hi, lo;
 #endif
 } JSInt64;
 typedef JSInt64 JSUint64;
+
 #endif /* !JS_HAVE_LONG_LONG */
 
 /************************************************************************
@@ -331,7 +349,7 @@ typedef JSInt64 JSUint64;
 typedef int JSIntn;
 typedef unsigned int JSUintn;
 #else
-#error 'sizeof(int)' not sufficient for platform use
+# error 'sizeof(int)' not sufficient for platform use
 #endif
 
 /************************************************************************
@@ -362,7 +380,11 @@ typedef ptrdiff_t JSPtrdiff;
 **  A type for pointer difference. Variables of this type are suitable
 **      for storing a pointer or pointer sutraction.
 ************************************************************************/
+#if JS_BYTES_PER_WORD == 8 && JS_BYTES_PER_LONG != 8
+typedef JSUint64 JSUptrdiff;
+#else
 typedef unsigned long JSUptrdiff;
+#endif
 
 /************************************************************************
 ** TYPES:       JSBool
@@ -380,15 +402,20 @@ typedef JSIntn JSBool;
 ** TYPES:       JSPackedBool
 ** DESCRIPTION:
 **  Use JSPackedBool within structs where bitfields are not desireable
-**      but minimum and consistant overhead matters.
+**      but minimum and consistent overhead matters.
 ************************************************************************/
 typedef JSUint8 JSPackedBool;
 
 /*
 ** A JSWord is an integer that is the same size as a void*
 */
+#if JS_BYTES_PER_WORD == 8 && JS_BYTES_PER_LONG != 8
+typedef JSInt64 JSWord;
+typedef JSUint64 JSUword;
+#else
 typedef long JSWord;
 typedef unsigned long JSUword;
+#endif
 
 #include "jsotypes.h"
 
@@ -409,12 +436,36 @@ typedef unsigned long JSUword;
 **
 ***********************************************************************/
 #if defined(__GNUC__) && (__GNUC__ > 2)
-#define JS_LIKELY(x)    (__builtin_expect((x), 1))
-#define JS_UNLIKELY(x)  (__builtin_expect((x), 0))
+
+# define JS_LIKELY(x)   (__builtin_expect((x), 1))
+# define JS_UNLIKELY(x) (__builtin_expect((x), 0))
+
 #else
-#define JS_LIKELY(x)    (x)
-#define JS_UNLIKELY(x)  (x)
+
+# define JS_LIKELY(x)   (x)
+# define JS_UNLIKELY(x) (x)
+
 #endif
+
+/***********************************************************************
+** MACROS:      JS_ARRAY_LENGTH
+**              JS_ARRAY_END
+** DESCRIPTION:
+**      Macros to get the number of elements and the pointer to one past the
+**      last element of a C array. Use them like this:
+**
+**      jschar buf[10], *s;
+**      JSString *str;
+**      ...
+**      for (s = buf; s != JS_ARRAY_END(buf); ++s) *s = ...;
+**      ...
+**      str = JS_NewStringCopyN(cx, buf, JS_ARRAY_LENGTH(buf));
+**      ...
+**
+***********************************************************************/
+
+#define JS_ARRAY_LENGTH(array) (sizeof (array) / sizeof (array)[0])
+#define JS_ARRAY_END(array)    ((array) + JS_ARRAY_LENGTH(array))
 
 JS_END_EXTERN_C
 

@@ -222,8 +222,7 @@ extern "C" {
 
 #define ftdm_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
-#define FTDM_SPAN_IS_BRI(x)     ((x)->trunk_type == FTDM_TRUNK_BRI || (x)->trunk_type == FTDM_TRUNK_BRI_PTMP)
-
+#define FTDM_SPAN_IS_BRI(x)	((x)->trunk_type == FTDM_TRUNK_BRI || (x)->trunk_type == FTDM_TRUNK_BRI_PTMP)
 /*!
   \brief Copy flags from one arbitrary object to another
   \command dest the object to copy the flags to
@@ -343,20 +342,24 @@ typedef enum {
 	FTDM_TYPE_CHANNEL
 } ftdm_data_type_t;
 
-#ifdef FTDM_DEBUG_DTMF
-/* number of bytes for the circular buffer (5 seconds worth of audio) */
-#define DTMF_DEBUG_SIZE 8 * 5000
-/* number of 20ms cycles before timeout and close the debug dtmf file (5 seconds) */
-#define DTMF_DEBUG_TIMEOUT 250
+/* number of bytes for the IO dump circular buffer (5 seconds worth of audio by default) */
+#define FTDM_IO_DUMP_DEFAULT_BUFF_SIZE 8 * 5000
 typedef struct {
-	FILE *file;
-	char buffer[DTMF_DEBUG_SIZE];
+	char *buffer;
+	ftdm_size_t size;
 	int windex;
 	int wrapped;
-	int closetimeout;
+} ftdm_io_dump_t;
+
+/* number of interval cycles before timeout and close the debug dtmf file (5 seconds if interval is 20) */
+#define DTMF_DEBUG_TIMEOUT 250
+typedef struct {
+	uint8_t enabled;
+	uint8_t requested;
+	FILE *file;
+	int32_t closetimeout;
 	ftdm_mutex_t *mutex;
 } ftdm_dtmf_debug_t;
-#endif
 
 typedef struct {
 	const char *file;
@@ -366,6 +369,35 @@ typedef struct {
 	ftdm_channel_state_t last_state;
 	ftdm_time_t time;
 } ftdm_channel_history_entry_t;
+
+typedef enum {
+	FTDM_IOSTATS_ERROR_CRC		= (1 << 0),
+	FTDM_IOSTATS_ERROR_FRAME	= (1 << 1),
+	FTDM_IOSTATS_ERROR_ABORT 	= (1 << 2),
+	FTDM_IOSTATS_ERROR_FIFO 	= (1 << 3),
+	FTDM_IOSTATS_ERROR_DMA		= (1 << 4),
+	FTDM_IOSTATS_ERROR_QUEUE_THRES	= (1 << 5), /* Queue reached high threshold */
+	FTDM_IOSTATS_ERROR_QUEUE_FULL	= (1 << 6), /* Queue is full */
+} ftdm_iostats_error_type_t;
+
+typedef struct {
+	struct {
+		uint32_t errors;
+		uint16_t flags;
+		uint8_t	 queue_size;	/* max queue size configured */
+		uint8_t	 queue_len;	/* Current number of elements in queue */
+		uint64_t packets;
+	} rx;
+
+	struct {
+		uint32_t errors;
+		uint16_t flags;
+		uint8_t  idle_packets;
+		uint8_t	 queue_size;	/* max queue size configured */
+		uint8_t	 queue_len;	/* Current number of elements in queue */
+		uint64_t packets;
+	} tx;
+} ftdm_channel_iostats_t;
 
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
@@ -441,9 +473,12 @@ struct ftdm_channel {
 	int availability_rate;
 	void *user_private;
 	ftdm_timer_id_t hangup_timer;
-#ifdef FTDM_DEBUG_DTMF
+	ftdm_channel_iostats_t iostats;
 	ftdm_dtmf_debug_t dtmfdbg;
-#endif
+	ftdm_io_dump_t rxdump;
+	ftdm_io_dump_t txdump;
+	int32_t txdrops;
+	int32_t rxdrops;
 };
 
 struct ftdm_span {
@@ -468,6 +503,7 @@ struct ftdm_span {
 	teletone_multi_tone_t tone_finder[FTDM_TONEMAP_INVALID+1];
 	ftdm_channel_t *channels[FTDM_MAX_CHANNELS_SPAN+1];
 	fio_channel_outgoing_call_t outgoing_call;
+	fio_channel_send_msg_t send_msg;
 	fio_channel_set_sig_status_t set_channel_sig_status;
 	fio_channel_get_sig_status_t get_channel_sig_status;
 	fio_span_set_sig_status_t set_span_sig_status;
@@ -476,6 +512,7 @@ struct ftdm_span {
 	ftdm_span_start_t start;
 	ftdm_span_stop_t stop;
 	ftdm_channel_sig_read_t sig_read;
+	ftdm_channel_sig_write_t sig_write;
 	/* Private I/O data per span. Do not touch unless you are an I/O module */
 	void *io_data;
 	char *type;
@@ -637,9 +674,20 @@ FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
 #define ftdm_channel_lock(chan) ftdm_mutex_lock(chan->mutex)
 #define ftdm_channel_unlock(chan) ftdm_mutex_unlock(chan->mutex)
+
+#define ftdm_log_throttle(level, ...) \
+	time_current_throttle_log = ftdm_current_time_in_ms(); \
+	if (time_current_throttle_log - time_last_throttle_log > FTDM_THROTTLE_LOG_INTERVAL) {\
+		ftdm_log(level, __VA_ARGS__); \
+		time_last_throttle_log = time_current_throttle_log; \
+	} 
+
 #define ftdm_log_chan_ex(fchan, file, func, line, level, format, ...) ftdm_log(file, func, line, level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan(fchan, level, format, ...) ftdm_log(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 #define ftdm_log_chan_msg(fchan, level, msg) ftdm_log(level, "[s%dc%d][%d:%d] " msg, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id)
+
+#define ftdm_log_chan_throttle(fchan, level, format, ...) ftdm_log_throttle(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
+#define ftdm_log_chan_msg_throttle(fchan, level, format, ...) ftdm_log_throttle(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
 
 #define ftdm_span_lock(span) ftdm_mutex_lock(span->mutex)
 #define ftdm_span_unlock(span) ftdm_mutex_unlock(span->mutex)

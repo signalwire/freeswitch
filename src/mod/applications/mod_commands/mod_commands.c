@@ -2491,23 +2491,46 @@ SWITCH_STANDARD_API(uuid_display_function)
 #define SIMPLIFY_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_simplify_function)
 {
+	char *mydata = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
-	} else {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		goto error;
+	}
+	if (argv[0]) {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
-		msg.string_arg = cmd;
+		msg.string_arg = argv[0];
 		msg.from = __FILE__;
 
-		if ((lsession = switch_core_session_locate(cmd))) {
+		if ((lsession = switch_core_session_locate(argv[0]))) {
 			status = switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_rwunlock(lsession);
 		}
+		goto ok;
+	} else {
+		goto error;
 	}
+
+  error:
+	stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+  ok:
+	switch_safe_free(mydata);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK Success\n");
@@ -3968,6 +3991,47 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define FILEMAN_SYNTAX "<uuid> <cmd>:<val>"
+SWITCH_STANDARD_API(uuid_fileman_function)
+{
+	switch_core_session_t *psession = NULL;
+	char *mycmd = NULL, *argv[4] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (argc >= 2 && !zstr(argv[0])) {
+			char *uuid = argv[0];
+			char *cmd = argv[1];
+
+			if ((psession = switch_core_session_locate(uuid))) {
+				switch_channel_t *channel;
+				switch_file_handle_t *fh = NULL;
+				
+				channel = switch_core_session_get_channel(psession);
+				
+				if (switch_ivr_get_file_handle(psession, &fh) == SWITCH_STATUS_SUCCESS) {
+					switch_ivr_process_fh(psession, cmd, fh);
+					switch_ivr_release_file_handle(psession, &fh);
+				}
+
+				switch_core_session_rwunlock(psession);
+
+			} else {
+				stream->write_function(stream, "-ERR No Such Channel!\n");
+			}
+			goto done;
+		}
+	}
+
+	stream->write_function(stream, "-USAGE: %s\n", GETVAR_SYNTAX);
+
+  done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define UUID_SEND_DTMF_SYNTAX "<uuid> <dtmf_data>"
 SWITCH_STANDARD_API(uuid_send_dtmf_function)
 {
@@ -4674,6 +4738,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_display", "change display", uuid_display_function, DISPLAY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_dump", "uuid_dump", uuid_dump_function, DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_exists", "see if a uuid exists", uuid_exists_function, EXISTS_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_fileman", "uuid_fileman", uuid_fileman_function, FILEMAN_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_flush_dtmf", "Flush dtmf on a given uuid", uuid_flush_dtmf_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
@@ -4785,6 +4850,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_display ::console::list_uuid");
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
 	switch_console_set_complete("add uuid_exists ::console::list_uuid");
+	switch_console_set_complete("add uuid_fileman ::console::list_uuid");
 	switch_console_set_complete("add uuid_flush_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_getvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
@@ -4810,6 +4876,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_session_heartbeat ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar_multi ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar ::console::list_uuid");
+	switch_console_set_complete("add uuid_simplify ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
 	switch_console_set_complete("add version");

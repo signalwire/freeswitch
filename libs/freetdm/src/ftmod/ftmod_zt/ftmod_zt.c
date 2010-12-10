@@ -35,6 +35,11 @@
 #include "private/ftdm_core.h"
 #include "ftmod_zt.h"
 
+/* used by dahdi to indicate there is no data available, but events to read */
+#ifndef ELAST
+#define ELAST 500
+#endif
+
 /**
  * \brief Zaptel globals
  */
@@ -889,12 +894,17 @@ static FIO_WAIT_FUNCTION(zt_wait)
 		inflags |= POLLPRI;
 	}
 
-
+pollagain:
 	memset(&pfds[0], 0, sizeof(pfds[0]));
 	pfds[0].fd = ftdmchan->sockfd;
 	pfds[0].events = inflags;
 	result = poll(pfds, 1, to);
 	*flags = 0;
+
+	if (result < 0 && errno == EINTR) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "DAHDI wait got interrupted, trying again\n");
+		goto pollagain;
+	}
 
 	if (pfds[0].revents & POLLERR) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "DAHDI device got POLLERR\n");
@@ -1076,7 +1086,6 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	}
 
 	return FTDM_FAIL;
-	
 }
 
 /**
@@ -1095,12 +1104,19 @@ static FIO_READ_FUNCTION(zt_read)
 		if ((r = read(ftdmchan->sockfd, data, *datalen)) > 0) {
 			break;
 		}
-		ftdm_sleep(10);
-		if (r == 0) {
-			errs--;
+		else if (r == 0) {
+			ftdm_sleep(10);
+			if (errs) errs--;
+		}
+		else {
+			if (errno == EAGAIN || errno == EINTR)
+				continue;
+			if (errno == ELAST)
+				break;
+
+			ftdm_log(FTDM_LOG_ERROR, "read failed: %s\n", strerror(errno));
 		}
 	}
-
 	if (r > 0) {
 		*datalen = r;
 		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
@@ -1108,7 +1124,9 @@ static FIO_READ_FUNCTION(zt_read)
 		}
 		return FTDM_SUCCESS;
 	}
-
+	else if (errno == ELAST) {
+		return FTDM_SUCCESS;
+	}
 	return r == 0 ? FTDM_TIMEOUT : FTDM_FAIL;
 }
 

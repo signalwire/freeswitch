@@ -81,7 +81,7 @@ struct KhompPvtPassive: public KhompPvt
     };
 */
 /******************************************************************************/
-    KhompPvtPassive(K3LAPI::target & target) : KhompPvt(target) 
+    KhompPvtPassive(K3LAPIBase::GenericTarget & target) : KhompPvt(target) 
     {
     }
 
@@ -150,7 +150,7 @@ struct KhompPvtPassive: public KhompPvt
 /********************************** HI Channel ********************************/
 struct KhompPvtHI: public KhompPvtPassive
 {
-    KhompPvtHI(K3LAPI::target & target) : KhompPvtPassive(target) 
+    KhompPvtHI(K3LAPIBase::GenericTarget & target) : KhompPvtPassive(target) 
     {
     }
 
@@ -189,7 +189,7 @@ struct KhompPvtHI: public KhompPvtPassive
 /********************************* KPR Channel ********************************/
 struct KhompPvtKPR: public KhompPvtPassive
 {
-    KhompPvtKPR(K3LAPI::target & target) : KhompPvtPassive(target) 
+    KhompPvtKPR(K3LAPIBase::GenericTarget & target) : KhompPvtPassive(target) 
     {
     }
 
@@ -243,7 +243,7 @@ struct KhompPvtKPR: public KhompPvtPassive
 
         for (unsigned obj = 0; obj < Globals::k3lapi.channel_count(_device_id); obj++)
         {
-            K3LAPI::target tgt(Globals::k3lapi, K3LAPI::target::CHANNEL, _device_id, obj);
+            K3LAPIBase::GenericTarget tgt(Globals::k3lapi, K3LAPIBase::GenericTarget::CHANNEL, _device_id, obj);
             KhompPvt * pvt;
 
             switch(Globals::k3lapi.channel_config(_device_id, obj).Signaling)

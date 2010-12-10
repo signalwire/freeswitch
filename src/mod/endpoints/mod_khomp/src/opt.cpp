@@ -47,170 +47,109 @@
 #include "logger.h"
 #include "spec.h"
 
-bool                            Opt::_debug;
-std::string                     Opt::_dialplan;
-std::string                     Opt::_context;
-std::string                     Opt::_user_xfer;
-std::map < std::string, CSpan > Opt::_spans;
-Opt::GroupToDestMapType         Opt::_groups;
-Opt::CadencesMapType            Opt::_cadences;
+#include <function.hpp>
 
-bool Opt::_echo_canceller;
-bool Opt::_auto_gain_control;
-bool Opt::_out_of_band_dtmfs;
-bool Opt::_suppression_delay;
-bool Opt::_pulse_forwarding;
-bool Opt::_native_bridge;
-bool Opt::_recording;
-bool Opt::_has_ctbus;
-bool Opt::_fxs_bina;
-bool Opt::_fxo_send_pre_audio;
-bool Opt::_drop_collect_call;
-bool Opt::_ignore_letter_dtmfs;
-bool Opt::_optimize_audio_path;
+Options               Opt::_options;
+CadencesMapType       Opt::_cadences;
+GroupToDestMapType    Opt::_groups;
+OrigToDestMapType     Opt::_fxs_hotline;
+BoardToOrigMapType    Opt::_fxs_orig_base;
+BranchToOptMapType    Opt::_branch_options;
+BranchToObjectMapType Opt::_fxs_branch_map;
 
-bool         Opt::_auto_fax_adjustment;
-unsigned int Opt::_fax_adjustment_timeout;
-
-bool         Opt::_r2_strict_behaviour;
-unsigned int Opt::_r2_preconnect_wait;
-
-unsigned int Opt::_fxs_digit_timeout;
-
-unsigned int Opt::_transferdigittimeout;
-
-std::string Opt::_flash;
-std::string Opt::_atxfer;
-std::string Opt::_blindxfer;
-
-unsigned int Opt::_ringback_co_delay;
-unsigned int Opt::_ringback_pbx_delay;
-
-unsigned int Opt::_disconnect_delay;
-
-int Opt::_input_volume;
-int Opt::_output_volume;
-
-Opt::DestVectorType     Opt::_fxs_co_dialtone;
-Opt::OrigToDestMapType  Opt::_fxs_hotline;
-std::string             Opt::_fxs_global_orig_base;
-
-Opt::BoardToOrigMapType    Opt::_fxs_orig_base;
-Opt::BranchToObjectMapType Opt::_fxs_branch_map;
-Opt::BranchToOptMapType    Opt::_branch_options;
-
-std::string Opt::_global_mohclass;
-std::string Opt::_global_language;
-
-std::string Opt::_record_prefix;
-
-std::string Opt::_context_gsm_call;
-std::string Opt::_context2_gsm_call;
-std::string Opt::_context_gsm_sms;
-std::string Opt::_context_fxo;
-std::string Opt::_context2_fxo;
-std::string Opt::_context_fxs;
-std::string Opt::_context2_fxs;
-std::string Opt::_context_digital;
-std::string Opt::_context_pr;
-
-int Opt::_amaflags;
-std::string Opt::_callgroup;
-std::string Opt::_pickupgroup;
-
-std::string Opt::_accountcode;
-
-unsigned int Opt::_kommuter_timeout;
-std::string  Opt::_kommuter_activation;
-
-unsigned int Opt::_audio_packet_size;
+/* not beautiful, should think of something! */
+#define FUNCTION_VALUE(x) reinterpret_cast< Config::FunctionValue Options::* >( x )
 
 void Opt::initialize(void) 
 { 
-    Globals::options.add(ConfigOption("debug",    _debug,    false));
-    Globals::options.add(ConfigOption("dialplan", _dialplan, "XML"));
-    Globals::options.add(ConfigOption("context",  _context,  "default"));
+    Globals::options.add(Config::Option("debug",    &Options::_debug,    false));
+    Globals::options.add(Config::Option("dialplan", &Options::_dialplan, "XML"));
+    Globals::options.add(Config::Option("context",  &Options::_context,  "default"));
 
-	Globals::options.add(ConfigOption("echo-canceller",       _echo_canceller,       true));
-	Globals::options.add(ConfigOption("auto-gain-control",    _auto_gain_control,    true));
-	Globals::options.add(ConfigOption("out-of-band-dtmfs",    _out_of_band_dtmfs,    true));
-	Globals::options.add(ConfigOption("suppression-delay",    _suppression_delay,    true));
-	Globals::options.add(ConfigOption("pulse-forwarding",     _pulse_forwarding,     false));
-	Globals::options.add(ConfigOption("native-bridge",        _native_bridge,        true));
-	Globals::options.add(ConfigOption("recording",            _recording,            true));
-	Globals::options.add(ConfigOption("has-ctbus",            _has_ctbus,            false));
-	Globals::options.add(ConfigOption("fxs-bina",             _fxs_bina,             true));
-	Globals::options.add(ConfigOption("fxo-send-pre-audio",   _fxo_send_pre_audio,   true));
-	Globals::options.add(ConfigOption("drop-collect-call",    _drop_collect_call,    false));
-	Globals::options.add(ConfigOption("ignore-letter-dtmfs", _ignore_letter_dtmfs,  false));
-	Globals::options.add(ConfigOption("optimize-audio-path",  _optimize_audio_path,  false));
+	Globals::options.add(Config::Option("echo-canceller",      &Options::_echo_canceller,      true));
+	Globals::options.add(Config::Option("auto-gain-control",   &Options::_auto_gain_control,   true));
+	Globals::options.add(Config::Option("out-of-band-dtmfs",   &Options::_out_of_band_dtmfs,   true));
+	Globals::options.add(Config::Option("suppression-delay",   &Options::_suppression_delay,   true));
+	Globals::options.add(Config::Option("pulse-forwarding",    &Options::_pulse_forwarding,    false));
+	Globals::options.add(Config::Option("native-bridge",       &Options::_native_bridge,       true));
+	Globals::options.add(Config::Option("recording",           &Options::_recording,           true));
+	Globals::options.add(Config::Option("has-ctbus",           &Options::_has_ctbus,           false));
+	Globals::options.add(Config::Option("fxs-bina",            &Options::_fxs_bina,            true));
+	Globals::options.add(Config::Option("fxo-send-pre-audio",  &Options::_fxo_send_pre_audio,  true));
+	Globals::options.add(Config::Option("drop-collect-call",   &Options::_drop_collect_call,   false));
+	Globals::options.add(Config::Option("ignore-letter-dtmfs", &Options::_ignore_letter_dtmfs, true));
+	Globals::options.add(Config::Option("optimize-audio-path", &Options::_optimize_audio_path, false));
 
-    Globals::options.add(ConfigOption("auto-fax-adjustment",    _auto_fax_adjustment,    true));
-    Globals::options.add(ConfigOption("fax-adjustment-timeout", _fax_adjustment_timeout, 30u, 3u, 9999u));
+    Globals::options.add(Config::Option("auto-fax-adjustment",    &Options::_auto_fax_adjustment,    true));
+    Globals::options.add(Config::Option("fax-adjustment-timeout", &Options::_fax_adjustment_timeout, 30u, 3u, 9999u));
 
-    Globals::options.add(ConfigOption("r2-strict-behaviour", _r2_strict_behaviour, false));
-    Globals::options.add(ConfigOption("r2-preconnect-wait",  _r2_preconnect_wait,  250u, 25u, 500u));
+    Globals::options.add(Config::Option("r2-strict-behaviour", &Options::_r2_strict_behaviour, false));
+    Globals::options.add(Config::Option("r2-preconnect-wait",  &Options::_r2_preconnect_wait,  250u, 25u, 500u));
 
-    Globals::options.add(ConfigOption("fxs-digit-timeout",   _fxs_digit_timeout,   7u,  1u, 30u));
+    Globals::options.add(Config::Option("fxs-digit-timeout",    &Options::_fxs_digit_timeout,   7u,  1u, 30u));
+    Globals::options.add(Config::Option("transferdigittimeout", &Options::_transferdigittimeout, 3000u, 0u, 90000u));
 
-    Globals::options.add(ConfigOption("transferdigittimeout", _transferdigittimeout, 3000u, 0u, 90000u));
+    Globals::options.add(Config::Option("atxfer",    &Options::_atxfer, ""));
+    Globals::options.add(Config::Option("blindxfer", &Options::_blindxfer, ""));
 
-    Globals::options.add(ConfigOption("flash-to-digits", _flash,  "*1"));
+    Globals::options.add(Config::Option("flash-to-digits", &Options::_flash, "*1"));
 
-    Globals::options.add(ConfigOption("atxfer",    _atxfer, ""));
-    Globals::options.add(ConfigOption("blindxfer", _blindxfer, ""));
-
-    Globals::options.add(ConfigOption("delay-ringback-co",  _ringback_co_delay,  1500u, 0u, 999000u)); 
-    Globals::options.add(ConfigOption("delay-ringback-pbx", _ringback_pbx_delay, 2500u, 0u, 999000u));
+    Globals::options.add(Config::Option("delay-ringback-co",  &Options::_ringback_co_delay,  1500u, 0u, 999000u)); 
+    Globals::options.add(Config::Option("delay-ringback-pbx", &Options::_ringback_pbx_delay, 2500u, 0u, 999000u));
     
-    Globals::options.add(ConfigOption("disconnect-delay", _disconnect_delay, 0u, 0u, 100000u)); 
+    Globals::options.add(Config::Option("disconnect-delay", &Options::_disconnect_delay, 0u, 0u, 100000u)); 
 
-    Globals::options.add(ConfigOption("input-volume",  _input_volume, 0, -10, 10));
-    Globals::options.add(ConfigOption("output-volume", _output_volume, 0, -10, 10));
+    Globals::options.add(Config::Option("input-volume",  &Options::_input_volume, 0, -10, 10));
+    Globals::options.add(Config::Option("output-volume", &Options::_output_volume, 0, -10, 10));
 
+    Globals::options.add(Config::Option("fxs-co-dialtone", 
+        FUNCTION_VALUE(&Options::_fxs_co_dialtone), ""));
 
-    Globals::options.add(ConfigOption("fxs-co-dialtone", ProcessFXSCODialtone(), ""));
-    Globals::options.add(ConfigOption("fxs-global-orig", _fxs_global_orig_base,  "0"));
+    Globals::options.add(Config::Option("log-to-disk",   
+        FUNCTION_VALUE(&Options::_log_disk_option),    "standard", false));
 
-    Globals::options.add(ConfigOption("language", _global_language, ""));
-    Globals::options.add(ConfigOption("mohclass", _global_mohclass, ""));
+    Globals::options.add(Config::Option("callgroup", &Options::_callgroup,   "0"));
 
-    Globals::options.add(ConfigOption("record-prefix", ProcessRecordPrefix(), "/var/spool/freeswitch/monitor/"));
+    Globals::options.add(Config::Option("pickupgroup", &Options::_pickupgroup, "0"));
+    
+    Globals::options.add(Config::Option("log-to-console",
+        FUNCTION_VALUE(&Options::_log_console_option), "standard", false));
 
-    Globals::options.add(ConfigOption("context-fxo",          _context_fxo,       "khomp-DD-CC"));
-    Globals::options.add(ConfigOption("context-fxo-alt",      _context2_fxo,      "khomp-DD"));
-    Globals::options.add(ConfigOption("context-fxs",          _context_fxs,       "khomp-DD-CC"));
-    Globals::options.add(ConfigOption("context-fxs-alt",      _context2_fxs,      "khomp-DD"));
-    Globals::options.add(ConfigOption("context-gsm-call",     _context_gsm_call,  "khomp-DD-CC"));
-    Globals::options.add(ConfigOption("context-gsm-call-alt", _context2_gsm_call, "khomp-DD"));
-    Globals::options.add(ConfigOption("context-gsm-sms",      _context_gsm_sms,   "khomp-sms-DD-CC"));
-    Globals::options.add(ConfigOption("context-digital",      _context_digital,   "khomp-DD-LL"));
-    Globals::options.add(ConfigOption("context-pr",           _context_pr,        "khomp-DD-CC"));
+    Globals::options.add(Config::Option("trace",
+        FUNCTION_VALUE(&Options::_log_trace_option), "", false));
 
-    Globals::options.add(ConfigOption("amaflags",    ProcessAMAFlags(),    "default"));
-    Globals::options.add(ConfigOption("callgroup",   _callgroup,   "0"));
-    Globals::options.add(ConfigOption("pickupgroup", _pickupgroup, "0"));
-    //Globals::options.add(ConfigOption("callgroup",   ProcessCallGroup(),   "0"));
-    //Globals::options.add(ConfigOption("pickupgroup", ProcessPickupGroup(), "0"));
+    Globals::options.add(Config::Option("record-prefix", 
+        FUNCTION_VALUE(&Options::_record_prefix), "/var/spool/freeswitch/monitor/"));
+    
+    Globals::options.add(Config::Option("fxs-global-orig", &Options::_fxs_global_orig_base,  "0"));
 
-    Globals::options.add(ConfigOption("accountcode", _accountcode, ""));
+    Globals::options.add(Config::Option("language", &Options::_global_language, ""));
+    Globals::options.add(Config::Option("mohclass", &Options::_global_mohclass, ""));
 
-    ConfigOption::string_allowed_type kommuter_allowed;
-    kommuter_allowed.insert("auto");
-    kommuter_allowed.insert("manual");
+    Globals::options.add(Config::Option("context-fxo",          &Options::_context_fxo,       "khomp-DD-CC"));
+    Globals::options.add(Config::Option("context-fxo-alt",      &Options::_context2_fxo,      "khomp-DD"));
+    Globals::options.add(Config::Option("context-fxs",          &Options::_context_fxs,       "khomp-DD-CC"));
+    Globals::options.add(Config::Option("context-fxs-alt",      &Options::_context2_fxs,      "khomp-DD"));
+    Globals::options.add(Config::Option("context-gsm-call",     &Options::_context_gsm_call,  "khomp-DD-CC"));
+    Globals::options.add(Config::Option("context-gsm-call-alt", &Options::_context2_gsm_call, "khomp-DD"));
+    Globals::options.add(Config::Option("context-gsm-sms",      &Options::_context_gsm_sms,   "khomp-sms-DD-CC"));
+    Globals::options.add(Config::Option("context-digital",      &Options::_context_digital,   "khomp-DD-LL"));
+    Globals::options.add(Config::Option("context-pr",           &Options::_context_pr,        "khomp-DD-CC"));
 
-    Globals::options.add(ConfigOption("kommuter-activation", _kommuter_activation , "auto", kommuter_allowed));
-    Globals::options.add(ConfigOption("kommuter-timeout",    _kommuter_timeout ,(unsigned int) 10 , (unsigned int) 0 , (unsigned int) 255));
+    Globals::options.add(Config::Option("accountcode", &Options::_accountcode, ""));
 
-    Globals::options.add(ConfigOption("audio-packet-length", _audio_packet_size,
+    Config::StringSet activation_strings;
+    activation_strings.insert("auto");
+    activation_strings.insert("manual");
+
+    Globals::options.add(Config::Option("kommuter-activation", &Options::_kommuter_activation , "auto", activation_strings));
+    Globals::options.add(Config::Option("kommuter-timeout",    &Options::_kommuter_timeout ,(unsigned int) 10 , (unsigned int) 0 , (unsigned int) 255));
+
+    Globals::options.add(Config::Option("audio-packet-length", &Options::_audio_packet_size,
          (unsigned int)KHOMP_READ_PACKET_SIZE, (unsigned int)KHOMP_MIN_READ_PACKET_SIZE, (unsigned int)KHOMP_MAX_READ_PACKET_SIZE, 8u));
 
-    Globals::options.add(ConfigOption("log-to-disk",    ProcessLogOptions(O_GENERIC), "standard", false));
-    Globals::options.add(ConfigOption("log-to-console", ProcessLogOptions(O_CONSOLE), "standard", false));
-
-    Globals::options.add(ConfigOption("trace",          ProcessTraceOptions(), "", false));
-    Globals::options.add(ConfigOption("user-transfer-digits", _user_xfer, ""));
-
+    Globals::options.add(Config::Option("user-transfer-digits", &Options::_user_xfer_digits, ""));
+    
     /* aliases */
     Globals::options.synonym("context-gsm", "context-gsm-call");
     Globals::options.synonym("context-gsm-alt", "context-gsm-call-alt");
@@ -224,27 +163,34 @@ void Opt::initialize(void)
     Globals::options.synonym("log", "log-to-disk");
     Globals::options.synonym("volume", "output-volume");
     Globals::options.synonym("disconnectdelay", "disconnect-delay");
-
 }
 
 void Opt::obtain(void)
 {
-    /* everything should start clean! */
-    cleanConfiguration();        
-
-    /* reset loaded options */
-    Globals::options.reset();
-
-    loadConfiguration("khomp.conf", NULL);
-
-    /* commit, loading defaults where needed */
-    ConfigOptions::messages_type msgs = Globals::options.commit();
-
-    /* config already full loaded at this point, so we can use our own log system... */
-    for (ConfigOptions::messages_type::iterator i = msgs.begin(); i != msgs.end(); i++)
+    try
     {
-        DBG(FUNC,FMT("%s") % (*i).c_str());
+        /* everything should start clean! */
+        cleanConfiguration();        
+
+        /* reset loaded options */
+        Globals::options.reset(&Opt::_options);
+
+        /* should be loaded *BEFORE* start_k3l */
+        loadConfiguration("khomp.conf", NULL);
+
+        /* commit, loading defaults where needed */
+            Config::Options::Messages msgs = Globals::options.commit(&Opt::_options);
+
+        /* config already full loaded at this point, so we can use our own log system... */
+        for (Config::Options::Messages::iterator i = msgs.begin(); i != msgs.end(); i++)
+        {
+            DBG(FUNC,FMT("%s") % (*i).c_str());
+        }
     }
+    catch (std::runtime_error & e) 
+    {    
+        LOG(ERROR, FMT("unable to obtain general options: %s: procedure aborted!") % e.what());
+    }    
 }
 
 void Opt::commit(void)
@@ -283,8 +229,13 @@ void Opt::loadConfiguration(const char *file_name, const char **section, bool sh
 {
     switch_xml_t cfg, xml, settings;
 
-    if (!(xml = switch_xml_open_cfg(file_name, &cfg, NULL))) {
-        LOG(ERROR,FMT("Open of %s failed") % file_name);
+    if (!(xml = switch_xml_open_cfg(file_name, &cfg, NULL)))
+    {
+        if (show_errors)
+        {
+            LOG(ERROR,FMT("Open of %s failed") % file_name);
+        }
+
         return;
     }
 
@@ -312,24 +263,10 @@ void Opt::loadConfiguration(const char *file_name, const char **section, bool sh
     switch_xml_free(xml);
 }
 
-void Opt::printConfiguration(switch_stream_handle_t* stream)
-{
-    for( std::map<std::string, CSpan>::iterator ii=_spans.begin(); ii!=_spans.end(); ++ii )
-    {
-        stream->write_function(stream,
-                               "Span: %s.\nDialplan: %s.\nContext: %s.\nDialstring: %s.\n\n",
-                               (*ii).first.c_str(),
-                               (*ii).second._dialplan.c_str(),
-                               (*ii).second._context.c_str(),
-                               (*ii).second._dialstring.c_str());
-    }
-}
-
 void Opt::cleanConfiguration(void)
 {
     _fxs_orig_base.clear();
     _fxs_hotline.clear();
-    _fxs_co_dialtone.clear();
     _fxs_branch_map.clear();
     _branch_options.clear();
 
@@ -343,72 +280,56 @@ void Opt::cleanConfiguration(void)
     _cadences.insert(CadencesPairType("vm-dialtone", CadenceType(1000,100,100,100)));
 }
 
-void Opt::ProcessFXSCODialtone::operator()(std::string options) // const
-{
-    Strings::vector_type tokens;
-    Strings::tokenize(options, tokens, ",");
-
-    for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++)
-        _fxs_co_dialtone.push_back(*i);
-}
-
-void Opt::ProcessRecordPrefix::operator()(std::string path) // const
-{
-    if (mkdir(path.c_str(), 493 /* 0755 */) < 0 && errno != EEXIST)
-    {
-        throw ConfigProcessFailure("the default recording directory could not be created.");
-    }
-    else
-    {
-        _record_prefix = path;
-    }
-}
-
-void Opt::ProcessAMAFlags::operator()(std::string options)
-{
 /*
-    //TODO: Do we need this ?
-    amaflags = ast_cdr_amaflags2int(options.c_str());
+void Options::AmaflagOption::operator()(const Config::StringType & str)
+{
+    //_value = Strings::tolong(str);
+    //if(_value < 0)
+    //    throw Config::Failure(STG(FMT("invalid AMA flags: %s") % str));
+}
 
-    if (amaflags < 0)
-        throw ConfigProcessFailure(STG(FMT("invalid AMA flags: %s") % options));
+void Options::CallGroupOption::operator()(const Config::StringType & str)
+{
+    _groups = str;
+}
+
+void Options::PickupGroupOption::operator()(const Config::StringType & str)
+{
+    _groups = str;
+}
 */
-}
 
-//TODO: Check this
-void Opt::ProcessCallGroup::operator()(std::string options)
+void Options::RecordPrefixOption::operator()(const Config::StringType & str)
 {
-//    _callgroup = options.c_str();
+    if (mkdir(str.c_str(), 493 /* 0755 */) < 0 && errno != EEXIST)
+        throw Config::Failure("the default recording directory could not be created.");
+
+    _value = str; 
 }
 
-//TODO: Check this
-void Opt::ProcessPickupGroup::operator()(std::string options)
-{
-//    _pickupgroup = options.c_str();
-}
-
-void Opt::ProcessLogOptions::operator()(std::string options)
-{
-    switch (_output)
-    {   
-        case O_GENERIC:
-            K::Logger::processLogDisk(NULL, options, false, true);
-            break;
-
-        case O_CONSOLE:
-            K::Logger::processLogConsole(NULL, options, false, true);
-            break;
-
-        default:
-            throw ConfigProcessFailure("attempt to process unknown log file configuration");
-            break;
-    }   
-}
-
-void Opt::ProcessTraceOptions::operator()(std::string options)
+void Options::CentralOfficeDialtone::operator()(const Config::StringType & str) 
 {
     Strings::vector_type tokens;
-    Strings::tokenize(options, tokens, ",");
+    Strings::tokenize(str, tokens, ",");
+
+    for (Strings::vector_type::iterator i = tokens.begin(); i != tokens.end(); i++) 
+        _value.push_back(*i);
+}
+
+void Options::LogDiskOption::operator()(const Config::StringType & str) 
+{
+    K::Logger::processLogDisk(NULL, str, false, true);
+}
+
+void Options::LogConsoleOption::operator()(const Config::StringType & str) 
+{
+    K::Logger::processLogConsole(NULL, str, false, true);
+}
+
+void Options::LogTraceOption::operator()(const Config::StringType & str)
+{
+    Strings::vector_type tokens;
+    Strings::tokenize(str, tokens, ",");
 
     bool         enable_k3l_tracing  = false;
     bool         enable_r2_tracing   = false;
@@ -418,17 +339,12 @@ void Opt::ProcessTraceOptions::operator()(std::string options)
     {
         std::string tok = Strings::trim(*i);
 
-        if (tok == "k3l")
+        /**/ if (tok == "k3l")  enable_k3l_tracing = true;
+        else if (tok == "r2")   enable_r2_tracing = true;
+        else if (tok == "rdsi") enable_rdsi_tracing = true;
+        else
         {
-            enable_k3l_tracing = true;
-        }
-        else if (tok == "r2")
-        {
-            enable_r2_tracing = true;
-        }
-        else if (tok == "rdsi")
-        {
-            enable_rdsi_tracing = true;
+            LOG(ERROR, FMT("invalid string '%s' for option 'trace', ignoring...") % tok)
         }
     }
 
@@ -485,12 +401,12 @@ switch_xml_t Opt::processSimpleXML(switch_xml_t &xml, const std::string& child_n
                     % var
                     % val);
 
-                Globals::options.process(var, val);
+                Globals::options.process(&Opt::_options, var, val);
             }
-            catch (ConfigProcessFailure e)
+            catch (Config::Failure e)
             {
                 LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
-                    % e.msg.c_str()
+                    % e.what()
                     % var
                     % val);
 
@@ -521,10 +437,10 @@ void Opt::processGroupXML(switch_xml_t &xml)
                 _groups.insert(GroupToDestPairType(var,val));
 
             }
-            catch (ConfigProcessFailure e)
+            catch (Config::Failure e)
             {
                 LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
-                    % e.msg.c_str()
+                    % e.what()
                     % var
                     % val);
             }
@@ -575,10 +491,10 @@ void Opt::processCadenceXML(switch_xml_t &xml)
                     _cadences.insert(CadencesPairType(var, cadence));
                 } 
             }
-            catch (ConfigProcessFailure e)
+            catch (Config::Failure e)
             {
                 LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
-                    % e.msg.c_str()
+                    % e.what()
                     % var
                     % val);
 
@@ -637,7 +553,7 @@ void Opt::processFXSBranchesXML(switch_xml_t &xml)
 
                     for (unsigned int device = 0; device < Globals::k3lapi.device_count(); device++)
                     {
-                        K3L_DEVICE_CONFIG & conf = Globals::k3lapi.device_config(device);
+                        const K3L_DEVICE_CONFIG & conf = Globals::k3lapi.device_config(device);
 
                         std::string str_serial(conf.SerialNumber);
 
@@ -659,10 +575,10 @@ void Opt::processFXSBranchesXML(switch_xml_t &xml)
                     }
                 }
             }
-            catch (ConfigProcessFailure e)
+            catch (Config::Failure e)
             {
                 LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
-                    % e.msg.c_str()
+                    % e.what()
                     % var
                     % val);
             }
@@ -702,10 +618,10 @@ void Opt::processFXSHotlines(switch_xml_t &xml)
                 _fxs_hotline.insert(OrigToDestPairType(var, val));
 
             }
-            catch (ConfigProcessFailure e)
+            catch (Config::Failure e)
             {
                 LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
-                    % e.msg.c_str()
+                    % e.what()
                     % var
                     % val);        
             }
@@ -758,10 +674,10 @@ void Opt::processFXSOptions(switch_xml_t &xml)
                     }
                 }
             }
-            catch (ConfigProcessFailure e)
+            catch (Config::Failure e)
             {
                 LOG(ERROR,FMT("config processing error: %s. [%s=%s]")  
-                    % e.msg.c_str()
+                    % e.what()
                     % var
                     % val);      
             }

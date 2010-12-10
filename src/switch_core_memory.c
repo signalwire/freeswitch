@@ -548,7 +548,7 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 				goto done;
 			}
 		} else {
-			switch_yield(100000);
+			switch_yield(1000000);
 		}
 	}
 

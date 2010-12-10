@@ -1,3 +1,6 @@
+handle SIGPIPE pass noprint nostop
+handle SIGTTIN pass noprint nostop
+
 # FreeSWITCH Custom GDB commands
 define list_sessions
 	dont-repeat

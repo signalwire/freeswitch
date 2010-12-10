@@ -63,9 +63,6 @@ struct ftdm_isdn_data {
 	Q921Data_t q921;
 	Q931_TrunkInfo_t q931;
 	ftdm_channel_t *dchan;
-	ftdm_channel_t *dchans[2];
-	struct ftdm_sigmsg sigmsg;
-	fio_signal_cb_t sig_cb;
 	uint32_t flags;
 	int32_t mode;
 	int32_t digit_timeout;

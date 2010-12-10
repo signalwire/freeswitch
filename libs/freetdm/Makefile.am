@@ -55,10 +55,6 @@ COMPILE   = $(CC) $(FTDM_CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(FTDM_CFLAGS) $(LDFLAGS) -o $@
 
-if WANT_DEBUGDTMF
-FTDM_CFLAGS += -DFTDM_DEBUG_DTMF
-endif
-
 
 #
 # GNU pkgconfig file

@@ -343,7 +343,7 @@ PString GetH245CodecName(const H323Capability* cap)
 }
 
 FSProcess::FSProcess()
-	: PLibraryProcess("Test", "mod_h323", 1, 0, AlphaCode, 1)
+	: PLibraryProcess("FreeSWITCH", "mod_h323", 1, 0, AlphaCode, 1)
 	, m_h323endpoint(NULL){
 }
 
@@ -742,6 +742,14 @@ FSH323Connection::~FSH323Connection()
 		switch_core_session_unlock_codec_write(m_fsSession);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->switch_core_session_unlock_codec_write [%p]\n",m_fsSession);
 	}
+
+	if (tech_pvt->rtp_session) {
+		switch_rtp_destroy(&tech_pvt->rtp_session);
+		tech_pvt->rtp_session = NULL;
+	} else if (m_RTPlocalPort) {
+		switch_rtp_release_port((const char *)m_RTPlocalIP.AsString(), m_RTPlocalPort);
+	}
+
 	tech_pvt->me = NULL;
 //	switch_mutex_unlock(tech_pvt->h323_mutex);
 //	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
@@ -1148,7 +1156,7 @@ void FSH323Connection::AnsweringCall(AnswerCallResponse response)
 			if (!mediaWaitForConnect) {
 				// create a new facility PDU if doing AnswerDeferredWithMedia
 				H323SignalPDU want245PDU;
-				//H225_Progress_UUIE & prog = want245PDU.BuildProgress(*this);
+				want245PDU.BuildProgress(*this);
 				PBoolean sendPDU = TRUE;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"mediaWaitForConnect = FALSE\n");
 /*				if (SendFastStartAcknowledge(prog.m_fastStart)){

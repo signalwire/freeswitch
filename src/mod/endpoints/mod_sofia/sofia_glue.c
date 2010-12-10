@@ -187,7 +187,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 
 static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen, 
 					   switch_port_t port,
-					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map)
+					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp)
 {
 	int i = 0;
 	int rate;
@@ -298,7 +298,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 			}
 		}
 		
-		if (tech_pvt->ianacodes[i] > 95) {
+		if (tech_pvt->ianacodes[i] > 95 || verbose_sdp) {
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate);
 		}
 
@@ -373,6 +373,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *fmtp_out_var = switch_channel_get_variable(tech_pvt->channel, "sip_force_audio_fmtp");
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
+	int verbose_sdp = 0;
 
 	sofia_glue_check_dtmf_type(tech_pvt);
 
@@ -394,6 +395,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	if (fmtp_out_var) {
 		fmtp_out = fmtp_out_var;
+	}
+
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "verbose_sdp")) && switch_true(val)) {
+		verbose_sdp = 1;
 	}
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
@@ -533,7 +538,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 
 		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
-			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map);
+			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
 		} else {
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
@@ -547,7 +552,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				
 				if (cur_ptime != this_ptime) {
 					cur_ptime = this_ptime;
-					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map);
+					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
 				}
 				
 			}
@@ -2668,6 +2673,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;
+			switch_yield(tech_pvt->read_impl.microseconds_per_packet);
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		} else {
@@ -3727,6 +3733,14 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 	if (!t38_options) {
 		t38_options = switch_core_session_alloc(tech_pvt->session, sizeof(switch_t38_options_t));
+
+		// set some default value
+		t38_options->T38FaxVersion = 0;
+		t38_options->T38MaxBitRate = 9600;
+		t38_options->T38FaxRateManagement = switch_core_session_strdup(tech_pvt->session, "transferredTCF");
+		t38_options->T38FaxUdpEC = switch_core_session_strdup(tech_pvt->session, "t38UDPRedundancy");
+		t38_options->T38FaxMaxBuffer = 500;
+		t38_options->T38FaxMaxDatagram = 500;
 	}
 
 	t38_options->remote_port = (switch_port_t)m->m_port;
@@ -5729,6 +5743,48 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	return ret;
 }
 
+char *sofia_glue_get_register_host(const char *uri)
+{
+	char *register_host = NULL;
+	const char *s;
+	char *p = NULL;
+
+	if (zstr(uri)) {
+		return NULL;
+	}
+
+	if ((s = switch_stristr("sip:", uri))) {
+		s += 4;
+	} else if ((s = switch_stristr("sips:", uri))) {
+		s += 5;
+	}
+
+	if (!s) {
+		return NULL;
+	}
+
+	register_host = strdup(s);
+	
+	/* remove port for register_host for testing nat acl take into account 
+	   ipv6 addresses which are required to have brackets around the addr 
+	*/
+	
+	if ((p = strchr(register_host, ']'))) {
+		if (*(p + 1) == ':') {
+			*(p + 1) = '\0';
+		}
+	} else {
+		if ((p = strrchr(register_host, ':'))) {
+			*p = '\0';
+		}
+	}
+	
+	/* register_proxy should always start with "sip:" or "sips:" */
+	assert(register_host);
+
+	return register_host;
+}
+
 const char *sofia_glue_strip_proto(const char *uri)
 {
 	char *p;
@@ -5977,7 +6033,6 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		switch_core_session_rwunlock(other_session);
 	}
 }
-
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl)
 {

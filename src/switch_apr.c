@@ -999,6 +999,12 @@ SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t *queue, void **d
 	return apr_queue_pop(queue, data);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_queue_pop_timeout(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
+{
+	return apr_queue_pop_timeout(queue, data, timeout);
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *data)
 {
 	apr_status_t s;

@@ -44,6 +44,7 @@
 #include "applications.h"
 #include "lock.h"
 
+
 bool Fax::adjustForFax()
 {
     /* Don't worry, let the man work */
@@ -379,18 +380,20 @@ bool Fax::addFaxFile(const char * filename, bool last)
 }
 
 /******************************************************************************/
+SMS::_SMSEvent SMS::SMSEvent;
+
 bool SMS::justAlloc(unsigned int count)
 {
     /* incoming contexts */
     MatchExtension::ContextListType contexts;
 
-    contexts.push_back(Opt::_context_gsm_sms);
+    contexts.push_back(Opt::_options._context_gsm_sms());
 
     /* temporary variables */
     std::string context;
     std::string exten("s");
 
-    K3L_DEVICE_CONFIG & dev_cfg = Globals::k3lapi.device_config(_pvt->_target.device);
+    const K3L_DEVICE_CONFIG & dev_cfg = Globals::k3lapi.device_config(_pvt->_target);
 
     for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {
@@ -438,7 +441,7 @@ bool SMS::justAlloc(unsigned int count)
 
         switch_caller_profile_t *caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
                 "Khomp_SMS",                       //username
-                Opt::_dialplan.c_str(),            //dialplan
+                Opt::_options._dialplan().c_str(), //dialplan
                 NULL,                              //caller_id_name
                 _got_sms._from.c_str(),            //caller_id_number
                 NULL,                              //network_addr
@@ -465,7 +468,7 @@ bool SMS::justAlloc(unsigned int count)
             return false;
         }
 
-        std::string name = STG(FMT("Khomp_SMS/%hu/%hu")
+        std::string name = STG(FMT("Khomp_SMS/%d/%d")
                 % _pvt->target().device
                 % _pvt->target().object);
 
@@ -744,6 +747,8 @@ bool SMS::onSMSData(K3L_EVENT *e)
         {
             _got_sms._body = (const char *)(e->Params ? e->Params : "");
 
+            SMSEvent(_pvt, _got_sms);
+
             if(!justStart())
             {
                 if(_got_sms._type != "broadcast")
@@ -945,6 +950,8 @@ int SMS::smsThread(void * sms_ptr)
 
             if (sms->_result == kgccNone)
             {
+                sms->SMSEvent(pvt, sms->_send_sms);
+
                 /* stats update if sent! */
                 sms->statistics<SMSStatistics>()->incrementOutgoing();
             }

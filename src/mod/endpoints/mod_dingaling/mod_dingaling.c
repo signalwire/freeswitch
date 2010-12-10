@@ -514,13 +514,19 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 				from = hint;
 			} else {
 				char *p;
-				ffrom = switch_mprintf("%s+%s", proto, from);
-				from = ffrom;
+				
+				if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
+					from = ffrom = strdup(profile->login);
+				} else {
+					from = ffrom = switch_mprintf("%s+%s", proto, from);
+				}
+				
 				if ((p = strchr(from, '/'))) {
 					*p = '\0';
 				}
 			}
 			ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+			switch_safe_free(ffrom);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
 			return SWITCH_STATUS_FALSE;
@@ -602,7 +608,7 @@ static void ipchanged_event_handler(switch_event_t *event)
 			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, NULL, NULL, &val);
 				profile = (mdl_profile_t *) val;
-				if (old_ip4 && !strcmp(profile->extip, old_ip4)) {
+				if (old_ip4 && profile->extip && !strcmp(profile->extip, old_ip4)) {
 					tmp = profile->extip;
 					profile->extip = strdup(new_ip4);
 					switch_safe_free(tmp);

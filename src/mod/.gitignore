@@ -7,6 +7,7 @@
 /applications/mod_spandsp/mod_spandsp.log
 /applications/mod_commands/Makefile
 /applications/mod_conference/Makefile
+/applications/mod_db/Makefile
 /applications/mod_dptools/Makefile
 /applications/mod_enum/Makefile
 /applications/mod_enum/Makefile.in

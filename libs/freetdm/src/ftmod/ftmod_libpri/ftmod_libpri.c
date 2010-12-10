@@ -462,7 +462,7 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_RING, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END}
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
@@ -479,7 +479,7 @@ static ftdm_state_map_t isdn_state_map = {
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
+			{FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
 			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 
 			 FTDM_CHANNEL_STATE_CANCEL, FTDM_CHANNEL_STATE_UP, FTDM_END},
 		},
@@ -495,6 +495,7 @@ static ftdm_state_map_t isdn_state_map = {
 /**
  * \brief Handler for channel state change
  * \param ftdmchan Channel to handle
+ * \note This function MUST be called with the channel locked
  */
 static __inline__ void state_advance(ftdm_channel_t *chan)
 {
@@ -503,14 +504,8 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 	ftdm_status_t status;
 	ftdm_sigmsg_t sig;
 
-	ftdm_log(FTDM_LOG_DEBUG, "%d:%d STATE [%s]\n",
+	ftdm_log(FTDM_LOG_DEBUG, "-- %d:%d STATE [%s]\n",
 			ftdm_channel_get_span_id(chan), ftdm_channel_get_id(chan), ftdm_channel_get_state_str(chan));
-
-#if 0
-	if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND) && !call) {
-		ftdm_log(FTDM_LOG_WARNING, "NO CALL!!!!\n");
-	}
-#endif
 
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = ftdm_channel_get_id(chan);
@@ -522,10 +517,28 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 		{
 			chan->call_data = NULL;
 			ftdm_channel_done(chan);
+
+			/*
+			 * Close channel completely, BRI PTMP will thank us
+			 */
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+				ftdm_channel_t *chtmp = chan;
+				if (ftdm_channel_close(&chtmp) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_WARNING, "-- Failed to close channel %d:%d\n",
+						ftdm_channel_get_span_id(chan),
+						ftdm_channel_get_id(chan));
+				} else {
+					ftdm_log(FTDM_LOG_DEBUG, "-- Closed channel %d:%d\n",
+						ftdm_channel_get_span_id(chan),
+						ftdm_channel_get_id(chan));
+				}
+			}
 		}
 		break;
 
 	case FTDM_CHANNEL_STATE_PROGRESS:
+	/* RINGING is an alias for PROGRESS state in inbound calls ATM */
+	case FTDM_CHANNEL_STATE_RINGING:
 		{
 			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS;
@@ -548,6 +561,10 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
+				/* make sure channel is open in this state (outbound handled in on_proceeding()) */
+				if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+					ftdm_channel_open_chan(chan);
+				}
 				pri_proceeding(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
@@ -557,6 +574,10 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 
 	case FTDM_CHANNEL_STATE_RING:
 		{
+			/*
+			 * This needs more auditing for BRI PTMP:
+			 * does pri_acknowledge() steal the call from other devices?
+			 */
 			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				if (call) {
 					pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
@@ -588,6 +609,10 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
+				/* make sure channel is open in this state (outbound handled in on_answer()) */
+				if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+					ftdm_channel_open_chan(chan);
+				}
 				pri_answer(isdn_data->spri.pri, call, 0, 1);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
@@ -705,15 +730,13 @@ static __inline__ void check_state(ftdm_span_t *span)
 		for (j = 1; j <= ftdm_span_get_chan_count(span); j++) {
 			ftdm_channel_t *chan = ftdm_span_get_channel(span, j);
 
-			if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
-				ftdm_channel_lock(chan);
-
+			ftdm_channel_lock(chan);
+			while (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
 				ftdm_clear_flag(chan, FTDM_CHANNEL_STATE_CHANGE);
 				state_advance(chan);
 				ftdm_channel_complete_state(chan);
-
-				ftdm_channel_unlock(chan);
 			}
+			ftdm_channel_unlock(chan);
 		}
 	}
 }
@@ -795,34 +818,113 @@ static int on_answer(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->answer.channel);
 
 	if (chan) {
+		if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- Call answered, opening B-Channel %d:%d\n",
+				ftdm_channel_get_span_id(chan),
+				ftdm_channel_get_id(chan));
+
+			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
+					ftdm_channel_get_span_id(chan),
+					ftdm_channel_get_id(chan));
+
+				caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+				goto out;
+			}
+		}
 		ftdm_log(FTDM_LOG_DEBUG, "-- Answer on channel %d:%d\n", ftdm_span_get_id(span), pevent->answer.channel);
 		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_UP);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Answer on channel %d:%d but it's not in the span?\n",
 			ftdm_span_get_id(span), pevent->answer.channel);
 	}
+out:
 	return 0;
 }
 
 /**
- * \brief Handler for libpri proceed event
+ * \brief Handler for libpri proceeding event
  * \param spri Pri wrapper structure (libpri, span, dchan)
  * \param event_type Event type (unused)
  * \param pevent Event
  * \return 0
  */
-static int on_proceed(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
+static int on_proceeding(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	ftdm_span_t *span = spri->span;
-	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->answer.channel);
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->proceeding.channel);
 
 	if (chan) {
+		/* Open channel if inband information is available */
+		if ((pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+				ftdm_channel_get_span_id(chan),
+				ftdm_channel_get_id(chan));
+
+			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
+					ftdm_channel_get_span_id(chan),
+					ftdm_channel_get_id(chan));
+
+				caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+				goto out;
+			}
+		}
 		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
 		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d but it's not in the span?\n",
 						ftdm_span_get_id(span), pevent->proceeding.channel);
 	}
+out:
+	return 0;
+}
+
+/**
+ * \brief Handler for libpri progress event
+ * \param spri Pri wrapper structure (libpri, span, dchan)
+ * \param event_type Event type (unused)
+ * \param pevent Event
+ * \return 0
+ * \note also uses pri_event->proceeding
+ */
+static int on_progress(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
+{
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->proceeding.channel);
+
+	if (chan) {
+		/* Open channel if inband information is available */
+		if ((pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+				ftdm_channel_get_span_id(chan),
+				ftdm_channel_get_id(chan));
+
+			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
+					ftdm_channel_get_span_id(chan),
+					ftdm_channel_get_id(chan));
+
+				caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+				goto out;
+			}
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "-- Progress on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+	} else {
+		ftdm_log(FTDM_LOG_DEBUG, "-- Progress on channel %d:%d but it's not in the span?\n",
+						ftdm_span_get_id(span), pevent->proceeding.channel);
+	}
+out:
 	return 0;
 }
 
@@ -840,17 +942,37 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 
 	if (chan) {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d\n", ftdm_span_get_id(span), pevent->ringing.channel);
+
 		/* we may get on_ringing even when we're already in FTDM_CHANNEL_STATE_PROGRESS_MEDIA */
 		if (ftdm_channel_get_state(chan) == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 			/* dont try to move to STATE_PROGRESS to avoid annoying veto warning */
 			return 0;
+		}
+
+		/* Open channel if inband information is available */
+		if ((pevent->ringing.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+				ftdm_channel_get_span_id(chan),
+				ftdm_channel_get_id(chan));
+
+			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
+					ftdm_channel_get_span_id(chan),
+					ftdm_channel_get_id(chan));
+
+				caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+				goto out;
+			}
 		}
 		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d but it's not in the span?\n",
 			ftdm_span_get_id(span), pevent->ringing.channel);
 	}
-
+out:
 	return 0;
 }
 
@@ -868,14 +990,49 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_caller_data_t *caller_data = NULL;
 	int ret = 0;
 
-	if (!chan || ftdm_channel_get_state(chan) != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(chan, FTDM_CHANNEL_INUSE)) {
-		ftdm_log(FTDM_LOG_WARNING, "--Duplicate Ring on channel %d:%d (ignored)\n", ftdm_span_get_id(span), pevent->ring.channel);
+	if (!chan) {
+		ftdm_log(FTDM_LOG_ERROR, "-- Unable to get channel %d:%d\n", ftdm_span_get_id(span), pevent->ring.channel);
+		return ret;
+	}
+
+	ftdm_channel_lock(chan);
+
+	if (chan->call_data) {
+		/* we could drop the incoming call, but most likely the pointer is just a ghost of the past, 
+		 * this check is just to detect potentially unreleased pointers */
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "channel already has call %p!\n", chan->call_data);
+		chan->call_data = NULL;
+	}
+
+	if (ftdm_channel_get_state(chan) != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(chan, FTDM_CHANNEL_INUSE)) {
+		ftdm_log(FTDM_LOG_WARNING, "-- Duplicate Ring on channel %d:%d (ignored)\n", ftdm_span_get_id(span), pevent->ring.channel);
 		goto done;
 	}
 
-	if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_WARNING, "--Failure opening channel %d:%d (ignored)\n", ftdm_span_get_id(span), pevent->ring.channel);
-		goto done;
+	if ((pevent->ring.progressmask & PRI_PROG_INBAND_AVAILABLE)) {
+		/* Open channel if inband information is available */
+		ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+			ftdm_channel_get_span_id(chan),
+			ftdm_channel_get_id(chan));
+
+		if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN) && ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+//			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+			ftdm_log(FTDM_LOG_WARNING, "-- Error opening channel %d:%d (ignored)\n",
+				ftdm_channel_get_span_id(chan),
+				ftdm_channel_get_id(chan));
+
+//			caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+//			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+//			goto done;
+		}
+	} else {
+		/* Reserve channel, don't open it yet */
+		if (ftdm_channel_use(chan) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_WARNING, "-- Error reserving channel %d:%d (ignored)\n",
+				ftdm_span_get_id(span), pevent->ring.channel);
+			goto done;
+		}
 	}
 
 	ftdm_log(FTDM_LOG_NOTICE, "-- Ring on channel %d:%d (from %s to %s)\n", ftdm_span_get_id(span), pevent->ring.channel,
@@ -901,12 +1058,13 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	}
 
 	// scary to trust this pointer, you'd think they would give you a copy of the call data so you own it......
-	/* hurr, this valid as along as nobody releases the call */
+	/* hurr, this is valid as along as nobody releases the call */
 	chan->call_data = pevent->ring.call;
 
-	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RING);
+	ftdm_set_state(chan, FTDM_CHANNEL_STATE_RING);
 
 done:
+	ftdm_channel_unlock(chan);
 	return ret;
 }
 
@@ -1300,7 +1458,7 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
  */
 static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
+	ftdm_log(FTDM_LOG_DEBUG, "-- Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
 
@@ -1313,7 +1471,7 @@ static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
  */
 static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
+	ftdm_log(FTDM_LOG_DEBUG, "-- Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
 
@@ -1401,8 +1559,8 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RING, on_ring);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RINGING, on_ringing);
-			//LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_SETUP_ACK, on_proceed);
-			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_PROCEEDING, on_proceed);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_PROCEEDING, on_proceeding);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_PROGRESS, on_progress);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANSWER, on_answer);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_UP, on_dchan_up);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_DOWN, on_dchan_down);

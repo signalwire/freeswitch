@@ -1346,6 +1346,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	switch_time_t t_agent_called = 0;
 	switch_time_t t_agent_answered = 0;
 	switch_time_t t_member_called = atoi(h->member_joined_epoch);
+	switch_event_t *event = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads++;
@@ -1360,6 +1361,21 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_safe_free(sql);
 		goto done;
 	}
+
+	/* Proceed contact the agent to offer the member */
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-offering");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", h->agent_type);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", h->member_caller_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", h->member_caller_number);
+		switch_event_fire(&event);
+	}
+
+	/* CallBack Mode */
 	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
@@ -1375,6 +1391,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_safe_free(dialstr);
 
 		switch_event_destroy(&ovars);
+	/* UUID Standby Mode */
 	} else if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
 		agent_session = switch_core_session_locate(h->agent_uuid);
 		if (agent_session) {
@@ -1400,14 +1417,17 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			cc_agent_update("status", cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), h->agent_name);
 			cc_agent_update("uuid", "", h->agent_name);
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid agent type '%s' for agent '%s', aborting member offering", h->agent_type, h->agent_name);
+		status = SWITCH_CAUSE_USER_NOT_REGISTERED;
 	}
 
+	/* Originate/Bridge is not finished, processing the return value */
 	if (status == SWITCH_STATUS_SUCCESS) {
 		/* Agent Answered */
 		const char *agent_uuid = switch_core_session_get_uuid(agent_session);
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
-		switch_event_t *event;
 
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
 

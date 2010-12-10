@@ -855,10 +855,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 		if (switch_queue_trypush(session->event_queue, *event) == SWITCH_STATUS_SUCCESS) {
 			*event = NULL;
 			status = SWITCH_STATUS_SUCCESS;
+
+			if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
+				switch_core_session_wake_session_thread(session);
+			}
 		}
 	}
 
 	return status;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_session_messages_waiting(switch_core_session_t *session)
+{
+	int x = 0;
+
+	if (session->private_event_queue) {
+		x += switch_queue_size(session->private_event_queue);
+	}
+
+	if (session->message_queue) {
+		x += switch_queue_size(session->message_queue);
+	}
+
+	return x;
 }
 
 SWITCH_DECLARE(uint32_t) switch_core_session_event_count(switch_core_session_t *session)
@@ -1308,6 +1327,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 {
 	switch_event_t *event;
 	switch_core_session_message_t msg = { 0 };
+	switch_caller_profile_t *profile;
 
 	switch_assert(use_uuid);
 
@@ -1323,6 +1343,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	msg.string_array_arg[0] = session->uuid_str;
 	msg.string_array_arg[1] = use_uuid;
 	switch_core_session_receive_message(session, &msg);
+
+	if ((profile = switch_channel_get_caller_profile(session->channel))) {
+		profile->uuid = switch_core_strdup(profile->pool, use_uuid);
+	}
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
@@ -1648,6 +1672,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
+	switch_thread_rwlock_create(&session->io_rwlock, session->pool);
 	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
@@ -1799,6 +1824,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *ap
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(switch_core_session_t *session, const char *app, const char *arg)
+{
+	switch_event_t *execute_event;
+	
+	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+
+		if (arg) {
+			switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", arg);
+		}
+		
+		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+		switch_core_session_queue_private_event(session, &execute_event, SWITCH_FALSE);
+		
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,
 																				  const char *arg, int32_t *flags)
 {
@@ -1831,10 +1878,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",
 						  app, switch_channel_get_name(session->channel));
 	} else if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && !switch_channel_media_ready(session->channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
-						  app, switch_channel_get_name(session->channel));
-		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
+		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media! pre_answering channel %s\n",
+							  app, switch_channel_get_name(session->channel));
+			if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
+				switch_goto_status(SWITCH_STATUS_FALSE, done);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+							  "Cannot execute app '%s' media required on an outbound channel that does not have media established\n", app);
 			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 	}

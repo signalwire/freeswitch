@@ -90,6 +90,8 @@ $(RECURSIVE_TARGETS):
 	fi; \
 	if test -z "$$fail" ; then \
 	   cd $(top_builddir)/build && $(MAKE) $(AM_MAKEFLAGS) $$target || exit 1; \
+	else \
+	   exit 1; \
 	fi ;
 
 CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
@@ -374,7 +376,7 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 	  touch .version ; \
 	else \
 	  if [ -d .git ] ; then \
-	    version=`git log --format="%h %ci" -1 HEAD | head -1 | sed -e 's|:|-|g' || echo hacked` ; \
+	    version=`git log --pretty=format:"%h %ci" -1 HEAD | head -1 | sed -e 's|:|-|g' || echo hacked` ; \
 	    if [ "x$$version" = "xhacked" ] ; then \
 	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
 	    else \

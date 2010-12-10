@@ -235,7 +235,7 @@ void _PR_InitMW(void)
      * We use NT 4's InterlockedCompareExchange() to operate
      * on PRMWStatus variables.
      */
-    PR_ASSERT(sizeof(PVOID) == sizeof(PRMWStatus));
+    //PR_ASSERT(sizeof(PVOID) == sizeof(PRMWStatus));
     TimerInit();
 #endif
     mw_lock = PR_NewLock();

@@ -55,7 +55,7 @@ ftdm_mutex_t *g_boost_modules_mutex = NULL;
 ftdm_hash_t *g_boost_modules_hash = NULL;
 
 #define MAX_TRUNK_GROUPS 64
-//DAVIDY need to merge congestion_timeouts with ftdm_sangoma_boost_trunkgroups
+//TODO need to merge congestion_timeouts with ftdm_sangoma_boost_trunkgroups
 static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 
 static ftdm_sangoma_boost_trunkgroup_t *g_trunkgroups[MAX_TRUNK_GROUPS];
@@ -1557,11 +1557,11 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 			ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
 			ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
 			if (strlen(ftdmchan->caller_data.rdnis.digits)) {
-					event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
-					event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
-					event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
+				event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
+				event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
+				event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
 			}
-		    
+
 			event.calling.screening_ind = ftdmchan->caller_data.screen;
 			event.calling.presentation_ind = ftdmchan->caller_data.pres;
 
@@ -2582,17 +2582,17 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 		} else if (!strcasecmp(var, "remote_port")) {
 			remote_port = atoi(val);
 		} else if (!strcasecmp(var, "outbound-called-ton")) {
-			ftdm_span_set_ton(val, &span->default_caller_data.dnis.type);
+			ftdm_set_ton(val, &span->default_caller_data.dnis.type);
 		} else if (!strcasecmp(var, "outbound-called-npi")) {
-			ftdm_span_set_npi(val, &span->default_caller_data.dnis.plan);
+			ftdm_set_npi(val, &span->default_caller_data.dnis.plan);
 		} else if (!strcasecmp(var, "outbound-calling-ton")) {
-			ftdm_span_set_ton(val, &span->default_caller_data.cid_num.type);
+			ftdm_set_ton(val, &span->default_caller_data.cid_num.type);
 		} else if (!strcasecmp(var, "outbound-calling-npi")) {
-			ftdm_span_set_npi(val, &span->default_caller_data.cid_num.plan);
+			ftdm_set_npi(val, &span->default_caller_data.cid_num.plan);
 		} else if (!strcasecmp(var, "outbound-rdnis-ton")) {
-			ftdm_span_set_ton(val, &span->default_caller_data.rdnis.type);
+			ftdm_set_ton(val, &span->default_caller_data.rdnis.type);
 		} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
-			ftdm_span_set_npi(val, &span->default_caller_data.rdnis.plan);
+			ftdm_set_npi(val, &span->default_caller_data.rdnis.plan);
 		} else if (!sigmod) {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			FAIL_CONFIG_RETURN(FTDM_FAIL);
