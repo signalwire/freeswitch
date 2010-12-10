@@ -1605,6 +1605,13 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				}
 				break;
 
+				/* INDICATE_RINGING doesn't apply to MFC/R2. maybe we could generate a tone */
+			case FTDM_CHANNEL_STATE_RINGING: 
+				{
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RINGING indicated, ignoring it as it doesn't apply to MFC/R2\n");
+				}
+				break;
+
 			default:
 				{
 					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Unhandled channel state change: %s\n", ftdm_channel_state2str(ftdmchan->state));
