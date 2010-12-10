@@ -1976,7 +1976,7 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 		return FTDM_FAIL;
 	}
 
-	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[0].name, "self-route");
+	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[0].name, "self-rt");
 
 	g_ftdm_sngss7_data.cfg.mtpRoute[0].id			= 0;
 	g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc			= spc;

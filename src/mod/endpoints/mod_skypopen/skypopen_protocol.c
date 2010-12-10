@@ -547,6 +547,9 @@ int skypopen_signaling_read(private_t *tech_pvt)
 							if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 								switch_core_timer_sync(&tech_pvt->timer_read);
 							}
+							if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
+								switch_core_timer_sync(&tech_pvt->timer_read_srv);
+							}
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 						}
 
@@ -878,7 +881,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 
 					unsigned int fdselect;
-					int rt;
+					int rt=1;
 					fd_set fs;
 					struct timeval to;
 					int nospace;
@@ -891,7 +894,10 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 					to.tv_usec = MS_SKYPOPEN * 1000 * 3;
 					to.tv_sec = 0;
 
-					rt = select(fdselect + 1, &fs, NULL, NULL, &to);
+					if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
+						switch_core_timer_next(&tech_pvt->timer_read_srv);
+					}
+					//rt = select(fdselect + 1, &fs, NULL, NULL, &to);
 					if (rt > 0) {
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {

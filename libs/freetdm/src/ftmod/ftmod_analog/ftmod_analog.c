@@ -491,9 +491,10 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 							ftdm_channel_command(ftdmchan, FTDM_COMMAND_GENERATE_RING_OFF, NULL);
 						}
 						
-						if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && 
+						if (ftdmchan->type == FTDM_CHAN_TYPE_FXS &&
+							   ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && 
 							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RINGING || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
-							 || ftdmchan->last_state >= FTDM_CHANNEL_STATE_RING)) {
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_RING)) {
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 						} else {
 							ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;

@@ -542,7 +542,8 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	
 	memset(&discEvnt, 0, sizeof(discEvnt));
 	
-	/* Fill discEvnt here */	
+	/* Fill discEvnt here */
+	/* TODO move this to set_cause_ie function */
   	discEvnt.causeDgn[0].eh.pres = PRSNT_NODEF;
 	discEvnt.causeDgn[0].location.pres = PRSNT_NODEF;
 	discEvnt.causeDgn[0].location.val = IN_LOC_PRIVNETLU;
@@ -580,7 +581,7 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 	
 	memset(&relEvnt, 0, sizeof(relEvnt));
 	
-	/* Fill discEvnt here */	
+	/* Fill relEvnt here */
   	relEvnt.causeDgn[0].eh.pres = PRSNT_NODEF;
 	relEvnt.causeDgn[0].location.pres = PRSNT_NODEF;
 	relEvnt.causeDgn[0].location.val = IN_LOC_PRIVNETLU;

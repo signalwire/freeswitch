@@ -184,6 +184,9 @@ typedef enum {
 	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 10),
 	/* If this flag is set, channel will be moved to proceed state when calls goes to routing */
 	FTDM_SPAN_USE_PROCEED_STATE = (1 << 11),
+	/* If this flag is set, the signalling module supports jumping directly to state up, without
+		going through PROGRESS/PROGRESS_MEDIA */
+	FTDM_SPAN_USE_SKIP_STATES = (1 << 12),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
@@ -264,6 +267,9 @@ typedef enum {
 	FTDM_CHANNEL_IN_ALARM = (1 << 27),
 	FTDM_CHANNEL_SIG_UP = (1 << 28),
 	FTDM_CHANNEL_USER_HANGUP = (1 << 29),
+	FTDM_CHANNEL_RX_DISABLED = (1 << 30),
+	FTDM_CHANNEL_TX_DISABLED = (1 << 31),
+	/* ok, when we reach 32, we need to move to uint64_t all the flag stuff */
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 
@@ -380,6 +386,7 @@ typedef struct ftdm_fsk_modulator ftdm_fsk_modulator_t;
 typedef ftdm_status_t (*ftdm_span_start_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_span_stop_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_channel_sig_read_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
+typedef ftdm_status_t (*ftdm_channel_sig_write_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
 
 typedef enum {
 	FTDM_ITERATOR_VARS = 1,

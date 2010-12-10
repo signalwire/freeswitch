@@ -526,6 +526,10 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_core_timer_destroy(&tech_pvt->timer_read);
 		}
 
+		if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
+			switch_core_timer_destroy(&tech_pvt->timer_read_srv);
+		}
+
 		if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next) {
 			switch_core_timer_destroy(&tech_pvt->timer_write);
 		}
@@ -1121,6 +1125,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 					switch_core_timer_sync(&tech_pvt->timer_read);
 				}
+				if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
+					switch_core_timer_sync(&tech_pvt->timer_read_srv);
+				}
 				switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 			}
 
@@ -1146,6 +1153,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 				switch_core_timer_sync(&tech_pvt->timer_read);
 			}
+			if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
+				switch_core_timer_sync(&tech_pvt->timer_read_srv);
+			}
 			switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 		}
 
@@ -1167,6 +1177,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			switch_buffer_zero(tech_pvt->read_buffer);
 			if (tech_pvt->timer_read.timer_interface && tech_pvt->timer_read.timer_interface->timer_next) {
 				switch_core_timer_sync(&tech_pvt->timer_read);
+			}
+			if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
+				switch_core_timer_sync(&tech_pvt->timer_read_srv);
 			}
 			switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 		}
@@ -2167,6 +2180,13 @@ int start_audio_threads(private_t *tech_pvt)
 	}
 
 	switch_core_timer_sync(&tech_pvt->timer_read);
+
+	if (switch_core_timer_init(&tech_pvt->timer_read_srv, "soft", MS_SKYPOPEN, SAMPLES_PER_FRAME, skypopen_module_pool) != SWITCH_STATUS_SUCCESS) {
+		ERRORA("setup timer failed\n", SKYPOPEN_P_LOG);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_timer_sync(&tech_pvt->timer_read_srv);
 
 	if (switch_core_timer_init(&tech_pvt->timer_write, "soft", MS_SKYPOPEN, SAMPLES_PER_FRAME, skypopen_module_pool) != SWITCH_STATUS_SUCCESS) {
 		ERRORA("setup timer failed\n", SKYPOPEN_P_LOG);
