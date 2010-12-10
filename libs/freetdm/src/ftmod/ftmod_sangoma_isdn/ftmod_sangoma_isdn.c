@@ -626,8 +626,11 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	case FTDM_CHANNEL_STATE_GET_CALLERID:
 		{
 			if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+				/* By default, we do not send a progress indicator in the proceed */
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
+				
 				sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
-				sngisdn_snd_proceed(ftdmchan);
+				sngisdn_snd_proceed(ftdmchan, prog_ind);
 			}
 			/* Wait in this state until we get FACILITY msg */			
 		}
@@ -666,8 +669,11 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
 				if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+					/* By default, we do not send a progress indicator in the proceed */
+					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
+					
 					sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
-					sngisdn_snd_proceed(ftdmchan);
+					sngisdn_snd_proceed(ftdmchan, prog_ind);
 				}
 			}
 		}
@@ -851,6 +857,26 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	return;
 }
 
+static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
+{
+	ftdm_status_t status = FTDM_FAIL;
+
+	switch (sigmsg->event_id) {
+		case FTDM_SIGEVENT_RESTART:
+			/* TODO: Send a channel restart here */
+			/* Implement me */
+			break;
+		case FTDM_SIGEVENT_FACILITY:
+			sngisdn_snd_fac_req(ftdmchan);
+			break;
+		default:
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unsupported signalling msg requested\n");
+			status = FTDM_BREAK;
+	}
+	ftdm_call_clear_data(&ftdmchan->caller_data);
+	return status;
+}
+
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 {
 	sngisdn_chan_data_t  *sngisdn_info = ftdmchan->call_data;
@@ -1030,6 +1056,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->stop = ftdm_sangoma_isdn_stop;
 	span->signal_type = FTDM_SIGTYPE_ISDN;
 	span->outgoing_call = ftdm_sangoma_isdn_outgoing_call;
+	span->send_msg = ftdm_sangoma_isdn_send_msg;
 	span->channel_request = NULL;
 	span->signal_cb	= sig_cb;
 	span->get_channel_sig_status = ftdm_sangoma_isdn_get_chan_sig_status;
@@ -1040,6 +1067,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
+	ftdm_set_flag(span, FTDM_SPAN_USE_SKIP_STATES);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {

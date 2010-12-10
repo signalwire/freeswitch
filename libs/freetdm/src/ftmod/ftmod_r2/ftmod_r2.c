@@ -29,6 +29,11 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Arnaldo Pereira <arnaldo@sangoma.com>
+ *
  */
 
 #ifdef __linux__
@@ -895,7 +900,7 @@ static int ftdm_r2_io_write(openr2_chan_t *r2chan, const void *buf, int size)
 	if (FTDM_FAIL == status) {
 		return -1;
 	}
-	return outsize;
+	return (int)outsize;
 }
 
 static int ftdm_r2_io_read(openr2_chan_t *r2chan, const void *buf, int size)
@@ -906,7 +911,7 @@ static int ftdm_r2_io_read(openr2_chan_t *r2chan, const void *buf, int size)
 	if (FTDM_FAIL == status) {
 		return -1;
 	}
-	return outsize;
+	return (int)outsize;
 }
 
 static int ftdm_r2_io_wait(openr2_chan_t *r2chan, int *flags, int block)
@@ -1643,6 +1648,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	int index = 0;
 	struct timeval start, end;
 	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *citer = NULL;
 	uint32_t txqueue_size = 4;
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
@@ -1653,8 +1659,12 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	ftdm_log(FTDM_LOG_DEBUG, "OpenR2 monitor thread %lu started.\n", r2data->monitor_thread_id);
 	r2chan = NULL;
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
-	for (i = 1; chaniter; chaniter = ftdm_iterator_next(chaniter), i++) {
-		ftdmchan = ftdm_iterator_current(chaniter);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		goto done;
+	}
+	for (i = 1, citer = chaniter; citer; citer = ftdm_iterator_next(citer), i++) {
+		ftdmchan = ftdm_iterator_current(citer);
 		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_span_id(r2chan, span->span_id);
 		openr2_chan_set_idle(r2chan);
@@ -1693,9 +1703,13 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
-		chaniter = ftdm_span_get_chan_iterator(span, chaniter);
-		for (i = 0; chaniter; chaniter = ftdm_iterator_next(chaniter), i++) {
-			ftdmchan = ftdm_iterator_current(chaniter);
+		citer = ftdm_span_get_chan_iterator(span, chaniter);
+		if (!citer) {
+			ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+			goto done;
+		}
+		for (i = 0; citer; citer = ftdm_iterator_next(citer), i++) {
+			ftdmchan = ftdm_iterator_current(citer);
 			r2chan = R2CALL(ftdmchan)->r2chan;
 			poll_events[i] = POLLPRI;
 			if (openr2_chan_get_read_enabled(r2chan)) {
@@ -1736,9 +1750,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 		/* this main loop takes care of MF and CAS signaling during call setup and tear down
 		 * for every single channel in the span, do not perform blocking operations here! */
-		chaniter = ftdm_span_get_chan_iterator(span, chaniter);
-		for ( ; chaniter; chaniter = ftdm_iterator_next(chaniter)) {
-			ftdmchan = ftdm_iterator_current(chaniter);
+		citer = ftdm_span_get_chan_iterator(span, chaniter);
+		for ( ; citer; citer = ftdm_iterator_next(citer)) {
+			ftdmchan = ftdm_iterator_current(citer);
 
 			ftdm_mutex_lock(ftdmchan->mutex);
 
@@ -1765,10 +1779,11 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			ftdm_mutex_unlock(ftdmchan->mutex);
 		}
 	}
-	
-	chaniter = ftdm_span_get_chan_iterator(span, chaniter);
-	for ( ; chaniter; chaniter = ftdm_iterator_next(chaniter)) {
-		ftdmchan = ftdm_iterator_current(chaniter);
+
+done:	
+	citer = ftdm_span_get_chan_iterator(span, chaniter);
+	for ( ; citer; citer = ftdm_iterator_next(citer)) {
+		ftdmchan = ftdm_iterator_current(citer);
 		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_blocked(r2chan);
 	}

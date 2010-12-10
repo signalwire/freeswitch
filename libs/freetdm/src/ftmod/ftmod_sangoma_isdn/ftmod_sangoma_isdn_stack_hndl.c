@@ -123,12 +123,9 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				break;
 			}
 
-#if 0
-			/* Export ftdmchan variables here if we need to */
-			ftdm_channel_add_var(ftdmchan, "isdn_specific_var", "1");
-#endif
 			/* Fill in call information */
 			get_calling_num(ftdmchan, &conEvnt->cgPtyNmb);
+			get_calling_num2(ftdmchan, &conEvnt->cgPtyNmb2);
 			get_called_num(ftdmchan, &conEvnt->cdPtyNmb);
 			get_redir_num(ftdmchan, &conEvnt->redirNmb);
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
@@ -410,6 +407,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 					}
 					break;
 					case FTDM_CHANNEL_STATE_RING:
+					case FTDM_CHANNEL_STATE_RINGING:
 					case FTDM_CHANNEL_STATE_PROCEED:
 					case FTDM_CHANNEL_STATE_PROGRESS:
 					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -450,6 +448,7 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 	ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "State change flag pending\n");
 	switch (ftdmchan->state) {		
 		case FTDM_CHANNEL_STATE_RING:
+		case FTDM_CHANNEL_STATE_RINGING:
 		case FTDM_CHANNEL_STATE_DIALING:
 		case FTDM_CHANNEL_STATE_PROCEED:
 		case FTDM_CHANNEL_STATE_PROGRESS:
@@ -540,6 +539,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 		case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 		case FTDM_CHANNEL_STATE_UP:
 		case FTDM_CHANNEL_STATE_RING:
+		case FTDM_CHANNEL_STATE_RINGING:
 			/* If we previously had a glare on this channel,
 			this RELEASE could be for the previous call.  Confirm whether call_data has
 			not changed while we were waiting for ftdmchan->mutex by comparing suInstId's */
@@ -757,14 +757,14 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 			{
 				ftdm_sigmsg_t sigev;
 				if (facEvnt->facElmt.facStr.pres) {
-					get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len);
+					get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len-2);
 				}
 				memset(&sigev, 0, sizeof(sigev));
 				sigev.chan_id = ftdmchan->chan_id;
 				sigev.span_id = ftdmchan->span_id;
 				sigev.channel = ftdmchan;
 				
-				sigev.event_id = FTDM_SIGEVENT_MSG;
+				sigev.event_id = FTDM_SIGEVENT_FACILITY;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			}
 			break;
@@ -884,6 +884,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 							break;
 						case FTDM_CHANNEL_STATE_PROCEED:
 						case FTDM_CHANNEL_STATE_PROGRESS:
+						case FTDM_CHANNEL_STATE_RINGING:
 						case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Remote switch expecting OVERLAP receive, but we are already PROCEEDING\n");
 							sngisdn_snd_disconnect(ftdmchan);
@@ -902,6 +903,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 				switch (ftdmchan->state) {
 					case FTDM_CHANNEL_STATE_PROCEED:
 					case FTDM_CHANNEL_STATE_PROGRESS:
+					case FTDM_CHANNEL_STATE_RINGING:
 						/* T310 timer has expired */
 						ftdmchan->caller_data.hangup_cause = staEvnt->causeDgn[0].causeVal.val;
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T310 Timer expired, hanging up call\n");
@@ -938,6 +940,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 				break;
 			case 9: /* Remote switch is in "Incoming call proceeding" state */
 				switch (ftdmchan->state) {
+					case FTDM_CHANNEL_STATE_RINGING:
 					case FTDM_CHANNEL_STATE_PROGRESS:
 					case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 					case FTDM_CHANNEL_STATE_GET_CALLERID:
