@@ -506,7 +506,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         stfu_frame_t *frame = NULL;
 #endif
         int32_t delay = i->last_rd_ts - i->cur_ts;
-        int32_t need  = abs(i->last_rd_ts - i->cur_ts) / i->samples_per_packet;
+        uint32_t need  = abs(i->last_rd_ts - i->cur_ts) / i->samples_per_packet;
 
         
         i->period_missing_count++;
