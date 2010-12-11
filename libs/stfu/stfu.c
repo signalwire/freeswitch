@@ -219,7 +219,7 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 static void stfu_n_reset_counters(stfu_instance_t *i)
 {
 #ifdef DB_JB
-    printf("COUNER RESET........\n");
+    printf("COUNTER RESET........\n");
 #endif
 
     if (i->callback) {
