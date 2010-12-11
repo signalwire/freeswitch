@@ -1367,9 +1367,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	switch_rtp_set_flag(rtp_session, flags);
 
 	/* for from address on recvfrom calls */
-	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, pool);
+	switch_sockaddr_create(&rtp_session->from_addr, pool);
+
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
-		switch_sockaddr_info_get(&rtp_session->rtcp_from_addr, NULL, SWITCH_UNSPEC, 0, 0, pool);
+		switch_sockaddr_create(&rtp_session->rtcp_from_addr, pool);
 	}
 	rtp_session->seq = (uint16_t) rand();
 	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL));
