@@ -60,8 +60,8 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 static struct scull_dev *scull_devices;	/* allocated in scull_init_module */
 
-#define GIOVA_BLK 3840
-#define GIOVA_SLEEP 40000
+#define GIOVA_BLK 1920
+#define GIOVA_SLEEP 20000
 
 void my_timer_callback_inq( unsigned long data )
 {
@@ -130,11 +130,11 @@ static int scull_c_open(struct inode *inode, struct file *filp)
 	struct scull_dev *dev;
 	dev_t key;
 
-	if (!current->pid) { 
-		printk("Process \"%s\" has no pid\n", current->comm);
+	if (!current->tgid) { 
+		printk("Process \"%s\" has no tgid\n", current->comm);
 		return -EINVAL;
 	}
-	key = current->pid;
+	key = current->tgid;
 
 	/* look for a scullc device in the list */
 	spin_lock(&scull_c_lock);
@@ -174,6 +174,8 @@ ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
 		prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
 			schedule();
 		finish_wait(&dev->inq, &wait);
+		//memset(buf, 255, count);
+
 	return count;
 
 }
