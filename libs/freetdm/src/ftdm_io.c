@@ -5478,7 +5478,6 @@ static void ftdm_cpu_monitor_stop(void)
 
 FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 {
-	int i;
 	memset(&globals, 0, sizeof(globals));
 
 	time_init();
@@ -5504,9 +5503,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 		ftdm_log(FTDM_LOG_CRIT, "Failed to run master timing schedule context\n");
 		return FTDM_FAIL;
 	}
-	for(i=0;i<MAX_CALLIDS;i++) {
-		globals.call_ids[i] = NULL;
-	}
+
 	globals.running = 1;
 	return FTDM_SUCCESS;
 }
