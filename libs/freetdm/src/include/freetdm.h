@@ -295,6 +295,11 @@ typedef struct ftdm_caller_data {
 	/* user information layer 1 protocol */
 	ftdm_user_layer1_prot_t bearer_layer1;
 	ftdm_variable_container_t variables; /*!<variables attached to this call */
+	/* We need call_id inside caller_data for the user to be able to retrieve 
+	 * the call_id when ftdm_channel_call_place is called. This is the only time
+	 * that the user can use caller_data.call_id to obtain the call_id. The user
+	 * should use the call_id from sigmsg otherwise */
+	uint32_t call_id; /*!< Unique call ID for this call */
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
@@ -381,9 +386,10 @@ struct ftdm_sigmsg {
 	ftdm_channel_t *channel; /*!< Related channel */
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
-	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */	
+	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */
 	void *raw_data; /*!< Message specific data if any */
 	uint32_t raw_data_len; /*!< Data len in case is needed */
+	uint32_t call_id; /*!< unique call id for this call */
 };
 
 /*! \brief Crash policy 
