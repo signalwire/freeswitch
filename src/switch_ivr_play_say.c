@@ -1761,6 +1761,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 	switch_assert(session);
 
+	if (!digit_timeout) {
+		digit_timeout = timeout;
+	}
+
 	if (max_digits < min_digits) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 						  "Max digits %u is less than Min %u, forcing Max to %u\n", max_digits, min_digits, min_digits);
