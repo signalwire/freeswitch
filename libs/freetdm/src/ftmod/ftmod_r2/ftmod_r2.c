@@ -665,7 +665,7 @@ static void ftdm_r2_on_call_read(openr2_chan_t *r2chan, const unsigned char *buf
 static void ftdm_r2_on_hardware_alarm(openr2_chan_t *r2chan, int alarm)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-	ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Alarm notification: %d\n", alarm);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Alarm notification: %d\n", alarm);
 }
 
 static void ftdm_r2_on_os_error(openr2_chan_t *r2chan, int errorcode)
@@ -1955,7 +1955,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 						"Max DNIS: %d\n"
 						"ANI First: %s\n"
 						"Immediate Accept: %s\n"
-						"Job Thread: %lu\n"
+						"Job Thread: %u\n"
 						"Job Max ms: %d\n"
 						"Job Loops: %lu\n",
 						openr2_proto_get_variant_string(r2variant),
