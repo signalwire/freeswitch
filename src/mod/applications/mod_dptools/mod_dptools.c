@@ -269,7 +269,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 }
 
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR pause OR resume OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
@@ -957,6 +957,17 @@ SWITCH_STANDARD_APP(redirect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(jitterbuffer_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to change the jitter buffer */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_JITTER_BUFFER;
+	switch_core_session_receive_message(session, &msg);
+}
+
 SWITCH_STANDARD_APP(display_function)
 {
 	switch_core_session_message_t msg = { 0 };
@@ -1303,13 +1314,22 @@ SWITCH_STANDARD_API(strftime_api_function)
 	char date[80] = "";
 	switch_time_t thetime;
 	char *p;
-	if (!zstr(cmd) && (p = strchr(cmd, '|'))) {
-		thetime = switch_time_make(atoi(cmd), 0);
+	char *mycmd = NULL;
+
+	if (!zstr(cmd)) {
+		mycmd = strdup(cmd);
+	}
+
+	if (!zstr(mycmd) && (p = strchr(cmd, '|'))) {
+		*p++ = '\0';
+		
+		thetime = switch_time_make(atol(cmd), 0);
 		cmd = p + 1;
 	} else {
 		thetime = switch_micro_time_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
+
 	if (zstr(cmd)) {
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	} else {
@@ -3513,6 +3533,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "jitterbuffer", "Send session jitterbuffer", "Send a jitterbuffer message to a session.", 
+				   jitterbuffer_function, "<jitterbuffer_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_display", "Send session a new display", "Send session a new display.", display_function, "<text>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>",

@@ -1486,6 +1486,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
 							  TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)),
 							  SIPTAG_ACCEPT_STR("application/sdp, multipart/mixed"),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_NO_CONNECTION_REUSE),
+									TPTAG_REUSE(0)),
 							  TAG_END());	/* Last tag should always finish the sequence */
 	
 	if (!profile->nua) {
@@ -3672,6 +3674,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->timer_t4 = v;
 						} else {
 							profile->timer_t4 = 4000;
+						}
+					} else if (!strcasecmp(var, "reuse-connections")) {
+						switch_bool_t value = switch_true(val);
+						if (!value) {
+							sofia_set_pflag(profile, PFLAG_NO_CONNECTION_REUSE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_NO_CONNECTION_REUSE);
 						}
 					}
 				}

@@ -57,11 +57,14 @@ struct tm *localtime_r(const time_t *clock, struct tm *result);
 #define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
 #define FTDM_READ_TRACE_INDEX 0
 #define FTDM_WRITE_TRACE_INDEX 1
+#define MAX_CALLIDS 6000
 
 ftdm_time_t time_last_throttle_log = 0;
 ftdm_time_t time_current_throttle_log = 0;
 
 static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
+static ftdm_status_t ftdm_call_set_call_id(ftdm_caller_data_t *caller_data);
+static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data);
 
 static int time_is_init = 0;
 
@@ -235,6 +238,10 @@ static struct {
 	ftdm_span_t *spans;
 	ftdm_group_t *groups;
 	cpu_monitor_t cpu_monitor;
+	
+	ftdm_caller_data_t *call_ids[MAX_CALLIDS+1];
+	ftdm_mutex_t *call_id_mutex;
+	uint32_t last_call_id;
 } globals;
 
 enum ftdm_enum_cpu_alarm_action_flags
@@ -1896,8 +1903,6 @@ static ftdm_status_t ftdm_channel_reset(ftdm_channel_t *ftdmchan)
 		ftdmchan->dtmf_off = FTDM_DEFAULT_DTMF_OFF;
 	}
 
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
-			
 	memset(ftdmchan->dtmf_hangup_buf, '\0', ftdmchan->span->dtmf_hangup_len);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE)) {
@@ -2483,6 +2488,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 
 	ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 100);
 
+	ftdm_call_set_call_id(&ftdmchan->caller_data);
 	ftdm_channel_unlock(ftdmchan);
 
 	return status;
@@ -2545,9 +2551,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel can't be done!\n");
 
 	ftdm_mutex_lock(ftdmchan->mutex);
-
-	memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
-
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_INUSE);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_WINK);
@@ -2587,7 +2590,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		sigmsg.channel = ftdmchan;
 		sigmsg.event_id = FTDM_SIGEVENT_RELEASED;
 		ftdm_span_send_signal(ftdmchan->span, &sigmsg);
-	}
+		ftdm_call_clear_call_id(&ftdmchan->caller_data);
+	}	
 
 	if (ftdmchan->txdrops || ftdmchan->rxdrops) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "channel dropped data: txdrops = %d, rxdrops = %d\n", 
@@ -2595,8 +2599,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	}
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
-
-
+	memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
 	return FTDM_SUCCESS;
@@ -3455,7 +3458,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 	ftdm_status_t  status = ftdmchan->fio->read(ftdmchan, data, datalen);
 	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
 		ftdm_size_t dlen = *datalen;
-		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, dlen) != dlen) {
+		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, (int)dlen) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
@@ -3468,7 +3471,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 		ftdm_size_t dlen = *datalen;
 		ftdm_size_t rc = 0;
 
-		write_chan_io_dump(&ftdmchan->rxdump, data, dlen);
+		write_chan_io_dump(&ftdmchan->rxdump, data, (int)dlen);
 
 		/* if dtmf debug is enabled and initialized, write there too */
 		if (ftdmchan->dtmfdbg.file) {
@@ -5336,7 +5339,7 @@ static void execute_safety_hangup(void *data)
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	if (sigmsg->channel) {
-		ftdm_mutex_lock(sigmsg->channel->mutex);
+		ftdm_mutex_lock(sigmsg->channel->mutex);		
 	}
 	
 	/* some core things to do on special events */
@@ -5355,6 +5358,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 	case FTDM_SIGEVENT_START:
 		{
+			ftdm_call_set_call_id(&sigmsg->channel->caller_data);
 			ftdm_set_echocancel_call_begin(sigmsg->channel);
 			if (sigmsg->channel->dtmfdbg.requested) {
 				ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL);
@@ -5384,7 +5388,10 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		break;	
 
 	}
-	
+
+	if (sigmsg->channel) {
+		sigmsg->call_id = sigmsg->channel->caller_data.call_id;
+	}
 	/* if the signaling module uses a queue for signaling notifications, then enqueue it */
 	if (ftdm_test_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE)) {
 		ftdm_span_queue_signal(span, sigmsg);
@@ -5493,6 +5500,8 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 	ftdm_mutex_create(&globals.mutex);
 	ftdm_mutex_create(&globals.span_mutex);
 	ftdm_mutex_create(&globals.group_mutex);
+	ftdm_mutex_create(&globals.call_id_mutex);
+	
 	ftdm_sched_global_init();
 	if (ftdm_sched_create(&globals.timingsched, "freetdm-master") != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to create master timing schedule context\n");
@@ -5502,6 +5511,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 		ftdm_log(FTDM_LOG_CRIT, "Failed to run master timing schedule context\n");
 		return FTDM_FAIL;
 	}
+
 	globals.running = 1;
 	return FTDM_SUCCESS;
 }
@@ -5605,6 +5615,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	ftdm_mutex_destroy(&globals.mutex);
 	ftdm_mutex_destroy(&globals.span_mutex);
 	ftdm_mutex_destroy(&globals.group_mutex);
+	ftdm_mutex_destroy(&globals.call_id_mutex);
 
 	memset(&globals, 0, sizeof(globals));
 	return FTDM_SUCCESS;
@@ -5962,6 +5973,47 @@ FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 
 	return stream.data;
 }
+
+static ftdm_status_t ftdm_call_set_call_id(ftdm_caller_data_t *caller_data)
+{
+	uint32_t current_call_id;
+	ftdm_assert_return(!caller_data->call_id, FTDM_FAIL, "Overwriting non-cleared call-id");
+
+	ftdm_mutex_lock(globals.call_id_mutex);
+	current_call_id = globals.last_call_id;
+
+	do {
+		if (++current_call_id > MAX_CALLIDS) {
+			current_call_id = 1;
+		}
+		if (globals.call_ids[current_call_id] != NULL) {
+			continue;
+		}
+	} while (0);
+
+	globals.last_call_id = current_call_id;
+	caller_data->call_id = current_call_id;
+
+	globals.call_ids[current_call_id] = caller_data;
+	ftdm_mutex_unlock(globals.call_id_mutex);
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data)
+{
+	ftdm_assert_return((caller_data->call_id && caller_data->call_id <= MAX_CALLIDS), FTDM_FAIL, "Clearing call with invalid call-id\n");
+	ftdm_mutex_lock(globals.call_id_mutex);
+	if (globals.call_ids[caller_data->call_id]) {
+		caller_data->call_id = 0;
+		globals.call_ids[caller_data->call_id] = NULL;
+	} else {
+		ftdm_log(FTDM_LOG_CRIT, "call-id did not exist %u\n", caller_data->call_id);
+	} 
+	ftdm_mutex_unlock(globals.call_id_mutex);
+	return FTDM_SUCCESS;
+}
+
+
 
 
 /* For Emacs:

@@ -75,6 +75,7 @@ typedef enum {
 struct stfu_frame {
 	uint32_t ts;
 	uint32_t pt;
+	uint32_t seq;
 	uint8_t data[STFU_DATALEN];
 	size_t dlen;
 	uint8_t was_read;
@@ -86,24 +87,27 @@ struct stfu_instance;
 typedef struct stfu_instance stfu_instance_t;
 
 typedef struct {
-	uint32_t in_len;
-	uint32_t in_size;
-	uint32_t out_len;
-	uint32_t out_size;
-
+	uint32_t qlen;
+	uint32_t packet_in_count;
+	uint32_t clean_count;
+	uint32_t consecutive_good_count;
+	uint32_t consecutive_bad_count;
 } stfu_report_t;
 
+typedef void (*stfu_n_call_me_t)(stfu_instance_t *i, void *);
 
 void stfu_n_report(stfu_instance_t *i, stfu_report_t *r);
 void stfu_n_destroy(stfu_instance_t **i);
-stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_plc);
+stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_per_packet, uint32_t samples_per_second);
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen);
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, int last);
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uint32_t pt, void *data, size_t datalen, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);
 void stfu_n_reset(stfu_instance_t *i);
+stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);
+void stfu_n_call_me(stfu_instance_t *i, stfu_n_call_me_t callback, void *udata);
 
 #define stfu_im_done(i) stfu_n_add_data(i, 0, NULL, 0, 1)
-#define stfu_n_eat(i,t,p,d,l) stfu_n_add_data(i, t, p, d, l, 0)
+#define stfu_n_eat(i,t,s,p,d,l) stfu_n_add_data(i, t, s, p, d, l, 0)
 
 #ifdef __cplusplus
 }

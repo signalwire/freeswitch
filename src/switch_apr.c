@@ -729,6 +729,18 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
 	return apr_socket_recv(sock, buf, len);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool)
+{
+	switch_sockaddr_t *new_sa;
+
+	new_sa = apr_pcalloc(pool, sizeof(apr_sockaddr_t));
+	switch_assert(new_sa);
+	new_sa->pool = pool;
+	memset(new_sa, 0, sizeof(new_sa));
+	*sa = new_sa;
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname, int32_t family,
 														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
