@@ -3455,7 +3455,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 	ftdm_status_t  status = ftdmchan->fio->read(ftdmchan, data, datalen);
 	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
 		ftdm_size_t dlen = *datalen;
-		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, dlen) != dlen) {
+		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, (int)dlen) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %zd bytes\n", dlen);
 		}
 	}
@@ -3468,7 +3468,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 		ftdm_size_t dlen = *datalen;
 		ftdm_size_t rc = 0;
 
-		write_chan_io_dump(&ftdmchan->rxdump, data, dlen);
+		write_chan_io_dump(&ftdmchan->rxdump, data, (int)dlen);
 
 		/* if dtmf debug is enabled and initialized, write there too */
 		if (ftdmchan->dtmfdbg.file) {

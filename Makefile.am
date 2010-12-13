@@ -102,6 +102,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
+CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
@@ -249,7 +250,8 @@ libfreeswitch_la_SOURCES = \
 	libs/miniupnpc/minissdpc.c \
 	libs/miniupnpc/upnperrors.c \
 	libs/libnatpmp/natpmp.c \
-	libs/libnatpmp/getgateway.c
+	libs/libnatpmp/getgateway.c\
+	libs/spandsp/src/plc.c
 
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp

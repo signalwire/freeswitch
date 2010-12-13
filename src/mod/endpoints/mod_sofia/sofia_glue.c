@@ -3153,18 +3153,37 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
 			int len = atoi(val);
+			int maxlen = 50;
+			char *p;
 
-			if (len < 100 || len > 1000) {
+			if ((p = strchr(val, ':'))) {
+				p++;
+				maxlen = atoi(val);
+			}
+
+			if (len < 20 || len > 10000) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR,
-								  "Invalid Jitterbuffer spec [%d] must be between 100 and 1000\n", len);
+								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", len);
 			} else {
-				int qlen;
-
+				int qlen, maxqlen = 0;
+				
 				qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len,
-								  qlen);
-				switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen);
+				if (maxlen) {
+					maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+				}
+
+				if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
+													  tech_pvt->read_impl.samples_per_packet, 
+													  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+					switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+									  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+				}
+				
 			}
 		}
 

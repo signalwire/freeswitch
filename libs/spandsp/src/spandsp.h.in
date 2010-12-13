@@ -39,8 +39,9 @@
 #include <limits.h>
 #include <time.h>
 @INSERT_MATH_HEADER@
+#if !defined(SPANDSP_NO_TIFF)
 #include <tiffio.h>
-
+#endif
 #include <spandsp/telephony.h>
 #include <spandsp/fast_convert.h>
 #include <spandsp/logging.h>

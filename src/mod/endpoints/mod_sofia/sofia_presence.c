@@ -90,6 +90,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *user_via = NULL;
 	char *contact_str = NULL;
 	char *dup_dest = NULL;
+	char *remote_host = NULL;
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -185,11 +186,9 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	
 		/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
 
-		remote_ip = malloc(sizeof(80));
 		dup_dest = strdup(dst->contact);
 
 		if (switch_stristr("fs_path", dst->contact)) {
-			char *remote_host = NULL;
 			const char *s;
 
 			if ((s = switch_stristr("fs_path=", dst->contact))) {
@@ -202,7 +201,6 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 			if (!zstr(remote_host)) {
 				switch_split_user_domain(remote_host, NULL, &remote_ip);
 			}
-			switch_safe_free(remote_host);
 		}
 
 		if (zstr(remote_ip)) {
@@ -236,7 +234,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		}
 
 		switch_safe_free(dup_dest);
-		free(remote_ip);
+		switch_safe_free(remote_host);
 
 		status = SWITCH_STATUS_SUCCESS;
 

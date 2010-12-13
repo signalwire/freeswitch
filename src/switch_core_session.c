@@ -1118,6 +1118,11 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
+	if ((*session)->plc) {
+		plc_free((*session)->plc);
+		(*session)->plc = NULL;
+	}
+
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data((*session)->channel, event);
 		switch_event_fire(&event);
