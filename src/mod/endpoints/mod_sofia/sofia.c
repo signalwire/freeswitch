@@ -1717,16 +1717,9 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
-	/* gcc 4.4 gets mad at us for testing if (ap) so let's try to work around it....*/
-	void *ap_ptr = (void *) (intptr_t) ap;
-	
 	if (!fmt) return;
 
-	if (ap_ptr) {
-		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, fmt, ap);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, "%s", fmt);
-	}
+	switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, mod_sofia_globals.tracelevel, fmt, ap);
 }
 
 static su_log_t *sofia_get_logger(const char *name)
