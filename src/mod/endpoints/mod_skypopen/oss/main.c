@@ -61,14 +61,14 @@ MODULE_LICENSE("Dual BSD/GPL");
 static struct scull_dev *scull_devices;	/* allocated in scull_init_module */
 
 #define GIOVA_BLK 1920
-#define GIOVA_SLEEP 20000
+#define GIOVA_SLEEP 20
 
 void my_timer_callback_inq( unsigned long data )
 {
 	struct scull_dev *dev = (void *)data;
 
 	wake_up_interruptible(&dev->inq);
-	mod_timer( &dev->timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP/1000) );
+	mod_timer( &dev->timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
 
 }
 
@@ -77,7 +77,7 @@ void my_timer_callback_outq( unsigned long data )
 	struct scull_dev *dev = (void *)data;
 
 	wake_up_interruptible(&dev->outq);
-	mod_timer( &dev->timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP/1000) );
+	mod_timer( &dev->timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
 }
 
 /* The clone-specific data structure includes a key field */
@@ -117,9 +117,9 @@ static struct scull_dev *scull_c_lookfor_device(dev_t key)
 	printk(" Timer installing\n");
 	setup_timer( &lptr->device.timer_inq, my_timer_callback_inq, (long int)lptr );
 	setup_timer( &lptr->device.timer_outq, my_timer_callback_outq, (long int)lptr );
-	printk( "Starting timer to fire in %dms (%ld)\n", GIOVA_SLEEP/1000, jiffies );
-	mod_timer( &lptr->device.timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP/1000) );
-	mod_timer( &lptr->device.timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP/1000) );
+	printk( "Starting timer to fire in %dms (%ld)\n", GIOVA_SLEEP, jiffies );
+	mod_timer( &lptr->device.timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
+	mod_timer( &lptr->device.timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
 	/* place it in the list */
 	list_add(&lptr->list, &scull_c_list);
 
@@ -170,11 +170,11 @@ ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
 {
 	struct scull_dev *dev = filp->private_data;
 
-		DEFINE_WAIT(wait);
-		prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
-			schedule();
-		finish_wait(&dev->inq, &wait);
-		//memset(buf, 255, count);
+	DEFINE_WAIT(wait);
+	prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
+	schedule();
+	finish_wait(&dev->inq, &wait);
+	//memset(buf, 255, count);
 
 	return count;
 
@@ -184,10 +184,10 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 		loff_t *f_pos)
 {
 	struct scull_dev *dev = filp->private_data;
-		DEFINE_WAIT(wait);
-		prepare_to_wait(&dev->outq, &wait, TASK_INTERRUPTIBLE);
-			schedule();
-		finish_wait(&dev->outq, &wait);
+	DEFINE_WAIT(wait);
+	prepare_to_wait(&dev->outq, &wait, TASK_INTERRUPTIBLE);
+	schedule();
+	finish_wait(&dev->outq, &wait);
 
 	return count;
 
@@ -252,7 +252,7 @@ void scull_cleanup_module(void)
 	}
 
 
-    	/* And all the cloned devices */
+	/* And all the cloned devices */
 	list_for_each_entry_safe(lptr, next, &scull_c_list, list) {
 		ret= del_timer( &lptr->device.timer_inq );
 		if (ret) printk("The inq timer was still in use...\n");
@@ -261,7 +261,7 @@ void scull_cleanup_module(void)
 		list_del(&lptr->list);
 		kfree(lptr);
 	}
-		printk("Timer uninstalling\n");
+	printk("Timer uninstalling\n");
 	/* cleanup_module is never called if registering failed */
 	unregister_chrdev_region(devno, scull_nr_devs);
 
