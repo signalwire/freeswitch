@@ -732,7 +732,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool)
 {
 	switch_sockaddr_t *new_sa;
-	int family = APR_INET;
+	unsigned short family = APR_INET;
 
 	new_sa = apr_pcalloc(pool, sizeof(apr_sockaddr_t));
 	switch_assert(new_sa);
