@@ -493,6 +493,9 @@ void sngisdn_process_disc_ind (sngisdn_event_data_t *sngisdn_event)
 			/* This is a race condition. We just sent a DISCONNECT, on this channel */
 			/* Do nothing */
 			break;
+		case FTDM_CHANNEL_STATE_RESET:
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
+			break;
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received DISCONNECT in an invalid state (%s)\n",
 						  ftdm_channel_state2str(ftdmchan->state));
@@ -598,7 +601,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 			break;
 		case FTDM_CHANNEL_STATE_RESET:
-			/* User initiated reset, so they do not know about this call */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
 			break;
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received RELEASE in an invalid state (%s)\n",
@@ -1103,7 +1106,7 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 	}
 	
 	if (!rstEvnt->rstInd.eh.pres || !rstEvnt->rstInd.rstClass.pres) {
-		ftdm_log(FTDM_LOG_CRIT, "Receved RESTART, but Restart Indicator IE not present\n");
+		ftdm_log(FTDM_LOG_DEBUG, "Receved RESTART, but Restart Indicator IE not present\n");
 		return;
 	}
 		

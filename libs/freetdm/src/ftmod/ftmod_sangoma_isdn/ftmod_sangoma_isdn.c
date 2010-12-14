@@ -704,12 +704,9 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				sigev.event_id = FTDM_SIGEVENT_PROGRESS;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
-				/* If we already sent a PROCEED before, do not send a PROGRESS as there is nothing to indicate to the remote switch */
-				if (ftdmchan->last_state != FTDM_CHANNEL_STATE_PROCEED) {
-					/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
-					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
-					sngisdn_snd_progress(ftdmchan, prog_ind);
-				}
+				/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+				sngisdn_snd_progress(ftdmchan, prog_ind);				
 			}
 		}
 		break;

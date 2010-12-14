@@ -2379,14 +2379,16 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_PROGRESS);
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 		} else {
-			if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
-				ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
-			}
+			if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_SKIP_STATES)) {
+				if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
+					ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
+				}
 
-			/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
-			if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
-				goto done;
+				/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
+					goto done;
+				}
 			}
 
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
