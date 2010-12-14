@@ -4366,6 +4366,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				}
 			}
 
+			switch_channel_set_variable(channel, "last_transfered_conference", argv[2]);
+
 			unlock_member(member);
 
 			stream->write_function(stream, "OK Member '%d' sent to conference %s.\n", member->id, argv[2]);
@@ -5373,6 +5375,14 @@ SWITCH_STANDARD_APP(conference_function)
 
 	}
 #endif
+
+	if (switch_channel_test_flag(channel, CF_RECOVERED)) {
+		const char *check = switch_channel_get_variable(channel, "last_transfered_conference");
+		
+		if (!zstr(check)) {
+			conf_name = (char *) check;
+		}
+	}
 
 	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
