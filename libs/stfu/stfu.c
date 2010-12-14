@@ -27,7 +27,7 @@
  */
 #include "stfu.h"
 
-//#define DB_JB 1
+#define DB_JB 1
 #ifdef _MSC_VER
 /* warning C4706: assignment within conditional expression*/
 #pragma warning(disable: 4706)
@@ -305,11 +305,11 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
         }
     }
  
-    if (seq && seq == i->last_seq + 1) {
+    if ((seq && seq == i->last_seq + 1) || (i->last_seq > 65500 && seq == 0)) {
         good_seq = 1;
     }
 
-    if (ts && ts == i->last_rd_ts + i->samples_per_packet) {
+    if ((ts && ts == i->last_rd_ts + i->samples_per_packet) || (i->last_rd_ts > 4294900000 && ts < 5000)) {
         good_ts = 1;
     }
 
@@ -450,7 +450,7 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
     for(i = 0; i < queue->real_array_size; i++) {
         frame = &queue->array[i];
         
-        if ((seq && frame->seq == seq) || frame->ts == ts) {
+        if (((seq || in->last_seq) && frame->seq == seq) || frame->ts == ts) {
             *r_frame = frame;
             queue->last_index = i;
             frame->was_read = 1;
@@ -547,7 +547,6 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 #ifdef DB_JB
     if (found) {
         printf("O: %u:%u %u\n", rframe->seq, rframe->seq, rframe->plc);
-        assert(found && rframe->seq);
     } else {
         printf("DATA: %u %u %d %s %d\n", i->packet_count, i->consecutive_good_count, i->out_queue->last_jitter, found ? "found" : "not found", i->qlen);
     }
@@ -579,6 +578,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         rframe = &i->out_queue->int_frame;
         rframe->dlen = i->plc_len;
         
+#if 0
         if (i->last_frame) {
             /* poor man's plc..  Copy the last frame, but we flag it so you can use a better one if you wish */
             if (i->miss_count) {
@@ -587,7 +587,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
                 memcpy(rframe->data, i->last_frame->data, rframe->dlen);
             }
         }
-
+#endif
         rframe->ts = i->cur_ts;
 
         i->miss_count++;
