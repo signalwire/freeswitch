@@ -6267,7 +6267,21 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			for (x = 0; x < profile->nat_acl_count; x++) {
 				last_acl = profile->nat_acl[x];
 				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
-					/* override the decision to say this is nat because the network_ip is within the acl too */
+					/* NAT mode double check logic and examples.
+
+					   Example 1: the contact_host is 192.168.1.100 and the network_ip is also 192.168.1.100 the end point 
+					   is most likely behind nat with us so we need to veto that decision to turn on nat processing.
+
+					   Example 2: the contact_host is 192.168.1.100 and the network_ip is 192.0.2.100 which is a public internet ip
+					   the remote endpoint is likely behind a remote nat traversing the public internet. 
+
+					   This secondary check is here to double check the conclusion of nat settigs to ensure we don't set net
+					   in cases where we don't really need to be doing this. 
+
+					   Why would you want to do this?  Well if your FreeSWITCH is behind nat and you want to talk to endpoints behind
+					   remote NAT over the public internet in addition to endpoints behind nat with you.  This simplifies that process.
+					   
+					 */
 					if ((ok = switch_check_network_list_ip(network_ip, last_acl))) { 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Endpoint is already inside nat with us.\n");
 						ok = 0;
