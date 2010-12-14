@@ -1,5 +1,5 @@
 /*
- * scull.h -- definitions for the char module
+ * skypopen.h -- definitions for the char module
  *
  * Copyright (C) 2001 Alessandro Rubini and Jonathan Corbet
  * Copyright (C) 2001 O'Reilly & Associates
@@ -12,55 +12,49 @@
  * by O'Reilly & Associates.   No warranty is attached;
  * we cannot take responsibility for errors or fitness for use.
  *
- * $Id: scull.h,v 1.15 2004/11/04 17:51:18 rubini Exp $
+ * $Id: skypopen.h,v 1.15 2004/11/04 17:51:18 rubini Exp $
  */
 
-#ifndef _SCULL_H_
-#define _SCULL_H_
+#ifndef _SKYPOPEN_H_
+#define _SKYPOPEN_H_
 
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 
-#ifndef SCULL_MAJOR
-#define SCULL_MAJOR 14   /* dynamic major by default */
+#ifndef SKYPOPEN_MAJOR
+#define SKYPOPEN_MAJOR 14   /* dynamic major by default */
 #endif
 
-#ifndef SCULL_NR_DEVS
-#define SCULL_NR_DEVS 1    /* scull0 through scull3 */
+#ifndef SKYPOPEN_NR_DEVS
+#define SKYPOPEN_NR_DEVS 1    /* skypopen0 through skypopen3 */
 #endif
 
-struct scull_dev {
+struct skypopen_dev {
 	struct cdev cdev;	  /* Char device structure		*/
 	wait_queue_head_t inq; /* read and write queues */
 	wait_queue_head_t outq; /* read and write queues */
 	struct timer_list timer_inq;
 	struct timer_list timer_outq;
-	int readable;
-	int writable;
-	//unsigned long read_howmany;
-	//unsigned long write_howmany;
-	//unsigned long read_sleeped_acc;
-	//unsigned long write_sleeped_acc;
-	//double read_delay; /* how much delay last time */
-	//double write_delay; /* how much delay last time */
+	int timer_inq_started;
+	int timer_outq_started;
 };
 
 
 /*
  * The different configurable parameters
  */
-extern int scull_major;     /* main.c */
-extern int scull_nr_devs;
+extern int skypopen_major;     /* main.c */
+extern int skypopen_nr_devs;
 
 
 /*
  * Prototypes for shared functions
  */
 
-ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
+ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
                    loff_t *f_pos);
-ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
+ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
                     loff_t *f_pos);
-int     scull_ioctl(struct inode *inode, struct file *filp,
+int     skypopen_ioctl(struct inode *inode, struct file *filp,
                     unsigned int cmd, unsigned long arg);
 
-#endif /* _SCULL_H_ */
+#endif /* _SKYPOPEN_H_ */

@@ -4,7 +4,7 @@
 
 # Add your debugging flag (or not) to CFLAGS
 ifeq ($(DEBUG),y)
-  DEBFLAGS = -O -g -DSCULL_DEBUG # "-O" is needed to expand inlines
+  DEBFLAGS = -O -g -DSKYPOPEN_DEBUG # "-O" is needed to expand inlines
 else
   DEBFLAGS = -O2 -Wall
 endif
@@ -15,9 +15,9 @@ EXTRA_CFLAGS += -I$(LDDINC)
 ifneq ($(KERNELRELEASE),)
 # call from kernel build system
 
-scull-objs := main.o
+skypopen-objs := main.o
 
-obj-m	:= scull.o
+obj-m	:= skypopen.o
 
 else
 
