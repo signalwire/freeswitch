@@ -27,7 +27,7 @@
  */
 #include "stfu.h"
 
-#define DB_JB 1
+//#define DB_JB 1
 #ifdef _MSC_VER
 /* warning C4706: assignment within conditional expression*/
 #pragma warning(disable: 4706)
