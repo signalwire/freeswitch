@@ -568,14 +568,14 @@ static void dump_mf(openr2_chan_t *r2chan)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", logname);
 		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
 				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
-		f = fopen(dfile, "w");
+		f = fopen(dfile, "wb");
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
 		fclose(f);
 
 		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
 				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
-		f = fopen(dfile, "w");
+		f = fopen(dfile, "wb");
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
 		fclose(f);

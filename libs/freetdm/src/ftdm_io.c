@@ -2715,7 +2715,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				close(ftdmchan->fds[FTDM_READ_TRACE_INDEX]);
 				ftdmchan->fds[FTDM_READ_TRACE_INDEX] = -1;
 			}
-			if ((ftdmchan->fds[FTDM_READ_TRACE_INDEX] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+			if ((ftdmchan->fds[FTDM_READ_TRACE_INDEX] = open(path, O_WRONLY | O_CREAT | O_TRUNC 
+							| FTDM_O_BINARY, S_IRUSR | S_IWUSR)) > -1) {
 				ftdm_log(FTDM_LOG_DEBUG, "Tracing channel %u:%u input to [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, path);	
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
@@ -2731,7 +2732,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				close(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX]);
 				ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] = -1;
 			}
-			if ((ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+			if ((ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] = open(path, O_WRONLY | O_CREAT | O_TRUNC
+							| FTDM_O_BINARY, S_IRUSR | S_IWUSR)) > -1) {
 				ftdm_log(FTDM_LOG_DEBUG, "Tracing channel %u:%u output to [%s]\n", ftdmchan->span_id, ftdmchan->chan_id, path);	
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
@@ -3376,7 +3378,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 				ftdmchan->span_id, ftdmchan->chan_id, 
 				currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
 				currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
-		ftdmchan->dtmfdbg.file = fopen(dfile, "w");	
+		ftdmchan->dtmfdbg.file = fopen(dfile, "wb");	
 		if (!ftdmchan->dtmfdbg.file) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to open debug dtmf file %s\n", dfile);
 		} else {
