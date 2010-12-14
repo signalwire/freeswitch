@@ -585,6 +585,8 @@ static void dump_mf(openr2_chan_t *r2chan)
 static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t mode)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
+
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call accepted\n");
 
 	clear_accept_pending(ftdmchan);
@@ -607,6 +609,11 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 			return;
 		}
 	} else {
+		/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
+		if (r2data->mf_dump_size) {
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+		}
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	}
 }
