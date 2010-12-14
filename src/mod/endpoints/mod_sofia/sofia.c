@@ -6267,6 +6267,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			for (x = 0; x < profile->nat_acl_count; x++) {
 				last_acl = profile->nat_acl[x];
 				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+					/* override the decision to say this is nat because the network_ip is within the acl too */
+					if ((ok = switch_check_network_list_ip(network_ip, last_acl))) { 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Endpoint is already inside nat with us.\n");
+						ok = 0;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Decision stands they are behind nat.\n");
+					}
 					break;
 				}
 			}
