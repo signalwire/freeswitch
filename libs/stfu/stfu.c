@@ -28,6 +28,11 @@
 #include "stfu.h"
 
 //#define DB_JB 1
+
+#ifndef UINT_MAX
+#  define UINT_MAX        4294967295U
+#endif
+
 #ifdef _MSC_VER
 /* warning C4706: assignment within conditional expression*/
 #pragma warning(disable: 4706)
@@ -123,6 +128,7 @@ static stfu_status_t stfu_n_resize_aqueue(stfu_queue_t *queue, uint32_t qlen)
 
 static void stfu_n_init_aqueue(stfu_queue_t *queue, uint32_t qlen)
 {
+
 	queue->array = calloc(qlen, sizeof(struct stfu_frame));
 	assert(queue->array != NULL);
 	memset(queue->array, 0, sizeof(struct stfu_frame) * qlen);	
@@ -166,6 +172,7 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     stfu_status_t s;
 
     if (i->qlen == i->max_qlen) {
+        printf("FUCKER1\n");
         return STFU_IT_FAILED;
     }
     
@@ -173,6 +180,7 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
         if (i->qlen < i->max_qlen) {
             qlen = i->max_qlen;
         } else {
+            printf("FUCKER2\n");
             return STFU_IT_FAILED;
         }
     }
@@ -196,6 +204,12 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 		return NULL;
 	}
 	memset(i, 0, sizeof(*i));
+
+
+#ifdef DB_JB
+    printf("INIT %u %u\n", qlen, max_qlen);
+#endif
+
     i->qlen = qlen;
     i->max_qlen = max_qlen;
     i->orig_qlen = qlen;
@@ -281,10 +295,11 @@ stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets)
 
 stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uint32_t pt, void *data, size_t datalen, int last)
 {
-	uint32_t index;
+	uint32_t index = 0;
 	stfu_frame_t *frame;
 	size_t cplen = 0;
     int good_seq = 0, good_ts = 0;
+    uint32_t min_seq = UINT_MAX, min_ts = UINT_MAX, min_index = 0;
 
     if (!i->samples_per_packet && ts && i->last_rd_ts) {
         i->ts_diff = ts - i->last_rd_ts;
@@ -322,21 +337,20 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
     i->period_packet_in_count++;
     i->session_packet_in_count++;
 
-    if (i->session_packet_in_count == 150) {
-        return STFU_IT_WORKED;
-    }
-
     i->period_need_range_avg = i->period_need_range / (i->period_missing_count || 1);
-    
+
     if (i->period_missing_count > i->qlen * 2) {
+#ifdef DB_JB
+        printf("resize %u %u\n", i->qlen, i->qlen + 1);
+#endif
         stfu_n_resize(i, i->qlen + 1);
         stfu_n_reset_counters(i);
-    }
-
-    if (i->qlen > i->orig_qlen && (i->consecutive_good_count > i->decrement_time || i->period_clean_count > i->decrement_time)) {
-        stfu_n_resize(i, i->qlen - 1);
-        stfu_n_reset_counters(i);
-        stfu_n_sync(i, i->qlen);
+    } else {
+        if (i->qlen > i->orig_qlen && (i->consecutive_good_count > i->decrement_time || i->period_clean_count > i->decrement_time)) {
+            stfu_n_resize(i, i->qlen - 1);
+            stfu_n_reset_counters(i);
+            stfu_n_sync(i, i->qlen);
+        }
     }
 
     if ((i->period_packet_in_count > i->period_time)) {
@@ -379,13 +393,31 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
 		return STFU_IM_DONE;
 	}
 
-    for(index = 0; index < i->out_queue->array_size; index++) {
+    for(index = 0; index < i->in_queue->array_size; index++) {
+
         if (i->in_queue->array[index].was_read) {
+            min_index = index;
             break;
+        }
+        
+        if (i->in_queue->array[index].seq < min_seq) {
+            min_seq = i->in_queue->array[index].seq;
+            min_index = index;
+        }
+
+        if (i->in_queue->array[index].ts < min_ts) {
+            min_ts = i->in_queue->array[index].ts;
+            min_index = index;
         }
     }
 
-    index = i->in_queue->array_len++;
+    index = min_index;
+    
+    if (i->in_queue->array_len < i->in_queue->array_size) {
+        i->in_queue->array_len++;
+    }
+
+    assert(index < i->in_queue->array_size);
 
 	frame = &i->in_queue->array[index];
 
@@ -468,7 +500,8 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 	stfu_frame_t *rframe = NULL;
     int found = 0;
 
-	if (!i->samples_per_packet || ((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
+	if (!i->samples_per_packet || !i->out_queue->array_len) {
+        //|| ((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
 		return NULL;
 	}
 
@@ -481,7 +514,11 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
     if (i->cur_seq == 0) {
         i->cur_seq = i->out_queue->array[0].seq;
     } else {
-        i->cur_seq++;
+        i->cur_seq++; 
+        /* if we bother using this for anything that doesn't have 16 bit seq, we'll make this a param */
+        if (i->cur_seq == 65535) {
+            i->cur_seq = 0;
+        }
     }
 
     if (!(found = stfu_n_find_frame(i, i->out_queue, i->cur_ts, i->cur_seq, &rframe))) {
@@ -496,7 +533,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             i->cur_seq = rframe->seq;
             i->cur_ts = rframe->ts;
         }
-        i->sync--;
+        i->sync = 0;
     }
 
 
@@ -546,7 +583,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 #ifdef DB_JB
     if (found) {
-        printf("O: %u:%u %u\n", rframe->seq, rframe->seq, rframe->plc);
+        printf("O: %u:%u %u %d\n", rframe->seq, rframe->ts, rframe->plc, rframe->seq - i->last_seq);
     } else {
         printf("DATA: %u %u %d %s %d\n", i->packet_count, i->consecutive_good_count, i->out_queue->last_jitter, found ? "found" : "not found", i->qlen);
     }

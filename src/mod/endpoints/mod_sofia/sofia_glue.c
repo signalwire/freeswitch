@@ -3153,19 +3153,19 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
 			int len = atoi(val);
-			int maxlen = 50;
+			int maxlen = 0;
 			char *p;
 
 			if ((p = strchr(val, ':'))) {
 				p++;
-				maxlen = atoi(val);
+				maxlen = atoi(p);
 			}
 
 			if (len < 20 || len > 10000) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR,
 								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", len);
 			} else {
-				int qlen, maxqlen = 0;
+				int qlen, maxqlen = 50;
 				
 				qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
