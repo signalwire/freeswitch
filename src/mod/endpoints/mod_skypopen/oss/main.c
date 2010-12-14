@@ -67,7 +67,7 @@ void my_timer_callback_inq( unsigned long data )
 {
 	struct scull_dev *dev = (void *)data;
 
-	dev->readable=1;
+	//dev->readable=1;
 	wake_up_interruptible(&dev->inq);
 	mod_timer( &dev->timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
 
@@ -77,7 +77,7 @@ void my_timer_callback_outq( unsigned long data )
 {
 	struct scull_dev *dev = (void *)data;
 
-	dev->writable=1;
+	//dev->writable=1;
 	wake_up_interruptible(&dev->outq);
 	mod_timer( &dev->timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
 }
@@ -172,14 +172,14 @@ ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
 {
 	struct scull_dev *dev = filp->private_data;
 
-	//DEFINE_WAIT(wait);
-	//prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
-	//schedule();
-	//finish_wait(&dev->inq, &wait);
+	DEFINE_WAIT(wait);
+	prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
+	schedule();
+	finish_wait(&dev->inq, &wait);
 	//memset(buf, 255, count);
 
-	wait_event_interruptible(dev->inq, dev->readable);
-	dev->readable=0;
+	//wait_event_interruptible(dev->inq, dev->readable);
+	//dev->readable=0;
 	return count;
 
 }
@@ -188,13 +188,13 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 		loff_t *f_pos)
 {
 	struct scull_dev *dev = filp->private_data;
-	//DEFINE_WAIT(wait);
-	//prepare_to_wait(&dev->outq, &wait, TASK_INTERRUPTIBLE);
-	//schedule();
-	//finish_wait(&dev->outq, &wait);
+	DEFINE_WAIT(wait);
+	prepare_to_wait(&dev->outq, &wait, TASK_INTERRUPTIBLE);
+	schedule();
+	finish_wait(&dev->outq, &wait);
 
-	wait_event_interruptible(dev->outq, dev->writable);
-	dev->writable=0;
+	//wait_event_interruptible(dev->outq, dev->writable);
+	//dev->writable=0;
 
 	return count;
 
