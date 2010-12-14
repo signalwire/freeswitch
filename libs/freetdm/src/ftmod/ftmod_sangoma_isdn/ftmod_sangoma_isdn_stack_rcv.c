@@ -630,8 +630,9 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
+
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART CFM (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
-	
+
 	/* Enqueue the event to each span within the dChan */
 	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
 		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
@@ -725,14 +726,25 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 			ftdmspan = signal_data->ftdm_span;
 			
 			if (status->t.usta.alarm.event == LCM_EVENT_UP) {
+				uint32_t chan_no = status->t.usta.evntParm[2];
 				ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
 						 status->t.usta.suId,
 								DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
 								DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
 								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
-				
-				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_UP);
-				sngisdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
+
+				if (chan_no) {
+					ftdm_channel_t *ftdmchan = ftdm_span_get_channel(ftdmspan, chan_no);
+					if (ftdmchan) {
+						sngisdn_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+						sngisdn_set_chan_avail_rate(ftdmchan, SNGISDN_AVAIL_UP);
+					} else {
+						ftdm_log(FTDM_LOG_CRIT, "stack alarm event on invalid channel :%d\n", chan_no);
+					}
+				} else {
+					sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_UP);
+					sngisdn_set_span_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
+				}
 			} else {
 				ftdm_log(FTDM_LOG_WARNING, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
 						 		status->t.usta.suId,
@@ -741,7 +753,7 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 				
 				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_DOWN);
-				sngisdn_set_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
+				sngisdn_set_span_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
 			}
 		}
 		break;

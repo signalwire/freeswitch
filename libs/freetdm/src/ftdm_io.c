@@ -65,6 +65,8 @@ ftdm_time_t time_current_throttle_log = 0;
 static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
 static ftdm_status_t ftdm_call_set_call_id(ftdm_caller_data_t *caller_data);
 static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data);
+static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
+static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 static int time_is_init = 0;
 
@@ -1874,45 +1876,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 	return status;
 }
 
-static ftdm_status_t ftdm_channel_reset(ftdm_channel_t *ftdmchan)
-{
-	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OPEN);
-	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
-	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
-	ftdm_channel_done(ftdmchan);
-	ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_HOLD);
-
-	memset(ftdmchan->tokens, 0, sizeof(ftdmchan->tokens));
-	ftdmchan->token_count = 0;
-
-	ftdm_channel_flush_dtmf(ftdmchan);
-
-	if (ftdmchan->gen_dtmf_buffer) {
-		ftdm_buffer_zero(ftdmchan->gen_dtmf_buffer);
-	}
-
-	if (ftdmchan->digit_buffer) {
-		ftdm_buffer_zero(ftdmchan->digit_buffer);
-	}
-
-	if (!ftdmchan->dtmf_on) {
-		ftdmchan->dtmf_on = FTDM_DEFAULT_DTMF_ON;
-	}
-
-	if (!ftdmchan->dtmf_off) {
-		ftdmchan->dtmf_off = FTDM_DEFAULT_DTMF_OFF;
-	}
-
-	memset(ftdmchan->dtmf_hangup_buf, '\0', ftdmchan->span->dtmf_hangup_len);
-
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE)) {
-		ftdmchan->effective_codec = ftdmchan->native_codec;
-		ftdmchan->packet_len = ftdmchan->native_interval * (ftdmchan->effective_codec == FTDM_CODEC_SLIN ? 16 : 8);
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE);
-	}
-
-	return FTDM_SUCCESS;
-}
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *ftdmchan)
 {
@@ -2462,6 +2425,21 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_send_msg(const char *file, const ch
 	return status;
 }
 
+FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
+{
+	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
+#ifdef __WINDOWS__
+	UNREFERENCED_PARAMETER(file);
+	UNREFERENCED_PARAMETER(func);
+	UNREFERENCED_PARAMETER(line);
+#endif
+
+	ftdm_channel_lock(ftdmchan);
+	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RESET, 0);
+	ftdm_channel_unlock(ftdmchan);
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -2545,12 +2523,13 @@ FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signa
 	}
 }
 
-static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
-FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
+static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 {
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel can't be done!\n");
-
 	ftdm_mutex_lock(ftdmchan->mutex);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OPEN);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_INUSE);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_WINK);
@@ -2591,17 +2570,47 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		sigmsg.event_id = FTDM_SIGEVENT_RELEASED;
 		ftdm_span_send_signal(ftdmchan->span, &sigmsg);
 		ftdm_call_clear_call_id(&ftdmchan->caller_data);
-	}	
+	}
 
 	if (ftdmchan->txdrops || ftdmchan->rxdrops) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "channel dropped data: txdrops = %d, rxdrops = %d\n", 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "channel dropped data: txdrops = %d, rxdrops = %d\n",
 				ftdmchan->txdrops, ftdmchan->rxdrops);
 	}
 
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
 	memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
-	ftdm_mutex_unlock(ftdmchan->mutex);
 
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_HOLD);
+
+	memset(ftdmchan->tokens, 0, sizeof(ftdmchan->tokens));
+	ftdmchan->token_count = 0;
+
+	ftdm_channel_flush_dtmf(ftdmchan);
+
+	if (ftdmchan->gen_dtmf_buffer) {
+		ftdm_buffer_zero(ftdmchan->gen_dtmf_buffer);
+	}
+
+	if (ftdmchan->digit_buffer) {
+		ftdm_buffer_zero(ftdmchan->digit_buffer);
+	}
+
+	if (!ftdmchan->dtmf_on) {
+		ftdmchan->dtmf_on = FTDM_DEFAULT_DTMF_ON;
+	}
+
+	if (!ftdmchan->dtmf_off) {
+		ftdmchan->dtmf_off = FTDM_DEFAULT_DTMF_OFF;
+	}
+
+	memset(ftdmchan->dtmf_hangup_buf, '\0', ftdmchan->span->dtmf_hangup_len);
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE)) {
+		ftdmchan->effective_codec = ftdmchan->native_codec;
+		ftdmchan->packet_len = ftdmchan->native_interval * (ftdmchan->effective_codec == FTDM_CODEC_SLIN ? 16 : 8);
+		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE);
+	}
+	ftdm_mutex_unlock(ftdmchan->mutex);
 	return FTDM_SUCCESS;
 }
 
@@ -2632,7 +2641,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 			status = check->fio->close(check);
 			if (status == FTDM_SUCCESS) {
 				ftdm_clear_flag(check, FTDM_CHANNEL_INUSE);
-				ftdm_channel_reset(check);
+				ftdm_channel_done(check);
 				*ftdmchan = NULL;
 			}
 		} else {

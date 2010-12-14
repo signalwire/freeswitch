@@ -839,7 +839,7 @@ static void handle_call_released(ftdm_span_t *span, sangomabc_connection_t *mcon
 	if ((ftdmchan = find_ftdmchan(span, event, 1))) {
 		ftdm_log(FTDM_LOG_DEBUG, "Releasing completely chan s%dc%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), 
 				BOOST_EVENT_CHAN(mcon->sigmod, event));
-		ftdm_channel_done(ftdmchan);
+		ftdm_channel_close(ftdmchan);
 	} else {
 		ftdm_log(FTDM_LOG_CRIT, "Odd, We could not find chan: s%dc%d to release the call completely!!\n", 
 				BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
@@ -1106,7 +1106,7 @@ static void handle_call_loop_start(ftdm_span_t *span, sangomabc_connection_t *mc
 	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_IN_LOOP, res);
 	if (res != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "yay, could not set the state of the channel to IN_LOOP, loop will fail\n");
-		ftdm_channel_done(ftdmchan);
+		ftdm_channel_close(ftdmchan);
 		return;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%d:%d starting loop\n", ftdmchan->span_id, ftdmchan->chan_id);
@@ -1426,11 +1426,11 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 			ftdmchan->sflags = 0;
 			memset(ftdmchan->call_data, 0, sizeof(sangoma_boost_call_t));
 			if (sangoma_boost_data->sigmod && call_stopped_ack_sent) {
-				/* we dont want to call ftdm_channel_done just yet until call released is received */
+				/* we dont want to call ftdm_channel_close just yet until call released is received */
 				ftdm_log(FTDM_LOG_DEBUG, "Waiting for call release confirmation before declaring chan %d:%d as available \n", 
 						ftdmchan->span_id, ftdmchan->chan_id);
 			} else {
-				ftdm_channel_done(ftdmchan);
+				ftdm_channel_close(ftdmchan);
 			}
 		}
 		break;

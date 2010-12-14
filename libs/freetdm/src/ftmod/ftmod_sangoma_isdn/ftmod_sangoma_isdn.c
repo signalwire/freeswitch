@@ -65,7 +65,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_ANY_STATE, FTDM_END},
-		{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_SUSPENDED, FTDM_END}
+		{FTDM_CHANNEL_STATE_RESET, FTDM_CHANNEL_STATE_RESTART, FTDM_END}
+	},
+	{
+		ZSD_INBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+		{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_INBOUND,
@@ -170,7 +176,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_ANY_STATE, FTDM_END},
-		{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_SUSPENDED, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		{FTDM_CHANNEL_STATE_RESET, FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+	},
+	{
+		ZSD_OUTBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+		{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_OUTBOUND,
@@ -780,7 +792,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 					sngisdn_snd_release(ftdmchan, 0);
 
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-						sngisdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
+						sngisdn_set_span_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 					}
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
@@ -838,6 +850,11 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			/* IMPLEMENT ME */
 		}
 		break;
+	case FTDM_CHANNEL_STATE_RESET:
+		{
+			sngisdn_snd_restart(ftdmchan);
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "unsupported sngisdn_rcvd state %s\n", ftdm_channel_state2str(ftdmchan->state));
@@ -862,10 +879,6 @@ static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
 	ftdm_status_t status = FTDM_FAIL;
 
 	switch (sigmsg->event_id) {
-		case FTDM_SIGEVENT_RESTART:
-			/* TODO: Send a channel restart here */
-			/* Implement me */
-			break;
 		case FTDM_SIGEVENT_FACILITY:
 			sngisdn_snd_fac_req(ftdmchan);
 			break;
@@ -1072,7 +1085,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
 		
-		sngisdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
+		sngisdn_set_span_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
 	}
 
 	/* Initialize scheduling context */
@@ -1167,6 +1180,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		goto done;
 	}
 
+	/* TODO: Move functions to table + function pointers */
 	if (!strcasecmp(argv[0], "trace")) {
 		char *trace_opt;
 		
@@ -1210,7 +1224,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		}
 		sngisdn_print_phy_stats(stream, span);
 	}
-
+	
 	if (!strcasecmp(argv[0], "show_spans")) {
 		ftdm_span_t *span = NULL;
 		if (argc == 2) {

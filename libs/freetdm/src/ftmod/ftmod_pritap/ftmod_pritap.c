@@ -281,10 +281,10 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 	switch (ftdmchan->state) {
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
-			ftdm_channel_done(ftdmchan);			
+			ftdm_channel_close(ftdmchan);			
 			ftdmchan->call_data = NULL;
 
-			ftdm_channel_done(peerchan);
+			ftdm_channel_close(peerchan);
 			peerchan->call_data = NULL;
 		}
 		break;
