@@ -1053,20 +1053,20 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 		ftdm_channel_t *ftdmchan = span->channels[i];
 		uint32_t chan_events = 0;
 
-		/* if the user specify which events to poll the channel for, we translate them from ftdm_wait_flag_t
-		 * to events that either sangoma_waitfor_many() or poll() understands. if not, we poll for POLLPRI */
+		/* translate events from ftdm to libsnagoma. if the user don't specify which events to poll the
+		 * channel for, we just use SANG_WAIT_OBJ_HAS_EVENTS */
 		if (poll_events) {
 			if (poll_events[j] & FTDM_READ) {
-				chan_events = POLLIN;
+				chan_events = SANG_WAIT_OBJ_HAS_INPUT;
 			}
 			if (poll_events[j] & FTDM_WRITE) {
-				chan_events |= POLLOUT;
+				chan_events |= SANG_WAIT_OBJ_HAS_OUTPUT;
 			}
 			if (poll_events[j] & FTDM_EVENTS) {
-				chan_events |= POLLPRI;
+				chan_events |= SANG_WAIT_OBJ_HAS_EVENTS;
 			}
 		} else {
-			chan_events = POLLPRI;
+			chan_events = SANG_WAIT_OBJ_HAS_EVENTS;
 		}
 
 #ifdef LIBSANGOMA_VERSION
