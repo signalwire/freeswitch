@@ -261,6 +261,8 @@ typedef struct sngisdn_span_data {
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
 	uint8_t 		ignore_cause_value;
+	uint8_t			raw_trace_q931;
+	uint8_t			raw_trace_q921;
 	uint8_t			timer_t3;
 	uint8_t			restart_opt;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
@@ -427,8 +429,11 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event);
 void sngisdn_rcv_phy_ind(SuId suId, Reason reason);
 void sngisdn_rcv_q921_ind(BdMngmt *status);
 
-void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len);
-void sngisdn_trace_q931(char* str, uint8_t* data, uint32_t data_len);
+void sngisdn_trace_interpreted_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+
 void get_memory_info(void);
 
 ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);

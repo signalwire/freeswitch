@@ -976,7 +976,8 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
-{	
+{
+	sngisdn_span_data_t *signal_data = span->signal_data;
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
 	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
@@ -985,6 +986,14 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	/* clear the monitor thread stop flag */
 	ftdm_clear_flag(span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
+
+	if (signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+		sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
+	}
+	
+	if (signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+		sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
+	}
 
 	/*start the span monitor thread*/
 	if (ftdm_thread_create_detached(ftdm_sangoma_isdn_run, span) != FTDM_SUCCESS) {
@@ -1210,6 +1219,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[2]);
 			goto done;
 		}
+		
 		if (!strcasecmp(trace_opt, "q921")) {
 			sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 		} else if (!strcasecmp(trace_opt, "q931")) {
@@ -1218,7 +1228,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			sngisdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
 		} else {
 			stream->write_function(stream, "-ERR invalid trace option <q921|q931> <span name>\n");
-		}	
+		}
 	}
 	if (!strcasecmp(argv[0], "l1_stats")) {
 		ftdm_span_t *span;

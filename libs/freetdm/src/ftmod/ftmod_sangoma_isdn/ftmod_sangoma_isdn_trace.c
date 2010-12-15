@@ -36,14 +36,15 @@
 #include "ftmod_sangoma_isdn_trace.h"
 
 #define OCTET(x) (ieData[x-1] & 0xFF)
+#define MAX_DECODE_STR_LEN 2000
 
 void print_hex_dump(char* str, uint32_t *str_len, uint8_t* data, uint32_t index_start, uint32_t index_end);
-void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len);
-void sngisdn_trace_q931(char* str, uint8_t* data, uint32_t data_len);
 uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset, uint8_t *data, uint16_t index_start);
 
 uint8_t get_bits(uint8_t octet, uint8_t bitLo, uint8_t bitHi);
 char* get_code_2_str(int code, struct code2str *pCodeTable);
+void sngisdn_decode_q921(char* str, uint8_t* data, uint32_t data_len);
+void sngisdn_decode_q931(char* str, uint8_t* data, uint32_t data_len);
 
 char* get_code_2_str(int code, struct code2str *pCodeTable)
 {
@@ -97,7 +98,42 @@ uint8_t get_bits(uint8_t octet, uint8_t bitLo, uint8_t bitHi)
 	return 0;
 }
 
-void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len)
+void sngisdn_trace_interpreted_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len)
+{
+	char *data_str = ftdm_calloc(1,200); /* TODO Find a proper size */
+ 	sngisdn_decode_q921(data_str, data, data_len);
+	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q921] s%d FRAME %s:%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
+	ftdm_safe_free(data_str);
+}
+
+void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len)
+{
+	uint8_t 			*raw_data;
+	ftdm_sigmsg_t		sigev;
+	
+	memset(&sigev, 0, sizeof(sigev));
+
+	sigev.span_id = signal_data->ftdm_span->span_id;
+	sigev.chan_id = signal_data->dchan->chan_id;
+	sigev.channel = signal_data->dchan;
+	sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
+	
+	sigev.ev_data.logevent.dir = dir;
+	sigev.ev_data.logevent.level = 2;
+	
+	/* TODO: Map trace to call ID here */
+	sigev.call_id = 0;
+	
+	raw_data = ftdm_malloc(data_len);
+	ftdm_assert(raw_data, "Failed to malloc");
+	
+	memcpy(raw_data, data, data_len);
+	sigev.raw_data = raw_data;
+	sigev.raw_data_len = data_len;
+	ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
+}
+
+void sngisdn_decode_q921(char* str, uint8_t* data, uint32_t data_len)
 {
 	int str_len;
 	uint32_t i;
@@ -169,7 +205,42 @@ void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len)
 	return;
 }
 
-void sngisdn_trace_q931(char* str, uint8_t* data, uint32_t data_len)
+
+void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len)
+{
+	char *data_str = ftdm_calloc(1,MAX_DECODE_STR_LEN); /* TODO Find a proper size */
+	sngisdn_decode_q931(data_str, data, data_len);
+	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] %s FRAME %s:%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
+	ftdm_safe_free(data_str);
+}
+
+void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len)
+{
+	uint8_t 			*raw_data;
+	ftdm_sigmsg_t		sigev;
+
+	memset(&sigev, 0, sizeof(sigev));
+
+	sigev.span_id = signal_data->ftdm_span->span_id;
+	sigev.chan_id = signal_data->dchan->chan_id;
+	sigev.channel = signal_data->dchan;
+	sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
+
+	sigev.ev_data.logevent.dir = dir;
+	sigev.ev_data.logevent.level = 3;
+	
+	/* TODO: Map trace to call ID here */
+	
+	raw_data = ftdm_malloc(data_len);
+	ftdm_assert(raw_data, "Failed to malloc");
+	
+	memcpy(raw_data, data, data_len);
+	sigev.raw_data = raw_data;
+	sigev.raw_data_len = data_len;
+	ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
+}
+
+void sngisdn_decode_q931(char* str, uint8_t* data, uint32_t data_len)
 {
 	uint32_t str_len;
 	uint8_t	 prot_disc, callRefFlag;
