@@ -159,6 +159,7 @@ typedef __int32 int32_t;
 typedef __int16 int16_t;
 typedef __int8 int8_t;
 #define FTDM_O_BINARY O_BINARY
+#define FTDM_SIZE_FMT "Id"
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
@@ -166,6 +167,7 @@ typedef __int8 int8_t;
 #endif /* _MSC_VER */
 #else /* __WINDOWS__ */
 #define FTDM_O_BINARY 0
+#define FTDM_SIZE_FMT "zd"
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
 #include <stdio.h>

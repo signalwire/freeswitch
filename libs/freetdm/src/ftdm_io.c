@@ -2801,10 +2801,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			if (start_chan_io_dump(ftdmchan, &ftdmchan->rxdump, size) != FTDM_SUCCESS) {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump of size %zd\n", size);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable input dump of size %"FTDM_SIZE_FMT"\n", size);
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled input dump with size %zd\n", size);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled input dump with size %"FTDM_SIZE_FMT"\n", size);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
@@ -2816,7 +2816,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No need to disable input dump\n");
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled input dump of size %zd\n", ftdmchan->rxdump.size);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled input dump of size %"FTDM_SIZE_FMT"\n", 
+					ftdmchan->rxdump.size);
 			stop_chan_io_dump(&ftdmchan->rxdump);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
@@ -2834,7 +2835,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump of size %d\n", size);	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled output dump with size %zd\n", size);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled output dump with size %"FTDM_SIZE_FMT"\n", size);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
@@ -2846,7 +2847,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No need to disable output dump\n");
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled output dump of size %zd\n", ftdmchan->rxdump.size);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Disabled output dump of size %"FTDM_SIZE_FMT"\n", ftdmchan->rxdump.size);
 			stop_chan_io_dump(&ftdmchan->txdump);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
@@ -2879,7 +2880,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			dump_chan_io_to_file(ftdmchan, &ftdmchan->txdump, obj);
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %zd to file %p\n", ftdmchan->txdump.size, obj);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %"FTDM_SIZE_FMT" to file %p\n", ftdmchan->txdump.size, obj);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
@@ -3448,7 +3449,7 @@ static FIO_WRITE_FUNCTION(ftdm_raw_write)
 	}
 	if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > -1) {
 		if ((write(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX], data, dlen)) != dlen) {
-			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %zd bytes\n", dlen);
+			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %"FTDM_SIZE_FMT" bytes\n", dlen);
 		}
 	}
 	write_chan_io_dump(&ftdmchan->txdump, data, dlen);
@@ -3461,7 +3462,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
 		ftdm_size_t dlen = *datalen;
 		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, (int)dlen) != dlen) {
-			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %zd bytes\n", dlen);
+			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %"FTDM_SIZE_FMT" bytes\n", dlen);
 		}
 	}
 
@@ -4702,7 +4703,7 @@ static ftdm_status_t load_config(void)
 				len = strlen(val);
 				if (len >= FTDM_MAX_NAME_STR_SZ) {
 					len = FTDM_MAX_NAME_STR_SZ - 1;
-					ftdm_log(FTDM_LOG_WARNING, "Truncating group name %s to %zd length\n", val, len);
+					ftdm_log(FTDM_LOG_WARNING, "Truncating group name %s to %"FTDM_SIZE_FMT" length\n", val, len);
 				}
 				memcpy(chan_config.group_name, val, len);
 				chan_config.group_name[len] = '\0';
