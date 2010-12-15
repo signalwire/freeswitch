@@ -449,6 +449,24 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
 	return FTDM_SUCCESS;
 }
 
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
+{
+	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
+	switch(status) {
+		case FTDM_SIG_STATE_DOWN:
+		case FTDM_SIG_STATE_SUSPENDED:
+			openr2_chan_set_blocked(r2chan);
+			break;
+		case FTDM_SIG_STATE_UP:
+			openr2_chan_set_idle(r2chan);
+			break;
+		default:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Ignoring unknown sigstatus: %d\n", status);
+			return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
 /* always called from the monitor thread */
 static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 {
@@ -1419,13 +1437,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	span->sig_read = NULL;
 	span->sig_write = NULL;
 
-	/* let the core set the states, we just read them */
-	span->get_channel_sig_status = ftdm_r2_get_channel_sig_status;
-
 	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_R2;
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
+	span->get_channel_sig_status = ftdm_r2_get_channel_sig_status;
+	span->set_channel_sig_status = ftdm_r2_set_channel_sig_status;
 
 	span->state_map = &r2_state_map;
 
