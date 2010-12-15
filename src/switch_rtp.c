@@ -229,7 +229,7 @@ struct switch_rtp {
 	uint32_t sync_packets;
 	int rtcp_interval;
 	switch_bool_t rtcp_fresh_frame;
-
+	uint8_t checked_jb;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -1652,6 +1652,32 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_deactivate_jitter_buffer(switch_rtp_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void jb_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
+{
+	int ret;
+	char *data;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = stfu_vasprintf(&data, fmt, ap);
+	if (ret != -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "%s", data);
+		free(data);
+	}
+
+	//switch_log_printf(SWITCH_CHANNEL_ID_LOG_CLEAN, file, func, line, NULL, level, fmt, ap);
+	va_end(ap);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name)
+{
+
+	stfu_n_debug(rtp_session->jb, name);
+	stfu_global_set_logger(jb_logger);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, 
 																  uint32_t queue_frames, 
 																  uint32_t max_queue_frames, 
@@ -1674,6 +1700,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	if (rtp_session->jb) {
 		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 		stfu_n_call_me(rtp_session->jb, jb_callback, session);
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2108,9 +2135,8 @@ static void do_flush(switch_rtp_t *rtp_session)
 
 					flushed++;
 
-					if (rtp_session->jb) {
+					if (0 && rtp_session->jb) {
 						stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), 
-								   ntohs((uint16_t) rtp_session->recv_msg.header.seq),
 								   rtp_session->recv_msg.header.pt,
 								   rtp_session->recv_msg.body, bytes - rtp_header_len);
 					}
@@ -2177,7 +2203,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), 
-				   ntohs((uint16_t) rtp_session->recv_msg.header.seq),
 				   rtp_session->recv_msg.header.pt,
 				   rtp_session->recv_msg.body, *bytes - rtp_header_len);
 		*bytes = 0;
@@ -2195,9 +2220,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			*bytes = jb_frame->dlen + rtp_header_len;
 			rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 			rtp_session->recv_msg.header.pt = jb_frame->pt;
-			rtp_session->recv_msg.header.seq = htons((uint16_t)jb_frame->seq);
 			status = SWITCH_STATUS_SUCCESS;
 		}
+		rtp_session->checked_jb++;
 	}
 
 	return status;
@@ -2342,6 +2367,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	READ_INC(rtp_session);
 
+	rtp_session->checked_jb = 0;
+	
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
 		bytes = 0;
@@ -2894,7 +2921,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
 			int fdr;
-
+			
 			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, 0)) == SWITCH_STATUS_SUCCESS) {
 				goto recvfrom;
 			}

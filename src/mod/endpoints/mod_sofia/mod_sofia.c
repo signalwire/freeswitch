@@ -1339,6 +1339,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (msg->string_arg) {
 					char *p;
+					const char *s;
+
+					if (!strncasecmp(msg->string_arg, "debug:", 6)) {
+						s = msg->string_arg + 6;
+						if (s && !strcmp(s, "off")) {
+							s = NULL;
+						}
+						switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
+						goto end;
+					}
+
 					
 					if ((len = atoi(msg->string_arg))) {
 						qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);

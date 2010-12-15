@@ -2300,7 +2300,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 			break;
 		}
 
-		stfu_n_eat(jb, ts, 0, read_frame->payload, read_frame->data, read_frame->datalen);
+		stfu_n_eat(jb, ts, read_frame->payload, read_frame->data, read_frame->datalen);
 		ts += interval;
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {
