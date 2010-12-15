@@ -255,7 +255,7 @@ static void ftdm_r2_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-	sig.sigstatus = status;
+	sig.ev_data.sigstatus.status = status;
 	if (ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to change channel status to %s\n", ftdm_signaling_status2str(status));
 	}
@@ -446,6 +446,24 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
 		*status = FTDM_SIG_STATE_DOWN;
 	}
 
+	return FTDM_SUCCESS;
+}
+
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
+{
+	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
+	switch(status) {
+		case FTDM_SIG_STATE_DOWN:
+		case FTDM_SIG_STATE_SUSPENDED:
+			openr2_chan_set_blocked(r2chan);
+			break;
+		case FTDM_SIG_STATE_UP:
+			openr2_chan_set_idle(r2chan);
+			break;
+		default:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%s'\n", status);
+			return FTDM_FAIL;
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -1419,13 +1437,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	span->sig_read = NULL;
 	span->sig_write = NULL;
 
-	/* let the core set the states, we just read them */
-	span->get_channel_sig_status = ftdm_r2_get_channel_sig_status;
-
 	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_R2;
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
+	span->get_channel_sig_status = ftdm_r2_get_channel_sig_status;
+	span->set_channel_sig_status = ftdm_r2_set_channel_sig_status;
 
 	span->state_map = &r2_state_map;
 
@@ -1720,7 +1737,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 		/* deliver the actual channel events to the user now without any channel locking */
 		ftdm_span_trigger_signals(span);
-#ifndef WIN32
+
 		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
@@ -1732,16 +1749,12 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		for (i = 0; citer; citer = ftdm_iterator_next(citer), i++) {
 			ftdmchan = ftdm_iterator_current(citer);
 			r2chan = R2CALL(ftdmchan)->r2chan;
-			poll_events[i] = POLLPRI;
+			poll_events[i] = FTDM_EVENTS;
 			if (openr2_chan_get_read_enabled(r2chan)) {
-				poll_events[i] |= POLLIN;
+				poll_events[i] |= FTDM_READ;
 			}
 		}
-
 		status = ftdm_span_poll_event(span, waitms, poll_events);
-#else
-		status = ftdm_span_poll_event(span, waitms, NULL);
-#endif
 
 		/* run any span timers */
 		ftdm_sched_run(r2data->sched);

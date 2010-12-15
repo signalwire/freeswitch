@@ -136,19 +136,25 @@ ftdm_status_t get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn
 	return FTDM_SUCCESS;
 }
 
-ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
+ftdm_status_t sngisdn_set_chan_avail_rate(ftdm_channel_t *chan, sngisdn_avail_t avail)
 {
-	if (span->trunk_type == FTDM_TRUNK_BRI ||
-		span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+	if (FTDM_SPAN_IS_BRI(chan->span)) {
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Setting availability rate to:%d\n", avail);
+		chan->availability_rate = avail;
+	}
+	return FTDM_SUCCESS;
+}
 
+ftdm_status_t sngisdn_set_span_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail)
+{
+	if (FTDM_SPAN_IS_BRI(span)) {
 		ftdm_iterator_t *chaniter = NULL;
 		ftdm_iterator_t *curr = NULL;
-
 
 		chaniter = ftdm_span_get_chan_iterator(span, NULL);
 		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 			ftdm_log_chan(((ftdm_channel_t*)ftdm_iterator_current(curr)), FTDM_LOG_DEBUG, "Setting availability rate to:%d\n", avail);
-			((ftdm_channel_t*)ftdm_iterator_current(curr))->availability_rate = avail;
+			sngisdn_set_chan_avail_rate(((ftdm_channel_t*)ftdm_iterator_current(curr)), avail);
 		}
 		ftdm_iterator_free(chaniter);
 	}
@@ -676,7 +682,6 @@ ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 	return FTDM_SUCCESS;
 }
 
-
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
 {
 	ftdm_status_t status;
@@ -788,6 +793,93 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
+{
+	if (!ftdmchan) {
+		return FTDM_SUCCESS;
+	}
+	chanId->eh.pres = PRSNT_NODEF;
+	chanId->prefExc.pres = PRSNT_NODEF;
+	chanId->prefExc.val = IN_PE_EXCLSVE;
+	chanId->dChanInd.pres = PRSNT_NODEF;
+	chanId->dChanInd.val = IN_DSI_NOTDCHAN;
+	chanId->intIdentPres.pres = PRSNT_NODEF;
+	chanId->intIdentPres.val = IN_IIP_IMPLICIT;
+
+	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
+		   ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+
+		/* BRI only params */
+		chanId->intType.pres = PRSNT_NODEF;
+		chanId->intType.val = IN_IT_BASIC;
+		chanId->infoChanSel.pres = PRSNT_NODEF;
+		chanId->infoChanSel.val = ftdmchan->physical_chan_id;
+	} else {
+		chanId->intType.pres = PRSNT_NODEF;
+		chanId->intType.val = IN_IT_OTHER;
+		chanId->infoChanSel.pres = PRSNT_NODEF;
+		chanId->infoChanSel.val = IN_ICS_B1CHAN;
+		chanId->chanMapType.pres = PRSNT_NODEF;
+		chanId->chanMapType.val = IN_CMT_BCHAN;
+		chanId->nmbMap.pres = PRSNT_NODEF;
+		chanId->nmbMap.val = IN_NM_CHNNMB;
+		chanId->codeStand1.pres = PRSNT_NODEF;
+		chanId->codeStand1.val = IN_CSTD_CCITT;
+		chanId->chanNmbSlotMap.pres = PRSNT_NODEF;
+		chanId->chanNmbSlotMap.len = 1;
+		chanId->chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
+	}
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t set_bear_cap_ie(ftdm_channel_t *ftdmchan, BearCap *bearCap)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	
+	bearCap->eh.pres = PRSNT_NODEF;
+	bearCap->infoTranCap.pres = PRSNT_NODEF;
+	bearCap->infoTranCap.val = sngisdn_get_infoTranCap_from_user(ftdmchan->caller_data.bearer_capability);
+
+	bearCap->codeStand0.pres = PRSNT_NODEF;
+	bearCap->codeStand0.val = IN_CSTD_CCITT;
+	bearCap->infoTranRate0.pres = PRSNT_NODEF;
+	bearCap->infoTranRate0.val = IN_ITR_64KBIT;
+	bearCap->tranMode.pres = PRSNT_NODEF;
+	bearCap->tranMode.val = IN_TM_CIRCUIT;
+
+	if (!FTDM_SPAN_IS_BRI(ftdmchan->span)) {
+		/* Trillium stack rejests lyr1Ident on BRI, but Netbricks always sends it.
+		Check with Trillium if this ever causes calls to fail in the field */
+
+		/* PRI only params */
+		bearCap->usrInfoLyr1Prot.pres = PRSNT_NODEF;
+		bearCap->usrInfoLyr1Prot.val = sngisdn_get_usrInfoLyr1Prot_from_user(ftdmchan->caller_data.bearer_layer1);
+
+		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN &&
+			bearCap->usrInfoLyr1Prot.val == IN_UIL1_G711ULAW) {
+
+			/* We are bridging a call from T1 */
+			bearCap->usrInfoLyr1Prot.val = IN_UIL1_G711ALAW;
+
+		} else if (bearCap->usrInfoLyr1Prot.val == IN_UIL1_G711ALAW) {
+
+			/* We are bridging a call from E1 */
+			bearCap->usrInfoLyr1Prot.val = IN_UIL1_G711ULAW;
+		}
+
+		bearCap->lyr1Ident.pres = PRSNT_NODEF;
+		bearCap->lyr1Ident.val = IN_L1_IDENT;
+	}
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd)
+{
+	rstInd->eh.pres = PRSNT_NODEF;
+	rstInd->rstClass.pres = PRSNT_NODEF;
+	rstInd->rstClass.val = IN_CL_INDCHAN;
+	return FTDM_SUCCESS;
+}
 
 void sngisdn_t3_timeout(void* p_sngisdn_info)
 {

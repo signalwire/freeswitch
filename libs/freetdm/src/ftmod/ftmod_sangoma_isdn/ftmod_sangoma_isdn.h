@@ -75,9 +75,11 @@ typedef enum {
 	FLAG_GLARE              = (1 << 6),
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
-	FLAG_SEND_DISC  		= (1 << 9),
+	FLAG_SEND_DISC  		= (1 << 9),	
 	/* Used for BRI only, flag is set after we request line CONNECTED */
-	FLAG_ACTIVATING			= (1 << 10), 
+	FLAG_ACTIVATING			= (1 << 10),
+	/* Used when we receive an ALERT msg + inband tones ready */
+	FLAG_MEDIA_READY		= (1 << 11),
 } sngisdn_flag_t;
 
 
@@ -193,6 +195,8 @@ typedef struct sngisdn_span_data {
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
 	uint8_t 		ignore_cause_value;
+	uint8_t			raw_trace_q931;
+	uint8_t			raw_trace_q921;
 	uint8_t			timer_t3;
 	uint8_t			restart_opt;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
@@ -286,8 +290,11 @@ void clear_call_glare_data(sngisdn_chan_data_t *sngisdn_info);
 ftdm_status_t get_ftdmchan_by_suInstId(int16_t cc_id, uint32_t suInstId, sngisdn_chan_data_t **sngisdn_data);
 ftdm_status_t get_ftdmchan_by_spInstId(int16_t cc_id, uint32_t spInstId, sngisdn_chan_data_t **sngisdn_data);
 
+ftdm_status_t sngisdn_set_span_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail);
+ftdm_status_t sngisdn_set_chan_avail_rate(ftdm_channel_t *chan, sngisdn_avail_t avail);
+void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t status);
+void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status);
 
-ftdm_status_t sngisdn_set_avail_rate(ftdm_span_t *span, sngisdn_avail_t avail);
 ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 
 
@@ -308,6 +315,7 @@ void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_restart(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
 void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event);
 
@@ -355,8 +363,11 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event);
 void sngisdn_rcv_phy_ind(SuId suId, Reason reason);
 void sngisdn_rcv_q921_ind(BdMngmt *status);
 
-void sngisdn_trace_q921(char* str, uint8_t* data, uint32_t data_len);
-void sngisdn_trace_q931(char* str, uint8_t* data, uint32_t data_len);
+void sngisdn_trace_interpreted_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
+
 void get_memory_info(void);
 
 ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
@@ -387,6 +398,9 @@ ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
 ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_sngisdn_progind_t prog_ind);
+ftdm_status_t set_bear_cap_ie(ftdm_channel_t *ftdmchan, BearCap *bearCap);
+ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId);
+ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
 
@@ -416,7 +430,6 @@ static __inline__ void sngisdn_set_flag(sngisdn_chan_data_t *sngisdn_info, sngis
 
 
 void handle_sng_log(uint8_t level, char *fmt,...);
-void sngisdn_set_span_sig_status(ftdm_span_t *ftdmspan, ftdm_signaling_status_t status);
 void sngisdn_delayed_setup(void* p_sngisdn_info);
 void sngisdn_delayed_release(void* p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
