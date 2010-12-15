@@ -40,6 +40,8 @@
 #ifdef _MSC_VER
 /* warning C4706: assignment within conditional expression*/
 #pragma warning(disable: 4706)
+/* warning C4996: 'strdup': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strdup. See online help for details. */
+#pragma warning(disable:4996)
 #endif
 
 #define least1(_z) (_z ? _z : 1)
@@ -641,7 +643,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 
     if (!found && i->samples_per_packet) {
-        int y;
+        uint32_t y;
         stfu_frame_t *frame = NULL;
 
         int32_t delay = i->last_rd_ts - i->cur_ts;

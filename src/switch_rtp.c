@@ -2135,11 +2135,18 @@ static void do_flush(switch_rtp_t *rtp_session)
 
 					flushed++;
 
+#ifdef _MSC_VER
+#pragma warning(push) /* remove this stuff when "if (0" is removed */
+#pragma warning(disable:4127)
+#endif
 					if (0 && rtp_session->jb) {
 						stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), 
 								   rtp_session->recv_msg.header.pt,
 								   rtp_session->recv_msg.body, bytes - rtp_header_len);
 					}
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 					rtp_session->stats.inbound.raw_bytes += bytes;
 					rtp_session->stats.inbound.flush_packet_count++;

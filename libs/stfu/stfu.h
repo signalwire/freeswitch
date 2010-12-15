@@ -136,7 +136,7 @@ typedef void (*stfu_logger_t)(const char *file, const char *func, int line, int 
 
 int stfu_vasprintf(char **ret, const char *fmt, va_list ap);
 
-STFU_DECLARE_DATA extern stfu_logger_t stfu_log;
+extern stfu_logger_t stfu_log;
 
 /*! Sets the logger for libstfu. Default is the null_logger */
 void stfu_global_set_logger(stfu_logger_t logger);
