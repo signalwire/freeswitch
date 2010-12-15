@@ -461,7 +461,7 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 			openr2_chan_set_idle(r2chan);
 			break;
 		default:
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Ignoring unknown sigstatus: %d\n", status);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%s'\n", status);
 			return FTDM_FAIL;
 	}
 	return FTDM_SUCCESS;
