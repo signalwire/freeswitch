@@ -547,6 +547,9 @@ struct PACKED service_url_stat_res_message {
 #define USER_TO_DEVICE_DATA_VERSION1_MESSAGE 0x013F
 /* See struct PACKED extended_data_message */
 
+/* XMLAlarmMessage */
+#define XML_ALARM_MESSAGE 0x015A
+
 /*****************************************************************************/
 /* SKINNY MESSAGE */
 /*****************************************************************************/
