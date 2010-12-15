@@ -6255,7 +6255,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (!is_nat && profile->nat_acl_count) {
 		uint32_t x = 0;
-		int ok = 1;
+		int contact_private_ip = 1;
+		int network_private_ip = 0;
 		char *last_acl = NULL;
 		const char *contact_host = NULL;
 
@@ -6264,35 +6265,37 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 		if (!zstr(contact_host)) {
+			/* NAT mode double check logic and examples.
+
+			   Example 1: the contact_host is 192.168.1.100 and the network_ip is also 192.168.1.100 the end point 
+			   is most likely behind nat with us so we need to veto that decision to turn on nat processing.
+
+			   Example 2: the contact_host is 192.168.1.100 and the network_ip is 192.0.2.100 which is a public internet ip
+			   the remote endpoint is likely behind a remote nat traversing the public internet. 
+
+			   This secondary check is here to double check the conclusion of nat settigs to ensure we don't set net
+			   in cases where we don't really need to be doing this. 
+
+			   Why would you want to do this?  Well if your FreeSWITCH is behind nat and you want to talk to endpoints behind
+			   remote NAT over the public internet in addition to endpoints behind nat with you.  This simplifies that process.
+
+			*/
+
 			for (x = 0; x < profile->nat_acl_count; x++) {
 				last_acl = profile->nat_acl[x];
-				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
-					/* NAT mode double check logic and examples.
-
-					   Example 1: the contact_host is 192.168.1.100 and the network_ip is also 192.168.1.100 the end point 
-					   is most likely behind nat with us so we need to veto that decision to turn on nat processing.
-
-					   Example 2: the contact_host is 192.168.1.100 and the network_ip is 192.0.2.100 which is a public internet ip
-					   the remote endpoint is likely behind a remote nat traversing the public internet. 
-
-					   This secondary check is here to double check the conclusion of nat settigs to ensure we don't set net
-					   in cases where we don't really need to be doing this. 
-
-					   Why would you want to do this?  Well if your FreeSWITCH is behind nat and you want to talk to endpoints behind
-					   remote NAT over the public internet in addition to endpoints behind nat with you.  This simplifies that process.
-					   
-					 */
-					if ((ok = switch_check_network_list_ip(network_ip, last_acl))) { 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Endpoint is already inside nat with us.\n");
-						ok = 0;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Decision stands they are behind nat.\n");
-					}
+				if ((contact_private_ip = switch_check_network_list_ip(contact_host, last_acl))) {
 					break;
 				}
 			}
+			if (contact_private_ip) {
+				for (x = 0; x < profile->nat_acl_count; x++) {
+					if ((network_private_ip = switch_check_network_list_ip(network_ip, profile->nat_acl[x]))) {
+						break;
+					}
+				}
+			}
 
-			if (ok) {
+			if (contact_private_ip && !network_private_ip) {
 				is_nat = last_acl;
 			}
 		}
