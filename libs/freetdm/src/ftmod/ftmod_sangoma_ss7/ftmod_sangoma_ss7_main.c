@@ -841,7 +841,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 						SS7_DEBUG_CHAN(ftdmchan,"All reset flags cleared %s\n", "");
 						/* all flags are down so we can bring up the sig status */
 						sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-						sigev.sigstatus = FTDM_SIG_STATE_UP;
+						sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 						ftdm_span_send_signal (ftdmchan->span, &sigev);
 					} /* if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) */
 				} /* if !blocked */
@@ -949,7 +949,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		/* if the sig_status is up...bring it down */
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 		}
 
@@ -1033,7 +1033,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 				/* bring the sig status back up */
 				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.sigstatus = FTDM_SIG_STATE_UP;
+				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			}
 
@@ -1046,7 +1046,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
 
 			/* go back to the last state */
@@ -1058,7 +1058,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a BLA */
@@ -1076,7 +1076,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status up */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a uba */
@@ -1092,7 +1092,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a blo */
@@ -1110,7 +1110,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status up */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a ubl */
@@ -1149,7 +1149,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the channel signaling status to down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 
 			/* remove any reset flags */

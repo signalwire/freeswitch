@@ -325,12 +325,14 @@ typedef enum {
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
-	FTDM_SIGEVENT_FACILITY, /* !< In call facility event */
-	FTDM_SIGEVENT_INVALID
+	FTDM_SIGEVENT_FACILITY, /*!< In call facility event */
+	FTDM_SIGEVENT_TRACE, /*!<Interpreted trace event */
+	FTDM_SIGEVENT_TRACE_RAW, /*!<Raw trace event */
+	FTDM_SIGEVENT_INVALID, /*!<Invalid */
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "FACILITY", "TRACE", "TRACE_RAW", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
@@ -381,16 +383,43 @@ typedef enum {
 /*! \brief Move from string to ftdm_signaling_status_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t)
 
+
+typedef struct {
+	ftdm_signaling_status_t status;
+} ftdm_event_sigstatus_t;
+
+typedef enum {
+	/* This is an received frame */
+	FTDM_TRACE_INCOMING,
+	/* This is a transmitted frame */
+	FTDM_TRACE_OUTGOING,
+	/* Invalid */
+ 	FTDM_TRACE_INVALID,
+} ftdm_trace_dir_t;
+#define TRACE_DIR_STRINGS "INCOMING", "OUTGOING", "INVALID"
+
+/*! \brief Move string to ftdm_trace_dir_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trace_dir, ftdm_trace_dir2str, ftdm_trace_dir_t)
+
+typedef struct {
+	/* Direction - incoming or outgoing */
+	ftdm_trace_dir_t dir;
+	uint8_t level; /* 1 for phy layer, 2 for q921/mtp2, 3 for q931/mtp3 */
+} ftdm_event_trace_t;
+
 /*! \brief Generic signaling message */
 struct ftdm_sigmsg {
 	ftdm_signal_event_t event_id; /*!< The type of message */
 	ftdm_channel_t *channel; /*!< Related channel */
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
-	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */
 	void *raw_data; /*!< Message specific data if any */
 	uint32_t raw_data_len; /*!< Data len in case is needed */
 	uint32_t call_id; /*!< unique call id for this call */
+	union {
+		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
+		ftdm_event_trace_t logevent;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
+	}ev_data;
 };
 
 /*! \brief Crash policy 
@@ -666,6 +695,14 @@ typedef enum {
 
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
+
+/*! \brief Return the availability rate for a channel 
+ * \param ftdmchan Channel to get the availability from
+ *
+ * \retval > 0 if availability is supported
+ * \retval -1 if availability is not supported
+ */
+FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan);
 
 /*! \brief Answer call */
 #define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))

@@ -255,7 +255,7 @@ static void ftdm_r2_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-	sig.sigstatus = status;
+	sig.ev_data.sigstatus.status = status;
 	if (ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to change channel status to %s\n", ftdm_signaling_status2str(status));
 	}

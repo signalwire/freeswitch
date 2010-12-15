@@ -2004,7 +2004,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* bring the sig status down */
 		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-		sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+		sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 		ftdm_span_send_signal(ftdmchan->span, &sigev);
 
 		/* unlock the channel again before we exit */
@@ -2135,7 +2135,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* bring the sig status down */
 		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-		sigev.sigstatus = FTDM_SIG_STATE_UP;
+		sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 		ftdm_span_send_signal(ftdmchan->span, &sigev);
 	
 		/* unlock the channel again before we exit */
