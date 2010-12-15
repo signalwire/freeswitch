@@ -568,14 +568,14 @@ static void dump_mf(openr2_chan_t *r2chan)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", logname);
 		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
 				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
-		f = fopen(dfile, "w");
+		f = fopen(dfile, "wb");
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
 		fclose(f);
 
 		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
 				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
-		f = fopen(dfile, "w");
+		f = fopen(dfile, "wb");
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
 		fclose(f);
@@ -585,6 +585,8 @@ static void dump_mf(openr2_chan_t *r2chan)
 static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t mode)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
+
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Call accepted\n");
 
 	clear_accept_pending(ftdmchan);
@@ -607,6 +609,11 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 			return;
 		}
 	} else {
+		/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
+		if (r2data->mf_dump_size) {
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+		}
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	}
 }
@@ -665,7 +672,7 @@ static void ftdm_r2_on_call_read(openr2_chan_t *r2chan, const unsigned char *buf
 static void ftdm_r2_on_hardware_alarm(openr2_chan_t *r2chan, int alarm)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-	ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Alarm notification: %d\n", alarm);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Alarm notification: %d\n", alarm);
 }
 
 static void ftdm_r2_on_os_error(openr2_chan_t *r2chan, int errorcode)
@@ -1955,7 +1962,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 						"Max DNIS: %d\n"
 						"ANI First: %s\n"
 						"Immediate Accept: %s\n"
-						"Job Thread: %lu\n"
+						"Job Thread: %u\n"
 						"Job Max ms: %d\n"
 						"Job Loops: %lu\n",
 						openr2_proto_get_variant_string(r2variant),

@@ -1667,7 +1667,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	if (rtp_session->jb) {
 		stfu_n_resize(rtp_session->jb, queue_frames);
 	} else {
-		rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames || 50, samples_per_packet, samples_per_second);
+		rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second);
 	}
 	READ_DEC(rtp_session);
 	

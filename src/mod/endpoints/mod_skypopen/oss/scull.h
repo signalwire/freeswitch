@@ -34,6 +34,8 @@ struct scull_dev {
 	wait_queue_head_t outq; /* read and write queues */
 	struct timer_list timer_inq;
 	struct timer_list timer_outq;
+	int readable;
+	int writable;
 	//unsigned long read_howmany;
 	//unsigned long write_howmany;
 	//unsigned long read_sleeped_acc;
