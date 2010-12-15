@@ -1659,7 +1659,7 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = stfu_vasprintf(&data, fmt, ap);
+	ret = switch_vasprintf(&data, fmt, ap);
 	if (ret != -1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "%s", data);
 		free(data);
