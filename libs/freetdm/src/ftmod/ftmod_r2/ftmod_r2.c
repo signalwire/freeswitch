@@ -1720,7 +1720,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 		/* deliver the actual channel events to the user now without any channel locking */
 		ftdm_span_trigger_signals(span);
-#ifndef WIN32
+
 		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
@@ -1732,16 +1732,12 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		for (i = 0; citer; citer = ftdm_iterator_next(citer), i++) {
 			ftdmchan = ftdm_iterator_current(citer);
 			r2chan = R2CALL(ftdmchan)->r2chan;
-			poll_events[i] = POLLPRI;
+			poll_events[i] = FTDM_EVENTS;
 			if (openr2_chan_get_read_enabled(r2chan)) {
-				poll_events[i] |= POLLIN;
+				poll_events[i] |= FTDM_READ;
 			}
 		}
-
 		status = ftdm_span_poll_event(span, waitms, poll_events);
-#else
-		status = ftdm_span_poll_event(span, waitms, NULL);
-#endif
 
 		/* run any span timers */
 		ftdm_sched_run(r2data->sched);

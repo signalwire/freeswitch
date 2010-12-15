@@ -1051,16 +1051,34 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		ftdm_channel_t *ftdmchan = span->channels[i];
+		uint32_t chan_events = 0;
+
+		/* if the user specify which events to poll the channel for, we translate them from ftdm_wait_flag_t
+		 * to events that either sangoma_waitfor_many() or poll() understands. if not, we poll for POLLPRI */
+		if (poll_events) {
+			if (poll_events[j] & FTDM_READ) {
+				chan_events = POLLIN;
+			}
+			if (poll_events[j] & FTDM_WRITE) {
+				chan_events |= POLLOUT;
+			}
+			if (poll_events[j] & FTDM_EVENTS) {
+				chan_events |= POLLPRI;
+			}
+		} else {
+			chan_events = POLLPRI;
+		}
+
 #ifdef LIBSANGOMA_VERSION
 		if (!ftdmchan->io_data) {
 			continue; /* should never happen but happens when shutting down */
 		}
 		pfds[j] = ftdmchan->io_data;
-		inflags[j] = poll_events ? poll_events[j] : POLLPRI;
+		inflags[j] = chan_events;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
-		pfds[j].events = poll_events ? poll_events[j] : POLLPRI;
+		pfds[j].events = chan_events;
 #endif
 
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
