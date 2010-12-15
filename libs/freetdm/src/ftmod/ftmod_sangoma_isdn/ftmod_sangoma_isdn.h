@@ -101,9 +101,11 @@ typedef enum {
 	FLAG_GLARE              = (1 << 6),
 	FLAG_DELAYED_REL        = (1 << 7),
 	FLAG_SENT_PROCEED       = (1 << 8),
-	FLAG_SEND_DISC  		= (1 << 9),
+	FLAG_SEND_DISC  		= (1 << 9),	
 	/* Used for BRI only, flag is set after we request line CONNECTED */
-	FLAG_ACTIVATING			= (1 << 10), 
+	FLAG_ACTIVATING			= (1 << 10),
+	/* Used when we receive an ALERT msg + inband tones ready */
+	FLAG_MEDIA_READY		= (1 << 11),
 } sngisdn_flag_t;
 
 

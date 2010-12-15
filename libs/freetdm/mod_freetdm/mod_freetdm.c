@@ -2167,6 +2167,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		}
 		break;
 	case FTDM_SIGEVENT_PROGRESS:
+	case FTDM_SIGEVENT_RINGING:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);

@@ -314,7 +314,8 @@ typedef enum {
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_FLASH, /*!< Flash event  (typically on-hook/off-hook for analog devices) */
- 	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_RINGING, /*!< Remote side is in ringing state */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
@@ -327,7 +328,7 @@ typedef enum {
 	FTDM_SIGEVENT_FACILITY, /* !< In call facility event */
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
+#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
 

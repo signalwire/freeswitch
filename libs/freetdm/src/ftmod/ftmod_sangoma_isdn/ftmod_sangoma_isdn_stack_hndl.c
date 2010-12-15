@@ -278,6 +278,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 		switch(ftdmchan->state) {
 			case FTDM_CHANNEL_STATE_PROCEED:
+			case FTDM_CHANNEL_STATE_RINGING:
 			case FTDM_CHANNEL_STATE_PROGRESS:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_DIALING:
@@ -364,21 +365,38 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 				goto sngisdn_process_cnst_ind_end;
 			}
-			
+
 			switch(ftdmchan->state) {
 				case FTDM_CHANNEL_STATE_DIALING:
 				case FTDM_CHANNEL_STATE_PROCEED:
-					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
-					} else 	if (evntType == MI_CALLPROC) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROCEED);
-					} else {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
-					}
-					break;
 				case FTDM_CHANNEL_STATE_PROGRESS:
+				case FTDM_CHANNEL_STATE_RINGING:
 					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+						sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
+					}
+					switch (evntType) {
+						case MI_CALLPROC:
+							if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROCEED);
+							}
+							break;
+						case MI_ALERTING:
+							if (ftdmchan->state == FTDM_CHANNEL_STATE_PROCEED) {
+								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RINGING);
+							}
+							break;
+						case MI_PROGRESS:
+							if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
+								
+								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+							} else if (ftdmchan->state != FTDM_CHANNEL_STATE_PROGRESS) {
+																
+								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
+							}
+							break;
+						default:
+							/* We should never reach this section !*/
+							ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle this event %d\n", evntType);
 					}
 					break;
 				case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
