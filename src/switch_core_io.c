@@ -325,13 +325,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_thread_rwlock_unlock(session->bug_rwlock);
 				}
 
-				status = switch_core_codec_decode(use_codec,
-												  session->read_codec,
-												  read_frame->data,
-												  read_frame->datalen,
-												  session->read_impl.actual_samples_per_second,
-												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
-												  &read_frame->flags);
+				if (switch_test_flag(read_frame, SFF_PLC)) {
+					session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
+					session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+					memset(session->raw_read_frame.data, 255, session->raw_read_frame.datalen);
+					status = SWITCH_STATUS_SUCCESS;
+				} else {
+					status = switch_core_codec_decode(use_codec,
+													  session->read_codec,
+													  read_frame->data,
+													  read_frame->datalen,
+													  session->read_impl.actual_samples_per_second,
+													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
+													  &read_frame->flags);
+				}
 				
 				if (status == SWITCH_STATUS_SUCCESS) {
 					if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER) && !session->plc) {
