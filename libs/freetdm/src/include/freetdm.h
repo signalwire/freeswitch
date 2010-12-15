@@ -314,7 +314,8 @@ typedef enum {
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_FLASH, /*!< Flash event  (typically on-hook/off-hook for analog devices) */
- 	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_RINGING, /*!< Remote side is in ringing state */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
@@ -327,7 +328,7 @@ typedef enum {
 	FTDM_SIGEVENT_FACILITY, /* !< In call facility event */
 	FTDM_SIGEVENT_INVALID
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
+#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
 
@@ -702,6 +703,14 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char
 /*! \brief Hangup the call with cause recording the source code point where it was called (see ftdm_channel_call_hangup_with_cause for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
 
+/*! \brief Reset the channel */
+#define ftdm_channel_reset(ftdmchan) _ftdm_channel_reset(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Reset the channel (see _ftdm_channel_reset for an easy to use macro) 
+ *  \note if there was a call on this channel, call will be cleared without any notifications to the user
+ */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
+
 /*! \brief Put a call on hold (if supported by the signaling stack) */
 #define ftdm_channel_call_hold(ftdmchan) _ftdm_channel_call_hold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
 
@@ -740,6 +749,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signa
 
 /*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
 FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signaling_status_t *status);
+
 
 /*! 
  * \brief Set user private data in the channel

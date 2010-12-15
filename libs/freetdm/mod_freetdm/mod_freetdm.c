@@ -2167,6 +2167,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		}
 		break;
 	case FTDM_SIGEVENT_PROGRESS:
+	case FTDM_SIGEVENT_RINGING:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -3922,6 +3923,28 @@ SWITCH_STANDARD_API(ft_function)
 			}
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
+	} else if (!strcasecmp(argv[0], "restart")) {
+		uint32_t chan_id = 0;
+		ftdm_channel_t *chan;
+		ftdm_span_t *span = NULL;
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> <chan_id>\n");
+			goto end;
+		}
+		ftdm_span_find_by_name(argv[1], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		
+		chan_id = atoi(argv[2]);
+		chan = ftdm_span_get_channel(span, chan_id);
+		if (!chan) {
+			stream->write_function(stream, "-ERR Could not find chan\n");
+			goto end;
+		}
+		stream->write_function(stream, "Resetting channel %s:%s\n", argv[2], argv[3]);
+		ftdm_channel_reset(chan);
 	} else {
 
 		char *rply = ftdm_api_execute(cmd);
