@@ -1702,6 +1702,18 @@ static ftdm_status_t __inline__ get_best_rated(ftdm_channel_t **fchan, ftdm_chan
 
 	return FTDM_SUCCESS;
 }
+
+FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan)
+{
+	int availability = -1;
+	ftdm_channel_lock(ftdmchan);
+	if (ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_AV_RATE)) {
+		availability = ftdmchan->availability_rate;
+	}
+	ftdm_channel_unlock(ftdmchan);
+	return availability;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;

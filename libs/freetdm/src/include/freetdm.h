@@ -696,6 +696,14 @@ typedef enum {
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
 
+/*! \brief Return the availability rate for a channel 
+ * \param ftdmchan Channel to get the availability from
+ *
+ * \retval > 0 if availability is supported
+ * \retval -1 if availability is not supported
+ */
+FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan);
+
 /*! \brief Answer call */
 #define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
 
