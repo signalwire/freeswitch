@@ -156,7 +156,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				release_request_id((m3ua_request_id_t)ftdmchan->extra_id);
 				ftdmchan->extra_id = 0;
 			}
-			ftdm_channel_close(ftdmchan);			
+			ftdm_channel_close(&ftdmchan);			
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:

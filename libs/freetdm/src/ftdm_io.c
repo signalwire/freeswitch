@@ -2430,14 +2430,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_send_msg(const char *file, const ch
 FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(file);
-	UNREFERENCED_PARAMETER(func);
-	UNREFERENCED_PARAMETER(line);
-#endif
 
 	ftdm_channel_lock(ftdmchan);
-	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RESET, 0);
+	ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RESET, 1);
 	ftdm_channel_unlock(ftdmchan);
 	return FTDM_SUCCESS;
 }
@@ -2578,8 +2573,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "channel dropped data: txdrops = %d, rxdrops = %d\n",
 				ftdmchan->txdrops, ftdmchan->rxdrops);
 	}
-
-	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
+	
 	memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
 
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_HOLD);
@@ -2612,6 +2606,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdmchan->packet_len = ftdmchan->native_interval * (ftdmchan->effective_codec == FTDM_CODEC_SLIN ? 16 : 8);
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE);
 	}
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
 	ftdm_mutex_unlock(ftdmchan->mutex);
 	return FTDM_SUCCESS;
 }
@@ -2642,7 +2637,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 		if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
 			status = check->fio->close(check);
 			if (status == FTDM_SUCCESS) {
-				ftdm_clear_flag(check, FTDM_CHANNEL_INUSE);
 				ftdm_channel_done(check);
 				*ftdmchan = NULL;
 			}
