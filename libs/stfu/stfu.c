@@ -33,10 +33,18 @@
 #  define UINT_MAX        4294967295U
 #endif
 
+#ifndef UINT16_MAX
+#  define UINT16_MAX        65535
+#endif
+
 #ifdef _MSC_VER
 /* warning C4706: assignment within conditional expression*/
 #pragma warning(disable: 4706)
 #endif
+
+#define least1(_z) (_z ? _z : 1)
+
+static int stfu_log_level = 7;
 
 struct stfu_queue {
 	struct stfu_frame *array;
@@ -53,13 +61,13 @@ typedef struct stfu_queue stfu_queue_t;
 struct stfu_instance {
 	struct stfu_queue a_queue;
 	struct stfu_queue b_queue;
+	struct stfu_queue c_queue;
 	struct stfu_queue *in_queue;
 	struct stfu_queue *out_queue;
+	struct stfu_queue *old_queue;
     struct stfu_frame *last_frame;
 	uint32_t cur_ts;
-	uint32_t cur_seq;
 	uint32_t last_wr_ts;
-	uint32_t last_wr_seq;
 	uint32_t last_rd_ts;
 	uint32_t samples_per_packet;
 	uint32_t samples_per_second;
@@ -76,6 +84,7 @@ struct stfu_instance {
     uint32_t period_packet_in_count;
     uint32_t period_packet_out_count;
     uint32_t period_missing_count;
+
     uint32_t period_need_range;
     uint32_t period_need_range_avg;
     uint32_t period_clean_count;
@@ -86,25 +95,55 @@ struct stfu_instance {
     uint32_t session_packet_in_count;
     uint32_t session_packet_out_count;
 
-    uint32_t sync;
+    uint32_t sync_out;
+    uint32_t sync_in;
 
 
     int32_t ts_diff;
     int32_t last_ts_diff;
     int32_t same_ts;
     
-    uint32_t last_seq;
-
     uint32_t period_time;
     uint32_t decrement_time;
     
     uint32_t plc_len;
+    uint32_t plc_pt;
+    uint32_t diff;
+    uint32_t diff_total;
+    uint8_t ready;
+    uint8_t debug;
 
+    char *name;
     stfu_n_call_me_t callback;
     void *udata;
 };
 
 static void stfu_n_reset_counters(stfu_instance_t *i);
+static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...);
+static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...);
+
+stfu_logger_t stfu_log = null_logger;
+
+void stfu_global_set_logger(stfu_logger_t logger)
+{
+	if (logger) {
+		stfu_log = logger;
+	} else {
+		stfu_log = null_logger;
+	}
+}
+
+void stfu_global_set_default_logger(int level)
+{
+	if (level < 0 || level > 7) {
+		level = 7;
+	}
+
+	stfu_log = default_logger;
+	stfu_log_level = level;
+}
+
+
 
 static stfu_status_t stfu_n_resize_aqueue(stfu_queue_t *queue, uint32_t qlen)
 {
@@ -151,10 +190,25 @@ void stfu_n_destroy(stfu_instance_t **i)
 	if (i && *i) {
 		ii = *i;
 		*i = NULL;
+        if (ii->name) free(ii->name);
 		free(ii->a_queue.array);
 		free(ii->b_queue.array);
+		free(ii->c_queue.array);
 		free(ii);
 	}
+}
+
+void stfu_n_debug(stfu_instance_t *i, const char *name)
+{
+    if (i->name) free(i->name);
+
+    if (name) {
+        i->name = strdup(name);
+        i->debug = 1;
+    } else {
+        i->name = strdup("none");
+        i->debug = 0;
+    }
 }
 
 void stfu_n_report(stfu_instance_t *i, stfu_report_t *r)
@@ -172,7 +226,6 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     stfu_status_t s;
 
     if (i->qlen == i->max_qlen) {
-        printf("FUCKER1\n");
         return STFU_IT_FAILED;
     }
     
@@ -180,13 +233,14 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
         if (i->qlen < i->max_qlen) {
             qlen = i->max_qlen;
         } else {
-            printf("FUCKER2\n");
             return STFU_IT_FAILED;
         }
     }
 
     if ((s = stfu_n_resize_aqueue(&i->a_queue, qlen)) == STFU_IT_WORKED) {
         s = stfu_n_resize_aqueue(&i->b_queue, qlen);
+        s = stfu_n_resize_aqueue(&i->c_queue, qlen);
+
         i->qlen = qlen;
         i->max_plc = 5;
         i->last_frame = NULL;
@@ -205,11 +259,6 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 	}
 	memset(i, 0, sizeof(*i));
 
-
-#ifdef DB_JB
-    printf("INIT %u %u\n", qlen, max_qlen);
-#endif
-
     i->qlen = qlen;
     i->max_qlen = max_qlen;
     i->orig_qlen = qlen;
@@ -217,8 +266,12 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 
 	stfu_n_init_aqueue(&i->a_queue, qlen);
 	stfu_n_init_aqueue(&i->b_queue, qlen);
+	stfu_n_init_aqueue(&i->c_queue, qlen);
+
 	i->in_queue = &i->a_queue;
 	i->out_queue = &i->b_queue;
+	i->old_queue = &i->c_queue;
+    i->name = strdup("none");
     
     i->max_plc = i->qlen / 2;
 
@@ -232,9 +285,9 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 
 static void stfu_n_reset_counters(stfu_instance_t *i)
 {
-#ifdef DB_JB
-    printf("COUNTER RESET........\n");
-#endif
+    if (stfu_log != null_logger && i->debug) {
+        stfu_log(STFU_LOG_EMERG, "%s COUNTER RESET........\n", i->name);
+    }
 
     if (i->callback) {
         i->callback(i, i->udata);
@@ -248,36 +301,44 @@ static void stfu_n_reset_counters(stfu_instance_t *i)
     i->period_packet_in_count = 0;
     i->period_packet_out_count = 0;
     i->period_missing_count = 0;
+
     i->period_need_range = 0;
     i->period_need_range_avg = 0;
+
+    i->diff = 0;
+    i->diff_total = 0;
+
 }
 
 void stfu_n_reset(stfu_instance_t *i)
 {
-#ifdef DB_JB
-    printf("RESET\n");
-#endif
+    if (stfu_log != null_logger && i->debug) {
+        stfu_log(STFU_LOG_EMERG, "%s RESET\n", i->name);
+    }
+
+    i->ready = 0;
 	i->in_queue = &i->a_queue;
 	i->out_queue = &i->b_queue;
+	i->old_queue = &i->c_queue;
+
 	i->in_queue->array_len = 0;
 	i->out_queue->array_len = 0;
 	i->out_queue->wr_len = 0;
 	i->last_frame = NULL;
-
     i->in_queue->last_jitter = 0;
     i->out_queue->last_jitter = 0;
 
+
     stfu_n_reset_counters(i);
-
-    i->last_seq = 0;
-
+    stfu_n_sync(i, 1);
+    
     i->cur_ts = 0;
-    i->cur_seq = 0;
 	i->last_wr_ts = 0;
-	i->last_wr_seq = 0;
 	i->last_rd_ts = 0;
 	i->miss_count = 0;	
     i->packet_count = 0;
+
+
 }
 
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets)
@@ -286,20 +347,39 @@ stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets)
     if (packets > i->qlen) {
         stfu_n_reset(i);
     } else {
-        i->sync = packets;
+        i->sync_out = packets;
+        i->sync_in = packets;
     }
 
     return STFU_IT_WORKED;
 }
 
 
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uint32_t pt, void *data, size_t datalen, int last)
+static void stfu_n_swap(stfu_instance_t *i)
+{
+    stfu_queue_t *last_in = i->in_queue, *last_out = i->out_queue, *last_old = i->old_queue;
+    
+    i->ready = 1;
+    
+    i->in_queue = last_out;
+    i->out_queue = last_old;
+    i->old_queue = last_in;
+
+    i->in_queue->array_len = 0;
+    i->out_queue->wr_len = 0;
+    i->last_frame = NULL;
+    i->miss_count = 0;
+    i->in_queue->last_index = 0;
+    i->out_queue->last_index = 0;
+    i->out_queue->last_jitter = 0;
+}
+
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, int last)
 {
 	uint32_t index = 0;
 	stfu_frame_t *frame;
 	size_t cplen = 0;
-    int good_seq = 0, good_ts = 0;
-    uint32_t min_seq = UINT_MAX, min_ts = UINT_MAX, min_index = 0;
+    int good_ts = 0;
 
     if (!i->samples_per_packet && ts && i->last_rd_ts) {
         i->ts_diff = ts - i->last_rd_ts;
@@ -320,16 +400,27 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
         }
     }
  
-    if ((seq && seq == i->last_seq + 1) || (i->last_seq > 65500 && seq == 0)) {
-        good_seq = 1;
-    }
-
-    if ((ts && ts == i->last_rd_ts + i->samples_per_packet) || (i->last_rd_ts > 4294900000 && ts < 5000)) {
+    if (i->sync_in) {
         good_ts = 1;
+        i->sync_in = 0;
+    } else {
+
+        if ((ts && ts == i->last_rd_ts + i->samples_per_packet) || (i->last_rd_ts > 4294900000 && ts < 5000)) {
+            good_ts = 1;
+        }
+
+        if (i->last_wr_ts) {
+            if ((ts <= i->last_wr_ts && (i->last_wr_ts != UINT_MAX || ts == i->last_wr_ts))) {
+                stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
+                if (i->in_queue->array_len < i->in_queue->array_size) {
+                    i->in_queue->array_len++;
+                }
+                return STFU_ITS_TOO_LATE;
+            }
+        }
     }
 
-
-    if (good_seq || good_ts) {
+    if (good_ts) {
         i->period_clean_count++;
         i->session_clean_count++;
     }
@@ -337,12 +428,12 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
     i->period_packet_in_count++;
     i->session_packet_in_count++;
 
-    i->period_need_range_avg = i->period_need_range / (i->period_missing_count || 1);
+    i->period_need_range_avg = i->period_need_range / least1(i->period_missing_count);
 
     if (i->period_missing_count > i->qlen * 2) {
-#ifdef DB_JB
-        printf("resize %u %u\n", i->qlen, i->qlen + 1);
-#endif
+        if (stfu_log != null_logger && i->debug) {
+            stfu_log(STFU_LOG_EMERG, "%s resize %u %u\n", i->name, i->qlen, i->qlen + 1);
+        }
         stfu_n_resize(i, i->qlen + 1);
         stfu_n_reset_counters(i);
     } else {
@@ -353,7 +444,24 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
         }
     }
 
+    
+    i->diff = 0;
+    
+    if (i->last_wr_ts) {
+        if (ts < 1000 && i->last_wr_ts > (UINT_MAX - 1000)) {
+            i->diff = abs(((UINT_MAX - i->last_wr_ts) + ts) / i->samples_per_packet);
+        } else if (ts) {
+            i->diff = abs(i->last_wr_ts - ts) / i->samples_per_packet;
+        }
+    }
+    
+    i->diff_total += i->diff;
+
     if ((i->period_packet_in_count > i->period_time)) {
+        uint32_t avg;
+
+        avg = i->diff_total / least1(i->period_packet_in_count);
+
         i->period_packet_in_count = 0;
 
         if (i->period_missing_count == 0 && i->qlen > i->orig_qlen) {
@@ -364,68 +472,38 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
         stfu_n_reset_counters(i);
     }
 
-#ifdef DB_JB
-    printf("%u i=%u/%u - g:%u/%u c:%u/%u b:%u - %u/%u - %u %d\n", 
-           i->qlen, i->period_packet_in_count, i->period_time, i->consecutive_good_count, 
-           i->decrement_time, i->period_clean_count, i->decrement_time, i->consecutive_bad_count,
-           seq, ts, 
-           i->period_missing_count, i->period_need_range_avg);
-#endif
 
+    
+
+    if (stfu_log != null_logger && i->debug) {
+        stfu_log(STFU_LOG_EMERG, "%s %u i=%u/%u - g:%u/%u c:%u/%u b:%u - %u:%u - %u %d %u %u %d %d\n", i->name,
+               i->qlen, i->period_packet_in_count, i->period_time, i->consecutive_good_count, 
+               i->decrement_time, i->period_clean_count, i->decrement_time, i->consecutive_bad_count,
+               ts, ts / i->samples_per_packet, 
+               i->period_missing_count, i->period_need_range_avg,
+               i->last_wr_ts, ts, i->diff, i->diff_total / least1(i->period_packet_in_count));
+    }
 
 	if (last || i->in_queue->array_len == i->in_queue->array_size) {
-		stfu_queue_t *other_queue;
-
-		other_queue = i->in_queue;
-		i->in_queue = i->out_queue;
-		i->out_queue = other_queue;
-
-		i->in_queue->array_len = 0;
-		i->out_queue->wr_len = 0;
-		i->last_frame = NULL;
-		i->miss_count = 0;
-        i->in_queue->last_index = 0;
-        i->out_queue->last_index = 0;
-        i->out_queue->last_jitter = 0;
+        stfu_n_swap(i);
     }
 
 	if (last) {
 		return STFU_IM_DONE;
 	}
 
-    for(index = 0; index < i->in_queue->array_size; index++) {
-
-        if (i->in_queue->array[index].was_read) {
-            min_index = index;
-            break;
-        }
-        
-        if (i->in_queue->array[index].seq < min_seq) {
-            min_seq = i->in_queue->array[index].seq;
-            min_index = index;
-        }
-
-        if (i->in_queue->array[index].ts < min_ts) {
-            min_ts = i->in_queue->array[index].ts;
-            min_index = index;
-        }
-    }
-
-    index = min_index;
-    
-    if (i->in_queue->array_len < i->in_queue->array_size) {
-        i->in_queue->array_len++;
-    }
-
+    index = i->in_queue->array_len++;
     assert(index < i->in_queue->array_size);
-
 	frame = &i->in_queue->array[index];
+
+	if (i->in_queue->array_len == i->in_queue->array_size) {
+        stfu_n_swap(i);
+    }
 
 	if ((cplen = datalen) > sizeof(frame->data)) {
 		cplen = sizeof(frame->data);
 	}
 
-    i->last_seq = seq;
     i->last_rd_ts = ts;
     i->packet_count++;
 
@@ -433,44 +511,13 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uin
 
     frame->pt = pt;
 	frame->ts = ts;
-    frame->seq = seq;
 	frame->dlen = cplen;
 	frame->was_read = 0;	
 
 	return STFU_IT_WORKED;
 }
 
-static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_frame_t **r_frame)
-{
-    uint32_t i = 0;
-    stfu_frame_t *frame = NULL;
-    stfu_queue_t *queue;
-
-    assert(r_frame);
-    
-    *r_frame = NULL;
-
-    for (queue = in->out_queue ; queue && queue != in->in_queue ; queue = in->in_queue) {
-
-        for(i = 0; i < queue->real_array_size; i++) {
-            frame = &queue->array[i];
-            if (!frame->was_read) {
-                *r_frame = frame;
-                queue->last_index = i;
-                frame->was_read = 1;
-                in->period_packet_out_count++;
-                in->session_packet_out_count++;
-                return 1;
-            }
-        }
-
-    }
-
-    return 0;    
-}
-
-
-static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t ts, uint32_t seq, stfu_frame_t **r_frame)
+static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_frame_t **r_frame)
 {
     uint32_t i = 0;
     stfu_frame_t *frame = NULL;
@@ -481,13 +528,40 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
 
     for(i = 0; i < queue->real_array_size; i++) {
         frame = &queue->array[i];
-        
-        if (((seq || in->last_seq) && frame->seq == seq) || frame->ts == ts) {
+        if (!frame->was_read) {
             *r_frame = frame;
             queue->last_index = i;
             frame->was_read = 1;
             in->period_packet_out_count++;
             in->session_packet_out_count++;
+            return 1;
+        }
+    }
+
+    return 0;    
+}
+
+
+static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t ts, stfu_frame_t **r_frame)
+{
+    uint32_t i = 0;
+    stfu_frame_t *frame = NULL;
+
+    if (r_frame) {
+        *r_frame = NULL;
+    }
+
+    for(i = 0; i < queue->array_size; i++) {
+        frame = &queue->array[i];
+        
+        if (frame->ts == ts) {
+            if (r_frame) {
+                *r_frame = frame;
+                queue->last_index = i;
+                frame->was_read = 1;
+                in->period_packet_out_count++;
+                in->session_packet_out_count++;
+            }
             return 1;
         }
     }
@@ -500,48 +574,76 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 	stfu_frame_t *rframe = NULL;
     int found = 0;
 
-	if (!i->samples_per_packet || !i->out_queue->array_len) {
-        //|| ((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
-		return NULL;
-	}
-
-    if (i->cur_ts == 0) {
-		i->cur_ts = i->out_queue->array[0].ts;
-    } else {
-		i->cur_ts += i->samples_per_packet;
+	if (!i->samples_per_packet) {
+        return NULL;
     }
     
-    if (i->cur_seq == 0) {
-        i->cur_seq = i->out_queue->array[0].seq;
+    if (!i->ready) {
+        if (stfu_log != null_logger && i->debug) {
+            stfu_log(STFU_LOG_EMERG, "%s XXXSKIP\n", i->name);
+        }
+        return NULL;
+    }
+
+
+    if (i->cur_ts == 0 && i->last_wr_ts < 1000) {
+        uint32_t x = 0;
+        for (x = 0; x < i->out_queue->array_len; x++) {
+            if (!i->out_queue->array[x].was_read) {
+                i->cur_ts = i->out_queue->array[x].ts;
+                break;
+            }
+            if (i->cur_ts == 0) {
+                if (stfu_log != null_logger && i->debug) {
+                    stfu_log(STFU_LOG_EMERG, "%s XXXPUNT\n", i->name);
+                    return NULL;
+                }
+            }
+        }
     } else {
-        i->cur_seq++; 
-        /* if we bother using this for anything that doesn't have 16 bit seq, we'll make this a param */
-        if (i->cur_seq == 65535) {
-            i->cur_seq = 0;
+        i->cur_ts = i->cur_ts + i->samples_per_packet;
+    }
+    
+    found = stfu_n_find_frame(i, i->out_queue, i->cur_ts, &rframe);
+
+    if (found) {
+        if (i->out_queue->array_len) {
+            i->out_queue->array_len--;
+        }
+    } else {
+        found = stfu_n_find_frame(i, i->in_queue, i->cur_ts, &rframe);
+
+        if (!found) {
+            found = stfu_n_find_frame(i, i->old_queue, i->cur_ts, &rframe);
         }
     }
 
-    if (!(found = stfu_n_find_frame(i, i->out_queue, i->cur_ts, i->cur_seq, &rframe))) {
-        found = stfu_n_find_frame(i, i->in_queue, i->cur_ts, i->cur_seq, &rframe);
+    if (i->sync_out) {
+        if (!found) {
+            if ((found = stfu_n_find_any_frame(i, i->out_queue, &rframe))) {
+                i->cur_ts = rframe->ts;
+            }
+            
+            if (stfu_log != null_logger && i->debug) {
+                stfu_log(STFU_LOG_EMERG, "%s SYNC %u %u:%u\n", i->name, i->sync_out, i->cur_ts, i->cur_ts / i->samples_per_packet);
+            }
+
+        }
+        i->sync_out = 0;
     }
 
-    if (!found && i->sync) {
-#ifdef DB_JB
-        printf("SYNC %u\n", i->sync);
-#endif
-        if ((found = stfu_n_find_any_frame(i, &rframe))) {
-            i->cur_seq = rframe->seq;
-            i->cur_ts = rframe->ts;
+    if (!i->cur_ts) {
+        if (stfu_log != null_logger && i->debug) {
+            stfu_log(STFU_LOG_EMERG, "%s NO TS\n", i->name);
         }
-        i->sync = 0;
+        return NULL;
     }
 
 
     if (!found && i->samples_per_packet) {
-#ifdef DB_JB
         int y;
         stfu_frame_t *frame = NULL;
-#endif
+
         int32_t delay = i->last_rd_ts - i->cur_ts;
         uint32_t need  = abs(i->last_rd_ts - i->cur_ts) / i->samples_per_packet;
 
@@ -550,30 +652,32 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->session_missing_count++;
         i->period_need_range += need;
 
-#ifdef DB_JB        
-        printf("MISSING %u %u %u %u %d %u %d\n", i->cur_seq, i->cur_ts, i->packet_count, i->last_rd_ts, delay, i->qlen, need);        
-#endif
+        if (stfu_log != null_logger && i->debug) {        
+            stfu_log(STFU_LOG_EMERG, "%s MISSING %u:%u %u %u %d %u %d\n", i->name, 
+                     i->cur_ts, i->cur_ts / i->samples_per_packet, i->packet_count, i->last_rd_ts, delay, i->qlen, need);        
+        }
 
         if (i->packet_count > i->orig_qlen * 100 && delay > 0 && need > i->qlen && need < (i->qlen + 5)) {
             i->packet_count = 0;
         }
 
-#ifdef DB_JB        
-        for(y = 0; y < i->out_queue->array_size; y++) {
-            if ((y % 5) == 0) printf("\n");
-            frame = &i->out_queue->array[y];
-            printf("%u:%u\t", frame->seq, frame->ts);
-        }
-        printf("\n\n");
+        if (stfu_log != null_logger && i->debug) {        
+            for(y = 0; y < i->out_queue->array_size; y++) {
+                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s", i->name);
+                frame = &i->out_queue->array[y];
+                stfu_log(STFU_LOG_EMERG, "%u:%u\t", frame->ts, frame->ts / i->samples_per_packet);
+            }
+            stfu_log(STFU_LOG_EMERG, "%s\n", i->name);
 
 
-        for(y = 0; y < i->in_queue->array_size; y++) {
-            if ((y % 5) == 0) printf("\n");
-            frame = &i->in_queue->array[y];
-            printf("%u:%u\t", frame->seq, frame->ts);
+            for(y = 0; y < i->in_queue->array_size; y++) {
+                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s", i->name);
+                frame = &i->in_queue->array[y];
+                stfu_log(STFU_LOG_EMERG, "%u:%u\t", frame->ts, frame->ts / i->samples_per_packet);
+            }
+            stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
+
         }
-        printf("\n\n");
-#endif
 
         if (delay < 0) {
             stfu_n_reset(i);
@@ -581,14 +685,11 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         }
     }
 
-#ifdef DB_JB
-    if (found) {
-        printf("O: %u:%u %u %d\n", rframe->seq, rframe->ts, rframe->plc, rframe->seq - i->last_seq);
-    } else {
-        printf("DATA: %u %u %d %s %d\n", i->packet_count, i->consecutive_good_count, i->out_queue->last_jitter, found ? "found" : "not found", i->qlen);
+    if (stfu_log != null_logger && i->debug) {
+        if (found) {
+            stfu_log(STFU_LOG_EMERG, "%s O: %u:%u %u\n", i->name, rframe->ts, rframe->ts / i->samples_per_packet, rframe->plc);
+        }
     }
-#endif
-
 
     if (found) {
         i->consecutive_good_count++;
@@ -602,36 +703,28 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
     if (found) {
         i->last_frame = rframe;
-		i->out_queue->wr_len++;
-		i->last_wr_ts = rframe->ts;
-        i->last_wr_seq = rframe->seq;
-		i->miss_count = 0;
+        i->out_queue->wr_len++;
+        i->last_wr_ts = rframe->ts;
+
+        i->miss_count = 0;
         if (rframe->dlen) {
             i->plc_len = rframe->dlen;
         }
+
+        i->plc_pt = rframe->pt;
+
     } else {
         i->last_wr_ts = i->cur_ts;
-        i->last_wr_seq = i->cur_seq;
         rframe = &i->out_queue->int_frame;
         rframe->dlen = i->plc_len;
-        
-#if 0
-        if (i->last_frame) {
-            /* poor man's plc..  Copy the last frame, but we flag it so you can use a better one if you wish */
-            if (i->miss_count) {
-                memset(rframe->data, 255, rframe->dlen);
-            } else {
-                memcpy(rframe->data, i->last_frame->data, rframe->dlen);
-            }
-        }
-#endif
+        rframe->pt = i->plc_pt;
         rframe->ts = i->cur_ts;
-
         i->miss_count++;
-
-#ifdef DB_JB
-        printf("PLC %d %d %ld %u %u\n", i->miss_count, rframe->plc, rframe->dlen, rframe->seq, rframe->ts);
-#endif
+        
+        if (stfu_log != null_logger && i->debug) {
+            stfu_log(STFU_LOG_EMERG, "%s PLC %d %d %ld %u:%u\n", i->name, 
+                     i->miss_count, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+        }
 
         if (i->miss_count > i->max_plc) {
             stfu_n_reset(i);
@@ -639,8 +732,137 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         }
     }
 
-	return rframe;
+    return rframe;
 }
+
+#ifdef WIN32
+#ifndef vsnprintf
+#define vsnprintf _vsnprintf
+#endif
+#endif
+
+
+int vasprintf(char **ret, const char *format, va_list ap);
+
+int stfu_vasprintf(char **ret, const char *fmt, va_list ap)
+{
+#if !defined(WIN32) && !defined(__sun)
+	return vasprintf(ret, fmt, ap);
+#else
+	char *buf;
+	int len;
+	size_t buflen;
+	va_list ap2;
+	char *tmp = NULL;
+
+#ifdef _MSC_VER
+#if _MSC_VER >= 1500
+	/* hack for incorrect assumption in msvc header files for code analysis */
+	__analysis_assume(tmp);
+#endif
+	ap2 = ap;
+#else
+	va_copy(ap2, ap);
+#endif
+
+	len = vsnprintf(tmp, 0, fmt, ap2);
+
+	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
+		len = vsnprintf(buf, buflen, fmt, ap);
+		*ret = buf;
+	} else {
+		*ret = NULL;
+		len = -1;
+	}
+
+	va_end(ap2);
+	return len;
+#endif
+}
+
+
+
+
+int stfu_snprintf(char *buffer, size_t count, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vsnprintf(buffer, count-1, fmt, ap);
+	if (ret < 0)
+		buffer[count-1] = '\0';
+	va_end(ap);
+	return ret;
+}
+
+static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
+{
+	if (file && func && line && level && fmt) {
+		return;
+	}
+	return;
+}
+
+
+
+static const char *LEVEL_NAMES[] = {
+	"EMERG",
+	"ALERT",
+	"CRIT",
+	"ERROR",
+	"WARNING",
+	"NOTICE",
+	"INFO",
+	"DEBUG",
+	NULL
+};
+
+static const char *cut_path(const char *in)
+{
+	const char *p, *ret = in;
+	char delims[] = "/\\";
+	char *i;
+
+	for (i = delims; *i; i++) {
+		p = in;
+		while ((p = strchr(p, *i)) != 0) {
+			ret = ++p;
+		}
+	}
+	return ret;
+}
+
+
+static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
+{
+	const char *fp;
+	char *data;
+	va_list ap;
+	int ret;
+	
+	if (level < 0 || level > 7) {
+		level = 7;
+	}
+	if (level > stfu_log_level) {
+		return;
+	}
+	
+	fp = cut_path(file);
+
+	va_start(ap, fmt);
+
+	ret = stfu_vasprintf(&data, fmt, ap);
+
+	if (ret != -1) {
+		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+		free(data);
+	}
+
+	va_end(ap);
+
+}
+
 
 /* For Emacs:
  * Local Variables:
