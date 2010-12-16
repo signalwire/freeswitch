@@ -664,20 +664,21 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         }
 
         if (stfu_log != null_logger && i->debug) {        
+            stfu_log(STFU_LOG_EMERG, "%s ", i->name);
             for(y = 0; y < i->out_queue->array_size; y++) {
-                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s", i->name);
+                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s ", i->name);
                 frame = &i->out_queue->array[y];
                 stfu_log(STFU_LOG_EMERG, "%u:%u\t", frame->ts, frame->ts / i->samples_per_packet);
             }
-            stfu_log(STFU_LOG_EMERG, "%s\n", i->name);
+            stfu_log(STFU_LOG_EMERG, "\n%s ", i->name);
 
 
             for(y = 0; y < i->in_queue->array_size; y++) {
-                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s", i->name);
+                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s ", i->name);
                 frame = &i->in_queue->array[y];
                 stfu_log(STFU_LOG_EMERG, "%u:%u\t", frame->ts, frame->ts / i->samples_per_packet);
             }
-            stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
+            stfu_log(STFU_LOG_EMERG, "\n%s\n\n\n", i->name);
 
         }
 
