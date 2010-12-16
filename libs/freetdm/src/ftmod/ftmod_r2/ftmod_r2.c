@@ -55,10 +55,13 @@ static int32_t g_thread_count = 0;
 
 typedef int openr2_call_status_t;
 
-/* when the users kills a span we clear this flag to kill the signaling thread */
+/* when the user stops a span, we clear FTDM_R2_SPAN_STARTED, so that the signaling thread
+ * knows it must stop, and we wait for FTDM_R2_RUNNING to be clear, which tells us the
+ * signaling thread is done. */
 /* FIXME: what about the calls that are already up-and-running? */
 typedef enum {
 	FTDM_R2_RUNNING = (1 << 0),
+	FTDM_R2_SPAN_STARTED = (1 << 1),
 } ftdm_r2_flag_t;
 
 /* private call information stored in ftdmchan->call_data void* ptr,
@@ -424,13 +427,14 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 static ftdm_status_t ftdm_r2_start(ftdm_span_t *span)
 {
 	ftdm_r2_data_t *r2_data = span->signal_data;
-	ftdm_set_flag(r2_data, FTDM_R2_RUNNING);
+	ftdm_set_flag(r2_data, FTDM_R2_SPAN_STARTED);
 	return ftdm_thread_create_detached(ftdm_r2_run, span);
 }
 
 static ftdm_status_t ftdm_r2_stop(ftdm_span_t *span)
 {
 	ftdm_r2_data_t *r2_data = span->signal_data;
+	ftdm_clear_flag(r2_data, FTDM_R2_SPAN_STARTED);
 	while (ftdm_test_flag(r2_data, FTDM_R2_RUNNING)) {
 		ftdm_log(FTDM_LOG_DEBUG, "Waiting for R2 span %s\n", span->name);
 		ftdm_sleep(100);
@@ -1759,6 +1763,9 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	uint32_t txqueue_size = 4;
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
+	/* as long as this thread is running, this flag is set */
+	ftdm_set_flag(r2data, FTDM_R2_RUNNING);
+
 #ifdef __linux__
 	r2data->monitor_thread_id = syscall(SYS_gettid);	
 #endif
@@ -1781,7 +1788,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 
 	memset(&start, 0, sizeof(start));
 	memset(&end, 0, sizeof(end));
-	while (ftdm_running() && ftdm_test_flag(r2data, FTDM_R2_RUNNING)) {
+	while (ftdm_running() && ftdm_test_flag(r2data, FTDM_R2_SPAN_STARTED)) {
 		res = gettimeofday(&end, NULL);
 		if (res) {
 			ftdm_log(FTDM_LOG_CRIT, "Failure gettimeofday [%s]\n", strerror(errno));
