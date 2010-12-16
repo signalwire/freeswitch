@@ -2078,7 +2078,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 
 		case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{
-			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->sigstatus;
+			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->ev_data.sigstatus.status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to: %s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
@@ -2168,6 +2168,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		}
 		break;
 	case FTDM_SIGEVENT_PROGRESS:
+	case FTDM_SIGEVENT_RINGING:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2183,7 +2184,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;	
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{	
-			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->sigstatus;
+			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->ev_data.sigstatus.status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
@@ -3543,7 +3544,83 @@ SWITCH_STANDARD_API(ft_function)
 		goto end;
 	}
 
-	if (!strcasecmp(argv[0], "dump")) {
+	if (!strcasecmp(argv[0], "sigstatus")) {
+		ftdm_span_t *span = NULL;
+		ftdm_signaling_status_t sigstatus;
+
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: ftdm sigstatus get|set [<span_id>] [<channel>] [<sigstatus>]\n");
+			goto end;
+		}
+		if (!strcasecmp(argv[1], "get") && argc < 3) {
+			stream->write_function(stream, "-ERR sigstatus get usage: get <span_id>\n");
+			goto end;
+		}
+		if (!strcasecmp(argv[1], "set") && argc != 5) {
+			stream->write_function(stream, "-ERR sigstatus set usage: set <span_id> <channel>|all <sigstatus>\n");
+			goto end;
+		}
+
+		ftdm_span_find_by_name(argv[2], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+
+		if (!strcasecmp(argv[1], "get")) {
+			if (argc == 4) {
+				uint32_t chan_id = atol(argv[3]);
+				ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
+				if (!fchan) {
+					stream->write_function(stream, "-ERR failed to get channel id '%d'\n", chan_id);
+					goto end;
+				}
+
+				if ((FTDM_SUCCESS == ftdm_channel_get_sig_status(fchan, &sigstatus))) {
+					stream->write_function(stream, "channel %d signaling status: %s\n", chan_id, ftdm_signaling_status2str(sigstatus));
+				} else {
+					stream->write_function(stream, "-ERR failed to get channel sigstatus\n");
+				}
+				goto end;
+			} else {
+				if ((FTDM_SUCCESS == ftdm_span_get_sig_status(span, &sigstatus))) {
+					stream->write_function(stream, "signaling_status: %s\n", ftdm_signaling_status2str(sigstatus));
+				} else {
+					stream->write_function(stream, "-ERR failed to read span status: %s\n", ftdm_span_get_last_error(span));
+				}
+			}
+			goto end;
+		}
+		if (!strcasecmp(argv[1], "set")) {
+			sigstatus = ftdm_str2ftdm_signaling_status(argv[4]);
+
+			if (!strcasecmp(argv[3], "all")) {
+				if ((FTDM_SUCCESS == ftdm_span_set_sig_status(span, sigstatus))) {
+					stream->write_function(stream, "Signaling status of all channels from span %s set to %s\n",
+							ftdm_span_get_name(span), ftdm_signaling_status2str(sigstatus));
+				} else {
+					stream->write_function(stream, "-ERR failed to set span sigstatus to '%s'\n", ftdm_signaling_status2str(sigstatus));
+				}
+				goto end;
+			} else {
+				uint32_t chan_id = atol(argv[3]);
+				ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
+				if (!fchan) {
+					stream->write_function(stream, "-ERR failed to get channel id '%d'\n", chan_id);
+					goto end;
+				}
+
+				if ((FTDM_SUCCESS == ftdm_channel_set_sig_status(fchan, sigstatus))) {
+					stream->write_function(stream, "Signaling status of channel %d set to %s\n", chan_id,
+							ftdm_signaling_status2str(sigstatus));
+				} else {
+					stream->write_function(stream, "-ERR failed to set span sigstatus to '%s'\n", ftdm_signaling_status2str(sigstatus));
+				}
+				goto end;
+			}
+		}
+
+	} else if (!strcasecmp(argv[0], "dump")) {
 		if (argc < 2) {
 			stream->write_function(stream, "-ERR Usage: ftdm dump <span_id> [<chan_id>]\n");
 			goto end;
@@ -3923,6 +4000,28 @@ SWITCH_STANDARD_API(ft_function)
 			}
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
+	} else if (!strcasecmp(argv[0], "restart")) {
+		uint32_t chan_id = 0;
+		ftdm_channel_t *chan;
+		ftdm_span_t *span = NULL;
+		if (argc < 3) {
+			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> <chan_id>\n");
+			goto end;
+		}
+		ftdm_span_find_by_name(argv[1], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		
+		chan_id = atoi(argv[2]);
+		chan = ftdm_span_get_channel(span, chan_id);
+		if (!chan) {
+			stream->write_function(stream, "-ERR Could not find chan\n");
+			goto end;
+		}
+		stream->write_function(stream, "Resetting channel %s:%s\n", argv[2], argv[3]);
+		ftdm_channel_reset(chan);
 	} else {
 
 		char *rply = ftdm_api_execute(cmd);

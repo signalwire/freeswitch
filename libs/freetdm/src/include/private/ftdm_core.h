@@ -599,7 +599,6 @@ FT_DECLARE(void) ftdm_channel_rotate_tokens(ftdm_channel_t *ftdmchan);
 FT_DECLARE(int) ftdm_load_module(const char *name);
 FT_DECLARE(int) ftdm_load_module_assume(const char *name);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
-FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void);
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);

@@ -296,6 +296,10 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->facility_ie_decode);
 		} else if (!strcasecmp(var, "ignore-cause-value")) {
 			parse_yesno(var, val, &signal_data->ignore_cause_value);
+		} else if (!strcasecmp(var, "q931-raw-trace")) {
+			parse_yesno(var, val, &signal_data->raw_trace_q931);
+		} else if (!strcasecmp(var, "q921-raw-trace")) {
+			parse_yesno(var, val, &signal_data->raw_trace_q921);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}

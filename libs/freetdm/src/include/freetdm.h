@@ -295,6 +295,11 @@ typedef struct ftdm_caller_data {
 	/* user information layer 1 protocol */
 	ftdm_user_layer1_prot_t bearer_layer1;
 	ftdm_variable_container_t variables; /*!<variables attached to this call */
+	/* We need call_id inside caller_data for the user to be able to retrieve 
+	 * the call_id when ftdm_channel_call_place is called. This is the only time
+	 * that the user can use caller_data.call_id to obtain the call_id. The user
+	 * should use the call_id from sigmsg otherwise */
+	uint32_t call_id; /*!< Unique call ID for this call */
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
@@ -309,7 +314,8 @@ typedef enum {
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_FLASH, /*!< Flash event  (typically on-hook/off-hook for analog devices) */
- 	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_RINGING, /*!< Remote side is in ringing state */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
@@ -319,12 +325,14 @@ typedef enum {
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
-	FTDM_SIGEVENT_FACILITY, /* !< In call facility event */
-	FTDM_SIGEVENT_INVALID
+	FTDM_SIGEVENT_FACILITY, /*!< In call facility event */
+	FTDM_SIGEVENT_TRACE, /*!<Interpreted trace event */
+	FTDM_SIGEVENT_TRACE_RAW, /*!<Raw trace event */
+	FTDM_SIGEVENT_INVALID, /*!<Invalid */
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
+#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "FACILITY", "TRACE", "TRACE_RAW", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
@@ -375,15 +383,43 @@ typedef enum {
 /*! \brief Move from string to ftdm_signaling_status_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t)
 
+
+typedef struct {
+	ftdm_signaling_status_t status;
+} ftdm_event_sigstatus_t;
+
+typedef enum {
+	/* This is an received frame */
+	FTDM_TRACE_INCOMING,
+	/* This is a transmitted frame */
+	FTDM_TRACE_OUTGOING,
+	/* Invalid */
+ 	FTDM_TRACE_INVALID,
+} ftdm_trace_dir_t;
+#define TRACE_DIR_STRINGS "INCOMING", "OUTGOING", "INVALID"
+
+/*! \brief Move string to ftdm_trace_dir_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trace_dir, ftdm_trace_dir2str, ftdm_trace_dir_t)
+
+typedef struct {
+	/* Direction - incoming or outgoing */
+	ftdm_trace_dir_t dir;
+	uint8_t level; /* 1 for phy layer, 2 for q921/mtp2, 3 for q931/mtp3 */
+} ftdm_event_trace_t;
+
 /*! \brief Generic signaling message */
 struct ftdm_sigmsg {
 	ftdm_signal_event_t event_id; /*!< The type of message */
 	ftdm_channel_t *channel; /*!< Related channel */
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
-	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */	
 	void *raw_data; /*!< Message specific data if any */
 	uint32_t raw_data_len; /*!< Data len in case is needed */
+	uint32_t call_id; /*!< unique call id for this call */
+	union {
+		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
+		ftdm_event_trace_t logevent;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
+	}ev_data;
 };
 
 /*! \brief Crash policy 
@@ -660,6 +696,14 @@ typedef enum {
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
 
+/*! \brief Return the availability rate for a channel 
+ * \param ftdmchan Channel to get the availability from
+ *
+ * \retval > 0 if availability is supported
+ * \retval -1 if availability is not supported
+ */
+FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan);
+
 /*! \brief Answer call */
 #define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
 
@@ -695,6 +739,14 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char
 
 /*! \brief Hangup the call with cause recording the source code point where it was called (see ftdm_channel_call_hangup_with_cause for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
+
+/*! \brief Reset the channel */
+#define ftdm_channel_reset(ftdmchan) _ftdm_channel_reset(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Reset the channel (see _ftdm_channel_reset for an easy to use macro) 
+ *  \note if there was a call on this channel, call will be cleared without any notifications to the user
+ */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Put a call on hold (if supported by the signaling stack) */
 #define ftdm_channel_call_hold(ftdmchan) _ftdm_channel_call_hold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
@@ -734,6 +786,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signa
 
 /*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
 FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signaling_status_t *status);
+
 
 /*! 
  * \brief Set user private data in the channel
