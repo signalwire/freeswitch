@@ -1364,7 +1364,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_profile = tech_pvt->caller_profile;
 		caller_profile->destination_number = rdest;
 
-		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_mutex_lock(tech_pvt->flag_mutex);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_mutex_unlock(tech_pvt->flag_mutex);

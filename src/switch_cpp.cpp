@@ -1206,7 +1206,7 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 
 		if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
 			session_a.begin_allow_threads();
-			if (!switch_channel_test_flag(channel_a, CF_OUTBOUND) && !switch_channel_media_ready(channel_a)) {
+			if (switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_media_ready(channel_a)) {
 				switch_channel_pre_answer(channel_a);
 			}
 

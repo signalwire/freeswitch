@@ -2456,7 +2456,7 @@ static void conference_loop_output(conference_member_t *member)
 			switch_event_destroy(&event);
 		}
 
-		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			/* test to see if outbound channel has answered */
 			if (switch_channel_test_flag(channel, CF_ANSWERED) && !switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
@@ -2599,7 +2599,7 @@ static void conference_loop_output(conference_member_t *member)
 					  switch_channel_cause2str(switch_channel_get_cause(channel)));
 
 	/* if it's an outbound channel, store the release cause in the conference struct, we might need it */
-	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		member->conference->bridge_hangup_cause = switch_channel_get_cause(channel);
 	}
 
@@ -5446,7 +5446,7 @@ SWITCH_STANDARD_APP(conference_function)
 		launch_conference_thread(conference);
 
 	} else {
-		int enforce_security = !switch_channel_test_flag(channel, CF_OUTBOUND);
+		int enforce_security =  switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *pvar = switch_channel_get_variable(channel, "conference_enforce_security");
 
 		if (pvar) {
@@ -5655,7 +5655,7 @@ SWITCH_STANDARD_APP(conference_function)
 	} else {
 		/* if we're not using "bridge:" set the conference answered flag */
 		/* and this isn't an outbound channel, answer the call */
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND))
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND)
 			switch_set_flag(conference, CFLAG_ANSWERED);
 	}
 

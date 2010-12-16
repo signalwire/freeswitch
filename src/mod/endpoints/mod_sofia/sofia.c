@@ -357,7 +357,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			goto error;
 		}
 
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			switch_channel_answer(channel);
 			switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
 			switch_ivr_session_transfer(session, "auto_answer", NULL, NULL);
@@ -4114,7 +4114,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		}
 
-		if (channel && sip && (status == 300 || status == 301 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (channel && sip && (status == 300 || status == 301 || status == 302 || status == 305) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			sip_contact_t *p_contact = sip->sip_contact;
 			int i = 0;
 			char var_name[80];
@@ -4645,7 +4645,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		status = 183;
 	}
 
-	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
 			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
@@ -4692,7 +4692,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		if (r_sdp) {
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) && !switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "PROXY MEDIA");
 				}
 				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
@@ -4715,7 +4715,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 				goto done;
 			} else {
-				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && !switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "DELAYED NEGOTIATION");
 				} else {
 					if (sofia_glue_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
@@ -4910,7 +4910,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 							if (!switch_channel_media_ready(channel)) {
-								if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+								if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 									//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 									tech_pvt->num_codecs = 0;

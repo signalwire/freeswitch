@@ -343,7 +343,7 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 		zstr((called_party_number = switch_channel_get_variable(channel, "destination_number")))) {
 		called_party_number = "0000000000";
 	}
-	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		call_type = SKINNY_INBOUND_CALL;
 	} else {
 		call_type = SKINNY_OUTBOUND_CALL;
@@ -1674,7 +1674,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 			);
 
 		switch_set_flag_locked(tech_pvt, TFLAG_IO);
-		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_mark_answered(channel);
 		}
 		if (switch_channel_test_flag(channel, CF_HOLD)) {

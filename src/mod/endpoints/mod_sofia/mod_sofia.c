@@ -508,7 +508,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 						TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 			}
 		} else {
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 				if (!tech_pvt->got_bye) {
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
@@ -573,7 +573,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	char *sticky = NULL;
 	const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
-	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -653,7 +653,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			}
 
-			if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 				const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 				tech_pvt->num_codecs = 0;
 				sofia_glue_tech_prepare_codecs(tech_pvt);
@@ -1683,7 +1683,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
-				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+				if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 					tech_pvt->num_codecs = 0;
@@ -2198,7 +2198,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || !tech_pvt->iananame) {
 						sofia_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
-						if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+						if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 							const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 							tech_pvt->num_codecs = 0;
