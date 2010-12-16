@@ -118,8 +118,8 @@ void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 	sigev.channel = signal_data->dchan;
 	sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
 	
-	sigev.ev_data.logevent.dir = dir;
-	sigev.ev_data.logevent.level = 2;
+	sigev.ev_data.trace.dir = dir;
+	sigev.ev_data.trace.type = FTDM_TRACE_TYPE_Q921;
 	
 	/* TODO: Map trace to call ID here */
 	sigev.call_id = 0;
@@ -226,8 +226,8 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 	sigev.channel = signal_data->dchan;
 	sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
 
-	sigev.ev_data.logevent.dir = dir;
-	sigev.ev_data.logevent.level = 3;
+	sigev.ev_data.trace.dir = dir;
+	sigev.ev_data.trace.type = FTDM_TRACE_TYPE_Q931;
 	
 	/* TODO: Map trace to call ID here */
 	

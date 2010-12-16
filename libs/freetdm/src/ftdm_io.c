@@ -281,7 +281,10 @@ FTDM_ENUM_NAMES(SIGNALING_STATUS_NAMES, SIGSTATUS_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t, SIGNALING_STATUS_NAMES, FTDM_SIG_STATE_INVALID)
 
 FTDM_ENUM_NAMES(TRACE_DIR_NAMES, TRACE_DIR_STRINGS)
-FTDM_STR2ENUM(ftdm_str2ftdm_trace_dir, ftdm_trace_dir2str, ftdm_trace_dir_t, TRACE_DIR_NAMES, FTDM_TRACE_INVALID)
+FTDM_STR2ENUM(ftdm_str2ftdm_trace_dir, ftdm_trace_dir2str, ftdm_trace_dir_t, TRACE_DIR_NAMES, FTDM_TRACE_DIR_INVALID)
+
+FTDM_ENUM_NAMES(TRACE_TYPE_NAMES, TRACE_TYPE_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_trace_type, ftdm_trace_type2str, ftdm_trace_type_t, TRACE_TYPE_NAMES, FTDM_TRACE_TYPE_INVALID)
 
 FTDM_ENUM_NAMES(TON_NAMES, TON_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_ton, ftdm_ton2str, ftdm_ton_t, TON_NAMES, FTDM_TON_INVALID)
@@ -2475,12 +2478,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 	UNREFERENCED_PARAMETER(func);
 	UNREFERENCED_PARAMETER(line);
 #endif
-
-	ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 100);
-
 	ftdm_call_set_call_id(&ftdmchan->caller_data);
+	ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 100);
 	ftdm_channel_unlock(ftdmchan);
-
 	return status;
 }
 

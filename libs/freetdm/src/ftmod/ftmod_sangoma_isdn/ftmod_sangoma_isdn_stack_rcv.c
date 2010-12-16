@@ -790,9 +790,9 @@ void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 	mlen = ((SsMsgInfo*)(mBuf->b_rptr))->len;
 	
 	if (trc->t.trc.evnt == TL3PKTTX) {
-		dir = FTDM_TRACE_OUTGOING;
+		dir = FTDM_TRACE_DIR_OUTGOING;
 	} else {
-		dir = FTDM_TRACE_INCOMING;
+		dir = FTDM_TRACE_DIR_INCOMING;
 	}
 	
 	if (mlen) {
@@ -837,9 +837,9 @@ void sngisdn_rcv_q921_trace(BdMngmt *trc, Buffer *mBuf)
 	}
 
 	if (trc->t.trc.evnt == TL2FRMTX) {
-		dir = FTDM_TRACE_OUTGOING;
+		dir = FTDM_TRACE_DIR_OUTGOING;
 	} else {
-		dir = FTDM_TRACE_INCOMING;
+		dir = FTDM_TRACE_DIR_INCOMING;
 	}
 	
 	ftdm_assert(mBuf != NULLP, "Received a Q921 trace with no buffer");
