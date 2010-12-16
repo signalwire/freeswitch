@@ -367,6 +367,7 @@ typedef struct ftdm_channel_config {
 
 /*!
   \brief Signaling status on a given span or specific channel on protocols that support it
+  \note see docs/sigstatus.txt for more extensive documentation on signaling status
  */
 typedef enum {
 	/* The signaling link is down (no d-chans up in the span/group, MFC-R2 bit pattern unidentified) */
