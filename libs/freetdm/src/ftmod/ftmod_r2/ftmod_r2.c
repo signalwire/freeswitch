@@ -461,9 +461,76 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 			openr2_chan_set_idle(r2chan);
 			break;
 		default:
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%s'\n", status);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
 			return FTDM_FAIL;
 	}
+	return FTDM_SUCCESS;
+}
+
+static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_span_sig_status)
+{
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *citer = NULL;
+	uint32_t i;
+
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
+	/* if ALL channels are non-idle, report SUSPENDED. UP otherwise. */
+	*status = FTDM_SIG_STATE_SUSPENDED;
+	for (i = 1, citer = chaniter; citer; citer = ftdm_iterator_next(citer), i++) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+
+		if (ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
+			*status = FTDM_SIG_STATE_UP;
+			break;
+		}
+	}
+	ftdm_iterator_free(chaniter);
+	return FTDM_SUCCESS;
+}
+
+static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
+{
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *citer = NULL;
+	uint32_t span_opr = -1;
+	uint32_t i;
+
+	/* we either set the channels to BLOCK or IDLE */
+	switch(status) {
+		case FTDM_SIG_STATE_DOWN:
+		case FTDM_SIG_STATE_SUSPENDED:
+			span_opr = 0;
+			break;
+		case FTDM_SIG_STATE_UP:
+			span_opr = 1;
+			break;
+		default:
+			ftdm_log(FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
+			return FTDM_FAIL;
+	}
+
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
+	/* iterate over all channels, setting them to the requested state */
+	for (i = 1, citer = chaniter; citer; citer = ftdm_iterator_next(citer), i++) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		openr2_chan_t *r2chan = R2CALL(fchan)->r2chan;
+		if (span_opr == 0) {
+			openr2_chan_set_blocked(r2chan);
+			ftdm_log_chan_msg(fchan, FTDM_LOG_NOTICE, "Channel blocked\n");
+		} else {
+			openr2_chan_set_idle(r2chan);
+			ftdm_log_chan_msg(fchan, FTDM_LOG_NOTICE, "Channel idle\n");
+		}
+	}
+	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
 }
 
@@ -1441,6 +1508,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	span->signal_type = FTDM_SIGTYPE_R2;
 	span->signal_data = r2data;
 	span->outgoing_call = r2_outgoing_call;
+	span->get_span_sig_status = ftdm_r2_get_span_sig_status;
+	span->set_span_sig_status = ftdm_r2_set_span_sig_status;
 	span->get_channel_sig_status = ftdm_r2_get_channel_sig_status;
 	span->set_channel_sig_status = ftdm_r2_set_channel_sig_status;
 
