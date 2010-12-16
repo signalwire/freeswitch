@@ -947,9 +947,9 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 
 	
 	while(!revent && handle->connected) {
-		esl_size_t len;
+		esl_size_t len1;
 		
-		if ((len = esl_buffer_read_packet(handle->packet_buf, handle->socket_buf, sizeof(handle->socket_buf)))) {
+		if ((len1 = esl_buffer_read_packet(handle->packet_buf, handle->socket_buf, sizeof(handle->socket_buf)))) {
 			char *data = (char *) handle->socket_buf;
 			char *p, *e;
 			
