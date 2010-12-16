@@ -468,6 +468,7 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
 			return FTDM_FAIL;
 	}
+	ftdm_r2_set_chan_sig_status(ftdmchan, status);
 	return FTDM_SUCCESS;
 }
 
@@ -528,6 +529,7 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 			openr2_chan_set_idle(r2chan);
 			ftdm_log_chan_msg(fchan, FTDM_LOG_NOTICE, "Channel idle\n");
 		}
+		ftdm_r2_set_chan_sig_status(fchan, status);
 	}
 	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
