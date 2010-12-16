@@ -473,20 +473,16 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_span_sig_status)
 {
-	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *citer = NULL;
-	uint32_t i;
-
-	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	ftdm_iterator_t *chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
 		return FTDM_FAIL;
 	}
 	/* if ALL channels are non-idle, report SUSPENDED. UP otherwise. */
 	*status = FTDM_SIG_STATE_SUSPENDED;
-	for (i = 1, citer = chaniter; citer; citer = ftdm_iterator_next(citer), i++) {
+	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
-
 		if (ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
 			*status = FTDM_SIG_STATE_UP;
 			break;
@@ -501,7 +497,6 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *citer = NULL;
 	uint32_t span_opr = -1;
-	uint32_t i;
 
 	/* we either set the channels to BLOCK or IDLE */
 	switch(status) {
@@ -523,7 +518,7 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 		return FTDM_FAIL;
 	}
 	/* iterate over all channels, setting them to the requested state */
-	for (i = 1, citer = chaniter; citer; citer = ftdm_iterator_next(citer), i++) {
+	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
 		openr2_chan_t *r2chan = R2CALL(fchan)->r2chan;
 		if (span_opr == 0) {
