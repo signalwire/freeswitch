@@ -390,21 +390,31 @@ typedef struct {
 
 typedef enum {
 	/* This is an received frame */
-	FTDM_TRACE_INCOMING,
+	FTDM_TRACE_DIR_INCOMING,
 	/* This is a transmitted frame */
-	FTDM_TRACE_OUTGOING,
+	FTDM_TRACE_DIR_OUTGOING,
 	/* Invalid */
- 	FTDM_TRACE_INVALID,
+ 	FTDM_TRACE_DIR_INVALID,
 } ftdm_trace_dir_t;
 #define TRACE_DIR_STRINGS "INCOMING", "OUTGOING", "INVALID"
 
 /*! \brief Move string to ftdm_trace_dir_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_trace_dir, ftdm_trace_dir2str, ftdm_trace_dir_t)
 
+typedef enum {
+	FTDM_TRACE_TYPE_Q931,
+	FTDM_TRACE_TYPE_Q921,
+	FTDM_TRACE_TYPE_INVALID,
+} ftdm_trace_type_t;
+#define TRACE_TYPE_STRINGS "Q931", "Q921", "INVALID"
+
+/*! \brief Move string to ftdm_trace_type_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trace_type, ftdm_trace_type2str, ftdm_trace_type_t)
+
 typedef struct {
 	/* Direction - incoming or outgoing */
 	ftdm_trace_dir_t dir;
-	uint8_t level; /* 1 for phy layer, 2 for q921/mtp2, 3 for q931/mtp3 */
+	ftdm_trace_type_t type;
 } ftdm_event_trace_t;
 
 /*! \brief Generic signaling message */
@@ -418,7 +428,7 @@ struct ftdm_sigmsg {
 	uint32_t call_id; /*!< unique call id for this call */
 	union {
 		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
-		ftdm_event_trace_t logevent;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
+		ftdm_event_trace_t trace;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
 	}ev_data;
 };
 
