@@ -2386,6 +2386,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *chann
 {
 	switch_assert(channel != NULL);
 
+	switch_channel_set_flag(channel, CF_DIALPLAN);
+
 	switch_mutex_lock(channel->profile_mutex);
 	caller_extension->next = channel->caller_profile->caller_extension;
 	channel->caller_profile->caller_extension = caller_extension;
