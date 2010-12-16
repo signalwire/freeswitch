@@ -277,7 +277,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 	
 	if (freespace < datalen) {
 		esl_size_t new_size, new_block_size;
-		void *data;
+		void *data1;
 		
 		new_size = buffer->datalen + datalen;
 		new_block_size = buffer->datalen + buffer->blocksize;
@@ -286,11 +286,11 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 			new_size = new_block_size;
 		}
 		buffer->head = buffer->data;
-		data = realloc(buffer->data, new_size);
-		if (!data) {
+		data1 = realloc(buffer->data, new_size);
+		if (!data1) {
 			return 0;
 		}
-		buffer->data = data;
+		buffer->data = data1;
 		buffer->head = buffer->data;
 		buffer->datalen = new_size;
 	}
