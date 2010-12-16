@@ -5117,9 +5117,16 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 {
 	if (span->start) {
+		/* check the alarms again before starting the signaling module
+                   this works-around some I/O modules (netborder I/O module) that cannot
+                   check the alarm status before during configuration because the spans are
+                   not really started yet at the I/O level */
+		if (ftdm_set_channels_alarms(span, 0) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%d: Failed to set channel alarms\n", span->span_id);
+			return FTDM_FAIL;
+		}
 		return span->start(span);
 	}
-
 	return FTDM_FAIL;
 }
 
