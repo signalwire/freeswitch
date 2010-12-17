@@ -413,7 +413,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 
         if (i->last_wr_ts) {
             if ((ts <= i->last_wr_ts && (i->last_wr_ts != UINT_MAX || ts == i->last_wr_ts))) {
-                stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
+                if (stfu_log != null_logger && i->debug) {
+                    stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
+                }
                 if (i->in_queue->array_len < i->in_queue->array_size) {
                     i->in_queue->array_len++;
                 }
