@@ -2382,12 +2382,48 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_bool_t in)
+{
+
+	if (in) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(channel, CF_DIALPLAN)) {
+			switch_channel_set_flag(channel, CF_DIALPLAN);
+		
+			switch_mutex_lock(channel->profile_mutex);
+			if (channel->caller_profile->callee_id_name) {
+				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", channel->caller_profile->caller_id_name);
+				channel->caller_profile->caller_id_name = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_name);
+			}
+			channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
+
+			if (channel->caller_profile->callee_id_number) {
+				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", channel->caller_profile->caller_id_number);
+				channel->caller_profile->caller_id_number = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_number);
+			}
+			channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
+			switch_mutex_unlock(channel->profile_mutex);
+		}
+
+		return;
+	}
+
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(channel, CF_DIALPLAN)) {
+		switch_channel_clear_flag(channel, CF_DIALPLAN);
+		switch_mutex_lock(channel->profile_mutex);
+		channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
+		channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
+		switch_mutex_unlock(channel->profile_mutex);
+	}
+	
+}
+
+
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
 {
 	switch_assert(channel != NULL);
 
-	switch_channel_set_flag(channel, CF_DIALPLAN);
-
+	switch_channel_sort_cid(channel, SWITCH_TRUE);
+	
 	switch_mutex_lock(channel->profile_mutex);
 	caller_extension->next = channel->caller_profile->caller_extension;
 	channel->caller_profile->caller_extension = caller_extension;

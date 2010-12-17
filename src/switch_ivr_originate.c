@@ -2383,24 +2383,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					new_profile->chan_name = SWITCH_BLANK_STRING;
 					new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
 
-					if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-						const char *callee_id_name = new_profile->callee_id_name;
-						const char *callee_id_number = new_profile->callee_id_number;
-
-						if (zstr(callee_id_number)) {
-							callee_id_number = caller_caller_profile->destination_number;
-						}
-
-						if (zstr(callee_id_name)) {
-							callee_id_name = callee_id_number;
-						}
-
-						new_profile->caller_id_name = callee_id_name;
-						new_profile->caller_id_number = callee_id_number;
-						new_profile->callee_id_name = SWITCH_BLANK_STRING;
-						new_profile->callee_id_number = SWITCH_BLANK_STRING;
-					}
-
 					if (cid_name_override) {
 						new_profile->caller_id_name = switch_core_strdup(new_profile->pool, cid_name_override);
 					}
