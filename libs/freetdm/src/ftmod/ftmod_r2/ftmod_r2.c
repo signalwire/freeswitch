@@ -456,19 +456,40 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
 static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 {
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
+	openr2_cas_signal_t rxcas, txcas;
+
+	/* get the current rx and tx cas bits */
+	openr2_chan_get_cas(r2chan, &rxcas, &txcas);
+
+	/* if we're already in the state the user asks us to be, we have nothing to do */
+	if (status == FTDM_SIG_STATE_SUSPENDED && txcas == OR2_CAS_BLOCK) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Channel signaling status already in BLOCK state\n");
+		return FTDM_SUCCESS;
+	}
+	if (status == FTDM_SIG_STATE_UP && txcas == OR2_CAS_IDLE) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Channel signaling status already in IDLE state\n");
+		return FTDM_SUCCESS;
+	}
+
+	/* set the signaling as requested and send SIGEVENT_SIGSTATUS_CHANGED, if applicable.
+	 * see docs/sigstatus.txt for details */
 	switch(status) {
-		case FTDM_SIG_STATE_DOWN:
 		case FTDM_SIG_STATE_SUSPENDED:
 			openr2_chan_set_blocked(r2chan);
+			if (rxcas == OR2_CAS_IDLE) {
+				ftdm_r2_set_chan_sig_status(ftdmchan, status);
+			}
 			break;
 		case FTDM_SIG_STATE_UP:
 			openr2_chan_set_idle(r2chan);
+			if (rxcas == OR2_CAS_IDLE) {
+				ftdm_r2_set_chan_sig_status(ftdmchan, status);
+			}
 			break;
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
 			return FTDM_FAIL;
 	}
-	ftdm_r2_set_chan_sig_status(ftdmchan, status);
 	return FTDM_SUCCESS;
 }
 
@@ -484,10 +505,13 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_span_sig_status)
 	*status = FTDM_SIG_STATE_SUSPENDED;
 	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(fchan);
 		if (ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
 			*status = FTDM_SIG_STATE_UP;
+			ftdm_channel_unlock(fchan);
 			break;
 		}
+		ftdm_channel_unlock(fchan);
 	}
 	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
@@ -497,21 +521,6 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 {
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *citer = NULL;
-	uint32_t span_opr = -1;
-
-	/* we either set the channels to BLOCK or IDLE */
-	switch(status) {
-		case FTDM_SIG_STATE_DOWN:
-		case FTDM_SIG_STATE_SUSPENDED:
-			span_opr = 0;
-			break;
-		case FTDM_SIG_STATE_UP:
-			span_opr = 1;
-			break;
-		default:
-			ftdm_log(FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
-			return FTDM_FAIL;
-	}
 
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {
@@ -521,15 +530,13 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 	/* iterate over all channels, setting them to the requested state */
 	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
-		openr2_chan_t *r2chan = R2CALL(fchan)->r2chan;
-		if (span_opr == 0) {
-			openr2_chan_set_blocked(r2chan);
-			ftdm_log_chan_msg(fchan, FTDM_LOG_NOTICE, "Channel blocked\n");
-		} else {
-			openr2_chan_set_idle(r2chan);
-			ftdm_log_chan_msg(fchan, FTDM_LOG_NOTICE, "Channel idle\n");
+		/* we set channel's state through ftdm_r2_set_channel_sig_status(), since it already takes
+		 * care of notifying the user when appropriate */
+		ftdm_channel_lock(fchan);
+		if ((ftdm_r2_set_channel_sig_status(fchan, status)) != FTDM_SUCCESS) {
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to set signaling status to %s\n", ftdm_signaling_status2str(status));
 		}
-		ftdm_r2_set_chan_sig_status(fchan, status);
+		ftdm_channel_unlock(fchan);
 	}
 	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
