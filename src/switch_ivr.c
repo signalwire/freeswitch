@@ -140,7 +140,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	const char *var;
 
 	/*
-	   if (!switch_channel_test_flag(channel, CF_OUTBOUND) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+	   if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
 	   !switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
 	   if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 	   switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot establish media.\n");
@@ -2300,7 +2300,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 			break;
 		}
 
-		stfu_n_eat(jb, ts, 0, read_frame->payload, read_frame->data, read_frame->datalen);
+		stfu_n_eat(jb, ts, read_frame->payload, read_frame->data, read_frame->datalen);
 		ts += interval;
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {

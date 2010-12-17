@@ -725,7 +725,6 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 		name += outbound_profile->destination_number;
 		switch_channel_set_name(m_fsChannel, name);
 
-		switch_channel_set_flag(m_fsChannel, CF_OUTBOUND);
 		switch_channel_set_state(m_fsChannel, CS_INIT);
 	}
 	
@@ -1508,7 +1507,7 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 			break;
 		}
 		case SWITCH_MESSAGE_INDICATE_ANSWER:	{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				return SWITCH_STATUS_FALSE;
 			}
 			AnsweringCall(H323Connection::AnswerCallNow);

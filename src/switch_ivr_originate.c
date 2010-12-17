@@ -1751,6 +1751,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	early_state_t early_state = { 0 };
 	int read_packet = 0;
 	int check_reject = 1;
+	switch_codec_implementation_t read_impl = { 0 };
 	
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
@@ -1777,6 +1778,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
 
+		switch_core_session_get_read_impl(session, &read_impl);
 
 		if ((to_var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 			timelimit_sec = atoi(to_var);
@@ -3066,7 +3068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if ((ringback.fh || silence || ringback.audio_buffer || oglobals.bridge_early_media > -1) && write_frame.codec && write_frame.datalen) {
 						if (silence) {
-							write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
+							write_frame.datalen = read_impl.decoded_bytes_per_packet;
 							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, silence);
 						}
 

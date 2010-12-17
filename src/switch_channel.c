@@ -2386,6 +2386,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *chann
 {
 	switch_assert(channel != NULL);
 
+	switch_channel_set_flag(channel, CF_DIALPLAN);
+
 	switch_mutex_lock(channel->profile_mutex);
 	caller_extension->next = channel->caller_profile->caller_extension;
 	channel->caller_profile->caller_extension = caller_extension;
@@ -2622,7 +2624,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 		msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 		msg.from = channel->name;
 		status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
@@ -2657,7 +2659,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_c
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 		msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
 		msg.from = channel->name;
 		msg.numeric_arg = rv;
@@ -2800,7 +2802,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 
 	switch_assert(channel != NULL);
 
-	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 

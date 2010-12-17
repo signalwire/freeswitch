@@ -357,7 +357,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			goto error;
 		}
 
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			switch_channel_answer(channel);
 			switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
 			switch_ivr_session_transfer(session, "auto_answer", NULL, NULL);
@@ -4114,7 +4114,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 		}
 
-		if (channel && sip && (status == 300 || status == 301 || status == 302 || status == 305) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (channel && sip && (status == 300 || status == 301 || status == 302 || status == 305) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			sip_contact_t *p_contact = sip->sip_contact;
 			int i = 0;
 			char var_name[80];
@@ -4645,7 +4645,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		status = 183;
 	}
 
-	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
 			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
@@ -4692,7 +4692,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		if (r_sdp) {
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) && !switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "PROXY MEDIA");
 				}
 				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
@@ -4715,7 +4715,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 				goto done;
 			} else {
-				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && !switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "DELAYED NEGOTIATION");
 				} else {
 					if (sofia_glue_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
@@ -4910,7 +4910,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 							if (!switch_channel_media_ready(channel)) {
-								if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+								if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 									//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 									tech_pvt->num_codecs = 0;
@@ -6255,7 +6255,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (!is_nat && profile->nat_acl_count) {
 		uint32_t x = 0;
-		int ok = 1;
+		int contact_private_ip = 1;
+		int network_private_ip = 0;
 		char *last_acl = NULL;
 		const char *contact_host = NULL;
 
@@ -6264,35 +6265,37 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 		if (!zstr(contact_host)) {
+			/* NAT mode double check logic and examples.
+
+			   Example 1: the contact_host is 192.168.1.100 and the network_ip is also 192.168.1.100 the end point 
+			   is most likely behind nat with us so we need to veto that decision to turn on nat processing.
+
+			   Example 2: the contact_host is 192.168.1.100 and the network_ip is 192.0.2.100 which is a public internet ip
+			   the remote endpoint is likely behind a remote nat traversing the public internet. 
+
+			   This secondary check is here to double check the conclusion of nat settigs to ensure we don't set net
+			   in cases where we don't really need to be doing this. 
+
+			   Why would you want to do this?  Well if your FreeSWITCH is behind nat and you want to talk to endpoints behind
+			   remote NAT over the public internet in addition to endpoints behind nat with you.  This simplifies that process.
+
+			*/
+
 			for (x = 0; x < profile->nat_acl_count; x++) {
 				last_acl = profile->nat_acl[x];
-				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
-					/* NAT mode double check logic and examples.
-
-					   Example 1: the contact_host is 192.168.1.100 and the network_ip is also 192.168.1.100 the end point 
-					   is most likely behind nat with us so we need to veto that decision to turn on nat processing.
-
-					   Example 2: the contact_host is 192.168.1.100 and the network_ip is 192.0.2.100 which is a public internet ip
-					   the remote endpoint is likely behind a remote nat traversing the public internet. 
-
-					   This secondary check is here to double check the conclusion of nat settigs to ensure we don't set net
-					   in cases where we don't really need to be doing this. 
-
-					   Why would you want to do this?  Well if your FreeSWITCH is behind nat and you want to talk to endpoints behind
-					   remote NAT over the public internet in addition to endpoints behind nat with you.  This simplifies that process.
-					   
-					 */
-					if ((ok = switch_check_network_list_ip(network_ip, last_acl))) { 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Endpoint is already inside nat with us.\n");
-						ok = 0;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Decision stands they are behind nat.\n");
-					}
+				if ((contact_private_ip = switch_check_network_list_ip(contact_host, last_acl))) {
 					break;
 				}
 			}
+			if (contact_private_ip) {
+				for (x = 0; x < profile->nat_acl_count; x++) {
+					if ((network_private_ip = switch_check_network_list_ip(network_ip, profile->nat_acl[x]))) {
+						break;
+					}
+				}
+			}
 
-			if (ok) {
+			if (contact_private_ip && !network_private_ip) {
 				is_nat = last_acl;
 			}
 		}

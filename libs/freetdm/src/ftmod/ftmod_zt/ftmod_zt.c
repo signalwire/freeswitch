@@ -53,42 +53,48 @@ static struct {
     float txgain;
 } zt_globals;
 
+#if defined(__FreeBSD__)
+typedef unsigned long ioctlcmd;
+#else
+typedef int ioctlcmd;
+#endif
+
 /**
  * \brief General IOCTL codes
  */
 struct ioctl_codes {
-    int GET_BLOCKSIZE;
-    int SET_BLOCKSIZE;
-    int FLUSH;
-    int SYNC;
-    int GET_PARAMS;
-    int SET_PARAMS;
-    int HOOK;
-    int GETEVENT;
-    int IOMUX;
-    int SPANSTAT;
-    int MAINT;
-    int GETCONF;
-    int SETCONF;
-    int CONFLINK;
-    int CONFDIAG;
-    int GETGAINS;
-    int SETGAINS;
-    int SPANCONFIG;
-    int CHANCONFIG;
-    int SET_BUFINFO;
-    int GET_BUFINFO;
-    int AUDIOMODE;
-    int ECHOCANCEL;
-    int HDLCRAWMODE;
-    int HDLCFCSMODE;
-    int SPECIFY;
-    int SETLAW;
-    int SETLINEAR;
-    int GETCONFMUTE;
-    int ECHOTRAIN;
-    int SETTXBITS;
-    int GETRXBITS;
+    ioctlcmd GET_BLOCKSIZE;
+    ioctlcmd SET_BLOCKSIZE;
+    ioctlcmd FLUSH;
+    ioctlcmd SYNC;
+    ioctlcmd GET_PARAMS;
+    ioctlcmd SET_PARAMS;
+    ioctlcmd HOOK;
+    ioctlcmd GETEVENT;
+    ioctlcmd IOMUX;
+    ioctlcmd SPANSTAT;
+    ioctlcmd MAINT;
+    ioctlcmd GETCONF;
+    ioctlcmd SETCONF;
+    ioctlcmd CONFLINK;
+    ioctlcmd CONFDIAG;
+    ioctlcmd GETGAINS;
+    ioctlcmd SETGAINS;
+    ioctlcmd SPANCONFIG;
+    ioctlcmd CHANCONFIG;
+    ioctlcmd SET_BUFINFO;
+    ioctlcmd GET_BUFINFO;
+    ioctlcmd AUDIOMODE;
+    ioctlcmd ECHOCANCEL;
+    ioctlcmd HDLCRAWMODE;
+    ioctlcmd HDLCFCSMODE;
+    ioctlcmd SPECIFY;
+    ioctlcmd SETLAW;
+    ioctlcmd SETLINEAR;
+    ioctlcmd GETCONFMUTE;
+    ioctlcmd ECHOTRAIN;
+    ioctlcmd SETTXBITS;
+    ioctlcmd GETRXBITS;
 };
 
 /**

@@ -1324,7 +1324,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_profile = tech_pvt->caller_profile;
 		caller_profile->destination_number = rdest;
 
-		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		gsmopen_call(tech_pvt, rdest, 30);
