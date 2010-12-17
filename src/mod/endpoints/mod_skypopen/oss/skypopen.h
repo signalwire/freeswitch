@@ -20,6 +20,11 @@
 
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 
+#define SKYPOPEN_BLK 960
+#define SKYPOPEN_SLEEP 10
+
+#define CENTOS
+
 #ifndef SKYPOPEN_MAJOR
 #define SKYPOPEN_MAJOR 14   /* dynamic major by default */
 #endif
@@ -28,12 +33,18 @@
 #define SKYPOPEN_NR_DEVS 1    /* skypopen0 through skypopen3 */
 #endif
 
+#define WANT_HRTIMER 
 struct skypopen_dev {
 	struct cdev cdev;	  /* Char device structure		*/
 	wait_queue_head_t inq; /* read and write queues */
 	wait_queue_head_t outq; /* read and write queues */
+#ifndef WANT_HRTIMER 
 	struct timer_list timer_inq;
 	struct timer_list timer_outq;
+#else// WANT_HRTIMER 
+	struct hrtimer timer_inq;
+	struct hrtimer timer_outq;
+#endif// WANT_HRTIMER 
 	int timer_inq_started;
 	int timer_outq_started;
 };
@@ -50,11 +61,11 @@ extern int skypopen_nr_devs;
  * Prototypes for shared functions
  */
 
-ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
-                   loff_t *f_pos);
-ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
-                    loff_t *f_pos);
-int     skypopen_ioctl(struct inode *inode, struct file *filp,
-                    unsigned int cmd, unsigned long arg);
+//ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
+                   //loff_t *f_pos);
+//ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
+                    //loff_t *f_pos);
+//int     skypopen_ioctl(struct inode *inode, struct file *filp,
+                    //unsigned int cmd, unsigned long arg);
 
 #endif /* _SKYPOPEN_H_ */
