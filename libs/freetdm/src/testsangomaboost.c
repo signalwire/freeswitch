@@ -49,12 +49,6 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(__linux__) && !defined(__USE_BSD)
-#define __USE_BSD
-#endif
-#ifndef WIN32
-#include <unistd.h>
-#endif
 #include "freetdm.h"
 
 

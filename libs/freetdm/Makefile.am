@@ -49,6 +49,7 @@ if HAVE_SNG_ISDN
 INCS += -I/usr/include/sng_isdn
 endif 
 
+# we needed to separate CFLAGS in FTDM_COMPAT_CFLAGS and FTDM_CFLAGS due to -c99 which causes problems with wanpipe headers
 FTDM_COMPAT_CFLAGS = $(INCS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_COMPAT_CFLAGS@ @DEFS@
 FTDM_CFLAGS = $(INCS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE   = $(CC) $(FTDM_CFLAGS)
@@ -183,8 +184,8 @@ ftmod_analog_em_la_LIBADD  = libfreetdm.la
 if HAVE_LIBSANGOMA
 mod_LTLIBRARIES += ftmod_wanpipe.la
 ftmod_wanpipe_la_SOURCES = $(SRC)/ftmod/ftmod_wanpipe/ftmod_wanpipe.c
-#some structures within Wanpipe drivers are not c99 compatible, so we need to compile ftmod_wanpipe
-#without c99 flags
+# some structures within Wanpipe drivers are not c99 compatible, so we need to compile ftmod_wanpipe
+# without c99 flags, use FTDM_COMPAT_CFLAGS instead
 ftmod_wanpipe_la_CFLAGS  = $(AM_CFLAGS) $(FTDM_COMPAT_CFLAGS) -D__LINUX__ -I/usr/include/wanpipe
 ftmod_wanpipe_la_LDFLAGS = -shared -module -avoid-version -lsangoma
 ftmod_wanpipe_la_LIBADD  = libfreetdm.la
