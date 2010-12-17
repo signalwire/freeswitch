@@ -486,9 +486,6 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 				ftdm_r2_set_chan_sig_status(ftdmchan, status);
 			}
 			break;
-		case FTDM_SIG_STATE_DOWN:
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "The user is not allowed to set signaling status to DOWN\n");
-			return FTDM_FAIL;
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
 			return FTDM_FAIL;
@@ -508,10 +505,13 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_span_sig_status)
 	*status = FTDM_SIG_STATE_SUSPENDED;
 	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(fchan);
 		if (ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
 			*status = FTDM_SIG_STATE_UP;
+			ftdm_channel_unlock(fchan);
 			break;
 		}
+		ftdm_channel_unlock(fchan);
 	}
 	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
@@ -521,11 +521,6 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 {
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *citer = NULL;
-
-	if (status == FTDM_SIG_STATE_DOWN) {
-		ftdm_log(FTDM_LOG_WARNING, "The user is not allowed to set the span signaling status to DOWN\n");
-		return FTDM_FAIL;
-	}
 
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {
@@ -537,9 +532,11 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_span_sig_status)
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
 		/* we set channel's state through ftdm_r2_set_channel_sig_status(), since it already takes
 		 * care of notifying the user when appropriate */
+		ftdm_channel_lock(fchan);
 		if ((ftdm_r2_set_channel_sig_status(fchan, status)) != FTDM_SUCCESS) {
 			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to set signaling status to %s\n", ftdm_signaling_status2str(status));
 		}
+		ftdm_channel_unlock(fchan);
 	}
 	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;

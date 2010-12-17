@@ -2488,9 +2488,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *ftdmchan, 
 {
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel\n");
 	ftdm_assert_return(ftdmchan->span != NULL, FTDM_FAIL, "Null span\n");
-	
+
+	if (sigstatus == FTDM_SIG_STATE_DOWN) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "The user is not allowed to set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
+		return FTDM_FAIL;
+	}
+
 	if (ftdmchan->span->set_channel_sig_status) {
-		return ftdmchan->span->set_channel_sig_status(ftdmchan, sigstatus);
+		ftdm_status_t res;
+		ftdm_channel_lock(ftdmchan);
+		res = ftdmchan->span->set_channel_sig_status(ftdmchan, sigstatus);
+		ftdm_channel_unlock(ftdmchan);
+		return res;
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "set_channel_sig_status method not implemented!\n");
 		return FTDM_FAIL;
@@ -2504,7 +2513,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_sig_status(ftdm_channel_t *ftdmchan, 
 	ftdm_assert_return(sigstatus != NULL, FTDM_FAIL, "Null sig status parameter\n");
 	
 	if (ftdmchan->span->get_channel_sig_status) {
-		return ftdmchan->span->get_channel_sig_status(ftdmchan, sigstatus);
+		ftdm_status_t res;
+		ftdm_channel_lock(ftdmchan);
+		res = ftdmchan->span->get_channel_sig_status(ftdmchan, sigstatus);
+		ftdm_channel_unlock(ftdmchan);
+		return res;
 	} else {
 		/* don't log error here, it can be called just to test if its supported */
 		return FTDM_NOTIMPL;
@@ -2514,6 +2527,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_sig_status(ftdm_channel_t *ftdmchan, 
 FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signaling_status_t sigstatus)
 {
 	ftdm_assert_return(span != NULL, FTDM_FAIL, "Null span\n");
+	
+	if (sigstatus == FTDM_SIG_STATE_DOWN) {
+		ftdm_log(FTDM_LOG_WARNING, "The user is not allowed to set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
+		return FTDM_FAIL;
+	}
 	
 	if (span->set_span_sig_status) {
 		return span->set_span_sig_status(span, sigstatus);
