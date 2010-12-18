@@ -1136,6 +1136,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		direction = FTDM_BOTTOM_UP;
 	} else if (*argv[1] == 'a') {
 		direction =  FTDM_TOP_DOWN;
+	} else if (*argv[1] == 'r') {
+		direction =  FTDM_RR_DOWN;
+	} else if (*argv[1] == 'R') {
+		direction =  FTDM_RR_UP;
 	} else {
 		chan_id = atoi(argv[1]);
 	}

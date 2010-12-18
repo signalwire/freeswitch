@@ -144,7 +144,9 @@ typedef enum {
 /*! \brief Hunting direction (when hunting for free channels) */
 typedef enum {
 	FTDM_TOP_DOWN,
-	FTDM_BOTTOM_UP
+	FTDM_BOTTOM_UP,
+	FTDM_RR_DOWN,
+	FTDM_RR_UP,
 } ftdm_direction_t;
 
 /*! \brief I/O channel type */
