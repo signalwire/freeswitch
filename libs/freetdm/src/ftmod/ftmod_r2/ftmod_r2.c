@@ -33,6 +33,7 @@
  * Contributors: 
  *
  * Arnaldo Pereira <arnaldo@sangoma.com>
+ * Ricardo Barroetaveña <rbarroetavena@anura.com.ar>
  *
  */
 
@@ -471,7 +472,7 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	}
 
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
-			ftdmchan->caller_data.cid_num.digits, 
+			ftdmchan->caller_data.pres == FTDM_PRES_ALLOWED ? ftdmchan->caller_data.cid_num.digits : NULL,
 			ftdmchan->caller_data.dnis.digits, 
 			category);
 
