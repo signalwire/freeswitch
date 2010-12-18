@@ -205,10 +205,14 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -DPIC)
     APR_ADDTO(SWITCH_AM_CFLAGS, -erroff=E_END_OF_LOOP_CODE_NOT_REACHED)
     APR_ADDTO(SWITCH_AM_CFLAGS, -errtags=yes)
+    APR_ADDTO(SWITCH_AM_CFLAGS, -D__FUNCTION__=__func__ )
+    APR_ADDTO(SWITCH_AM_CFLAGS, -mt)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -errtags=yes)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -KPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -DPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, "-features=extensions")
+    APR_ADDTO(SWITCH_AM_CXXFLAGS, -D__FUNCTION__=__func__)
+    APR_ADDTO(SWITCH_AM_CXXFLAGS, -mt)
 
     APR_ADDTO(SWITCH_AM_LDFLAGS, -R${prefix}/lib)
     if test "${enable_64}" = "yes"; then
