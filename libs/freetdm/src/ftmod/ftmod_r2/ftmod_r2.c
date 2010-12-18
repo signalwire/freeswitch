@@ -33,6 +33,7 @@
  * Contributors: 
  *
  * Arnaldo Pereira <arnaldo@sangoma.com>
+ * Ricardo Barroetaveña <rbarroetavena@anura.com.ar>
  *
  */
 
@@ -380,11 +381,72 @@ static void ft_r2_answer_call(ftdm_channel_t *ftdmchan)
 	R2CALL(ftdmchan)->answer_pending = 0;
 }
 
+static __inline__ ftdm_calling_party_category_t ftdm_openr2_cpc_to_r2_ftdm_cpc(openr2_calling_party_category_t cpc)
+{
+	switch (cpc) {
+	case OR2_CALLING_PARTY_CATEGORY_UNKNOWN:
+		return FTDM_CPC_UNKNOWN;
+
+	case OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER:
+		return FTDM_CPC_ORDINARY;
+
+	case OR2_CALLING_PARTY_CATEGORY_NATIONAL_PRIORITY_SUBSCRIBER:
+		return FTDM_CPC_PRIORITY;
+
+	case OR2_CALLING_PARTY_CATEGORY_INTERNATIONAL_SUBSCRIBER:
+		return FTDM_CPC_UNKNOWN;
+
+	case OR2_CALLING_PARTY_CATEGORY_INTERNATIONAL_PRIORITY_SUBSCRIBER:
+		return FTDM_CPC_UNKNOWN;
+
+	case OR2_CALLING_PARTY_CATEGORY_TEST_EQUIPMENT:
+		return FTDM_CPC_TEST;
+
+	case OR2_CALLING_PARTY_CATEGORY_PAY_PHONE:
+		return FTDM_CPC_PAYPHONE;
+
+	case OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL:
+		return FTDM_CPC_OPERATOR;
+	}
+	return FTDM_CPC_INVALID;
+}
+
+static __inline openr2_calling_party_category_t ftdm_r2_ftdm_cpc_to_openr2_cpc(ftdm_calling_party_category_t cpc)
+{
+	switch (cpc) {
+	case FTDM_CPC_UNKNOWN:
+		return OR2_CALLING_PARTY_CATEGORY_UNKNOWN;
+
+	case FTDM_CPC_OPERATOR:
+		return OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL;
+
+	case FTDM_CPC_ORDINARY:
+		return OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER;
+
+	case FTDM_CPC_PRIORITY:
+		return OR2_CALLING_PARTY_CATEGORY_NATIONAL_PRIORITY_SUBSCRIBER;
+
+	case FTDM_CPC_DATA:
+		return OR2_CALLING_PARTY_CATEGORY_UNKNOWN;
+
+	case FTDM_CPC_TEST:
+		return OR2_CALLING_PARTY_CATEGORY_TEST_EQUIPMENT;
+
+	case FTDM_CPC_PAYPHONE:
+		return OR2_CALLING_PARTY_CATEGORY_PAY_PHONE;
+
+	case FTDM_CPC_INVALID:
+		return OR2_CALLING_PARTY_CATEGORY_UNKNOWN;
+	}
+	return OR2_CALLING_PARTY_CATEGORY_UNKNOWN;
+}
+
 /* this function must be called with the chan mutex held! */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 {
 	openr2_call_status_t callstatus;
 	ftdm_r2_data_t *r2data;
+	openr2_calling_party_category_t category = OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER;
 
 	r2data = ftdmchan->span->signal_data;
 
@@ -397,6 +459,12 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 
 	ft_r2_clean_call(ftdmchan->call_data);
 
+	if (ftdmchan->caller_data.cpc == FTDM_CPC_INVALID || ftdmchan->caller_data.cpc == FTDM_CPC_UNKNOWN) {
+		category = r2data->category;
+	} else {
+		category = ftdm_r2_ftdm_cpc_to_openr2_cpc(ftdmchan->caller_data.cpc);
+	}
+
 	/* start io dump */
 	if (r2data->mf_dump_size) {
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_INPUT_DUMP, &r2data->mf_dump_size);
@@ -404,9 +472,9 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	}
 
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
-			ftdmchan->caller_data.cid_num.digits, 
+			ftdmchan->caller_data.pres == FTDM_PRES_ALLOWED ? ftdmchan->caller_data.cid_num.digits : NULL,
 			ftdmchan->caller_data.dnis.digits, 
-			r2data->category);
+			category);
 
 	if (callstatus) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
@@ -622,6 +690,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	} else {
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 	}
+	ftdmchan->caller_data.cpc = ftdm_openr2_cpc_to_r2_ftdm_cpc(category);
 }
 
 /*

@@ -493,6 +493,7 @@ struct ftdm_span {
 	ftdm_trunk_type_t trunk_type;
 	ftdm_analog_start_type_t start_type;
 	ftdm_signal_type_t signal_type;
+	uint32_t last_used_index;
 	/* Private signaling data. Do not touch unless you are a signaling module */
 	void *signal_data;
 	fio_signal_cb_t signal_cb;

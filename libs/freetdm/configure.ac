@@ -82,7 +82,7 @@ sun)
 	fi
 	;;
 *)
-	COMP_VENDOR_COMPAT_CFLAGS="-Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+	COMP_VENDOR_COMPAT_CFLAGS="-Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
 	COMP_VENDOR_CFLAGS="-std=c99 $COMP_VENDOR_COMPAT_CFLAGS"
 	;;
 esac

@@ -39,9 +39,12 @@
 extern "C" {
 #endif
 
+#if defined(__linux__) && !defined(__USE_BSD)
+#define __USE_BSD
+#endif
+
 #include "ftdm_declare.h"
 #include "ftdm_threadmutex.h"
-
 #include <string.h>
 
 #ifndef __WINDOWS__

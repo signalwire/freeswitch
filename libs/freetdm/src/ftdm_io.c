@@ -301,6 +301,9 @@ FTDM_STR2ENUM(ftdm_str2ftdm_bearer_cap, ftdm_bearer_cap2str, ftdm_bearer_cap_t, 
 FTDM_ENUM_NAMES(USER_LAYER1_PROT_NAMES, USER_LAYER1_PROT_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t, USER_LAYER1_PROT_NAMES, FTDM_USER_LAYER1_PROT_INVALID)
 
+FTDM_ENUM_NAMES(CALLING_PARTY_CATEGORY_NAMES, CALLING_PARTY_CATEGORY_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t, CALLING_PARTY_CATEGORY_NAMES, FTDM_CPC_INVALID)
+
 static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
 
 static const char *cut_path(const char *in)
@@ -1703,6 +1706,21 @@ static ftdm_status_t __inline__ get_best_rated(ftdm_channel_t **fchan, ftdm_chan
 	return FTDM_SUCCESS;
 }
 
+static uint32_t __inline__ rr_next(uint32_t last, uint32_t min, uint32_t max, ftdm_direction_t direction)
+{
+	uint32_t next = min;
+
+	ftdm_log(FTDM_LOG_DEBUG, "last = %d, min = %d, max = %d\n", last, min, max);
+
+	if (direction == FTDM_RR_DOWN) {
+		next = (last >= max) ? min : ++last;
+	} else {
+		next = (last <= min) ? max : --last;
+	}
+	return next;
+}
+
+
 FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan)
 {
 	int availability = -1;
@@ -1745,6 +1763,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 	
 	if (direction == FTDM_TOP_DOWN) {
 		i = 0;
+	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+		i = rr_next(group->last_used_index, 0, group->chan_count - 1, direction);
 	} else {
 		i = group->chan_count-1;
 	}
@@ -1759,16 +1779,24 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 
 		if (request_voice_channel(check, ftdmchan, caller_data, direction)) {
 			status = FTDM_SUCCESS;
+			if (direction == FTDM_RR_UP || direction == FTDM_RR_DOWN) {
+				group->last_used_index = i;
+			}
 			break;
 		}
 
 		calculate_best_rate(check, &best_rated, &best_rate);
 
 		if (direction == FTDM_TOP_DOWN) {
-			if (i >= group->chan_count) {
+			if (i >= (group->chan_count - 1)) {
 				break;
 			}
 			i++;
+		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+			if (check == best_rated) {
+				group->last_used_index = i;
+			}
+			i = rr_next(i, 0, group->chan_count - 1, direction);
 		} else {
 			if (i == 0) {
 				break;
@@ -1847,6 +1875,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 	
 	if (direction == FTDM_TOP_DOWN) {
 		i = 1;
+	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+		i = rr_next(span->last_used_index, 1, span->chan_count, direction);
 	} else {
 		i = span->chan_count;
 	}	
@@ -1855,6 +1885,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 
 		if (direction == FTDM_TOP_DOWN) {
 			if (i > span->chan_count) {
+				break;
+			}
+		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+			if (i == span->last_used_index) {
 				break;
 			}
 		} else {
@@ -1870,6 +1904,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 
 		if (request_voice_channel(check, ftdmchan, caller_data, direction)) {
 			status = FTDM_SUCCESS;
+			if (direction == FTDM_RR_UP || direction == FTDM_RR_DOWN) {
+				span->last_used_index = i;
+			}
 			break;
 		}
 			
@@ -1877,6 +1914,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 
 		if (direction == FTDM_TOP_DOWN) {
 			i++;
+		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+			if (check == best_rated) {
+				span->last_used_index = i;
+			}
+			i = rr_next(i, 1, span->chan_count, direction);
 		} else {
 			i--;
 		}

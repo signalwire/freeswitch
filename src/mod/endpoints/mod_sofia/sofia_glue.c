@@ -2669,7 +2669,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 							  tech_pvt->rm_encoding, 
 							  tech_pvt->codec_ms,
 							  tech_pvt->rm_rate);
-
+			
+			switch_yield(tech_pvt->read_impl.microseconds_per_packet);
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;

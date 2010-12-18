@@ -1544,21 +1544,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		new_profile->destination_number = switch_core_strdup(new_profile->pool, extension);
 		new_profile->rdnis = switch_core_strdup(new_profile->pool, profile->destination_number);
 
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			if (profile->callee_id_name) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", new_profile->caller_id_name);
-				new_profile->caller_id_name = switch_core_strdup(new_profile->pool, profile->callee_id_name);
-				profile->callee_id_name = SWITCH_BLANK_STRING;
-			}
-
-			if (profile->callee_id_number) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", new_profile->caller_id_number);
-				new_profile->caller_id_number = switch_core_strdup(new_profile->pool, profile->callee_id_number);
-				profile->callee_id_number = SWITCH_BLANK_STRING;
-			}
-		}
-		
-
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
 		/* If HANGUP_AFTER_BRIDGE is set to 'true', SWITCH_SIGNAL_BRIDGE_VARIABLE 
