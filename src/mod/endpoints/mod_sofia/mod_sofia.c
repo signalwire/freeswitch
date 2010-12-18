@@ -1084,7 +1084,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									tech_pvt->last_ts = 0;
 
 									/* inform them of the codec they are actually sending */
-
+#if 0
 									if (++tech_pvt->codec_reinvites > 2) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 														  "Ok, some devices *cough* X-lite *cough*\n"
@@ -1093,7 +1093,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									} else {
 										sofia_glue_do_invite(session);
 									}
+#endif
 
+									*frame = &silence_frame;
+									return SWITCH_STATUS_SUCCESS;
 								}
 
 							}
