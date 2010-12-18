@@ -265,6 +265,21 @@ typedef enum {
 #define USER_LAYER1_PROT_STRINGS "V.110", "u-law", "a-law", "Invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t)
 
+/*! Calling Party Category */
+typedef enum {
+	FTDM_CPC_UNKNOWN,
+	FTDM_CPC_OPERATOR,
+	FTDM_CPC_ORDINARY,
+	FTDM_CPC_PRIORITY,
+	FTDM_CPC_DATA,
+	FTDM_CPC_TEST,
+	FTDM_CPC_PAYPHONE,
+	FTDM_CPC_INVALID
+} ftdm_calling_party_category_t;
+#define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t)
+
+
 /*! \brief Number abstraction */
 typedef struct {
 	char digits[25];
@@ -294,7 +309,8 @@ typedef struct ftdm_caller_data {
 	ftdm_bearer_cap_t bearer_capability;
 	/* user information layer 1 protocol */
 	ftdm_user_layer1_prot_t bearer_layer1;
-	ftdm_variable_container_t variables; /*!<variables attached to this call */
+	ftdm_calling_party_category_t cpc; /*!< Calling party category */
+	ftdm_variable_container_t variables; /*!< Variables attached to this call */
 	/* We need call_id inside caller_data for the user to be able to retrieve 
 	 * the call_id when ftdm_channel_call_place is called. This is the only time
 	 * that the user can use caller_data.call_id to obtain the call_id. The user

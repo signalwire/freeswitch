@@ -1278,6 +1278,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
 
+	if ((var = channel_get_variable(session, var_event, "freetdm_calling_party_category"))) {
+		ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
+	}
+
 	if ((var = channel_get_variable(session, var_event, "freetdm_custom_call_data"))) {
 		ftdm_set_string(caller_data.raw_data, var);
 		caller_data.raw_data_len = (uint32_t)strlen(var);
