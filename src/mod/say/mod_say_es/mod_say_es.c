@@ -39,8 +39,9 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
+ * François Delawarde <fdelawarde@wirelessmundi.com>
  *
- * mod_say_es.c -- Say for English
+ * mod_say_es.c -- Say for Spanish
  *
  */
 
@@ -102,7 +103,7 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 			break;
 		default:
 			say_file("digits/%d.wav", a);
-			say_file("digits/hundred.wav");
+			say_file("digits/hundreds.wav");
 			break;
 		}
 	}
@@ -175,7 +176,12 @@ static switch_status_t es_say_general_count(switch_core_session_t *session, char
 		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			/* specific case, one million => un millón */
+			if (!places[8] && !places[7] && (places[6] == 1)) {
+				say_file("digits/un.wav");
+				say_file("digits/million.wav");
+			}
+			else if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/millions.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
 			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
