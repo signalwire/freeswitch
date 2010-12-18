@@ -70,10 +70,12 @@ config.status
 configure.lineno
 /freeswitch
 /fs_cli
+/fs_encode
 /fs_ivrd
 /libtool
 /modules.conf
 /quiet_libtool
+/tone2wav
 /scripts/fsxs
 /scripts/gentls_cert
 /a.out.dSYM

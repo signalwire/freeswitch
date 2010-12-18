@@ -544,5 +544,11 @@ struct code2str dcodQ931GenDigitsTypeTable[] = {
 	{-1, "Invalid"},
 };
 
+struct code2str dcodQ931TypeOfSubaddressTable[] = {
+	{ 0x00, "NSAP"},
+	{ 0x02, "User-specified"},
+	{ -1,   "Invalid"},
+};
+
 #endif /* __FTMOD_SANGOMA_ISDN_TRACE_H__ */
 

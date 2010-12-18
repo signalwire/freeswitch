@@ -50,7 +50,12 @@ bool BoardPassive::KhompPvtPassive::validContexts(
 {
     DBG(FUNC,PVT_FMT(_target,"(Passive) c"));
 
-    contexts.push_back(Opt::_context_pr);
+    if(!_group_context.empty())
+    {
+        contexts.push_back(_group_context);
+    }
+
+    contexts.push_back(Opt::_options._context_pr());
 
     for (MatchExtension::ContextListType::iterator i = contexts.begin(); i != contexts.end(); i++)
     {

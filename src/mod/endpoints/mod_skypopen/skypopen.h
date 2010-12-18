@@ -75,7 +75,9 @@
 #define MY_EVENT_INCOMING_RAW "skypopen::incoming_raw"
 
 #define SAMPLERATE_SKYPOPEN 16000
-#define SAMPLES_PER_FRAME SAMPLERATE_SKYPOPEN/50
+#define MS_SKYPOPEN 20
+#define SAMPLES_PER_FRAME (SAMPLERATE_SKYPOPEN/(1000/MS_SKYPOPEN))
+#define BYTES_PER_FRAME (SAMPLES_PER_FRAME * sizeof(short))
 
 #ifdef SKYPOPEN_C_VER
 #ifdef MODSKYPOPEN_C_VER
@@ -339,6 +341,7 @@ struct private_object {
 	chat_t chats[MAX_CHATS];
 	uint32_t report_incoming_chatmessages;
 	switch_timer_t timer_read;
+	switch_timer_t timer_read_srv;
 	switch_timer_t timer_write;
 	int begin_to_write;
 	int begin_to_read;

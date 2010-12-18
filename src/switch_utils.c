@@ -726,18 +726,31 @@ SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 	if (zstr(ip))
 		return SWITCH_FALSE;
 
-	return (strncmp(ip, "10.", 3) &&
-			strncmp(ip, "192.168.", 8) &&
-			strncmp(ip, "127.", 4) &&
+	return (strncmp(ip, "10.", 3) &&       /* 10.0.0.0        -   10.255.255.255  (10/8 prefix)       */
+			strncmp(ip, "192.168.", 8) &&  /* 192.168.0.0     -   192.168.255.255 (192.168/16 prefix) */
+			strncmp(ip, "127.", 4) &&      /* 127.0.0.0       -   127.255.255.255 (127/8 prefix)      */
 			strncmp(ip, "255.", 4) &&
-			strncmp(ip, "0.", 2) &&
+			strncmp(ip, "0.", 2) &&       
 			strncmp(ip, "1.", 2) &&
 			strncmp(ip, "2.", 2) &&
-			strncmp(ip, "172.16.", 7) &&
+			strncmp(ip, "172.16.", 7) &&   /* 172.16.0.0      -   172.31.255.255  (172.16/12 prefix)  */
 			strncmp(ip, "172.17.", 7) &&
 			strncmp(ip, "172.18.", 7) &&
 			strncmp(ip, "172.19.", 7) &&
-			strncmp(ip, "172.2", 5) && strncmp(ip, "172.30.", 7) && strncmp(ip, "172.31.", 7) && strncmp(ip, "192.0.2.", 8) && strncmp(ip, "169.254.", 8)
+			strncmp(ip, "172.20.", 7) &&
+			strncmp(ip, "172.21.", 7) &&
+			strncmp(ip, "172.22.", 7) &&
+			strncmp(ip, "172.23.", 7) &&
+			strncmp(ip, "172.24.", 7) &&
+			strncmp(ip, "172.25.", 7) &&
+			strncmp(ip, "172.26.", 7) &&
+			strncmp(ip, "172.27.", 7) &&
+			strncmp(ip, "172.28.", 7) &&
+			strncmp(ip, "172.29.", 7) &&
+			strncmp(ip, "172.30.", 7) &&
+			strncmp(ip, "172.31.", 7) &&
+			strncmp(ip, "192.0.2.", 8) &&  /* 192.0.2.0       -   192.0.2.255      (192.0.2/24 prefix) */
+			strncmp(ip, "169.254.", 8)     /* 169.254.0.0     -   169.254.255.255  (169.254/16 prefix) */
 		)? SWITCH_FALSE : SWITCH_TRUE;
 }
 

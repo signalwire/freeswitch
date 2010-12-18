@@ -63,14 +63,7 @@ typedef enum
 SpecFlagType;
 
 typedef unsigned int SpecFlagsType;
-
-
 typedef Function::Function3 < bool, unsigned int, unsigned int, SpecFlagsType & > SpecFunType;
-
-
-//SpecRetType processSpecAtom(std::string &, SpecFlagsType &, SpecFunType &);
-//SpecRetType processSpecAtoms(std::string &, SpecFlagsType &, SpecFunType &);
-//bool processCallChannelString(std::string &, Board::KhompPvt *&, int *, bool need_free = true);
 
 /* Request a Board::KhompPvt based on dialplan string.
 

@@ -1206,7 +1206,7 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 
 		if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
 			session_a.begin_allow_threads();
-			if (!switch_channel_test_flag(channel_a, CF_OUTBOUND) && !switch_channel_media_ready(channel_a)) {
+			if (switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_media_ready(channel_a)) {
 				switch_channel_pre_answer(channel_a);
 			}
 
@@ -1269,120 +1269,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 	this_check(SWITCH_STATUS_FALSE);
 	sanity_check(SWITCH_STATUS_FALSE);
 	
-    if (zstr(result)) {
-		return SWITCH_STATUS_SUCCESS;	
-    }
-
-	if (fhp) {
-		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
-			return SWITCH_STATUS_FALSE;
-		}
-
-		if (!strncasecmp(result, "speed", 5)) {
-			char *p;
-		
-			if ((p = strchr(result, ':'))) {
-				p++;
-				if (*p == '+' || *p == '-') {
-					int step;
-					if (!(step = atoi(p))) {
-						step = 1;
-					}
-					fhp->speed += step;
-				} else {
-					int speed = atoi(p);
-					fhp->speed = speed;
-				}
-				return SWITCH_STATUS_SUCCESS;
-			}
-
-			return SWITCH_STATUS_FALSE;
-
-		} else if (!strncasecmp(result, "volume", 6)) {
-			char *p;
-			
-			if ((p = strchr(result, ':'))) {
-				p++;
-				if (*p == '+' || *p == '-') {
-					int step;
-					if (!(step = atoi(p))) {
-						step = 1;
-					}
-					fhp->vol += step;
-				} else {
-					int vol = atoi(p);
-					fhp->vol = vol;
-				}
-				return SWITCH_STATUS_SUCCESS;
-			}
-			
-			if (fhp->vol) {
-				switch_normalize_volume(fhp->vol);
-			}
-			
-			return SWITCH_STATUS_FALSE;
-		} else if (!strcasecmp(result, "pause")) {
-			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
-			} else {
-				switch_set_flag(fhp, SWITCH_FILE_PAUSE);
-			}
-			return SWITCH_STATUS_SUCCESS;
-		} else if (!strcasecmp(result, "stop")) {
-			return SWITCH_STATUS_FALSE;
-		} else if (!strcasecmp(result, "truncate")) {
-			switch_core_file_truncate(fhp, 0);
-		} else if (!strcasecmp(result, "restart")) {
-			unsigned int pos = 0;
-			fhp->speed = 0;
-			switch_core_file_seek(fhp, &pos, 0, SEEK_SET);
-			return SWITCH_STATUS_SUCCESS;
-		} else if (!strncasecmp(result, "seek", 4)) {
-			switch_codec_t *codec;
-			unsigned int samps = 0;
-			unsigned int pos = 0;
-			char *p;
-			codec = switch_core_session_get_read_codec(session);
-			
-			if ((p = strchr(result, ':'))) {
-				p++;
-				if (*p == '+' || *p == '-') {
-					int step;
-					int32_t target;
-					if (!(step = atoi(p))) {
-						step = 1000;
-					}
-
-					samps = step * (codec->implementation->samples_per_second / 1000);
-					target = (int32_t)fhp->pos + samps;
-
-					if (target < 0) {
-						target = 0;
-					}
-
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", target);
-					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
-
-				} else {
-					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-					if (samps < 0) {
-						samps = 0;
-					}
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
-					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
-				}
-			}
-
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-
-    if (!strcmp(result, "true") || !strcmp(result, "undefined")) {
-		return SWITCH_STATUS_SUCCESS;
-    }
-
-
-    return SWITCH_STATUS_FALSE;
+	return switch_ivr_process_fh(session, result, fhp);
 }
 
 /* For Emacs:

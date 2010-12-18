@@ -38,6 +38,7 @@
     <!-- <load module="mod_openzap"/> -->
     <!-- <load module="mod_unicall"/> -->
     <!-- <load module="mod_skinny"/> -->
+    <!-- <load module="mod_khomp"/>   -->
 
     <!-- Applications -->
     <load module="mod_commands"/>

@@ -1324,7 +1324,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_profile = tech_pvt->caller_profile;
 		caller_profile->destination_number = rdest;
 
-		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		gsmopen_call(tech_pvt, rdest, 30);
@@ -1904,14 +1903,25 @@ static switch_status_t load_config(int reload_type)
 				if (globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol != PROTOCOL_NO_SERIAL) {
 					res = gsmopen_serial_config(&globals.GSMOPEN_INTERFACES[interface_id]);
 					if (res) {
-						ERRORA("gsmopen_serial_config failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
-						globals.GSMOPEN_INTERFACES[interface_id].running=0;
-						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_config failed");
-						globals.GSMOPEN_INTERFACES[interface_id].active=0;
-						globals.GSMOPEN_INTERFACES[interface_id].name[0]='\0';
-						continue;
+						int count = 0;
+						ERRORA("gsmopen_serial_config failed, let's try again\n", GSMOPEN_P_LOG);
+						while(res && count < 5){
+							switch_sleep(100000); //0.1 seconds
+							res = gsmopen_serial_config(&globals.GSMOPEN_INTERFACES[interface_id]);
+							count++;
+							if (res) {
+								ERRORA("%d: gsmopen_serial_config failed, let's try again\n", GSMOPEN_P_LOG, count);
+							}
+						}
+						if (res) {
+							ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
+							//return SWITCH_STATUS_FALSE;
+							globals.GSMOPEN_INTERFACES[interface_id].running=0;
+							alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_config failed");
+							globals.GSMOPEN_INTERFACES[interface_id].active=0;
+							globals.GSMOPEN_INTERFACES[interface_id].name[0]='\0';
+							continue;
+						}
 					}
 				}
 

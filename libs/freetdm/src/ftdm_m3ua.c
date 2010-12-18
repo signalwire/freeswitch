@@ -156,7 +156,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				release_request_id((m3ua_request_id_t)ftdmchan->extra_id);
 				ftdmchan->extra_id = 0;
 			}
-			ftdm_channel_done(ftdmchan);			
+			ftdm_channel_close(&ftdmchan);			
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -484,7 +484,7 @@ static FIO_SPAN_NEXT_EVENT_FUNCTION(m3ua_next_event)
 
 static FIO_SPAN_DESTROY_FUNCTION(m3ua_span_destroy)
 {
-	m3ua_span_data_t *span_data = (m3ua_span_data_t *) span->mod_data;
+	m3ua_span_data_t *span_data = (m3ua_span_data_t *) span->io_data;
 	
 	if (span_data) {
 		ftdm_safe_free(span_data);
@@ -494,8 +494,8 @@ static FIO_SPAN_DESTROY_FUNCTION(m3ua_span_destroy)
 }
 static FIO_CHANNEL_DESTROY_FUNCTION(m3ua_channel_destroy)
 {
-	m3ua_chan_data_t *chan_data = (m3ua_chan_data_t *) ftdmchan->mod_data;
-	m3ua_span_data_t *span_data = (m3ua_span_data_t *) ftdmchan->span->mod_data;
+	m3ua_chan_data_t *chan_data = (m3ua_chan_data_t *) ftdmchan->io_data;
+	m3ua_span_data_t *span_data = (m3ua_span_data_t *) ftdmchan->span->io_data;
 	
 	if (!chan_data) {
 		return FTDM_FAIL;

@@ -55,7 +55,7 @@ ftdm_mutex_t *g_boost_modules_mutex = NULL;
 ftdm_hash_t *g_boost_modules_hash = NULL;
 
 #define MAX_TRUNK_GROUPS 64
-//DAVIDY need to merge congestion_timeouts with ftdm_sangoma_boost_trunkgroups
+//TODO need to merge congestion_timeouts with ftdm_sangoma_boost_trunkgroups
 static time_t congestion_timeouts[MAX_TRUNK_GROUPS];
 
 static ftdm_sangoma_boost_trunkgroup_t *g_trunkgroups[MAX_TRUNK_GROUPS];
@@ -839,7 +839,7 @@ static void handle_call_released(ftdm_span_t *span, sangomabc_connection_t *mcon
 	if ((ftdmchan = find_ftdmchan(span, event, 1))) {
 		ftdm_log(FTDM_LOG_DEBUG, "Releasing completely chan s%dc%d\n", BOOST_EVENT_SPAN(mcon->sigmod, event), 
 				BOOST_EVENT_CHAN(mcon->sigmod, event));
-		ftdm_channel_done(ftdmchan);
+		ftdm_channel_close(&ftdmchan);
 	} else {
 		ftdm_log(FTDM_LOG_CRIT, "Odd, We could not find chan: s%dc%d to release the call completely!!\n", 
 				BOOST_EVENT_SPAN(mcon->sigmod, event), BOOST_EVENT_CHAN(mcon->sigmod, event));
@@ -1105,8 +1105,9 @@ static void handle_call_loop_start(ftdm_span_t *span, sangomabc_connection_t *mc
 
 	ftdm_set_state_r(ftdmchan, FTDM_CHANNEL_STATE_IN_LOOP, res);
 	if (res != FTDM_SUCCESS) {
+		ftdm_channel_t *toclose = ftdmchan;
 		ftdm_log(FTDM_LOG_CRIT, "yay, could not set the state of the channel to IN_LOOP, loop will fail\n");
-		ftdm_channel_done(ftdmchan);
+		ftdm_channel_close(&toclose);
 		return;
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%d:%d starting loop\n", ftdmchan->span_id, ftdmchan->chan_id);
@@ -1426,11 +1427,12 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 			ftdmchan->sflags = 0;
 			memset(ftdmchan->call_data, 0, sizeof(sangoma_boost_call_t));
 			if (sangoma_boost_data->sigmod && call_stopped_ack_sent) {
-				/* we dont want to call ftdm_channel_done just yet until call released is received */
+				/* we dont want to call ftdm_channel_close just yet until call released is received */
 				ftdm_log(FTDM_LOG_DEBUG, "Waiting for call release confirmation before declaring chan %d:%d as available \n", 
 						ftdmchan->span_id, ftdmchan->chan_id);
 			} else {
-				ftdm_channel_done(ftdmchan);
+				ftdm_channel_t *toclose = ftdmchan;
+				ftdm_channel_close(&toclose);
 			}
 		}
 		break;
@@ -1557,11 +1559,11 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 			ftdm_set_string(event.calling_name, ftdmchan->caller_data.cid_name);
 			ftdm_set_string(event.rdnis.digits, ftdmchan->caller_data.rdnis.digits);
 			if (strlen(ftdmchan->caller_data.rdnis.digits)) {
-					event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
-					event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
-					event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
+				event.rdnis.digits_count = (uint8_t)strlen(ftdmchan->caller_data.rdnis.digits)+1;
+				event.rdnis.ton = ftdmchan->caller_data.rdnis.type;
+				event.rdnis.npi = ftdmchan->caller_data.rdnis.plan;
 			}
-		    
+
 			event.calling.screening_ind = ftdmchan->caller_data.screen;
 			event.calling.presentation_ind = ftdmchan->caller_data.pres;
 
@@ -2582,17 +2584,17 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 		} else if (!strcasecmp(var, "remote_port")) {
 			remote_port = atoi(val);
 		} else if (!strcasecmp(var, "outbound-called-ton")) {
-			ftdm_span_set_ton(val, &span->default_caller_data.dnis.type);
+			ftdm_set_ton(val, &span->default_caller_data.dnis.type);
 		} else if (!strcasecmp(var, "outbound-called-npi")) {
-			ftdm_span_set_npi(val, &span->default_caller_data.dnis.plan);
+			ftdm_set_npi(val, &span->default_caller_data.dnis.plan);
 		} else if (!strcasecmp(var, "outbound-calling-ton")) {
-			ftdm_span_set_ton(val, &span->default_caller_data.cid_num.type);
+			ftdm_set_ton(val, &span->default_caller_data.cid_num.type);
 		} else if (!strcasecmp(var, "outbound-calling-npi")) {
-			ftdm_span_set_npi(val, &span->default_caller_data.cid_num.plan);
+			ftdm_set_npi(val, &span->default_caller_data.cid_num.plan);
 		} else if (!strcasecmp(var, "outbound-rdnis-ton")) {
-			ftdm_span_set_ton(val, &span->default_caller_data.rdnis.type);
+			ftdm_set_ton(val, &span->default_caller_data.rdnis.type);
 		} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
-			ftdm_span_set_npi(val, &span->default_caller_data.rdnis.plan);
+			ftdm_set_npi(val, &span->default_caller_data.rdnis.plan);
 		} else if (!sigmod) {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			FAIL_CONFIG_RETURN(FTDM_FAIL);

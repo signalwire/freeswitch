@@ -251,6 +251,7 @@ typedef int esl_filehandle_t;
 #include "esl_json.h"
 
 typedef int16_t esl_port_t;
+typedef size_t esl_size_t;
 
 typedef enum {
 	ESL_SUCCESS,
@@ -259,7 +260,11 @@ typedef enum {
 	ESL_DISCONNECTED
 } esl_status_t;
 
+#define BUF_CHUNK 65536 * 50
+#define BUF_START 65536 * 100
+
 #include <esl_threadmutex.h>
+#include <esl_buffer.h>
 
 /*! \brief A handle that will hold the socket information and
            different events received. */
@@ -273,7 +278,8 @@ typedef struct {
 	/*! The error number reported by the OS */
 	int errnum;
 	/*! The inner contents received by the socket. Used only internally. */
-	char header_buf[4196];
+	esl_buffer_t *packet_buf;
+	char socket_buf[65536];
 	/*! Last command reply */
 	char last_reply[1024];
 	/*! Las command reply when called with esl_send_recv */

@@ -9,9 +9,9 @@ CXXFLAGS=$(BASE_FLAGS) -Wall -Werror -Wno-unused-variable
 MYLIB=libesl.a
 LIBS=-lncurses -lpthread -lesl -lm
 LDFLAGS=-L.
-OBJS=src/esl.o src/esl_event.o src/esl_threadmutex.o src/esl_config.o src/esl_json.o
-SRC=src/esl.c src/esl_json.c src/esl_event.c src/esl_threadmutex.c src/esl_config.c src/esl_oop.cpp src/esl_json.c
-HEADERS=src/include/esl_config.h src/include/esl_event.h src/include/esl.h src/include/esl_threadmutex.h src/include/esl_oop.h src/include/esl_json.h
+OBJS=src/esl.o src/esl_event.o src/esl_threadmutex.o src/esl_config.o src/esl_json.o src/esl_buffer.o
+SRC=src/esl.c src/esl_json.c src/esl_event.c src/esl_threadmutex.c src/esl_config.c src/esl_oop.cpp src/esl_json.c src/esl_buffer.c
+HEADERS=src/include/esl_config.h src/include/esl_event.h src/include/esl.h src/include/esl_threadmutex.h src/include/esl_oop.h src/include/esl_json.h src/include/esl_buffer.h
 SOLINK=-shared -Xlinker -x
 # comment the next line to disable c++ (no swig mods for you then)
 OBJS += src/esl_oop.o

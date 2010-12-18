@@ -131,7 +131,6 @@ SWITCH_STANDARD_API(dump_hash)
 static switch_status_t process_event(switch_event_t *event)
 {
 	switch_core_session_t *session = NULL;
-	switch_channel_t *channel;
 	char *username[3] = { 0 };
 	char *domain[3] = { 0 };
 	char key[512];
@@ -172,18 +171,19 @@ static switch_status_t process_event(switch_event_t *event)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	session = switch_core_session_locate(uuid);
-	channel = switch_core_session_get_channel(session);
+	if ((session = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop \n", uuid, key);
-	my_uuid = switch_event_get_header(event, "Unique-ID");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop \n", uuid, key);
+		my_uuid = switch_event_get_header(event, "Unique-ID");
 
-	switch_channel_set_variable(channel, "spy_uuid", my_uuid);
+		switch_channel_set_variable(channel, "spy_uuid", my_uuid);
 
-	switch_channel_set_state(channel, CS_EXCHANGE_MEDIA);
-	switch_channel_set_flag(channel, CF_BREAK);
+		switch_channel_set_state(channel, CS_EXCHANGE_MEDIA);
+		switch_channel_set_flag(channel, CF_BREAK);
 
-	switch_core_session_rwunlock(session);
+		switch_core_session_rwunlock(session);
+	}
 	return SWITCH_STATUS_SUCCESS;
 
 }

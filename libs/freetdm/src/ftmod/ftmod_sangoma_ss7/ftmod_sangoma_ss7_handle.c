@@ -211,10 +211,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			/* add any special variables for the dialplan */
 			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
-			ftdm_channel_add_var(ftdmchan, "ss7_clg_nadi", nadi);
+			ftdm_call_add_var(&ftdmchan->caller_data, "ss7_clg_nadi", nadi);
 
 			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
-			ftdm_channel_add_var(ftdmchan, "ss7_cld_nadi", nadi);
+			ftdm_call_add_var(&ftdmchan->caller_data, "ss7_cld_nadi", nadi);
 
 
 			/* check if a COT test is requested */
@@ -1722,7 +1722,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* fill in the span structure for this circuit */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 	sngss7_span->rx_grs.circuit = circuit; 
 	sngss7_span->rx_grs.range = range;
 
@@ -1758,7 +1758,7 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* fill in the span structure for this circuit */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 	sngss7_span->rx_gra.circuit = circuit; 
 	sngss7_span->rx_gra.range = range;
 
@@ -1866,7 +1866,7 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	}
 
 	/* check if we just sent a GRS request...*/
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 	if (sngss7_span->tx_grs.circuit > 0) {
 		/* we need to put all circuits on this UCIC */
 		sngss7_span->ucic.circuit = sngss7_span->tx_grs.circuit;
@@ -1917,7 +1917,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* grab the span info */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 
 	/* figure out what type of block needs to be applied */
 	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
@@ -2004,7 +2004,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* bring the sig status down */
 		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-		sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+		sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 		ftdm_span_send_signal(ftdmchan->span, &sigev);
 
 		/* unlock the channel again before we exit */
@@ -2058,7 +2058,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	}
 
 	/* grab the span info */
-	sngss7_span = ftdmchan->span->mod_data;
+	sngss7_span = ftdmchan->span->signal_data;
 
 	/* figure out what type of block needs to be applied */
 	if ((siStaEvnt->cgsmti.eh.pres == PRSNT_NODEF) && (siStaEvnt->cgsmti.typeInd.pres == PRSNT_NODEF)) {
@@ -2135,7 +2135,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* bring the sig status down */
 		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-		sigev.sigstatus = FTDM_SIG_STATE_UP;
+		sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 		ftdm_span_send_signal(ftdmchan->span, &sigev);
 	
 		/* unlock the channel again before we exit */

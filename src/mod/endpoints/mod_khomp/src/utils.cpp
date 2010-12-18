@@ -44,7 +44,6 @@
 #include <utils.h>
 #include "khomp_pvt.h"
 
-
 void Kflags::init()
 {
     _flags[CONNECTED]._name = "CONNECTED";
@@ -461,7 +460,7 @@ bool Kommuter::stop()
     }
 
     /* stop all watches */
-    if (Opt::_kommuter_activation == "auto")
+    if (Opt::_options._kommuter_activation() == "auto")
     {
         for (int kommuter = 0 ; kommuter < _kommuter_count ; kommuter++)
         {
@@ -486,7 +485,7 @@ bool Kommuter::initialize(K3L_EVENT *e)
     /* get total of kommuter devices */
     _kommuter_count = e->AddInfo;
    
-    if(Opt::_kommuter_activation == "manual")
+    if(Opt::_options._kommuter_activation() == "manual")
     {
         if (_kommuter_count > 0)
         {
@@ -499,7 +498,7 @@ bool Kommuter::initialize(K3L_EVENT *e)
     if (_kommuter_count > 0) 
     {    
         bool start_timer = false;
-        int timeout = Opt::_kommuter_timeout;
+        int timeout = Opt::_options._kommuter_timeout();
 
         std::string param = STG(FMT("timeout=%d") % timeout);
 
@@ -604,4 +603,75 @@ void Kommuter::wtdKickTimer(void *)
         return;
     }
 }
+
+/************************************ ESLs **********************************/
+ESL::VectorEvents * ESL::_events = NULL;
+
+ESL::ESL(std::string type) : _type(type)
+{
+    if(!_events)
+        _events = new VectorEvents();
+
+//    _events->push_back(_type);
+}
+
+ESL::~ESL()
+{
+    if(!_events)
+        return;
+
+    //Remove one from vector
+    //_events->pop_back();
+    
+    if(_events->size() == 0)
+    {
+        delete _events;
+        _events = NULL;
+    }
+}
+
+bool ESL::registerEvents()
+{
+    bool ok = true;
+
+    DBG(FUNC, "Register ESLs");
+
+    if(!_events)
+        return true;
+
+    for(VectorEvents::const_iterator event = _events->begin(); event != _events->end(); event++)
+    {
+        if (switch_event_reserve_subclass((*(event)).c_str()) != SWITCH_STATUS_SUCCESS)
+        {
+            LOG(ERROR, FMT("Couldn't register subclass=\"%s\"") % *(event));
+            ok = false;
+        }
+        else
+        {
+            DBG(FUNC, FMT("Register subclass=\"%s\"") % *(event));
+        }
+    }
+
+    return ok;
+}
+
+bool ESL::unregisterEvents()
+{
+    DBG(FUNC, "Unregister ESLs");
+    
+    if(!_events)
+        return true;
+
+    for(VectorEvents::const_iterator event = _events->begin(); event != _events->end(); event++)
+    {
+        DBG(FUNC, FMT("Unregister subclass=\"%s\"") % *(event));
+        switch_event_free_subclass((*(event)).c_str());
+    }
+
+    return true;
+}
+
+
+
+/******************************************************************************/
 

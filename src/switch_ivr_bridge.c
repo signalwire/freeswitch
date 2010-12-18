@@ -100,7 +100,7 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 	caller_channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
 	
-	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(caller_channel, CF_DIALPLAN)) {
 		name = caller_profile->callee_id_name;
 		number = caller_profile->callee_id_number;
 
@@ -155,7 +155,6 @@ struct switch_ivr_bridge_data {
 	switch_input_callback_function_t input_callback;
 	void *session_data;
 	int clean_exit;
-	uint32_t skip_frames;
 };
 typedef struct switch_ivr_bridge_data switch_ivr_bridge_data_t;
 
@@ -169,7 +168,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_t *chan_a, *chan_b;
 	switch_frame_t *read_frame;
 	switch_core_session_t *session_a, *session_b;
-	uint32_t loop_count = 0;
+	uint32_t read_frame_count = 0;
 	const char *app_name = NULL, *app_arg = NULL;
 	const char *hook_var = NULL;
 	int inner_bridge = 0;
@@ -181,6 +180,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *bridge_answer_timeout = NULL;
 	int answer_timeout, sent_update = 0;
 	time_t answer_limit = 0;
+	const char *exec_app = NULL;
+	const char *exec_data = NULL;
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	switch_thread_t *vid_thread = NULL;
@@ -201,6 +202,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
 
+	if ((exec_app = switch_channel_get_variable(chan_a, "bridge_pre_execute_app"))) {
+		exec_data = switch_channel_get_variable(chan_a, "bridge_pre_execute_data");
+	}
+
 	bypass_media_after_bridge = switch_channel_test_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 	switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 
@@ -212,7 +217,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	inner_bridge = switch_channel_test_flag(chan_a, CF_INNER_BRIDGE);
-
+	
 	if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && (bridge_answer_timeout = switch_channel_get_variable(chan_a, "bridge_answer_timeout"))) {
 		if ((answer_timeout = atoi(bridge_answer_timeout)) < 0) {
 			answer_timeout = 0;
@@ -285,7 +290,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
-		loop_count++;
 
 		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
 			data->clean_exit = 1;
@@ -309,7 +313,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 		
-		if (loop_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
+		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
@@ -341,13 +345,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
-		if (loop_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) &&
-			(bypass_media_after_bridge || switch_channel_test_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
-			&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
-			bypass_media_after_bridge = 0;
-			switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
-			goto end_of_bridge_loop;
+		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
+			
+			if (exec_app) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Bridge execute app %s(%s)\n", 
+								  switch_channel_get_name(chan_a), exec_app, exec_data);
+
+				switch_core_session_execute_application_async(session_a, exec_app, exec_data);
+				exec_app = exec_data = NULL;
+			}
+
+
+			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
+				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+				switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
+				bypass_media_after_bridge = 0;
+				switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+				goto end_of_bridge_loop;
+			}
 		}
 
 		/* if 1 channel has DTMF pass it to the other */
@@ -418,19 +433,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (ans_a != ans_b) {
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
+			switch_channel_t *a = un == chan_b ? chan_a : chan_b;
 
-			if (!switch_channel_test_flag(un, CF_OUTBOUND)) {
-				switch_channel_pass_callee_id(un == chan_b ? chan_a : chan_b, un);
+			if (switch_channel_direction(un) == SWITCH_CALL_DIRECTION_INBOUND) {
+				if (switch_channel_direction(a) == SWITCH_CALL_DIRECTION_OUTBOUND || (un == chan_a && !originator)) {
+					switch_channel_pass_callee_id(a, un);
+				}
+
 				if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
 					goto end_of_bridge_loop;
 				}
-			}
 
-			if (ans_a)
-				ans_b = 1;
-			else
-				ans_a = 1;
+				if (ans_a) {
+					ans_b = 1;
+				} else {
+					ans_a = 1;
+				}
+			}
 		}
 
 		if (originator && !sent_update && ans_a && ans_b && switch_channel_media_ack(chan_a) && switch_channel_media_ack(chan_b)) {
@@ -454,6 +474,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
 
 		if (SWITCH_READ_ACCEPTABLE(status)) {
+			read_frame_count++;
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				if (silence_val) {
 					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, silence_val);
@@ -461,11 +482,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				} else if (!switch_channel_test_flag(chan_b, CF_ACCEPT_CNG)) {
 					continue;
 				}
-			}
-
-			if (data->skip_frames) {
-				data->skip_frames--;
-				continue;
 			}
 
 			if (switch_channel_test_flag(chan_a, CF_BRIDGE_NOWRITE)) {
@@ -1036,6 +1052,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_set_variable(caller_channel, "signal_bridge", "true");
 	switch_channel_set_variable(peer_channel, "signal_bridge", "true");
 
+	switch_channel_sort_cid(peer_channel, SWITCH_FALSE);
+
 	/* fire events that will change the data table from "show channels" */
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
@@ -1100,6 +1118,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
+
+	switch_channel_sort_cid(peer_channel, SWITCH_FALSE);
 
 	b_leg->session = peer_session;
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));
@@ -1193,35 +1213,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
-				switch_event_t *execute_event;
-
-				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
-				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
-					switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(session, &execute_event, SWITCH_FALSE);
-					a_leg->skip_frames = DEFAULT_LEAD_FRAMES;
+				switch_channel_set_variable(caller_channel, "bridge_pre_execute_app", app);
+				
+				if ((data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data"))) {
+					switch_channel_set_variable(caller_channel, "bridge_pre_execute_data", data);
 				}
-
 			}
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
-				switch_event_t *execute_event;
-				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
-				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
-					switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(peer_session, &execute_event, SWITCH_FALSE);
-					b_leg->skip_frames = DEFAULT_LEAD_FRAMES;
-				}
-			}
+				switch_channel_set_variable(peer_channel, "bridge_pre_execute_app", app);
 
+				if ((data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data"))) {
+					switch_channel_set_variable(peer_channel, "bridge_pre_execute_data", data);
+				}
+				
+			}
+			
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
 			switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
 			audio_bridge_thread(NULL, (void *) a_leg);
@@ -1553,7 +1560,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		}
 	}
 
-	switch_channel_pre_answer(channel);
+	switch_channel_answer(channel);
 
 	if (!zstr(buuid)) {
 		if ((bsession = switch_core_session_locate(buuid))) {

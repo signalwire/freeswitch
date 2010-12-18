@@ -1,52 +1,220 @@
 <!-- Please refer to http://wiki.freeswitch.org/wiki/FreeTDM for further documentation  -->
 
+<!-- 
+This is a sample FreeSWITCH XML configuration for FreeTDM
+Remember you still need to configure freetdm.conf (no XML extension) in $prefix/conf/
+directory of FreeSWITCH. The freetdm.conf (no XML extension) is a simple text file
+definining the I/O interfaces (Sangoma, DAHDI etc). This file (freetdm.conf.xml) deals
+with the signaling protocols that you can run on top of your I/O interfaces.
+-->
 <configuration name="freetdm.conf" description="FreeTDM Configuration">
-  <settings>
-    <param name="debug" value="0"/>
-    <!--<param name="hold-music" value="$${moh_uri}"/>-->
-    <!--<param name="enable-analog-option" value="call-swap"/>-->
-    <!--<param name="enable-analog-option" value="3-way"/>-->
-  </settings>
+	
+	<settings>
+		<param name="debug" value="0"/>
+		<!--<param name="hold-music" value="$${moh_uri}"/>-->
+		<!--<param name="enable-analog-option" value="call-swap"/>-->
+		<!--<param name="enable-analog-option" value="3-way"/>-->
+	</settings>
 
-  <!-- use the <pri_spans> tag for native ISDN support (most likely broken at this point, check sangoma_pri_spans or libpri_spans for alternatives) -->
-   <pri_spans>
-     <span name="PRI_1">
-       <!-- Log Levels: none, alert, crit, err, warning, notice, info, debug -->
-       <param name="q921loglevel" value="alert"/>
-       <param name="q931loglevel" value="alert"/>
-       <param name="mode" value="user"/>
-       <param name="dialect" value="5ess"/>
-       <param name="dialplan" value="XML"/>
-       <param name="context" value="default"/>
-     </span>
-     <span name="PRI_2">
-       <param name="q921loglevel" value="alert"/>
-       <param name="q931loglevel" value="alert"/>
-       <param name="mode" value="user"/>
-       <param name="dialect" value="5ess"/>
-       <param name="dialplan" value="XML"/>
-       <param name="context" value="default"/>
-     </span>
-   </pri_spans>
+	<!-- Sample analog configuration -->
+	<analog_spans>
+		<!-- The span name must match the name in your freetdm.conf -->
+		<span name="myAnalog">
+			<!--<param name="hold-music" value="$${moh_uri}"/>-->
+			<!--<param name="enable-analog-option" value="call-swap"/>-->
+			<!--<param name="enable-analog-option" value="3-way"/>-->
+			<param name="tonegroup" value="us"/>
+			<param name="digit-timeout" value="2000"/>
+			<param name="max-digits" value="11"/>
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+			<param name="enable-callerid" value="true"/>
+			<!-- regex to stop dialing when it matches -->
+			<!--<param name="dial-regex" value="5555"/>-->
+			<!-- regex to stop dialing when it does not match -->
+			<!--<param name="fail-dial-regex" value="^5"/>-->
+		</span>
+	</analog_spans>
 
+	<!-- openr2 (MFC-R2 signaling) spans 
+	MFC-R2 signaling has lots of variants from country to country and even sometimes
+	minor variants inside the same country. The only mandatory parameters here are:
+	variant, but typically you also want to set max_ani and max_dnis.
+	IT IS RECOMMENDED that you leave the default values (leaving them commented) for the 
+	other parameters unless you have problems or you have been instructed to change some 
+	parameter. OpenR2 library uses the 'variant' parameter to try to determine the 
+	best defaults for your country.  If you want to contribute your configs for a particular 
+	country send them to the e-mail of the primary OpenR2 developer that you can find in the 
+	AUTHORS file of the OpenR2 package, they will be added to the samples directory of openr2.
+	-->
+	<r2_spans>
+		<span name="wp1" cfgprofile="testr2">
+			
+			<!--
+			MFC/R2 variant. This depends on the OpenR2 supported variants
+			A list of values can be found by executing the openr2 command r2test -l
+			some valid values are:
+			mx (Mexico)
+			ar (Argentina)
+			br (Brazil)
+			ph (Philippines)
+			itu (per ITU spec)
+			-->
+			<param name="variant" value="mx"/>
 
-  <!-- Analog spans go here -->
-  <analog_spans>
-    <span name="myAnalog">
-      <!--<param name="hold-music" value="$${moh_uri}"/>-->
-      <!--<param name="enable-analog-option" value="call-swap"/>-->
-      <!--<param name="enable-analog-option" value="3-way"/>-->
-      <param name="tonegroup" value="us"/>
-      <param name="digit-timeout" value="2000"/>
-      <param name="max-digits" value="11"/>
-      <param name="dialplan" value="XML"/>
-      <param name="context" value="default"/>
-      <param name="enable-callerid" value="true"/>
-      <!-- regex to stop dialing when it matches -->
-      <!--<param name="dial-regex" value="5555"/>-->
-      <!-- regex to stop dialing when it does not match -->
-      <!--<param name="fail-dial-regex" value="^5"/>-->
-    </span>
-  </analog_spans>
+			<!-- switch parameters (required), where to send calls to -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
 
+			<!-- 
+			Max amount of ANI (caller id digits) to ask for
+			<param name="max_ani" value="4"/> 
+			-->
+			<!-- 
+			Max amount of DNIS to ask for 
+			<param name="max_dnis" value="4"/> 
+			-->
+
+			<!-- Do not set parameters below this line unless you desire to tweak it because is not working -->
+			
+			<!-- 
+			Whether or not to get the ANI before getting DNIS (only affects incoming calls)
+			Some telcos require ANI first some others do not care, if default go wrong on 
+			incoming calls, change this value
+			<param name="get_ani_first" value="yes"/>
+			-->
+
+			<!--
+			Caller Category to send. Accepted values:
+				- national_subscriber
+				- national_priority_subscriber
+				- international_subscriber
+				- international_priority_subscriber
+				- collect_call
+			Usually national_subscriber (the default) works just fine
+			<param name="category" value="national_subscriber"/>
+			-->
+
+			<!--
+			Brazil uses a special calling party category for collect calls (llamadas por cobrar)
+			instead of using the operator (as in Mexico). The R2 spec in Brazil says a special GB tone
+			should be used to reject collect calls. If you want to ALLOW collect calls specify 'yes',
+			if you want to BLOCK collect calls then say 'no'. Default is to block collect calls.
+			(see also 'double_answer')
+			<param name="allow_collect_calls" value="yes"/>
+			-->
+
+			<!--
+			This feature is related but independent of allow_collect_calls
+			Some PBX's require a double-answer process to block collect calls, if
+			you ever have problems blocking collect calls using Group B signals (allow_collect_calls=no)
+			then you may want to try with double_answer=yes, this will cause that every answer signal
+			is changed to perform 'answer -> clear back -> answer' (sort of a flash)
+			(see also 'allow_collect_calls')
+			<param name="double_answer" value="yes"/>
+			-->
+
+			<!--
+			This feature allows to skip the use of Group B/II signals and go directly
+			to the accepted state for incoming calls
+			<param name="immediate_accept" value="yes"/>
+			-->
+
+			<!--
+			Skip request of calling party category and ANI
+			<param name="skip_category" value="yes"/>
+			-->
+
+			<!--
+			Brazil use a special signal to force the release of the line (hangup) from the
+			backward perspective. When forced_release=no, the normal clear back signal
+			will be sent on hangup, which is OK for all mfcr2 variants I know of, except for
+			Brazilian variant, where the central will leave the line up for several seconds (30, 60)
+			which sometimes is not what people really want. When forced_release=yes, a different
+			signal will be sent to hangup the call indicating that the line should be released immediately
+			<param name="forced_release" value="yes"/>
+			-->
+
+			<!--
+			Whether or not report to the other end 'accept call with charge'
+			This setting has no effect with most telecos, usually is safe
+			leave the default (yes), but once in a while when interconnecting with
+			old PBXs this may be useful.
+			Concretely this affects the Group B signal used to accept calls
+			<param name="charge_calls" value="yes"/>
+			-->
+
+			<!--
+			MFC/R2 value in milliseconds for the MF timeout. Any negative value
+			means 'default', smaller values than 500ms are not recommended
+			and can cause malfunctioning. If you experience protocol error
+			due to MF timeout try incrementing this value in 500ms steps
+			<param name="mfback_timeout" value="1500"/>
+			-->
+
+			<!--
+			MFC/R2 value in milliseconds for the metering pulse timeout.
+			Metering pulses are sent by some telcos for some R2 variants
+			during a call presumably for billing purposes to indicate costs,
+			however this pulses use the same signal that is used to indicate
+			call hangup, therefore a timeout is sometimes required to distinguish
+			between a *real* hangup and a billing pulse that should not
+			last more than 500ms, If you experience call drops after some
+			minutes of being stablished try setting a value of some ms here,
+			values greater than 500ms are not recommended.
+			BE AWARE that choosing the proper protocol variant parameter
+			implicitly sets a good recommended value for this timer, use this
+			parameter only when you *really* want to override the default, otherwise
+			just comment out this value.
+			<param name="metering_pulse_timeout" value="1000"/>
+			-->
+
+			<!--
+			WARNING: advanced users only! I really mean it
+			this parameter is commented by default because
+			YOU DON'T NEED IT UNLESS YOU REALLY GROK MFC/R2
+			READ COMMENTS on doc/r2proto.conf in openr2 package 
+			for more info
+			<param name="advanced_protocol_file" value="/usr/local/freeswitch/conf/r2proto.conf"/>
+			-->
+
+			<!-- USE THIS FOR DEBUGGING MFC-R2 PROTOCOL -->
+			<!-- 
+			Where to dump advanced call file protocol logs
+			<param name="logdir" value="$${base_dir}/log/mfcr2"/>
+			-->
+
+			<!-- 
+			MFC/R2 valid logging values are: all,error,warning,debug,notice,cas,mf,nothing
+			error,warning,debug and notice are self-descriptive
+			'cas' is for logging ABCD CAS tx and rx
+			'mf' is for logging of the Multi Frequency tones
+			You can mix up values, like: loglevel=error,debug,mf to log just error, debug and 
+			multi frequency messages
+			'all' is a special value to log all the activity
+			'nothing' is a clean-up value, in case you want to not log any activity for
+			a channel or group of channels
+			BE AWARE that the level of output logged will ALSO depend on
+			the value you have in FreeSWITCH logging configurations, if you disable output FreeSWITCH
+			then it does not matter if you specify 'all' here, nothing will be logged
+			so FreeSWITCH has the last word on what is going to be logged
+			<param name="logging" value="debug,notice,warning,error,mf,cas"/>
+			-->
+
+			<!-- 
+			whether or not to drop protocol call files into 'logdir'
+			<param name="call_files" value="yes"/>
+			-->
+
+			<!--
+			Use only for very technical debugging
+			This is the size (if 0, dumps are disabled) of MF dump files. MF dump files
+			are audio files that are dumped when a protocol error occurs.
+			The files are dumped in whatever you set in the logdir parameter.
+			Value -1 uses a default recommended size (which stores 5 seconds of audio)
+			<param name="mf_dump_size" value="-1"/>
+			-->
+		</span>
+	</r2_spans>
 </configuration>
+

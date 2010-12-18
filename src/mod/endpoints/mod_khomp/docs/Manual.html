@@ -37,17 +37,22 @@
 </li><li><b>context-fxs</b>: Contexto de entrada para placas FXS (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
 </li><li><b>context-gsm-call</b> (ou "context-gsm"): Contexto de entrada para ligações GSM (o padrão é "khomp-DD-CC", onde "DD" será substituído no momento da ligação pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
 </li><li><b>context-gsm-sms</b>: Contexto de entrada para SMSs (o padrão é "khomp-sms-DD-CC", onde "DD" será substituído pelo número de dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo);
-</li><li><b>context-pr</b>: Contexto de entrada para ligações em placas KPR (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal); 
+</li><li><b>context-pr</b>: Contexto de entrada para ligações em placas KPR (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal);
+</li><li><b>delay-ringback-co</b>: Define o tempo de <i>delay</i> para ativar a geração de tom de controle de chamada (<i>ringback</i>) pelo Endpoint da Khomp quando há uma indicação de <i>ringback</i>, e não há áudio sendo enviado por quem indicou a situação de controle da chamada;
+</li><li><b>delay-ringback-pbx</b>: Define o tempo de <i>delay</i> para ativar a geração de controle de chamada (<i>ringback</i>) pelo Endpoint da Khomp quando há uma indicação de <i>ringback</i>, e o áudio de controle enviado não possui nenhum tom (ou seja, está em silêncio);
 </li><li><b>disconnect-delay</b>: Define o tempo em milissegundos para realizar o processamento de um evento de desconexão, para ignorar situações onde outros equipamentos realizam o duplo atendimento para derrubar chamadas a cobrar;
+</li><li><b>drop-collect-call</b>: Ativa ("yes") ou desativa ("no") o derrubamento de chamadas à cobrar. Caso ativo, todas as chamadas à cobrar serão derrubadas não importando o que foi ajustado na variável KDropCollectCall (o valor padrão é "no");
 </li><li><b>echo-canceller</b>: Ativa ("yes") ou desativa ("no") o cancelamento de eco automático pelo Endpoint; 
+</li><li><b>flash-to-digits</b>: Define os dígitos para serem enviados quando o FLASH é detectado na FXS;
 </li><li><b>fxo-send-pre-audio</b>: Quando ativada ("yes") libera canal de áudio sainte antes da conexão da chamada em placas KFXO (o valor padrão é "yes");
+</li><li><b>fxs-digit-timeout</b>: Define o <i>timeout</i>, em segundos, entre dígitos na FXS;
 </li><li><b>fxs-global-orig</b>: Número inicial para numeração seqüencial de ramais das placas <b>KFXS</b> que não estiverem listadas na seção <b>&lt;fxs-branches&gt;</b> (a numeração segue ordem crescente por número da placa e número do canal físico) (o padrão é "0"); 
 </li><li><b>fxs-co-dialtone</b>: Seqüências de números, separados por vírgula, que disparam um tom contínuo (de central pública) em ramais FXS (ex: "0,99" faz com que, ao discar "0" ou "99", o usuário receba o tom de linha contínuo) (o padrão é vazio);
 </li><li><b>fxs-bina</b>: Quando ativada ("yes"), ligações para ramais FXS enviarão os dígitos correspondentes ao telefone de origem em sinalização BINA DTMF (o valor padrão é "no");
+</li><li><b>ignore-letter-dtmfs</b>: Define se o canal deve ignorar DTMFs incomuns detectados pela placa (A, B, C e D). Entretanto, se você necessita passar esses dígitos pela placa, você deve ajustar esta opção para "no" (o valor padrão é "yes");
 </li><li><b>input-volume</b>: Define o volume de entrada das ligações, varia de -10 a +10&nbsp;; 
 </li><li><b>kommuter-activation</b>: Define se a ativação de dispositivos kommuter encontrados no sistema será feita de forma automática ("auto"), ou de forma manual ("manual") pelo usuário, através do comando "khomp kommuter on/off"; 
 </li><li><b>kommuter-timeout</b>: Define o <i>timeout</i> (em segundos) com que os kommuters serão inicializados. Se chegarem a este <i>timeout</i> sem receberem notificação do channel, os dispositivos irão comutar para o estado "desligado". O valor mínimo é "0" , onde os links permanecerão sempre comutados no estado "ligado", e o valor máximo é "255"; 
-</li><li><b>language</b>: Define idioma para ligações nas placas Khomp; 
 </li><li><b>log-to-console</b>: Define mensagens de log que devem ser impressas na console; 
 </li><li><b>log-to-disk</b>: Define mensagens de log que devem ser salvar em disco; 
 </li><li><b>out-of-band-dtmfs</b>: Ativa ("yes") ou desativa ("no") a supressão DTMF e o envio destes out-of-band; 
@@ -55,12 +60,9 @@
 </li><li><b>pulse-forwarding</b>: Ativa ("yes") ou desativa ("no") a detecção de pulsos e a conversão dos mesmos em DTMFs; 
 </li><li><b>r2-preconnect-wait</b>: Define o tempo de espera do envio da sinalização de ringback, no protocolo R2/MFC, para iniciar o envio de áudio de silêncio. Apenas utilizado quando "r2-strict-behaviour" estiver ajustado para "no"; 
 </li><li><b>r2-strict-behaviour</b>: Ativa ("yes") ou desativa ("no") o comportamento da sinalização R2/MFC conforme a norma define. O padrão é "no", e pode ser alterado para "yes" caso seja necessário receber/enviar dados precisos da sinalização do protocolo (condição de B, por exemplo); 
-</li><li><b>ringback-delay-co</b>: Define o tempo de <i>delay</i> para ativar a geração de tom de controle de chamada (<i>ringback</i>) pelo Endpoint da Khomp quando há uma indicação de <i>ringback</i>, e não há áudio sendo enviado por quem indicou a situação de controle da chamada;
-</li><li><b>ringback-delay-pbx</b>: Define o tempo de <i>delay</i> para ativar a geração de controle de chamada (<i>ringback</i>) pelo Endpoint da Khomp quando há uma indicação de <i>ringback</i>, e o áudio de controle enviado não possui nenhum tom (ou seja, está em silêncio);
 </li><li><b>suppression-delay</b>: Ativa ("yes") ou desativa ("no") o delay necessário para supressão DTMF. Se desativado ("no"), também desativa supressão de DTMFs; 
 </li><li><b>trace</b>: Define opções de depuração. Não deve ser utilizado em produção a não ser que estritamente necessário;
 </li><li><b>user-transfer-digits</b>: Define uma seqüência de dígitos DTMF para iniciar a transferencia entre o FreeSWITCH&reg; e um outro PABX (utilizando sinalização de usuário, como QSig ou FXO FLASH);
-</li><li><b>flash-to-digits</b>: Define os dígitos para serem enviados quando o FLASH é detectado na FXS;
 </li></ul>
 <p><br />
 </p>
@@ -117,15 +119,13 @@
 <ul><li>context; 
 </li><li>input-volume; 
 </li><li>output-volume; 
-</li><li>accountcode; 
 </li><li>calleridnum; 
 </li><li>calleridname;
-</li><li>mailbox;
 </li><li>flash-to-digits.
 </li></ul>
 <p>Cada opção é separada uma da outra por um pipe "|" ou uma barra "/" e definidas após dois pontos ":", exemplo:
 </p>
-<pre> &lt;param name="200" value="language:en|context:master-branch" /&gt;
+<pre> &lt;param name="200" value="input-volume:1|context:master-branch" /&gt;
 </pre>
 <p>Para maiores informações sobre a sintaxe e exemplos, favor consultar o arquivo de configuração.
 </p><p><br />

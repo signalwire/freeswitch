@@ -224,6 +224,8 @@ typedef enum {
 	PFLAG_IN_DIALOG_CHAT,
 	PFLAG_DEL_SUBS_ON_REG,
 	PFLAG_IGNORE_183NOSDP,
+	PFLAG_PRESENCE_PROBE_ON_REGISTER,
+	PFLAG_NO_CONNECTION_REUSE,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -957,6 +959,7 @@ void sofia_presence_event_thread_start(void);
 void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot);
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
+char *sofia_glue_get_register_host(const char *uri);
 const char *sofia_glue_strip_proto(const char *uri);
 switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);

@@ -547,12 +547,15 @@ struct PACKED service_url_stat_res_message {
 #define USER_TO_DEVICE_DATA_VERSION1_MESSAGE 0x013F
 /* See struct PACKED extended_data_message */
 
+/* XMLAlarmMessage */
+#define XML_ALARM_MESSAGE 0x015A
+
 /*****************************************************************************/
 /* SKINNY MESSAGE */
 /*****************************************************************************/
 #define SKINNY_MESSAGE_FIELD_SIZE 4 /* 4-bytes field */
 #define SKINNY_MESSAGE_HEADERSIZE 12 /* three 4-bytes fields */
-#define SKINNY_MESSAGE_MAXSIZE 1000
+#define SKINNY_MESSAGE_MAXSIZE 2048
 
 union skinny_data {
 	/* no data for KEEP_ALIVE_MESSAGE */

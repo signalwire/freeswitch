@@ -110,6 +110,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_assert(session != NULL);
 
+
+	if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_mutex_unlock(session->codec_read_mutex);
+	} else {
+		switch_cond_next();
+		*frame = &runtime.dummy_cng_frame;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (!(session->read_codec && session->read_codec->implementation && switch_core_codec_ready(session->read_codec))) {
 		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_get_state(session->channel) == CS_HIBERNATE) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s reading on a session with no media!\n",
@@ -226,7 +235,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;
-		if (!session->bugs) {
+		if (!session->bugs && !session->plc) {
 			goto done;
 		}
 		is_cng = 1;
@@ -294,7 +303,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 
 			if (is_cng) {
-				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
+				if (session->plc) {
+					plc_fillin(session->plc, session->raw_read_frame.data, read_frame->codec->implementation->decoded_bytes_per_packet / 2);
+					is_cng = 0;
+					flag &= !SFF_CNG;
+				} else {
+					memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
+				}
 				session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				read_frame = &session->raw_read_frame;
@@ -310,13 +325,37 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_thread_rwlock_unlock(session->bug_rwlock);
 				}
 
-				status = switch_core_codec_decode(use_codec,
-												  session->read_codec,
-												  read_frame->data,
-												  read_frame->datalen,
-												  session->read_impl.actual_samples_per_second,
-												  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
-												  &read_frame->flags);
+				if (switch_test_flag(read_frame, SFF_PLC)) {
+					session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
+					session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+					memset(session->raw_read_frame.data, 255, session->raw_read_frame.datalen);
+					status = SWITCH_STATUS_SUCCESS;
+				} else {
+					status = switch_core_codec_decode(use_codec,
+													  session->read_codec,
+													  read_frame->data,
+													  read_frame->datalen,
+													  session->read_impl.actual_samples_per_second,
+													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
+													  &read_frame->flags);
+				}
+				
+				if (status == SWITCH_STATUS_SUCCESS) {
+					if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER) && !session->plc) {
+						session->plc = plc_init(NULL);
+					}
+				
+					if (session->plc) {
+						if (switch_test_flag(read_frame, SFF_PLC)) {
+							plc_fillin(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
+							switch_clear_flag(read_frame, SFF_PLC);
+						} else {
+							plc_rx(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
+						}
+					}
+				}
+
+
 			}
 
 			if (do_resample && ((status == SWITCH_STATUS_SUCCESS) || is_cng)) {
@@ -352,6 +391,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				session->raw_read_frame.seq = read_frame->seq;
 				session->raw_read_frame.m = read_frame->m;
 				session->raw_read_frame.payload = read_frame->payload;
+				session->raw_read_frame.flags = 0;
+				if (switch_test_flag(read_frame, SFF_PLC)) {
+					session->raw_read_frame.flags |= SFF_PLC;
+				}
 				read_frame = &session->raw_read_frame;
 				break;
 			case SWITCH_STATUS_NOOP:
@@ -374,6 +417,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				session->raw_read_frame.seq = read_frame->seq;
 				session->raw_read_frame.m = read_frame->m;
 				session->raw_read_frame.payload = read_frame->payload;
+				session->raw_read_frame.flags = 0;
+				if (switch_test_flag(read_frame, SFF_PLC)) {
+					session->raw_read_frame.flags |= SFF_PLC;
+				}
+
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
 				break;
@@ -453,7 +501,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				read_frame->datalen = session->read_resampler->to_len * 2;
 				read_frame->rate = session->read_resampler->to_rate;
 				switch_mutex_unlock(session->resample_mutex);
-
 			}
 
 			if (read_frame->datalen == session->read_impl.decoded_bytes_per_packet) {
@@ -471,7 +518,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					goto done;
 				}
 			}
-
 
 			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_impl.decoded_bytes_per_packet) {
 				if (perfect) {
@@ -641,11 +687,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_mutex_unlock(session->codec_write_mutex);
+	} else {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (switch_test_flag(frame, SFF_CNG)) {
 		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) {
 			pass_cng = 1;
+		} else {
+			return SWITCH_STATUS_SUCCESS;
 		}
-		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(session->write_codec && switch_core_codec_ready(session->write_codec)) && !pass_cng) {
@@ -794,6 +847,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			session->raw_write_frame.ssrc = frame->ssrc;
 			session->raw_write_frame.seq = frame->seq;
 			session->raw_write_frame.payload = frame->payload;
+			session->raw_write_frame.flags = 0;
+			if (switch_test_flag(frame, SFF_PLC)) {
+				session->raw_write_frame.flags |= SFF_PLC;
+			}
+
 			write_frame = &session->raw_write_frame;
 			break;
 		case SWITCH_STATUS_BREAK:

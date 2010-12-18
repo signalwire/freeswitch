@@ -158,18 +158,39 @@ typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef __int16 int16_t;
 typedef __int8 int8_t;
+#define FTDM_O_BINARY O_BINARY
+#define FTDM_SIZE_FMT "Id"
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif /* _MSC_VER */
 #else /* __WINDOWS__ */
+#define FTDM_O_BINARY 0
+#define FTDM_SIZE_FMT "zd"
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
 #endif
+
+/*! \brief FreeTDM APIs possible return codes */
+typedef enum {
+	FTDM_SUCCESS, /*!< Success */
+	FTDM_FAIL, /*!< Failure, generic error return code, use ftdm_channel_get_last_error or ftdm_span_get_last_error for details */
+	FTDM_MEMERR, /*!< Memory error, most likely allocation failure */
+	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
+	FTDM_NOTIMPL, /*!< Operation not implemented */
+	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
+	FTDM_EINVAL /*!< Invalid argument */
+} ftdm_status_t;
+
+/*! \brief FreeTDM bool type. */
+typedef enum {
+	FTDM_FALSE,
+	FTDM_TRUE
+} ftdm_bool_t;
 
 /*! 
  * \brief FreeTDM channel.

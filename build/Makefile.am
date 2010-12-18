@@ -6,7 +6,12 @@ all:
 	@echo " + Install by running:                           +"
 	@echo " +                                               +"
 	@echo " +               $(MK) install                   +"
+	@echo " +                                               +"
+	@echo " + While you're waiting, register for ClueCon!   +"
+	@echo " + http://www.cluecon.com                        +"
+	@echo " +                                               +"
 	@echo " +-----------------------------------------------+"
+
 
 install:
 	@echo " +---------- FreeSWITCH install Complete ----------+"

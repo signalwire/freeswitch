@@ -58,6 +58,7 @@ typedef int ftdm_filehandle_t;
 extern "C" {
 #endif
 
+#define FTDM_COMMAND_OBJ_SIZE *((ftdm_size_t *)obj)
 #define FTDM_COMMAND_OBJ_INT *((int *)obj)
 #define FTDM_COMMAND_OBJ_CHAR_P (char *)obj
 #define FTDM_COMMAND_OBJ_FLOAT *(float *)obj
@@ -176,10 +177,16 @@ typedef enum {
 	FTDM_SPAN_USE_CHAN_QUEUE = (1 << 6),
 	FTDM_SPAN_SUGGEST_CHAN_ID = (1 << 7),
 	FTDM_SPAN_USE_AV_RATE = (1 << 8),
+	FTDM_SPAN_PWR_SAVING = (1 << 9),
 	/* If you use this flag, you MUST call ftdm_span_trigger_signals to deliver the user signals
 	 * after having called ftdm_send_span_signal(), which with this flag it will just enqueue the signal
 	 * for later delivery */
-	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 9),
+	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 10),
+	/* If this flag is set, channel will be moved to proceed state when calls goes to routing */
+	FTDM_SPAN_USE_PROCEED_STATE = (1 << 11),
+	/* If this flag is set, the signalling module supports jumping directly to state up, without
+		going through PROGRESS/PROGRESS_MEDIA */
+	FTDM_SPAN_USE_SKIP_STATES = (1 << 12),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
@@ -193,6 +200,7 @@ typedef enum {
 	FTDM_CHANNEL_FEATURE_CALLWAITING = (1 << 6), /*!< Channel will allow call waiting (ie: FXS devices) (read/write) */
 	FTDM_CHANNEL_FEATURE_HWEC = (1<<7), /*!< Channel has a hardware echo canceller */
 	FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE  = (1<<8), /*!< hardware echo canceller is disabled when there are no calls on this channel */
+	FTDM_CHANNEL_FEATURE_IO_STATS = (1<<9), /*!< Channel supports IO statistics (HDLC channels only) */
 } ftdm_channel_feature_t;
 
 typedef enum {
@@ -202,6 +210,7 @@ typedef enum {
 	FTDM_CHANNEL_STATE_DIALTONE,
 	FTDM_CHANNEL_STATE_COLLECT,
 	FTDM_CHANNEL_STATE_RING,
+	FTDM_CHANNEL_STATE_RINGING,
 	FTDM_CHANNEL_STATE_BUSY,
 	FTDM_CHANNEL_STATE_ATTN,
 	FTDM_CHANNEL_STATE_GENRING,
@@ -209,6 +218,7 @@ typedef enum {
 	FTDM_CHANNEL_STATE_GET_CALLERID,
 	FTDM_CHANNEL_STATE_CALLWAITING,
 	FTDM_CHANNEL_STATE_RESTART,
+	FTDM_CHANNEL_STATE_PROCEED,
 	FTDM_CHANNEL_STATE_PROGRESS,
 	FTDM_CHANNEL_STATE_PROGRESS_MEDIA,
 	FTDM_CHANNEL_STATE_UP,
@@ -218,12 +228,13 @@ typedef enum {
 	FTDM_CHANNEL_STATE_HANGUP,
 	FTDM_CHANNEL_STATE_HANGUP_COMPLETE,
 	FTDM_CHANNEL_STATE_IN_LOOP,
+	FTDM_CHANNEL_STATE_RESET,
 	FTDM_CHANNEL_STATE_INVALID
 } ftdm_channel_state_t;
 #define CHANNEL_STATE_STRINGS "DOWN", "HOLD", "SUSPENDED", "DIALTONE", "COLLECT", \
-		"RING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
-		"RESTART", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", \
-		"HANGUP", "HANGUP_COMPLETE", "IN_LOOP", "INVALID"
+		"RING", "RINGING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
+		"RESTART", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", \
+		"HANGUP", "HANGUP_COMPLETE", "IN_LOOP", "RESET", "INVALID"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channel_state_t)
 
 typedef enum {
@@ -257,6 +268,9 @@ typedef enum {
 	FTDM_CHANNEL_IN_ALARM = (1 << 27),
 	FTDM_CHANNEL_SIG_UP = (1 << 28),
 	FTDM_CHANNEL_USER_HANGUP = (1 << 29),
+	FTDM_CHANNEL_RX_DISABLED = (1 << 30),
+	FTDM_CHANNEL_TX_DISABLED = (1 << 31),
+	/* ok, when we reach 32, we need to move to uint64_t all the flag stuff */
 } ftdm_channel_flag_t;
 #if defined(__cplusplus) && defined(WIN32) 
     // fix C2676 
@@ -373,6 +387,7 @@ typedef struct ftdm_fsk_modulator ftdm_fsk_modulator_t;
 typedef ftdm_status_t (*ftdm_span_start_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_span_stop_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_channel_sig_read_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
+typedef ftdm_status_t (*ftdm_channel_sig_write_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
 
 typedef enum {
 	FTDM_ITERATOR_VARS = 1,

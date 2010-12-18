@@ -417,7 +417,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_destroy(ftdm_interrupt_t **ininterrupt)
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interrupts[], ftdm_size_t size, int ms)
 {
 	int numdevices = 0;
-	unsigned i;
+	unsigned i = 0;
 
 #if defined(__WINDOWS__)
 	DWORD res = 0;
@@ -496,6 +496,8 @@ pollagain:
 		}
 	}
 #else
+	/* for MacOS compilation, unused vars */
+	numdevices = i;
 #endif
 	return FTDM_SUCCESS;
 }

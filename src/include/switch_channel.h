@@ -179,8 +179,8 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
-  \brief Retrive the given channel's caller profile
-  \param channel channel to retrive the profile from
+  \brief Retrieve the given channel's caller profile
+  \param channel channel to retrieve the profile from
   \return the requested profile
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(switch_channel_t *channel);
@@ -195,8 +195,8 @@ SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel
 SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
-  \brief Retrive the given channel's originator caller profile
-  \param channel channel to retrive the profile from
+  \brief Retrieve the given channel's originator caller profile
+  \param channel channel to retrieve the profile from
   \return the requested profile
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_profile(switch_channel_t *channel);
@@ -209,8 +209,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_p
 SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
-  \brief Retrive the given channel's originatee caller profile
-  \param channel channel to retrive the profile from
+  \brief Retrieve the given channel's originatee caller profile
+  \param channel channel to retrieve the profile from
   \return the requested profile
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_profile(switch_channel_t *channel);
@@ -223,16 +223,16 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_p
 SWITCH_DECLARE(void) switch_channel_set_origination_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
-  \brief Retrive the given channel's origination caller profile
-  \param channel channel to retrive the profile from
+  \brief Retrieve the given channel's origination caller profile
+  \param channel channel to retrieve the profile from
   \return the requested profile
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_origination_caller_profile(switch_channel_t *channel);
 
 
 /*!
-  \brief Retrive the given channel's unique id
-  \param channel channel to retrive the unique id from
+  \brief Retrieve the given channel's unique id
+  \param channel channel to retrieve the unique id from
   \return the unique id
 */
 SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
@@ -241,7 +241,7 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
   \brief Set a variable on a given channel
   \param channel channel to set variable on
   \param varname the name of the variable
-  \param value the vaule of the variable
+  \param value the value of the variable
   \returns SWITCH_STATUS_SUCCESS if successful
 */
 
@@ -311,6 +311,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
   \param caller_extension extension to assign
 */
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
+
+SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_bool_t in);
 
 /*!
   \brief Retrieve caller extension from a given channel

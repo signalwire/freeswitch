@@ -729,6 +729,28 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
 	return apr_socket_recv(sock, buf, len);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool)
+{
+	switch_sockaddr_t *new_sa;
+	unsigned short family = APR_INET;
+
+	new_sa = apr_pcalloc(pool, sizeof(apr_sockaddr_t));
+	switch_assert(new_sa);
+	new_sa->pool = pool;
+	memset(new_sa, 0, sizeof(new_sa));
+
+    new_sa->family = family;
+    new_sa->sa.sin.sin_family = family;
+
+    new_sa->salen = sizeof(struct sockaddr_in);
+    new_sa->addr_str_len = 16;
+    new_sa->ipaddr_ptr = &(new_sa->sa.sin.sin_addr);
+    new_sa->ipaddr_len = sizeof(struct in_addr);
+
+	*sa = new_sa;
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname, int32_t family,
 														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
@@ -985,6 +1007,12 @@ SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t *queue, void **d
 {
 	return apr_queue_pop(queue, data);
 }
+
+SWITCH_DECLARE(switch_status_t) switch_queue_pop_timeout(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
+{
+	return apr_queue_pop_timeout(queue, data, timeout);
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *data)
 {

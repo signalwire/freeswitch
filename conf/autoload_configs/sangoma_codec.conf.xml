@@ -4,14 +4,15 @@
 		<!--
 		Comma separated list of codecs to register with FreeSWITCH, 
 		by default (if this parameter is not set) all available codecs are registered.
-		Valid codec values are: PCMU,PCMA,L16,G729,G726-32,GSM
+		Valid codec values are: PCMU,PCMA,G729,G726-32,G722,GSM,G723,AMR,G7221,iLBC
+		If this parameter is not specified only G729 will be registered
 		<param name="register" value="all"/>
 		-->
 
 		<!-- 
 		List of codecs to not register with FreeSWITCH, by default this is empty,
 	        but you may want to not load PCMU and PCMA or may be others to not use your 
-	        vocallo resources in codecs that are done well and fast in software.	
+	        resources in codecs that are done well and fast in software.	
 		<param name="noregister" value="PCMU,PCMA"/>
 		-->
 

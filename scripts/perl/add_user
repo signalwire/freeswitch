@@ -1,0 +1,306 @@
+#!/usr/bin/perl
+#
+# add_user
+#
+# Add one or more users to the XML directory
+#
+#
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Data::Dumper;
+
+## Useful items
+my $path_sep;
+my $config_path;
+my @dir_elem;
+my $user_template = &get_user_template;
+my $new_user_count = 0;
+
+## Command line args
+my $users;
+my $domain;
+my $dirpath;
+my $help;
+
+## Misc items somewhat related to cmd line args
+my $start;
+my $end; 
+my $user;
+
+## Check for Windows vs. *nix
+if ( $^O =~ m/^win/i ) {
+  ## Detected Windows (probably)
+  $path_sep = "\\";  # single backslash (\)
+  use File::Spec::Win32;
+} else {
+  $path_sep = '/';   # single slash (/)
+  use File::Spec;
+}
+
+GetOptions(
+		   'h'           => \$help,
+		   'help'        => \$help,
+		   'domain=s'    => \$domain,
+		   'users=s'     => \$users,
+		   'confpath=s'  => \$config_path,
+);
+
+if ( $help ) { 
+  usage();
+  exit(0);
+}
+
+if ( ! $domain ) {
+  $domain='default';
+}
+
+## Validate users if specified on command line
+if ( $users ) {
+  ($start,$end) = split /-/,$users;
+  if ( ! $start && ! $end ) {
+	die "Please specify both a start and end range, separated by a hyphen:\n add_user --users=xxxx-yyyy\n";
+  }
+
+  unless ( $start =~ m/[1-9]\d+/ ) {
+	die "Start of range '$start' is not numeric or is too short\n";
+  }
+
+  unless ( $end =~ m/[1-9]\d+/ ) {
+	die "End of range '$end' is not numberic or is too short\n";
+  }
+
+  if ( $end <= $start ) {
+	die "End of range needs to be greater than start of range\n";
+  }
+} else {
+  ## Look for user id in $ARGV[0]
+  if ( ! $ARGV[0] ) {
+	die "You must specify user id as a command line argument to add user, or use the --users option.\n";
+  }
+  unless ( $ARGV[0] =~ m/^[1-9]\d+$/ ) {
+	die "User id must be numeric, be at least 2 digits long, and cannot begin with the digit zero.\n"
+  }
+  $user = $ARGV[0];
+}
+
+if ( ! $config_path ) {
+  $config_path = '/usr/local/freeswitch/conf';
+} 
+
+## Check to make sure the directories in question exists
+unless ( -d $config_path ) {
+  die "Configuration path '$config_path' does not exist.\n";
+}
+
+my $directory_path = $config_path . $path_sep . 'directory';
+unless ( -d $directory_path ) {
+  die "Directory path '$directory_path' does not exist.\n";
+}
+
+## Now check domain pathname and test existence
+if ( ! $domain ) {
+  $domain = 'default';
+}
+
+## Full directory path includes the domain name 
+my $full_dir_path = $directory_path . $path_sep . $domain;
+unless ( -d $full_dir_path ) {
+  die "Full path to directory and domain '$full_dir_path' does not exist. \n";
+}
+
+unless ( -w $full_dir_path ) {
+  die "This user does not have write access to '$full_dir_path'.\n";
+}
+print "\n";
+
+## Regexp assemble items to show user what a PCRE might look like for his new users
+my $ra_present;
+my $ra_new;
+my $ra_all;
+eval { require Regexp::Assemble; };
+if ( ! $@ ) {
+  ## If Regexp::Assemble is available flag it for later building regexes
+  $ra_present = 'true';
+  $ra_new = Regexp::Assemble->new(    # new user regex
+								  reduce => 1,
+								  flags  => 0,
+);  
+  $ra_all = Regexp::Assemble->new(    # all users regex w/ new users thrown in
+								  reduce => 1,
+								  flags  => 0,
+);
+}
+
+## If we're this far then we can read in the existing users and put them in a hash
+##  Later we can check hash to avoid adding duplicate users
+my %current_users;
+my @CURRENT_USER_FILES = glob($full_dir_path . $path_sep . '*.xml');
+foreach ( @CURRENT_USER_FILES ) {
+  #print "User: $_\n";
+  open(FILEIN,'<',$_);
+  while(<FILEIN>) {
+	next unless  m/user id|number-alias/;
+	m/user id="(\d+)"/;
+	my $user_id = $1;
+	if ( ! $user_id ) {
+	  m/alias="(\d+)"/;
+	  $user_id = $1;
+	}
+
+	next unless $user_id;
+	$current_users{$user_id}++;
+
+	if ( $ra_present && $user_id =~ m/^\d+$/ ) {
+	  #print "Adding $user_id to \$re_all...\n";
+	  $ra_all->add($user_id)->anchor_line_begin->anchor_line_end;
+	}
+	last;
+  }
+  close(FILEIN);
+}
+
+#print Dumper(%current_users) . "\n";
+if ( $start && $end ) {
+  ## Add range of users
+  foreach $user ($start .. $end) {
+	&add_user($user);
+  }
+} else {
+  ## Add single user
+  &add_user($user);
+}
+
+print "\nOperation complete. ";
+if ( $new_user_count == 0 ) {
+  print "No users added.\n";
+  exit(0);
+} else {
+  printf "%d user%s added.\n", $new_user_count, $new_user_count==1 ? "" : "s";
+  print "Be sure to reloadxml.\n\n";
+}
+
+if ( $ra_present ) {
+  print "Regular expression information:\n\n";
+  ## Regexp::Assemble adds some stuff we really don't need
+  ## These lines just make the regexp pattern a bit more readable
+  my $tmp = $ra_new->as_string;
+  $tmp =~ s/\?://g;
+  $tmp =~ s/^\(\?\-xism:\^/^(/;
+  $tmp =~ s/\$\)$/)\$/;
+  $tmp =~ s/\\d/[0-9]/g;  # [0-9] is sometimes easier to read than \d
+  print "            Sample regex for all new users: " . $tmp . "\n";
+  $tmp = $ra_all->as_string;
+  $tmp =~ s/\?://g;
+  $tmp =~ s/^\(\?\-xism:\^/^(/;
+  $tmp =~ s/\$\)$/)\$/;
+  $tmp =~ s/\\d/[0-9]/g;  # [0-9] is sometimes easier to read than \d
+  print "Sample regex for all new AND current users: " . $tmp . "\n\n";
+  print "In the default configuration you can modify the expression in the condition for 'Local_Extension'.\n";
+  print ""
+} else {
+  print "If CPAN module Regexp::Assemble were installed this program would be able to suggest a regex for your new users.\n"
+}
+
+exit(0);
+
+sub add_user {
+  my $user_id = shift;
+  if ( exists( $current_users{$user_id} ) ) {
+	warn "User id $user_id already exists, skipping...\n";
+  } else {
+	my $new_user = $user_template;
+	$new_user =~ s/__USERID__/$user_id/g;
+	#print "Adding user id '$user_id' with this XML:\n";
+	#print $new_user . "\n";
+
+	## Attempt to create the user file
+	my $user_file_name = $full_dir_path . $path_sep . $user_id . '.xml';
+
+	## Does it already exist?
+	if ( -f $user_file_name ) {
+	  warn "$user_file_name exists, skipping...\n";
+	}
+	my $fh;
+	open($fh,'>',$user_file_name);
+	if ( ! $fh ) {
+	  warn "Unable to open '$user_file_name' - $!\n";
+	  warn "Skipping...\n";
+	  next;
+	}
+
+	print $fh $new_user;
+	close($fh);
+	print "Added $user_id in file $user_file_name \n";
+	$new_user_count++;
+	if ( $ra_present ) {
+	  $ra_new->add($user_id)->anchor_line_begin->anchor_line_end;
+	  $ra_all->add($user_id)->anchor_line_begin->anchor_line_end;
+	}
+  }
+
+}
+
+sub get_user_template {
+  my $templ = <<ENDUSERTEMPLATE;
+<include>
+  <user id="__USERID__">
+    <params>
+      <param name="password" value="\$\${default_password}"/>
+      <param name="vm-password" value="__USERID__"/>
+    </params>
+    <variables>
+      <variable name="toll_allow" value="domestic,international,local"/>
+      <variable name="accountcode" value="__USERID__"/>
+      <variable name="user_context" value="default"/>
+      <variable name="effective_caller_id_name" value="Extension __USERID__"/>
+      <variable name="effective_caller_id_number" value="__USERID__"/>
+      <variable name="outbound_caller_id_name" value="\$\${outbound_caller_name}"/>
+      <variable name="outbound_caller_id_number" value="\$\${outbound_caller_id}"/>
+      <variable name="callgroup" value="techsupport"/>
+    </variables>
+  </user>
+</include>
+
+ENDUSERTEMPLATE
+
+  return $templ;
+}
+
+sub usage {
+  print <<ENDUSAGE;
+
+            FreeSWITCH add user utility
+
+Adds one or more users to the FreeSWITCH directory using XML files.
+
+
+ Syntax:
+
+ add_user <user_id> [--domain=<domain_name>] [--confpath=<configuration_path>]
+ add_user --users=<start_user_id>-<end_user_id> [--domain=<domain_name>] [--confpath=<configuration_path>]
+
+In its simplest form, add_user will simply add the user_id specified at the command line.
+By default, users are added to the "default" domain. Use the --domain option to specify
+a different domain for the user(s) that are added.
+
+To specify a range of user IDs use the --users option. Separate the beginning and
+end of the range with a hyphen (-) character.
+
+By default add_user will look for the XML directory in its default location of
+/usr/local/freeswitch/conf/directory. Use the --confpath (configuration path)
+option to specify an alternate directory location.
+
+
+ NOTES: 
+
+add_user assumes
+User IDs must be numeric and cannot begin with zero.
+User IDs must be at least two digits long and have no specific length limit.
+If a user ID exists it will be skipped.
+If a domain specified does not exist no users will be created.
+
+ENDUSAGE
+
+}

@@ -140,7 +140,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	const char *var;
 
 	/*
-	   if (!switch_channel_test_flag(channel, CF_OUTBOUND) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+	   if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
 	   !switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
 	   if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 	   switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot establish media.\n");
@@ -763,6 +763,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		write_frame.samples = write_frame.datalen / sizeof(int16_t);
 	}
 
+	if (switch_channel_test_flag(channel, CF_RECOVERED) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
+		switch_channel_clear_flag(channel, CF_CONTROLLED);
+	}
+
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
@@ -914,21 +918,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_dtmf_t dtmf = { 0 };
 				
-			if (!args->input_callback && !args->buf && !args->dmachine) {
+			if (args && !args->input_callback && !args->buf && !args->dmachine) {
 				status = SWITCH_STATUS_BREAK;
 				break;
 			}
 				
 			switch_channel_dequeue_dtmf(channel, &dtmf);
 
-			if (args->dmachine) {
-				char ds[2] = {dtmf.digit, '\0'};
-				if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			} else if (args && args->input_callback) {
-				if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
-					break;
+			if (args) {
+				if (args->dmachine) {
+					char ds[2] = {dtmf.digit, '\0'};
+					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else if (args->input_callback) {
+					if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
 				}
 			}
 		}
@@ -1537,21 +1543,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		new_profile->context = switch_core_strdup(new_profile->pool, use_context);
 		new_profile->destination_number = switch_core_strdup(new_profile->pool, extension);
 		new_profile->rdnis = switch_core_strdup(new_profile->pool, profile->destination_number);
-
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			if (profile->callee_id_name) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", new_profile->caller_id_name);
-				new_profile->caller_id_name = switch_core_strdup(new_profile->pool, profile->callee_id_name);
-				profile->callee_id_name = SWITCH_BLANK_STRING;
-			}
-
-			if (profile->callee_id_number) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", new_profile->caller_id_number);
-				new_profile->caller_id_number = switch_core_strdup(new_profile->pool, profile->callee_id_number);
-				profile->callee_id_number = SWITCH_BLANK_STRING;
-			}
-		}
-		
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
@@ -2284,7 +2275,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
-	jb = stfu_n_init(qlen, 0);
+	jb = stfu_n_init(qlen, qlen, read_impl.samples_per_packet, read_impl.samples_per_second);
 
 	write_frame.codec = switch_core_session_get_read_codec(session);
 
@@ -2556,6 +2547,280 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid)
 
 	return exists;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp)
+{
+    if (zstr(cmd)) {
+		return SWITCH_STATUS_SUCCESS;	
+    }
+
+	if (fhp) {
+		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (!strncasecmp(cmd, "speed", 5)) {
+			char *p;
+		
+			if ((p = strchr(cmd, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fhp->speed += step;
+				} else {
+					int speed = atoi(p);
+					fhp->speed = speed;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			return SWITCH_STATUS_FALSE;
+
+		} else if (!strncasecmp(cmd, "volume", 6)) {
+			char *p;
+			
+			if ((p = strchr(cmd, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fhp->vol += step;
+				} else {
+					int vol = atoi(p);
+					fhp->vol = vol;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+			
+			if (fhp->vol) {
+				switch_normalize_volume(fhp->vol);
+			}
+			
+			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(cmd, "pause")) {
+			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
+			} else {
+				switch_set_flag(fhp, SWITCH_FILE_PAUSE);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strcasecmp(cmd, "stop")) {
+			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(cmd, "truncate")) {
+			switch_core_file_truncate(fhp, 0);
+		} else if (!strcasecmp(cmd, "restart")) {
+			unsigned int pos = 0;
+			fhp->speed = 0;
+			switch_core_file_seek(fhp, &pos, 0, SEEK_SET);
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strncasecmp(cmd, "seek", 4)) {
+			switch_codec_t *codec;
+			unsigned int samps = 0;
+			unsigned int pos = 0;
+			char *p;
+			codec = switch_core_session_get_read_codec(session);
+			
+			if ((p = strchr(cmd, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					int32_t target;
+					if (!(step = atoi(p))) {
+						step = 1000;
+					}
+
+					samps = step * (codec->implementation->samples_per_second / 1000);
+					target = (int32_t)fhp->pos + samps;
+
+					if (target < 0) {
+						target = 0;
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", target);
+					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
+
+				} else {
+					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
+					if (samps < 0) {
+						samps = 0;
+					}
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
+					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
+				}
+			}
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+    if (!strcmp(cmd, "true") || !strcmp(cmd, "undefined")) {
+		return SWITCH_STATUS_SUCCESS;
+    }
+
+    return SWITCH_STATUS_FALSE;
+	
+}
+
+#define START_SAMPLES 32768
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *session, const char *file, const char *insert_file, switch_size_t sample_point)
+{
+	switch_file_handle_t orig_fh = { 0 };
+	switch_file_handle_t new_fh = { 0 };
+	switch_codec_implementation_t read_impl = { 0 };
+	char *tmp_file;
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	int16_t *abuf = NULL;
+	switch_size_t olen = 0;
+	int asis = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_size_t sample_count = 0;
+	uint32_t pos = 0;
+	char *ext;
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+
+	if ((ext = strrchr(file, '.'))) {
+		ext++;
+	} else {
+		ext = "wav";
+	}
+	
+	tmp_file = switch_core_session_sprintf(session, "%s%smsg_%s.%s", 
+										   SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str, ext);	
+	
+	switch_core_session_get_read_impl(session, &read_impl);
+	
+	new_fh.channels = read_impl.number_of_channels;
+	new_fh.native_rate = read_impl.actual_samples_per_second;
+
+
+	if (switch_core_file_open(&new_fh,
+							  tmp_file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", tmp_file);
+		goto end;
+	}
+
+
+	if (switch_core_file_open(&orig_fh,
+							  file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", file);
+		goto end;
+	}
+
+
+	switch_zmalloc(abuf, START_SAMPLES * sizeof(*abuf));
+
+	if (switch_test_flag((&orig_fh), SWITCH_FILE_NATIVE)) {
+		asis = 1;
+	}
+
+	while (switch_channel_ready(channel)) {
+		olen = START_SAMPLES;
+
+		if (!asis) {
+			olen /= 2;
+		}
+
+		if ((sample_count + olen) > sample_point) {
+			olen = sample_point - sample_count;
+		}
+
+		if (!olen || switch_core_file_read(&orig_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+			break;
+		}
+
+		sample_count += olen;
+
+		switch_core_file_write(&new_fh, abuf, &olen);
+	}
+
+	switch_core_file_close(&orig_fh);
+
+
+	if (switch_core_file_open(&orig_fh,
+							  insert_file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", file);
+		goto end;
+	}
+
+
+	while (switch_channel_ready(channel)) {
+		olen = START_SAMPLES;
+
+		if (!asis) {
+			olen /= 2;
+		}
+
+		if (switch_core_file_read(&orig_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+			break;
+		}
+
+		sample_count += olen;
+
+		switch_core_file_write(&new_fh, abuf, &olen);
+	}
+
+	switch_core_file_close(&orig_fh);
+
+	if (switch_core_file_open(&orig_fh,
+							  file,
+							  new_fh.channels,
+							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open file %s\n", file);
+		goto end;
+	}
+
+	pos = 0;
+	switch_core_file_seek(&orig_fh, &pos, sample_point, SEEK_SET);
+
+	while (switch_channel_ready(channel)) {
+		olen = START_SAMPLES;
+
+		if (!asis) {
+			olen /= 2;
+		}
+
+		if (switch_core_file_read(&orig_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+			break;
+		}
+
+		sample_count += olen;
+
+		switch_core_file_write(&new_fh, abuf, &olen);
+	}
+
+ end:
+
+	if (switch_test_flag((&orig_fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&orig_fh);
+	}
+
+	if (switch_test_flag((&new_fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&new_fh);
+	}
+
+	switch_file_rename(tmp_file, file, switch_core_session_get_pool(session));
+	unlink(tmp_file);
+
+	switch_safe_free(abuf);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 
 /* For Emacs:
