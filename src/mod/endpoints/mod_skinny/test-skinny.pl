@@ -34,12 +34,6 @@ if(!$socket) {
     exit 1;
 }
 # =============================================================================
-$socket->send_raw(
-    XML_ALARM_MESSAGE,
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\x0a<x-cisco-alarm>\x0a<Alarm Name=\"LastOutOfServiceInformation\">\x0a<ParameterList>\x0a<String name=\"DeviceName\">SEP002699438F62</String>\x0a<String name=\"DeviceIPv4Address\">192.168.3.201/24</String>\x0a<String name=\"IPv4DefaultGateway\">192.168.3.254</String>\x0a<String name=\"DeviceIPv6Address\"></String>\x0a<String name=\"IPv6DefaultGateway\"></String>\x0a<String name=\"ModelNumber\">CP-7961G</String>\x0a<String name=\"NeighborIPv4Address\">192.168.0.253</String>\x0a<String name=\"NeighborIPv6Address\"></String>\x0a<String name=\"NeighborDeviceID\">sw2.wvds.local</String>\x0a<String name=\"NeighborPortID\">3</String>\x0a<Enum name=\"DHCPv4Status\">1</Enum>\x0a<Enum name=\"DHCPv6Status\">0</Enum>\x0a<Enum name=\"TFTPCfgStatus\">0</Enum>\x0a<Enum name=\"DNSStatusUnifiedCM1\">0</Enum>\x0a<Enum name=\"DNSStatusUnifiedCM2\">0</Enum>\x0a<Enum name=\"DNSStatusUnifiedCM3\">0</Enum>\x0a<String name=\"VoiceVLAN\">4095</String>\x0a<String name=\"UnifiedCMIPAddress\"><not open></String>\x0a<String name=\"LocalPort\">-1</String>\x0a<String name=\"TimeStamp\">1289313813826</String>\x0a<Enum name=\"ReasonForOutOfService\"></Enum>\x0a<String name=\"LastProtocolEventSent\">1:Register</String>\x0a<String name=\"LastProtocolEventReceived\">129:RegisterAck</String>\x0a</ParameterList>\x0a</Alarm>\x0a</x-cisco-alarm>\x0a"
-    );
-    $socket->sleep(20);
-    exit;
 $socket->send_message(
     REGISTER_MESSAGE,
     device_name => $device_name,
