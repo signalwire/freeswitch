@@ -627,8 +627,7 @@ union skinny_data {
 	struct extended_data_message extended_data;
 
     uint16_t as_uint16;
-    char as_char;
-    void *raw;
+    char as_char[1];
 };
 
 /*
