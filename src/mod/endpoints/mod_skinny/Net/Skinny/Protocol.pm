@@ -48,7 +48,7 @@ sub _find {
             my ($name, $value) = ($1,hex($2));
             $sub{$name} = sub () { $value };
             $const{$name} = $value;
-        } elsif(/^\s*struct\s+([a-z_]+)\s*\{\s*$/) {
+        } elsif(/^\s*struct\s+PACKED\s+([a-z_]+)\s*\{\s*$/) {
             my $struct_name = $1;
             $struct{$struct_name} = [];
             while(<$fh>) {
