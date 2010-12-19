@@ -250,6 +250,10 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 {
 	DEFINE_WAIT(wait);
 	struct skypopen_dev *dev = filp->private_data;
+
+	if(unload)
+		return -1;
+
 #ifdef WANT_HRTIMER
 #if 1
 	if(dev->timer_inq_started == 0){
@@ -278,6 +282,10 @@ static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t 
 {
 	DEFINE_WAIT(wait);
 	struct skypopen_dev *dev = filp->private_data;
+
+	if(unload)
+		return -1;
+
 #ifdef WANT_HRTIMER
 #if 1
 	if(dev->timer_outq_started == 0){
@@ -372,10 +380,14 @@ void skypopen_cleanup_module(void)
 		ret= del_timer( &lptr->device.timer_outq );
 		printk( "Stopped skypopen OSS driver write timer\n");
 #else// WANT_HRTIMER
-		ret = hrtimer_cancel( &lptr->device.timer_inq );
-		printk( "Stopped skypopen OSS driver read HRtimer\n");
-		ret = hrtimer_cancel( &lptr->device.timer_outq );
-		printk( "Stopped skypopen OSS driver write HRtimer\n");
+		if(lptr->device.timer_inq_started){
+			ret = hrtimer_cancel( &lptr->device.timer_inq );
+			printk( "Stopped skypopen OSS driver read HRtimer\n");
+		}
+		if(lptr->device.timer_outq_started){
+			ret = hrtimer_cancel( &lptr->device.timer_outq );
+			printk( "Stopped skypopen OSS driver write HRtimer\n");
+		}
 
 #endif// WANT_HRTIMER
 		list_del(&lptr->list);
