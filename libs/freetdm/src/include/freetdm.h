@@ -438,7 +438,7 @@ struct ftdm_sigmsg {
 	union {
 		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
 		ftdm_event_trace_t logevent;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
-	}ev_data;
+	} ev_data;
 };
 
 /*! \brief Crash policy 

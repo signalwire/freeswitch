@@ -1397,8 +1397,7 @@ static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 			sig.chan_id = ftdm_channel_get_id(chan);
 			sig.channel = chan;
 			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sig.raw_data = &status;
-
+			sig.ev_data.sigstatus.status = status;
 			ftdm_span_send_signal(span, &sig);
 		}
 	}
@@ -1434,7 +1433,7 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 			sig.chan_id = ftdm_channel_get_id(chan);
 			sig.channel = chan;
 			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sig.raw_data = &status;
+			sig.ev_data.sigstatus.status = status;
 
 			ftdm_span_send_signal(span, &sig);
 		}
