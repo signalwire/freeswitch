@@ -2086,7 +2086,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 
 		case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{
-			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->ev_data.sigstatus.status;
+			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to: %s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
