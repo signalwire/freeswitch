@@ -55,6 +55,7 @@ static void sync_sla(sofia_profile_t *profile, const char *to_user, const char *
 struct dialog_helper {
 	char status[512];
 	char rpid[512];
+	char presence_id[1024];
 };
 
 struct resub_helper {
@@ -479,9 +480,10 @@ static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, cha
 {
 	struct dialog_helper *helper = (struct dialog_helper *) pArg;
 
-	if (argc == 2) {
+	if (argc == 3) {
 		switch_set_string(helper->status, argv[0]);
 		switch_set_string(helper->rpid, argv[1]);
+		switch_set_string(helper->presence_id, argv[2]);
 	}
 
 	return -1;
@@ -638,7 +640,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
-				sql = switch_mprintf("select status,rpid from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
+				sql = switch_mprintf("select status,rpid,presence_id from sip_dialogs "
+									 "where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
 									 probe_euser, probe_host, probe_euser, probe_host);
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 
@@ -656,16 +659,16 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 "sip_dialogs.direction, "
 									 "sip_dialogs.sip_to_user, "
 									 "sip_dialogs.sip_to_host, "
+
 									 "sip_presence.status,"
 									 "sip_presence.rpid,"
 									 "sip_dialogs.presence_id, "
 									 "sip_presence.open_closed,"
 									 "'%q','%q' "
+									 "from sip_registrations "
 
-									 "from sip_registrations left join sip_dialogs on "
+									 "left join sip_dialogs on "
 									 "sip_dialogs.presence_id = sip_registrations.sip_user || '@' || sip_registrations.sip_host "
-
-
 									 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
 									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
  
@@ -813,7 +816,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
-		sql = switch_mprintf("select status,rpid from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
+		sql = switch_mprintf("select status,rpid,presence_id from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
 							 euser, host, euser, host);
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 		switch_safe_free(sql);
@@ -824,25 +827,19 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 								  "sip_subscriptions.accept,sip_subscriptions.profile_name"
 								  ",'%q','%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'%q','%q',"
-								  "sip_subscriptions.version, sip_dialogs.presence_id "
+								  "sip_subscriptions.version, '%q' "
 								  "from sip_subscriptions "
 								  "left join sip_presence on "
 								  "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								  "sip_subscriptions.profile_name=sip_presence.profile_name) "
-								  "left join sip_dialogs on "
-								  
-								  "sip_dialogs.presence_id = sip_subscriptions.sub_to_user || '@' || sip_subscriptions.sub_to_host or "
-
-								  
-								  "(sip_dialogs.sip_from_user = sip_subscriptions.sub_to_user "
-								  "and sip_dialogs.sip_from_host = sip_subscriptions.sub_to_host) "
 								  
 								  "where sip_subscriptions.expires > -1 and "
 								  "(event='%q' or event='%q') and sub_to_user='%q' "
 								  "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
-								  "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host)",
-								  switch_str_nil(status), switch_str_nil(rpid), host, 
-								  dh.status,dh.rpid,
+								  "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host) ",
+								  
+								  switch_str_nil(status), switch_str_nil(rpid), host,
+								  dh.status,dh.rpid,dh.presence_id,
 								  event_type, alt_event_type, euser, host, host, profile->name))) {
 			
 			struct presence_helper helper = { 0 };			
