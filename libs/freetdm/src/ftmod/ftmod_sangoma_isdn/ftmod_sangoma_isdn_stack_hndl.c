@@ -284,7 +284,9 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 			case FTDM_CHANNEL_STATE_PROGRESS:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_DIALING:
+#ifdef NETBORDER_CALL_REF
 				get_callref(ftdmchan, &cnStEvnt->callRef);
+#endif
 				get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 				get_facility_ie(ftdmchan, &cnStEvnt->facilityStr);
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
@@ -357,7 +359,9 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 		case MI_CALLPROC:			
 		case MI_PROGRESS:
 		case MI_ALERTING:
+#ifdef NETBORDER_CALL_REF
 			get_callref(ftdmchan, &cnStEvnt->callRef);
+#endif
 			get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 			get_facility_ie(ftdmchan, &cnStEvnt->facilityStr);
 
