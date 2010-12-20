@@ -2780,7 +2780,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
 					GOTO_STATUS(done, FTDM_FAIL);
 				}
-				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT);
+				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT);
+				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 		}
 		break;
@@ -2788,7 +2789,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_CALLERID)) {
 				ftdm_fsk_demod_destroy(&ftdmchan->fsk);
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT);
+				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT);
+				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
 		}
 		break;
@@ -3051,7 +3053,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_DISABLE_PROGRESS_DETECT:
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_PROGRESS)) {
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_PROGRESS_DETECT);
+				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_PROGRESS_DETECT);
 				ftdm_channel_clear_detected_tones(ftdmchan);
 				ftdm_channel_clear_needed_tones(ftdmchan);
 				GOTO_STATUS(done, FTDM_SUCCESS);
@@ -3063,8 +3065,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			/* if they don't have thier own, use ours */
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
 				teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
-				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled software DTMF detector\n");
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
