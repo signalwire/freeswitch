@@ -1731,6 +1731,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		}
 		break;
 	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED: { /* twiddle */ } break;
 	
 	default:
 		{

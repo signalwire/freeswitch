@@ -96,6 +96,10 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_get_channel_sig_status)
 {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+		*status = FTDM_SIG_STATE_DOWN;
+		return FTDM_SUCCESS;
+	}
 	*status = FTDM_SIG_STATE_UP;
 	return FTDM_SUCCESS;
 }
@@ -109,7 +113,25 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_get_channel_sig_status)
 
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_get_span_sig_status)
 {
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
+	/* if ALL channels are in alarm, report DOWN, UP otherwise. */
+	*status = FTDM_SIG_STATE_DOWN;
+	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(fchan);
+		if (!ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
+			*status = FTDM_SIG_STATE_UP;
+			ftdm_channel_unlock(fchan);
+			break;
+		}
+		ftdm_channel_unlock(fchan);
+	}
+	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
 }
 
@@ -967,6 +989,21 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
 		}
+		break;
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sig.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
+			ftdm_span_send_signal(span, &sig);
+		}
+		break;
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sig.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
+			ftdm_span_send_signal(span, &sig);
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(event->channel, FTDM_LOG_DEBUG, "Ignoring event [%s] in state [%s]\n", ftdm_oob_event2str(event->enum_id), ftdm_channel_state2str(event->channel->state));
