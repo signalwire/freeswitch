@@ -1761,27 +1761,28 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 		for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
 			if ((node = (fifo_node_t *) val)) {
+				int x = 0;
+				switch_event_t *pop;
 
 				if (node->ready == FIFO_DELAY_DESTROY) {
-					int doit = 0;
-					
-					switch_mutex_lock(node->update_mutex);
-					doit = node->consumer_count == 0 && node_caller_count(node) == 0;
-					switch_mutex_unlock(node->update_mutex);
-					
-					if (doit) {
+					if (switch_thread_rwlock_trywrlock(node->rwlock) == SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s removed.\n", node->name);
 						switch_core_hash_delete(globals.fifo_hash, node->name);
+
+						for (x = 0; x < MAX_PRI; x++) {
+							while (fifo_queue_pop(node->fifo_list[x], &pop, 2) == SWITCH_STATUS_SUCCESS) {
+								switch_event_destroy(&pop);
+							}
+						}
 						
 						node->ready = 0;
-						switch_mutex_lock(node->mutex);
 						switch_core_hash_destroy(&node->consumer_hash);
 						switch_mutex_unlock(node->mutex);
 						switch_mutex_unlock(node->update_mutex);
+						switch_thread_rwlock_unlock(node->rwlock);
 						switch_core_destroy_memory_pool(&node->pool);
 						goto restart;
 					}
-					
 				}
 				
 
@@ -2172,7 +2173,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	char *mydata = NULL, *argv[5] = { 0 };
 	fifo_node_t *node = NULL, *node_list[MAX_NODES_PER_CONSUMER + 1] = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int do_wait = 1, node_count = 0, i = 0;
+	int do_destroy = 0, do_wait = 1, node_count = 0, i = 0;
 	const char *moh = NULL;
 	const char *announce = NULL;
 	switch_event_t *event = NULL;
@@ -2247,13 +2248,10 @@ SWITCH_STANDARD_APP(fifo_function)
 		if (!(node = switch_core_hash_find(globals.fifo_hash, nlist[i]))) {
 			node = create_node(nlist[i], importance, globals.sql_mutex);
 			node->ready = 1;
-			switch_thread_rwlock_rdlock(node->rwlock);
 		}
-		node_list[node_count++] = node;
-	}
 
-	if (switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use")) && node->ready == 1) {
-		node->ready = FIFO_DELAY_DESTROY;
+		switch_thread_rwlock_rdlock(node->rwlock);
+		node_list[node_count++] = node;
 	}
 
 	switch_mutex_unlock(globals.mutex);
@@ -3103,9 +3101,21 @@ SWITCH_STANDARD_APP(fifo_function)
 
   done:
 
-	if (node) {
-		switch_thread_rwlock_unlock(node->rwlock);
+	if (switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use"))) {
+		do_destroy = 1;
 	}
+
+	switch_mutex_lock(globals.mutex);
+	for (i = 0; i < node_count; i++) {
+		if (!(node = node_list[i])) {
+			continue;
+		}
+		switch_thread_rwlock_unlock(node->rwlock);
+		if (node->ready == 1 && do_destroy) {
+			node->ready = FIFO_DELAY_DESTROY;
+		}
+	}
+	switch_mutex_unlock(globals.mutex);
 
 	switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
