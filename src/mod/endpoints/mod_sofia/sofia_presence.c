@@ -840,11 +840,10 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  "where sip_subscriptions.expires > -1 and "
 								  "(event='%q' or event='%q') and sub_to_user='%q' "
 								  "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
-								  "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host) "
-								  "and (presence_id is null or presence_id = '%q@%q')",
+								  "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host)",
 								  switch_str_nil(status), switch_str_nil(rpid), host, 
 								  dh.status,dh.rpid,
-								  event_type, alt_event_type, euser, host, host, profile->name, euser, host))) {
+								  event_type, alt_event_type, euser, host, host, profile->name))) {
 			
 			struct presence_helper helper = { 0 };			
 
