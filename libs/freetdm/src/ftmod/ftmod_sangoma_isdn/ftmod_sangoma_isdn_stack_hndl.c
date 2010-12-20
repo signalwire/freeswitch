@@ -71,13 +71,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				sngisdn_info->glare.suInstId = suInstId; /* Do not generate a suInstId now, we will generate when glared call gets extracted */
 				sngisdn_info->glare.spInstId = spInstId;
 				sngisdn_info->glare.dChan = dChan;
-				sngisdn_info->glare.ces = ces;
+				sngisdn_info->glare.ces = ces;				
 				break;
 			}
 			
 			sngisdn_info->suInstId = get_unique_suInstId(suId);
 			sngisdn_info->spInstId = spInstId;
-			
 
 			if (conEvnt->cdPtyNmb.eh.pres && signal_data->num_local_numbers) {
 				uint8_t local_number_matched = 0;
@@ -125,6 +124,9 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 
 			/* Fill in call information */
+#ifdef NETBORDER_CALL_REF
+			get_callref(ftdmchan, &conEvnt->callRef);
+#endif
 			get_calling_num(ftdmchan, &conEvnt->cgPtyNmb);
 			get_calling_num2(ftdmchan, &conEvnt->cgPtyNmb2);
 			get_called_num(ftdmchan, &conEvnt->cdPtyNmb);
@@ -282,6 +284,7 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 			case FTDM_CHANNEL_STATE_PROGRESS:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_DIALING:
+				get_callref(ftdmchan, &cnStEvnt->callRef);
 				get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 				get_facility_ie(ftdmchan, &cnStEvnt->facilityStr);
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
@@ -354,6 +357,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 		case MI_CALLPROC:			
 		case MI_PROGRESS:
 		case MI_ALERTING:
+			get_callref(ftdmchan, &cnStEvnt->callRef);
 			get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 			get_facility_ie(ftdmchan, &cnStEvnt->facilityStr);
 

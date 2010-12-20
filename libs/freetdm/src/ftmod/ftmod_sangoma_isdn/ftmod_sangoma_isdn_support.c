@@ -161,6 +161,32 @@ ftdm_status_t sngisdn_set_span_avail_rate(ftdm_span_t *span, sngisdn_avail_t ava
 	return FTDM_SUCCESS;
 }
 
+#ifdef NETBORDER_CALL_REF
+ftdm_status_t get_callref(ftdm_channel_t *ftdmchan, BCCallRef* callRef)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
+
+	if (signal_data->raw_trace_q931) {
+		if (callRef->eh.pres != PRSNT_NODEF || callRef->reference.pres != PRSNT_NODEF) {
+			/* Netborder only supports BRI, so we only care for BRI for now */
+			if (FTDM_SPAN_IS_BRI(ftdmchan->span) && !sngisdn_info->call_ref) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to obtain call reference\n");
+			}
+			return FTDM_FAIL;
+		}		
+		if (FTDM_SPAN_IS_BRI(ftdmchan->span)) {
+			sngisdn_info->call_ref = 0x7F & callRef->reference.val;
+		} else {
+			sngisdn_info->call_ref = 0x7FFF & callRef->reference.val;
+		}
+		
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Call reference:%04x\n", sngisdn_info->call_ref);
+	}
+	return FTDM_SUCCESS;
+}
+#endif
+
 ftdm_status_t get_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
