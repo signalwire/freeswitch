@@ -38,13 +38,25 @@
 #define OCTET(x) (ieData[x-1] & 0xFF)
 #define MAX_DECODE_STR_LEN 2000
 
+typedef struct sngisdn_trace_info
+{
+	uint8_t call_ref_flag;
+	uint16_t call_ref;
+	uint8_t msgtype;
+	uint8_t bchan_no;
+	ftdm_trace_dir_t dir;
+} sngisdn_frame_info_t;
+
 void print_hex_dump(char* str, uint32_t *str_len, uint8_t* data, uint32_t index_start, uint32_t index_end);
 uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset, uint8_t *data, uint16_t index_start);
+static ftdm_status_t sngisdn_map_call(sngisdn_span_data_t *signal_data, sngisdn_frame_info_t frame_info, ftdm_channel_t **found);
+static ftdm_status_t sngisdn_get_frame_info(uint8_t *data, uint32_t data_len, ftdm_trace_dir_t dir, sngisdn_frame_info_t *frame_info);
 
 uint8_t get_bits(uint8_t octet, uint8_t bitLo, uint8_t bitHi);
 char* get_code_2_str(int code, struct code2str *pCodeTable);
 void sngisdn_decode_q921(char* str, uint8_t* data, uint32_t data_len);
 void sngisdn_decode_q931(char* str, uint8_t* data, uint32_t data_len);
+
 
 char* get_code_2_str(int code, struct code2str *pCodeTable)
 {
@@ -120,10 +132,7 @@ void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 	
 	sigev.ev_data.trace.dir = dir;
 	sigev.ev_data.trace.type = FTDM_TRACE_TYPE_Q921;
-	
-	/* TODO: Map trace to call ID here */
-	sigev.call_id = 0;
-	
+
 	raw_data = ftdm_malloc(data_len);
 	ftdm_assert(raw_data, "Failed to malloc");
 	
@@ -218,26 +227,33 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 {
 	uint8_t 			*raw_data;
 	ftdm_sigmsg_t		sigev;
+	ftdm_channel_t *ftdmchan;
+	sngisdn_frame_info_t  frame_info;
 
 	memset(&sigev, 0, sizeof(sigev));
 
-	sigev.span_id = signal_data->ftdm_span->span_id;
-	sigev.chan_id = signal_data->dchan->chan_id;
-	sigev.channel = signal_data->dchan;
-	sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
+	/* Note: Mapped raw trace assume only exclusive b-channel selection is used. i.e the b-channel selected on outgoing SETUP is always used for the call */
+	
+	if (sngisdn_get_frame_info(data, data_len, dir, &frame_info) == FTDM_SUCCESS) {
+		if (sngisdn_map_call(signal_data, frame_info, &ftdmchan) == FTDM_SUCCESS) {
+			sigev.call_id = ftdmchan->caller_data.call_id;
+			sigev.span_id = ftdmchan->physical_span_id;
+			sigev.chan_id = ftdmchan->physical_chan_id;
+			sigev.channel = ftdmchan;
+		}
+		sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
 
-	sigev.ev_data.trace.dir = dir;
-	sigev.ev_data.trace.type = FTDM_TRACE_TYPE_Q931;
-	
-	/* TODO: Map trace to call ID here */
-	
-	raw_data = ftdm_malloc(data_len);
-	ftdm_assert(raw_data, "Failed to malloc");
-	
-	memcpy(raw_data, data, data_len);
-	sigev.raw_data = raw_data;
-	sigev.raw_data_len = data_len;
-	ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
+		sigev.ev_data.trace.dir = dir;
+		sigev.ev_data.trace.type = FTDM_TRACE_TYPE_Q931;
+
+		raw_data = ftdm_malloc(data_len);
+		ftdm_assert(raw_data, "Failed to malloc");
+
+		memcpy(raw_data, data, data_len);
+		sigev.raw_data = raw_data;
+		sigev.raw_data_len = data_len;
+		ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
+	}
 }
 
 void sngisdn_decode_q931(char* str, uint8_t* data, uint32_t data_len)
@@ -253,9 +269,6 @@ void sngisdn_decode_q931(char* str, uint8_t* data, uint32_t data_len)
 	prot_disc = (uint8_t)data[0];
 	str_len += sprintf(&str[str_len], "  Prot Disc:%s (0x%02x)\n", get_code_2_str(prot_disc, dcodQ931ProtDiscTable), prot_disc);
 	
-
-	
-
 	/* Decode Call Reference */
 	lenCallRef = (uint8_t) (data[1] & 0x0F);
 
@@ -746,5 +759,204 @@ void print_hex_dump(char* str, uint32_t *str_len, uint8_t* data, uint32_t index_
 	*str_len += sprintf(&str[*str_len], "]\n");
 	return;
 }
+
+static ftdm_status_t sngisdn_get_frame_info(uint8_t *data, uint32_t data_len, ftdm_trace_dir_t dir, sngisdn_frame_info_t *target)
+{
+	uint8_t pos = 0;
+	uint8_t flag;
+	uint16_t ref = 0;
+	uint8_t ref_len = 0;
+	uint8_t bchan_no = 0;
+	uint8_t msgtype;
+
+	/* First octet is protocol discriminator */
+	pos++;
+	/* Second octet contains length of call reference */
+	ref_len = data[pos++] & 0x0F;
+
+	/* third octet is call reference */
+	flag = (data[pos] & 0x80) >> 7;
+	if (ref_len == 2) {
+		ref = (data[pos++] & 0x7F) << 8;
+		ref |= (data[pos++] & 0xFF) ;
+	} else {
+		ref = (data[pos++] & 0x7F);
+	}
+
+	/* Next octet is the message type */
+	msgtype = data[pos++] & 0x7F;
+	
+	/*
+		ftdm_log(FTDM_LOG_DEBUG, "Raw frame:call_ref:0x%04x flag:%d msgtype:%d\n", ref, flag, msgtype);
+	*/
+	if (!ref) {
+		/* This is not a call specific message (RESTART for example and we do not care about it) */
+		return FTDM_FAIL;
+	}
+
+	/* Look for the b-channel */
+	if (msgtype == PROT_Q931_MSGTYPE_SETUP) {
+		/* Try to find the b-channel no*/
+
+		for(; pos < data_len; pos++) {
+			uint8_t ie_id = data[pos];
+			uint8_t ie_len = data[pos+1];
+
+			switch(ie_id) {
+				case PROT_Q931_IE_SENDING_COMPLETE:
+					/* Single octet ie's do not have a length */
+					ie_len = 0;
+					break;
+				case PROT_Q931_IE_CHANNEL_ID:
+					{
+						/* Try to obtain the b-channel */
+						uint8_t ie_pos = pos+2;					
+						//ifaceIdPresent = get_bits(OCTET(3),7,7);
+						if (data[ie_pos] & 0x20) {
+							/* Interface type is Primary Rate */
+							ie_pos+=2;
+							bchan_no = data[ie_pos] & 0x7F;
+						} else {
+							/* Interface type is Basic Interface */
+							/* Get the channel number from info channel selection */
+							bchan_no = data[ie_pos] & 0x03;
+						}
+						ftdm_log(FTDM_LOG_DEBUG, "Found b-channel:%d\n", bchan_no);
+						goto parse_ies_done;
+					}
+					break;
+				default:
+					pos = pos+ie_len+1;
+			}
+			//ftdm_log(FTDM_LOG_DEBUG, "Decoded IE:%s\n", get_code_2_str(ie_id, dcodQ931IEIDTable));
+		}
+		if (!bchan_no) {
+			char tmp[1000];
+			print_hex_dump(tmp, 0, data, 0, data_len);			
+			ftdm_log(FTDM_LOG_WARNING, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
+		}
+	}
+
+parse_ies_done:
+
+	target->call_ref = ref;
+	target->call_ref_flag = flag;
+	target->msgtype = msgtype;
+	target->bchan_no = bchan_no;
+	target->dir = dir;
+
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t sngisdn_map_call(sngisdn_span_data_t *signal_data, sngisdn_frame_info_t frame_info, ftdm_channel_t **found)
+{
+	ftdm_channel_t *ftdmchan;
+	sngisdn_chan_data_t *sngisdn_info;
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_status_t status = FTDM_FAIL;
+	uint8_t outbound_call = 0;
+	
+	if ((!frame_info.call_ref_flag && frame_info.dir == FTDM_TRACE_DIR_OUTGOING) ||
+		(frame_info.call_ref_flag && frame_info.dir == FTDM_TRACE_DIR_INCOMING)) {
+
+		/* If this is an outgoing frame and this frame was sent by the originating side
+			of the call (frame_info.call_ref_flag == 0), then this is an outbound call */
+		outbound_call = 1;
+	} else {
+		outbound_call = 0;
+	}
+
+	switch (frame_info.msgtype) {
+		case PROT_Q931_MSGTYPE_SETUP:
+			/* We initiated this outgoing call try to match the call reference with our internal call-id*/
+			if (!frame_info.bchan_no) {
+				/* We were not able to determine the bchannel on this call, so we will not be able to match it anyway */
+				status = FTDM_FAIL;
+			}
+			
+			chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
+			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+				ftdmchan = (ftdm_channel_t*)(ftdm_iterator_current(curr));
+				ftdm_channel_lock(ftdmchan);
+				
+				if (outbound_call) {
+					sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
+					if (sngisdn_info && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+						if (ftdmchan->caller_data.call_id && ftdmchan->physical_chan_id == frame_info.bchan_no) {
+
+							sngisdn_info->call_ref = frame_info.call_ref;
+							*found = ftdmchan;
+							status = FTDM_SUCCESS;
+						}
+					}
+				} else {
+					if (ftdmchan->physical_chan_id == frame_info.bchan_no) {
+						*found = ftdmchan;
+						status = FTDM_SUCCESS;
+					}
+				}
+				ftdm_channel_unlock(ftdmchan);
+			}
+			ftdm_iterator_free(chaniter);
+			break;
+		case PROT_Q931_MSGTYPE_ALERTING:
+		case PROT_Q931_MSGTYPE_PROCEEDING:
+		case PROT_Q931_MSGTYPE_PROGRESS:
+		case PROT_Q931_MSGTYPE_CONNECT:
+		case PROT_Q931_MSGTYPE_SETUP_ACK:
+		case PROT_Q931_MSGTYPE_CONNECT_ACK:
+		case PROT_Q931_MSGTYPE_USER_INFO:
+		case PROT_Q931_MSGTYPE_DISCONNECT:
+		case PROT_Q931_MSGTYPE_RELEASE:
+		case PROT_Q931_MSGTYPE_RELEASE_ACK:
+		case PROT_Q931_MSGTYPE_RELEASE_COMPLETE:
+		case PROT_Q931_MSGTYPE_FACILITY:
+		case PROT_Q931_MSGTYPE_NOTIFY:
+		case PROT_Q931_MSGTYPE_STATUS_ENQUIRY:
+		case PROT_Q931_MSGTYPE_INFORMATION:
+		case PROT_Q931_MSGTYPE_STATUS:
+			/* Look for an outbound call on that span and and try to match the call-id */
+			chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
+			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+				ftdmchan = (ftdm_channel_t*)(ftdm_iterator_current(curr));
+				ftdm_channel_lock(ftdmchan);
+				sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
+				if (outbound_call) {
+					if (sngisdn_info && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+						if (sngisdn_info->call_ref == frame_info.call_ref) {
+
+							*found = ftdmchan;
+							status = FTDM_SUCCESS;
+						}
+					}
+				} else {
+					if (sngisdn_info && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+						if (sngisdn_info->call_ref && sngisdn_info->call_ref == frame_info.call_ref) {
+
+							*found = ftdmchan;
+							status = FTDM_SUCCESS;
+						}
+					}
+				}
+				ftdm_channel_unlock(ftdmchan);
+			}
+			ftdm_iterator_free(chaniter);
+			break;
+		default:
+			/* This frame is not call specific, ignore */
+			break;
+	}
+	if (status == FTDM_SUCCESS) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Mapped %s with Call Ref:%04x to call-id:%d\n", get_code_2_str(frame_info.msgtype, dcodQ931MsgTypeTable), frame_info.call_ref, (*found)->caller_data.call_id);
+	} else {
+		/* We could not map this frame to a call-id */
+		ftdm_log(FTDM_LOG_DEBUG, "Failed to map %s with Call Ref:%04x to local call\n",
+				 get_code_2_str(frame_info.msgtype, dcodQ931MsgTypeTable), frame_info.call_ref);
+	}
+
+	return status;
+}
+
 
 
