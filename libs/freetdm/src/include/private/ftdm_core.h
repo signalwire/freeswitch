@@ -411,7 +411,7 @@ struct ftdm_channel {
 	uint32_t extra_id;
 	ftdm_chan_type_t type;
 	ftdm_socket_t sockfd;
-	uint32_t flags;
+	uint64_t flags;
 	uint32_t pflags;
 	uint32_t sflags;
 	ftdm_alarm_flag_t alarm_flags;

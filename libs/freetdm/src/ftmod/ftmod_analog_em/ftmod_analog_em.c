@@ -467,7 +467,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				dtmf_offset = strlen(dtmf);
 				last_digit = elapsed;
 				sig.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
-				sig.raw_data = dtmf;
+				ftdm_set_string(sig.ev_data.collected.digits, dtmf);
 				if (ftdm_span_send_signal(ftdmchan->span, &sig) == FTDM_BREAK) {
 					collecting = 0;
 				}

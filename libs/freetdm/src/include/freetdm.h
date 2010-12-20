@@ -281,16 +281,18 @@ typedef enum {
 #define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t)
 
+/*! \brief Digit limit used in DNIS/ANI */
+#define FTDM_DIGITS_LIMIT 25
 
 /*! \brief Number abstraction */
 typedef struct {
-	char digits[25];
+	char digits[FTDM_DIGITS_LIMIT];
 	uint8_t type;
 	uint8_t plan;
 } ftdm_number_t;
 
 typedef void * ftdm_variable_container_t; 
-									 
+
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
 	char cid_date[8]; /*!< Caller ID date */
@@ -299,10 +301,10 @@ typedef struct ftdm_caller_data {
 	ftdm_number_t ani; /*!< ANI (Automatic Number Identification) */
 	ftdm_number_t dnis; /*!< DNIS (Dialed Number Identification Service) */
 	ftdm_number_t rdnis; /*!< RDNIS (Redirected Dialed Number Identification Service) */
-	char aniII[25]; /*! ANI II */
+	char aniII[FTDM_DIGITS_LIMIT]; /*! ANI II */
 	uint8_t screen; /*!< Screening */
 	uint8_t pres; /*!< Presentation*/
-	char collected[25]; /*!< Collected digits so far */
+	char collected[FTDM_DIGITS_LIMIT]; /*!< Collected digits so far */
 	int hangup_cause; /*!< Hangup cause */
 	char raw_data[1024]; /*!< Protocol specific raw caller data */
 	uint32_t raw_data_len; /*!< Raw data length */
@@ -426,19 +428,28 @@ typedef struct {
 	uint8_t level; /* 1 for phy layer, 2 for q921/mtp2, 3 for q931/mtp3 */
 } ftdm_event_trace_t;
 
+typedef struct {
+	/* Digits collected */
+	char digits[FTDM_DIGITS_LIMIT];
+} ftdm_event_collected_t;
+
 /*! \brief Generic signaling message */
 struct ftdm_sigmsg {
 	ftdm_signal_event_t event_id; /*!< The type of message */
 	ftdm_channel_t *channel; /*!< Related channel */
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
-	void *raw_data; /*!< Message specific data if any */
-	uint32_t raw_data_len; /*!< Data len in case is needed */
 	uint32_t call_id; /*!< unique call id for this call */
 	union {
 		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
 		ftdm_event_trace_t logevent;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
+		ftdm_event_collected_t collected; /*!< valif if event_id is FTDM_SIGEVENT_COLLECTED_DIGIT */
 	} ev_data;
+	struct {
+		uint8_t autofree; /*!< Whether the freetdm core will free it after message delivery */
+		uint32_t len; /*!< Data len */
+		void *data; /*!< Signaling module specific data */
+	} raw;
 };
 
 /*! \brief Crash policy 

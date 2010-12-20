@@ -1920,7 +1920,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
     case FTDM_SIGEVENT_COLLECTED_DIGIT:
 		{
 			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
-			char *dtmf = sigmsg->raw_data;
+			char *dtmf = sigmsg->ev_data.collected.digits;
 			char *regex = SPAN_CONFIG[span_id].dial_regex;
 			char *fail_regex = SPAN_CONFIG[span_id].fail_dial_regex;
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
@@ -2192,7 +2192,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;	
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{	
-			ftdm_signaling_status_t sigstatus = sigmsg->raw_data ? *((ftdm_signaling_status_t*)(sigmsg->raw_data)) : sigmsg->ev_data.sigstatus.status;
+			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}

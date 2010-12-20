@@ -493,8 +493,10 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						
 						if (ftdmchan->type == FTDM_CHAN_TYPE_FXS &&
 							   ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && 
-							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RINGING || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
-							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_RING)) {
+							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RINGING 
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_RING
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_UP)) {
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 						} else {
 							ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
@@ -717,7 +719,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				dtmf_offset = strlen(dtmf);
 				last_digit = elapsed;
 				sig.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
-				sig.raw_data = dtmf;
+				ftdm_set_string(sig.ev_data.collected.digits, dtmf);
 				if (ftdm_span_send_signal(ftdmchan->span, &sig) == FTDM_BREAK) {
 					collecting = 0;
 				}
@@ -884,14 +886,14 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 		{
 			if (event->channel->type != FTDM_CHAN_TYPE_FXO) {
 				ftdm_log_chan_msg(event->channel, FTDM_LOG_ERROR, "Cannot get a RING_START event on a non-fxo channel, please check your config.\n");
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 				goto end;
 			}
 			if (!event->channel->ring_count && (event->channel->state == FTDM_CHANNEL_STATE_DOWN && !ftdm_test_flag(event->channel, FTDM_CHANNEL_INTHREAD))) {
 				if (ftdm_test_flag(analog_data, FTDM_ANALOG_CALLERID)) {
-					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_GET_CALLERID);
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_GET_CALLERID);
 				} else {
-					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_RING);
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_RING);
 				}
 				event->channel->ring_count = 1;
 				ftdm_mutex_unlock(event->channel->mutex);
@@ -909,7 +911,12 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			}
 
 			if (event->channel->state != FTDM_CHANNEL_STATE_DOWN) {
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
+				if (event->channel->state == FTDM_CHANNEL_STATE_HANGUP && 
+				    ftdm_test_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE)) { 
+					ftdm_clear_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE);
+					/* we do not need to process HANGUP since the device also hangup already */
+				}
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
 
 		}
@@ -917,16 +924,16 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	case FTDM_OOB_FLASH:
 		{
 			if (event->channel->state == FTDM_CHANNEL_STATE_CALLWAITING) {
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_UP);
-				ftdm_clear_flag_locked(event->channel, FTDM_CHANNEL_STATE_CHANGE);
-				ftdm_clear_flag_locked(event->channel->span, FTDM_SPAN_STATE_CHANGE);
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_UP);
+				ftdm_clear_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE);
+				ftdm_clear_flag(event->channel->span, FTDM_SPAN_STATE_CHANGE);
 				event->channel->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK] = 0;
 			} 
 
 			ftdm_channel_rotate_tokens(event->channel);
 			
 			if (ftdm_test_flag(event->channel, FTDM_CHANNEL_HOLD) && event->channel->token_count != 1) {
-				ftdm_set_state_locked(event->channel,  FTDM_CHANNEL_STATE_UP);
+				ftdm_set_state(event->channel,  FTDM_CHANNEL_STATE_UP);
 			} else {
 				sig.event_id = FTDM_SIGEVENT_FLASH;
 				ftdm_span_send_signal(span, &sig);
@@ -940,12 +947,12 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 					if (ftdm_test_flag(event->channel, FTDM_CHANNEL_RINGING)) {
 						ftdm_channel_command(event->channel, FTDM_COMMAND_GENERATE_RING_OFF, NULL);
 					}
-					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_UP);
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_UP);
 				} else {
 					if(!analog_data->max_dialstr) {
-						ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_COLLECT);
+						ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_COLLECT);
 					} else {
-						ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DIALTONE);
+						ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DIALTONE);
 					}						
 					ftdm_mutex_unlock(event->channel->mutex);
 					locked = 0;
@@ -957,7 +964,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 						ftdm_channel_command(event->channel, FTDM_COMMAND_ONHOOK, NULL);
 					}
 				}
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
 		}
 	default:
