@@ -1152,11 +1152,23 @@ static FIO_WRITE_FUNCTION(zt_write)
 		bytes += 2;
 	}
 
+tryagain:
 	w = write(ftdmchan->sockfd, data, bytes);
 	
 	if (w >= 0) {
 		*datalen = w;
 		return FTDM_SUCCESS;
+	}
+
+	if (errno == ELAST) {
+		zt_event_t zt_event_id = 0;
+		if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event after ELAST on write: %s\n", strerror(errno));
+			return FTDM_FAIL;
+		}
+		/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dropping event %d to be able to write data\n", zt_event_id);
+		goto tryagain;
 	}
 
 	return FTDM_FAIL;

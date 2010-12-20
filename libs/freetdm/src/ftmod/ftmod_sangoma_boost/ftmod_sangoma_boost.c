@@ -2478,7 +2478,7 @@ static BOOST_SIG_STATUS_CB_FUNCTION(ftdm_boost_sig_status_change)
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-	sig.raw_data = &status;
+	sig.ev_data.sigstatus.status = status;
 	ftdm_span_send_signal(ftdmchan->span, &sig);
 	return;
 }

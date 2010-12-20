@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mod_say_pt</ProjectName>
-    <ProjectGuid>{FA429E98-8B03-45E6-A096-A4BC5E821DE4}</ProjectGuid>
+    <ProjectGuid>{7C22BDFF-CC09-400C-8A09-660733980028}</ProjectGuid>
     <RootNamespace>mod_say_pt</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

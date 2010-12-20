@@ -1963,6 +1963,26 @@ switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *request)
+{
+	switch_event_t *event = NULL;
+	char *tmp = NULL;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"Received XML alarm.\n");
+	/* skinny::xml_alarm event */
+	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_XML_ALARM);
+	/* Ensure that the body is null-terminated */
+	tmp = malloc(request->length - 4 + 1);
+	memcpy(tmp, request->data.as_char, request->length - 4);
+	tmp[request->length - 4] = '\0';
+	switch_event_add_body(event, "%s", tmp);
+	switch_safe_free(tmp);
+	switch_event_fire(&event);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
 	if (listener->profile->debug >= 10 || request->type != KEEP_ALIVE_MESSAGE) {
@@ -2032,6 +2052,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_extended_data_message(listener, request);
 		case DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE:
 			return skinny_handle_extended_data_message(listener, request);
+		case XML_ALARM_MESSAGE:
+			return skinny_handle_xml_alarm(listener, request);
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Unhandled request %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);

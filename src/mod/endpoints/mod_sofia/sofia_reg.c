@@ -1139,30 +1139,24 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
-			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-				if (regtype == REG_REGISTER) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP auth %s (REGISTER) on sofia profile '%s' "
-									  "for [%s@%s] from ip %s\n", forbidden ? "failure" : "challenge", profile->name, to_user, to_host, network_ip);
-				}
+			if (auth_res == AUTH_FORBIDDEN) {
+				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+				forbidden = 1;
+			} else {
+				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 			}
 
 			if (profile->debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s]\n",
 								  forbidden ? "forbidden" : "challenge", to_user, to_host);
 			}
-			if (auth_res == AUTH_FORBIDDEN) {
-				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
-				
-				/* Log line added to support Fail2Ban */
-				if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-					if (regtype == REG_INVITE) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (INVITE) on sofia profile '%s' "
-										  "for [%s@%s] from ip %s\n", profile->name, to_user, to_host, network_ip);
-					}
-				}
-			} else {
-				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
+			/* Log line added to support Fail2Ban */
+			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth %s (%s) on sofia profile '%s' "
+								  "for [%s@%s] from ip %s\n", forbidden ? "failure" : "challenge", 
+								  (regtype == REG_INVITE) ? "INVITE" : "REGISTER", profile->name, to_user, to_host, network_ip);
 			}
+
 			switch_goto_int(r, 1, end);
 		}
 	}
@@ -1193,14 +1187,18 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			realm = from_host;
 		}
 
-		if (regtype == REG_REGISTER) {
-			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
-			if (profile->debug) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
-			}
-		} else {
-			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
+		sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
+
+		if (profile->debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send challenge for [%s@%s]\n", to_user, to_host);
 		}
+		/* Log line added to support Fail2Ban */
+		if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth challenge (%s) on sofia profile '%s' "
+							  "for [%s@%s] from ip %s\n", (regtype == REG_INVITE) ? "INVITE" : "REGISTER", 
+							  profile->name, to_user, to_host, network_ip);
+		}
+
 		switch_goto_int(r, 1, end);
 	}
   reg:
