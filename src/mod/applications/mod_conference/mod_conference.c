@@ -191,7 +191,8 @@ typedef enum {
 	EFLAG_TRANSFER = (1 << 23),
 	EFLAG_BGDIAL_RESULT = (1 << 24),
 	EFLAG_FLOOR_CHANGE = (1 << 25),
-	EFLAG_MUTE_DETECT = (1 << 26)
+	EFLAG_MUTE_DETECT = (1 << 26),
+	EFLAG_RECORD = (1 << 27)
 } event_type_t;
 
 typedef struct conference_file_node {
@@ -270,6 +271,7 @@ typedef struct conference_obj {
 	uint32_t not_talking_buf_len;
 	int comfort_noise_level;
 	int is_recording;
+	int record_count;
 	int video_running;
 	uint32_t eflags;
 	uint32_t verbose_events;
@@ -283,6 +285,7 @@ typedef struct conference_obj {
 	uint32_t avg_score;
 	uint32_t avg_itt;
 	uint32_t avg_tally;
+	switch_time_t run_time;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -468,6 +471,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hear", "%s", switch_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speak", "%s", switch_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Talking", "%s", switch_test_flag(member, MFLAG_TALKING) ? "true" : "false" );
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mute-Detect", "%s", switch_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Type", "%s", switch_test_flag(member, MFLAG_MOD) ? "moderator" : "member");
 
@@ -562,6 +566,7 @@ static switch_status_t conference_record_stop(conference_obj_t *conference, char
 	switch_mutex_unlock(conference->member_mutex);
 	return count;
 }
+
 
 /* Add a custom relationship to a member */
 static conference_relationship_t *member_add_relationship(conference_member_t *member, uint32_t id)
@@ -1035,6 +1040,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_unlock(globals.hash_mutex);
 
 	conference->is_recording = 0;
+	conference->record_count = 0;
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
@@ -1099,6 +1105,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		/* Start recording if there's more than one participant. */
 		if (conference->auto_record && !conference->is_recording && conference->count > 1) {
 			conference->is_recording = 1;
+			conference->record_count++;
 			imember = conference->members;
 			if (imember) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
@@ -2623,6 +2630,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_timer_t timer = { 0 };
 	uint32_t rlen;
 	switch_size_t data_buf_len;
+	switch_event_t *event;
 
 	data_buf_len = samples * sizeof(int16_t);
 
@@ -2700,6 +2708,15 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}
 
 	switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_ARTIST, "FreeSWITCH mod_conference Software Conference Module");
+
+	if (test_eflag(conference, EFLAG_RECORD) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_add_event_data(conference, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
+		switch_event_fire(&event);
+	}
+
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && conference->count) {
 		switch_size_t len = 0;
@@ -3759,6 +3776,13 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "dynamic", "true");
 	}
 
+	if (conference->record_count > 0) {
+		switch_xml_set_attr_d(x_conference, "recording", "true");
+	}
+
+	switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - conference->run_time);
+	switch_xml_set_attr_d(x_conference, "run_time", ival);
+
 	if (conference->agc_level) {
 		char tmp[30] = "";
 		switch_snprintf(tmp, sizeof(tmp), "%d", conference->agc_level);
@@ -3824,6 +3848,9 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 
 		x_tag = switch_xml_add_child_d(x_flags, "can_speak", count++);
 		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false");
+
+		x_tag = switch_xml_add_child_d(x_flags, "mute_detect", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "talking", count++);
 		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_TALKING) ? "true" : "false");
@@ -4414,6 +4441,7 @@ static switch_status_t conf_api_sub_record(conference_obj_t *conference, switch_
 		return SWITCH_STATUS_GENERR;
 
 	stream->write_function(stream, "Record file %s\n", argv[2]);
+	conference->record_count++;
 	launch_conference_record_thread(conference, argv[2]);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4421,6 +4449,7 @@ static switch_status_t conf_api_sub_record(conference_obj_t *conference, switch_
 static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int all;
+	switch_event_t *event;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -4432,6 +4461,20 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switc
 	stream->write_function(stream, "Stop recording file %s\n", argv[2]);
 	if (!conference_record_stop(conference, all ? NULL : argv[2]) && !all) {
 		stream->write_function(stream, "non-existant recording '%s'\n", argv[2]);
+	} else {
+		if (all) {
+			conference->record_count = 0;
+		} else {
+			conference->record_count--;
+		}
+		if (test_eflag(conference, EFLAG_RECORD) &&
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", all ? "all" : argv[2]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
+			switch_event_fire(&event);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5138,6 +5181,8 @@ static void clear_eflags(char *events, uint32_t *f)
 				*f &= ~EFLAG_BGDIAL_RESULT;
 			} else if (!strcmp(event, "floor-change")) {
 				*f &= ~EFLAG_FLOOR_CHANGE;
+			} else if (!strcmp(event, "record")) {
+				*f &= ~EFLAG_RECORD;
 			}
 
 			event = next;
@@ -6121,6 +6166,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
+	conference->run_time = switch_epoch_time_now(NULL);
 	
 
 	if (!zstr(perpetual_sound)) {
