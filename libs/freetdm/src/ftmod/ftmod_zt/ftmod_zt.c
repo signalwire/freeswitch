@@ -1007,7 +1007,8 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
 		if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
-			snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event from channel: %s\n",
+					strerror(errno));
 			return FTDM_FAIL;
 		}
 
@@ -1044,7 +1045,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 		case ZT_EVENT_RINGOFFHOOK:
 			{
 				if (ftdmchan->type == FTDM_CHAN_TYPE_FXS || (ftdmchan->type == FTDM_CHAN_TYPE_EM && ftdmchan->state != FTDM_CHANNEL_STATE_UP)) {
-					ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
+					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK);
 					event_id = FTDM_OOB_OFFHOOK;
 				} else if (ftdmchan->type == FTDM_CHAN_TYPE_FXO) {
 					event_id = FTDM_OOB_RING_START;
@@ -1076,7 +1077,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 			break;
 		default:
 			{
-				ftdm_log(FTDM_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
 				event_id = FTDM_OOB_INVALID;
 			}
 			break;

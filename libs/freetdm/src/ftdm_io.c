@@ -1142,14 +1142,17 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 	ftdm_span_t *span = ftdmchan->span;
 	ftdm_assert_return(span->fio != NULL, FTDM_FAIL, "No I/O module attached to this span!\n");
 
+	ftdm_channel_lock(ftdmchan);
+
 	if (!span->fio->channel_next_event) {
 		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!", span->fio->name);
-		return FTDM_NOTIMPL;
+		status = FTDM_NOTIMPL;
+		goto done;
 	}
 
 	status = span->fio->channel_next_event(ftdmchan, event);
 	if (status != FTDM_SUCCESS) {
-		return status;
+		goto done;
 	}
 
 	/* before returning the event to the user we do some core operations with certain OOB events */
@@ -1177,6 +1180,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 		break;
 	}
 
+done:
+	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
 
