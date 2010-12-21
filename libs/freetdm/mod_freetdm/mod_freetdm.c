@@ -3548,7 +3548,19 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   switch_channel_cause2str(caller_data->hangup_cause));
 }
 
-#define FT_SYNTAX "list || dump <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix] || gains <txgain> <rxgain> <span_id> [<chan_id>] || dtmf on|off <span_id> [<chan_id>]" 
+#define FT_SYNTAX "USAGE:\n" \
+"--------------------------------------------------------------------------------\n" \
+"ftdm list\n" \
+"ftdm start|stop <span_name|span_id>\n" \
+"ftdm restart <span_id|span_name> <chan_id>\n" \
+"ftdm dump <span_id|span_name> [<chan_id>]\n" \
+"ftdm sigstatus get|set [<span_id|span_name>] [<channel>] [<sigstatus>]\n" \
+"ftdm trace <path> <span_id|span_name> [<chan_id>]\n" \
+"ftdm notrace <span_id|span_name> [<chan_id>]\n" \
+"ftdm q931_pcap <span_id> on|off [pcapfilename without suffix]\n" \
+"ftdm gains <txgain> <rxgain> <span_id> [<chan_id>]\n" \
+"ftdm dtmf on|off <span_id> [<chan_id>]\n" \
+"--------------------------------------------------------------------------------\n"
 SWITCH_STANDARD_API(ft_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };

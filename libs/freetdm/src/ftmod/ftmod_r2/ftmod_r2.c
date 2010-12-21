@@ -50,10 +50,6 @@
 #include "freetdm.h"
 #include "private/ftdm_core.h"
 
-/* debug thread count for r2 legs */
-static ftdm_mutex_t* g_thread_count_mutex;
-static int32_t g_thread_count = 0;
-
 typedef int openr2_call_status_t;
 
 /* when the user stops a span, we clear FTDM_R2_SPAN_STARTED, so that the signaling thread
@@ -2023,6 +2019,14 @@ static void __inline__ unblock_channel(ftdm_channel_t *fchan, ftdm_stream_handle
 	ftdm_mutex_unlock(fchan->mutex);
 }
 
+#define FT_SYNTAX "USAGE:\n" \
+"--------------------------------------------------------------------------------\n" \
+"ftdm r2 status <span_id|span_name>\n" \
+"ftdm r2 loopstats <span_id|span_name>\n" \
+"ftdm r2 block|unblock <span_id|span_name> [<chan_id>]\n" \
+"ftdm r2 version\n" \
+"ftdm r2 variants\n" \
+"--------------------------------------------------------------------------------\n"
 static FIO_API_FUNCTION(ftdm_r2_api)
 {
 	ftdm_span_t *span = NULL;
@@ -2206,14 +2210,6 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 	}
 
 	if (argc == 1) {
-		if (!strcasecmp(argv[0], "threads")) {
-			ftdm_mutex_lock(g_thread_count_mutex);
-			stream->write_function(stream, "%d R2 channel threads up\n", g_thread_count);
-			ftdm_mutex_unlock(g_thread_count_mutex);
-			stream->write_function(stream, "+OK.\n");
-			goto done;
-		}
-
 		if (!strcasecmp(argv[0], "version")) {
 			stream->write_function(stream, "OpenR2 version: %s, revision: %s\n", openr2_get_version(), openr2_get_revision());
 			stream->write_function(stream, "+OK.\n");
@@ -2239,7 +2235,7 @@ static FIO_API_FUNCTION(ftdm_r2_api)
 		}
 	}
 
-	stream->write_function(stream, "-ERR invalid command.\n");
+	stream->write_function(stream, "%s", FT_SYNTAX);
 
 done:
 
@@ -2268,7 +2264,6 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_r2_init)
 	if (!g_mod_data_hash) {
 		return FTDM_FAIL;
 	}
-	ftdm_mutex_create(&g_thread_count_mutex);
 	return FTDM_SUCCESS;
 }
 
@@ -2288,7 +2283,6 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_r2_destroy)
 		}
 	}
 	hashtable_destroy(g_mod_data_hash);
-	ftdm_mutex_destroy(&g_thread_count_mutex);
 	return FTDM_SUCCESS;
 }
 
