@@ -1541,6 +1541,7 @@ end:
 		ftdm_mutex_unlock(ftdmchan->span->mutex);
 	} else {
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "VETO state change from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+		goto done;
 	}
 
 	/* there is an inherent race here between set and check of the change flag but we do not care because
@@ -1570,7 +1571,7 @@ end:
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not processed after aprox %dms\n",
 				ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
 	}
-
+done:
 	return ok ? FTDM_SUCCESS : FTDM_FAIL;
 }
 
@@ -2289,8 +2290,15 @@ static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const c
 		ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
 		/* the signaling stack did not touch the state, 
-		 * core is responsible from clearing flags and stuff */
-		ftdm_channel_close(&chan);
+		 * core is responsible from clearing flags and stuff, however, because ftmod_analog
+		 * is a bitch in a serious need of refactoring, we also check whether the channel is open
+		 * to avoid an spurious warning about the channel not being open. This is because ftmod_analog
+		 * does not follow our convention of sending SIGEVENT_STOP and waiting for the user to move
+		 * to HANGUP (implicitly through ftdm_channel_call_hangup(), as soon as ftmod_analog is fixed
+		 * this check can be removed */
+		if (ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+			ftdm_channel_close(&chan);
+		}
 	}
 	return FTDM_SUCCESS;
 }
@@ -3933,7 +3941,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "cannot write in channel not open\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "cannot write in channel not open\n");
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
 		status = FTDM_FAIL;
 		goto done;

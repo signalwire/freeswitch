@@ -557,7 +557,13 @@ typedef enum {
 	FTDM_COMMAND_COUNT,
 	FTDM_COMMAND_SET_RX_QUEUE_SIZE,
 	FTDM_COMMAND_SET_TX_QUEUE_SIZE,
+	FTDM_COMMAND_SET_POLARITY,
 } ftdm_command_t;
+
+typedef enum {
+	FTDM_POLARITY_FORWARD = 0,
+	FTDM_POLARITY_REVERSE = 1
+} ftdm_polarity_t;
 
 /*! \brief Custom memory handler hooks. Not recommended to use unless you need memory allocation customizations */
 typedef void *(*ftdm_malloc_func_t)(void *pool, ftdm_size_t len);

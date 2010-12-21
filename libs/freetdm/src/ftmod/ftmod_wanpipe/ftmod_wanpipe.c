@@ -784,16 +784,26 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			err = sangoma_set_tx_queue_sz(ftdmchan->sockfd, &tdm_api, queue_size);
 		}
 		break;
+	case FTDM_COMMAND_SET_POLARITY:
+		{
+			ftdm_polarity_t polarity = FTDM_COMMAND_OBJ_INT;
+			err = sangoma_tdm_set_polarity(ftdmchan->sockfd, &tdm_api, polarity);
+			if (!err) {
+				ftdmchan->polarity = polarity;
+			}
+		}
+		break;
 	default:
 		err = FTDM_NOTIMPL;
 		break;
 	};
 
 	if (err) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
+		int myerrno = errno;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Wanpipe failed to execute command %d: %s\n", command, strerror(myerrno));
+		errno = myerrno;
 		return err;
 	}
-
 
 	return FTDM_SUCCESS;
 }
@@ -1237,8 +1247,9 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	wanpipe_tdm_api_t tdm_api;
 	ftdm_span_t *span = ftdmchan->span;
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT))
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
+	}
 
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	status = sangoma_tdm_read_event(ftdmchan->sockfd, &tdm_api);
@@ -1251,7 +1262,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
 	switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 
-	case WP_TDMAPI_EVENT_LINK_STATUS:
+	case WP_API_EVENT_LINK_STATUS:
 		{
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
@@ -1264,7 +1275,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 		}
 		break;
 
-	case WP_TDMAPI_EVENT_RXHOOK:
+	case WP_API_EVENT_RXHOOK:
 		{
 			if (ftdmchan->type == FTDM_CHAN_TYPE_FXS) {
 				event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_OFFHOOK : FTDM_OOB_ONHOOK;
@@ -1300,26 +1311,26 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 			}
 		}
 		break;
-	case WP_TDMAPI_EVENT_RING_DETECT:
+	case WP_API_EVENT_RING_DETECT:
 		{
 			event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_RING_START : FTDM_OOB_RING_STOP;
 		}
 		break;
 		/*
 		disabled this ones when configuring, we don't need them, do we?
-	case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
+	case WP_API_EVENT_RING_TRIP_DETECT:
 		{
 			event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_ONHOOK : FTDM_OOB_OFFHOOK;
 		}
 		break;
 		*/
-	case WP_TDMAPI_EVENT_RBS:
+	case WP_API_EVENT_RBS:
 		{
 			event_id = FTDM_OOB_CAS_BITS_CHANGE;
 			ftdmchan->rx_cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
 		}
 		break;
-	case WP_TDMAPI_EVENT_DTMF:
+	case WP_API_EVENT_DTMF:
 		{
 			char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
 			event_id = FTDM_OOB_NOOP;
@@ -1342,10 +1353,16 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 			} 
 		}
 		break;
-	case WP_TDMAPI_EVENT_ALARM:
+	case WP_API_EVENT_ALARM:
 		{
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
 			event_id = FTDM_OOB_ALARM_TRAP;
+		}
+		break;
+	case WP_API_EVENT_POLARITY_REVERSE:
+		{
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Got polarity reverse\n");
+			event_id = FTDM_OOB_POLARITY_REVERSE;
 		}
 		break;
 	default:
@@ -1423,7 +1440,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 			ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 
-			case WP_TDMAPI_EVENT_LINK_STATUS:
+			case WP_API_EVENT_LINK_STATUS:
 				{
 					switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 					case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
@@ -1436,7 +1453,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 				}
 				break;
 
-			case WP_TDMAPI_EVENT_RXHOOK:
+			case WP_API_EVENT_RXHOOK:
 				{
 					if (span->channels[i]->type == FTDM_CHAN_TYPE_FXS) {
 						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_OFFHOOK : FTDM_OOB_ONHOOK;
@@ -1472,26 +1489,26 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 					}
 				}
 				break;
-			case WP_TDMAPI_EVENT_RING_DETECT:
+			case WP_API_EVENT_RING_DETECT:
 				{
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_RING_START : FTDM_OOB_RING_STOP;
 				}
 				break;
 				/*
 				disabled this ones when configuring, we don't need them, do we?
-			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
+			case WP_API_EVENT_RING_TRIP_DETECT:
 				{
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_ONHOOK : FTDM_OOB_OFFHOOK;
 				}
 				break;
 				*/
-			case WP_TDMAPI_EVENT_RBS:
+			case WP_API_EVENT_RBS:
 				{
 					event_id = FTDM_OOB_CAS_BITS_CHANGE;
 					span->channels[i]->rx_cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
 				}
 				break;
-			case WP_TDMAPI_EVENT_DTMF:
+			case WP_API_EVENT_DTMF:
 				{
 					char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
 					event_id = FTDM_OOB_NOOP;
@@ -1514,10 +1531,16 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 					} 
 				}
 				break;
-			case WP_TDMAPI_EVENT_ALARM:
+			case WP_API_EVENT_ALARM:
 				{
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
 					event_id = FTDM_OOB_ALARM_TRAP;
+				}
+				break;
+			case WP_API_EVENT_POLARITY_REVERSE:
+				{
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Got polarity reverse\n");
+					event_id = FTDM_OOB_POLARITY_REVERSE;
 				}
 				break;
 			default:

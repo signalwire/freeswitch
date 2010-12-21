@@ -123,6 +123,7 @@ typedef enum {
 FTDM_STR2ENUM_P(ftdm_str2ftdm_analog_start_type, ftdm_analog_start_type2str, ftdm_analog_start_type_t)
 
 typedef enum {
+	FTDM_OOB_NOOP,
 	FTDM_OOB_ONHOOK,
 	FTDM_OOB_OFFHOOK,
 	FTDM_OOB_WINK,
@@ -131,11 +132,11 @@ typedef enum {
 	FTDM_OOB_RING_STOP,
 	FTDM_OOB_ALARM_TRAP,
 	FTDM_OOB_ALARM_CLEAR,
-	FTDM_OOB_NOOP,
 	FTDM_OOB_CAS_BITS_CHANGE,
+	FTDM_OOB_POLARITY_REVERSE,
 	FTDM_OOB_INVALID
 } ftdm_oob_event_t;
-#define OOB_STRINGS "ONHOOK", "OFFHOOK", "WINK", "FLASH", "RING_START", "RING_STOP", "ALARM_TRAP", "ALARM_CLEAR", "NOOP", "CAS_BITS_CHANGE", "INVALID"
+#define OOB_STRINGS "NOOP", "ONHOOK", "OFFHOOK", "WINK", "FLASH", "RING_START", "RING_STOP", "ALARM_TRAP", "ALARM_CLEAR", "CAS_BITS_CHANGE", "POLARITY_REVERSE", "INVALID"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_oob_event, ftdm_oob_event2str, ftdm_oob_event_t)
 
 /*! \brief Event types */

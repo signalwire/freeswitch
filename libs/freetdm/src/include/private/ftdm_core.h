@@ -143,7 +143,9 @@ extern "C" {
   \return true value if the object has the flags defined
 */
 #define ftdm_test_flag(obj, flag) ((obj)->flags & flag)
+/*!< Physical (IO) module specific flags */
 #define ftdm_test_pflag(obj, flag) ((obj)->pflags & flag)
+/*!< signaling module specific flags */
 #define ftdm_test_sflag(obj, flag) ((obj)->sflags & flag)
 
 #define ftdm_set_alarm_flag(obj, flag) (obj)->alarm_flags |= (flag)
@@ -456,6 +458,7 @@ struct ftdm_channel {
 	ftdm_fsk_data_state_t fsk;
 	uint8_t fsk_buf[80];
 	uint32_t ring_count;
+	ftdm_polarity_t polarity;
 	/* Private I/O data. Do not touch unless you are an I/O module */
 	void *io_data;
 	/* Private signaling data. Do not touch unless you are a signaling module */
