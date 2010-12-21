@@ -184,6 +184,9 @@ typedef enum {
 	FTDM_SPAN_USE_SIGNALS_QUEUE = (1 << 10),
 	/* If this flag is set, channel will be moved to proceed state when calls goes to routing */
 	FTDM_SPAN_USE_PROCEED_STATE = (1 << 11),
+	/* If this flag is set, the signalling module supports jumping directly to state up, without
+		going through PROGRESS/PROGRESS_MEDIA */
+	FTDM_SPAN_USE_SKIP_STATES = (1 << 12),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
@@ -225,60 +228,50 @@ typedef enum {
 	FTDM_CHANNEL_STATE_HANGUP,
 	FTDM_CHANNEL_STATE_HANGUP_COMPLETE,
 	FTDM_CHANNEL_STATE_IN_LOOP,
+	FTDM_CHANNEL_STATE_RESET,
 	FTDM_CHANNEL_STATE_INVALID
 } ftdm_channel_state_t;
 #define CHANNEL_STATE_STRINGS "DOWN", "HOLD", "SUSPENDED", "DIALTONE", "COLLECT", \
 		"RING", "RINGING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
 		"RESTART", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "UP", "IDLE", "TERMINATING", "CANCEL", \
-		"HANGUP", "HANGUP_COMPLETE", "IN_LOOP", "INVALID"
+		"HANGUP", "HANGUP_COMPLETE", "IN_LOOP", "RESET", "INVALID"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channel_state_t)
 
-typedef enum {
-	FTDM_CHANNEL_CONFIGURED = (1 << 0),
-	FTDM_CHANNEL_READY = (1 << 1),
-	FTDM_CHANNEL_OPEN = (1 << 2),
-	FTDM_CHANNEL_DTMF_DETECT = (1 << 3),
-	FTDM_CHANNEL_SUPRESS_DTMF = (1 << 4),
-	FTDM_CHANNEL_TRANSCODE = (1 << 5),
-	FTDM_CHANNEL_BUFFER = (1 << 6),
-	FTDM_CHANNEL_EVENT = (1 << 7),
-	FTDM_CHANNEL_INTHREAD = (1 << 8),
-	FTDM_CHANNEL_WINK = (1 << 9),
-	FTDM_CHANNEL_FLASH = (1 << 10),
-	FTDM_CHANNEL_STATE_CHANGE = (1 << 11),
-	FTDM_CHANNEL_HOLD = (1 << 12),
-	FTDM_CHANNEL_INUSE = (1 << 13),
-	FTDM_CHANNEL_OFFHOOK = (1 << 14),
-	FTDM_CHANNEL_RINGING = (1 << 15),
-	FTDM_CHANNEL_PROGRESS_DETECT = (1 << 16),
-	FTDM_CHANNEL_CALLERID_DETECT = (1 << 17),
-	FTDM_CHANNEL_OUTBOUND = (1 << 18),
-	FTDM_CHANNEL_SUSPENDED = (1 << 19),
-	FTDM_CHANNEL_3WAY = (1 << 20),
-	FTDM_CHANNEL_PROGRESS = (1 << 21),
-	FTDM_CHANNEL_MEDIA = (1 << 22),
-	FTDM_CHANNEL_ANSWERED = (1 << 23),
-	FTDM_CHANNEL_MUTE = (1 << 24),
-	FTDM_CHANNEL_USE_RX_GAIN = (1 << 25),
-	FTDM_CHANNEL_USE_TX_GAIN = (1 << 26),
-	FTDM_CHANNEL_IN_ALARM = (1 << 27),
-	FTDM_CHANNEL_SIG_UP = (1 << 28),
-	FTDM_CHANNEL_USER_HANGUP = (1 << 29),
-	FTDM_CHANNEL_RX_DISABLED = (1 << 30),
-	FTDM_CHANNEL_TX_DISABLED = (1 << 31),
-	/* ok, when we reach 32, we need to move to uint64_t all the flag stuff */
-} ftdm_channel_flag_t;
-#if defined(__cplusplus) && defined(WIN32) 
-    // fix C2676 
-__inline__ ftdm_channel_flag_t operator|=(ftdm_channel_flag_t a, int32_t b) {
-    a = (ftdm_channel_flag_t)(a | b);
-    return a;
-}
-__inline__ ftdm_channel_flag_t operator&=(ftdm_channel_flag_t a, int32_t b) {
-    a = (ftdm_channel_flag_t)(a & b);
-    return a;
-}
-#endif
+/*!< Channel flags. This used to be an enum but we reached the 32bit limit for enums, is safer this way */
+#define FTDM_CHANNEL_CONFIGURED    (1ULL << 0)
+#define FTDM_CHANNEL_READY         (1ULL << 1)
+#define FTDM_CHANNEL_OPEN          (1ULL << 2)
+#define FTDM_CHANNEL_DTMF_DETECT   (1ULL << 3)
+#define FTDM_CHANNEL_SUPRESS_DTMF  (1ULL << 4)
+#define FTDM_CHANNEL_TRANSCODE     (1ULL << 5)
+#define FTDM_CHANNEL_BUFFER        (1ULL << 6)
+#define FTDM_CHANNEL_EVENT         (1ULL << 7)
+#define FTDM_CHANNEL_INTHREAD      (1ULL << 8)
+#define FTDM_CHANNEL_WINK          (1ULL << 9)
+#define FTDM_CHANNEL_FLASH         (1ULL << 10)
+#define FTDM_CHANNEL_STATE_CHANGE  (1ULL << 11)
+#define FTDM_CHANNEL_HOLD          (1ULL << 12)
+#define FTDM_CHANNEL_INUSE         (1ULL << 13)
+#define FTDM_CHANNEL_OFFHOOK       (1ULL << 14)
+#define FTDM_CHANNEL_RINGING       (1ULL << 15)
+#define FTDM_CHANNEL_PROGRESS_DETECT (1ULL << 16)
+#define FTDM_CHANNEL_CALLERID_DETECT (1ULL << 17)
+#define FTDM_CHANNEL_OUTBOUND        (1ULL << 18)
+#define FTDM_CHANNEL_SUSPENDED       (1ULL << 19)
+#define FTDM_CHANNEL_3WAY            (1ULL << 20)
+#define FTDM_CHANNEL_PROGRESS        (1ULL << 21)
+#define FTDM_CHANNEL_MEDIA           (1ULL << 22)
+#define FTDM_CHANNEL_ANSWERED        (1ULL << 23)
+#define FTDM_CHANNEL_MUTE            (1ULL << 24)
+#define FTDM_CHANNEL_USE_RX_GAIN     (1ULL << 25)
+#define FTDM_CHANNEL_USE_TX_GAIN     (1ULL << 26)
+#define FTDM_CHANNEL_IN_ALARM        (1ULL << 27)
+#define FTDM_CHANNEL_SIG_UP          (1ULL << 28)
+#define FTDM_CHANNEL_USER_HANGUP     (1ULL << 29)
+#define FTDM_CHANNEL_RX_DISABLED     (1ULL << 30)
+#define FTDM_CHANNEL_TX_DISABLED     (1ULL << 31)
+/*!< The user knows about a call in this channel */
+#define FTDM_CHANNEL_CALL_STARTED    (1ULL << 32)
 
 typedef enum {
 	ZSM_NONE,

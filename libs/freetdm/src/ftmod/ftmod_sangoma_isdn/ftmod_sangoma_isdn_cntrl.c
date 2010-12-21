@@ -47,7 +47,7 @@ void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-	sig.sigstatus = status;
+	sig.ev_data.sigstatus.status = status;
 	ftdm_span_send_signal(ftdmchan->span, &sig);
 	return;
 }

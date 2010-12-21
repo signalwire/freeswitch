@@ -2456,7 +2456,7 @@ static void conference_loop_output(conference_member_t *member)
 			switch_event_destroy(&event);
 		}
 
-		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			/* test to see if outbound channel has answered */
 			if (switch_channel_test_flag(channel, CF_ANSWERED) && !switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
@@ -2599,7 +2599,7 @@ static void conference_loop_output(conference_member_t *member)
 					  switch_channel_cause2str(switch_channel_get_cause(channel)));
 
 	/* if it's an outbound channel, store the release cause in the conference struct, we might need it */
-	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		member->conference->bridge_hangup_cause = switch_channel_get_cause(channel);
 	}
 
@@ -4366,6 +4366,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				}
 			}
 
+			switch_channel_set_variable(channel, "last_transfered_conference", argv[2]);
+
 			unlock_member(member);
 
 			stream->write_function(stream, "OK Member '%d' sent to conference %s.\n", member->id, argv[2]);
@@ -5374,6 +5376,14 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 #endif
 
+	if (switch_channel_test_flag(channel, CF_RECOVERED)) {
+		const char *check = switch_channel_get_variable(channel, "last_transfered_conference");
+		
+		if (!zstr(check)) {
+			conf_name = (char *) check;
+		}
+	}
+
 	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
@@ -5436,7 +5446,7 @@ SWITCH_STANDARD_APP(conference_function)
 		launch_conference_thread(conference);
 
 	} else {
-		int enforce_security = !switch_channel_test_flag(channel, CF_OUTBOUND);
+		int enforce_security =  switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *pvar = switch_channel_get_variable(channel, "conference_enforce_security");
 
 		if (pvar) {
@@ -5645,7 +5655,7 @@ SWITCH_STANDARD_APP(conference_function)
 	} else {
 		/* if we're not using "bridge:" set the conference answered flag */
 		/* and this isn't an outbound channel, answer the call */
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND))
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND)
 			switch_set_flag(conference, CFLAG_ANSWERED);
 	}
 

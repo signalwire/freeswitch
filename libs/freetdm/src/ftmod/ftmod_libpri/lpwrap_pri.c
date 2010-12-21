@@ -127,24 +127,24 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 		} else {
 			ftdm_log(FTDM_LOG_CRIT, "span %d D-READ TIMEOUT\n", spri->span->span_id);
 		}
-
-		ftdm_clear_flag(spri, LPWRAP_PRI_READY);
-		return -1;
+		/* we cannot return -1, libpri seems to expect values >= 0 */
+		return 0;
 	}
 	spri->errs = 0;
 	res = (int)len;
 
-	memset(&((unsigned char*)buf)[res], 0, 2);
-	res += 2;
-
+	if (res > 0) {
+		memset(&((unsigned char*)buf)[res], 0, 2);
+		res += 2;
 #ifdef IODEBUG
-	{
-		char bb[2048] = { 0 };
+		{
+			char bb[2048] = { 0 };
 
-		print_hex_bytes(buf, res - 2, bb, sizeof(bb));
-		ftdm_log(FTDM_LOG_DEBUG, "READ %d\n", res - 2);
-	}
+			print_hex_bytes(buf, res - 2, bb, sizeof(bb));
+			ftdm_log(FTDM_LOG_DEBUG, "READ %d\n", res - 2);
+		}
 #endif
+	}
 	return res;
 }
 
@@ -155,8 +155,8 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 
 	if (ftdm_channel_write(spri->dchan, buf, buflen, &len) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
-		ftdm_clear_flag(spri, LPWRAP_PRI_READY);
-		return -1;
+		/* we cannot return -1, libpri seems to expect values >= 0 */
+		return 0;
 	}
 
 #ifdef IODEBUG

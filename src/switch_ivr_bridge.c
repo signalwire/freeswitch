@@ -100,7 +100,7 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 	caller_channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
 	
-	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(caller_channel, CF_DIALPLAN)) {
 		name = caller_profile->callee_id_name;
 		number = caller_profile->callee_id_number;
 
@@ -435,8 +435,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
 			switch_channel_t *a = un == chan_b ? chan_a : chan_b;
 
-			if (!switch_channel_test_flag(un, CF_OUTBOUND)) {
-				if (switch_channel_test_flag(a, CF_OUTBOUND) || (un == chan_a && !originator)) {
+			if (switch_channel_direction(un) == SWITCH_CALL_DIRECTION_INBOUND) {
+				if (switch_channel_direction(a) == SWITCH_CALL_DIRECTION_OUTBOUND || (un == chan_a && !originator)) {
 					switch_channel_pass_callee_id(a, un);
 				}
 
@@ -1052,6 +1052,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_set_variable(caller_channel, "signal_bridge", "true");
 	switch_channel_set_variable(peer_channel, "signal_bridge", "true");
 
+	switch_channel_sort_cid(peer_channel, SWITCH_FALSE);
+
 	/* fire events that will change the data table from "show channels" */
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
@@ -1116,6 +1118,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
+
+	switch_channel_sort_cid(peer_channel, SWITCH_FALSE);
 
 	b_leg->session = peer_session;
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));

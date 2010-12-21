@@ -144,7 +144,9 @@ typedef enum {
 /*! \brief Hunting direction (when hunting for free channels) */
 typedef enum {
 	FTDM_TOP_DOWN,
-	FTDM_BOTTOM_UP
+	FTDM_BOTTOM_UP,
+	FTDM_RR_DOWN,
+	FTDM_RR_UP,
 } ftdm_direction_t;
 
 /*! \brief I/O channel type */
@@ -265,12 +267,31 @@ typedef enum {
 #define USER_LAYER1_PROT_STRINGS "V.110", "u-law", "a-law", "Invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t)
 
+/*! Calling Party Category */
+typedef enum {
+	FTDM_CPC_UNKNOWN,
+	FTDM_CPC_OPERATOR,
+	FTDM_CPC_ORDINARY,
+	FTDM_CPC_PRIORITY,
+	FTDM_CPC_DATA,
+	FTDM_CPC_TEST,
+	FTDM_CPC_PAYPHONE,
+	FTDM_CPC_INVALID
+} ftdm_calling_party_category_t;
+#define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t)
+
+/*! \brief Digit limit used in DNIS/ANI */
+#define FTDM_DIGITS_LIMIT 25
+
 /*! \brief Number abstraction */
 typedef struct {
-	char digits[25];
+	char digits[FTDM_DIGITS_LIMIT];
 	uint8_t type;
 	uint8_t plan;
 } ftdm_number_t;
+
+typedef void * ftdm_variable_container_t; 
 
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
@@ -280,18 +301,25 @@ typedef struct ftdm_caller_data {
 	ftdm_number_t ani; /*!< ANI (Automatic Number Identification) */
 	ftdm_number_t dnis; /*!< DNIS (Dialed Number Identification Service) */
 	ftdm_number_t rdnis; /*!< RDNIS (Redirected Dialed Number Identification Service) */
-	char aniII[25]; /*! ANI II */
+	char aniII[FTDM_DIGITS_LIMIT]; /*! ANI II */
 	uint8_t screen; /*!< Screening */
 	uint8_t pres; /*!< Presentation*/
-	char collected[25]; /*!< Collected digits so far */
+	char collected[FTDM_DIGITS_LIMIT]; /*!< Collected digits so far */
 	int hangup_cause; /*!< Hangup cause */
 	char raw_data[1024]; /*!< Protocol specific raw caller data */
-	uint32_t raw_data_len; /* !< Raw data length */
+	uint32_t raw_data_len; /*!< Raw data length */
 	/* these 2 are undocumented right now, only used by boost: */
 	/* bearer capability */
 	ftdm_bearer_cap_t bearer_capability;
 	/* user information layer 1 protocol */
 	ftdm_user_layer1_prot_t bearer_layer1;
+	ftdm_calling_party_category_t cpc; /*!< Calling party category */
+	ftdm_variable_container_t variables; /*!< Variables attached to this call */
+	/* We need call_id inside caller_data for the user to be able to retrieve 
+	 * the call_id when ftdm_channel_call_place is called. This is the only time
+	 * that the user can use caller_data.call_id to obtain the call_id. The user
+	 * should use the call_id from sigmsg otherwise */
+	uint32_t call_id; /*!< Unique call ID for this call */
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
@@ -306,7 +334,8 @@ typedef enum {
 	FTDM_SIGEVENT_RELEASED, /*!< Channel is completely released and available */
 	FTDM_SIGEVENT_UP, /*!< Outgoing call has been answered */
 	FTDM_SIGEVENT_FLASH, /*!< Flash event  (typically on-hook/off-hook for analog devices) */
- 	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_PROCEED, /*!< Outgoing call got a response */
+	FTDM_SIGEVENT_RINGING, /*!< Remote side is in ringing state */
 	FTDM_SIGEVENT_PROGRESS, /*!< Outgoing call is making progress */
 	FTDM_SIGEVENT_PROGRESS_MEDIA, /*!< Outgoing call is making progress and there is media available */
 	FTDM_SIGEVENT_ALARM_TRAP, /*!< Hardware alarm ON */
@@ -316,12 +345,14 @@ typedef enum {
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
 	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
-	FTDM_SIGEVENT_MSG, /*!< We received an in-call msg */
-	FTDM_SIGEVENT_INVALID
+	FTDM_SIGEVENT_FACILITY, /*!< In call facility event */
+	FTDM_SIGEVENT_TRACE, /*!<Interpreted trace event */
+	FTDM_SIGEVENT_TRACE_RAW, /*!<Raw trace event */
+	FTDM_SIGEVENT_INVALID, /*!<Invalid */
 } ftdm_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "PROGRESS", \
+#define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "MSG", "INVALID"
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "FACILITY", "TRACE", "TRACE_RAW", "INVALID"
 
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
@@ -356,6 +387,7 @@ typedef struct ftdm_channel_config {
 
 /*!
   \brief Signaling status on a given span or specific channel on protocols that support it
+  \note see docs/sigstatus.txt for more extensive documentation on signaling status
  */
 typedef enum {
 	/* The signaling link is down (no d-chans up in the span/group, MFC-R2 bit pattern unidentified) */
@@ -372,15 +404,52 @@ typedef enum {
 /*! \brief Move from string to ftdm_signaling_status_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signaling_status, ftdm_signaling_status2str, ftdm_signaling_status_t)
 
+
+typedef struct {
+	ftdm_signaling_status_t status;
+} ftdm_event_sigstatus_t;
+
+typedef enum {
+	/* This is an received frame */
+	FTDM_TRACE_INCOMING,
+	/* This is a transmitted frame */
+	FTDM_TRACE_OUTGOING,
+	/* Invalid */
+ 	FTDM_TRACE_INVALID,
+} ftdm_trace_dir_t;
+#define TRACE_DIR_STRINGS "INCOMING", "OUTGOING", "INVALID"
+
+/*! \brief Move string to ftdm_trace_dir_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trace_dir, ftdm_trace_dir2str, ftdm_trace_dir_t)
+
+typedef struct {
+	/* Direction - incoming or outgoing */
+	ftdm_trace_dir_t dir;
+	uint8_t level; /* 1 for phy layer, 2 for q921/mtp2, 3 for q931/mtp3 */
+} ftdm_event_trace_t;
+
+typedef struct {
+	/* Digits collected */
+	char digits[FTDM_DIGITS_LIMIT];
+} ftdm_event_collected_t;
+
 /*! \brief Generic signaling message */
 struct ftdm_sigmsg {
 	ftdm_signal_event_t event_id; /*!< The type of message */
 	ftdm_channel_t *channel; /*!< Related channel */
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
-	ftdm_signaling_status_t sigstatus; /*!< Signaling status (valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED) */
-	void *raw_data; /*!< Message specific data if any */
-	uint32_t raw_data_len; /*!< Data len in case is needed */
+	uint32_t call_id; /*!< unique call id for this call */
+	union {
+		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
+		ftdm_event_trace_t logevent;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
+		ftdm_event_collected_t collected; /*!< valif if event_id is FTDM_SIGEVENT_COLLECTED_DIGIT */
+	} ev_data;
+	struct {
+		uint8_t autofree; /*!< Whether the freetdm core will free it after message delivery */
+		uint32_t len; /*!< Data len */
+		void *data; /*!< Signaling module specific data */
+	} raw;
 };
 
 /*! \brief Crash policy 
@@ -507,6 +576,7 @@ struct ftdm_memory_handler {
  * You don't need these unless your implementing an I/O interface module (most users don't) */
 #define FIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 #define FIO_CHANNEL_OUTGOING_CALL_ARGS (ftdm_channel_t *ftdmchan)
+#define FIO_CHANNEL_SEND_MSG_ARGS (ftdm_channel_t *ftdmchan, ftdm_sigmsg_t *sigmsg)
 #define FIO_CHANNEL_SET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
 #define FIO_CHANNEL_GET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *status)
 #define FIO_SPAN_SET_SIG_STATUS_ARGS (ftdm_span_t *span, ftdm_signaling_status_t status)
@@ -539,6 +609,7 @@ struct ftdm_memory_handler {
  * You don't need these unless your implementing an I/O interface module (most users don't) */
 typedef ftdm_status_t (*fio_channel_request_t) FIO_CHANNEL_REQUEST_ARGS ;
 typedef ftdm_status_t (*fio_channel_outgoing_call_t) FIO_CHANNEL_OUTGOING_CALL_ARGS ;
+typedef ftdm_status_t (*fio_channel_send_msg_t) FIO_CHANNEL_SEND_MSG_ARGS;
 typedef ftdm_status_t (*fio_channel_set_sig_status_t) FIO_CHANNEL_SET_SIG_STATUS_ARGS;
 typedef ftdm_status_t (*fio_channel_get_sig_status_t) FIO_CHANNEL_GET_SIG_STATUS_ARGS;
 typedef ftdm_status_t (*fio_span_set_sig_status_t) FIO_SPAN_SET_SIG_STATUS_ARGS;
@@ -572,6 +643,7 @@ typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
  * You don't need these unless your implementing an I/O interface module (most users don't) */
 #define FIO_CHANNEL_REQUEST_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_REQUEST_ARGS
 #define FIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_OUTGOING_CALL_ARGS
+#define FIO_CHANNEL_SEND_MSG_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_SEND_MSG_ARGS
 #define FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_SET_SIG_STATUS_ARGS
 #define FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_CHANNEL_GET_SIG_STATUS_ARGS
 #define FIO_SPAN_SET_SIG_STATUS_FUNCTION(name) ftdm_status_t name FIO_SPAN_SET_SIG_STATUS_ARGS
@@ -654,6 +726,14 @@ typedef enum {
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);
 
+/*! \brief Return the availability rate for a channel 
+ * \param ftdmchan Channel to get the availability from
+ *
+ * \retval > 0 if availability is supported
+ * \retval -1 if availability is not supported
+ */
+FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan);
+
 /*! \brief Answer call */
 #define ftdm_channel_call_answer(ftdmchan) _ftdm_channel_call_answer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
 
@@ -672,6 +752,12 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 /*! \brief Indicate a new condition in an incoming call recording the source code point where it was called (see ftdm_channel_call_indicate for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication);
 
+/*! \brief Send a message on a call */
+#define ftdm_channel_call_send_msg(ftdmchan, sigmsg) _ftdm_channel_call_send_msg(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (sigmsg))
+
+/*! \brief Send a signal on a call recording the source code point where it was called (see ftdm_channel_call_send_msg for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_send_msg(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_sigmsg_t *sigmsg);
+
 /*! \brief Hangup the call without cause */
 #define ftdm_channel_call_hangup(ftdmchan) _ftdm_channel_call_hangup(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
 
@@ -683,6 +769,14 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char
 
 /*! \brief Hangup the call with cause recording the source code point where it was called (see ftdm_channel_call_hangup_with_cause for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_call_cause_t);
+
+/*! \brief Reset the channel */
+#define ftdm_channel_reset(ftdmchan) _ftdm_channel_reset(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
+
+/*! \brief Reset the channel (see _ftdm_channel_reset for an easy to use macro) 
+ *  \note if there was a call on this channel, call will be cleared without any notifications to the user
+ */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Put a call on hold (if supported by the signaling stack) */
 #define ftdm_channel_call_hold(ftdmchan) _ftdm_channel_call_hold(__FILE__, __FUNCTION__, __LINE__, (ftdmchan))
@@ -722,6 +816,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_sig_status(ftdm_span_t *span, ftdm_signa
 
 /*! \brief Get span signaling status (ie: whether protocol layer is up or down) */
 FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signaling_status_t *status);
+
 
 /*! 
  * \brief Set user private data in the channel
@@ -1128,6 +1223,45 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
  */
 FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter);
 
+/*! \brief Add a custom variable to the call
+ *  \note This variables may be used by signaling modules to override signaling parameters
+ *  \todo Document which signaling variables are available
+ * */
+FT_DECLARE(ftdm_status_t) ftdm_call_add_var(ftdm_caller_data_t *caller_data, const char *var_name, const char *value);
+
+/*! \brief Get a custom variable from the call.
+ *  \note The variable pointer returned is only valid during the callback receiving SIGEVENT. */
+FT_DECLARE(const char *) ftdm_call_get_var(ftdm_caller_data_t *caller_data, const char *var_name);
+
+/*! \brief Get an iterator to iterate over the channel variables
+ *  \param caller_data The signal msg structure containing the variables
+ *  \param iter Optional iterator. You can reuse an old iterator (not previously freed) to avoid the extra allocation of a new iterator.
+ *  \note The iterator pointer returned is only valid while the signal message and it'll be destroyed when the signal message is processed.
+ *        This iterator is completely non-thread safe, if you are adding variables or removing variables while iterating
+ *        results are unpredictable
+ */
+FT_DECLARE(ftdm_iterator_t *) ftdm_call_get_var_iterator(const ftdm_caller_data_t *caller_data, ftdm_iterator_t *iter);
+
+/*! \brief Get variable name and value for the current iterator position */
+FT_DECLARE(ftdm_status_t) ftdm_call_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
+
+/*! \brief Clear all variables  attached to the call
+ *  \note Variables are cleared at the end of each call back, so it is not necessary for the user to call this function.
+ *  \todo Document which signaling variables are available
+ * */
+FT_DECLARE(ftdm_status_t) ftdm_call_clear_vars(ftdm_caller_data_t *caller_data);
+
+/*! \brief Remove a variable attached to the call
+ *  \note Removes a variable that was attached to the call.
+ *  \todo Document which call variables are available
+ * */
+FT_DECLARE(ftdm_status_t) ftdm_call_remove_var(ftdm_caller_data_t *caller_data, const char *var_name);
+
+/*! \brief Clears all the temporary data attached to this call
+ *  \note Clears caller_data->variables and caller_data->raw_data.
+ * */
+FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data);
+		
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
 

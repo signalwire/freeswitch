@@ -31,9 +31,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "private/ftdm_core.h"
 #include "ftmod_zt.h"
+
+/* used by dahdi to indicate there is no data available, but events to read */
+#ifndef ELAST
+#define ELAST 500
+#endif
 
 /**
  * \brief Zaptel globals
@@ -48,42 +52,48 @@ static struct {
     float txgain;
 } zt_globals;
 
+#if defined(__FreeBSD__)
+typedef unsigned long ioctlcmd;
+#else
+typedef int ioctlcmd;
+#endif
+
 /**
  * \brief General IOCTL codes
  */
 struct ioctl_codes {
-    int GET_BLOCKSIZE;
-    int SET_BLOCKSIZE;
-    int FLUSH;
-    int SYNC;
-    int GET_PARAMS;
-    int SET_PARAMS;
-    int HOOK;
-    int GETEVENT;
-    int IOMUX;
-    int SPANSTAT;
-    int MAINT;
-    int GETCONF;
-    int SETCONF;
-    int CONFLINK;
-    int CONFDIAG;
-    int GETGAINS;
-    int SETGAINS;
-    int SPANCONFIG;
-    int CHANCONFIG;
-    int SET_BUFINFO;
-    int GET_BUFINFO;
-    int AUDIOMODE;
-    int ECHOCANCEL;
-    int HDLCRAWMODE;
-    int HDLCFCSMODE;
-    int SPECIFY;
-    int SETLAW;
-    int SETLINEAR;
-    int GETCONFMUTE;
-    int ECHOTRAIN;
-    int SETTXBITS;
-    int GETRXBITS;
+    ioctlcmd GET_BLOCKSIZE;
+    ioctlcmd SET_BLOCKSIZE;
+    ioctlcmd FLUSH;
+    ioctlcmd SYNC;
+    ioctlcmd GET_PARAMS;
+    ioctlcmd SET_PARAMS;
+    ioctlcmd HOOK;
+    ioctlcmd GETEVENT;
+    ioctlcmd IOMUX;
+    ioctlcmd SPANSTAT;
+    ioctlcmd MAINT;
+    ioctlcmd GETCONF;
+    ioctlcmd SETCONF;
+    ioctlcmd CONFLINK;
+    ioctlcmd CONFDIAG;
+    ioctlcmd GETGAINS;
+    ioctlcmd SETGAINS;
+    ioctlcmd SPANCONFIG;
+    ioctlcmd CHANCONFIG;
+    ioctlcmd SET_BUFINFO;
+    ioctlcmd GET_BUFINFO;
+    ioctlcmd AUDIOMODE;
+    ioctlcmd ECHOCANCEL;
+    ioctlcmd HDLCRAWMODE;
+    ioctlcmd HDLCFCSMODE;
+    ioctlcmd SPECIFY;
+    ioctlcmd SETLAW;
+    ioctlcmd SETLINEAR;
+    ioctlcmd GETCONFMUTE;
+    ioctlcmd ECHOTRAIN;
+    ioctlcmd SETTXBITS;
+    ioctlcmd GETRXBITS;
 };
 
 /**
@@ -1183,7 +1193,6 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	}
 
 	return FTDM_FAIL;
-	
 }
 
 /**
@@ -1202,12 +1211,19 @@ static FIO_READ_FUNCTION(zt_read)
 		if ((r = read(ftdmchan->sockfd, data, *datalen)) > 0) {
 			break;
 		}
-		ftdm_sleep(10);
-		if (r == 0) {
-			errs--;
+		else if (r == 0) {
+			ftdm_sleep(10);
+			if (errs) errs--;
+		}
+		else {
+			if (errno == EAGAIN || errno == EINTR)
+				continue;
+			if (errno == ELAST)
+				break;
+
+			ftdm_log(FTDM_LOG_ERROR, "read failed: %s\n", strerror(errno));
 		}
 	}
-
 	if (r > 0) {
 		*datalen = r;
 		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
@@ -1215,7 +1231,9 @@ static FIO_READ_FUNCTION(zt_read)
 		}
 		return FTDM_SUCCESS;
 	}
-
+	else if (errno == ELAST) {
+		return FTDM_SUCCESS;
+	}
 	return r == 0 ? FTDM_TIMEOUT : FTDM_FAIL;
 }
 
@@ -1236,11 +1254,23 @@ static FIO_WRITE_FUNCTION(zt_write)
 		bytes += 2;
 	}
 
+tryagain:
 	w = write(ftdmchan->sockfd, data, bytes);
 	
 	if (w >= 0) {
 		*datalen = w;
 		return FTDM_SUCCESS;
+	}
+
+	if (errno == ELAST) {
+		zt_event_t zt_event_id = 0;
+		if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event after ELAST on write: %s\n", strerror(errno));
+			return FTDM_FAIL;
+		}
+		/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dropping event %d to be able to write data\n", zt_event_id);
+		goto tryagain;
 	}
 
 	return FTDM_FAIL;

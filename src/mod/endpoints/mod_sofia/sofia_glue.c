@@ -2342,7 +2342,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
-				   TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
+				   NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
@@ -2669,7 +2669,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 							  tech_pvt->rm_encoding, 
 							  tech_pvt->codec_ms,
 							  tech_pvt->rm_rate);
-
+			
+			switch_yield(tech_pvt->read_impl.microseconds_per_packet);
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;
@@ -3153,18 +3154,37 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
 			int len = atoi(val);
+			int maxlen = 0;
+			char *p;
 
-			if (len < 100 || len > 1000) {
+			if ((p = strchr(val, ':'))) {
+				p++;
+				maxlen = atoi(p);
+			}
+
+			if (len < 20 || len > 10000) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR,
-								  "Invalid Jitterbuffer spec [%d] must be between 100 and 1000\n", len);
+								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", len);
 			} else {
-				int qlen;
-
+				int qlen, maxqlen = 50;
+				
 				qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len,
-								  qlen);
-				switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen);
+				if (maxlen) {
+					maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+				}
+
+				if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
+													  tech_pvt->read_impl.samples_per_packet, 
+													  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+					switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+									  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+				}
+				
 			}
 		}
 
@@ -4668,8 +4688,8 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 
 		if (!sofia_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && !sofia_test_flag(tech_pvt, TFLAG_RECOVERING) &&
-			(switch_channel_test_flag(other_channel, CF_OUTBOUND) &&
-			 switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND) && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
+			(switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_OUTBOUND &&
+ switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
 			sofia_set_flag_locked(tech_pvt, TFLAG_CHANGE_MEDIA);
 		}
@@ -5041,8 +5061,19 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		const char *port = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 		const char *r_ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 		const char *r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
+		const char *use_uuid;
 
 		sofia_set_flag(tech_pvt, TFLAG_RECOVERING);
+
+		if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
+			if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(channel),
+								  use_uuid);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
+								  switch_channel_get_name(channel), use_uuid);
+			}
+		}
 
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && ip && port) {
 			const char *tmp;

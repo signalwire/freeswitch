@@ -508,7 +508,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 						TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 			}
 		} else {
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 				if (!tech_pvt->got_bye) {
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
@@ -573,7 +573,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	char *sticky = NULL;
 	const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
-	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -653,7 +653,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			}
 
-			if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 				const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 				tech_pvt->num_codecs = 0;
 				sofia_glue_tech_prepare_codecs(tech_pvt);
@@ -723,7 +723,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(session_timeout),
-						TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
+						NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
@@ -739,7 +739,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
 						NUTAG_SESSION_TIMER(session_timeout),
-						TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
+						NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
@@ -906,7 +906,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			tech_pvt->read_frame.flags = SFF_NONE;
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
-
+			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				if (status == SWITCH_STATUS_TIMEOUT) {
 
@@ -1084,7 +1084,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									tech_pvt->last_ts = 0;
 
 									/* inform them of the codec they are actually sending */
-
+#if 0
 									if (++tech_pvt->codec_reinvites > 2) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 														  "Ok, some devices *cough* X-lite *cough*\n"
@@ -1093,7 +1093,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									} else {
 										sofia_glue_do_invite(session);
 									}
+#endif
 
+									*frame = &silence_frame;
+									return SWITCH_STATUS_SUCCESS;
 								}
 
 							}
@@ -1328,6 +1331,60 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
 				} else {
 					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+				}
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
+		{
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				int len, maxlen = 0, qlen = 0, maxqlen = 50;
+
+				if (msg->string_arg) {
+					char *p;
+					const char *s;
+
+					if (!strncasecmp(msg->string_arg, "debug:", 6)) {
+						s = msg->string_arg + 6;
+						if (s && !strcmp(s, "off")) {
+							s = NULL;
+						}
+						switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
+						goto end;
+					}
+
+					
+					if ((len = atoi(msg->string_arg))) {
+						qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+					}
+					
+					if (qlen) {
+						if ((p = strchr(msg->string_arg, ':'))) {
+							p++;
+							maxlen = atol(p);
+						}
+					}
+
+
+					if (maxlen) {
+						maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+					}
+				}
+
+				if (qlen) {
+					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
+														  tech_pvt->read_impl.samples_per_packet, 
+														  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", len, qlen, maxqlen);
+						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+					}
+					
+				} else {
+					switch_rtp_deactivate_jitter_buffer(tech_pvt->rtp_session);
 				}
 			}
 		}
@@ -1629,7 +1686,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
-				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+				if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 					tech_pvt->num_codecs = 0;
@@ -2144,7 +2201,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || !tech_pvt->iananame) {
 						sofia_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
-						if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+						if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 							const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 							tech_pvt->num_codecs = 0;

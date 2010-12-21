@@ -1624,6 +1624,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			runtime.odbc_dsn = NULL;
 			runtime.odbc_user = NULL;
 			runtime.odbc_pass = NULL;
+			runtime.odbc_dbtype = DBTYPE_DEFAULT;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Falling back to core_db.\n");
 			goto top;
 		}

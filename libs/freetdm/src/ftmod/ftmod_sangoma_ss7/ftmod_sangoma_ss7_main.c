@@ -502,6 +502,8 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_COLLECT:	/* IAM received but wating on digits */
 
+		isup_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
+
 		if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
 			SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
 			break;
@@ -521,8 +523,8 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/*now go to the RING state */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
 			
-		} else if (i >= g_ftdm_sngss7_data.min_digits) {
-			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, g_ftdm_sngss7_data.min_digits);
+		} else if (i >= isup_intf->min_digits) {
+			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, isup_intf->min_digits);
 
 			/*now go to the RING state */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
@@ -532,7 +534,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
 				SS7_INFO_CHAN(ftdmchan,"Received %d out of %d so far: %s...starting T35\n",
 										i,
-										g_ftdm_sngss7_data.min_digits,
+										isup_intf->min_digits,
 										ftdmchan->caller_data.dnis.digits);
 		
 				/* start ISUP t35 */
@@ -839,7 +841,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 						SS7_DEBUG_CHAN(ftdmchan,"All reset flags cleared %s\n", "");
 						/* all flags are down so we can bring up the sig status */
 						sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-						sigev.sigstatus = FTDM_SIG_STATE_UP;
+						sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 						ftdm_span_send_signal (ftdmchan->span, &sigev);
 					} /* if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) */
 				} /* if !blocked */
@@ -947,7 +949,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		/* if the sig_status is up...bring it down */
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 		}
 
@@ -1031,7 +1033,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 				/* bring the sig status back up */
 				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.sigstatus = FTDM_SIG_STATE_UP;
+				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			}
 
@@ -1044,7 +1046,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
 
 			/* go back to the last state */
@@ -1056,7 +1058,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a BLA */
@@ -1074,7 +1076,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status up */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a uba */
@@ -1090,7 +1092,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a blo */
@@ -1108,7 +1110,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the sig status up */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_UP;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 			ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 			/* send a ubl */
@@ -1147,7 +1149,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* bring the channel signaling status to down */
 			sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-			sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+			sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 			ftdm_span_send_signal (ftdmchan->span, &sigev);
 
 			/* remove any reset flags */
@@ -1519,9 +1521,6 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 
 	/* initalize the global gen_config flag */
 	g_ftdm_sngss7_data.gen_config = 0;
-
-	/* min. number of digitis to wait for */
-	g_ftdm_sngss7_data.min_digits = 7;
 
 	/* function trace initizalation */
 	g_ftdm_sngss7_data.function_trace = 1;

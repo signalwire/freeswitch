@@ -329,8 +329,8 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				{
 					if (state_counter > 500) {
 						if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && 
-							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RING || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
-							 || ftdmchan->last_state >= FTDM_CHANNEL_STATE_IDLE)) {
+							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RINGING || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_RING)) {
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 						} else {
 							ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
@@ -340,7 +340,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				}
 				break;
 			case FTDM_CHANNEL_STATE_UP:
-			case FTDM_CHANNEL_STATE_IDLE:
+			case FTDM_CHANNEL_STATE_RING:
 				{
 					ftdm_sleep(interval);
 					continue;
@@ -386,7 +386,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 					ftdm_channel_use(ftdmchan);
 				}
 				break;
-			case FTDM_CHANNEL_STATE_IDLE:
+			case FTDM_CHANNEL_STATE_RING:
 				{
 					ftdm_channel_use(ftdmchan);
 
@@ -421,7 +421,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 					ftdm_channel_command(ftdmchan, FTDM_COMMAND_WINK, NULL);
 				}
 				break;
-			case FTDM_CHANNEL_STATE_RING:
+			case FTDM_CHANNEL_STATE_RINGING:
 				{
 					ftdm_buffer_zero(dt_buffer);
 					teletone_run(&ts, ftdmchan->span->tone_map[FTDM_TONEMAP_RING]);
@@ -467,7 +467,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				dtmf_offset = strlen(dtmf);
 				last_digit = elapsed;
 				sig.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
-				sig.raw_data = dtmf;
+				ftdm_set_string(sig.ev_data.collected.digits, dtmf);
 				if (ftdm_span_send_signal(ftdmchan->span, &sig) == FTDM_BREAK) {
 					collecting = 0;
 				}
@@ -477,7 +477,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 
 		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) > analog_data->max_dialstr))) {
 			ftdm_log(FTDM_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
 			last_digit = 0;
 			collecting = 0;
 		}

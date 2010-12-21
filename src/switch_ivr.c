@@ -140,7 +140,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	const char *var;
 
 	/*
-	   if (!switch_channel_test_flag(channel, CF_OUTBOUND) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+	   if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
 	   !switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
 	   if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 	   switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot establish media.\n");
@@ -1544,21 +1544,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		new_profile->destination_number = switch_core_strdup(new_profile->pool, extension);
 		new_profile->rdnis = switch_core_strdup(new_profile->pool, profile->destination_number);
 
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			if (profile->callee_id_name) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", new_profile->caller_id_name);
-				new_profile->caller_id_name = switch_core_strdup(new_profile->pool, profile->callee_id_name);
-				profile->callee_id_name = SWITCH_BLANK_STRING;
-			}
-
-			if (profile->callee_id_number) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", new_profile->caller_id_number);
-				new_profile->caller_id_number = switch_core_strdup(new_profile->pool, profile->callee_id_number);
-				profile->callee_id_number = SWITCH_BLANK_STRING;
-			}
-		}
-		
-
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
 		/* If HANGUP_AFTER_BRIDGE is set to 'true', SWITCH_SIGNAL_BRIDGE_VARIABLE 
@@ -2290,7 +2275,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
-	jb = stfu_n_init(qlen, 0);
+	jb = stfu_n_init(qlen, qlen, read_impl.samples_per_packet, read_impl.samples_per_second);
 
 	write_frame.codec = switch_core_session_get_read_codec(session);
 

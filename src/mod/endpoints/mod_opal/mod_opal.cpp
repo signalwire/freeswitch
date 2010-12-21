@@ -580,7 +580,6 @@ FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, void* userDat
         name += outbound_profile->destination_number;
         switch_channel_set_name(m_fsChannel, name);
 
-        switch_channel_set_flag(m_fsChannel, CF_OUTBOUND);
         switch_channel_set_state(m_fsChannel, CS_INIT);
     }
 }
@@ -966,7 +965,7 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
       It would only happen if someone called switch_channel_answer() instead of switch_channel_mark_answered() on an outbound call.
       it should not do anything if someone does it by accident somewhere hense this in both cases:
 
-      if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+      if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
       return SWITCH_STATUS_FALSE;
       }
 
@@ -1025,7 +1024,7 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
         {
             int fixed = 0;
             
-            if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+            if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
                 return SWITCH_STATUS_FALSE;
             }
 

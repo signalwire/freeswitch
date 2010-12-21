@@ -65,7 +65,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_ANY_STATE, FTDM_END},
-		{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_SUSPENDED, FTDM_END}
+		{FTDM_CHANNEL_STATE_RESET, FTDM_CHANNEL_STATE_RESTART, FTDM_END}
+	},
+	{
+		ZSD_INBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+		{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_INBOUND,
@@ -170,7 +176,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_ANY_STATE, FTDM_END},
-		{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_SUSPENDED, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		{FTDM_CHANNEL_STATE_RESET, FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+	},
+	{
+		ZSD_OUTBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+		{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_OUTBOUND,
@@ -203,7 +215,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
 		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
-		 FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP,
+		 FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP,
 		 FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
@@ -211,12 +223,18 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_PROCEED, FTDM_END},
 		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
-		 FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
-		},
+		 FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+	},
 	{
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+	},
+	{
+		ZSD_OUTBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RINGING, FTDM_END},
 		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 	},
 	{
@@ -626,8 +644,11 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	case FTDM_CHANNEL_STATE_GET_CALLERID:
 		{
 			if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+				/* By default, we do not send a progress indicator in the proceed */
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
+				
 				sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
-				sngisdn_snd_proceed(ftdmchan);
+				sngisdn_snd_proceed(ftdmchan, prog_ind);
 			}
 			/* Wait in this state until we get FACILITY msg */			
 		}
@@ -666,16 +687,28 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
 				if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+					/* By default, we do not send a progress indicator in the proceed */
+					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
+					
 					sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
-					sngisdn_snd_proceed(ftdmchan);
+					sngisdn_snd_proceed(ftdmchan, prog_ind);
 				}
 			}
 		}
 		break;
 	case FTDM_CHANNEL_STATE_RINGING:
 		{
-			ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
-			sngisdn_snd_alert(ftdmchan, prog_ind);
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				/* OUTBOUND...so we were told by the line of this so notify the user */
+				sigev.event_id = FTDM_SIGEVENT_RINGING;
+				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+				}
+			} else {
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+				sngisdn_snd_alert(ftdmchan, prog_ind);
+			}
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
@@ -686,12 +719,9 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				sigev.event_id = FTDM_SIGEVENT_PROGRESS;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
-				/* If we already sent a PROCEED before, do not send a PROGRESS as there is nothing to indicate to the remote switch */
-				if (ftdmchan->last_state != FTDM_CHANNEL_STATE_PROCEED) {
-					/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
-					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
-					sngisdn_snd_progress(ftdmchan, prog_ind);
-				}
+				/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+				sngisdn_snd_progress(ftdmchan, prog_ind);				
 			}
 		}
 		break;
@@ -774,7 +804,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 					sngisdn_snd_release(ftdmchan, 0);
 
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-						sngisdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
+						sngisdn_set_span_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 					}
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
@@ -832,6 +862,11 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			/* IMPLEMENT ME */
 		}
 		break;
+	case FTDM_CHANNEL_STATE_RESET:
+		{
+			sngisdn_snd_restart(ftdmchan);
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "unsupported sngisdn_rcvd state %s\n", ftdm_channel_state2str(ftdmchan->state));
@@ -849,6 +884,22 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 #endif
 	ftdm_channel_unlock(ftdmchan);
 	return;
+}
+
+static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
+{
+	ftdm_status_t status = FTDM_FAIL;
+
+	switch (sigmsg->event_id) {
+		case FTDM_SIGEVENT_FACILITY:
+			sngisdn_snd_fac_req(ftdmchan);
+			break;
+		default:
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unsupported signalling msg requested\n");
+			status = FTDM_BREAK;
+	}
+	ftdm_call_clear_data(&ftdmchan->caller_data);
+	return status;
 }
 
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
@@ -925,7 +976,8 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
-{	
+{
+	sngisdn_span_data_t *signal_data = span->signal_data;
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
 	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
@@ -934,6 +986,14 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	/* clear the monitor thread stop flag */
 	ftdm_clear_flag(span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
+
+	if (signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+		sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
+	}
+	
+	if (signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+		sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
+	}
 
 	/*start the span monitor thread*/
 	if (ftdm_thread_create_detached(ftdm_sangoma_isdn_run, span) != FTDM_SUCCESS) {
@@ -1030,6 +1090,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->stop = ftdm_sangoma_isdn_stop;
 	span->signal_type = FTDM_SIGTYPE_ISDN;
 	span->outgoing_call = ftdm_sangoma_isdn_outgoing_call;
+	span->send_msg = ftdm_sangoma_isdn_send_msg;
 	span->channel_request = NULL;
 	span->signal_cb	= sig_cb;
 	span->get_channel_sig_status = ftdm_sangoma_isdn_get_chan_sig_status;
@@ -1040,11 +1101,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
+	ftdm_set_flag(span, FTDM_SPAN_USE_SKIP_STATES);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
 		
-		sngisdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
+		sngisdn_set_span_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
 	}
 
 	/* Initialize scheduling context */
@@ -1139,6 +1201,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		goto done;
 	}
 
+	/* TODO: Move functions to table + function pointers */
 	if (!strcasecmp(argv[0], "trace")) {
 		char *trace_opt;
 		
@@ -1156,6 +1219,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[2]);
 			goto done;
 		}
+		
 		if (!strcasecmp(trace_opt, "q921")) {
 			sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 		} else if (!strcasecmp(trace_opt, "q931")) {
@@ -1164,7 +1228,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			sngisdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
 		} else {
 			stream->write_function(stream, "-ERR invalid trace option <q921|q931> <span name>\n");
-		}	
+		}
 	}
 	if (!strcasecmp(argv[0], "l1_stats")) {
 		ftdm_span_t *span;
@@ -1182,7 +1246,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		}
 		sngisdn_print_phy_stats(stream, span);
 	}
-
+	
 	if (!strcasecmp(argv[0], "show_spans")) {
 		ftdm_span_t *span = NULL;
 		if (argc == 2) {

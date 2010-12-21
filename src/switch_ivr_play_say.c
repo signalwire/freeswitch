@@ -1573,10 +1573,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file\n");
 
 		if (read_impl.samples_per_second) {
-			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_out / read_impl.samples_per_second);
-			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_out / (read_impl.samples_per_second / 1000));
+			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / read_impl.samples_per_second);
+			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / (read_impl.samples_per_second / 1000));
 		}
-		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_out);
+		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_in);
 
 		switch_core_session_io_write_lock(session);
 		switch_channel_set_private(channel, "__fh", NULL);
@@ -1760,6 +1760,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	char tb[2] = "";
 
 	switch_assert(session);
+
+	if (!digit_timeout) {
+		digit_timeout = timeout;
+	}
 
 	if (max_digits < min_digits) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,

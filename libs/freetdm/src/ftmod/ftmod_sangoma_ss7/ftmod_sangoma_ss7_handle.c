@@ -211,10 +211,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			/* add any special variables for the dialplan */
 			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
-			ftdm_channel_add_var(ftdmchan, "ss7_clg_nadi", nadi);
+			ftdm_call_add_var(&ftdmchan->caller_data, "ss7_clg_nadi", nadi);
 
 			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
-			ftdm_channel_add_var(ftdmchan, "ss7_cld_nadi", nadi);
+			ftdm_call_add_var(&ftdmchan->caller_data, "ss7_cld_nadi", nadi);
 
 
 			/* check if a COT test is requested */
@@ -2004,7 +2004,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* bring the sig status down */
 		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-		sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+		sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 		ftdm_span_send_signal(ftdmchan->span, &sigev);
 
 		/* unlock the channel again before we exit */
@@ -2135,7 +2135,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* bring the sig status down */
 		sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-		sigev.sigstatus = FTDM_SIG_STATE_UP;
+		sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 		ftdm_span_send_signal(ftdmchan->span, &sigev);
 	
 		/* unlock the channel again before we exit */

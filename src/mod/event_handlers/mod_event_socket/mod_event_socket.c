@@ -31,8 +31,8 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-#define MAX_QUEUE_LEN 5000
-#define MAX_MISSED 200
+#define MAX_QUEUE_LEN 25000
+#define MAX_MISSED 2000
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -170,7 +170,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 			switch_log_node_t *dnode = switch_log_node_dup(node);
 
-			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
+			if (switch_queue_push(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
 					int ll = l->lost_logs;
 					switch_event_t *event;
@@ -366,7 +366,7 @@ static void event_handler(switch_event_t *event)
 
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				if (switch_queue_trypush(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
+				if (switch_queue_push(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_events) {
 						int le = l->lost_events;
 						l->lost_events = 0;
@@ -1233,7 +1233,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				if (switch_channel_get_state(chan) < CS_HANGUP && switch_channel_test_flag(chan, CF_DIVERT_EVENTS)) {
 					switch_event_t *e = NULL;
 					while (switch_core_session_dequeue_event(listener->session, &e, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-						if (switch_queue_trypush(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
+						if (switch_queue_push(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
 							switch_core_session_queue_event(listener->session, &e);
 							break;
 						}

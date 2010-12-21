@@ -411,7 +411,7 @@ struct ftdm_channel {
 	uint32_t extra_id;
 	ftdm_chan_type_t type;
 	ftdm_socket_t sockfd;
-	uint32_t flags;
+	uint64_t flags;
 	uint32_t pflags;
 	uint32_t sflags;
 	ftdm_alarm_flag_t alarm_flags;
@@ -493,6 +493,7 @@ struct ftdm_span {
 	ftdm_trunk_type_t trunk_type;
 	ftdm_analog_start_type_t start_type;
 	ftdm_signal_type_t signal_type;
+	uint32_t last_used_index;
 	/* Private signaling data. Do not touch unless you are a signaling module */
 	void *signal_data;
 	fio_signal_cb_t signal_cb;
@@ -503,6 +504,7 @@ struct ftdm_span {
 	teletone_multi_tone_t tone_finder[FTDM_TONEMAP_INVALID+1];
 	ftdm_channel_t *channels[FTDM_MAX_CHANNELS_SPAN+1];
 	fio_channel_outgoing_call_t outgoing_call;
+	fio_channel_send_msg_t send_msg;
 	fio_channel_set_sig_status_t set_channel_sig_status;
 	fio_channel_get_sig_status_t get_channel_sig_status;
 	fio_span_set_sig_status_t set_span_sig_status;
@@ -598,7 +600,6 @@ FT_DECLARE(void) ftdm_channel_rotate_tokens(ftdm_channel_t *ftdmchan);
 FT_DECLARE(int) ftdm_load_module(const char *name);
 FT_DECLARE(int) ftdm_load_module_assume(const char *name);
 FT_DECLARE(int) ftdm_vasprintf(char **ret, const char *fmt, va_list ap);
-FT_DECLARE(ftdm_status_t) ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void);
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);

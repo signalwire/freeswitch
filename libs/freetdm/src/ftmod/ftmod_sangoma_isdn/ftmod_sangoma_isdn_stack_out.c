@@ -51,72 +51,6 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[signal_data->cc_id].mutex);
 
 	memset(&conEvnt, 0, sizeof(conEvnt));
-
-	conEvnt.bearCap[0].eh.pres = PRSNT_NODEF;
-	conEvnt.bearCap[0].infoTranCap.pres = PRSNT_NODEF;
-	conEvnt.bearCap[0].infoTranCap.val = sngisdn_get_infoTranCap_from_user(ftdmchan->caller_data.bearer_capability);
-
-	conEvnt.bearCap[0].codeStand0.pres = PRSNT_NODEF;
-	conEvnt.bearCap[0].codeStand0.val = IN_CSTD_CCITT;
-	conEvnt.bearCap[0].infoTranRate0.pres = PRSNT_NODEF;
-	conEvnt.bearCap[0].infoTranRate0.val = IN_ITR_64KBIT;
-	conEvnt.bearCap[0].tranMode.pres = PRSNT_NODEF;
-	conEvnt.bearCap[0].tranMode.val = IN_TM_CIRCUIT;
-
-	conEvnt.chanId.eh.pres = PRSNT_NODEF;
-	conEvnt.chanId.prefExc.pres = PRSNT_NODEF;
-	conEvnt.chanId.prefExc.val = IN_PE_EXCLSVE;
-	conEvnt.chanId.dChanInd.pres = PRSNT_NODEF;
-	conEvnt.chanId.dChanInd.val = IN_DSI_NOTDCHAN;
-	conEvnt.chanId.intIdentPres.pres = PRSNT_NODEF;
-	conEvnt.chanId.intIdentPres.val = IN_IIP_IMPLICIT;
-	conEvnt.chanId.intIdent.pres = NOTPRSNT;
-
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-		/* Trillium stack rejests lyr1Ident on BRI, but Netbricks always sends it.
-		Check with Trillium if this ever causes calls to fail in the field */
-
-		/* BRI only params */
-		conEvnt.chanId.intType.pres = PRSNT_NODEF;
-		conEvnt.chanId.intType.val = IN_IT_BASIC;
-		conEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		conEvnt.chanId.infoChanSel.val = ftdmchan->physical_chan_id;
-	} else {
-		/* PRI only params */
-		conEvnt.bearCap[0].usrInfoLyr1Prot.pres = PRSNT_NODEF;
-		conEvnt.bearCap[0].usrInfoLyr1Prot.val = sngisdn_get_usrInfoLyr1Prot_from_user(ftdmchan->caller_data.bearer_layer1);
-		
-		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN &&
-			conEvnt.bearCap[0].usrInfoLyr1Prot.val == IN_UIL1_G711ULAW) {
-			
-			/* We are bridging a call from T1 */
-			conEvnt.bearCap[0].usrInfoLyr1Prot.val = IN_UIL1_G711ALAW;
-			
-		} else if (conEvnt.bearCap[0].usrInfoLyr1Prot.val == IN_UIL1_G711ALAW) {
-			
-			/* We are bridging a call from E1 */
-			conEvnt.bearCap[0].usrInfoLyr1Prot.val = IN_UIL1_G711ULAW;
-		}
-		
-		conEvnt.bearCap[0].lyr1Ident.pres = PRSNT_NODEF;
-		conEvnt.bearCap[0].lyr1Ident.val = IN_L1_IDENT;
-
-		conEvnt.chanId.intType.pres = PRSNT_NODEF;
-		conEvnt.chanId.intType.val = IN_IT_OTHER;
-		conEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		conEvnt.chanId.infoChanSel.val = IN_ICS_B1CHAN;
-		conEvnt.chanId.chanMapType.pres = PRSNT_NODEF;
-		conEvnt.chanId.chanMapType.val = IN_CMT_BCHAN;
-		conEvnt.chanId.nmbMap.pres = PRSNT_NODEF;
-		conEvnt.chanId.nmbMap.val = IN_NM_CHNNMB;
-		conEvnt.chanId.codeStand1.pres = PRSNT_NODEF;
-		conEvnt.chanId.codeStand1.val = IN_CSTD_CCITT;
-		conEvnt.chanId.chanNmbSlotMap.pres = PRSNT_NODEF;
-		conEvnt.chanId.chanNmbSlotMap.len = 1;
-		conEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
-	}
-
 	if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
 		conEvnt.sndCmplt.eh.pres = PRSNT_NODEF;
 	}
@@ -126,8 +60,11 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	}
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Outgoing call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
+	set_chan_id_ie(ftdmchan, &conEvnt.chanId);
+	set_bear_cap_ie(ftdmchan, &conEvnt.bearCap[0]);
 	set_called_num(ftdmchan, &conEvnt.cdPtyNmb);
 	set_calling_num(ftdmchan, &conEvnt.cgPtyNmb);
+	set_calling_num2(ftdmchan, &conEvnt.cgPtyNmb2);
 	set_calling_subaddr(ftdmchan, &conEvnt.cgPtySad);
 	set_redir_num(ftdmchan, &conEvnt.redirNmb);
 	set_calling_name(ftdmchan, &conEvnt);
@@ -160,38 +97,7 @@ void sngisdn_snd_setup_ack(ftdm_channel_t *ftdmchan)
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));	
 
-	cnStEvnt.chanId.eh.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.val = IN_PE_EXCLSVE;
-	cnStEvnt.chanId.dChanInd.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.dChanInd.val = IN_DSI_NOTDCHAN;
-	cnStEvnt.chanId.intIdentPres.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.intIdentPres.val = IN_IIP_IMPLICIT;
 
-	
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-
-		/* BRI only params */
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_BASIC;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = ftdmchan->physical_chan_id;
-	} else {
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_OTHER;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = IN_ICS_B1CHAN;
-		cnStEvnt.chanId.chanMapType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanMapType.val = IN_CMT_BCHAN;
-		cnStEvnt.chanId.nmbMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.nmbMap.val = IN_NM_CHNNMB;
-		cnStEvnt.chanId.codeStand1.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.codeStand1.val = IN_CSTD_CCITT;
-		cnStEvnt.chanId.chanNmbSlotMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanNmbSlotMap.len = 1;
-		cnStEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
-	}
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP ACK (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -220,38 +126,7 @@ void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan)
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 	
-	cnStEvnt.chanId.eh.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.val = IN_PE_EXCLSVE;
-	cnStEvnt.chanId.dChanInd.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.dChanInd.val = IN_DSI_NOTDCHAN;
-	cnStEvnt.chanId.intIdentPres.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.intIdentPres.val = IN_IIP_IMPLICIT;
-	
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-
-		/* BRI only params */
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_BASIC;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = ftdmchan->physical_chan_id;
-	} else {
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_OTHER;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = IN_ICS_B1CHAN;
-		cnStEvnt.chanId.chanMapType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanMapType.val = IN_CMT_BCHAN;
-		cnStEvnt.chanId.nmbMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.nmbMap.val = IN_NM_CHNNMB;
-		cnStEvnt.chanId.codeStand1.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.codeStand1.val = IN_CSTD_CCITT;
-		cnStEvnt.chanId.chanNmbSlotMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanNmbSlotMap.len = 1;
-		cnStEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
-	}
-
+	set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT COMPL (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -262,10 +137,9 @@ void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan)
 }
 
 
-void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan)
+void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind)
 {
 	CnStEvnt cnStEvnt;
-	
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
@@ -277,40 +151,12 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan)
 	}
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
-	
-	cnStEvnt.chanId.eh.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.val = IN_PE_EXCLSVE;
-	cnStEvnt.chanId.dChanInd.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.dChanInd.val = IN_DSI_NOTDCHAN;
-	cnStEvnt.chanId.intIdentPres.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.intIdentPres.val = IN_IIP_IMPLICIT;
-	
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
 
-		/* BRI only params */
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_BASIC;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = ftdmchan->physical_chan_id;
-	} else {
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_OTHER;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = IN_ICS_B1CHAN;
-		cnStEvnt.chanId.chanMapType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanMapType.val = IN_CMT_BCHAN;
-		cnStEvnt.chanId.nmbMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.nmbMap.val = IN_NM_CHNNMB;
-		cnStEvnt.chanId.codeStand1.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.codeStand1.val = IN_CSTD_CCITT;
-		cnStEvnt.chanId.chanNmbSlotMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanNmbSlotMap.len = 1;
-		cnStEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
-	}
-
+	set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
+	
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROCEED (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -343,6 +189,7 @@ void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));	
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROGRESS (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_PROGRESS, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -369,6 +216,7 @@ void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind
 
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending ALERT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -393,41 +241,11 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	}
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
-
-	cnStEvnt.chanId.eh.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.prefExc.val = IN_PE_EXCLSVE;
-	cnStEvnt.chanId.dChanInd.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.dChanInd.val = IN_DSI_NOTDCHAN;
-	cnStEvnt.chanId.intIdentPres.pres = PRSNT_NODEF;
-	cnStEvnt.chanId.intIdentPres.val = IN_IIP_IMPLICIT;
 	
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-
-		/* BRI only params */
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_BASIC;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = ftdmchan->physical_chan_id;
-	} else {
-		cnStEvnt.chanId.intType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.intType.val = IN_IT_OTHER;
-		cnStEvnt.chanId.infoChanSel.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.infoChanSel.val = IN_ICS_B1CHAN;
-		cnStEvnt.chanId.chanMapType.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanMapType.val = IN_CMT_BCHAN;
-		cnStEvnt.chanId.nmbMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.nmbMap.val = IN_NM_CHNNMB;
-		cnStEvnt.chanId.codeStand1.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.codeStand1.val = IN_CSTD_CCITT;
-		cnStEvnt.chanId.chanNmbSlotMap.pres = PRSNT_NODEF;
-		cnStEvnt.chanId.chanNmbSlotMap.len = 1;
-		cnStEvnt.chanId.chanNmbSlotMap.val[0] = ftdmchan->physical_chan_id;
-	}
-
+	set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if (sng_isdn_con_response(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -450,10 +268,17 @@ void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
 		
 	memset(&facEvnt, 0, sizeof(facEvnt));
 	
-	set_facility_ie_str(ftdmchan, &facEvnt.facElmt.facStr.val[2], (ftdm_size_t*)&facEvnt.facElmt.facStr.len);
+	if (set_facility_ie_str(ftdmchan, &facEvnt.facElmt.facStr.val[2], (uint8_t*)&facEvnt.facElmt.facStr.len) != FTDM_SUCCESS) {
+		/* No point in sending a FACILITY message if there is no Facility IE to transmit */
+		return;
+	}
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	
+	facEvnt.facElmt.eh.pres = PRSNT_NODEF;
+	facEvnt.facElmt.facStr.pres = PRSNT_NODEF;
 	facEvnt.facElmt.facStr.val[0] = 0x1C;
-	facEvnt.facElmt.facStr.val[1] = facEvnt.facElmt.facStr.len;
+	facEvnt.facElmt.facStr.val[1] = (uint8_t)facEvnt.facElmt.facStr.len;
+	facEvnt.facElmt.facStr.len +=2; /* Need to include the size of identifier + len */
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending FACILITY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -481,6 +306,8 @@ void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 	//ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ\n");
 
 
+	ftdm_call_clear_data(&ftdmchan->caller_data);
+	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, signal_data->dchan_id, sngisdn_info->ces);
 
 	if (sng_isdn_con_status(signal_data->cc_id, 0, 0, &cnStEvnt, MI_INFO, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -501,6 +328,8 @@ void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan)
 
 	memset(&staEvnt, 0, sizeof(StaEvnt));
 
+	ftdm_call_clear_data(&ftdmchan->caller_data);
+	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending Status ENQ on suId:%d suInstId:%u spInstId:%d dchan:%d ces:%d\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 	if (sng_isdn_status_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &staEvnt, MI_STATENQ)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused Status ENQ request\n");
@@ -539,6 +368,7 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	discEvnt.causeDgn[0].dgnVal.pres = NOTPRSNT;
 
 	set_facility_ie(ftdmchan, &discEvnt.facilityStr);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 	if (sng_isdn_disc_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &discEvnt)) {
@@ -546,6 +376,7 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 	}
 	return;
 }
+
 void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 {
 	RelEvnt relEvnt;
@@ -585,6 +416,7 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 	}
 
 	set_facility_ie(ftdmchan, &relEvnt.facilityStr);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending RELEASE/RELEASE COMPLETE (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, suInstId, spInstId);
 
@@ -597,6 +429,24 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare)
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "stack refused RELEASE/RELEASE COMPLETE request\n");
 		}
 	}	
+	return;
+}
+
+void sngisdn_snd_restart(ftdm_channel_t *ftdmchan)
+{
+	Rst rstEvnt;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+
+	memset(&rstEvnt, 0, sizeof(rstEvnt));
+
+	set_chan_id_ie(ftdmchan, &rstEvnt.chanId);
+	set_restart_ind_ie(ftdmchan, &rstEvnt.rstInd);
+	
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending RESTART (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, signal_data->dchan_id, CES_MNGMNT);
+
+	if (sng_isdn_restart_request(signal_data->cc_id, &rstEvnt, signal_data->dchan_id, CES_MNGMNT, IN_SND_RST)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "stack refused RESTART request\n");
+	}
 	return;
 }
 

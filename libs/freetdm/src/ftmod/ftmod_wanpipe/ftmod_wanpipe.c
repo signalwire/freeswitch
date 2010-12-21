@@ -811,13 +811,14 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 		ftdm_clear_flag(&(ftdmchan->iostats.tx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	}
 
-	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_number_of_frames_in_queue) {
-		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
+	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_tx_idle_packets) {
 		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle
 		 * also do not report idle warning when we just started transmitting */
 		if (ftdmchan->iostats.tx.packets && FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle: %d\n", ftdmchan->iostats.tx.idle_packets);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle changed from %d to %d\n", 
+					ftdmchan->iostats.tx.idle_packets, tx_stats->wp_api_tx_hdr_tx_idle_packets);
 		}
+		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
 	}
 
 	if (!ftdmchan->iostats.tx.packets) {
@@ -941,7 +942,6 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 {
 	int bsent = 0;
 	int err = 0;
-	ftdm_time_t ms = 0;
 	wp_tdm_api_tx_hdr_t hdrframe;
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
@@ -1051,16 +1051,34 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		ftdm_channel_t *ftdmchan = span->channels[i];
+		uint32_t chan_events = 0;
+
+		/* translate events from ftdm to libsnagoma. if the user don't specify which events to poll the
+		 * channel for, we just use SANG_WAIT_OBJ_HAS_EVENTS */
+		if (poll_events) {
+			if (poll_events[j] & FTDM_READ) {
+				chan_events = SANG_WAIT_OBJ_HAS_INPUT;
+			}
+			if (poll_events[j] & FTDM_WRITE) {
+				chan_events |= SANG_WAIT_OBJ_HAS_OUTPUT;
+			}
+			if (poll_events[j] & FTDM_EVENTS) {
+				chan_events |= SANG_WAIT_OBJ_HAS_EVENTS;
+			}
+		} else {
+			chan_events = SANG_WAIT_OBJ_HAS_EVENTS;
+		}
+
 #ifdef LIBSANGOMA_VERSION
 		if (!ftdmchan->io_data) {
 			continue; /* should never happen but happens when shutting down */
 		}
 		pfds[j] = ftdmchan->io_data;
-		inflags[j] = poll_events ? poll_events[j] : POLLPRI;
+		inflags[j] = chan_events;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
-		pfds[j].events = poll_events ? poll_events[j] : POLLPRI;
+		pfds[j].events = chan_events;
 #endif
 
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
