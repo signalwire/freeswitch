@@ -174,6 +174,7 @@ struct switch_rtp {
 	void *private_data;
 	uint32_t ts;
 	uint32_t last_write_ts;
+	uint32_t last_read_ts;
 	uint32_t last_write_samplecount;
 	uint32_t next_write_samplecount;
 	switch_time_t last_write_timestamp;
@@ -2135,19 +2136,6 @@ static void do_flush(switch_rtp_t *rtp_session)
 
 					flushed++;
 
-#ifdef _MSC_VER
-#pragma warning(push) /* remove this stuff when "if (0" is removed */
-#pragma warning(disable:4127)
-#endif
-					if (0 && rtp_session->jb) {
-						stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), 
-								   rtp_session->recv_msg.header.pt,
-								   rtp_session->recv_msg.body, bytes - rtp_header_len);
-					}
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 					rtp_session->stats.inbound.raw_bytes += bytes;
 					rtp_session->stats.inbound.flush_packet_count++;
 					rtp_session->stats.inbound.packet_count++;
@@ -2196,12 +2184,15 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->stats.inbound.packet_count++;
 	}
 
+
 	if ((rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
-		*bytes < rtp_header_len ||
+		(*bytes < rtp_header_len && *bytes > 0) ||
 		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
+
+	rtp_session->last_read_ts = ntohl(rtp_session->recv_msg.header.ts);
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
@@ -2209,16 +2200,17 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			stfu_n_reset(rtp_session->jb);
 		}
 
-		stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), 
+		stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
 				   rtp_session->recv_msg.header.pt,
-				   rtp_session->recv_msg.body, *bytes - rtp_header_len);
+				   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount);
 		*bytes = 0;
 		status = SWITCH_STATUS_FALSE;
 	}
 
-	if (rtp_session->jb) {
+	if (rtp_session->jb && !rtp_session->checked_jb) {
 		if ((jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
 			memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
+
 			if (jb_frame->plc) {
 				(*flags) |= SFF_PLC;
 			} else {
@@ -2229,6 +2221,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->recv_msg.header.pt = jb_frame->pt;
 			status = SWITCH_STATUS_SUCCESS;
 		}
+
 		rtp_session->checked_jb++;
 	}
 
@@ -2385,7 +2378,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 					rtp_session->hot_hits += rtp_session->samples_per_interval;
-
+					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
 						switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 						hot_socket = 1;
@@ -2927,12 +2920,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-			int fdr;
-			
-			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, 0)) == SWITCH_STATUS_SUCCESS) {
-				goto recvfrom;
-			}
-			
+
 			memset(data, 0, 2);
 			data[0] = 65;
 			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;

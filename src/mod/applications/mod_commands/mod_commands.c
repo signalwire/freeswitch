@@ -1428,8 +1428,8 @@ SWITCH_STANDARD_API(cond_function)
 		int a_is_num, b_is_num;
 		*expr++ = '\0';
 		b = expr;
-		s_a = switch_strip_spaces(a);
-		s_b = switch_strip_spaces(b);
+		s_a = switch_strip_spaces(a, SWITCH_TRUE);
+		s_b = switch_strip_spaces(b, SWITCH_TRUE);
 		a_is_num = switch_is_number(s_a);
 		b_is_num = switch_is_number(s_b);
 
