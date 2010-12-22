@@ -1,5 +1,5 @@
 #!/bin/bash
-sounds_en_us_callie="freeswitch-sounds-en-us-callie-48000-1.0.12.tar.gz"
+sounds_en_us_callie="freeswitch-sounds-en-us-callie-48000-1.0.14.tar.gz"
 sounds_music="freeswitch-sounds-music-48000-1.0.8.tar.gz"
 sounds_ru_RU_elena="freeswitch-sounds-ru-RU-elena-48000-1.0.12.tar.gz"
 

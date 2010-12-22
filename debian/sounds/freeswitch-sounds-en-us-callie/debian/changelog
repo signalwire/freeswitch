@@ -1,11 +1,17 @@
-freeswitch-sounds-en-us-callie  (1.0.head-git.master,20101014.1-1) unstable; urgency=low
+freeswitch-sounds-en-us-callie (1.0.14~git.master.20101222.1-1) unstable; urgency=low
 
-  * Change upstream package version numbering scheme for unreleased versions:
-    new format is major.minor.micro~git.branch.date.commits-1
+   * Bumped up to 1.0.14 version
+   * Clean ups
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Wed, 22 Dec 2010 22:55:02 +0200
+
+freeswitch-sounds-en-us-callie (1.0.head~git.master.20101014.1-1) unstable; urgency=low
+
+  * Change upstream package version numbering scheme for unreleased versions: new format is major.minor.micro~git.branch.date.commits-1
   * Change source format to 3.0 (quilt).
   * Upgrade debhelper compatibility to version 7.
 
- -- Michal Bielicki <michal.bielicki@seventhsignal.de> Fr, 14 Oct 2010 05:05:02 +0200
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Fri, 14 Oct 2010 05:05:02 +0200
 
 freeswitch-sounds-en-us-callie (1.0.12-0ubuntu1) jaunty; urgency=low
 
