@@ -488,7 +488,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				pindex = (uint32_t) i;
 			} else if (!oglobals->sent_ring && oglobals->ignore_early_media == 2 && len == 1 && caller_channel && !oglobals->ignore_ring_ready) {
 				switch_channel_pass_callee_id(originate_status[0].peer_channel, caller_channel);
-				//switch_channel_ring_ready(caller_channel);
+				switch_channel_ring_ready(caller_channel);
 				oglobals->sent_ring = 1;
 			}
 
