@@ -2717,6 +2717,9 @@ static switch_status_t load_config(void)
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
 			const char *enable_callerid = "true";
+			const char *answer_polarity = "false";
+			const char *hangup_polarity = "false";
+			int polarity_delay = 600;
 			int callwaiting = 1;
 
 			uint32_t span_id = 0, to = 0, max = 0;
@@ -2788,6 +2791,12 @@ static switch_status_t load_config(void)
 					dial_regex = val;
 				} else if (!strcasecmp(var, "enable-callerid")) {
 					enable_callerid = val;
+				} else if (!strcasecmp(var, "answer-polarity-reverse")) {
+					answer_polarity = val;
+				} else if (!strcasecmp(var, "hangup-polarity-reverse")) {
+					hangup_polarity = val;
+				} else if (!strcasecmp(var, "polarity-delay")) {
+					polarity_delay = atoi(val);
 				} else if (!strcasecmp(var, "fail-dial-regex")) {
 					fail_dial_regex = val;
 				} else if (!strcasecmp(var, "hold-music")) {
@@ -2848,6 +2857,9 @@ static switch_status_t load_config(void)
 								   "max_dialstr", &max,
 								   "hotline", hotline ? hotline : "",
 								   "enable_callerid", enable_callerid,
+								   "answer_polarity_reverse", answer_polarity,
+								   "hangup_polarity_reverse", hangup_polarity,
+								   "polarity_delay", &polarity_delay,
 								   "callwaiting", &callwaiting,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));

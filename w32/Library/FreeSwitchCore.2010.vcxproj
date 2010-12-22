@@ -120,8 +120,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>
-      </ImportLibrary>
+      <ImportLibrary>$(OutDir)FreeSwitchCore.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <ShowProgress>
       </ShowProgress>

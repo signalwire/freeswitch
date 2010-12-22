@@ -63,7 +63,7 @@ ftdm_time_t time_last_throttle_log = 0;
 ftdm_time_t time_current_throttle_log = 0;
 
 static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
-static ftdm_status_t ftdm_call_set_call_id(ftdm_caller_data_t *caller_data);
+static ftdm_status_t ftdm_call_set_call_id(ftdm_channel_t *fchan, ftdm_caller_data_t *caller_data);
 static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data);
 static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
 static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan);
@@ -1546,6 +1546,7 @@ end:
 		ftdm_mutex_unlock(ftdmchan->span->mutex);
 	} else {
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "VETO state change from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+		goto done;
 	}
 
 	/* there is an inherent race here between set and check of the change flag but we do not care because
@@ -1575,7 +1576,7 @@ end:
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not processed after aprox %dms\n",
 				ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
 	}
-
+done:
 	return ok ? FTDM_SUCCESS : FTDM_FAIL;
 }
 
@@ -2294,8 +2295,15 @@ static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const c
 		ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
 		/* the signaling stack did not touch the state, 
-		 * core is responsible from clearing flags and stuff */
-		ftdm_channel_close(&chan);
+		 * core is responsible from clearing flags and stuff, however, because ftmod_analog
+		 * is a bitch in a serious need of refactoring, we also check whether the channel is open
+		 * to avoid an spurious warning about the channel not being open. This is because ftmod_analog
+		 * does not follow our convention of sending SIGEVENT_STOP and waiting for the user to move
+		 * to HANGUP (implicitly through ftdm_channel_call_hangup(), as soon as ftmod_analog is fixed
+		 * this check can be removed */
+		if (ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
+			ftdm_channel_close(&chan);
+		}
 	}
 	return FTDM_SUCCESS;
 }
@@ -2519,7 +2527,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 
 	if (status == FTDM_SUCCESS) {
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED);
-		ftdm_call_set_call_id(&ftdmchan->caller_data);
+		ftdm_call_set_call_id(ftdmchan, &ftdmchan->caller_data);
 		ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 100);
 	}
 
@@ -2603,10 +2611,11 @@ FT_DECLARE(ftdm_status_t) ftdm_span_get_sig_status(ftdm_span_t *span, ftdm_signa
 	}
 }
 
+/* this function must be called with the channel lock */
 static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 {
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel can't be done!\n");
-	ftdm_mutex_lock(ftdmchan->mutex);
+
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OPEN);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
@@ -2691,7 +2700,6 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE);
 	}
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
-	ftdm_mutex_unlock(ftdmchan->mutex);
 	return FTDM_SUCCESS;
 }
 
@@ -3938,7 +3946,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "cannot write in channel not open\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "cannot write in channel not open\n");
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "channel not open");
 		status = FTDM_FAIL;
 		goto done;
@@ -4394,6 +4402,16 @@ static void print_channels_by_state(ftdm_stream_handle_t *stream, ftdm_channel_s
 	ftdm_mutex_unlock(globals.mutex);
 }
 
+static void print_core_usage(ftdm_stream_handle_t *stream)
+{
+	stream->write_function(stream, 
+	"--------------------------------------------------------------------------------\n"
+	"ftdm core state [!]<state_name> - List all channels in or not in the given state\n"
+	"ftdm core flag <flag-int-value> - List all channels with the fiven flag value set\n"
+	"ftdm core calls - List all known calls to the FreeTDM core\n"
+	"--------------------------------------------------------------------------------\n");
+}
+
 static char *handle_core_command(const char *cmd)
 {
 	char *mycmd = NULL;
@@ -4404,22 +4422,31 @@ static char *handle_core_command(const char *cmd)
 	char *state = NULL;
 	char *flag = NULL;
 	uint32_t flagval = 0;
+	uint32_t current_call_id = 0;
+	ftdm_caller_data_t *calldata = NULL;
+	ftdm_channel_t *fchan = NULL;
 	ftdm_channel_state_t i = FTDM_CHANNEL_STATE_INVALID;
 	ftdm_stream_handle_t stream = { 0 };
 
 	FTDM_STANDARD_STREAM(stream);
 
-	if (cmd) {
+	if (cmd && strlen(cmd)) {
 		mycmd = ftdm_strdup(cmd);
 		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		stream.write_function(&stream, "invalid core command\n");
+		print_core_usage(&stream);
+		goto done;
+	}
+
+	if (!argc) {
+		print_core_usage(&stream);
 		goto done;
 	}
 
 	if (!strcasecmp(argv[0], "state")) {
 		if (argc < 2) {
 			stream.write_function(&stream, "core state command requires an argument\n");
+			print_core_usage(&stream);
 			goto done;
 		}
 		state = argv[1];
@@ -4440,7 +4467,8 @@ static char *handle_core_command(const char *cmd)
 		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "not in state" : "in state", ftdm_channel_state2str(i), count);
 	} else if (!strcasecmp(argv[0], "flag")) {
 		if (argc < 2) {
-			stream.write_function(&stream, "core state command requires an argument\n");
+			stream.write_function(&stream, "core flag command requires an argument\n");
+			print_core_usage(&stream);
 			goto done;
 		}
 		flag = argv[1];
@@ -4451,8 +4479,28 @@ static char *handle_core_command(const char *cmd)
 		flagval = atoi(flag);
 		print_channels_by_flag(&stream, flagval, not, &count);
 		stream.write_function(&stream, "\nTotal channels %s %d: %d\n", not ? "without flag" : "with flag", flagval, count);
+	} else if (!strcasecmp(argv[0], "calls")) {
+		ftdm_mutex_lock(globals.call_id_mutex);
+		current_call_id = globals.last_call_id;
+		for (current_call_id = 0; current_call_id <= MAX_CALLIDS; current_call_id++) {
+			if (!globals.call_ids[current_call_id]) {
+				continue;
+			}
+			calldata = globals.call_ids[current_call_id];
+			fchan = calldata->fchan;
+			if (fchan) {
+				stream.write_function(&stream, "Call %d on channel %d:%d\n", current_call_id, 
+						fchan->span_id, fchan->chan_id);
+			} else {
+				stream.write_function(&stream, "Call %d without a channel?\n", current_call_id);
+			}
+			count++;
+		}
+		ftdm_mutex_unlock(globals.call_id_mutex);
+		stream.write_function(&stream, "\nTotal calls: %d\n", count);
 	} else {
 		stream.write_function(&stream, "invalid core command %s\n", argv[0]);
+		print_core_usage(&stream);
 	}
 
 done:
@@ -4472,6 +4520,8 @@ FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 	if ((p = strchr(dup, ' '))) {
 		*p++ = '\0';
 		cmd = p;
+	} else {
+		cmd = "";
 	}
 
 	type = dup;
@@ -5444,7 +5494,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	case FTDM_SIGEVENT_START:
 		{
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
-			ftdm_call_set_call_id(&sigmsg->channel->caller_data);
+			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
 			ftdm_set_echocancel_call_begin(sigmsg->channel);
 			if (sigmsg->channel->dtmfdbg.requested) {
 				ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL);
@@ -6086,27 +6136,35 @@ FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 	return stream.data;
 }
 
-static ftdm_status_t ftdm_call_set_call_id(ftdm_caller_data_t *caller_data)
+static ftdm_status_t ftdm_call_set_call_id(ftdm_channel_t *fchan, ftdm_caller_data_t *caller_data)
 {
 	uint32_t current_call_id;
-	ftdm_assert_return(!caller_data->call_id, FTDM_FAIL, "Overwriting non-cleared call-id");
+	
+	ftdm_assert_return(!caller_data->call_id, FTDM_FAIL, "Overwriting non-cleared call-id\n");
 
 	ftdm_mutex_lock(globals.call_id_mutex);
+
 	current_call_id = globals.last_call_id;
 
-	do {
-		if (++current_call_id > MAX_CALLIDS) {
+	for (current_call_id = globals.last_call_id + 1; 
+	     current_call_id != globals.last_call_id; 
+	     current_call_id++ ) {
+		if (current_call_id > MAX_CALLIDS) {
 			current_call_id = 1;
 		}
-		if (globals.call_ids[current_call_id] != NULL) {
-			continue;
+		if (globals.call_ids[current_call_id] == NULL) {
+			break;
 		}
-	} while (0);
+	}
+
+	ftdm_assert_return(globals.call_ids[current_call_id] == NULL, FTDM_FAIL, "We ran out of call ids\n"); 
 
 	globals.last_call_id = current_call_id;
 	caller_data->call_id = current_call_id;
 
 	globals.call_ids[current_call_id] = caller_data;
+	caller_data->fchan = fchan;
+
 	ftdm_mutex_unlock(globals.call_id_mutex);
 	return FTDM_SUCCESS;
 }
@@ -6123,8 +6181,8 @@ static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data)
 	ftdm_mutex_lock(globals.call_id_mutex);
 	if (globals.call_ids[caller_data->call_id]) {
 		ftdm_log(FTDM_LOG_DEBUG, "Cleared call with id %u\n", caller_data->call_id);
-		caller_data->call_id = 0;
 		globals.call_ids[caller_data->call_id] = NULL;
+		caller_data->call_id = 0;
 	} else {
 		ftdm_log(FTDM_LOG_CRIT, "call-id did not exist %u\n", caller_data->call_id);
 	} 
