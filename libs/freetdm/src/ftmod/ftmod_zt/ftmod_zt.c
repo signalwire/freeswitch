@@ -1006,92 +1006,91 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
-		if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event from channel: %s\n",
-					strerror(errno));
-			return FTDM_FAIL;
-		}
-
-		switch(zt_event_id) {
-		case ZT_EVENT_RINGEROFF:
-			{
-				return FTDM_FAIL;
-			}
-			break;
-		case ZT_EVENT_RINGERON:
-			{
-				return FTDM_FAIL;
-			}
-			break;
-		case ZT_EVENT_RINGBEGIN:
-			{
-				event_id = FTDM_OOB_RING_START;
-			}
-			break;
-		case ZT_EVENT_ONHOOK:
-			{
-				event_id = FTDM_OOB_ONHOOK;
-			}
-			break;
-		case ZT_EVENT_WINKFLASH:
-			{
-				if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN || ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
-					event_id = FTDM_OOB_WINK;
-				} else {
-					event_id = FTDM_OOB_FLASH;
-				}
-			}
-			break;
-		case ZT_EVENT_RINGOFFHOOK:
-			{
-				if (ftdmchan->type == FTDM_CHAN_TYPE_FXS || (ftdmchan->type == FTDM_CHAN_TYPE_EM && ftdmchan->state != FTDM_CHANNEL_STATE_UP)) {
-					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK);
-					event_id = FTDM_OOB_OFFHOOK;
-				} else if (ftdmchan->type == FTDM_CHAN_TYPE_FXO) {
-					event_id = FTDM_OOB_RING_START;
-				} else {
-					event_id = FTDM_OOB_NOOP;
-				}
-			}
-			break;
-		case ZT_EVENT_ALARM:
-			{
-				event_id = FTDM_OOB_ALARM_TRAP;
-			}
-			break;
-		case ZT_EVENT_NOALARM:
-			{
-				event_id = FTDM_OOB_ALARM_CLEAR;
-			}
-			break;
-		case ZT_EVENT_BITSCHANGED:
-			{
-				event_id = FTDM_OOB_CAS_BITS_CHANGE;
-				int bits = 0;
-				int err = ioctl(ftdmchan->sockfd, codes.GETRXBITS, &bits);
-				if (err) {
-					return FTDM_FAIL;
-				}
-				ftdmchan->rx_cas_bits = bits;
-			}
-			break;
-		default:
-			{
-				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
-				event_id = FTDM_OOB_INVALID;
-			}
-			break;
-		}
-
-		ftdmchan->last_event_time = 0;
-		span->event_header.e_type = FTDM_EVENT_OOB;
-		span->event_header.enum_id = event_id;
-		span->event_header.channel = ftdmchan;
-		*event = &span->event_header;
-		return FTDM_SUCCESS;
 	}
 
-	return FTDM_FAIL;
+	if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event from channel: %s\n",
+				strerror(errno));
+		return FTDM_FAIL;
+	}
+
+	switch(zt_event_id) {
+	case ZT_EVENT_RINGEROFF:
+		{
+			return FTDM_FAIL;
+		}
+		break;
+	case ZT_EVENT_RINGERON:
+		{
+			return FTDM_FAIL;
+		}
+		break;
+	case ZT_EVENT_RINGBEGIN:
+		{
+			event_id = FTDM_OOB_RING_START;
+		}
+		break;
+	case ZT_EVENT_ONHOOK:
+		{
+			event_id = FTDM_OOB_ONHOOK;
+		}
+		break;
+	case ZT_EVENT_WINKFLASH:
+		{
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN || ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+				event_id = FTDM_OOB_WINK;
+			} else {
+				event_id = FTDM_OOB_FLASH;
+			}
+		}
+		break;
+	case ZT_EVENT_RINGOFFHOOK:
+		{
+			if (ftdmchan->type == FTDM_CHAN_TYPE_FXS || (ftdmchan->type == FTDM_CHAN_TYPE_EM && ftdmchan->state != FTDM_CHANNEL_STATE_UP)) {
+				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK);
+				event_id = FTDM_OOB_OFFHOOK;
+			} else if (ftdmchan->type == FTDM_CHAN_TYPE_FXO) {
+				event_id = FTDM_OOB_RING_START;
+			} else {
+				event_id = FTDM_OOB_NOOP;
+			}
+		}
+		break;
+	case ZT_EVENT_ALARM:
+		{
+			event_id = FTDM_OOB_ALARM_TRAP;
+		}
+		break;
+	case ZT_EVENT_NOALARM:
+		{
+			event_id = FTDM_OOB_ALARM_CLEAR;
+		}
+		break;
+	case ZT_EVENT_BITSCHANGED:
+		{
+			event_id = FTDM_OOB_CAS_BITS_CHANGE;
+			int bits = 0;
+			int err = ioctl(ftdmchan->sockfd, codes.GETRXBITS, &bits);
+			if (err) {
+				return FTDM_FAIL;
+			}
+			ftdmchan->rx_cas_bits = bits;
+		}
+		break;
+	default:
+		{
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
+			event_id = FTDM_OOB_INVALID;
+		}
+		break;
+	}
+
+	ftdmchan->last_event_time = 0;
+	span->event_header.e_type = FTDM_EVENT_OOB;
+	span->event_header.enum_id = event_id;
+	span->event_header.channel = ftdmchan;
+	*event = &span->event_header;
+	return FTDM_SUCCESS;
 }
 
 /**
