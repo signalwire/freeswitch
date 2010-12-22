@@ -12726,13 +12726,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_number(char * jarg1) {
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_strip_spaces(char * jarg1) {
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_strip_spaces(char * jarg1, int jarg2) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
+  switch_bool_t arg2 ;
   char *result = 0 ;
   
   arg1 = (char *)jarg1; 
-  result = (char *)switch_strip_spaces((char const *)arg1);
+  arg2 = (switch_bool_t)jarg2; 
+  result = (char *)switch_strip_spaces(arg1,arg2);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -23624,6 +23626,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_caller_extension(void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_sort_cid(void * jarg1, int jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_bool_t arg2 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  switch_channel_sort_cid(arg1,arg2);
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_caller_extension(void * jarg1) {
   void * jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -29008,6 +29020,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_jitter_buffer(void * jarg1
   arg4 = (uint32_t)jarg4; 
   arg5 = (uint32_t)jarg5; 
   result = (switch_status_t)switch_rtp_activate_jitter_buffer(arg1,arg2,arg3,arg4,arg5);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_debug_jitter_buffer(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_rtp_debug_jitter_buffer(arg1,(char const *)arg2);
   jresult = result; 
   return jresult;
 }
