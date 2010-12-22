@@ -1385,13 +1385,10 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	}
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
-	ftdm_channel_lock(ftdmchan);
 	if ((wanpipe_channel_process_event(ftdmchan, &event_id, &tdm_api)) != FTDM_SUCCESS) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process events from channel\n");
-		ftdm_channel_unlock(ftdmchan);
 		return FTDM_FAIL;
 	}
-	ftdm_channel_unlock(ftdmchan);
 
 	ftdmchan->last_event_time = 0;
 	span->event_header.e_type = FTDM_EVENT_OOB;
