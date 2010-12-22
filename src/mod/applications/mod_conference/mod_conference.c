@@ -689,8 +689,14 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			}
 
 			if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ) && !zstr(conference->enter_sound)) {
-				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
+				if (!zstr(switch_channel_get_variable(channel, "conference_enter_sound"))) {
+	                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Playing file...%s\n", conference->name);
+				     conference_play_file(conference, (char *)switch_channel_get_variable(channel, "conference_enter_sound"), CONF_DEFAULT_LEADIN,
+						     switch_core_session_get_channel(member->session), switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+			        } else {
+				     conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
 									 switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+				}
 			}
 		}
 
