@@ -320,6 +320,7 @@ typedef struct ftdm_caller_data {
 	 * that the user can use caller_data.call_id to obtain the call_id. The user
 	 * should use the call_id from sigmsg otherwise */
 	uint32_t call_id; /*!< Unique call ID for this call */
+	ftdm_channel_t *fchan; /*!< FreeTDM channel associated (can be NULL) */
 } ftdm_caller_data_t;
 
 /*! \brief Tone type */
