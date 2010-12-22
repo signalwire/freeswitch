@@ -831,9 +831,9 @@ SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 	return s;
 }
 
-SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
+SWITCH_DECLARE(char *) switch_strip_spaces(char *str, switch_bool_t dup)
 {
-	const char *sp = str;
+	char *sp = str;
 	char *p, *s = NULL;
 
 	if (!sp)
@@ -843,7 +843,11 @@ SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 		sp++;
 	}
 
-	s = strdup(sp);
+	if (dup) {
+		s = strdup(sp);
+	} else {
+		s = sp;
+	}
 
 	if (!s)
 		return NULL;
