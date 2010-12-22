@@ -622,7 +622,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(_In_ char *buf, char delim, 
 SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *delim, _Post_count_(return) char **array, unsigned int arraylen);
 
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
-SWITCH_DECLARE(char *) switch_strip_spaces(const char *str);
+SWITCH_DECLARE(char *) switch_strip_spaces(char *str, switch_bool_t dup);
 SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str);
 SWITCH_DECLARE(char *) switch_strip_commas(char *in, char *out, switch_size_t len);
 SWITCH_DECLARE(char *) switch_strip_nonnumerics(char *in, char *out, switch_size_t len);

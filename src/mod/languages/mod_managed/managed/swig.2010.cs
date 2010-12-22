@@ -2877,8 +2877,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static string switch_strip_spaces(string str) {
-    string ret = freeswitchPINVOKE.switch_strip_spaces(str);
+  public static string switch_strip_spaces(string str, switch_bool_t dup) {
+    string ret = freeswitchPINVOKE.switch_strip_spaces(str, (int)dup);
     return ret;
   }
 
@@ -3326,6 +3326,10 @@ public class freeswitch {
 
   public static void switch_channel_set_caller_extension(SWIGTYPE_p_switch_channel channel, switch_caller_extension caller_extension) {
     freeswitchPINVOKE.switch_channel_set_caller_extension(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_extension.getCPtr(caller_extension));
+  }
+
+  public static void switch_channel_sort_cid(SWIGTYPE_p_switch_channel channel, switch_bool_t arg1) {
+    freeswitchPINVOKE.switch_channel_sort_cid(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)arg1);
   }
 
   public static switch_caller_extension switch_channel_get_caller_extension(SWIGTYPE_p_switch_channel channel) {
@@ -4642,6 +4646,11 @@ public class freeswitch {
 
   public static switch_status_t switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp rtp_session, uint queue_frames, uint max_queue_frames, uint samples_per_packet, uint samples_per_second) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), queue_frames, max_queue_frames, samples_per_packet, samples_per_second);
+    return ret;
+  }
+
+  public static switch_status_t switch_rtp_debug_jitter_buffer(SWIGTYPE_p_switch_rtp rtp_session, string name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_debug_jitter_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), name);
     return ret;
   }
 
@@ -8661,7 +8670,7 @@ class freeswitchPINVOKE {
   public static extern int switch_is_number(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_spaces")]
-  public static extern string switch_strip_spaces(string jarg1);
+  public static extern string switch_strip_spaces(string jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_whitespace")]
   public static extern string switch_strip_whitespace(string jarg1);
@@ -11327,6 +11336,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_caller_extension")]
   public static extern void switch_channel_set_caller_extension(HandleRef jarg1, HandleRef jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_sort_cid")]
+  public static extern void switch_channel_sort_cid(HandleRef jarg1, int jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_caller_extension")]
   public static extern IntPtr switch_channel_get_caller_extension(HandleRef jarg1);
 
@@ -12454,6 +12466,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_jitter_buffer")]
   public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_debug_jitter_buffer")]
+  public static extern int switch_rtp_debug_jitter_buffer(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_deactivate_jitter_buffer")]
   public static extern int switch_rtp_deactivate_jitter_buffer(HandleRef jarg1);
@@ -21563,6 +21578,7 @@ public enum switch_channel_flag_t {
   CF_BRIDGE_NOWRITE,
   CF_RECOVERED,
   CF_JITTERBUFFER,
+  CF_DIALPLAN,
   CF_FLAG_MAX
 }
 

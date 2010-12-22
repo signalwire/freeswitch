@@ -1874,6 +1874,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 			status = SWITCH_STATUS_SUCCESS;
 		}
 
+		if ((min_digits == 0) && (strlen(digit_buffer) == 0) && switch_channel_get_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE) != 0)
+		{
+			return SWITCH_STATUS_SUCCESS;
+		}
+
 		if (!(status == SWITCH_STATUS_TOO_SMALL && strlen(digit_buffer) == 0)) {
 			if (status == SWITCH_STATUS_SUCCESS) {
 				if (!zstr(digit_buffer)) {
