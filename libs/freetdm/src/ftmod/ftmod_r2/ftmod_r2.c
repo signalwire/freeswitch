@@ -468,9 +468,10 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 	}
 
 	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
-			ftdmchan->caller_data.pres == FTDM_PRES_ALLOWED ? ftdmchan->caller_data.cid_num.digits : NULL,
+			ftdmchan->caller_data.cid_num.digits,
 			ftdmchan->caller_data.dnis.digits, 
-			category);
+			category,
+			ftdmchan->caller_data.pres == FTDM_PRES_ALLOWED ? 0 : 1);
 
 	if (callstatus) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
@@ -666,12 +667,14 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 
 static void dump_mf(openr2_chan_t *r2chan);
 /* only called for incoming calls when the ANI, DNIS etc is complete and the user has to decide either to accept or reject the call */
-static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, const char *dnis, openr2_calling_party_category_t category)
+static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, const char *dnis, 
+		openr2_calling_party_category_t category, int ani_restricted)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = (%d)\n", ani, dnis, category);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = %d, ANI restricted = %s\n", 
+			ani, dnis, category, ani_restricted ? "Yes" : "No");
 
 	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
 	if (r2data->mf_dump_size) {
@@ -687,6 +690,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 	}
 	ftdmchan->caller_data.cpc = ftdm_openr2_cpc_to_r2_ftdm_cpc(category);
+	ftdmchan->caller_data.pres = ani_restricted ? FTDM_PRES_RESTRICTED : FTDM_PRES_ALLOWED;
 }
 
 /*
