@@ -730,26 +730,6 @@ static __inline__ int ftdm_check_state_all(ftdm_span_t *span, ftdm_channel_state
 	return 1;
 }
 
-static __inline__ void ftdm_set_flag_all(ftdm_span_t *span, uint32_t flag)
-{
-	uint32_t j;
-	ftdm_mutex_lock(span->mutex);
-	for(j = 1; j <= span->chan_count; j++) {
-		ftdm_set_flag_locked((span->channels[j]), flag);
-	}
-	ftdm_mutex_unlock(span->mutex);
-}
-
-static __inline__ void ftdm_clear_flag_all(ftdm_span_t *span, uint32_t flag)
-{
-	uint32_t j;
-	ftdm_mutex_lock(span->mutex);
-	for(j = 1; j <= span->chan_count; j++) {
-		ftdm_clear_flag_locked((span->channels[j]), flag);
-	}
-	ftdm_mutex_unlock(span->mutex);
-}
-
 static __inline__ int16_t ftdm_saturated_add(int16_t sample1, int16_t sample2)
 {
 	int addres;
