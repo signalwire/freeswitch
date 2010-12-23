@@ -1237,6 +1237,18 @@ static ftdm_state_map_t r2_state_map = {
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
+			{FTDM_ANY_STATE, FTDM_END},
+			{FTDM_CHANNEL_STATE_RESET, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
 			{FTDM_CHANNEL_STATE_COLLECT, FTDM_END}
 		},
@@ -1285,6 +1297,20 @@ static ftdm_state_map_t r2_state_map = {
 		
 		/* Outbound states */
 		
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_ANY_STATE, FTDM_END},
+			{FTDM_CHANNEL_STATE_RESET, FTDM_END}
+		},
+
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+		},
+
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
@@ -1774,7 +1800,9 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				/* finished call for good */
 			case FTDM_CHANNEL_STATE_DOWN: 
 				{
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "R2 Call is down\n");
+					if (ftdmchan->last_state != FTDM_CHANNEL_STATE_RESET) {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "R2 Call is down\n");
+					}
 					ret = 1;
 				}
 				break;
@@ -1783,6 +1811,15 @@ static int ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 			case FTDM_CHANNEL_STATE_RINGING: 
 				{
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RINGING indicated, ignoring it as it doesn't apply to MFC/R2\n");
+				}
+				break;
+
+				/* put the r2 channel back to IDLE, close ftdmchan and set it's state as DOWN */
+			case FTDM_CHANNEL_STATE_RESET:
+				{
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RESET indicated, putting the R2 channel back to IDLE\n");
+					openr2_chan_set_idle(r2chan);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 				}
 				break;
 
