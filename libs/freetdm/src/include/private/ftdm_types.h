@@ -260,9 +260,16 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channe
 #define FTDM_CHANNEL_OUTBOUND        (1ULL << 18)
 #define FTDM_CHANNEL_SUSPENDED       (1ULL << 19)
 #define FTDM_CHANNEL_3WAY            (1ULL << 20)
+
+/* this 3 flags are really nonsense used by boost module only, as soon
+ * as we deprecate/delete boost module we can get rid of them 
+ * ==================
+ * */
 #define FTDM_CHANNEL_PROGRESS        (1ULL << 21)
 #define FTDM_CHANNEL_MEDIA           (1ULL << 22)
 #define FTDM_CHANNEL_ANSWERED        (1ULL << 23)
+/* ================== */
+
 #define FTDM_CHANNEL_MUTE            (1ULL << 24)
 #define FTDM_CHANNEL_USE_RX_GAIN     (1ULL << 25)
 #define FTDM_CHANNEL_USE_TX_GAIN     (1ULL << 26)
@@ -273,6 +280,8 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channe
 #define FTDM_CHANNEL_TX_DISABLED     (1ULL << 31)
 /*!< The user knows about a call in this channel */
 #define FTDM_CHANNEL_CALL_STARTED    (1ULL << 32)
+/*!< The user wants non-blocking operations in the channel */
+#define FTDM_CHANNEL_NONBLOCK        (1ULL << 33)
 
 typedef enum {
 	ZSM_NONE,

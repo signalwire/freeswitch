@@ -1595,6 +1595,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	/* use signals queue */
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 
+	/* we can skip states (going straight from RING to UP) */
+	ftdm_set_flag(span, FTDM_SPAN_USE_SKIP_STATES);
+
 	/* setup the scheduler */
 	snprintf(schedname, sizeof(schedname), "ftmod_r2_%s", span->name);
 	ftdm_assert(ftdm_sched_create(&r2data->sched, schedname) == FTDM_SUCCESS, "Failed to create schedule!\n");
