@@ -1091,10 +1091,43 @@ FT_DECLARE(ftdm_status_t) ftdm_span_poll_event(ftdm_span_t *span, uint32_t ms, s
 	return FTDM_NOTIMPL;
 }
 
+/* handle oob events and send the proper SIGEVENT signal to user, when applicable */
+static __inline__ ftdm_status_t ftdm_event_handle_oob(ftdm_event_t *event)
+{
+	ftdm_sigmsg_t sigmsg;
+	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_channel_t *fchan = event->channel;
+	ftdm_span_t *span = fchan->span;
+
+	memset(&sigmsg, 0, sizeof(sigmsg));
+	sigmsg.span_id = span->span_id;
+	sigmsg.chan_id = fchan->chan_id;
+	sigmsg.channel = fchan;
+	switch (event->enum_id) {
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			sigmsg.event_id = FTDM_SIGEVENT_ALARM_CLEAR;
+			ftdm_clear_flag_locked(fchan, FTDM_CHANNEL_IN_ALARM);
+			status = ftdm_span_send_signal(span, &sigmsg);
+		}
+		break;
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			sigmsg.event_id = FTDM_SIGEVENT_ALARM_TRAP;
+			ftdm_set_flag_locked(fchan, FTDM_CHANNEL_IN_ALARM);
+			status = ftdm_span_send_signal(span, &sigmsg);
+		}
+		break;
+	default:
+		/* NOOP */
+		break;
+	}
+	return status;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t **event)
 {
 	ftdm_status_t status = FTDM_FAIL;
-	ftdm_sigmsg_t sigmsg;
 	ftdm_assert_return(span->fio != NULL, FTDM_FAIL, "No I/O module attached to this span!\n");
 
 	if (!span->fio->next_event) {
@@ -1107,38 +1140,16 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
 		return status;
 	}
 
-	/* before returning the event to the user we do some core operations with certain OOB events */
-	memset(&sigmsg, 0, sizeof(sigmsg));
-	sigmsg.span_id = span->span_id;
-	sigmsg.chan_id = (*event)->channel->chan_id;
-	sigmsg.channel = (*event)->channel;
-	switch ((*event)->enum_id) {
-	case FTDM_OOB_ALARM_CLEAR:
-		{
-			sigmsg.event_id = FTDM_SIGEVENT_ALARM_CLEAR;
-			ftdm_clear_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
-			ftdm_span_send_signal(span, &sigmsg);
-		}
-		break;
-	case FTDM_OOB_ALARM_TRAP:
-		{
-			sigmsg.event_id = FTDM_SIGEVENT_ALARM_TRAP;
-			ftdm_set_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
-			ftdm_span_send_signal(span, &sigmsg);
-		}
-		break;
-	default:
-		/* NOOP */
-		break;
+	status = ftdm_event_handle_oob(*event);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "failed to handle event %d\n", **event);
 	}
-
 	return status;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm_event_t **event)
 {
 	ftdm_status_t status = FTDM_FAIL;
-	ftdm_sigmsg_t sigmsg;
 	ftdm_span_t *span = ftdmchan->span;
 	ftdm_assert_return(span->fio != NULL, FTDM_FAIL, "No I/O module attached to this span!\n");
 
@@ -1155,29 +1166,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 		goto done;
 	}
 
-	/* before returning the event to the user we do some core operations with certain OOB events */
-	memset(&sigmsg, 0, sizeof(sigmsg));
-	sigmsg.span_id = span->span_id;
-	sigmsg.chan_id = (*event)->channel->chan_id;
-	sigmsg.channel = (*event)->channel;
-	switch ((*event)->enum_id) {
-	case FTDM_OOB_ALARM_CLEAR:
-		{
-			sigmsg.event_id = FTDM_SIGEVENT_ALARM_CLEAR;
-			ftdm_clear_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
-			ftdm_span_send_signal(span, &sigmsg);
-		}
-		break;
-	case FTDM_OOB_ALARM_TRAP:
-		{
-			sigmsg.event_id = FTDM_SIGEVENT_ALARM_TRAP;
-			ftdm_set_flag_locked((*event)->channel, FTDM_CHANNEL_IN_ALARM);
-			ftdm_span_send_signal(span, &sigmsg);
-		}
-		break;
-	default:
-		/* NOOP */
-		break;
+	status = ftdm_event_handle_oob(*event);
+	if (status != FTDM_SUCCESS) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to handle event %d\n", **event);
 	}
 
 done:
