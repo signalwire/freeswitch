@@ -893,6 +893,7 @@ static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
 	switch (sigmsg->event_id) {
 		case FTDM_SIGEVENT_FACILITY:
 			sngisdn_snd_fac_req(ftdmchan);
+			status = FTDM_SUCCESS;
 			break;
 		default:
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unsupported signalling msg requested\n");
