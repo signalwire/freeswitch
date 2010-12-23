@@ -408,7 +408,7 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference, 
 static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin);
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
-static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t *pool);
+static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool);
 static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
 								 const char *body, const char *type, const char *hint);
 
@@ -2499,6 +2499,10 @@ static void conference_loop_output(conference_member_t *member)
 
 		use_buffer = NULL;
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
+		
+		if (mux_used < bytes * 2) {
+			use_timer = 1;
+		}
 
 		if (mux_used) {
 			if (mux_used < bytes) {
@@ -2512,10 +2516,7 @@ static void conference_loop_output(conference_member_t *member)
 			}
 		}
 
-
-		use_timer = 1;
-
-		if (mux_used) {
+		if (mux_used >= bytes) {
 			/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
 			switch_mutex_lock(member->audio_out_mutex);
 			write_frame.data = data;
@@ -2523,7 +2524,7 @@ static void conference_loop_output(conference_member_t *member)
 			low_count = 0;
 			if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 				if (write_frame.datalen) {
-               write_frame.samples = write_frame.datalen / 2;
+					write_frame.samples = write_frame.datalen / 2;
 				   
 				   if( !switch_test_flag(member, MFLAG_CAN_HEAR)) {
 				      memset(write_frame.data, 255, write_frame.datalen);
@@ -4347,7 +4348,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 					}
 					
 					/* Create the conference object. */
-					new_conference = conference_new(conf_name, xml_cfg, pool);
+					new_conference = conference_new(conf_name, xml_cfg, member->session, pool);
 
 					/* Release the config registry handle */
 					if (cxml) {
@@ -5472,7 +5473,7 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 
 		/* Create the conference object. */
-		conference = conference_new(conf_name, xml_cfg, NULL);
+		conference = conference_new(conf_name, xml_cfg, session, NULL);
 
 		if (!conference) {
 			goto done;
@@ -5517,7 +5518,7 @@ SWITCH_STANDARD_APP(conference_function)
 			const char *max_members_str;
 
 			/* couldn't find the conference, create one */
-			conference = conference_new(conf_name, xml_cfg, NULL);
+			conference = conference_new(conf_name, xml_cfg, session, NULL);
 
 			if (!conference) {
 				goto done;
@@ -5942,7 +5943,7 @@ static conference_obj_t *conference_find(char *name)
 }
 
 /* create a new conferene with a specific profile */
-static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t *pool)
+static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool)
 {
 	conference_obj_t *conference;
 	switch_xml_t xml_kvp;
@@ -5985,11 +5986,46 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
 	char *terminate_on_silence = NULL;
-	
+	switch_codec_implementation_t read_impl = { 0 };
+	switch_channel_t *channel = NULL;
+	const char *force_rate = NULL, *force_interval = NULL;
+	uint32_t force_rate_i = 0, force_interval_i = 0;
+
 	/* Validate the conference name */
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
 		return NULL;
+	}
+
+	if (session) {
+		uint32_t tmp;
+
+		switch_core_session_get_read_impl(session, &read_impl);
+		channel = switch_core_session_get_channel(session);
+		
+		if ((force_rate = switch_channel_get_variable(channel, "conference_force_rate"))) {
+			if (!strcasecmp(force_rate, "auto")) {
+				force_rate_i = read_impl.actual_samples_per_second;
+			} else {
+				tmp = atoi(force_rate);
+
+				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
+					force_rate_i = rate = tmp;
+				}
+			}
+		}
+
+		if ((force_interval = switch_channel_get_variable(channel, "conference_force_interval"))) {
+			if (!strcasecmp(force_interval, "auto")) {
+				force_interval_i = read_impl.microseconds_per_packet / 1000;
+			} else {
+				tmp = atoi(force_interval);
+				
+				if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
+					force_interval_i = interval = tmp;
+				}
+			}
+		}
 	}
 
 	switch_mutex_lock(globals.hash_mutex);
@@ -6012,20 +6048,33 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 				var = buf;
 			}
 
-			if (!strcasecmp(var, "rate") && !zstr(val)) {
+			if (!force_rate_i && !strcasecmp(var, "rate") && !zstr(val)) {
 				uint32_t tmp = atoi(val);
-				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
-					rate = tmp;
+				if (session && tmp == 0) {
+					if (!strcasecmp(val, "auto")) {
+						rate = read_impl.actual_samples_per_second;
+					}
+				} else {
+					if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
+						rate = tmp;
+					}
 				}
 			} else if (!strcasecmp(var, "domain") && !zstr(val)) {
 				domain = val;
-			} else if (!strcasecmp(var, "interval") && !zstr(val)) {
+			} else if (!force_interval_i && !strcasecmp(var, "interval") && !zstr(val)) {
 				uint32_t tmp = atoi(val);
-				if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
-					interval = tmp;
+
+				if (session && tmp == 0) {
+					if (!strcasecmp(val, "auto")) {
+						interval = read_impl.microseconds_per_packet / 1000;
+					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-									  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+					if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
+						interval = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "Interval must be multipe of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+					}
 				}
 			} else if (!strcasecmp(var, "timer-name") && !zstr(val)) {
 				timer_name = val;
@@ -6296,6 +6345,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	} else {
 		conference->domain = "cluecon.com";
 	}
+
 	conference->rate = rate;
 	conference->interval = interval;
 

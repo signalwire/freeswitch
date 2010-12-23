@@ -2172,8 +2172,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	*bytes = sizeof(rtp_msg_t);
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 	ts = ntohl(rtp_session->recv_msg.header.ts);
-
-	if (ts && !rtp_session->jb && ts <= rtp_session->last_cng_ts) {
+	
+	if (*bytes && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) && 
+		ts && !rtp_session->jb && ts == rtp_session->last_cng_ts) {
 		/* we already sent this frame..... */
 		*bytes = 0;
 		return SWITCH_STATUS_SUCCESS;
@@ -2929,8 +2930,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-			rtp_session->last_cng_ts = rtp_session->last_read_ts + rtp_session->samples_per_interval;
-			
+
+			if (rtp_session->last_cng_ts == rtp_session->last_read_ts + rtp_session->samples_per_interval) {
+				rtp_session->last_cng_ts = 0;
+			} else {
+				rtp_session->last_cng_ts = rtp_session->last_read_ts + rtp_session->samples_per_interval;
+			}
+
 			memset(data, 0, 2);
 			data[0] = 65;
 			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
