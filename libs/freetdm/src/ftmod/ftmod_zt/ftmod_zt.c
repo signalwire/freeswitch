@@ -1000,7 +1000,7 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
  */
 FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 {
-	uint32_t i, event_id = FTDM_OOB_INVALID;
+	ftdm_oob_event_t event_id = FTDM_OOB_INVALID;
 	zt_event_t zt_event_id = 0;
 	ftdm_span_t *span = ftdmchan->span;
 
@@ -1079,7 +1079,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 		break;
 	default:
 		{
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
 			event_id = FTDM_OOB_INVALID;
 		}
 		break;
