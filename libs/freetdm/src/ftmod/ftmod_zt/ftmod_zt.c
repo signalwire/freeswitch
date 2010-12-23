@@ -1096,6 +1096,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 		return FTDM_FAIL;
 	}
 
+	/* the core already locked the channel for us, so it's safe to call zt_channel_process_event() here */
 	if ((zt_channel_process_event(ftdmchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
 		return FTDM_FAIL;
@@ -1130,10 +1131,13 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 			return FTDM_FAIL;
 		}
 
+		ftdm_channel_lock(fchan);
 		if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
 			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
+			ftdm_channel_unlock(fchan);
 			return FTDM_FAIL;
 		}
+		ftdm_channel_unlock(fchan);
 
 		fchan->last_event_time = 0;
 		span->event_header.e_type = FTDM_EVENT_OOB;
