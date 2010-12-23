@@ -698,12 +698,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_sessio
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
 {
 	int x = 0;
-
+	switch_channel_t *channel;
 
 	switch_ivr_parse_all_messages(session);
 
-	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS)
+	channel = switch_core_session_get_channel(session);
+
+	if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && switch_channel_test_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA)) {
+		if (switch_channel_media_ready(channel)) {
+			switch_channel_clear_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
+		} else {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	while (switch_ivr_parse_next_event(session) == SWITCH_STATUS_SUCCESS) {
 		x++;
+	}
 
 	if (x) {
 		switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
