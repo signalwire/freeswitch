@@ -1386,7 +1386,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
 	if ((wanpipe_channel_process_event(ftdmchan, &event_id, &tdm_api)) != FTDM_SUCCESS) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process events from channel\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
 		return FTDM_FAIL;
 	}
 
