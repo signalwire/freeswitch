@@ -1142,7 +1142,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
 
 	status = ftdm_event_handle_oob(*event);
 	if (status != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "failed to send SIGEVENT signal to user\n");
+		ftdm_log(FTDM_LOG_ERROR, "failed to handle event %d\n", **event);
 	}
 	return status;
 }
@@ -1168,7 +1168,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 
 	status = ftdm_event_handle_oob(*event);
 	if (status != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "failed to send SIGEVENT signal to user\n");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to handle event %d\n", **event);
 	}
 
 done:
