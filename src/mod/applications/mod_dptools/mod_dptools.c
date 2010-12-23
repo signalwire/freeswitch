@@ -3112,6 +3112,11 @@ SWITCH_STANDARD_APP(verbose_events_function)
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_VERBOSE_EVENTS);
 }
 
+SWITCH_STANDARD_APP(cng_plc_function)
+{
+	switch_channel_set_flag(switch_core_session_get_channel(session), CF_CNG_PLC);
+}
+
 SWITCH_STANDARD_APP(early_hangup_function)
 {
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_EARLY_HANGUP);
@@ -3496,6 +3501,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", "Check an ip against an ACL list", check_acl_function,
 				   "<ip> <acl | cidr> [<hangup_cause>]", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "verbose_events", "Make ALL Events verbose.", "Make ALL Events verbose.", verbose_events_function, "",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "cng_plc", "Do PLC on CNG frames", "", cng_plc_function, "",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "early_hangup", "Enable early hangup", "", early_hangup_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_SUPPORT_NOMEDIA);

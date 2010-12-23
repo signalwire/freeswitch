@@ -175,6 +175,7 @@ struct switch_rtp {
 	uint32_t ts;
 	uint32_t last_write_ts;
 	uint32_t last_read_ts;
+	uint32_t last_cng_ts;
 	uint32_t last_write_samplecount;
 	uint32_t next_write_samplecount;
 	switch_time_t last_write_timestamp;
@@ -2164,11 +2165,19 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	stfu_frame_t *jb_frame;
+	uint32_t ts;
 
 	switch_assert(bytes);
 
 	*bytes = sizeof(rtp_msg_t);
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
+	ts = ntohl(rtp_session->recv_msg.header.ts);
+
+	if (ts && !rtp_session->jb && ts <= rtp_session->last_cng_ts) {
+		/* we already sent this frame..... */
+		*bytes = 0;
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (*bytes) {
 		rtp_session->stats.inbound.raw_bytes += *bytes;
@@ -2192,7 +2201,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 
-	rtp_session->last_read_ts = ntohl(rtp_session->recv_msg.header.ts);
+	rtp_session->last_read_ts = ts;
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
@@ -2920,7 +2929,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-
+			rtp_session->last_cng_ts = rtp_session->last_read_ts + rtp_session->samples_per_interval;
+			
 			memset(data, 0, 2);
 			data[0] = 65;
 			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
