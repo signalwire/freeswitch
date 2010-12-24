@@ -440,6 +440,7 @@ typedef struct {
  * This is used during incoming calls when you want to request the signaling stack
  * to notify about indications occurring locally. See ftdm_channel_call_indicate for more info */
 typedef enum {
+	FTDM_CHANNEL_INDICATE_NONE,
 	FTDM_CHANNEL_INDICATE_RINGING,
 	FTDM_CHANNEL_INDICATE_PROCEED,
 	FTDM_CHANNEL_INDICATE_PROGRESS,
@@ -449,7 +450,7 @@ typedef enum {
 	FTDM_CHANNEL_INDICATE_ANSWER,
 	FTDM_CHANNEL_INDICATE_INVALID,
 } ftdm_channel_indication_t;
-#define INDICATION_STRINGS "RINGING", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "BUSY", "ANSWER", "INVALID"
+#define INDICATION_STRINGS "NONE", "RINGING", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "BUSY", "ANSWER", "INVALID"
 
 /*! \brief Move from string to ftdm_channel_indication_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2channel_indication, ftdm_channel_indication2str, ftdm_channel_indication_t)
