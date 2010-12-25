@@ -37,6 +37,7 @@ Content-Transfer-Encoding: 7bit
 Created: ${voicemail_time}<br>
 Duration: ${voicemail_message_len}<br>
 Account: ${voicemail_account}@${voicemail_domain}<br>
+</font>
 
 </body>
 </html>
