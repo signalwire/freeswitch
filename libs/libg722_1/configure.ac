@@ -15,16 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-# $Id: configure.ac,v 1.9 2008/10/09 14:17:12 steveu Exp $
 
 # @start 1
 
 AC_INIT
-
-CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
-CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
-LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
 m4_include(config/ax_compiler_vendor.m4)
 m4_include(config/ax_check_real_file.m4)
@@ -111,6 +105,22 @@ else
   CXXFLAGS=${CXXFLAGS-"-g -O2"}
 fi
 
+AC_DEFUN([REMOVE_FROM_VAR],[
+    new_val=""
+    removed=0
+    for i in $$1; do
+        if test "x$i" != "x$2"; then
+            new_val="$new_val $i"
+        else
+            removed=1
+        fi
+    done
+    if test $removed = "1"; then
+        echo "  removed \"$2\" from $1"
+        $1=$new_val
+    fi
+])
+
 AC_C_CONST
 AC_C_INLINE
 AC_C_VOLATILE
@@ -190,7 +200,7 @@ AC_CHECK_HEADERS([audiofile.h])
 
 AC_LANG([C])
 
-if test "${build}" = "${host}"
+if test "${build}" == "${host}"
 then
     case "${host}" in
     x86_64-*)
@@ -270,6 +280,7 @@ sun)
         COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
     fi
     COMP_VENDOR_LDFLAGS=
+    REMOVE_FROM_VAR(CFLAGS, -Xc)
     ;;
 *)
     COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
@@ -293,20 +304,14 @@ AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
 if test "$enable_fixed_point" = "yes" ; then
     AC_DEFINE([G722_1_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
     G722_1_USE_FIXED_POINT="#define G722_1_USE_FIXED_POINT 1"
-    fixed = "yes"
     G722_1_VECTORS_FOR_TESTS="fixed"
 else
     AX_FIXED_POINT_MACHINE([$host],
-        [
-	AC_DEFINE([G722_1_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
-        G722_1_USE_FIXED_POINT="#define G722_1_USE_FIXED_POINT 1"
-	fixed = "yes"
-	],
+        [AC_DEFINE([G722_1_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
+        G722_1_USE_FIXED_POINT="#define G722_1_USE_FIXED_POINT 1"],
         [G722_1_USE_FIXED_POINT="#undef G722_1_USE_FIXED_POINT"])
     G722_1_VECTORS_FOR_TESTS="floating"
 fi
-AM_CONDITIONAL([COND_FIXED], [test "$fixed" = "yes"])
-
 AX_MISALIGNED_ACCESS_FAILS([$host],
     [AC_DEFINE([G722_1_MISALIGNED_ACCESS_FAILS], [1], [Do not expect a misaligned memory access to work correctly])
     G722_1_MISALIGNED_ACCESS_FAILS="#define G722_1_MISALIGNED_ACCESS_FAILS 1"],
@@ -363,6 +368,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/g722_1.h
                  tests/Makefile
+                 g722_1.pc
                  g722_1.spec])
 
 AC_CONFIG_FILES([tests/regression_tests.sh], [chmod +x tests/regression_tests.sh])

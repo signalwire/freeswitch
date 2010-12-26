@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-# $Id: unpack_g722_1_data.sh,v 1.2 2008/09/26 12:09:29 steveu Exp $
-#
 
 ITUDATA="../../../T-REC-G.722.1-200505-I!!SOFT-ZST-E.zip"
 

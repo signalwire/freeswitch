@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: huff_tab.c,v 1.7 2008/09/30 14:06:40 steveu Exp $
  */
 
 /*! \file */
