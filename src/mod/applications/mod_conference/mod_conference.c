@@ -2500,10 +2500,8 @@ static void conference_loop_output(conference_member_t *member)
 		use_buffer = NULL;
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
 		
-		if (mux_used < bytes * 2) {
-			use_timer = 1;
-		}
-
+		use_timer = 1;
+		
 		if (mux_used) {
 			if (mux_used < bytes) {
 				if (++low_count >= 5) {
