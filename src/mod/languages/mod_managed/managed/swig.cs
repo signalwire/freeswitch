@@ -21525,6 +21525,8 @@ public enum switch_channel_flag_t {
   CF_RECOVERED,
   CF_JITTERBUFFER,
   CF_DIALPLAN,
+  CF_BLOCK_BROADCAST_UNTIL_MEDIA,
+  CF_CNG_PLC,
   CF_FLAG_MAX
 }
 
