@@ -2488,6 +2488,48 @@ SWITCH_STANDARD_API(uuid_display_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define BUGLIST_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_buglist_function)
+{
+	char *mydata = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (zstr(cmd)) {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		goto error;
+	}
+	if (argv[0]) {
+		switch_core_session_t *lsession = NULL;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_media_bug_enumerate(lsession, stream);
+			switch_core_session_rwunlock(lsession);
+		}
+		goto ok;
+	} else {
+		goto error;
+	}
+
+  error:
+	stream->write_function(stream, "-USAGE: %s\n", BUGLIST_SYNTAX);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+  ok:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SIMPLIFY_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_simplify_function)
 {
@@ -2540,7 +2582,6 @@ SWITCH_STANDARD_API(uuid_simplify_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 #define JITTERBUFFER_SYNTAX "<uuid> [0|<min_msec>[:<max_msec>]]"
 SWITCH_STANDARD_API(uuid_jitterbuffer_function)
@@ -4797,6 +4838,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_buglist", "List media bugs on a session", uuid_buglist_function, BUGLIST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_debug_audio", "debug audio", uuid_debug_audio_function, DEBUG_AUDIO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
@@ -4911,6 +4953,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_break ::console::list_uuid both");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
+	switch_console_set_complete("add uuid_buglist ::console::list_uuid");
 	switch_console_set_complete("add uuid_chat ::console::list_uuid");
 	switch_console_set_complete("add uuid_debug_audio ::console::list_uuid");
 	switch_console_set_complete("add uuid_deflect ::console::list_uuid");
@@ -4939,7 +4982,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid talk");
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid hold");
 	switch_console_set_complete("add uuid_preprocess ::console::list_uuid");
-	switch_console_set_complete("add uuid_record ::console::list_uuid");
+	switch_console_set_complete("add uuid_record ::console::list_uuid ::[start:stop");
 	switch_console_set_complete("add uuid_recv_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_send_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_session_heartbeat ::console::list_uuid");
