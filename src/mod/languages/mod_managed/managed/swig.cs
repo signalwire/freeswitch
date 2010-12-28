@@ -1045,6 +1045,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_media_bug_enumerate(SWIGTYPE_p_switch_core_session session, switch_stream_handle stream) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_enumerate(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_stream_handle.getCPtr(stream));
+    return ret;
+  }
+
   public static switch_status_t switch_core_media_bug_read(SWIGTYPE_p_switch_media_bug bug, switch_frame frame, switch_bool_t fill) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_read(SWIGTYPE_p_switch_media_bug.getCPtr(bug), switch_frame.getCPtr(frame), (int)fill);
     return ret;
@@ -7268,6 +7273,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_remove_all")]
   public static extern int switch_core_media_bug_remove_all(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_enumerate")]
+  public static extern int switch_core_media_bug_enumerate(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_read")]
   public static extern int switch_core_media_bug_read(HandleRef jarg1, HandleRef jarg2, int jarg3);
@@ -21525,6 +21533,8 @@ public enum switch_channel_flag_t {
   CF_RECOVERED,
   CF_JITTERBUFFER,
   CF_DIALPLAN,
+  CF_BLOCK_BROADCAST_UNTIL_MEDIA,
+  CF_CNG_PLC,
   CF_FLAG_MAX
 }
 

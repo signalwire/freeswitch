@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C)2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: decoder.c,v 1.21 2008/11/21 15:30:22 steveu Exp $
  */
 
 /*! \file */
@@ -94,9 +92,7 @@ static void decoder(g722_1_decode_state_t *s,
                     int16_t old_decoder_mlt_coefs[],
                     int frame_error_flag);
 
-/***************************************************************************
- Description: Decodes the out_words into mlt coefs using G.722.1 Annex C
-***************************************************************************/
+/* Decodes the out_words into MLT coefs using G.722.1 Annex C */
 void decoder(g722_1_decode_state_t *s,
              int16_t number_of_regions,
              int16_t decoder_mlt_coefs[],
@@ -109,11 +105,11 @@ void decoder(g722_1_decode_state_t *s,
     int16_t absolute_region_power_index[MAX_NUMBER_OF_REGIONS];
     int16_t decoder_power_categories[MAX_NUMBER_OF_REGIONS];
     int16_t decoder_category_balances[MAX_NUM_CATEGORIZATION_CONTROL_POSSIBILITIES - 1];
-    uint16_t categorization_control;
     int16_t num_categorization_control_bits;
     int16_t num_categorization_control_possibilities;
     int16_t number_of_coefs;
     int16_t number_of_valid_coefs;
+    uint16_t categorization_control;
  
     number_of_valid_coefs = number_of_regions*REGION_SIZE;
 
@@ -184,9 +180,7 @@ void decoder(g722_1_decode_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-/***************************************************************************
- Description: Recover differential_region_power_index from code bits
-***************************************************************************/
+/* Recover differential_region_power_index from code bits */
 static void decode_envelope(g722_1_decode_state_t *s,
                             int16_t number_of_regions,
                             int16_t *decoder_region_standard_deviation,
@@ -262,7 +256,7 @@ static void decode_envelope(g722_1_decode_state_t *s,
     while ((i >= 0)  &&  ((temp1 >= 0)  ||  (temp2 > 0)))
     {
         i = sub(i, 1);
-        temp = shr(temp, 1);
+        temp >>= 1;
         max_index = sub(max_index, 2);
         temp1 = sub(temp, 8);
         temp2 = sub(max_index, 28);
@@ -365,12 +359,12 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
                     if (g722_1_bitstream_get(&s->bitstream, &(s->code_ptr), 1) == 0)
                     {
                         temp = shl(index, 1);
-                        index = (int16_t) *(decoder_table_ptr + temp);
+                        index = decoder_table_ptr[temp];
                     }
                     else
                     {
                         temp = shl(index, 1);
-                        index = (int16_t) *(decoder_table_ptr + temp + 1);
+                        index = decoder_table_ptr[temp + 1];
                     }
                     s->number_of_bits_left--;
                 }
@@ -406,7 +400,7 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
                         {
                             if ((signs_index & bit) == 0)
                                 decoder_mlt_value = negate(decoder_mlt_value);
-                            bit = shr(bit, 1);
+                            bit >>= 1;
                         }
                         *decoder_mlt_ptr++ = decoder_mlt_value;
                     }
@@ -440,7 +434,7 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
                 if (*decoder_mlt_ptr == 0)
                 {
                     *decoder_mlt_ptr = ((random_word & 1) == 0)  ?  noifillneg  :  noifillpos;
-                    random_word = shr(random_word, 1);
+                    random_word >>= 1;
                 }
                 /* pointer arithmetic */
                 decoder_mlt_ptr++;
@@ -451,7 +445,7 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
                 if (*decoder_mlt_ptr == 0)
                 {
                     *decoder_mlt_ptr = ((random_word & 1) == 0)  ?  noifillneg  :  noifillpos;
-                    random_word  = shr(random_word,1);
+                    random_word >>= 1;
                 }
                 /* pointer arithmetic */
                 decoder_mlt_ptr++;

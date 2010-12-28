@@ -303,8 +303,6 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	if (is_timeout) {
 		if (both_bp) {
 			r_bp = exact_bp ? exact_bp : both_bp;
-		} else if (partial_bp) {
-			r_bp = partial_bp;
 		}
 	} 
 

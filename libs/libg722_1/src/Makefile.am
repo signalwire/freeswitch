@@ -15,18 +15,19 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: Makefile.am,v 1.10 2008/10/16 15:46:12 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in
 
-EXTRA_DIST = g722_1/version.h.in \
+EXTRA_DIST = make_tables.c \
+             g722_1/version.h.in \
              libg722_1.dsp \
-             libg722_1.sln \
-             libg722_1.vcproj \
+             libg722_1.2005.sln \
+             libg722_1.2008.sln \
+             libg722_1.2005.vcproj \
+             libg722_1.2008.vcproj \
              msvc/gettimeofday.c \
              msvc/inttypes.h \
              msvc/tgmath.h \
@@ -36,13 +37,16 @@ EXTRA_DIST = g722_1/version.h.in \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
-             msvc/vc8proj.foot
+             msvc/vc8proj.foot \
+             msvc/vc9proj.head \
+             msvc/vc9proj.foot
 
 INCLUDES = -I$(top_builddir)
 
 lib_LTLIBRARIES = libg722_1.la
 
-libg722_1_la_SOURCES = bitstream.c \
+libg722_1_la_SOURCES = basop32.c \
+                       bitstream.c \
                        coef2sam.c \
                        common.c \
                        commonf.c \
@@ -55,11 +59,9 @@ libg722_1_la_SOURCES = bitstream.c \
                        encoderf.c \
                        huff_tab.c \
                        sam2coef.c \
-                       tables.c
+                       tables.c \
+                       utilities.c
 
-if COND_FIXED
-libg722_1_la_SOURCES += basop32.c
-endif
 libg722_1_la_LDFLAGS = -version-info @G722_1_LT_CURRENT@:@G722_1_LT_REVISION@:@G722_1_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
 nobase_include_HEADERS = g722_1/g722_1.h \
@@ -76,10 +78,10 @@ noinst_HEADERS = basop32.h \
                  defs.h \
                  huff_tab.h \
                  sam2coef.h \
-                 tables.h
+                 tables.h \
+                 utilities.h
 
-noinst_PROGRAMS = make_dct4_tables \
-                  make_tables
+noinst_PROGRAMS = make_dct4_tables
 
 dct4.$(OBJEXT): dct4.h
 
@@ -88,6 +90,9 @@ dct4.lo: dct4.h
 dct4.h: make_dct4_tables$(EXEEXT)
 	./make_dct4_tables$(EXEEXT) >dct4.h
 
+make_dct4_tables$(EXEEXT): $(top_srcdir)/src/make_dct4_tables.c
+	$(CC_FOR_BUILD) -o make_dct4_tables$(EXEEXT) $(top_srcdir)/src/make_dct4_tables.c  -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
 #coef2sam.h: make_tables$(EXEEXT)
 #	./make_tables$(EXEEXT) coef2sam >coef2samx.h
 
@@ -95,13 +100,15 @@ dct4.h: make_dct4_tables$(EXEEXT)
 #	./make_tables$(EXEEXT) sam2coef >sam2coefx.h
 
 DSP = libg722_1.dsp
-VCPROJ = libg722_1.vcproj
+VCPROJ8 = libg722_1.2005.vcproj
+VCPROJ9 = libg722_1.2008.vcproj
 
 WIN32SOURCES = $(libg722_1_la_SOURCES) msvc/gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) g722_1.h
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
-VCPROJOUT = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ)
+VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
+VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
 
 $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "creating $(DSP)"
@@ -124,26 +131,38 @@ $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "# End Group" $(DSPOUT); \
 	cat $(srcdir)/msvc/msvcproj.foot $(DSPOUT) )
 
-$(VCPROJ): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
-	echo "creating $(VCPROJ)"
-	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ); \
+$(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
+	echo "creating $(VCPROJ8)"
+	@(cp $(srcdir)/msvc/vc8proj.head $(VCPROJ8); \
 	for file in $(WIN32SOURCES); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
+    myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+    echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT8); \
 	done; \
-	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT); \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT8); \
 	for file in $(WIN32HEADERS); do \
-		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
+        myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT8); \
 	done; \
-	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT) )
+	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT8) )
+
+$(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
+	echo "creating $(VCPROJ9)"
+	@(cp $(srcdir)/msvc/vc9proj.head $(VCPROJ9); \
+	for file in $(WIN32SOURCES); do \
+        myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT9); \
+	done; \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT9); \
+	for file in $(WIN32HEADERS); do \
+        myfile=`echo $$file | sed -e 's|/|\\\\|g'`; \
+		echo "<File RelativePath=\""$$myfile"\"></File>" $(VCPROJOUT9); \
+	done; \
+	cat $(srcdir)/msvc/vc9proj.foot $(VCPROJOUT9) )
+
+dist-hook: g722_1/version.h
 
 g722_1/version.h:
 	NOWDATE=`date --utc +"%Y%m%d"` ; \
 	NOWTIME=`date --utc +"%H%M%S"` ; \
 	sed 's/$$G722_1_RELEASE_DATE/'$$NOWDATE'/;s/$$G722_1_RELEASE_TIME/'$$NOWTIME'/' \
-		<g722_1/version.h.in >g722_1/version.h
-
-dist-hook:
-	NOWDATE=`date --utc +"%Y%m%d"` ; \
-	NOWTIME=`date --utc +"%H%M%S"` ; \
-	sed 's/$$G722_1_RELEASE_DATE/'$$NOWDATE'/;s/$$G722_1_RELEASE_TIME/'$$NOWTIME'/' \
-		<g722_1/version.h.in >g722_1/version.h
+		<$(srcdir)/g722_1/version.h.in >$@

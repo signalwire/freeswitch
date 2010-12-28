@@ -8,8 +8,6 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: bitstream.h,v 1.2 2008/10/17 13:18:21 steveu Exp $
  */
 
 /*! \file */
