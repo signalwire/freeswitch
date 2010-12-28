@@ -287,6 +287,7 @@ typedef struct conference_obj {
 	uint32_t avg_itt;
 	uint32_t avg_tally;
 	switch_time_t run_time;
+	char *uuid_str;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -440,6 +441,7 @@ static switch_status_t conference_add_event_data(conference_obj_t *conference, s
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Unique-ID", conference->uuid_str);
 
 	return status;
 }
@@ -2779,6 +2781,12 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_core_file_close(&fh);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording of %s Stopped\n", rec->path);
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_add_event_data(conference, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
+		switch_event_fire(&event);
+	}
 
 	if (rec->pool) {
 		switch_memory_pool_t *pool = rec->pool;
@@ -5985,7 +5993,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
 	char *terminate_on_silence = NULL;
-	
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+	switch_uuid_t uuid;
+
 	/* Validate the conference name */
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
@@ -6314,6 +6324,12 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	if (!zstr(verbose_events) && switch_true(verbose_events)) {
 		conference->verbose_events = 1;
 	}
+
+	/* Create the conference unique identifier */
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+	conference->uuid_str = switch_core_strdup(conference->pool, uuid_str);
+
 
 	/* Activate the conference mutex for exclusivity */
 	switch_mutex_init(&conference->mutex, SWITCH_MUTEX_NESTED, conference->pool);
