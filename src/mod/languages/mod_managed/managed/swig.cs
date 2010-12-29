@@ -220,6 +220,11 @@ public class CoreSession : IDisposable {
     } 
   }
 
+  public int insertFile(string file, string insert_file, int sample_point) {
+    int ret = freeswitchPINVOKE.CoreSession_insertFile(swigCPtr, file, insert_file, sample_point);
+    return ret;
+  }
+
   public int Answer() {
     int ret = freeswitchPINVOKE.CoreSession_Answer(swigCPtr);
     return ret;
@@ -13658,6 +13663,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_voice_name_get")]
   public static extern string CoreSession_voice_name_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_insertFile")]
+  public static extern int CoreSession_insertFile(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
+
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_Answer")]
   public static extern int CoreSession_Answer(HandleRef jarg1);
 
@@ -23203,6 +23211,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_UDPTL_MODE,
   SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS,
   SWITCH_MESSAGE_INDICATE_JITTER_BUFFER,
+  SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH,
   SWITCH_MESSAGE_INVALID
 }
 

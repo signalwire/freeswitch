@@ -34037,6 +34037,24 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_voice_name_get(void * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_insertFile(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
+  int jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  int result;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (int)jarg4; 
+  result = (int)(arg1)->insertFile((char const *)arg2,(char const *)arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_Answer(void * jarg1) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;

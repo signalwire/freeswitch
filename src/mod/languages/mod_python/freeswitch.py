@@ -263,6 +263,7 @@ class CoreSession(_object):
     __swig_setmethods__["voice_name"] = _freeswitch.CoreSession_voice_name_set
     __swig_getmethods__["voice_name"] = _freeswitch.CoreSession_voice_name_get
     if _newclass:voice_name = _swig_property(_freeswitch.CoreSession_voice_name_get, _freeswitch.CoreSession_voice_name_set)
+    def insertFile(*args): return _freeswitch.CoreSession_insertFile(*args)
     def answer(*args): return _freeswitch.CoreSession_answer(*args)
     def preAnswer(*args): return _freeswitch.CoreSession_preAnswer(*args)
     def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
