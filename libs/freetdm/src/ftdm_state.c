@@ -37,6 +37,9 @@
 FTDM_ENUM_NAMES(CHANNEL_STATE_NAMES, CHANNEL_STATE_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channel_state_t, CHANNEL_STATE_NAMES, FTDM_CHANNEL_STATE_INVALID)
 
+FTDM_ENUM_NAMES(CHANNEL_STATE_STATUS_NAMES, CHANNEL_STATE_STATUS_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_state_status, ftdm_state_status2str, ftdm_state_status_t, CHANNEL_STATE_STATUS_NAMES, FTDM_STATE_STATUS_INVALID)
+
 /* This function is only needed for boost and we should get rid of it at the next refactoring */
 FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *fchan)
 {
@@ -54,11 +57,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *fchan)
 FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const char *func, int line, ftdm_channel_t *fchan)
 {
 	uint8_t hindex = 0;
+	ftdm_time_t diff = 0;
 	ftdm_channel_state_t state = fchan->state;
 
 	if (fchan->state_status == FTDM_STATE_STATUS_COMPLETED) {
+		ftdm_assert_return(!ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE), FTDM_FAIL, 
+				"State change flag set but state is not completed\n");
 		return FTDM_SUCCESS;
 	}
+
+	ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
 
 	if (state == FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_set_flag(fchan, FTDM_CHANNEL_PROGRESS);
@@ -71,18 +79,27 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 		ftdm_set_flag(fchan, FTDM_CHANNEL_MEDIA);	
 	}
 
-	/* if there is a pending ack for an indication */
+	/* if there is a pending ack for an indication
+	 * MAINTENANCE WARNING: we're assuming an indication performed 
+	 * via state change will involve a single state change
+	 */
 	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IND_ACK_PENDING)) {
 		ftdm_ack_indication(fchan, fchan->indication, FTDM_SUCCESS);
-		ftdm_clear_flag(fchan, FTDM_CHANNEL_IND_ACK_PENDING);
 	}
 
-	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Completed state change from %s to %s\n", ftdm_channel_state2str(fchan->state), ftdm_channel_state2str(state));
-	hindex = (fchan->hindex == 0) ? (ftdm_array_len(fchan->history) - 1) : (hindex - 1);
+	hindex = (fchan->hindex == 0) ? (ftdm_array_len(fchan->history) - 1) : (fchan->hindex - 1);
 	
 	ftdm_assert(!fchan->history[hindex].end_time, "End time should be zero!\n");
 
 	fchan->history[hindex].end_time = ftdm_current_time_in_ms();
+
+	fchan->state_status = FTDM_STATE_STATUS_COMPLETED;
+
+	diff = fchan->history[hindex].end_time - fchan->history[hindex].time;
+
+	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Completed state change from %s to %s in %llums\n", 
+			ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(state), diff);
+	
 
 	/* FIXME: broadcast condition to wake up anyone waiting on state completion if the channel 
 	 * is blocking (FTDM_CHANNEL_NONBLOCK is not set) */
@@ -93,9 +110,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 FT_DECLARE(ftdm_status_t) _ftdm_set_state(const char *file, const char *func, int line,
 		ftdm_channel_t *fchan, ftdm_channel_state_t state)
 {
-	if (fchan->state_status == FTDM_STATE_STATUS_NEW) {
-		/* the current state is new, setting a new state from a signaling module
-		   when the current state is new is equivalent to implicitly acknowledging 
+	if (fchan->state_status != FTDM_STATE_STATUS_COMPLETED) {
+		/* the current state is not completed, setting a new state from a signaling module
+		   when the current state is not completed is equivalent to implicitly acknowledging 
 		   the current state */
 		_ftdm_channel_complete_state(file, func, line, fchan);
 	}
@@ -161,9 +178,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 		return FTDM_FAIL;
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, "Ignored state change request from %s to %s, the previous state change has not been processed yet\n",
-				ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+	if (ftdmchan->state_status != FTDM_STATE_STATUS_COMPLETED) {
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_ERROR, 
+		"Ignored state change request from %s to %s, the previous state change has not been processed yet (status = %s)\n",
+		ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state),
+		ftdm_state_status2str(ftdmchan->state_status));
 		return FTDM_FAIL;
 	}
 
@@ -422,9 +441,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan, ftd
 	ftdm_channel_lock(fchan);
 	while (fchan->state_status == FTDM_STATE_STATUS_NEW) {
 		state = fchan->state;
+		ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Executing state processor for %s\n", ftdm_channel_state2str(fchan->state));
 		state_processor(fchan);
-		if (state == fchan->state) {
-			/* if the state did not change, the state status must go to PROCESSED
+		if (state == fchan->state && fchan->state_status == FTDM_STATE_STATUS_NEW) {
+			/* if the state did not change and is still NEW, the state status must go to PROCESSED
 			 * otherwise we don't touch it since is a new state and the old state was
 			 * already completed implicitly by the state_processor() function via some internal
 			 * call to ftdm_set_state() */

@@ -192,6 +192,7 @@ typedef enum {
 
 	FTDM_EINVAL, /*!< Invalid argument */
 	FTDM_ECANCELED, /*!< Operation cancelled */
+	FTDM_EBUSY, /*!< Device busy */
 } ftdm_status_t;
 
 /*! \brief FreeTDM bool type. */

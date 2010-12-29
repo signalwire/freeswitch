@@ -421,16 +421,18 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
-	assert(tech_pvt->ftdmchan != NULL);
+	switch_assert(tech_pvt->ftdmchan != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
 
-	ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -441,10 +443,10 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -2094,6 +2096,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		break;
 
 		case FTDM_SIGEVENT_PROCEED:{} break;
+		case FTDM_SIGEVENT_INDICATION_COMPLETED:{} break;
 
 		default:
 		{

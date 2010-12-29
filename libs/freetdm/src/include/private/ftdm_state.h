@@ -138,8 +138,11 @@ FT_DECLARE(int) ftdm_check_state_all(ftdm_span_t *span, ftdm_channel_state_t sta
 typedef enum {
 	FTDM_STATE_STATUS_NEW,
 	FTDM_STATE_STATUS_PROCESSED,
-	FTDM_STATE_STATUS_COMPLETED
+	FTDM_STATE_STATUS_COMPLETED,
+	FTDM_STATE_STATUS_INVALID
 } ftdm_state_status_t;
+#define CHANNEL_STATE_STATUS_STRINGS "NEW", "PROCESSED", "COMPLETED", "INVALID"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_state_status, ftdm_state_status2str, ftdm_state_status_t)
 
 typedef enum {
 	ZSM_NONE,

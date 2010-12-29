@@ -1022,6 +1022,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 		}
 
 		ftdm_set_flag(new_chan, FTDM_CHANNEL_CONFIGURED | FTDM_CHANNEL_READY);		
+		new_chan->state = FTDM_CHANNEL_STATE_DOWN;
+		new_chan->state_status = FTDM_STATE_STATUS_COMPLETED;
 		*chan = new_chan;
 		return FTDM_SUCCESS;
 	}
@@ -2012,10 +2014,14 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_unhold(const char *file, const char
 	return status;
 }
 
-FT_DECLARE(void) ftdm_ack_indication(const ftdm_channel_t *fchan, ftdm_channel_indication_t indication, ftdm_status_t status)
+FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *fchan, ftdm_channel_indication_t indication, ftdm_status_t status)
 {
 	ftdm_sigmsg_t msg;
+	ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Acknowledging indication %s in state %s (rc = %d)\n", 
+			ftdm_channel_indication2str(indication), ftdm_channel_state2str(fchan->state), status);
+	ftdm_clear_flag(fchan, FTDM_CHANNEL_IND_ACK_PENDING);
 	memset(&msg, 0, sizeof(msg));
+	msg.channel = fchan;
 	msg.event_id = FTDM_SIGEVENT_INDICATION_COMPLETED;
 	msg.ev_data.indication_completed.indication = indication;
 	msg.ev_data.indication_completed.status = status;
@@ -2197,21 +2203,39 @@ FT_DECLARE(uint32_t) ftdm_channel_get_ph_span_id(const ftdm_channel_t *ftdmchan)
 
 /*
  * Every user requested indication *MUST* be acknowledged with the proper status (ftdm_status_t)
- * If the indication fails before we notify the signaling stack, we *MUST* acknowledge ourselves,
+ * However, if the indication fails before we notify the signaling stack, we don't need to ack
  * but if we already notified the signaling stack about the indication, the signaling stack is
- * responsible for the acknowledge.
+ * responsible for the acknowledge. Bottom line is, whenever this function returns FTDM_SUCCESS
+ * someone *MUST* acknowledge the indication, either the signaling stack, this function or the core
+ * at some later point
  * */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 
+	ftdm_assert_return(ftdmchan, FTDM_FAIL, "Null channel\n");
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Indicating %s in state %s\n",
+			ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
+
 	ftdm_channel_lock(ftdmchan);
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot indicate %s in channel with indication %s still pending in state %s\n",
+				ftdm_channel_indication2str(indication), 
+				ftdm_channel_indication2str(ftdmchan->indication),
+				ftdm_channel_state2str(ftdmchan->state));
+		status = FTDM_EBUSY;
+		goto done;
+	}
+
+	ftdmchan->indication = indication;
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_EINVAL;
-		ftdm_ack_indication(ftdmchan, indication, status);
 		goto done;
 	}
 
@@ -2219,7 +2243,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring indication %s because the call is in %s state\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_ECANCELED;
-		ftdm_ack_indication(ftdmchan, indication, status);
 		goto done;
 	}
 
@@ -2228,15 +2251,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 	 * (particularly isdn stacks I think, we should emulate or just move to hangup with busy cause) */
 	case FTDM_CHANNEL_INDICATE_RINGING:
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_RINGING, 1);
-		if (status != FTDM_SUCCESS) {
-			ftdm_ack_indication(ftdmchan, indication, status);
-		}
 		break;
 	case FTDM_CHANNEL_INDICATE_BUSY:
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_BUSY, 1);
-		if (status != FTDM_SUCCESS) {
-			ftdm_ack_indication(ftdmchan, indication, status);
-		}
 		break;
 	case FTDM_CHANNEL_INDICATE_PROCEED:
 		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE)) {
@@ -2244,47 +2261,34 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			goto done;
 		}
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROCEED, 1);
-		if (status != FTDM_SUCCESS) {
-			ftdm_ack_indication(ftdmchan, indication, status);
-		}
 		break;
 	case FTDM_CHANNEL_INDICATE_PROGRESS:
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
-		if (status != FTDM_SUCCESS) {
-			ftdm_ack_indication(ftdmchan, indication, status);
-		}
 		break;
 	case FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA:
 		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_SKIP_STATES)) {
 			if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 				status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 				if (status != FTDM_SUCCESS) {
-					ftdm_ack_indication(ftdmchan, indication, status);
 					goto done;
 				}
 			}
 
 			/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
 			if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
-				status = FTDM_ECANCELED;
-				ftdm_ack_indication(ftdmchan, indication, status);
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring progress media because the call is terminating\n");
 				goto done;
 			}
 		}
-		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
-		if (status != FTDM_SUCCESS) {
-			ftdm_ack_indication(ftdmchan, indication, status);
-		}
+		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
 		break;
 	case FTDM_CHANNEL_INDICATE_ANSWER:
-		/* _ftdm_channel_call_indicate takes care of the indication ack */
+		/* _ftdm_channel_call_answer takes care of the indication ack */
 		status = _ftdm_channel_call_answer(file, func, line, ftdmchan);
 		break;
 	default:
 		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "Do not know how to indicate %d\n", indication);
-		status = FTDM_FAIL;
-		ftdm_ack_indication(ftdmchan, indication, status);
+		status = FTDM_EINVAL;
 		break;
 	}
 
@@ -2463,6 +2467,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 
 	ftdmchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	ftdmchan->state = FTDM_CHANNEL_STATE_DOWN;
+	ftdmchan->state_status = FTDM_STATE_STATUS_COMPLETED;
 
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_DTMF, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
@@ -5023,7 +5028,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const
 	ftdm_assert_return(parameters != NULL, FTDM_FAIL, "No parameters");
 
 	if (!span->chan_count) {
-		ftdm_log(FTDM_LOG_WARNING, "Cannot configure signaling on span with no channels\n");
+		ftdm_log(FTDM_LOG_WARNING, "Cannot configure signaling on span %s with no channels\n", span->name);
 		return FTDM_FAIL;
 	}
 

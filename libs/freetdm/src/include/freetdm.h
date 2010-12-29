@@ -777,11 +777,17 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan);
 
 /*! \brief Indicate a new condition in an incoming call 
+ *
  *  \note Every indication request will result in FTDM_SIGEVENT_INDICATION_COMPLETED event being delivered with
- *        the proper status that will inform you if the request was successful or not.
- *        Be aware there is no guarantee of whether the event will arrive after or before your execution thread returns
- *        from ftdm_channel_call_indicate. This means you could get FTDM_SIGEVENT_INDICATION_COMPLETED even before
- *        your execution thread returns from the ftdm_channel_call_indicate() API
+ *        the proper status that will inform you if the request was successful or not. The exception is if this
+ *        function returns something different to FTDM_SUCCESS, in which case the request failed right away and no
+ *        further FTDM_SIGEVENT_INDICATION_COMPLETED will be delivered
+ *        Be aware there is no guarantee of whether the completion event will arrive after or before your execution 
+ *        thread returns from ftdm_channel_call_indicate. This means you could get FTDM_SIGEVENT_INDICATION_COMPLETED 
+ *        even before your execution thread returns from the ftdm_channel_call_indicate() API
+ *
+ * \note  You cannot send more than one indication at the time. You must wait for the completed event before 
+ *        calling this function again (unless the return code was different than FTDM_SUCCESS)
  */
 #define ftdm_channel_call_indicate(ftdmchan, indication) _ftdm_channel_call_indicate(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (indication))
 
