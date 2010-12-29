@@ -3498,6 +3498,10 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		if (zstr(domain)) {
 			domain = profile->name;
 		}
+
+		if (!zstr(profile->domain_name) && !zstr(profile_name) && !strcmp(profile_name, profile->name)) {
+			domain = profile->domain_name;
+		}
 			
 		select_from_profile(profile, user, domain, concat, exclude_contact, &mystream);
 		sofia_glue_release_profile(profile);
@@ -3937,7 +3941,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			goto error;
 		}
 
-		if (profile->domain_name && profile->domain_name != profile->name) {
+		if (profile->domain_name && strcmp(profile->domain_name, profile->name)) {
 			profile_name = profile->domain_name;
 		}
 
