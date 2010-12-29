@@ -1902,6 +1902,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_set_blocking_mode(const ftdm_span_t *span, f
 			ftdm_set_flag_locked(fchan, FTDM_CHANNEL_NONBLOCK);
 		}
 	}
+	ftdm_iterator_free(citer);
 	return FTDM_SUCCESS;
 }
 
