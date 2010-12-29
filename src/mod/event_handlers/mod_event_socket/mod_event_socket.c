@@ -1556,12 +1556,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			user = cmd + 9;
 
-			if ((domain_name = strchr(user, '@'))) {
-				*domain_name++ = '\0';
-			}
-
 			if ((pass = strchr(user, ':'))) {
 				*pass++ = '\0';
+			}
+
+			if ((domain_name = strchr(user, '@'))) {
+				*domain_name++ = '\0';
 			}
 			
 			if (zstr(user) || zstr(domain_name)) {
