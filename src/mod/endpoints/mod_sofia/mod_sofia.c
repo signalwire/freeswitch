@@ -3395,6 +3395,36 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void select_from_profile(sofia_profile_t *profile, 
+								const char *user,
+								const char *domain,
+								const char *concat,
+								const char *exclude_contact, 
+								switch_stream_handle_t *stream)
+{
+	struct cb_helper cb;
+	char *sql;
+	
+	cb.row_process = 0;
+
+	cb.profile = profile;
+	cb.stream = stream;
+
+	if (exclude_contact) {
+		sql = switch_mprintf("select contact, profile_name, '%q' "
+							 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
+							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, domain, exclude_contact);
+	} else {
+		sql = switch_mprintf("select contact, profile_name, '%q' "
+							 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+							 (concat != NULL) ? concat : "", user, domain, domain);
+	}
+
+	switch_assert(sql);
+	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, contact_callback, &cb);
+	switch_safe_free(sql);
+}
+
 SWITCH_STANDARD_API(sofia_contact_function)
 {
 	char *data;
@@ -3406,6 +3436,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
 	char *reply = "error/facility_not_subscribed";
+	switch_stream_handle_t mystream = { 0 };
 
 	if (!cmd) {
 		stream->write_function(stream, "%s", "");
@@ -3440,75 +3471,69 @@ SWITCH_STANDARD_API(sofia_contact_function)
 		}
 	}
 
-	if (!profile_name && domain) {
-		profile_name = domain;
+	if (zstr(domain)) {
+		domain = switch_core_get_variable("domain");
 	}
 
-	if (user && profile_name) {
-		char *sql;
+	if (!user) goto end;
 
-		if (!(profile = sofia_glue_find_profile(profile_name))) {
-			profile_name = domain;
-			domain = NULL;
-		}
-
-		if (!profile && profile_name) {
+	if (zstr(profile_name) || strcmp(profile_name, "*") || zstr(domain)) {
+		if (!zstr(profile_name)) {
 			profile = sofia_glue_find_profile(profile_name);
 		}
-
-		if (profile) {
-			struct cb_helper cb;
-			switch_stream_handle_t mystream = { 0 };
-
-			cb.row_process = 0;
-
-			if (!domain || (!strchr(domain, '.') && strcmp(profile_name, domain))) {
-				domain = profile->name;
-			}
-
-			SWITCH_STANDARD_STREAM(mystream);
-			switch_assert(mystream.data);
-			cb.profile = profile;
-			cb.stream = &mystream;
-
-			if (exclude_contact) {
-				sql = switch_mprintf("select contact, profile_name, '%q' "
-									 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
-									 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, domain, exclude_contact);
-			} else {
-				sql = switch_mprintf("select contact, profile_name, '%q' "
-									 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
-									 (concat != NULL) ? concat : "", user, domain, domain);
-			}
-
-			switch_assert(sql);
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, contact_callback, &cb);
-			switch_safe_free(sql);
-			reply = (char *) mystream.data;
-			if (!zstr(reply) && end_of(reply) == ',') {
-				end_of(reply) = '\0';
-			}
-
-			if (zstr(reply)) {
-				reply = "error/user_not_registered";
-			}
-
-			stream->write_function(stream, "%s", reply);
-			reply = NULL;
-
-			switch_safe_free(mystream.data);
+	
+		if (!profile) {
+			profile = sofia_glue_find_profile(domain);
 		}
 	}
 
-	if (reply) {
-		stream->write_function(stream, "%s", reply);
+	if (profile || !zstr(domain)) {
+		SWITCH_STANDARD_STREAM(mystream);
+		switch_assert(mystream.data);
 	}
-
-	switch_safe_free(data);
 
 	if (profile) {
+		if (zstr(domain)) {
+			domain = profile->name;
+		}
+			
+		select_from_profile(profile, user, domain, concat, exclude_contact, &mystream);
 		sofia_glue_release_profile(profile);
+	
+	} else if (!zstr(domain)) {
+		switch_mutex_lock(mod_sofia_globals.hash_mutex);
+		if (mod_sofia_globals.profile_hash) {
+			switch_hash_index_t *hi;
+			const void *var;
+			void *val;
+			
+			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &var, NULL, &val);
+				if ((profile = (sofia_profile_t *) val) && !strcmp((char *)var, profile->name)) {
+					select_from_profile(profile, user, domain, concat, exclude_contact, &mystream);			
+					profile = NULL;
+				}
+			}
+		}
+		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	} 
+	
+	reply = (char *) mystream.data;
+
+ end:
+	
+	if (zstr(reply)) {
+		reply = "error/user_not_registered";
+	} else if (end_of(reply) == ',') {
+		end_of(reply) = '\0';
 	}
+
+	stream->write_function(stream, "%s", reply);
+	reply = NULL;
+
+	switch_safe_free(mystream.data);					
+
+	switch_safe_free(data);
 
 	return SWITCH_STATUS_SUCCESS;
 }
