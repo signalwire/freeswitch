@@ -1001,6 +1001,17 @@ SWITCH_STANDARD_APP(deflect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(recovery_refresh_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to recovery_refresh the call */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH;
+	switch_core_session_receive_message(session, &msg);
+}
+
 
 SWITCH_STANDARD_APP(sched_cancel_function)
 {
@@ -3547,6 +3558,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "recovery_refresh", "Send call recovery_refresh", "Send a call recovery_refresh.", recovery_refresh_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",

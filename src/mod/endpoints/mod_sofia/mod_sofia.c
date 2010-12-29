@@ -1319,6 +1319,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	/* ones that do not need to lock sofia mutex */
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH:
 	case SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC:
 		{
 			sofia_glue_tech_track(tech_pvt->profile, session);
@@ -1335,6 +1336,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
+
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {

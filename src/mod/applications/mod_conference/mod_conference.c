@@ -4284,6 +4284,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 	switch_event_t *params = NULL;
 	conference_obj_t *new_conference = NULL;
 	int locked = 0;
+	switch_core_session_message_t msg = { 0 };
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -4408,6 +4409,11 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			}
 
 			switch_channel_set_variable(channel, "last_transfered_conference", argv[2]);
+
+			/* Sync the recovery data */
+			msg.from = __FILE__;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH;
+			switch_core_session_receive_message(member->session, &msg);
 
 			unlock_member(member);
 

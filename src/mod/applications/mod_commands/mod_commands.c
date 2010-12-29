@@ -2226,6 +2226,40 @@ SWITCH_STANDARD_API(uuid_deflect)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_RECOVERY_REFRESH_SYNTAX "<uuid> <uri>"
+SWITCH_STANDARD_API(uuid_recovery_refresh)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *text = NULL;
+
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
+		if ((text = strchr(uuid, ' '))) {
+			*text++ = '\0';
+		}
+	}
+
+	if (zstr(uuid) || zstr(text)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_RECOVERY_REFRESH_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_core_session_message_t msg = { 0 };
+
+			/* Tell the channel to recovery_refresh the call */
+			msg.from = __FILE__;
+			msg.string_arg = text;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH;
+			switch_core_session_receive_message(tsession, &msg);
+			stream->write_function(stream, "+OK:%s\n", msg.string_reply);
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "-ERR No Such Channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SCHED_TRANSFER_SYNTAX "[+]<time> <uuid> <extension> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(sched_transfer_function)
 {
@@ -4858,6 +4892,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send and event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_record", "session record", session_record_function, SESS_REC_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_recovery_refresh", "Send a recovery_refresh", uuid_recovery_refresh, UUID_RECOVERY_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_recv_dtmf", "receive dtmf digits", uuid_recv_dtmf_function, UUID_RECV_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_session_heartbeat", "uuid_session_heartbeat", uuid_session_heartbeat_function, HEARTBEAT_SYNTAX);
@@ -4983,6 +5018,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid hold");
 	switch_console_set_complete("add uuid_preprocess ::console::list_uuid");
 	switch_console_set_complete("add uuid_record ::console::list_uuid ::[start:stop");
+	switch_console_set_complete("add uuid_recovery_refresh ::console::list_uuid");
 	switch_console_set_complete("add uuid_recv_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_send_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_session_heartbeat ::console::list_uuid");
