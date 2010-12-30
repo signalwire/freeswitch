@@ -2552,6 +2552,7 @@ static void conference_loop_output(conference_member_t *member)
 			write_frame.datalen = bytes;
 			write_frame.samples = samples;
 			memset(write_frame.data, 255, write_frame.datalen);
+			write_frame.timestamp = timer.samplecount;
 			member_add_file_data(member, write_frame.data, write_frame.datalen);
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -5812,22 +5813,29 @@ SWITCH_STANDARD_APP(conference_function)
 	if (conference && switch_test_flag(&member, MFLAG_KICKED) && conference->kicked_sound) {
 		char *toplay = NULL;
 		char *dfile = NULL;
+		char *expanded = NULL;
 
 		if (!strncasecmp(conference->kicked_sound, "say:", 4)) {
 			if (conference->tts_engine && conference->tts_voice) {
 				switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, conference->kicked_sound + 4, NULL);
 			}
 		} else {
+			if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(session), conference->kicked_sound)) != conference->kicked_sound) {
+				toplay = expanded;
+			} else {
+				expanded = NULL;
+				toplay = conference->kicked_sound; 
+			}
+
 			if (conference->sound_prefix) {
-				dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, conference->kicked_sound);
+				dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, toplay);
 				switch_assert(dfile);
 				toplay = dfile;
-			} else {
-				toplay = conference->kicked_sound;
 			}
 
 			switch_ivr_play_file(session, NULL, toplay, NULL);
 			switch_safe_free(dfile);
+			switch_safe_free(expanded);
 		}
 	}
 
