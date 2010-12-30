@@ -745,6 +745,14 @@ typedef struct {
 	char *route_uri;
 } sofia_destination_t;
 
+typedef struct {
+	char network_ip[80];
+	int network_port;
+	const char *is_nat;
+	int is_auto_nat;
+} sofia_nat_parse_t;
+
+
 #define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
 #define sofia_set_pflag(obj, flag) (obj)->pflags[flag] = 1
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -1040,3 +1048,4 @@ switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, swi
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
 void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str);
+char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np);
