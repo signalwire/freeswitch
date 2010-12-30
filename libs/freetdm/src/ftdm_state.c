@@ -101,8 +101,10 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 			ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(state), diff);
 	
 
-	/* FIXME: broadcast condition to wake up anyone waiting on state completion if the channel 
-	 * is blocking (FTDM_CHANNEL_NONBLOCK is not set) */
+	if (ftdm_test_flag(fchan, FTDM_CHANNEL_BLOCKING)) {
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_BLOCKING);
+		ftdm_interrupt_signal(fchan->state_change_notify);
+	}
 
 	return FTDM_SUCCESS;
 }
@@ -169,6 +171,7 @@ static int ftdm_parse_state_map(ftdm_channel_t *ftdmchan, ftdm_channel_state_t s
 #define DEFAULT_WAIT_TIME 1000
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq)
 {
+	ftdm_status_t status;
 	int ok = 1;
 	int waitms = DEFAULT_WAIT_TIME;	
 
@@ -190,6 +193,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Why bother changing state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		return FTDM_FAIL;
 	}
+
+	if (!ftdmchan->state_change_notify) {
+		status = ftdm_interrupt_create(&ftdmchan->state_change_notify, FTDM_INVALID_SOCKET);
+		if (status != FTDM_SUCCESS) {
+			ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_CRIT, 
+					"Failed to create state change interrupt when moving from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+			return status;
+		}
+	}
+
 
 	if (ftdmchan->span->state_map) {
 		ok = ftdm_parse_state_map(ftdmchan, state, ftdmchan->span->state_map);
@@ -276,67 +289,54 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 
 end:
 
-	if (ok) {
-		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
-		ftdmchan->last_state = ftdmchan->state; 
-		ftdmchan->state = state;
-		ftdmchan->state_status = FTDM_STATE_STATUS_NEW;
-		ftdmchan->history[ftdmchan->hindex].file = file;
-		ftdmchan->history[ftdmchan->hindex].func = func;
-		ftdmchan->history[ftdmchan->hindex].line = line;
-		ftdmchan->history[ftdmchan->hindex].state = ftdmchan->state;
-		ftdmchan->history[ftdmchan->hindex].last_state = ftdmchan->last_state;
-		ftdmchan->history[ftdmchan->hindex].time = ftdm_current_time_in_ms();
-		ftdmchan->history[ftdmchan->hindex].end_time = 0;
-		ftdmchan->hindex++;
-		if (ftdmchan->hindex == ftdm_array_len(ftdmchan->history)) {
-			ftdmchan->hindex = 0;
-		}
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
-
-		ftdm_mutex_lock(ftdmchan->span->mutex);
-		ftdm_set_flag(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
-		if (ftdmchan->span->pendingchans) {
-			ftdm_queue_enqueue(ftdmchan->span->pendingchans, ftdmchan);
-		}
-		ftdm_mutex_unlock(ftdmchan->span->mutex);
-	} else {
+	if (!ok) {
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "VETO state change from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		goto done;
 	}
+
+	ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
+	ftdmchan->last_state = ftdmchan->state; 
+	ftdmchan->state = state;
+	ftdmchan->state_status = FTDM_STATE_STATUS_NEW;
+	ftdmchan->history[ftdmchan->hindex].file = file;
+	ftdmchan->history[ftdmchan->hindex].func = func;
+	ftdmchan->history[ftdmchan->hindex].line = line;
+	ftdmchan->history[ftdmchan->hindex].state = ftdmchan->state;
+	ftdmchan->history[ftdmchan->hindex].last_state = ftdmchan->last_state;
+	ftdmchan->history[ftdmchan->hindex].time = ftdm_current_time_in_ms();
+	ftdmchan->history[ftdmchan->hindex].end_time = 0;
+	ftdmchan->hindex++;
+	if (ftdmchan->hindex == ftdm_array_len(ftdmchan->history)) {
+		ftdmchan->hindex = 0;
+	}
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+
+	ftdm_mutex_lock(ftdmchan->span->mutex);
+	ftdm_set_flag(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
+	if (ftdmchan->span->pendingchans) {
+		ftdm_queue_enqueue(ftdmchan->span->pendingchans, ftdmchan);
+	}
+	ftdm_mutex_unlock(ftdmchan->span->mutex);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
 		/* the channel should not block waiting for state processing */
 		goto done;
 	}
 
-	/* there is an inherent race here between set and check of the change flag but we do not care because
-	 * the flag should never last raised for more than a few ms for any state change */
-	while (waitrq && waitms > 0) {
-		/* give a chance to the signaling stack to process it */
-		ftdm_mutex_unlock(ftdmchan->mutex);
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_BLOCKING);
 
-		ftdm_sleep(10);
-		waitms -= 10;
+	ftdm_mutex_unlock(ftdmchan->mutex);
 
-		ftdm_mutex_lock(ftdmchan->mutex);
-		
-		/* if the flag is no longer set, the state change was processed (or is being processed) */
-		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-			break;
-		}
+	status = ftdm_interrupt_wait(ftdmchan->state_change_notify, waitms);
 
-		/* if the state is no longer what we set, the state change was 
-		 * obviously processed (and the current state change flag is for other state change) */
-		if (ftdmchan->state != state) {
-			break;
-		}
-	}
+	ftdm_mutex_lock(ftdmchan->mutex);
 
-	if (waitms <= 0) {
-		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not processed after aprox %dms\n",
+	if (status != FTDM_SUCCESS) {
+		ftdm_log_chan_ex(ftdmchan, file, func, line, 
+				FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not processed after aprox %dms\n",
 				ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
 		ok = 0;
+		goto done;
 	}
 done:
 	return ok ? FTDM_SUCCESS : FTDM_FAIL;

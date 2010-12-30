@@ -462,6 +462,7 @@ struct ftdm_channel {
 	ftdm_dtmf_debug_t dtmfdbg;
 	ftdm_io_dump_t rxdump;
 	ftdm_io_dump_t txdump;
+	ftdm_interrupt_t *state_change_notify; /*!< Notify when a state change is terminated */
 	int32_t txdrops;
 	int32_t rxdrops;
 };

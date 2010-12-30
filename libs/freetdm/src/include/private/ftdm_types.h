@@ -250,6 +250,8 @@ typedef enum {
 #define FTDM_CHANNEL_NONBLOCK        (1ULL << 33)
 /*!< There is a pending acknowledge for an indication */
 #define FTDM_CHANNEL_IND_ACK_PENDING (1ULL << 34)
+/*!< There is someone blocking in the channel waiting for state completion */
+#define FTDM_CHANNEL_BLOCKING        (1ULL << 35)
 
 #include "ftdm_state.h"
 
