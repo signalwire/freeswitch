@@ -115,7 +115,7 @@ static void do_rotate(cdr_fd_t *fd)
 
 	if (globals.rotate) {
 		switch_time_exp_lt(&tm, switch_micro_time_now());
-		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
+		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
 
 		len = strlen(fd->path) + strlen(date) + 2;
 		p = switch_mprintf("%s.%s", fd->path, date);
@@ -143,6 +143,7 @@ static void write_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
 	unsigned int bytes_in, bytes_out;
+	int loops = 0;
 
 	if (!(fd = switch_core_hash_find(globals.fd_hash, path))) {
 		fd = switch_core_alloc(globals.pool, sizeof(*fd));
@@ -169,11 +170,15 @@ static void write_cdr(const char *path, const char *log_line)
 		do_rotate(fd);
 	}
 
-	if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
+	while ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out && ++loops < 10) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int) bytes_in, (int) bytes_out);
+		do_rotate(fd);
+		switch_yield(250000);
 	}
 
-	fd->bytes += bytes_in;
+	if (bytes_in > 0) {
+		fd->bytes += bytes_in;
+	}
 
   end:
 
@@ -330,6 +335,7 @@ static int save_cdr(const char* const table, const char* const template, const c
 	sprintf(query, query_template, table, columns, values);
 	free(columns);
 	free(values);
+
 	if (globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Query: \"%s\"\n", query);
 	}
@@ -339,6 +345,7 @@ static int save_cdr(const char* const table, const char* const template, const c
 	if (!globals.db_online || PQstatus(globals.db_connection) != CONNECTION_OK) {
 		globals.db_connection = PQconnectdb(globals.db_info);
 	}
+
 	if (PQstatus(globals.db_connection) == CONNECTION_OK) {
 		globals.db_online = 1;
 	} else {
@@ -350,21 +357,9 @@ static int save_cdr(const char* const table, const char* const template, const c
 		return 0;
 	}
 
-	res = PQexec(globals.db_connection, "BEGIN");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "BEGIN command failed: %s", PQerrorMessage(globals.db_connection));
-		PQclear(res);
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		free(query);
-		return 0;
-	}
-	PQclear(res);
-
 	res = PQexec(globals.db_connection, query);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INSERT command failed: %s", PQerrorMessage(globals.db_connection));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INSERT command failed: %s", PQresultErrorMessage(res));
 		PQclear(res);
 		PQfinish(globals.db_connection);
 		globals.db_online = 0;
@@ -373,26 +368,14 @@ static int save_cdr(const char* const table, const char* const template, const c
 		return 0;
 	}
 	PQclear(res);
-
 	free(query);
-
-	res = PQexec(globals.db_connection, "END");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "END command failed: %s", PQerrorMessage(globals.db_connection));
-		PQclear(res);
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		return 0;
-	}
-	PQclear(res);
 
 	switch_mutex_unlock(globals.db_mutex);
 
 	return 1;
 }
 
-static switch_status_t my_on_hangup(switch_core_session_t *session)
+static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -524,9 +507,14 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ my_on_hangup,
+	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media */ NULL,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ my_on_reporting
 };
 
 
@@ -638,19 +626,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	load_config(pool);
+
+	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
+		return status;
+	}
+
+	if ((status = switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
+		return status;
 	}
 
 	switch_core_add_state_handler(&state_handlers);
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	load_config(pool);
-
-	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
-	}
 
 	return status;
 }
