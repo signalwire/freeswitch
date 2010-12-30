@@ -2,15 +2,18 @@
   <settings>
     <!-- 'cdr-pg-csv' will always be appended to log-base -->
     <!--<param name="log-base" value="/var/log"/>-->
+    <param name="rotate-on-hup" value="true"/>
+    <!-- Log a-leg (a), b-leg (b) or both (ab) -->
+    <param name="legs" value="a"/>
+    <!-- See parameters for PQconnectdb() at http://www.postgresql.org/docs/8.4/static/libpq-connect.html -->
+    <param name="db-info" value="host=localhost dbname=cdr connect_timeout=10" />
+    <!-- Global CDR table -->
+    <!--<param name="g-table" value="g"/>-->
+    <!-- Per-accountcode CDR table -->
+    <!--<param name="a-table" value="a"/>-->
     <param name="default-template" value="example"/>
     <!-- This is like the info app but after the call is hung up -->
     <!--<param name="debug" value="true"/>-->
-    <param name="rotate-on-hup" value="true"/>
-    <!-- may be a b or ab -->
-    <param name="legs" value="a"/>
-    <param name="debug" value="true"/>
-    <!-- The parameters for pqconnectdb(), see there -->
-    <param name="db-info" value="host=localhost dbname=cdr connect_timeout=10" />
   </settings>
   <templates>
     <template name="sql">INSERT INTO cdr VALUES ("${caller_id_name}","${caller_id_number}","${destination_number}","${context}","${start_stamp}","${answer_stamp}","${end_stamp}","${duration}","${billsec}","${hangup_cause}","${uuid}","${bleg_uuid}", "${accountcode}");</template>
