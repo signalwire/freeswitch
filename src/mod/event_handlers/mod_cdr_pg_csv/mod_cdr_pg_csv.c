@@ -186,10 +186,12 @@ static int save_cdr(const char* const table, const char* const template, const c
 	char* values;
 	char* p;
 	unsigned clen;
-        unsigned vlen;
+	unsigned vlen;
 	char* query;
 	const char* const query_template = "INSERT INTO %s (%s) VALUES (%s);";
 	PGresult* res;
+	char *spaceColumns, *pt, *nullValues, *temp, *tp;
+	int spaceCounter = 0, nullCounter = 0, charCounter = 0;
 
 	if (!table || !*table || !template || !*template || !cdr || !*cdr) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Bad parameter\n");
@@ -199,9 +201,9 @@ static int save_cdr(const char* const table, const char* const template, const c
 	columns = strdup(template);
 	for (p = columns; *p; ++p) {
 		switch (*p) {
-		case '$': case '"': case '{': case '}': case ';':
-			*p = ' ';
-			break;
+			case '$': case '"': case '{': case '}': case ';':
+				*p = ' ';
+				break;
 		}
 	}
 	clen = p - columns;
@@ -209,121 +211,121 @@ static int save_cdr(const char* const table, const char* const template, const c
 	values = strdup(cdr);
 	for (p = values; *p; ++p) {
 		switch(*p) {
-		case '"':
-			*p = '\'';
-			break;
-		case ';':
-			*p = ' ';
-			break;
+			case '"':
+				*p = '\'';
+				break;
+			case ';':
+				*p = ' ';
+				break;
 		}
 	}
 	vlen = p - values;
-/*
-         Patch for changing spaces (; ;) in the template paterns to NULL   (ex.)  ; ; --PACH--> null
-         - added new functionality - space removing
-*/
-        char *spaceColumns;
-	int spaceCounter=0;
-	for (p=columns; *p; ++p)
-	{
-		if (*p==' ')
-		{
+
+	/*
+	 * Patch for changing spaces (; ;) in the template paterns to NULL
+	 * (eg.) ; ; --PATCH--> null
+	 * - added new functionality - space removing
+	 */
+	for (p = columns; *p; ++p) {
+		if (*p == ' ') {
 			spaceCounter++;
 		}
 	}
-	spaceColumns = (char*)malloc(clen-spaceCounter+1);
-	char *pt=spaceColumns;
-	for (p=columns; *p; ++p)
-	{
-		if (*p!=' ')
-		{
+
+	spaceColumns = (char *) malloc(clen - spaceCounter + 1);
+	pt = spaceColumns;
+
+	for (p = columns; *p; ++p) {
+		if (*p != ' ') {
 			*pt=*p;
 			pt++;
 		}
 	}
-	*pt=0;
-	pt=columns;
-	columns=spaceColumns;
+
+	*pt = 0;
+	pt = columns;
+	columns = spaceColumns;
 	free(pt);
-	char *nullValues;
-	int nullCounter=0;
-	int charCounter=0;
-	for (p=values; *p; ++p)
-	{
-		if (*p==',')
-		{
-			if (charCounter==0)
-			{
+
+	for (p = values; *p; ++p) {
+		if (*p == ',') {
+			if (charCounter == 0) {
 				nullCounter++;
 			}
-			charCounter=0;
-		}
-		else if (*p!=' ' && *p!='\'')
-		{
+			charCounter = 0;
+		} else if (*p != ' ' && *p != '\'') {
 			charCounter++;
 		}
 	}
-	if (charCounter==0)
-	{
+
+	if (charCounter == 0) {
 		nullCounter++;
 	}
-	charCounter=0;
-	nullCounter*=4;
-	vlen+=nullCounter;
-	nullValues=(char*)malloc(strlen(values)+nullCounter+1);
-	charCounter=0;
-	char *temp=nullValues;
-	char *tp=nullValues;
-	for (p=values; *p; ++tp,++p)
-	{
-	    if (*p==',')
-		{
-			if (charCounter==0)
-			{
+
+	charCounter = 0;
+	nullCounter *= 4;
+	vlen += nullCounter;
+	nullValues = (char *) malloc(strlen(values) + nullCounter + 1);
+	charCounter = 0;
+	temp = nullValues;
+	tp = nullValues;
+
+	for (p = values; *p; ++tp, ++p) {
+		if (*p == ',') {
+			if (charCounter == 0) {
 				temp++;
-				*temp='n';temp++;
-				if (temp==tp) tp++;
-				*temp='u';temp++;
-				if (temp==tp) tp++;
-				*temp='l';temp++;
-				if (temp==tp) tp++;
-				*temp='l';temp++;
-				while (temp!=tp)
-				{
-					*temp=' ';temp++;
+				*temp = 'n';
+				temp++;
+				if (temp == tp) tp++;
+				*temp = 'u';
+				temp++;
+				if (temp == tp) tp++;
+				*temp = 'l';
+				temp++;
+				if (temp == tp) tp++;
+				*temp = 'l';
+				temp++;
+				while (temp != tp) {
+					*temp = ' ';
+					temp++;
 				}
 			}
-			charCounter=0;
-			temp=tp;
-		}
-		else if (*p!=' ' && *p!='\'')
-		{
+			charCounter = 0;
+			temp = tp;
+		} else if (*p != ' ' && *p != '\'') {
 			charCounter++;
 		}
-		*tp=*p;
+		*tp = *p;
 	}
-	if (charCounter==0)
-	{
+
+	if (charCounter == 0) {
 		temp++;
-		*temp='n';temp++;
-		if (temp==tp) tp++;
-		*temp='u';temp++;
-		if (temp==tp) tp++;
-		*temp='l';temp++;
-		if (temp==tp) tp++;
-		*temp='l';temp++;
-		while (temp!=tp)
-		{
-			*temp=' ';temp++;
+		*temp = 'n';
+		temp++;
+		if (temp == tp) tp++;
+		*temp = 'u';
+		temp++;
+		if (temp == tp) tp++;
+		*temp = 'l';
+		temp++;
+		if (temp == tp) tp++;
+		*temp = 'l';
+		temp++;
+		while (temp != tp) {
+			*temp = ' ';
+			temp++;
 		}
 	}
-	charCounter=0;
-	temp=tp;
-	*tp=0;
-	tp=values;
-	values=nullValues;
+
+	charCounter = 0;
+	temp = tp;
+	*tp = 0;
+	tp = values;
+	values = nullValues;
 	free(tp);
-//-----------------------------END_OF_PATCH----------------------------------------------------------------
+
+	//----------------------------- END_OF_PATCH -------------------------------
+
 	query = malloc(strlen(query_template) - 6 + strlen(table) + clen + vlen + 1);
 	sprintf(query, query_template, table, columns, values);
 	free(columns);
