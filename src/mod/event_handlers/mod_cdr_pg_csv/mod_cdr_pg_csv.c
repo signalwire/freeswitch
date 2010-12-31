@@ -185,34 +185,37 @@ static void write_cdr(const char *path, const char *log_line)
 	switch_mutex_unlock(fd->mutex);
 }
 
-static int save_cdr(const char* const table, const char* const template, const char* const cdr)
+static int save_cdr(const char * const table, const char * const template, const char * const cdr)
 {
-	char* columns;
-	char* values;
-	char* p;
-	unsigned clen;
+	char *columns, *values;
+	char *p, *q;
 	unsigned vlen;
-	char* query;
-	const char* const query_template = "INSERT INTO %s (%s) VALUES (%s);";
-	PGresult* res;
-	char *spaceColumns, *pt, *nullValues, *temp, *tp;
-	int spaceCounter = 0, nullCounter = 0, charCounter = 0;
+	char *query;
+	PGresult *res;
+	char *nullValues, *temp, *tp;
+	int nullCounter = 0, charCounter = 0;
 
 	if (!table || !*table || !template || !*template || !cdr || !*cdr) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Bad parameter\n");
 		return 0;
 	}
 
+	/* Build comma-separated list of field names by dropping $ { } ; chars */
 	columns = strdup(template);
-	for (p = columns; *p; ++p) {
+	for (p = columns, q = columns; *p; ++p) {
 		switch (*p) {
 			case '$': case '"': case '{': case '}': case ';':
-				*p = ' ';
 				break;
+			default:
+				*q++ = *p;
 		}
 	}
-	clen = p - columns;
+	*q = '\0';
 
+	/* In the expanded vars, replace double quotes (") with single quotes (')
+	 * for corect PostgreSQL syntax, and replace semi-colon with space to
+	 * prevent SQL injection attacks.
+	 */
 	values = strdup(cdr);
 	for (p = values; *p; ++p) {
 		switch(*p) {
@@ -227,31 +230,9 @@ static int save_cdr(const char* const table, const char* const template, const c
 	vlen = p - values;
 
 	/*
-	 * Patch for changing spaces (; ;) in the template paterns to NULL
-	 * (eg.) ; ; --PATCH--> null
-	 * - added new functionality - space removing
+	 * Patch for changing empty strings ('') in the expanded variables to
+	 * Postgresql null
 	 */
-	for (p = columns; *p; ++p) {
-		if (*p == ' ') {
-			spaceCounter++;
-		}
-	}
-
-	spaceColumns = (char *) malloc(clen - spaceCounter + 1);
-	pt = spaceColumns;
-
-	for (p = columns; *p; ++p) {
-		if (*p != ' ') {
-			*pt=*p;
-			pt++;
-		}
-	}
-
-	*pt = 0;
-	pt = columns;
-	columns = spaceColumns;
-	free(pt);
-
 	for (p = values; *p; ++p) {
 		if (*p == ',') {
 			if (charCounter == 0) {
@@ -331,8 +312,8 @@ static int save_cdr(const char* const table, const char* const template, const c
 
 	//----------------------------- END_OF_PATCH -------------------------------
 
-	query = malloc(strlen(query_template) - 6 + strlen(table) + clen + vlen + 1);
-	sprintf(query, query_template, table, columns, values);
+	query = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);", table, columns, values);
+	assert(query);
 	free(columns);
 	free(values);
 
