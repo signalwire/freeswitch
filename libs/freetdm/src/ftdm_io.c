@@ -4234,7 +4234,7 @@ static void print_core_usage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, 
 	"--------------------------------------------------------------------------------\n"
 	"ftdm core state [!]<state_name> - List all channels in or not in the given state\n"
-	"ftdm core flag <flag-int-value> - List all channels with the fiven flag value set\n"
+	"ftdm core flag <flag-int-value> - List all channels with the given flag value set\n"
 	"ftdm core calls - List all known calls to the FreeTDM core\n"
 	"--------------------------------------------------------------------------------\n");
 }
