@@ -52,8 +52,8 @@ typedef struct cdr_fd cdr_fd_t;
 
 const char *default_template =
 	"\"${local_ip_v4}\",\"${caller_id_name}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${start_stamp}\","
-	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\", \"${accountcode}\","
-	"\"${read_codec}\", \"${write_codec}\"\n";
+	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\",\"${accountcode}\","
+	"\"${read_codec}\",\"${write_codec}\"\n";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -65,9 +65,8 @@ static struct {
 	int rotate;
 	int debug;
 	cdr_leg_t legs;
-	char *a_table;
-	char *g_table;
 	char *db_info;
+	char *db_table;
 	PGconn *db_connection;
 	int db_online;
 	switch_mutex_t *db_mutex;
@@ -185,7 +184,7 @@ static void write_cdr(const char *path, const char *log_line)
 	switch_mutex_unlock(fd->mutex);
 }
 
-static int save_cdr(const char * const table, const char * const template, const char * const cdr)
+static switch_status_t save_cdr(const char * const table, const char * const template, const char * const cdr)
 {
 	char *columns, *values;
 	char *p, *q;
@@ -197,7 +196,7 @@ static int save_cdr(const char * const table, const char * const template, const
 
 	if (!table || !*table || !template || !*template || !cdr || !*cdr) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Bad parameter\n");
-		return 0;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	/* Build comma-separated list of field names by dropping $ { } ; chars */
@@ -212,7 +211,8 @@ static int save_cdr(const char * const table, const char * const template, const
 	}
 	*q = '\0';
 
-	/* In the expanded vars, replace double quotes (") with single quotes (')
+	/*
+	 * In the expanded vars, replace double quotes (") with single quotes (')
 	 * for corect PostgreSQL syntax, and replace semi-colon with space to
 	 * prevent SQL injection attacks.
 	 */
@@ -248,7 +248,6 @@ static int save_cdr(const char * const table, const char * const template, const
 		nullCounter++;
 	}
 
-	charCounter = 0;
 	nullCounter *= 4;
 	vlen += nullCounter;
 	nullValues = (char *) malloc(strlen(values) + nullCounter + 1);
@@ -335,7 +334,7 @@ static int save_cdr(const char * const table, const char * const template, const
 		globals.db_online = 0;
 		switch_mutex_unlock(globals.db_mutex);
 		free(query);
-		return 0;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	res = PQexec(globals.db_connection, query);
@@ -346,21 +345,21 @@ static int save_cdr(const char * const table, const char * const template, const
 		globals.db_online = 0;
 		switch_mutex_unlock(globals.db_mutex);
 		free(query);
-		return 0;
+		return SWITCH_STATUS_FALSE;
 	}
 	PQclear(res);
 	free(query);
 
 	switch_mutex_unlock(globals.db_mutex);
 
-	return 1;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *log_dir = NULL, *accountcode = NULL, *a_template_str = NULL, *g_template_str = NULL;
+	const char *log_dir = NULL, *template_str = NULL;
 	char *log_line, *path = NULL;
 	int saved = 0;
 
@@ -402,44 +401,20 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		}
 	}
 
-	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
+	template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
 
-	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {
-		a_template_str = (const char *) switch_core_hash_find(globals.template_hash, accountcode);
+	if (!template_str) {
+		template_str = default_template;
 	}
 
-	if (!g_template_str) {
-		g_template_str = "\"${accountcode}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${caller_id}\",\"${channel_name}\",\"${bridge_channel}\",\"${last_app}\",\"${last_arg}\",\"${start_stamp}\",\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${amaflags}\",\"${uuid}\",\"${userfield}\";";
-	}
-
-	if (!a_template_str) {
-		a_template_str = g_template_str;
-	}
-
-	log_line = switch_channel_expand_variables(channel, a_template_str);
-
-	saved = 1; // save_cdr(globals.a_table, a_template_str, log_line);
-
-	if (!saved && accountcode) {
-		path = switch_mprintf("%s%s%s.csv", log_dir, SWITCH_PATH_SEPARATOR, accountcode);
-		assert(path);
-		write_cdr(path, log_line);
-		free(path);
-	}
-
-	if (g_template_str != a_template_str) {
-		if (log_line != a_template_str) {
-			switch_safe_free(log_line);
-		}
-		log_line = switch_channel_expand_variables(channel, g_template_str);
-	}
+	log_line = switch_channel_expand_variables(channel, template_str);
 
 	if (!log_line) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating cdr\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error expanding CDR variables.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	saved = save_cdr(globals.g_table, g_template_str, log_line);
+	saved = save_cdr(globals.db_table, template_str, log_line);
 
 	if (!saved) {
 		path = switch_mprintf("%s%sMaster.csv", log_dir, SWITCH_PATH_SEPARATOR);
@@ -448,7 +423,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		free(path);
 	}
 
-	if (log_line != g_template_str) {
+	if (log_line != template_str) {
 		free(log_line);
 	}
 
@@ -545,14 +520,12 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 					globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", val, SWITCH_PATH_SEPARATOR);
 				} else if (!strcasecmp(var, "rotate-on-hup")) {
 					globals.rotate = switch_true(val);
-				} else if (!strcasecmp(var, "default-template")) {
-					globals.default_template = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "a-table")) {
-					globals.a_table = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "g-table")) {
-					globals.g_table = switch_core_strdup(pool, val);
 				} else if (!strcasecmp(var, "db-info")) {
 					globals.db_info = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "db-table") || !strcasecmp(var, "g-table")) {
+					globals.db_table = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "default-template")) {
+					globals.default_template = switch_core_strdup(pool, val);
 				}
 			}
 		}
@@ -578,26 +551,22 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 		switch_xml_free(xml);
 	}
 
+	if (!globals.log_dir) {
+		globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+	}
+
+	if (zstr(globals.db_info)) {
+		globals.db_info = switch_core_strdup(pool, "dbname=cdr");
+	}
+
+	if (zstr(globals.db_table)) {
+		globals.db_table = switch_core_strdup(pool, "cdr");
+	}
 
 	if (zstr(globals.default_template)) {
 		globals.default_template = switch_core_strdup(pool, "default");
 	}
 
-	if (!globals.log_dir) {
-		globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
-	}
-
-	if (zstr(globals.a_table)) {
-		globals.a_table = switch_core_strdup(pool, "a");
-	}
-
-	if (zstr(globals.g_table)) {
-		globals.g_table = switch_core_strdup(pool, "g");
-	}
-
-	if (zstr(globals.db_info)) {
-		globals.db_info = switch_core_strdup(pool, "dbname = cdr");
-	}
 
 	return status;
 }
