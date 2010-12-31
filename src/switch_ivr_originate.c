@@ -384,8 +384,9 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 		switch_codec_implementation_t video_impl = { 0 };
 		char tmp[128] = "";
 
-
 		if (switch_core_session_get_read_impl(session, &impl) == SWITCH_STATUS_SUCCESS) {
+			const char *ep = switch_channel_get_variable(caller_channel, "ep_codec_string");
+
 			if (switch_core_session_get_video_read_impl(session, &video_impl) == SWITCH_STATUS_SUCCESS) {
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui,%s",
 								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000,
@@ -394,9 +395,15 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui",
 								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
 			}
-			switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n",
-							  switch_channel_get_name(caller_channel), tmp);
+		
+			if (ep && switch_stristr(impl.iananame, ep)) {
+				switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n",
+								  switch_channel_get_name(caller_channel), tmp);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Codec string %s not supported on %s, skipping inheritance\n",
+								  tmp, switch_channel_get_name(caller_channel));
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_WARNING,
 							  "Error inheriting codec.  Channel %s has no read codec yet.\n",
