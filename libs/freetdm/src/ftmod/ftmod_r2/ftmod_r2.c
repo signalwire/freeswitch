@@ -620,7 +620,7 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 			ftdm_sched_cancel_timer(r2data->sched, r2call->protocol_error_recovery_timer);
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Cancelled protocol error recovery timer\n");
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-			ftdm_channel_advance_states(ftdmchan, ftdm_r2_state_advance);
+			ftdm_channel_advance_states(ftdmchan);
 		}
 	}
 
@@ -814,7 +814,7 @@ static void ftdm_r2_on_call_end(openr2_chan_t *r2chan)
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 	/* in some circumstances openr2 can call on_call_init right after this, so let's advance the state right here */
-	ftdm_channel_advance_states(ftdmchan, ftdm_r2_state_advance);
+	ftdm_channel_advance_states(ftdmchan);
 }
 
 static void ftdm_r2_on_call_read(openr2_chan_t *r2chan, const unsigned char *buf, int buflen)
@@ -846,7 +846,7 @@ static void ftdm_r2_recover_from_protocol_error(void *data)
 		goto done;
 	}
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-	ftdm_channel_advance_states(ftdmchan, ftdm_r2_state_advance);
+	ftdm_channel_advance_states(ftdmchan);
 done:
 	ftdm_channel_unlock(ftdmchan);
 }
@@ -1584,6 +1584,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	span->set_channel_sig_status = ftdm_r2_set_channel_sig_status;
 
 	span->state_map = &r2_state_map;
+	span->state_processor = ftdm_r2_state_advance;
 
 	/* use signals queue */
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
@@ -1917,12 +1918,12 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 			ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_RX_DISABLED);
 			ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TX_DISABLED);
 
-			ftdm_channel_advance_states(ftdmchan, ftdm_r2_state_advance);
+			ftdm_channel_advance_states(ftdmchan);
 
 			r2chan = call->r2chan;
 			openr2_chan_process_signaling(r2chan);
 
-			ftdm_channel_advance_states(ftdmchan, ftdm_r2_state_advance);
+			ftdm_channel_advance_states(ftdmchan);
 
 			if (!call->accepted) {
 				/* if the call is not accepted we do not want users reading */

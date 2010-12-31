@@ -86,15 +86,21 @@ typedef struct {
 	const char *file;
 	const char *func;
 	int line;
-	ftdm_channel_state_t state;
-	ftdm_channel_state_t last_state;
-	ftdm_time_t time;
-	ftdm_time_t end_time;
+	ftdm_channel_state_t state; /*!< Current state (processed or not) */
+	ftdm_channel_state_t last_state; /*!< Previous state */
+	ftdm_time_t time; /*!< Time the state was set */
+	ftdm_time_t end_time; /*!< Time the state processing was completed */
 } ftdm_state_history_entry_t;
 
 typedef ftdm_status_t (*ftdm_channel_state_processor_t)(ftdm_channel_t *fchan);
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan, ftdm_channel_state_processor_t processor);
+/*!
+ * \brief Process channel states by invoking the channel state processing routine
+ *        it will keep calling the processing routine while the state status
+ *        is FTDM_STATE_STATUS_NEW, it will not do anything otherwise
+ */
+FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan);
+
 FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const char *function, int line, ftdm_channel_t *fchan);
 #define ftdm_channel_complete_state(obj) _ftdm_channel_complete_state(__FILE__, __FUNCTION__, __LINE__, obj)
 FT_DECLARE(int) ftdm_check_state_all(ftdm_span_t *span, ftdm_channel_state_t state);
@@ -171,16 +177,26 @@ struct ftdm_state_map {
 };
 typedef struct ftdm_state_map ftdm_state_map_t;
 
+/*!\brief Set the state for a channel (the channel must be locked when calling this function)
+ * \note Signaling modules should use ftdm_set_state macro instead
+ * \note If this function is called with the wait parameter set to a non-zero value, the recursivity
+ *       of the channel lock must be == 1 because the channel will be unlocked/locked when waiting */
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line,
 		ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int wait);
 
-/*!\brief Set the state of a channel immediately and implicitly complete the previous state */
+/*!\brief Set the state of a channel immediately and implicitly complete the previous state if needed 
+ * \note FTDM_SIGEVENT_INDICATION_COMPLETED will be sent if the state change 
+ *       is associated to some indication (ie FTDM_CHANNEL_INDICATE_PROCEED)
+ * \note The channel must be locked when calling this function
+ * */
 FT_DECLARE(ftdm_status_t) _ftdm_set_state(const char *file, const char *func, int line,
 			ftdm_channel_t *fchan, ftdm_channel_state_t state);
 #define ftdm_set_state(obj, s) _ftdm_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s);									\
 
 /*!\brief This macro is deprecated, signaling modules should always lock the channel themselves anyways since they must
  * process first the user pending state changes then set a new state before releasing the lock 
+ * this macro is here for backwards compatibility, DO NOT USE IT in new code since it is *always* wrong to set
+ * a state in a signaling module without checking and processing the current state first (and for that you must lock the channel)
  */
 #define ftdm_set_state_locked(obj, s) \
 	do { \

@@ -500,15 +500,15 @@ struct ftdm_span {
 	ftdm_span_stop_t stop;
 	ftdm_channel_sig_read_t sig_read;
 	ftdm_channel_sig_write_t sig_write;
-	/* Private I/O data per span. Do not touch unless you are an I/O module */
-	void *io_data;
+	ftdm_channel_state_processor_t state_processor; /*!< This guy is called whenever state processing is required */
+	void *io_data; /*!< Private I/O data per span. Do not touch unless you are an I/O module */
 	char *type;
 	char *dtmf_hangup;
 	size_t dtmf_hangup_len;
 	ftdm_state_map_t *state_map;
 	ftdm_caller_data_t default_caller_data;
-	ftdm_queue_t *pendingchans;
-	ftdm_queue_t *pendingsignals;
+	ftdm_queue_t *pendingchans; /*!< Channels pending of state processing */
+	ftdm_queue_t *pendingsignals; /*!< Signals pending from being delivered to the user */
 	struct ftdm_span *next;
 };
 

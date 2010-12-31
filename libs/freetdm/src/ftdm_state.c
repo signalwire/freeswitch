@@ -434,15 +434,14 @@ FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 	return stream.data;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan, ftdm_channel_state_processor_t state_processor)
+FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan)
 {
 	ftdm_channel_state_t state;
 	
-	ftdm_channel_lock(fchan);
 	while (fchan->state_status == FTDM_STATE_STATUS_NEW) {
 		state = fchan->state;
 		ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Executing state processor for %s\n", ftdm_channel_state2str(fchan->state));
-		state_processor(fchan);
+		fchan->span->state_processor(fchan);
 		if (state == fchan->state && fchan->state_status == FTDM_STATE_STATUS_NEW) {
 			/* if the state did not change and is still NEW, the state status must go to PROCESSED
 			 * otherwise we don't touch it since is a new state and the old state was
@@ -451,7 +450,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan, ftd
 			fchan->state_status = FTDM_STATE_STATUS_PROCESSED;
 		}
 	}
-	ftdm_channel_unlock(fchan);
+
 	return FTDM_SUCCESS;
 }
 

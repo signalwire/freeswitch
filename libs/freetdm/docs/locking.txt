@@ -1,0 +1,125 @@
+Last Updated: Fri 30 Dec, 2010
+
+== Background ==
+
+FreeTDM is a threaded library. As such, locking considerations must be taken when using it and when writing code inside the library.
+
+At the moment locks are not exposed to users. This means API users cannot acquire a lock on a channel or span structure. There is no
+need for users to lock channels or spans since all their interactions with those structures should be done thru the FreeTDM API which
+can (and in most cases must) internally lock on their behalf.
+
+Internally, locking can be done either by the core or the signaling modules. To better understand the locking considerations we must
+understand first the threading model of FreeTDM.
+
+== Threading Model ==
+
+At startup, when the user calls ftdm_global_init(), just one timing thread is created to dispatch internal timers. If you write
+a signaling module or any other code using the scheduling API, you can choose to run your schedule in this timing thread or in
+a thread of your choice. This is the only thread launched at initialization.
+
+If the application decides to use ftdm_global_configuration(), which reads freetdm.conf to create the spans and channels data
+structures, then possibly another thread will be launched for CPU usage monitoring (only if enabled in the configuration cpu_monitor=yes
+This thread sole purpose is to check the CPU and raise an alarm if reaches a configurable threshold, the alarm then is checked to avoid
+placing or receiving further calls.
+
+At this point FreeTDM has initialized and configured its channels input output configuration.
+
+The user is then supposed to configure the signaling via ftdm_configure_span_signaling() and then start the signaling work
+using ftdm_span_start(). This will typically launch at least 1 thread per span. Some signaling modules (actually just the analog one)
+launches another thread per channel when receiving a call. The rest of the signaling modules currently launch only one thread per
+span and the signaling for all channels within the span is handled in that thread. We call that thread 'the signaling thread'.
+
+At this point the user can start placing calls using the FreeTDM call API ftdm_channel_call_place(). Any of the possible threads in 
+which the user calls the FreeTDM API is called 'the user thread', depending on the application thread model (the application using FreeTDM)
+this user thread may be different each time or the same all the time, we cannot make any assumptions. In the case of FreeSWITCH, the most
+common user of FreeTDM, the user thread is most of the cases a thread for each new call leg.
+
+At this point we have identified 4 types of threads.
+
+1. The timing thread (the core thread that triggers timers).
+   Its responsibility is simply check for timers that were scheduled and trigger them when the time comes. This means that if you decide
+   to use the scheduling API in freerun mode (where you use the core timer thread) you callbacks will be executed in this global thread
+   and you MUST not block at all since there might be other events waiting.
+
+2. The CPU thread (we don't really care about this one as it does not interact with channels or spans).
+
+3. The signaling thread.
+   There is one thread of this per span. This thread takes care of reading signaling specific messages from the network (ISDN network, etc) and
+   changing the channel call state accordingly and processing state changes caused by user API calls (like ftdm_channel_call_hangup for example).
+
+4. The user thread.
+   This is a thread in which the user decides to execute FreeTDM APIs, in some cases it might even be the same than the signaling thread (because
+   most SIGEVENT notifications are delivered by the signaling thread, however we are advicing users to not use FreeTDM unsafe APIs from the
+   thread where they receive SIGEVENT notifications as some APIs may block for a few milliseconds, effectively blocking the whole signaling thread
+   that is servicing a span.
+
+== Application Locking ==
+
+Users of the FreeTDM API will typically have locking of their own for their own application-specific data structures (in the case of FreeSWITCH, the
+session lock for example). Other application-specific locks may be involved.
+
+== DeadLocks ==
+
+As soon as we think of application locks, and we mix them with the FreeTDM internal locks, the possibility of deadlocks arise.
+
+A typical deadlock scenario when 2 locks are involved is:
+
+- User Thread -                                                                    - Signaling Thread -
+1. Application locks applock.                                                     1. A network message is received for a channel.
+
+2. Aplication invokes a FreeTDM call API (ie: ftdm_channel_call_hangup()).        2. The involved channel is locked.
+
+3. The FreeTDM API attempts to acquire the channel lock and stalls because        3. The message processing results in a notification
+   the signaling thread just acquired it.                                            to be delivered to the user via the callback function
+										     provided for that purpose. The callback is then called.
+
+4. The thread is now deadlocked because the signaling thread will never           4. The application callback attempts to acquire its application
+   release the channel lock.                                                         lock but deadlocks because the user thread already has it.
+
+To avoid this signaling modules should not deliver signals to the user while holding the channel lock. An easy way to avoid this is
+to not deliver signals while processing a state change, but rather defer them until the channel lock is released. Most new signaling modules
+accomplish this by setting the span flag FTDM_SPAN_USE_SIGNALS_QUEUE, this flag tells the core to enqueue signals (ie FTDM_SIGEVENT_START) 
+when ftdm_span_send_signal() is called and not deliver them until ftdm_span_trigger_signals() is called, which is done by the signaling module
+in its signaling thread when no channel lock is being held.
+
+== State changes while locking ==
+
+Only 2 types of threads should be performing state changes.
+
+User threads.
+The user thread is a random thread that was crated by the API user. We do not know what threading model users of FreeTDM will follow
+and therefore cannot make assumptions about it. The user should be free to call FreeTDM APIs from any thread, except threads that
+are under our control, like the signaling threads. Although it may work in most situations, is discouraged for users to try
+to use FreeTDM APIs from the signaling thread, that is, the thread where the signaling callback provided during configuration
+is called (the callback where FTDM_SIGEVENT_XXX signals are delivered).
+
+A user thread may request state changes implicitly through calls to FreeTDM API's. The idea of state changes is internal to freetdm
+and should not be exposed to users of the API (except for debugging purposes, like the ftdm_channel_get_state, ftdm_channel_get_state_str etc)
+
+This is an example of the API's that implicitly request a state change.
+
+ftdm_channel_call_answer()
+
+Signaling modules should guarantee that upon releasing a lock on a channel, any state changes will be already processed and
+not deferred to other threads, otherwise that leads to a situation where a state change requested by the signaling module is pending
+to be serviced by another signaling module thread but a user thread wins the channel lock and attempts to perform a state change which will
+fail because another state change is pending (and user threads are not meant to process signaling states).
+
+ONLY one signaling thread per channel should try to perform state changes and processing of the states, 
+otherwise complexity arises and is not worth it!
+
+At some point before we stablished this policies we could have 3 different threads doing state changes.
+
+1. A user random thread could implcitly try to change the state in response to a call API.
+2. The ftmod signaling thread could try to change the state in response to other state changes.
+3. The lower level signaling stack threads could try to change the state in response to stack events.
+
+As a result, lower level signaling stack thread could set a state and then let the signaling thread to
+process it, but when unlocking the channel, the user thread may win the lock over the signaling thread and
+may try to set a state change of its own and fail (due to the unprocessed state change)!
+
+The rule is, the signaling module should never unlock a channel with states pending to process this way the user, 
+when acquiring a channel lock (inside ftdm_channel_call_answer for example) it will always find a consistent state 
+for the channel and not in the middle of state processing.
+
+

@@ -356,7 +356,6 @@ typedef enum {
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "FACILITY", \
 		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "INVALID"
-
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
 
@@ -653,7 +652,20 @@ typedef ftdm_status_t (*fio_span_get_sig_status_t) FIO_SPAN_GET_SIG_STATUS_ARGS;
 typedef ftdm_status_t (*fio_span_poll_event_t) FIO_SPAN_POLL_EVENT_ARGS ;
 typedef ftdm_status_t (*fio_span_next_event_t) FIO_SPAN_NEXT_EVENT_ARGS ;
 typedef ftdm_status_t (*fio_channel_next_event_t) FIO_CHANNEL_NEXT_EVENT_ARGS ;
+
+/*! \brief Callback for signal delivery (FTDM_SIGEVENT_START and friends) 
+ *  \note This callback is provided by the user during ftdm_configure_span_signaling
+ *
+ *  \note You must NOT do any blocking during this callback since this function is
+ *        most likely called in an internal signaling thread that can potentially be
+ *        shared for all the channels in a span and blocking will delay processing
+ *        (sometimes even audio processing) for other channels
+ *
+ *  \note Although some simple FreeTDM APIs can work (ie: ftdm_span_get_id etc), the
+ *        use of any FreeTDM call API (ie ftdm_channel_call_answer) is discouraged
+ */
 typedef ftdm_status_t (*fio_signal_cb_t) FIO_SIGNAL_CB_ARGS ;
+
 typedef ftdm_status_t (*fio_event_cb_t) FIO_EVENT_CB_ARGS ;
 typedef ftdm_status_t (*fio_configure_span_t) FIO_CONFIGURE_SPAN_ARGS ;
 typedef ftdm_status_t (*fio_configure_t) FIO_CONFIGURE_ARGS ;
