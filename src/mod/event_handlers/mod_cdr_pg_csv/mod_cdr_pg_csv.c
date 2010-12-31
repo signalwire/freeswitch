@@ -53,7 +53,7 @@ typedef struct cdr_fd cdr_fd_t;
 const char *default_template =
 	"\"${local_ip_v4}\",\"${caller_id_name}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${start_stamp}\","
 	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\",\"${accountcode}\","
-	"\"${read_codec}\",\"${write_codec}\"\n";
+	"\"${read_codec}\",\"${write_codec}\"";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -184,17 +184,17 @@ static void write_cdr(const char *path, const char *log_line)
 	switch_mutex_unlock(fd->mutex);
 }
 
-static switch_status_t save_cdr(const char * const table, const char * const template, const char * const cdr)
+static switch_status_t save_cdr(const char * const template, const char * const cdr, const char * const log_dir)
 {
 	char *columns, *values;
 	char *p, *q;
 	unsigned vlen;
-	char *query;
-	PGresult *res;
 	char *nullValues, *temp, *tp;
 	int nullCounter = 0, charCounter = 0;
+	char *sql = NULL, *path = NULL;
+	PGresult *res;
 
-	if (!table || !*table || !template || !*template || !cdr || !*cdr) {
+	if (!template || !*template || !cdr || !*cdr) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Bad parameter\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -311,13 +311,13 @@ static switch_status_t save_cdr(const char * const table, const char * const tem
 
 	//----------------------------- END_OF_PATCH -------------------------------
 
-	query = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);", table, columns, values);
-	assert(query);
+	sql = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);\n", globals.db_table, columns, values);
+	assert(sql);
 	free(columns);
 	free(values);
 
 	if (globals.debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Query: \"%s\"\n", query);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Query: \"%s\"\n", sql);
 	}
 
 	switch_mutex_lock(globals.db_mutex);
@@ -330,29 +330,40 @@ static switch_status_t save_cdr(const char * const table, const char * const tem
 		globals.db_online = 1;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection to database failed: %s", PQerrorMessage(globals.db_connection));
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		free(query);
-		return SWITCH_STATUS_FALSE;
+		goto error;
 	}
 
-	res = PQexec(globals.db_connection, query);
+	res = PQexec(globals.db_connection, sql);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INSERT command failed: %s", PQresultErrorMessage(res));
 		PQclear(res);
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		free(query);
-		return SWITCH_STATUS_FALSE;
+		goto error;
 	}
+
 	PQclear(res);
-	free(query);
+	free(sql);
 
 	switch_mutex_unlock(globals.db_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
+
+
+  error:
+
+	PQfinish(globals.db_connection);
+	globals.db_online = 0;
+	switch_mutex_unlock(globals.db_mutex);
+
+	/* SQL INSERT failed for whatever reason. Spool the attempted query to disk */
+	path = switch_mprintf("%s%scdr-spool.sql", log_dir, SWITCH_PATH_SEPARATOR);
+	assert(path);
+	write_cdr(path, sql);
+
+	free(path);
+	free(sql);
+
+	return SWITCH_STATUS_FALSE;
+
 }
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
@@ -360,8 +371,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *log_dir = NULL, *template_str = NULL;
-	char *log_line, *path = NULL;
-	int saved = 0;
+	char *expanded_vars = NULL;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -407,24 +417,17 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		template_str = default_template;
 	}
 
-	log_line = switch_channel_expand_variables(channel, template_str);
+	expanded_vars = switch_channel_expand_variables(channel, template_str);
 
-	if (!log_line) {
+	if (!expanded_vars) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error expanding CDR variables.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	saved = save_cdr(globals.db_table, template_str, log_line);
+	save_cdr(template_str, expanded_vars, log_dir);
 
-	if (!saved) {
-		path = switch_mprintf("%s%sMaster.csv", log_dir, SWITCH_PATH_SEPARATOR);
-		assert(path);
-		write_cdr(path, log_line);
-		free(path);
-	}
-
-	if (log_line != template_str) {
-		free(log_line);
+	if (expanded_vars != template_str) {
+		free(expanded_vars);
 	}
 
 	return status;
@@ -535,13 +538,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 				char *var = (char *) switch_xml_attr(param, "name");
 				if (var) {
 					char *tpl;
-					size_t len = strlen(param->txt) + 2;
-					if (end_of(param->txt) != '\n') {
-						tpl = switch_core_alloc(pool, len);
-						switch_snprintf(tpl, len, "%s\n", param->txt);
-					} else {
-						tpl = switch_core_strdup(pool, param->txt);
-					}
+					tpl = switch_core_strdup(pool, param->txt);
 
 					switch_core_hash_insert(globals.template_hash, var, tpl);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding template %s.\n", var);

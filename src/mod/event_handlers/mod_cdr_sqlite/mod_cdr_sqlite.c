@@ -113,7 +113,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *template_str = NULL;
-	char *expanded_vars, *sql = NULL;
+	char *expanded_vars = NULL, *sql = NULL;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
