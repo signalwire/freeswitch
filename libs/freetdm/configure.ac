@@ -160,7 +160,7 @@ AC_ARG_WITH([pritap],
 	[AS_HELP_STRING([--with-pritap], [Install ftmod_pritap])],
 	[case "${withval}" in
 	 no)	enable_pritap="no" ;;
-	 *)	enable_pritab="yes" ;;
+	 *)	enable_pritap="yes" ;;
 	 esac],
 	[enable_pritap="no"]
 )

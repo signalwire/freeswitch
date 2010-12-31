@@ -355,7 +355,6 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				break;
 			}
 		} else {
-			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 			ftdm_clear_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
 			ftdm_channel_complete_state(ftdmchan);
 			indicate = 0;

@@ -103,7 +103,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 
 	if (ftdm_test_flag(fchan, FTDM_CHANNEL_BLOCKING)) {
 		ftdm_clear_flag(fchan, FTDM_CHANNEL_BLOCKING);
-		ftdm_interrupt_signal(fchan->state_change_notify);
+		ftdm_interrupt_signal(fchan->state_completed_interrupt);
 	}
 
 	return FTDM_SUCCESS;
@@ -194,8 +194,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *f
 		return FTDM_FAIL;
 	}
 
-	if (!ftdmchan->state_change_notify) {
-		status = ftdm_interrupt_create(&ftdmchan->state_change_notify, FTDM_INVALID_SOCKET);
+	if (!ftdmchan->state_completed_interrupt) {
+		status = ftdm_interrupt_create(&ftdmchan->state_completed_interrupt, FTDM_INVALID_SOCKET);
 		if (status != FTDM_SUCCESS) {
 			ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_CRIT, 
 					"Failed to create state change interrupt when moving from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
@@ -323,17 +323,23 @@ end:
 		goto done;
 	}
 
+	if (!waitrq) {
+		/* no waiting was requested */
+		goto done;
+	}
+
+	/* let's wait for the state change to be completed by the signaling stack */
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_BLOCKING);
 
 	ftdm_mutex_unlock(ftdmchan->mutex);
 
-	status = ftdm_interrupt_wait(ftdmchan->state_change_notify, waitms);
+	status = ftdm_interrupt_wait(ftdmchan->state_completed_interrupt, waitms);
 
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	if (status != FTDM_SUCCESS) {
 		ftdm_log_chan_ex(ftdmchan, file, func, line, 
-				FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not processed after aprox %dms\n",
+				FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not completed after aprox %dms\n",
 				ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
 		ok = 0;
 		goto done;
@@ -437,6 +443,8 @@ FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *fchan)
 FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan)
 {
 	ftdm_channel_state_t state;
+
+	ftdm_assert_return(fchan->span->state_processor, FTDM_FAIL, "Cannot process states without a state processor!\n");
 	
 	while (fchan->state_status == FTDM_STATE_STATUS_NEW) {
 		state = fchan->state;

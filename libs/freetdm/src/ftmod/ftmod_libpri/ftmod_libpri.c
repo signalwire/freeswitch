@@ -497,7 +497,7 @@ static ftdm_state_map_t isdn_state_map = {
  * \param ftdmchan Channel to handle
  * \note This function MUST be called with the channel locked
  */
-static __inline__ void state_advance(ftdm_channel_t *chan)
+static ftdm_status_t state_advance(ftdm_channel_t *chan)
 {
 	ftdm_libpri_data_t *isdn_data = chan->span->signal_data;
 	q931_call *call = (q931_call *)chan->call_data;
@@ -511,6 +511,8 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 	sig.chan_id = ftdm_channel_get_id(chan);
 	sig.span_id = ftdm_channel_get_span_id(chan);
 	sig.channel = chan;
+	
+	ftdm_channel_complete_state(chan);
 
 	switch (ftdm_channel_get_state(chan)) {
 	case FTDM_CHANNEL_STATE_DOWN:
@@ -625,7 +627,7 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 					ftdm_channel_get_span_id(chan), ftdm_channel_get_id(chan));
 				/* TODO: set hangup cause? */
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
-				return;
+				return FTDM_SUCCESS;
 			}
 
 			ton = caller_data->dnis.type;
@@ -708,6 +710,7 @@ static __inline__ void state_advance(ftdm_channel_t *chan)
 	default:
 		break;
 	}
+	return FTDM_SUCCESS;
 }
 
 /**
@@ -723,13 +726,8 @@ static __inline__ void check_state(ftdm_span_t *span)
 
 		for (j = 1; j <= ftdm_span_get_chan_count(span); j++) {
 			ftdm_channel_t *chan = ftdm_span_get_channel(span, j);
-
 			ftdm_channel_lock(chan);
-			while (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
-				ftdm_clear_flag(chan, FTDM_CHANNEL_STATE_CHANGE);
-				state_advance(chan);
-				ftdm_channel_complete_state(chan);
-			}
+			ftdm_channel_advance_states(chan);
 			ftdm_channel_unlock(chan);
 		}
 	}
@@ -1910,6 +1908,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	span->outgoing_call = isdn_outgoing_call;
 
 	span->state_map = &isdn_state_map;
+	span->state_processor = state_advance;
 
 	span->get_channel_sig_status = isdn_get_channel_sig_status;
 	span->get_span_sig_status = isdn_get_span_sig_status;

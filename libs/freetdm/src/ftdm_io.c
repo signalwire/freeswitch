@@ -615,6 +615,9 @@ static ftdm_status_t ftdm_channel_destroy(ftdm_channel_t *ftdmchan)
 
 		ftdm_mutex_destroy(&ftdmchan->mutex);
 		ftdm_mutex_destroy(&ftdmchan->pre_buffer_mutex);
+		if (ftdmchan->state_completed_interrupt) {
+			ftdm_interrupt_destroy(&ftdmchan->state_completed_interrupt);
+		}
 	}
 	
 	return FTDM_SUCCESS;
