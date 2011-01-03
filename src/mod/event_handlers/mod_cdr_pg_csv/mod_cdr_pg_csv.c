@@ -457,7 +457,6 @@ static void event_handler(switch_event_t *event)
 			PQfinish(globals.db_connection);
 			globals.db_online = 0;
 		}
-
 	}
 }
 

@@ -1,8 +1,5 @@
 <configuration name="cdr_pg_csv.conf" description="CDR PG CSV Format">
   <settings>
-    <!-- 'cdr-pg-csv' will always be appended to log-base -->
-    <!--<param name="log-base" value="/var/log"/>-->
-    <param name="rotate-on-hup" value="true"/>
     <!-- Log a-leg (a), b-leg (b) or both (ab) -->
     <param name="legs" value="a"/>
     <!-- See parameters for PQconnectdb() at http://www.postgresql.org/docs/8.4/static/libpq-connect.html -->
@@ -10,6 +7,9 @@
     <!-- CDR table name -->
     <!--<param name="db-table" value="cdr"/>-->
     <param name="default-template" value="example"/>
+    <!-- 'cdr-pg-csv' will always be appended to log-base -->
+    <!--<param name="log-base" value="/var/log"/>-->
+    <param name="rotate-on-hup" value="true"/>
     <!-- This is like the info app but after the call is hung up -->
     <!--<param name="debug" value="true"/>-->
   </settings>
@@ -17,4 +17,3 @@
     <template name="example">"${local_ip_v4}","${caller_id_name}","${caller_id_number}","${destination_number}","${context}","${start_stamp}","${answer_stamp}","${end_stamp}","${duration}","${billsec}","${hangup_cause}","${uuid}","${bleg_uuid}","${accountcode}","${read_codec}","${write_codec}","${sip_hangup_disposition}","${ani}"</template>
   </templates>
 </configuration>
-
