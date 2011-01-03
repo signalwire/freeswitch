@@ -17,9 +17,10 @@
 #include <config.h>
 #endif
 
+#include <inttypes.h>
+
 #if defined(G722_1_USE_FIXED_POINT)
 
-#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 
