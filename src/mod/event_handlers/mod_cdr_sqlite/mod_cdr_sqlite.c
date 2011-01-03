@@ -166,16 +166,6 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 }
 
 
-static void event_handler(switch_event_t *event)
-{
-	const char *sig = switch_event_get_header(event, "Trapped-Signal");
-
-	if (globals.shutdown) {
-		return;
-	}
-}
-
-
 static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
@@ -290,11 +280,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_sqlite_load)
 
 	load_config(pool);
 
-	if ((status = switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return status;
-	}
-
 	switch_core_add_state_handler(&state_handlers);
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -305,7 +290,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_sqlite_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_sqlite_shutdown)
 {
 	globals.shutdown = 1;
-	switch_event_unbind_callback(event_handler);
 	switch_core_remove_state_handler(&state_handlers);
 
 	return SWITCH_STATUS_SUCCESS;
