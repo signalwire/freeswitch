@@ -2645,14 +2645,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 
 
 			if (sofia_test_pflag(profile, PFLAG_MULTIREG) && !open) {
-				char buf[32] = "";
-					
-				sql = switch_mprintf("select count(*) from sip_registrations where "
-									 "sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", from_user, from_host, from_host);
-					
-				sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
-				switch_safe_free(sql);
-				count = atoi(buf);										
+				count = sofia_reg_reg_count(profile, from_user, from_host);
 			}
 				
 
