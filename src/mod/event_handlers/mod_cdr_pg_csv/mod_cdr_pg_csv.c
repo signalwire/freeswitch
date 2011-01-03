@@ -213,7 +213,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 
 	/*
 	 * In the expanded vars, replace double quotes (") with single quotes (')
-	 * for corect PostgreSQL syntax, and replace semi-colon with space to
+	 * for correct PostgreSQL syntax, and replace semi-colon with space to
 	 * prevent SQL injection attacks.
 	 */
 	values = strdup(cdr);
@@ -231,7 +231,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 
 	/*
 	 * Patch for changing empty strings ('') in the expanded variables to
-	 * Postgresql null
+	 * PostgreSQL null
 	 */
 	for (p = values; *p; ++p) {
 		if (*p == ',') {
