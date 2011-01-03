@@ -7229,6 +7229,31 @@ fail:
 }
 
 
+static int _wrap_Dbh_connected(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("connected",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("connected",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_connected",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  result = (bool)(arg1)->connected();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Dbh_query(lua_State* L) {
   int SWIG_arg = -1;
   LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
@@ -7277,6 +7302,7 @@ delete arg1;
 }
 static swig_lua_method swig_LUA_Dbh_methods[] = {
     {"release", _wrap_Dbh_release}, 
+    {"connected", _wrap_Dbh_connected}, 
     {"query", _wrap_Dbh_query}, 
     {0,0}
 };

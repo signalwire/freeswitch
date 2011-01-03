@@ -318,9 +318,9 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
   options.odbc_options.pass = pass;
 
   if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) == SWITCH_STATUS_SUCCESS) {
-    connected = true;
+    m_connected = true;
   } else {
-    connected = false;
+    m_connected = false;
   }
 }
 
@@ -331,12 +331,17 @@ Dbh::~Dbh()
 
 bool Dbh::release()
 {
-  if (connected) {
+  if (m_connected) {
     switch_cache_db_release_db_handle(&dbh);
-    connected = false;
+    m_connected = false;
     return true;
   }
   return false;
+}
+
+bool Dbh::connected()
+{
+  return m_connected;
 }
 
 int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
@@ -366,7 +371,7 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 
 bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
 {
-  if (connected) {
+  if (m_connected) {
     if (lua_fun.L) {
       if (switch_cache_db_execute_sql_callback(dbh, sql, query_callback, &lua_fun, NULL) == SWITCH_STATUS_SUCCESS) {
         return true;
