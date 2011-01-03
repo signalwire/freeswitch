@@ -9,6 +9,8 @@
     <param name="default-template" value="example"/>
     <!-- 'cdr-pg-csv' will always be appended to log-base -->
     <!--<param name="log-base" value="/var/log"/>-->
+    <!-- Disk spool format if DB connection/insert fails - csv (default) or sql -->
+    <param name="spool-format" value="csv"/>
     <param name="rotate-on-hup" value="true"/>
     <!-- This is like the info app but after the call is hung up -->
     <!--<param name="debug" value="true"/>-->

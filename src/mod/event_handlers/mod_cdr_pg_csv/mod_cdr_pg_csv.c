@@ -67,6 +67,7 @@ static struct {
 	cdr_leg_t legs;
 	char *db_info;
 	char *db_table;
+	char *spool_format;
 	PGconn *db_connection;
 	int db_online;
 	switch_mutex_t *db_mutex;
@@ -141,6 +142,7 @@ static void do_rotate(cdr_fd_t *fd)
 static void write_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
+	char *log_line_lf = NULL;
 	unsigned int bytes_in, bytes_out;
 	int loops = 0;
 
@@ -154,8 +156,17 @@ static void write_cdr(const char *path, const char *log_line)
 		switch_core_hash_insert(globals.fd_hash, path, fd);
 	}
 
+	if (end_of(log_line) != '\n') {
+		size_t len = strlen(log_line) + 2;
+		log_line_lf = switch_core_alloc(globals.pool, len);
+		switch_snprintf(log_line_lf, len, "%s\n", log_line);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Adding LF to log_line.\n");
+	} else {
+		log_line_lf = switch_core_strdup(globals.pool, log_line);
+	}
+
 	switch_mutex_lock(fd->mutex);
-	bytes_out = (unsigned) strlen(log_line);
+	bytes_out = (unsigned) strlen(log_line_lf);
 
 	if (fd->fd < 0) {
 		do_reopen(fd);
@@ -169,7 +180,7 @@ static void write_cdr(const char *path, const char *log_line)
 		do_rotate(fd);
 	}
 
-	while ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out && ++loops < 10) {
+	while ((bytes_in = write(fd->fd, log_line_lf, bytes_out)) != bytes_out && ++loops < 10) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int) bytes_in, (int) bytes_out);
 		do_rotate(fd);
 		switch_yield(250000);
@@ -184,7 +195,7 @@ static void write_cdr(const char *path, const char *log_line)
 	switch_mutex_unlock(fd->mutex);
 }
 
-static switch_status_t save_cdr(const char * const template, const char * const cdr, const char * const log_dir)
+static switch_status_t save_cdr(const char * const template, const char * const cdr)
 {
 	char *columns, *values;
 	char *p, *q;
@@ -214,7 +225,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	/*
 	 * In the expanded vars, replace double quotes (") with single quotes (')
 	 * for correct PostgreSQL syntax, and replace semi-colon with space to
-	 * prevent SQL injection attacks.
+	 * prevent SQL injection attacks
 	 */
 	values = strdup(cdr);
 	for (p = values; *p; ++p) {
@@ -309,9 +320,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	values = nullValues;
 	free(tp);
 
-	//----------------------------- END_OF_PATCH -------------------------------
-
-	sql = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);\n", globals.db_table, columns, values);
+	sql = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);", globals.db_table, columns, values);
 	assert(sql);
 	free(columns);
 	free(values);
@@ -355,22 +364,27 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	switch_mutex_unlock(globals.db_mutex);
 
 	/* SQL INSERT failed for whatever reason. Spool the attempted query to disk */
-	path = switch_mprintf("%s%scdr-spool.sql", log_dir, SWITCH_PATH_SEPARATOR);
-	assert(path);
-	write_cdr(path, sql);
+	if (!strcasecmp(globals.spool_format, "sql")) {
+		path = switch_mprintf("%s%scdr-spool.sql", globals.log_dir, SWITCH_PATH_SEPARATOR);
+		assert(path);
+		write_cdr(path, sql);
+	} else {
+		path = switch_mprintf("%s%scdr-spool.csv", globals.log_dir, SWITCH_PATH_SEPARATOR);
+		assert(path);
+		write_cdr(path, cdr);
+	}
 
 	free(path);
 	free(sql);
 
 	return SWITCH_STATUS_FALSE;
-
 }
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *log_dir = NULL, *template_str = NULL;
+	const char *template_str = NULL;
 	char *expanded_vars = NULL;
 
 	if (globals.shutdown) {
@@ -389,12 +403,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		}
 	}
 
-	if (!(log_dir = switch_channel_get_variable(channel, "cdr_pg_csv_base"))) {
-		log_dir = globals.log_dir;
-	}
-
-	if (switch_dir_make_recursive(log_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", log_dir);
+	if (switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -424,7 +434,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	save_cdr(template_str, expanded_vars, log_dir);
+	save_cdr(template_str, expanded_vars);
 
 	if (expanded_vars != template_str) {
 		free(expanded_vars);
@@ -528,6 +538,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 					globals.db_table = switch_core_strdup(pool, val);
 				} else if (!strcasecmp(var, "default-template")) {
 					globals.default_template = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "spool-format")) {
+					globals.spool_format = switch_core_strdup(pool, val);
 				}
 			}
 		}
@@ -563,6 +575,9 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 		globals.default_template = switch_core_strdup(pool, "default");
 	}
 
+	if (zstr(globals.spool_format)) {
+		globals.spool_format = switch_core_strdup(pool, "csv");
+	}
 
 	return status;
 }
