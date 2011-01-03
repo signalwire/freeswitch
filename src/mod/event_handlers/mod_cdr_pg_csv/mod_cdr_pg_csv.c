@@ -160,7 +160,6 @@ static void write_cdr(const char *path, const char *log_line)
 		size_t len = strlen(log_line) + 2;
 		log_line_lf = switch_core_alloc(globals.pool, len);
 		switch_snprintf(log_line_lf, len, "%s\n", log_line);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Adding LF to log_line.\n");
 	} else {
 		log_line_lf = switch_core_strdup(globals.pool, log_line);
 	}
