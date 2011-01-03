@@ -173,10 +173,6 @@ static void event_handler(switch_event_t *event)
 	if (globals.shutdown) {
 		return;
 	}
-
-	if (sig && !strcmp(sig, "HUP")) {
-		/* Should we do something on SIG_HUP? */
-	}
 }
 
 
