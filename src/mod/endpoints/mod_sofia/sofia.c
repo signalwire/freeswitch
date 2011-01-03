@@ -6844,11 +6844,19 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	if (sip->sip_request->rq_url->url_params) {
-		gw_name = sofia_glue_find_parameter(sip->sip_request->rq_url->url_params, "gw=");
+		gw_name = sofia_glue_find_parameter_value(session, sip->sip_request->rq_url->url_params, "gw=");
 	}
 
 	if (strstr(destination_number, "gw+")) {
-		gw_name = destination_number + 3;
+		if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
+			char *tmp;
+			gw_name = switch_core_session_strdup(session, destination_number + 3);
+			if ((tmp = strchr(gw_name, '@'))) {
+				*tmp = '\0';
+			}
+		} else {
+			gw_name = destination_number + 3;
+		}
 	}
 
 	if (gw_name) {
