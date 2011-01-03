@@ -140,7 +140,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			switch_assert(buf);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
 			switch_event_destroy(&event);
-			free(buf);
+			switch_safe_free(buf);
 		}
 	}
 
@@ -160,7 +160,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	sql = switch_mprintf("INSERT INTO %s VALUES (%s)", globals.db_table, expanded_vars);
 	assert(sql);
 	write_cdr(sql);
-	free(sql);
+	switch_safe_free(sql);
 
 	return status;
 }
@@ -264,8 +264,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 
 		/* Check if table exists (try SELECT FROM ...) and create table if query fails */
 		switch_cache_db_test_reactive(dbh, select_sql, NULL, create_sql);
-		free(select_sql);
-		free(create_sql);
+		switch_safe_free(select_sql);
+		switch_safe_free(create_sql);
 
 		switch_cache_db_release_db_handle(&dbh);
 	}

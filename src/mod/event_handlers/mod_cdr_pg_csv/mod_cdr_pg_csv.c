@@ -121,7 +121,7 @@ static void do_rotate(cdr_fd_t *fd)
 		p = switch_mprintf("%s.%s", fd->path, date);
 		assert(p);
 		switch_file_rename(fd->path, p, globals.pool);
-		free(p);
+		switch_safe_free(p);
 	}
 
 	do_reopen(fd);
@@ -317,12 +317,12 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	*tp = 0;
 	tp = values;
 	values = nullValues;
-	free(tp);
+	switch_safe_free(tp);
 
 	sql = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);", globals.db_table, columns, values);
 	assert(sql);
-	free(columns);
-	free(values);
+	switch_safe_free(columns);
+	switch_safe_free(values);
 
 	if (globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Query: \"%s\"\n", sql);
@@ -349,7 +349,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	}
 
 	PQclear(res);
-	free(sql);
+	switch_safe_free(sql);
 
 	switch_mutex_unlock(globals.db_mutex);
 
@@ -373,8 +373,8 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 		write_cdr(path, cdr);
 	}
 
-	free(path);
-	free(sql);
+	switch_safe_free(path);
+	switch_safe_free(sql);
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -416,7 +416,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			switch_assert(buf);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
 			switch_event_destroy(&event);
-			free(buf);
+			switch_safe_free(buf);
 		}
 	}
 
@@ -436,7 +436,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	save_cdr(template_str, expanded_vars);
 
 	if (expanded_vars != template_str) {
-		free(expanded_vars);
+		switch_safe_free(expanded_vars);
 	}
 
 	return status;
