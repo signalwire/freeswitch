@@ -139,7 +139,7 @@ static void do_rotate(cdr_fd_t *fd)
 
 }
 
-static void write_cdr(const char *path, const char *log_line)
+static void spool_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
 	char *log_line_lf = NULL;
@@ -157,12 +157,11 @@ static void write_cdr(const char *path, const char *log_line)
 	}
 
 	if (end_of(log_line) != '\n') {
-		size_t len = strlen(log_line) + 2;
-		log_line_lf = switch_core_alloc(globals.pool, len);
-		switch_snprintf(log_line_lf, len, "%s\n", log_line);
+		log_line_lf = switch_mprintf("%s\n", log_line);
 	} else {
-		log_line_lf = switch_core_strdup(globals.pool, log_line);
+		switch_strdup(log_line_lf, log_line);
 	}
+	assert(log_line_lf);
 
 	switch_mutex_lock(fd->mutex);
 	bytes_out = (unsigned) strlen(log_line_lf);
@@ -192,9 +191,10 @@ static void write_cdr(const char *path, const char *log_line)
   end:
 
 	switch_mutex_unlock(fd->mutex);
+	switch_safe_free(log_line_lf);
 }
 
-static switch_status_t save_cdr(const char * const template, const char * const cdr)
+static switch_status_t insert_cdr(const char * const template, const char * const cdr)
 {
 	char *columns, *values;
 	char *p, *q;
@@ -210,7 +210,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	}
 
 	/* Build comma-separated list of field names by dropping $ { } ; chars */
-	columns = strdup(template);
+	switch_strdup(columns, template);
 	for (p = columns, q = columns; *p; ++p) {
 		switch (*p) {
 			case '$': case '"': case '{': case '}': case ';':
@@ -226,7 +226,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	 * for correct PostgreSQL syntax, and replace semi-colon with space to
 	 * prevent SQL injection attacks
 	 */
-	values = strdup(cdr);
+	switch_strdup(values, cdr);
 	for (p = values; *p; ++p) {
 		switch(*p) {
 			case '"':
@@ -260,7 +260,7 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 
 	nullCounter *= 4;
 	vlen += nullCounter;
-	nullValues = (char *) malloc(strlen(values) + nullCounter + 1);
+	switch_zmalloc(nullValues, strlen(values) + nullCounter + 1);
 	charCounter = 0;
 	temp = nullValues;
 	tp = nullValues;
@@ -366,11 +366,11 @@ static switch_status_t save_cdr(const char * const template, const char * const 
 	if (!strcasecmp(globals.spool_format, "sql")) {
 		path = switch_mprintf("%s%scdr-spool.sql", globals.log_dir, SWITCH_PATH_SEPARATOR);
 		assert(path);
-		write_cdr(path, sql);
+		spool_cdr(path, sql);
 	} else {
 		path = switch_mprintf("%s%scdr-spool.csv", globals.log_dir, SWITCH_PATH_SEPARATOR);
 		assert(path);
-		write_cdr(path, cdr);
+		spool_cdr(path, cdr);
 	}
 
 	switch_safe_free(path);
@@ -433,7 +433,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	save_cdr(template_str, expanded_vars);
+	insert_cdr(template_str, expanded_vars);
 
 	if (expanded_vars != template_str) {
 		switch_safe_free(expanded_vars);
