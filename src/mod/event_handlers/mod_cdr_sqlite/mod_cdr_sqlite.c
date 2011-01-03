@@ -38,8 +38,8 @@ typedef enum {
 } cdr_leg_t;
 
 static char default_create_sql[] =
-        "CREATE TABLE %s (\n"
-        "    caller_id_name VARCHAR,\n"
+	"CREATE TABLE %s (\n"
+	"    caller_id_name VARCHAR,\n"
 	"    caller_id_number VARCHAR,\n"
 	"    destination_number VARCHAR,\n"
 	"    context VARCHAR,\n"
@@ -77,8 +77,8 @@ SWITCH_MODULE_DEFINITION(mod_cdr_sqlite, mod_cdr_sqlite_load, mod_cdr_sqlite_shu
 
 switch_cache_db_handle_t *cdr_get_db_handle(void)
 {
-        switch_cache_db_connection_options_t options = { {0} };
-        switch_cache_db_handle_t *dbh = NULL;
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
 
 	options.core_db_options.db_path = globals.db_name;
 	if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
@@ -89,22 +89,22 @@ switch_cache_db_handle_t *cdr_get_db_handle(void)
 
 static switch_status_t write_cdr(char *sql)
 {
-        switch_cache_db_handle_t *dbh = NULL;
-        switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
-        if (!(dbh = cdr_get_db_handle())) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
-                goto end;
-        }
+	if (!(dbh = cdr_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Writing SQL to DB: %s\n", sql);
-        status = switch_cache_db_execute_sql(dbh, sql, NULL);
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
 
   end:
 
-        switch_cache_db_release_db_handle(&dbh);
+	switch_cache_db_release_db_handle(&dbh);
 
-        return status;
+	return status;
 }
 
 
