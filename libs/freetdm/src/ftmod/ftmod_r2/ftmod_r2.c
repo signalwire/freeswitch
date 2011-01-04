@@ -1862,10 +1862,12 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	}
 	for (i = 1, citer = chaniter; citer; citer = ftdm_iterator_next(citer), i++) {
 		ftdmchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(ftdmchan);
 		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_span_id(r2chan, span->span_id);
 		openr2_chan_set_idle(r2chan);
 		openr2_chan_process_cas_signaling(r2chan);
+		ftdm_channel_unlock(ftdmchan);
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txqueue_size);
 	}
 
@@ -1947,7 +1949,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 		for ( ; citer; citer = ftdm_iterator_next(citer)) {
 			ftdmchan = ftdm_iterator_current(citer);
 
-			ftdm_mutex_lock(ftdmchan->mutex);
+			ftdm_channel_lock(ftdmchan);
 
 			call = R2CALL(ftdmchan);
 
@@ -1969,7 +1971,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_TX_DISABLED);
 			}
 
-			ftdm_mutex_unlock(ftdmchan->mutex);
+			ftdm_channel_unlock(ftdmchan);
 		}
 	}
 
@@ -1977,8 +1979,10 @@ done:
 	citer = ftdm_span_get_chan_iterator(span, chaniter);
 	for ( ; citer; citer = ftdm_iterator_next(citer)) {
 		ftdmchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(ftdmchan);
 		r2chan = R2CALL(ftdmchan)->r2chan;
 		openr2_chan_set_blocked(r2chan);
+		ftdm_channel_unlock(ftdmchan);
 	}
 
 	ftdm_iterator_free(chaniter);
