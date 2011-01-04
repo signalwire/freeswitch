@@ -51,6 +51,9 @@ extern "C" {
 #include <unistd.h>
 #endif
 
+/*! \brief time data type */
+typedef uint64_t ftdm_time_t; 
+
 /*! \brief sleep x amount of milliseconds */
 #ifdef __WINDOWS__
 #define ftdm_sleep(x) Sleep(x)
@@ -114,6 +117,8 @@ FT_DECLARE(char *) ftdm_strdup(const char *str);
 /*! \brief Duplicate string with limit */
 FT_DECLARE(char *) ftdm_strndup(const char *str, ftdm_size_t inlen);
 
+/*! \brief Get the current time in milliseconds */
+FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void);
 
 #ifdef __cplusplus
 } /* extern C */

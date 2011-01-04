@@ -585,8 +585,8 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 					if (done) {
 						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 						ftdm_clear_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
+						ftdm_channel_complete_state(ftdmchan);
 						ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK] = 0;
 					}
 				}
@@ -628,7 +628,6 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				break;
 			}
 		} else {
-			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 			ftdm_clear_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
 			ftdm_channel_complete_state(ftdmchan);
 			indicate = 0;
@@ -672,11 +671,12 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 					    !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) &&
 					    ftdm_test_flag(analog_data, FTDM_ANALOG_ANSWER_POLARITY_REVERSE)) {
 						ftdm_polarity_t polarity = FTDM_POLARITY_REVERSE;
-						if (ftdmchan->polarity != FTDM_POLARITY_FORWARD) {
-							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Polarity is already reversed on answer??\n");
-						} else {
+						if (ftdmchan->polarity == FTDM_POLARITY_FORWARD) {
 							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Reversing polarity on answer\n");
 							ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_POLARITY, &polarity);
+						} else {
+							/* the polarity may be already reversed if this is the second time we 
+							 * answer (ie, due to 2 calls being on the same line) */
 						}
 					}
 
@@ -1036,8 +1036,8 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			if (event->channel->state != FTDM_CHANNEL_STATE_DOWN) {
 				if (event->channel->state == FTDM_CHANNEL_STATE_HANGUP && 
 				    ftdm_test_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE)) { 
-					ftdm_clear_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE);
 					/* we do not need to process HANGUP since the device also hangup already */
+					ftdm_channel_complete_state(event->channel);
 				}
 				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
@@ -1052,8 +1052,8 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 		{
 			if (event->channel->state == FTDM_CHANNEL_STATE_CALLWAITING) {
 				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_UP);
-				ftdm_clear_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE);
 				ftdm_clear_flag(event->channel->span, FTDM_SPAN_STATE_CHANGE);
+				ftdm_channel_complete_state(event->channel);
 				event->channel->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK] = 0;
 			} 
 

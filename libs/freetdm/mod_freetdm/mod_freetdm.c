@@ -421,16 +421,18 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
-	assert(tech_pvt->ftdmchan != NULL);
+	switch_assert(tech_pvt->ftdmchan != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL ROUTING\n", switch_channel_get_name(channel));
 
-	ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -441,10 +443,10 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -1640,6 +1642,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			}
 			return FTDM_SUCCESS;
 		}
+
+	case FTDM_SIGEVENT_RELEASED: 
+	case FTDM_SIGEVENT_INDICATION_COMPLETED:
+		{ 
+			/* Swallow these events */
+			return FTDM_BREAK;
+		} 
+		break;
 	default:
 		return FTDM_SUCCESS;
 		break;
@@ -1730,7 +1740,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED: { /* twiddle */ } break;
 	
 	default:
@@ -1786,7 +1795,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
-	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
 	
     case FTDM_SIGEVENT_STOP:
 		{
@@ -2013,8 +2021,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		}
 		break;
 		
-		case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
-		
 		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
 		{
@@ -2094,6 +2100,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		break;
 
 		case FTDM_SIGEVENT_PROCEED:{} break;
+		case FTDM_SIGEVENT_INDICATION_COMPLETED:{} break;
 
 		default:
 		{
@@ -2132,8 +2139,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		}
 		break;
 
-	case FTDM_SIGEVENT_RELEASED: { /* twiddle */ } break;
-		
     case FTDM_SIGEVENT_STOP:
     case FTDM_SIGEVENT_RESTART:
 		{

@@ -56,7 +56,11 @@ struct ftdm_interrupt {
 	/* for generic interruption */
 	HANDLE event;
 #else
-	/* for generic interruption */
+	/* In theory we could be using thread conditions for generic interruption,
+	 * however, Linux does not have a primitive like Windows WaitForMultipleObjects
+	 * to wait for both thread condition and file descriptors, therefore we decided
+	 * to use a dummy pipe for generic interruption/condition logic
+	 * */
 	int readfd;
 	int writefd;
 #endif
@@ -243,6 +247,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(ftdm_mutex_t *mutex)
 
 FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, ftdm_socket_t device)
 {
+	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_interrupt_t *interrupt = NULL;
 #ifndef WIN32
 	int fds[2];
@@ -253,7 +258,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, 
 	interrupt = ftdm_calloc(1, sizeof(*interrupt));
 	if (!interrupt) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt memory\n");
-		return FTDM_FAIL;
+		return FTDM_ENOMEM;
 	}
 
 	interrupt->device = device;
@@ -261,11 +266,13 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, 
 	interrupt->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (!interrupt->event) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt event\n");
+		status = FTDM_ENOMEM;
 		goto failed;
 	}
 #else
 	if (pipe(fds)) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to allocate interrupt pipe: %s\n", strerror(errno));
+		status = FTDM_FAIL;
 		goto failed;
 	}
 	interrupt->readfd = fds[0];
@@ -287,7 +294,7 @@ failed:
 #endif
 		ftdm_safe_free(interrupt);
 	}
-	return FTDM_FAIL;
+	return status;
 }
 
 #define ONE_BILLION 1000000000

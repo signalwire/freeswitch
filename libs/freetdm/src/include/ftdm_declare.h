@@ -183,7 +183,16 @@ typedef enum {
 	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
 	FTDM_NOTIMPL, /*!< Operation not implemented */
 	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
-	FTDM_EINVAL /*!< Invalid argument */
+
+	/*!< Any new return codes should try to mimc unix style error codes, no need to reinvent */
+	/* Remapping some of the codes that were before */
+	FTDM_ENOMEM = FTDM_MEMERR, /*!< Memory error */
+	FTDM_ETIMEDOUT = FTDM_TIMEOUT, /*!< Operation timedout */
+	FTDM_ENOSYS = FTDM_NOTIMPL, /*!< The function is not implemented */
+
+	FTDM_EINVAL, /*!< Invalid argument */
+	FTDM_ECANCELED, /*!< Operation cancelled */
+	FTDM_EBUSY, /*!< Device busy */
 } ftdm_status_t;
 
 /*! \brief FreeTDM bool type. */
