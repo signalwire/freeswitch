@@ -47,14 +47,13 @@ rm -rf %{buildroot}
 
 %{_libdir}/libg722_1.so.*
 
-%{_datadir}/libg722_1
-
 %files devel
 %defattr(-,root,root,-)
 %doc doc/api
 %{_includedir}/g722_1.h
 %{_includedir}/g722_1
 %{_libdir}/libg722_1.so
+%{_libdir}/pkgconfig/g722_1.pc
 
 %post -p /sbin/ldconfig
 

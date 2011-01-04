@@ -9,8 +9,6 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: basop32.c,v 1.5 2008/09/22 13:08:31 steveu Exp $
  */
 
 /*! \file */
@@ -19,9 +17,10 @@
 #include <config.h>
 #endif
 
+#include <inttypes.h>
+
 #if defined(G722_1_USE_FIXED_POINT)
 
-#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 

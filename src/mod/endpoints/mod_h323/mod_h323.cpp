@@ -589,7 +589,7 @@ FSH323EndPoint::FSH323EndPoint()
 	,m_fax_old_asn(false)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323EndPoint::FSH323EndPoint [%p]\n",this);
-	terminalType = e_GatewayOnly;
+	terminalType = e_GatewayAndMC;
 }	
 
 FSH323EndPoint::~FSH323EndPoint()

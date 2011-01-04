@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: make_tables.c,v 1.5 2008/11/21 15:30:22 steveu Exp $
  */
 
 /*! \file */
@@ -37,6 +35,7 @@
 #undef PI
 #endif
 #define PI                                              3.141592653589793238462
+
 /* These may have been defined in the main header for the codec, so we clear out
    any pre-existing definitions here. */
 #if defined(ENCODER_SCALE_FACTOR)
@@ -124,7 +123,7 @@ static void generate_sam2coef_tables(void)
     for (i = 0;  i < DCT_LENGTH;  i++)
     {
         angle = (PI/2.0)*((double) i + 0.5)/(double) DCT_LENGTH;
-        printf("    %.15e,\n", sin(angle));
+        printf("    %.15ef,\n", sin(angle));
     }
     printf("};\n\n");
 
@@ -132,7 +131,7 @@ static void generate_sam2coef_tables(void)
     for (i = 0;  i < MAX_DCT_LENGTH;  i++)
     {
         angle = (PI/2.0)*((double) i + 0.5)/(double) MAX_DCT_LENGTH;
-        printf("    %.15le,\n", sin(angle));
+        printf("    %.15ef,\n", sin(angle));
     }
     printf("};\n\n");
 
@@ -180,7 +179,7 @@ static void generate_coef2sam_tables(void)
     for (i = 0;  i < DCT_LENGTH;  i++)
     {
         angle = (PI/2.0)*((double) i + 0.5)/(double) DCT_LENGTH;
-        printf("    %.15e,\n", sin(angle));
+        printf("    %.15ef,\n", sin(angle));
     }
     printf("};\n\n");
 
@@ -188,7 +187,7 @@ static void generate_coef2sam_tables(void)
     for (i = 0;  i < MAX_DCT_LENGTH;  i++)
     {
         angle = (PI/2.0)*((double) i + 0.5)/(double) MAX_DCT_LENGTH;
-        printf("    %.15e,\n", sin(angle));
+        printf("    %.15ef,\n", sin(angle));
     }
     printf("};\n\n");
 
@@ -218,7 +217,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < REGION_POWER_TABLE_SIZE;  i++)
     {
         value = pow(10.0, 0.10*REGION_POWER_STEPSIZE_DB*(i - REGION_POWER_TABLE_NUM_NEGATIVES));
-        printf("    %.15e,\n", sqrt(value));
+        printf("    %.15ef,\n", sqrt(value));
     }
     printf("};\n\n");
 
@@ -226,7 +225,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < REGION_POWER_TABLE_SIZE;  i++)
     {
         value = pow(10.0, 0.10*REGION_POWER_STEPSIZE_DB*(i - REGION_POWER_TABLE_NUM_NEGATIVES));
-        printf("    %.15e,\n", 1.0/sqrt(value));
+        printf("    %.15ef,\n", 1.0/sqrt(value));
     }
     printf("};\n\n");
 
@@ -259,14 +258,14 @@ int main(int argc, char *argv[])
     printf("const float step_size[NUM_CATEGORIES] =\n{\n");
     for (i = 0;  i < NUM_CATEGORIES;  i++)
     {
-        printf("    %.15e,\n", step_size[i]);
+        printf("    %.15ef,\n", step_size[i]);
     }
     printf("};\n\n");
 
     printf("const float step_size_inverse_table[NUM_CATEGORIES] =\n{\n");
     for (i = 0;  i < NUM_CATEGORIES;  i++)
     {
-        printf("    %.15e,\n", 1.0/step_size[i]);
+        printf("    %.15ef,\n", 1.0/step_size[i]);
     }
     printf("};\n\n");
 
@@ -275,7 +274,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < REGION_POWER_TABLE_SIZE;  i++)
     {
         value = pow(10.0, 0.10*REGION_POWER_STEPSIZE_DB*(i - REGION_POWER_TABLE_NUM_NEGATIVES));
-        printf("    %.15e,\n", value);
+        printf("    %.15ef,\n", value);
     }
     printf("};\n\n");
 
@@ -283,9 +282,10 @@ int main(int argc, char *argv[])
     for (i = 0;  i < REGION_POWER_TABLE_SIZE - 1; i++)
     {
         value = (float) pow(10.0, 0.10*REGION_POWER_STEPSIZE_DB*(0.5 + (i - REGION_POWER_TABLE_NUM_NEGATIVES)));
-        printf("    %.15e,\n", value);
+        printf("    %.15ef,\n", value);
     }
     printf("};\n\n");
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

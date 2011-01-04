@@ -15,8 +15,6 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: Makefile.am,v 1.6 2008/09/30 14:06:39 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -26,6 +24,7 @@ noinst_SCRIPTS = g722_1.spec
 MAINTAINERCLEANFILES = Makefile.in
 
 EXTRA_DIST = autogen.sh \
+             g722_1.pc \
              g722_1.spec \
              unpack_g722_1_data.sh \
              wrapper.xsl \
@@ -49,6 +48,9 @@ endif
 SUBDIRS = src $(MAYBE_DOC) $(MAYBE_TESTS)
 
 DIST_SUBDIRS = src doc tests test-data
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = g722_1.pc
 
 faq: faq.xml
 	cd faq ; xsltproc ../wrapper.xsl ../faq.xml

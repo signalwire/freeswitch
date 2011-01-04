@@ -82,12 +82,13 @@ class Session : public CoreSession {
 class Dbh {
   private:
     switch_cache_db_handle_t *dbh;
-    bool connected;
+    bool m_connected;
     static int query_callback(void *pArg, int argc, char **argv, char **cargv);
   public:
     Dbh(char *dsn, char *user = NULL, char *pass = NULL);
     ~Dbh();
     bool release();
+    bool connected();
     bool query(char *sql, SWIGLUA_FN lua_fun);
 };
 

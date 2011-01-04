@@ -6588,6 +6588,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_remove_all(void * jarg1)
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_enumerate(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_stream_handle_t *arg2 = (switch_stream_handle_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_stream_handle_t *)jarg2; 
+  result = (switch_status_t)switch_core_media_bug_enumerate(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_read(void * jarg1, void * jarg2, int jarg3) {
   int jresult ;
   switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
@@ -34019,6 +34033,24 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_voice_name_get(void * jarg1) {
   arg1 = (CoreSession *)jarg1; 
   result = (char *) ((arg1)->voice_name);
   jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_insertFile(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
+  int jresult ;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  int result;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (int)jarg4; 
+  result = (int)(arg1)->insertFile((char const *)arg2,(char const *)arg3,arg4);
+  jresult = result; 
   return jresult;
 }
 

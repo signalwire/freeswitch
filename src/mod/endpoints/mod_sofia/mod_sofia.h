@@ -745,6 +745,14 @@ typedef struct {
 	char *route_uri;
 } sofia_destination_t;
 
+typedef struct {
+	char network_ip[80];
+	int network_port;
+	const char *is_nat;
+	int is_auto_nat;
+} sofia_nat_parse_t;
+
+
 #define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
 #define sofia_set_pflag(obj, flag) (obj)->pflags[flag] = 1
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -1027,6 +1035,7 @@ void sofia_profile_destroy(sofia_profile_t *profile);
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
 const char *sofia_gateway_status_name(sofia_gateway_status_t status);
 void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase);
+uint32_t sofia_reg_reg_count(sofia_profile_t *profile, const char *user, const char *host);
 void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
 switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
@@ -1040,3 +1049,4 @@ switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, swi
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
 void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str);
+char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np);

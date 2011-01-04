@@ -40,7 +40,8 @@ sub set_callback($;$$) {
   $self->{_callback}->{$event} = shift;
   my $subclass = shift;
   if($subclass) {
-    $self->{_custom_subclass} = split(/,/, $subclass);
+    my @subclasses = split(/,/, $subclass);
+    $self->{_custom_subclass} = \@subclasses;
   }
 }
 
@@ -79,7 +80,7 @@ sub run($;) {
   for(;;) {
     # Only register for events we have callbacks for.
     for my $key ( keys %{$self->{_callback}} ) {
-      if ($key eq "CUSTOM") {
+      if ($key =~ m/custom/i) {
 	foreach $subclass (@{$self->{_custom_subclass}}) {
 	  $self->{_esl}->events("plain", "$key $subclass");
 	}

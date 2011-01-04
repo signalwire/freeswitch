@@ -246,6 +246,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(_Inout_ switch_media
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_core_session_t *session);
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_session_t *session, switch_stream_handle_t *stream);
+
 /*!
   \brief Read a frame from the bug
   \param bug the bug to read from

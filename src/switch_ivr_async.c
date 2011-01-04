@@ -282,9 +282,10 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
 				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
-			}
+			} 
 
-			if (!(both_bp && partial_bp) && !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
+			if (!(both_bp && partial_bp) && strlen(bp->digits) != strlen(dmachine->digits) && 
+				!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
 				if (exact_bp) {
 					best = DM_MATCH_BOTH;
 					both_bp = bp;
@@ -303,8 +304,6 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	if (is_timeout) {
 		if (both_bp) {
 			r_bp = exact_bp ? exact_bp : both_bp;
-		} else if (partial_bp) {
-			r_bp = partial_bp;
 		}
 	} 
 

@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: encoderf.c,v 1.22 2008/11/21 15:30:22 steveu Exp $
  */
 
 /*! \file */
@@ -33,6 +31,7 @@
 #include "huff_tab.h"
 #include "tables.h"
 #include "bitstream.h"
+#include "utilities.h"
 
 #if !defined(G722_1_USE_FIXED_POINT)
 
@@ -218,7 +217,6 @@ static int compute_region_powers(int number_of_regions,
     float *input_ptr;
     int iterations;
     float ftemp0;
-    float ftemp1;
     int index;
     int index_min;
     int index_max;
@@ -230,13 +228,9 @@ static int compute_region_powers(int number_of_regions,
     input_ptr = mlt_coefs;
     for (region = 0;  region < number_of_regions;  region++)
     {
-        ftemp0 = 0.0f;
-        for (j = 0;  j < REGION_SIZE;  j++)
-        {
-            ftemp1 = *input_ptr++;
-            ftemp0 += ftemp1*ftemp1;
-        }
+        ftemp0 = vec_dot_prodf(input_ptr, input_ptr, REGION_SIZE);
         ftemp0 *= REGION_SIZE_INVERSE;
+        input_ptr += REGION_SIZE;
 
         index_min = 0;
         index_max = REGION_POWER_TABLE_SIZE;
@@ -260,7 +254,7 @@ static int compute_region_powers(int number_of_regions,
     }
 
     /* The MLT is currently scaled too low by the factor
-       ENCODER_SCALE_FACTOR(=18318)/32768 * (1./sqrt(160).
+       ENCODER_SCALE_FACTOR(=18318)/32768 * (1.0/sqrt(160).
        This is the ninth power of 1 over the square root of 2.
        So later we will add ESF_ADJUSTMENT_TO_RMS_INDEX (now 9)
        to drp_code_bits[0]. */
@@ -448,7 +442,7 @@ static int vector_huffman(int category,
         number_of_non_zero = 0;
         for (j = 0;  j < vec_dim;  j++)
         {
-            k = (int) (fabs(*raw_mlt_ptr) * inv_of_step_size_times_std_dev + dead_zone[category]);
+            k = (int) (fabs(*raw_mlt_ptr)*inv_of_step_size_times_std_dev + dead_zone[category]);
             if (k != 0)
             {
                 number_of_non_zero++;
@@ -458,12 +452,12 @@ static int vector_huffman(int category,
                 if (k > kmax)
                     k = kmax;
             }
-            index = index*(kmax_plus_one) + k;
+            index = index*kmax_plus_one + k;
             raw_mlt_ptr++;
         }
 
-        code_bits = *(code_table_ptr + index);
-        number_of_code_bits = *(bitcount_table_ptr + index) + number_of_non_zero;
+        code_bits = code_table_ptr[index];
+        number_of_code_bits = bitcount_table_ptr[index] + number_of_non_zero;
         number_of_region_bits += number_of_code_bits;
 
         code_bits = (code_bits << number_of_non_zero) + signs_index;

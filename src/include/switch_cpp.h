@@ -216,6 +216,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 char *tts_name;
 		 char *voice_name;
 
+		 SWITCH_DECLARE(int) insertFile(const char *file, const char *insert_file, int sample_point);
 		 SWITCH_DECLARE(int) answer();
 		 SWITCH_DECLARE(int) preAnswer();
 		 SWITCH_DECLARE(void) hangup(const char *cause = "normal_clearing");

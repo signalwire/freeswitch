@@ -23,7 +23,13 @@
   <settings>
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
-    <!--Most channels to allow at once -->
+    <!--
+	Max number of sessions to allow at any given time.
+	
+	NOTICE: If you're driving 28 T1's in a single box you should set this to 644*2 or 1288
+	this will ensure you're able to use the entire DS3 without a problem.  Otherwise you'll
+	be 144 channels short of always filling that DS3 up which can translate into waste.
+    -->
     <param name="max-sessions" value="1000"/>
     <!--Most channels to create per second -->
     <param name="sessions-per-second" value="30"/>

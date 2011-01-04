@@ -1452,7 +1452,7 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 	switch_bool_t ok = SWITCH_TRUE;
 
   top:
-
+	
 	if (!switch_core_hash_find(listener->allowed_api_hash, check_cmd)) {
 		ok = SWITCH_FALSE;
 		goto end;
@@ -1556,14 +1556,18 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			user = cmd + 9;
 
-			if ((pass = strchr(user, ':'))) {
-				*pass++ = '\0';
-			}
-
 			if ((domain_name = strchr(user, '@'))) {
 				*domain_name++ = '\0';
 			}
 
+			if ((pass = strchr(domain_name, ':'))) {
+				*pass++ = '\0';
+			}
+
+			if ((pass = strchr(user, ':'))) {
+				*pass++ = '\0';
+			}
+			
 			if (zstr(user) || zstr(domain_name)) {
 				switch_snprintf(reply, reply_len, "-ERR invalid");
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
@@ -2044,21 +2048,31 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		char *arg = NULL;
 		strip_cr(api_cmd);
 
-		if (!(acs.console_execute = switch_true(console_execute))) {
-			if ((arg = strchr(api_cmd, ' '))) {
-				*arg++ = '\0';
-			}
-		}
-
 		if (listener->allowed_api_hash) {
-			if (!auth_api_command(listener, api_cmd, arg)) {
+			char *api_copy = strdup(api_cmd);
+			char *arg_copy = NULL;
+			int ok = 0;
+
+			if ((arg_copy = strchr(api_copy, ' '))) {
+				*arg_copy++ = '\0';
+			}
+			
+			ok = auth_api_command(listener, api_copy, arg_copy);
+			free(api_copy);
+
+			if (!ok) {
 				switch_snprintf(reply, reply_len, "-ERR permission denied");
 				status = SWITCH_STATUS_SUCCESS;
 				goto done;
 			}
 		}
-
-
+		
+		if (!(acs.console_execute = switch_true(console_execute))) {
+			if ((arg = strchr(api_cmd, ' '))) {
+				*arg++ = '\0';
+			}
+		}
+		
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
 		acs.arg = arg;

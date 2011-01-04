@@ -392,6 +392,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(switch_core_sess
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	switch_media_bug_t *bp;
+
+	stream->write_function(stream, "<media-bugs>\n");
+
+	if (session->bugs) {
+        switch_thread_rwlock_wrlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			int thread_locked = (bp->thread_id && bp->thread_id == switch_thread_self());
+			stream->write_function(stream, 
+								   " <media-bug>\n"
+								   "  <function>%s</function>\n"
+								   "  <target>%s</target>\n"
+								   "  <thread-locked>%d</thread-locked>\n"
+								   " </media-bug>\n", 
+								   bp->function, bp->target, thread_locked);
+
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+	}
+
+	stream->write_function(stream, "</media-bugs>\n");
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_session_t *session)
 {

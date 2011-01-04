@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: decoderf.c,v 1.22 2008/11/21 15:30:22 steveu Exp $
  */
 
 /*! \file */
@@ -33,6 +31,7 @@
 #include "huff_tab.h"
 #include "tables.h"
 #include "bitstream.h"
+#include "utilities.h"
 
 #if !defined(G722_1_USE_FIXED_POINT)
 
@@ -84,12 +83,12 @@ static void decoder(g722_1_decode_state_t *s,
     int absolute_region_power_index[MAX_NUMBER_OF_REGIONS];
     int decoder_power_categories[MAX_NUMBER_OF_REGIONS];
     int decoder_category_balances[MAX_NUM_CATEGORIZATION_CONTROL_POSSIBILITIES - 1];
-    int rate_control;
     int num_categorization_control_bits;
     int num_categorization_control_possibilities;
     int number_of_coefs;
     int number_of_valid_coefs;
     int rmlt_scale_factor;
+    int rate_control;
 
     number_of_valid_coefs = s->number_of_regions*REGION_SIZE;
 
@@ -451,7 +450,7 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
 
         if (category == NUM_CATEGORIES - 1)
         {
-            noifillpos = standard_deviation*0.70711f;
+            noifillpos = standard_deviation*0.70711;
             noifillneg = -noifillpos;
 
             /* This assumes region_size = 20 */
@@ -555,27 +554,21 @@ static void error_handling(int number_of_coefs,
                            float *decoder_mlt_coefs,
                            float *old_decoder_mlt_coefs)
 {
-    int i;
-
     /* If both the current and previous frames are errored,
        set the mlt coefficients to 0. If only the current frame
        is errored, repeat the previous frame's MLT coefficients. */
     if (*frame_error_flag)
     {
-        for (i = 0;  i < number_of_valid_coefs;  i++)
-            decoder_mlt_coefs[i] = old_decoder_mlt_coefs[i];
-        for (i = 0;  i < number_of_valid_coefs;  i++)
-            old_decoder_mlt_coefs[i] = 0.0f;
+        vec_copyf(decoder_mlt_coefs, old_decoder_mlt_coefs, number_of_valid_coefs);
+        vec_zerof(old_decoder_mlt_coefs, number_of_valid_coefs);
     }
     else
     {
         /* Store in case the next frame has errors. */
-        for (i = 0;  i < number_of_valid_coefs;  i++)
-            old_decoder_mlt_coefs[i] = decoder_mlt_coefs[i];
+        vec_copyf(old_decoder_mlt_coefs, decoder_mlt_coefs, number_of_valid_coefs);
     }
     /* Zero out the upper 1/8 of the spectrum. */
-    for (i = number_of_valid_coefs;  i < number_of_coefs;  i++)
-        decoder_mlt_coefs[i] = 0.0f;
+    vec_zerof(&decoder_mlt_coefs[number_of_valid_coefs], number_of_coefs - number_of_valid_coefs);
 }
 /*- End of function --------------------------------------------------------*/
 
