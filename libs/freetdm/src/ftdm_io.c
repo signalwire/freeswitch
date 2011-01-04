@@ -2032,22 +2032,22 @@ FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *fchan, ftdm_channel_indicat
 	ftdm_span_send_signal(fchan->span, &msg);
 }
 
-FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
+/*! \brief Answer call without locking the channel. The caller must have locked first
+ *  \note This function was added because ftdm_channel_call_indicate needs to answer the call
+ *        when its already locking the channel, ftdm_channel_set_state cannot be called with the same
+ *        lock locked once or more (recursive lock) and wait for the result  */
+static ftdm_status_t _ftdm_channel_call_answer_nl(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 
-	ftdm_channel_lock(ftdmchan);
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+		status = FTDM_EINVAL;
+		goto done;
+	}
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call is already TERMINATING\n");
 		status = FTDM_ECANCELED;
-		ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
-		goto done;
-	}
-
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-		status = FTDM_EINVAL;
-		ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
 		goto done;
 	}
 
@@ -2059,7 +2059,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS) {
 			status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS, 1);
 			if (status != FTDM_SUCCESS) {
-				ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
+				status = FTDM_ECANCELED;
 				goto done;
 			}
 		}
@@ -2068,14 +2068,13 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to PROGRESS\n");
 			status = FTDM_ECANCELED;
-			ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
 			goto done;
 		}
 
 		if (ftdmchan->state < FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 			status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
 			if (status != FTDM_SUCCESS) {
-				ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
+				status = FTDM_ECANCELED;
 				goto done;
 			}
 		}
@@ -2084,23 +2083,35 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 		if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call has moved to TERMINATING while we're moving to UP\n");
 			status = FTDM_ECANCELED;
-			ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
 			goto done;
 		}
 	}
 
 	status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_UP, 1);
 	if (status != FTDM_SUCCESS) {
-		ftdm_ack_indication(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, status);
+		status = FTDM_ECANCELED;
+		goto done;
 	}
 
 done:
+
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
+{
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	ftdm_channel_lock(ftdmchan);
+
+	status = _ftdm_channel_call_answer_nl(file, func, line, ftdmchan);
+
 	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
 
 /* lock must be acquired by the caller! */
-static ftdm_status_t call_hangup(ftdm_channel_t *chan, const char *file, const char *func, int line)
+static ftdm_status_t _ftdm_channel_call_hangup_nl(ftdm_channel_t *chan, const char *file, const char *func, int line)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	
@@ -2139,7 +2150,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file,
 
 	ftdmchan->caller_data.hangup_cause = cause;
 	
-	status = call_hangup(ftdmchan, file, func, line);
+	status = _ftdm_channel_call_hangup_nl(ftdmchan, file, func, line);
 
 	ftdm_channel_unlock(ftdmchan);
 	return status;
@@ -2153,7 +2164,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char
 	
 	ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
 
-	status = call_hangup(ftdmchan, file, func, line);
+	status = _ftdm_channel_call_hangup_nl(ftdmchan, file, func, line);
 
 	ftdm_channel_unlock(ftdmchan);
 	return status;
@@ -2288,7 +2299,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		break;
 	case FTDM_CHANNEL_INDICATE_ANSWER:
 		/* _ftdm_channel_call_answer takes care of the indication ack */
-		status = _ftdm_channel_call_answer(file, func, line, ftdmchan);
+		status = _ftdm_channel_call_answer_nl(file, func, line, ftdmchan);
 		break;
 	default:
 		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "Do not know how to indicate %d\n", indication);
@@ -5292,7 +5303,7 @@ static void execute_safety_hangup(void *data)
 	fchan->hangup_timer = 0;
 	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
-		call_hangup(fchan, __FILE__, __FUNCTION__, __LINE__);
+		_ftdm_channel_call_hangup_nl(fchan, __FILE__, __FUNCTION__, __LINE__);
 	} else {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
 	}

@@ -69,8 +69,6 @@ extern "C" {
 #define FTDM_END -1
 #define FTDM_ANY_STATE -1
 
-typedef uint64_t ftdm_time_t; 
-
 typedef enum {
 	FTDM_ENDIAN_BIG = 1,
 	FTDM_ENDIAN_LITTLE = -1
