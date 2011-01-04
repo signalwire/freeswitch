@@ -4287,6 +4287,40 @@ fail:
 }
 
 
+static int _wrap_CoreSession_insertFile(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  int result;
+  
+  SWIG_check_num_args("insertFile",4,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("insertFile",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("insertFile",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("insertFile",3,"char const *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("insertFile",4,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_insertFile",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  result = (int)(arg1)->insertFile((char const *)arg2,(char const *)arg3,arg4);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_CoreSession_answer(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -5864,6 +5898,7 @@ CoreSession *arg1 = (CoreSession *) obj;
 delete arg1;
 }
 static swig_lua_method swig_CoreSession_methods[] = {
+    {"insertFile", _wrap_CoreSession_insertFile}, 
     {"answer", _wrap_CoreSession_answer}, 
     {"preAnswer", _wrap_CoreSession_preAnswer}, 
     {"hangup", _wrap_CoreSession_hangup}, 
@@ -7194,6 +7229,31 @@ fail:
 }
 
 
+static int _wrap_Dbh_connected(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("connected",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("connected",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_connected",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  result = (bool)(arg1)->connected();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Dbh_query(lua_State* L) {
   int SWIG_arg = -1;
   LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
@@ -7242,6 +7302,7 @@ delete arg1;
 }
 static swig_lua_method swig_LUA_Dbh_methods[] = {
     {"release", _wrap_Dbh_release}, 
+    {"connected", _wrap_Dbh_connected}, 
     {"query", _wrap_Dbh_query}, 
     {0,0}
 };

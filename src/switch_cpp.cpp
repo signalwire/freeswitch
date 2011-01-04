@@ -576,6 +576,15 @@ SWITCH_DECLARE(int) CoreSession::answer()
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
+SWITCH_DECLARE(int) CoreSession::insertFile(const char *file, const char *insert_file, int sample_point)
+{
+    switch_status_t status;
+	this_check(-1);
+	sanity_check(-1);
+    status = switch_ivr_insert_file(session, file, insert_file, (switch_size_t)sample_point);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
 SWITCH_DECLARE(int) CoreSession::preAnswer()
 {
     switch_status_t status;

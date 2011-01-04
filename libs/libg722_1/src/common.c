@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: common.c,v 1.6 2008/09/30 14:06:39 steveu Exp $
  */
 
 /*! \file */
@@ -38,41 +36,7 @@ static void compute_raw_pow_categories(int16_t *power_categories,
                                        int16_t number_of_regions,
                                        int16_t offset);
 
-/****************************************************************************************
- Function:    categorize
-
- Syntax:      void categorize(int16_t number_of_available_bits,
-                              int16_t number_of_regions,
-                              int16_t num_categorization_control_possibilities,
-                              int16_t rms_index,
-                              int16_t power_categories,
-                              int16_t category_balances)
-
-                  inputs:   number_of_regions
-                            num_categorization_control_possibilities
-                            number_of_available_bits
-                            rms_index[MAX_NUMBER_OF_REGIONS]
-
-                  outputs:  power_categories[MAX_NUMBER_OF_REGIONS]
-                            category_balances[MAX_NUM_CATEGORIZATION_CONTROL_POSSIBILITIES-1]
-
- Description: Computes a series of categorizations
-
- WMOPS:     7kHz |    24kbit    |     32kbit
-          -------|--------------|----------------
-            AVG  |    0.14      |     0.14
-          -------|--------------|----------------
-            MAX  |    0.15      |     0.15
-          -------|--------------|----------------
-
-           14kHz |    24kbit    |     32kbit     |     48kbit
-          -------|--------------|----------------|----------------
-            AVG  |    0.42      |     0.45       |     0.48
-          -------|--------------|----------------|----------------
-            MAX  |    0.47      |     0.52       |     0.52
-          -------|--------------|----------------|----------------
-
-****************************************************************************************/
+/* Compute a series of categorizations */
 void categorize(int16_t number_of_available_bits,
                 int16_t number_of_regions,
                 int16_t num_categorization_control_possibilities,
@@ -88,10 +52,7 @@ void categorize(int16_t number_of_available_bits,
     /* At higher bit rates, there is an increase for most categories in average bit
        consumption per region. We compensate for this by pretending we have fewer
        available bits. */
-    if (number_of_regions == NUMBER_OF_REGIONS)
-        frame_size = DCT_LENGTH;
-    else
-        frame_size = MAX_DCT_LENGTH;
+    frame_size = (number_of_regions == NUMBER_OF_REGIONS)  ?  DCT_LENGTH  :  MAX_DCT_LENGTH;
 
     temp = sub(number_of_available_bits, frame_size);
     if (temp > 0)
@@ -114,45 +75,7 @@ void categorize(int16_t number_of_available_bits,
 }
 /*- End of function --------------------------------------------------------*/
 
-/***************************************************************************
- Function:    comp_powercat_and_catbalance
-
- Syntax:      void comp_powercat_and_catbalance(int16_t *power_categories,
-                                                int16_t *category_balances,
-                                                int16_t *rms_index,
-                                                int16_t number_of_available_bits,
-                                                int16_t number_of_regions,
-                                                int16_t num_categorization_control_possibilities,
-                                                int16_t offset)
-
-
-                inputs:   *rms_index
-                          number_of_available_bits
-                          number_of_regions
-                          num_categorization_control_possibilities
-                          offset
-
-                outputs:  *power_categories
-                          *category_balances
-
-
- Description: Computes the power_categories and the category balances
-
- WMOPS:     7kHz |    24kbit    |     32kbit
-          -------|--------------|----------------
-            AVG  |    0.10      |     0.10
-          -------|--------------|----------------
-            MAX  |    0.11      |     0.11
-          -------|--------------|----------------
-
-           14kHz |    24kbit    |     32kbit     |     48kbit
-          -------|--------------|----------------|----------------
-            AVG  |    0.32      |     0.35       |     0.38
-          -------|--------------|----------------|----------------
-            MAX  |    0.38      |     0.42       |     0.43
-          -------|--------------|----------------|----------------
-
-***************************************************************************/
+/* Compute the power_categories and the category balances */
 void comp_powercat_and_catbalance(int16_t *power_categories,
                                   int16_t *category_balances,
                                   int16_t *rms_index,
@@ -161,7 +84,6 @@ void comp_powercat_and_catbalance(int16_t *power_categories,
                                   int16_t num_categorization_control_possibilities,
                                   int16_t offset)
 {
-
     int16_t expected_number_of_code_bits;
     int16_t region;
     int16_t max_region;
@@ -189,7 +111,6 @@ void comp_powercat_and_catbalance(int16_t *power_categories,
 
     for (region = 0;  region < number_of_regions;  region++)
         expected_number_of_code_bits = add(expected_number_of_code_bits, expected_bits_table[power_categories[region]]);
-
 
     for (region = 0;  region < number_of_regions;  region++)
     {
@@ -277,42 +198,16 @@ void comp_powercat_and_catbalance(int16_t *power_categories,
 }
 /*- End of function --------------------------------------------------------*/
 
-/***************************************************************************
- Function:    calc_offset
-
- Syntax:      offset=calc_offset(int16_t *rms_index,int16_t number_of_regions,int16_t available_bits)
-
-                input:  int16_t *rms_index
-                        int16_t number_of_regions
-                        int16_t available_bits
-
-                output: int16_t offset
-
- Description: Calculates the the category offset.  This is the shift required
-              To get the most out of the number of available bits.  A binary
-              type search is used to find the offset.
-
- WMOPS:     7kHz |    24kbit    |     32kbit
-          -------|--------------|----------------
-            AVG  |    0.04      |     0.04
-          -------|--------------|----------------
-            MAX  |    0.04      |     0.04
-          -------|--------------|----------------
-
-           14kHz |    24kbit    |     32kbit     |     48kbit
-          -------|--------------|----------------|----------------
-            AVG  |    0.08      |     0.08       |     0.08
-          -------|--------------|----------------|----------------
-            MAX  |    0.09      |     0.09       |     0.09
-          -------|--------------|----------------|----------------
-
-***************************************************************************/
-int16_t calc_offset(int16_t *rms_index,int16_t number_of_regions,int16_t available_bits)
+/* Calculate the the category offset. This is the shift required
+   To get the most out of the number of available bits.  A binary
+   type search is used to find the offset. */
+int16_t calc_offset(int16_t *rms_index, int16_t number_of_regions, int16_t available_bits)
 {
     int16_t answer;
     int16_t delta;
     int16_t test_offset;
-    int16_t region,j;
+    int16_t region;
+    int16_t j;
     int16_t power_cats[MAX_NUMBER_OF_REGIONS];
     int16_t bits;
     int16_t offset;
@@ -360,40 +255,9 @@ int16_t calc_offset(int16_t *rms_index,int16_t number_of_regions,int16_t availab
 }
 /*- End of function --------------------------------------------------------*/
 
-/***************************************************************************
- Function:    compute_raw_pow_categories
-
- Syntax:      void compute_raw_pow_categories(int16_t *power_categories,
-                                              int16_t *rms_index,
-                                              int16_t number_of_regions,
-                                              int16_t offset)
-              inputs:  *rms_index
-                       number_of_regions
-                       offset
-
-              outputs: *power_categories
-
-
-
- Description: This function computes the power categories given the offset
-              This is kind of redundant since they were already computed
-              in calc_offset to determine the offset.
-
- WMOPS:          |    24kbit    |     32kbit
-          -------|--------------|----------------
-            AVG  |    0.01      |     0.01
-          -------|--------------|----------------
-            MAX  |    0.01      |     0.01
-          -------|--------------|----------------
-
-           14kHz |    24kbit    |     32kbit     |     48kbit
-          -------|--------------|----------------|----------------
-            AVG  |    0.01      |     0.01       |     0.01
-          -------|--------------|----------------|----------------
-            MAX  |    0.01      |     0.01       |     0.01
-          -------|--------------|----------------|----------------
-
-***************************************************************************/
+/* Compute the power categories given the offset
+   This is kind of redundant since they were already computed
+   in calc_offset to determine the offset. */
 static void compute_raw_pow_categories(int16_t *power_categories, int16_t *rms_index, int16_t number_of_regions, int16_t offset)
 {
     int16_t region;

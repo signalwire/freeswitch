@@ -733,11 +733,28 @@ static void ftdm_span_add(ftdm_span_t *span)
 
 FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 {
-	ftdm_status_t status =  FTDM_FAIL;
-	if (span->stop) {
-		status = span->stop(span);
-		span->stop = NULL;
+	ftdm_status_t status =  FTDM_SUCCESS;
+	
+	ftdm_mutex_lock(span->mutex);
+
+	if (!ftdm_test_flag(span, FTDM_SPAN_STARTED)) {
+		status = FTDM_EINVAL;
+		goto done;
 	}
+
+	if (!span->stop) {
+		status = FTDM_ENOSYS;
+		goto done;
+	}
+
+	status = span->stop(span);
+	if (FTDM_SUCCESS == status) {
+		ftdm_clear_flag(span, FTDM_SPAN_STARTED);
+	}
+
+done:
+	ftdm_mutex_unlock(span->mutex);
+
 	return status;
 }
 
@@ -5063,11 +5080,28 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const
 
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 {
-	if (span->start) {
-		return span->start(span);
+	ftdm_status_t status = FTDM_FAIL;
+
+	ftdm_mutex_lock(span->mutex);
+
+	if (ftdm_test_flag(span, FTDM_SPAN_STARTED)) {
+		status = FTDM_EINVAL;
+		goto done;
 	}
 
-	return FTDM_FAIL;
+	if (!span->start) {
+		status = FTDM_ENOSYS;
+		goto done;
+	}
+
+	status = span->start(span);
+	if (status == FTDM_SUCCESS) {
+		ftdm_set_flag_locked(span, FTDM_SPAN_STARTED);
+	}
+
+done:
+	ftdm_mutex_unlock(span->mutex);
+	return status;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_channel_t* ftdmchan)

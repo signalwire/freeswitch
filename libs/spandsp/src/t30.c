@@ -4275,6 +4275,7 @@ static void process_state_iv_eor(t30_state_t *s, const uint8_t *msg, int len)
         break;
     case T30_ERR:
         /* TODO: Continue with the next message if MPS or EOM? */
+        s->current_status = T30_ERR_RETRYDCN;
         s->timer_t5 = 0;
         send_dcn(s);
         break;
@@ -4319,6 +4320,7 @@ static void process_state_iv_eor_rnr(t30_state_t *s, const uint8_t *msg, int len
         break;
     case T30_ERR:
         /* TODO: Continue with the next message if MPS or EOM? */
+        s->current_status = T30_ERR_RETRYDCN;
         s->timer_t5 = 0;
         send_dcn(s);
         break;

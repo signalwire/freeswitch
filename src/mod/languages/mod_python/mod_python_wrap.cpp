@@ -5892,6 +5892,61 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_insertFile(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int val4 ;
+  int ecode4 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:CoreSession_insertFile",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_insertFile" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_insertFile" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_insertFile" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  ecode4 = SWIG_AsVal_int(obj3, &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "CoreSession_insertFile" "', argument " "4"" of type '" "int""'");
+  } 
+  arg4 = static_cast< int >(val4);
+  result = (int)(arg1)->insertFile((char const *)arg2,(char const *)arg3,arg4);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_answer(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -8915,6 +8970,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_tts_name_get", _wrap_CoreSession_tts_name_get, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_voice_name_set", _wrap_CoreSession_voice_name_set, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_voice_name_get", _wrap_CoreSession_voice_name_get, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_insertFile", _wrap_CoreSession_insertFile, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_answer", _wrap_CoreSession_answer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_preAnswer", _wrap_CoreSession_preAnswer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_hangup", _wrap_CoreSession_hangup, METH_VARARGS, NULL},

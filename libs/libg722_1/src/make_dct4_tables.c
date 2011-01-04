@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: make_dct4_tables.c,v 1.2 2008/10/02 11:43:54 steveu Exp $
  */
 
 /*! \file */
@@ -29,7 +27,11 @@
 
 #include "g722_1/g722_1.h"
 
+#if defined(PI)
+#undef PI
+#endif
 #define PI                                              3.141592653589793238462
+
 #include "defs.h"
 
 static void set_up_one_table(int length)
@@ -99,6 +101,7 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i <= length_log;  i++)
         set_up_one_table(dct_size << i);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

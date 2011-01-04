@@ -168,7 +168,7 @@ typedef enum {
 
 typedef enum {
 	FTDM_SPAN_CONFIGURED = (1 << 0),
-	FTDM_SPAN_READY = (1 << 1),
+	FTDM_SPAN_STARTED = (1 << 1),
 	FTDM_SPAN_STATE_CHANGE = (1 << 2),
 	FTDM_SPAN_SUSPENDED = (1 << 3),
 	FTDM_SPAN_IN_THREAD = (1 << 4),

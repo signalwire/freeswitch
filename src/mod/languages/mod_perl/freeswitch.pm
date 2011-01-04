@@ -404,6 +404,7 @@ sub DESTROY {
 *swig_tts_name_set = *freeswitchc::CoreSession_tts_name_set;
 *swig_voice_name_get = *freeswitchc::CoreSession_voice_name_get;
 *swig_voice_name_set = *freeswitchc::CoreSession_voice_name_set;
+*insertFile = *freeswitchc::CoreSession_insertFile;
 *answer = *freeswitchc::CoreSession_answer;
 *preAnswer = *freeswitchc::CoreSession_preAnswer;
 *hangup = *freeswitchc::CoreSession_hangup;

@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: dct4_s.h,v 1.4 2008/09/25 15:56:31 steveu Exp $
  */
 
 typedef struct
@@ -196,11 +194,9 @@ static const int16_t max_dither[MAX_DCT_LENGTH] =
       for (index = 0;index < length;index++)
       {
           angle = scale * ((double)index + 0.5);
-          table[index].cosine     = (short) (FTOI((18427)* cos(angle)));
-          table[index].minus_sine = (short) (FTOI((18427)*(-sin(angle))));
+          table[index].cosine = (int16_t) (FTOI((18427)* cos(angle)));
+          table[index].minus_sine = (int16_t) (FTOI((18427)*(-sin(angle))));
       }
-
-
 ********************************************************************************/
 
 static const cos_msin_t s_cos_msin_2[DCT_LENGTH_DIV_32] =

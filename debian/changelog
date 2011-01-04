@@ -1,3 +1,9 @@
+freeswitch (1.0.head~git.master.20101222.1-1) unstable; urgency=low
+
+  * cleaning work
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Wed, 22 Dec 2010 22:48:02 +0200
+
 freeswitch (1.0.head~git.master.20101015.1-1) unstable; urgency=low
 
   * reintroduced mod_flite

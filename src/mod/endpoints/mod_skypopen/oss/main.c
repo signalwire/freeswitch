@@ -249,6 +249,7 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
 	DEFINE_WAIT(wait);
+        size_t written;
 	struct skypopen_dev *dev = filp->private_data;
 
 	if(unload)
@@ -273,8 +274,31 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 	prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
 	schedule();
 	finish_wait(&dev->inq, &wait);
-	return count;
 
+        if (!count)
+                return 0;
+
+        if (!access_ok(VERIFY_WRITE, buf, count))
+                return -EFAULT;
+
+        written = 0;
+        while (count) {
+                unsigned long unwritten;
+                size_t chunk = count;
+
+                if (chunk > PAGE_SIZE)
+                        chunk = PAGE_SIZE;      /* Just for latency reasons */
+                unwritten = __clear_user(buf, chunk);
+                written += chunk - unwritten;
+                if (unwritten)
+                        break;
+                if (signal_pending(current))
+                        return written ? written : -ERESTARTSYS;
+                buf += chunk;
+                count -= chunk;
+                cond_resched();
+        }
+        return written ? written : -EFAULT;
 }
 
 static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,

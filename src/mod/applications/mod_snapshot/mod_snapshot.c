@@ -188,10 +188,12 @@ static switch_status_t do_snap(switch_core_session_t *session)
 		switch_core_file_close(&fh);
 		switch_core_set_variable("file", file);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Wrote %s\n", file);
+		return SWITCH_STATUS_SUCCESS;
 	}
 
-	return SWITCH_STATUS_SUCCESS;
-
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Bug is not attached.\n", switch_channel_get_name(channel));
+	return SWITCH_STATUS_FALSE;
+	
 }
 
 #define SNAP_SYNTAX "start <sec> <read|write>"
@@ -249,7 +251,7 @@ SWITCH_STANDARD_APP(snapshot_app_function)
 }
 
 
-#define SNAP_API_SYNTAX "<uuid> <warning>"
+#define SNAP_API_SYNTAX "<uuid> snap|start [<sec> read|write <base>]"
 SWITCH_STANDARD_API(snapshot_function)
 {
 	char *mycmd = NULL, *argv[5] = { 0 };
@@ -260,7 +262,7 @@ SWITCH_STANDARD_API(snapshot_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
+	if (zstr(cmd) || argc < 2 || zstr(argv[0])) {
 		stream->write_function(stream, "-USAGE: %s\n", SNAP_API_SYNTAX);
 		goto done;
 	} else {
@@ -270,9 +272,9 @@ SWITCH_STANDARD_API(snapshot_function)
 			if (!strcasecmp(argv[1], "snap")) {
 				status = do_snap(lsession);
 			} else if (!strcasecmp(argv[1], "start")) {
-				char *sec = argv[1];
-				char *fl = argv[2];
-				const char *base = argv[3];
+				char *sec = argv[2];
+				char *fl = argv[3];
+				const char *base = argv[4];
 				int seconds = 5;
 				switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING;
 
@@ -325,10 +327,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snapshot_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
-
 	SWITCH_ADD_API(api_interface, "uuid_snapshot", "Snapshot API", snapshot_function, SNAP_API_SYNTAX);
 	SWITCH_ADD_APP(app_interface, "snapshot", "", "", snapshot_app_function, SNAP_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	switch_console_set_complete("add uuid_snapshot ::console::list_uuid");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
