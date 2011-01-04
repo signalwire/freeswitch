@@ -452,7 +452,7 @@ extern int				cmbLinkSetId;
 
 /* PROTOTYPES *****************************************************************/
 /* in ftmod_sangoma_ss7_main.c */
-void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
+ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
 
 /* in ftmod_sangoma_ss7_logger.c */
 void handle_sng_log(uint8_t level, char *fmt,...);
