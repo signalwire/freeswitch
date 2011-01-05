@@ -228,7 +228,7 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 {
 	uint8_t 			*raw_data;
 	ftdm_sigmsg_t		sigev;
-	ftdm_channel_t *ftdmchan;
+	ftdm_channel_t *ftdmchan = NULL;
 	sngisdn_frame_info_t  frame_info;
 
 	memset(&sigev, 0, sizeof(sigev));
@@ -852,8 +852,8 @@ parse_ies_done:
 
 static ftdm_status_t sngisdn_map_call(sngisdn_span_data_t *signal_data, sngisdn_frame_info_t frame_info, ftdm_channel_t **found)
 {
-	ftdm_channel_t *ftdmchan;
 	sngisdn_chan_data_t *sngisdn_info;
+	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
 	ftdm_status_t status = FTDM_FAIL;
