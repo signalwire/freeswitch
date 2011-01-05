@@ -973,6 +973,8 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	consumer_channel = switch_core_session_get_channel(consumer_session);
 	outbound_id = switch_channel_get_variable(consumer_channel, "fifo_outbound_uuid");
 
+	if (!outbound_id) return SWITCH_STATUS_SUCCESS;
+
 	switch (msg->message_id) {
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
@@ -1028,7 +1030,6 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 									  switch_channel_get_variable(caller_channel, "fifo_import_prefix"));
 			}
 
-				
 			ced_name = switch_channel_get_variable(consumer_channel, "callee_id_name");
 			ced_number = switch_channel_get_variable(consumer_channel, "callee_id_number");
 
