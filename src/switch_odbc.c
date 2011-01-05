@@ -165,6 +165,8 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		goto error;
 	}
 
+	SQLSetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, (SQLPOINTER)30, 0);
+
 	if (SQLPrepare(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
 		code = __LINE__;
 		goto error;
