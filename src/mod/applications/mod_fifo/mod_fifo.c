@@ -582,6 +582,8 @@ static int check_caller_outbound_call(const char *key)
 {
 	int x = 0;
 
+	if (!key) return x;
+
 	switch_mutex_lock(globals.caller_orig_mutex);
 	x = !!switch_core_hash_find(globals.caller_orig_hash, key);
 	switch_mutex_unlock(globals.caller_orig_mutex);
@@ -592,6 +594,8 @@ static int check_caller_outbound_call(const char *key)
 
 static void add_caller_outbound_call(const char *key, switch_call_cause_t *cancel_cause)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.caller_orig_mutex);
 	switch_core_hash_insert(globals.caller_orig_hash, key, cancel_cause);
 	switch_mutex_unlock(globals.caller_orig_mutex);
@@ -599,6 +603,8 @@ static void add_caller_outbound_call(const char *key, switch_call_cause_t *cance
 
 static void del_caller_outbound_call(const char *key)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.caller_orig_mutex);
 	switch_core_hash_delete(globals.caller_orig_hash, key);
 	switch_mutex_unlock(globals.caller_orig_mutex);
@@ -607,6 +613,8 @@ static void del_caller_outbound_call(const char *key)
 static void cancel_caller_outbound_call(const char *key, switch_call_cause_t cause)
 {
 	switch_call_cause_t *cancel_cause = NULL;
+
+	if (!key) return;
 
 	switch_mutex_lock(globals.caller_orig_mutex);
     if ((cancel_cause = (switch_call_cause_t *) switch_core_hash_find(globals.caller_orig_hash, key))) {
@@ -624,6 +632,8 @@ static int check_bridge_call(const char *key)
 {
 	int x = 0;
 
+	if (!key) return x;
+
 	switch_mutex_lock(globals.bridge_mutex);
 	x = !!switch_core_hash_find(globals.bridge_hash, key);
 	switch_mutex_unlock(globals.bridge_mutex);
@@ -634,6 +644,8 @@ static int check_bridge_call(const char *key)
 
 static void add_bridge_call(const char *key)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.bridge_mutex);
 	switch_core_hash_insert(globals.bridge_hash, key, (void *)&marker);
 	switch_mutex_unlock(globals.bridge_mutex);
@@ -651,6 +663,8 @@ static int check_consumer_outbound_call(const char *key)
 {
 	int x = 0;
 
+	if (!key) return x;
+
 	switch_mutex_lock(globals.consumer_orig_mutex);
 	x = !!switch_core_hash_find(globals.consumer_orig_hash, key);
 	switch_mutex_unlock(globals.consumer_orig_mutex);
@@ -660,6 +674,8 @@ static int check_consumer_outbound_call(const char *key)
 
 static void add_consumer_outbound_call(const char *key, switch_call_cause_t *cancel_cause)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.consumer_orig_mutex);
 	switch_core_hash_insert(globals.consumer_orig_hash, key, cancel_cause);
 	switch_mutex_unlock(globals.consumer_orig_mutex);
@@ -667,6 +683,8 @@ static void add_consumer_outbound_call(const char *key, switch_call_cause_t *can
 
 static void del_consumer_outbound_call(const char *key)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.consumer_orig_mutex);
 	switch_core_hash_delete(globals.consumer_orig_hash, key);
 	switch_mutex_unlock(globals.consumer_orig_mutex);
@@ -675,6 +693,8 @@ static void del_consumer_outbound_call(const char *key)
 static void cancel_consumer_outbound_call(const char *key, switch_call_cause_t cause)
 {
 	switch_call_cause_t *cancel_cause = NULL;
+
+	if (!key) return;
 
 	switch_mutex_lock(globals.consumer_orig_mutex);
     if ((cancel_cause = (switch_call_cause_t *) switch_core_hash_find(globals.consumer_orig_hash, key))) {
@@ -1948,6 +1968,8 @@ static uint32_t fifo_add_outbound(const char *node_name, const char *url, uint32
 	if (priority >= MAX_PRI) {
 		priority = MAX_PRI - 1;
 	}
+
+	if (!node_name) return 0;
 
 	switch_mutex_lock(globals.mutex);
 
@@ -4166,6 +4188,8 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 	char *sql, *name_dup, *p;
 	fifo_node_t *node = NULL;
 
+	if (!fifo_name) return;
+
 	if (switch_stristr("fifo_outbound_uuid=", originate_string)) {
 		extract_fifo_outbound_uuid(originate_string, digest, sizeof(digest));
 	} else {
@@ -4212,6 +4236,9 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	char outbound_count[80] = "";
 	callback_t cbt = { 0 };
 	fifo_node_t *node = NULL;
+
+	if (!fifo_name) return;
+
 
 	if (switch_stristr("fifo_outbound_uuid=", originate_string)) {
 		extract_fifo_outbound_uuid(originate_string, digest, sizeof(digest));
