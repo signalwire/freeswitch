@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: encoder.c,v 1.26 2008/11/21 15:30:22 steveu Exp $
  */
 
 /*! \file */
@@ -32,6 +30,7 @@
 #include "huff_tab.h"
 #include "tables.h"
 #include "bitstream.h"
+#include "utilities.h"
 
 #if defined(G722_1_USE_FIXED_POINT)
 
@@ -99,9 +98,8 @@ static void bits_to_words(g722_1_encode_state_t *s,
     drp_num_bits[number_of_regions] = num_categorization_control_bits;
     drp_code_bits[number_of_regions] = categorization_control;
 
-    bit_count = 0;
     /* These code bits are right justified. */
-    for (region = 0;  region <= number_of_regions;  region++)
+    for (bit_count = 0, region = 0;  region <= number_of_regions;  region++)
     {
         g722_1_bitstream_put(&s->bitstream, &out_code, drp_code_bits[region], drp_num_bits[region]);
         bit_count += drp_num_bits[region];
@@ -247,14 +245,11 @@ void adjust_abs_region_power_index(int16_t *absolute_region_power_index,
 
     for (region = 0;  region < number_of_regions;  region++)
     {
-        n = sub(absolute_region_power_index[region], 39);
-        n = shr(n, 1);
+        n = sub(absolute_region_power_index[region], 39) >> 1;
         if (n > 0)
         {
             temp = (int16_t) L_mult0(region, REGION_SIZE);
-
             raw_mlt_ptr = &mlt_coefs[temp];
-
             for (i = 0;  i < REGION_SIZE;  i++)
             {
                 acca = L_shl(*raw_mlt_ptr, 16);
@@ -264,8 +259,7 @@ void adjust_abs_region_power_index(int16_t *absolute_region_power_index,
                 *raw_mlt_ptr++ = (int16_t) acca;
             }
 
-            temp = sub(absolute_region_power_index[region], shl(n, 1));
-            absolute_region_power_index[region] = temp;
+            absolute_region_power_index[region] = sub(absolute_region_power_index[region], shl(n, 1));
         }
     }
 }
@@ -281,7 +275,6 @@ static int16_t compute_region_powers(int16_t *mlt_coefs,
 {
     int16_t *input_ptr;
     int32_t long_accumulator;
-    int16_t itemp1;
     int16_t power_shift;
     int16_t region;
     int16_t j;
@@ -295,12 +288,8 @@ static int16_t compute_region_powers(int16_t *mlt_coefs,
     input_ptr = mlt_coefs;
     for (region = 0;  region < number_of_regions;  region++)
     {
-        long_accumulator = 0;
-        for (j = 0;  j < REGION_SIZE;  j++)
-        {
-            itemp1 = *input_ptr++;
-            long_accumulator = L_mac0(long_accumulator, itemp1, itemp1);
-        }
+        long_accumulator = vec_dot_prodi16(input_ptr, input_ptr, REGION_SIZE);
+        input_ptr += REGION_SIZE;
 
         power_shift = 0;
         acca = long_accumulator & 0x7FFF0000L;
@@ -348,7 +337,7 @@ static int16_t compute_region_powers(int16_t *mlt_coefs,
     }
 
     /* The MLT is currently scaled too low by the factor
-       ENCODER_SCALE_FACTOR(=18318)/32768 * (1./sqrt(160).
+       ENCODER_SCALE_FACTOR(=18318)/32768 * (1.0/sqrt(160).
        This is the ninth power of 1 over the square root of 2.
        So later we will add ESF_ADJUSTMENT_TO_RMS_INDEX (now 9)
        to drp_code_bits[0]. */
@@ -520,7 +509,8 @@ static int16_t vector_huffman(int16_t category,
     int16_t num_vecs;
     int16_t kmax;
     int16_t kmax_plus_one;
-    int16_t index,signs_index;
+    int16_t index;
+    int16_t signs_index;
     const int16_t *bitcount_table_ptr;
     const uint16_t *code_table_ptr;
     int32_t code_bits;

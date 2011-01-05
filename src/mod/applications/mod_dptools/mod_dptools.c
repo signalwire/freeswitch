@@ -1001,6 +1001,17 @@ SWITCH_STANDARD_APP(deflect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(recovery_refresh_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to recovery_refresh the call */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH;
+	switch_core_session_receive_message(session, &msg);
+}
+
 
 SWITCH_STANDARD_APP(sched_cancel_function)
 {
@@ -3112,6 +3123,11 @@ SWITCH_STANDARD_APP(verbose_events_function)
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_VERBOSE_EVENTS);
 }
 
+SWITCH_STANDARD_APP(cng_plc_function)
+{
+	switch_channel_set_flag(switch_core_session_get_channel(session), CF_CNG_PLC);
+}
+
 SWITCH_STANDARD_APP(early_hangup_function)
 {
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_EARLY_HANGUP);
@@ -3497,6 +3513,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "<ip> <acl | cidr> [<hangup_cause>]", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "verbose_events", "Make ALL Events verbose.", "Make ALL Events verbose.", verbose_events_function, "",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "cng_plc", "Do PLC on CNG frames", "", cng_plc_function, "",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "early_hangup", "Enable early hangup", "", early_hangup_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "delay_echo", "echo audio at a specified delay", "Delay n ms", delay_function, "<delay ms>", SAF_NONE);
@@ -3540,6 +3558,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "recovery_refresh", "Send call recovery_refresh", "Send a call recovery_refresh.", recovery_refresh_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",

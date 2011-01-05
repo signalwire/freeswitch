@@ -131,6 +131,7 @@
     <ClCompile Include="..\..\libg722_1\src\huff_tab.c" />
     <ClCompile Include="..\..\libg722_1\src\sam2coef.c" />
     <ClCompile Include="..\..\libg722_1\src\tables.c" />
+    <ClCompile Include="..\..\libg722_1\src\utilities.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libg722_1\src\basop32.h" />
@@ -143,6 +144,7 @@
     <ClInclude Include="..\..\libg722_1\src\huff_tab.h" />
     <ClInclude Include="..\..\libg722_1\src\sam2coef.h" />
     <ClInclude Include="..\..\libg722_1\src\tables.h" />
+    <ClInclude Include="..\..\libg722_1\src\utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

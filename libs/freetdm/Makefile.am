@@ -73,6 +73,7 @@ libfreetdm_la_SOURCES = \
 	$(SRC)/hashtable.c \
 	$(SRC)/hashtable_itr.c \
 	$(SRC)/ftdm_io.c \
+	$(SRC)/ftdm_state.c \
 	$(SRC)/ftdm_queue.c \
 	$(SRC)/ftdm_sched.c \
 	$(SRC)/ftdm_call_utils.c \

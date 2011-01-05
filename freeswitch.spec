@@ -379,7 +379,7 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/fre
 #						Event Handlers
 #
 ######################################################################################################################
-EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_event_socket event_handlers/mod_event_multicast"
+EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_sqlite event_handlers/mod_event_socket event_handlers/mod_event_multicast"
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
@@ -620,6 +620,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/callcenter.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_pg_csv.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_sqlite.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/console.conf.xml
@@ -746,6 +747,7 @@ fi
 %{prefix}/mod/mod_bv.so*
 %{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_cdr_csv.so*
+%{prefix}/mod/mod_cdr_sqlite.so*
 %{prefix}/mod/mod_celt.so*
 %{prefix}/mod/mod_cidlookup.so*
 %{prefix}/mod/mod_cluechoo.so*

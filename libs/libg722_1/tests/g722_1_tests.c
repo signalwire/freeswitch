@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: g722_1_tests.c,v 1.14 2008/11/21 15:30:22 steveu Exp $
  */
 
 /*! \file */
@@ -36,7 +34,7 @@
 #include <g722_1.h>
 
 #include "timing.h"
-#include "itu_bit_stream.h"
+#include "g192_bit_stream.h"
 
 typedef struct
 {
@@ -227,7 +225,7 @@ static void parse_command_line(char *argv[], coder_control_t *control)
     }
     else if (strcasecmp(*argv, "i") == 0)
     {
-        control->encoded_format = ITU_CODEC_BITSTREAM_ITU;
+        control->encoded_format = ITU_CODEC_BITSTREAM_G192;
         printf("Encoding format = ITU-format bitstream\n");
     }
     else

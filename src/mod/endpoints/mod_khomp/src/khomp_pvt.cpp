@@ -868,7 +868,6 @@ switch_status_t Board::KhompPvt::justStart(switch_caller_profile_t *profile)
             _caller_profile = switch_caller_profile_clone(_session, profile);
             switch_channel_set_caller_profile(channel, _caller_profile);
 
-            switch_channel_set_flag(channel, CF_OUTBOUND);
             switch_channel_set_state(channel, CS_INIT);
         }
         else

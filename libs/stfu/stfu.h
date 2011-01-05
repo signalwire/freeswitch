@@ -38,6 +38,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+
 
 #ifdef  _MSC_VER
 #ifndef uint32_t
@@ -62,6 +64,85 @@ typedef unsigned long   in_addr_t;
 #endif
 #include <assert.h>
 
+
+
+#ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
+typedef SOCKET stfu_socket_t;
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int8 uint8_t;
+typedef __int64 int64_t;
+typedef __int32 int32_t;
+typedef __int16 int16_t;
+typedef __int8 int8_t;
+typedef intptr_t stfu_ssize_t;
+typedef int stfu_filehandle_t;
+#define STFU_SOCK_INVALID INVALID_SOCKET
+#define strerror_r(num, buf, size) strerror_s(buf, size, num)
+#if defined(STFU_DECLARE_STATIC)
+#define STFU_DECLARE(type)			type __stdcall
+#define STFU_DECLARE_NONSTD(type)		type __cdecl
+#define STFU_DECLARE_DATA
+#elif defined(STFU_EXPORTS)
+#define STFU_DECLARE(type)			__declspec(dllexport) type __stdcall
+#define STFU_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
+#define STFU_DECLARE_DATA				__declspec(dllexport)
+#else
+#define STFU_DECLARE(type)			__declspec(dllimport) type __stdcall
+#define STFU_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
+#define STFU_DECLARE_DATA				__declspec(dllimport)
+#endif
+#else
+#define STFU_DECLARE(type) type
+#define STFU_DECLARE_NONSTD(type) type
+#define STFU_DECLARE_DATA
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <stdarg.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#define STFU_SOCK_INVALID -1
+typedef int stfu_socket_t;
+typedef ssize_t stfu_ssize_t;
+typedef int stfu_filehandle_t;
+#endif
+
+
+#define STFU_PRE __FILE__, __FUNCTION__, __LINE__
+#define STFU_LOG_LEVEL_DEBUG 7
+#define STFU_LOG_LEVEL_INFO 6
+#define STFU_LOG_LEVEL_NOTICE 5
+#define STFU_LOG_LEVEL_WARNING 4
+#define STFU_LOG_LEVEL_ERROR 3
+#define STFU_LOG_LEVEL_CRIT 2
+#define STFU_LOG_LEVEL_ALERT 1
+#define STFU_LOG_LEVEL_EMERG 0
+
+#define STFU_LOG_DEBUG STFU_PRE, STFU_LOG_LEVEL_DEBUG
+#define STFU_LOG_INFO STFU_PRE, STFU_LOG_LEVEL_INFO
+#define STFU_LOG_NOTICE STFU_PRE, STFU_LOG_LEVEL_NOTICE
+#define STFU_LOG_WARNING STFU_PRE, STFU_LOG_LEVEL_WARNING
+#define STFU_LOG_ERROR STFU_PRE, STFU_LOG_LEVEL_ERROR
+#define STFU_LOG_CRIT STFU_PRE, STFU_LOG_LEVEL_CRIT
+#define STFU_LOG_ALERT STFU_PRE, STFU_LOG_LEVEL_ALERT
+#define STFU_LOG_EMERG STFU_PRE, STFU_LOG_LEVEL_EMERG
+typedef void (*stfu_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
+
+
+int stfu_vasprintf(char **ret, const char *fmt, va_list ap);
+
+extern stfu_logger_t stfu_log;
+
+/*! Sets the logger for libstfu. Default is the null_logger */
+void stfu_global_set_logger(stfu_logger_t logger);
+/*! Sets the default log level for libstfu */
+void stfu_global_set_default_logger(int level);
+
 #define STFU_DATALEN 16384
 #define STFU_QLEN 300
 #define STFU_MAX_TRACK 256
@@ -69,13 +150,13 @@ typedef unsigned long   in_addr_t;
 typedef enum {
 	STFU_IT_FAILED,
 	STFU_IT_WORKED,
-	STFU_IM_DONE
+	STFU_IM_DONE,
+	STFU_ITS_TOO_LATE
 } stfu_status_t;
 
 struct stfu_frame {
 	uint32_t ts;
 	uint32_t pt;
-	uint32_t seq;
 	uint8_t data[STFU_DATALEN];
 	size_t dlen;
 	uint8_t was_read;
@@ -100,14 +181,16 @@ void stfu_n_report(stfu_instance_t *i, stfu_report_t *r);
 void stfu_n_destroy(stfu_instance_t **i);
 stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_per_packet, uint32_t samples_per_second);
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen);
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t seq, uint32_t pt, void *data, size_t datalen, int last);
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);
 void stfu_n_reset(stfu_instance_t *i);
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);
 void stfu_n_call_me(stfu_instance_t *i, stfu_n_call_me_t callback, void *udata);
+void stfu_n_debug(stfu_instance_t *i, const char *name);
+int32_t stfu_n_get_drift(stfu_instance_t *i);
 
-#define stfu_im_done(i) stfu_n_add_data(i, 0, NULL, 0, 1)
-#define stfu_n_eat(i,t,s,p,d,l) stfu_n_add_data(i, t, s, p, d, l, 0)
+#define stfu_im_done(i) stfu_n_add_data(i, 0, NULL, 0, 0, 1)
+#define stfu_n_eat(i,t,p,d,l,tt) stfu_n_add_data(i, t, p, d, l, tt, 0)
 
 #ifdef __cplusplus
 }

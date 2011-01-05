@@ -1,5 +1,5 @@
 /*
- * SpanDSP - a series of DSP components for telephony
+ * g722_1 - a library for the G.722.1 and Annex C codecs
  *
  * timing.h - Provide access to the Pentium/Athlon TSC timer register
  *
@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: timing.h,v 1.1 2008/10/17 15:17:39 steveu Exp $
  */
 
 #if !defined(_TIMING_H_)

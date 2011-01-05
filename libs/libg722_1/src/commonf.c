@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: commonf.c,v 1.11 2008/09/30 14:06:39 steveu Exp $
  */
 
 /*! \file */
@@ -34,9 +32,7 @@
 
 #if !defined(G722_1_USE_FIXED_POINT)
 
-/****************************************************************************************
- Description: Computes a series of categorizations    
-****************************************************************************************/
+/* Compute a series of categorizations */
 void categorize(int number_of_regions,
                 int number_of_available_bits,
                 int rms_index[MAX_NUMBER_OF_REGIONS],

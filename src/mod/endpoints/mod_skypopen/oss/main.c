@@ -1,5 +1,5 @@
 /*
- * main.c -- the bare scull char module
+ * main.c -- the bare skypopen char module
  *
  * Copyright (C) 2010 Giovanni Maruzzelli
  * Copyright (C) 2001 Alessandro Rubini and Jonathan Corbet
@@ -41,117 +41,198 @@
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 
-#include "scull.h"		/* local definitions */
+#include "skypopen.h"		/* local definitions */
 
 /*
  * Our parameters which can be set at load time.
  */
 
-int scull_major =   SCULL_MAJOR;
-int scull_minor =   3;
-int scull_nr_devs = SCULL_NR_DEVS;	/* number of bare scull devices */
+int skypopen_major =   SKYPOPEN_MAJOR;
+int skypopen_minor =   3;
+int skypopen_nr_devs = SKYPOPEN_NR_DEVS;	/* number of bare skypopen devices */
 
-module_param(scull_major, int, S_IRUGO);
-module_param(scull_minor, int, S_IRUGO);
-module_param(scull_nr_devs, int, S_IRUGO);
+module_param(skypopen_major, int, S_IRUGO);
+module_param(skypopen_minor, int, S_IRUGO);
+module_param(skypopen_nr_devs, int, S_IRUGO);
 
-MODULE_AUTHOR("Original: Alessandro Rubini, Jonathan Corbet. Heavy modified by: Giovanni Maruzzelli");
+MODULE_AUTHOR("Original: Alessandro Rubini, Jonathan Corbet. Modified by: Giovanni Maruzzelli for FreeSWITCH skypopen");
 MODULE_LICENSE("Dual BSD/GPL");
 
-static struct scull_dev *scull_devices;	/* allocated in scull_init_module */
+static struct skypopen_dev *skypopen_devices;	/* allocated in skypopen_init_module */
 
-#define GIOVA_BLK 1920
-#define GIOVA_SLEEP 20
+static int unload = 0;
+#ifdef CENTOS
+#define HRTIMER_MODE_REL HRTIMER_REL
+#endif// CENTOS
 
+#ifndef WANT_HRTIMER
 void my_timer_callback_inq( unsigned long data )
 {
-	struct scull_dev *dev = (void *)data;
+	struct skypopen_dev *dev = (void *)data;
 
-	//dev->readable=1;
 	wake_up_interruptible(&dev->inq);
-	mod_timer( &dev->timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
+	mod_timer( &dev->timer_inq, jiffies + msecs_to_jiffies(SKYPOPEN_SLEEP) );
 
 }
 
 void my_timer_callback_outq( unsigned long data )
 {
-	struct scull_dev *dev = (void *)data;
+	struct skypopen_dev *dev = (void *)data;
 
-	//dev->writable=1;
 	wake_up_interruptible(&dev->outq);
-	mod_timer( &dev->timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
+	mod_timer( &dev->timer_outq, jiffies + msecs_to_jiffies(SKYPOPEN_SLEEP) );
 }
+#else// WANT_HRTIMER
+
+#ifndef CENTOS
+static enum hrtimer_restart my_hrtimer_callback_inq( struct hrtimer *timer_inq )
+{
+	struct skypopen_dev *dev = container_of(timer_inq, struct skypopen_dev, timer_inq);
+	ktime_t now;
+
+	if(unload)
+		return HRTIMER_NORESTART;
+
+	now = ktime_get();
+	hrtimer_forward(&dev->timer_inq, now, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
+	wake_up_interruptible(&dev->inq);
+
+	return HRTIMER_RESTART;
+}
+static enum hrtimer_restart my_hrtimer_callback_outq( struct hrtimer *timer_outq )
+{
+	struct skypopen_dev *dev = container_of(timer_outq, struct skypopen_dev, timer_outq);
+	ktime_t now;
+
+	if(unload)
+		return HRTIMER_NORESTART;
+
+	now = ktime_get();
+	hrtimer_forward(&dev->timer_outq, now, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
+	wake_up_interruptible(&dev->outq);
+
+	return HRTIMER_RESTART;
+}
+#else// CENTOS
+static int my_hrtimer_callback_inq( struct hrtimer *timer_inq )
+{
+	struct skypopen_dev *dev = container_of(timer_inq, struct skypopen_dev, timer_inq);
+
+	if(unload)
+		return HRTIMER_NORESTART;
+
+	hrtimer_forward(&dev->timer_inq, timer_inq->expires, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
+	wake_up_interruptible(&dev->inq);
+
+	return HRTIMER_RESTART;
+}
+static int my_hrtimer_callback_outq( struct hrtimer *timer_outq )
+{
+	struct skypopen_dev *dev = container_of(timer_outq, struct skypopen_dev, timer_outq);
+
+	if(unload)
+		return HRTIMER_NORESTART;
+
+	hrtimer_forward(&dev->timer_outq, timer_outq->expires, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
+	wake_up_interruptible(&dev->outq);
+
+	return HRTIMER_RESTART;
+}
+#endif// CENTOS
+#endif// WANT_HRTIMER
 
 /* The clone-specific data structure includes a key field */
 
-struct scull_listitem {
-	struct scull_dev device;
+struct skypopen_listitem {
+	struct skypopen_dev device;
 	dev_t key;
 	struct list_head list;
 
 };
 
 /* The list of devices, and a lock to protect it */
-static LIST_HEAD(scull_c_list);
-static spinlock_t scull_c_lock = SPIN_LOCK_UNLOCKED;
+static LIST_HEAD(skypopen_c_list);
+static spinlock_t skypopen_c_lock = SPIN_LOCK_UNLOCKED;
 
 /* Look for a device or create one if missing */
-static struct scull_dev *scull_c_lookfor_device(dev_t key)
+static struct skypopen_dev *skypopen_c_lookfor_device(dev_t key)
 {
-	struct scull_listitem *lptr;
+	struct skypopen_listitem *lptr;
+#ifdef WANT_HRTIMER
+#if 0
+	ktime_t ktime_inq;
+	ktime_t ktime_outq;
+#endif //0
+#endif// WANT_HRTIMER
 
-	list_for_each_entry(lptr, &scull_c_list, list) {
+	list_for_each_entry(lptr, &skypopen_c_list, list) {
 		if (lptr->key == key)
 			return &(lptr->device);
 	}
 
 	/* not found */
-	lptr = kmalloc(sizeof(struct scull_listitem), GFP_KERNEL);
+	lptr = kmalloc(sizeof(struct skypopen_listitem), GFP_KERNEL);
 	if (!lptr)
 		return NULL;
 
 	/* initialize the device */
-	memset(lptr, 0, sizeof(struct scull_listitem));
+	memset(lptr, 0, sizeof(struct skypopen_listitem));
 	lptr->key = key;
 
 	init_waitqueue_head(&lptr->device.inq);
 	init_waitqueue_head(&lptr->device.outq);
-	printk(" Timer installing\n");
+#ifndef WANT_HRTIMER
 	setup_timer( &lptr->device.timer_inq, my_timer_callback_inq, (long int)lptr );
 	setup_timer( &lptr->device.timer_outq, my_timer_callback_outq, (long int)lptr );
-	printk( "Starting timer to fire in %dms (%ld)\n", GIOVA_SLEEP, jiffies );
-	mod_timer( &lptr->device.timer_inq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
-	mod_timer( &lptr->device.timer_outq, jiffies + msecs_to_jiffies(GIOVA_SLEEP) );
+	printk( "Starting skypopen OSS driver read timer (%dms) skype client:(%d)\n", SKYPOPEN_SLEEP, current->tgid );
+	mod_timer( &lptr->device.timer_inq, jiffies + msecs_to_jiffies(SKYPOPEN_SLEEP) );
+	printk( "Starting skypopen OSS driver write timer (%dms) skype client:(%d)\n", SKYPOPEN_SLEEP, current->tgid );
+	mod_timer( &lptr->device.timer_outq, jiffies + msecs_to_jiffies(SKYPOPEN_SLEEP) );
+#else// WANT_HRTIMER
+#if 0
+	ktime_inq = ktime_set( 0, SKYPOPEN_SLEEP * 1000000);
+	hrtimer_init( &lptr->device.timer_inq, CLOCK_MONOTONIC, HRTIMER_MODE_REL );
+	lptr->device.timer_inq.function = &my_hrtimer_callback_inq;
+	hrtimer_start( &lptr->device.timer_inq, ktime_inq, HRTIMER_MODE_REL );
+
+	ktime_outq = ktime_set( 0, SKYPOPEN_SLEEP * 1000000);
+	hrtimer_init( &lptr->device.timer_outq, CLOCK_MONOTONIC, HRTIMER_MODE_REL );
+	lptr->device.timer_outq.function = &my_hrtimer_callback_outq;
+	hrtimer_start( &lptr->device.timer_outq, ktime_outq, HRTIMER_MODE_REL );
+#endif
+
+#endif// WANT_HRTIMER
+
 	/* place it in the list */
-	list_add(&lptr->list, &scull_c_list);
+	list_add(&lptr->list, &skypopen_c_list);
 
 	return &(lptr->device);
 }
-static int scull_c_open(struct inode *inode, struct file *filp)
+
+/*
+ * Open and close
+ */
+static int skypopen_c_open(struct inode *inode, struct file *filp)
 {
-	struct scull_dev *dev;
+	struct skypopen_dev *dev;
 	dev_t key;
 
-	if (!current->pid) { 
-		printk("Process \"%s\" has no pid\n", current->comm);
-		return -EINVAL;
-	}
-	key = current->pid;
+	key = current->tgid;
 
-	/* look for a scullc device in the list */
-	spin_lock(&scull_c_lock);
-	dev = scull_c_lookfor_device(key);
-	spin_unlock(&scull_c_lock);
+	/* look for a skypopenc device in the list */
+	spin_lock(&skypopen_c_lock);
+	dev = skypopen_c_lookfor_device(key);
+	spin_unlock(&skypopen_c_lock);
 
 	if (!dev)
 		return -ENOMEM;
 
-	/* then, everything else is copied from the bare scull device */
+	/* then, everything else is copied from the bare skypopen device */
 	filp->private_data = dev;
 	return 0;          /* success */
 }
 
-static int scull_c_release(struct inode *inode, struct file *filp)
+static int skypopen_c_release(struct inode *inode, struct file *filp)
 {
 	/*
 	 * Nothing to do, because the device is persistent.
@@ -163,39 +244,91 @@ static int scull_c_release(struct inode *inode, struct file *filp)
 
 
 /*************************************************************/
-/*
- * Open and close
- */
 
-ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
+static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
-	struct scull_dev *dev = filp->private_data;
-
 	DEFINE_WAIT(wait);
+        size_t written;
+	struct skypopen_dev *dev = filp->private_data;
+
+	if(unload)
+		return -1;
+
+#ifdef WANT_HRTIMER
+#if 1
+	if(dev->timer_inq_started == 0){
+		ktime_t ktime_inq;
+
+		ktime_inq = ktime_set( 0, SKYPOPEN_SLEEP * 1000000);
+		hrtimer_init( &dev->timer_inq, CLOCK_MONOTONIC, HRTIMER_MODE_REL );
+		dev->timer_inq.function = &my_hrtimer_callback_inq;
+		hrtimer_start( &dev->timer_inq, ktime_inq, HRTIMER_MODE_REL );
+		dev->timer_inq_started = 1;
+	}
+#endif
+#endif// WANT_HRTIMER
+
+
+	//printk("READ\n");
 	prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
 	schedule();
 	finish_wait(&dev->inq, &wait);
-	//memset(buf, 255, count);
 
-	//wait_event_interruptible(dev->inq, dev->readable);
-	//dev->readable=0;
-	return count;
+        if (!count)
+                return 0;
 
+        if (!access_ok(VERIFY_WRITE, buf, count))
+                return -EFAULT;
+
+        written = 0;
+        while (count) {
+                unsigned long unwritten;
+                size_t chunk = count;
+
+                if (chunk > PAGE_SIZE)
+                        chunk = PAGE_SIZE;      /* Just for latency reasons */
+                unwritten = __clear_user(buf, chunk);
+                written += chunk - unwritten;
+                if (unwritten)
+                        break;
+                if (signal_pending(current))
+                        return written ? written : -ERESTARTSYS;
+                buf += chunk;
+                count -= chunk;
+                cond_resched();
+        }
+        return written ? written : -EFAULT;
 }
 
-ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
+static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
 		loff_t *f_pos)
 {
-	struct scull_dev *dev = filp->private_data;
 	DEFINE_WAIT(wait);
+	struct skypopen_dev *dev = filp->private_data;
+
+	if(unload)
+		return -1;
+
+#ifdef WANT_HRTIMER
+#if 1
+	if(dev->timer_outq_started == 0){
+		ktime_t ktime_outq;
+
+		ktime_outq = ktime_set( 0, SKYPOPEN_SLEEP * 1000000);
+		hrtimer_init( &dev->timer_outq, CLOCK_MONOTONIC, HRTIMER_MODE_REL );
+		dev->timer_outq.function = &my_hrtimer_callback_outq;
+		hrtimer_start( &dev->timer_outq, ktime_outq, HRTIMER_MODE_REL );
+		dev->timer_outq_started = 1;
+	}
+#endif
+#endif// WANT_HRTIMER
+
+
+	//printk("WRITE\n");
 	prepare_to_wait(&dev->outq, &wait, TASK_INTERRUPTIBLE);
 	schedule();
 	finish_wait(&dev->outq, &wait);
-
-	//wait_event_interruptible(dev->outq, dev->writable);
-	//dev->writable=0;
-
 	return count;
 
 }
@@ -203,7 +336,7 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
  * The ioctl() implementation
  */
 
-int scull_ioctl(struct inode *inode, struct file *filp,
+static int skypopen_ioctl(struct inode *inode, struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
 	void __user *argp = (void __user *)arg;
@@ -213,7 +346,7 @@ int scull_ioctl(struct inode *inode, struct file *filp,
 		case OSS_GETVERSION:
 			return put_user(SOUND_VERSION, p);
 		case SNDCTL_DSP_GETBLKSIZE:
-			return put_user(GIOVA_BLK, p);
+			return put_user(SKYPOPEN_BLK, p);
 		case SNDCTL_DSP_GETFMTS:
 			return put_user(28731, p);
 
@@ -223,14 +356,14 @@ int scull_ioctl(struct inode *inode, struct file *filp,
 
 }
 
-struct file_operations scull_fops = {
+struct file_operations skypopen_fops = {
 	.owner =    THIS_MODULE,
 	.llseek =   no_llseek,
-	.read =     scull_read,
-	.write =    scull_write,
-	.ioctl =    scull_ioctl,
-	.open =     scull_c_open,
-	.release =  scull_c_release,
+	.read =     skypopen_read,
+	.write =    skypopen_write,
+	.ioctl =    skypopen_ioctl,
+	.open =     skypopen_c_open,
+	.release =  skypopen_c_release,
 };
 
 /*
@@ -243,34 +376,50 @@ struct file_operations scull_fops = {
  * have not been initialized
  */
 
-void scull_cleanup_module(void)
+void skypopen_cleanup_module(void)
 {
 	int i;
 	int ret;
-	struct scull_listitem *lptr, *next;
-	dev_t devno = MKDEV(scull_major, scull_minor);
+	struct skypopen_listitem *lptr, *next;
+	dev_t devno = MKDEV(skypopen_major, skypopen_minor);
+
+
+	unload = 1;
+
+	msleep(100);
 
 	/* Get rid of our char dev entries */
-	if (scull_devices) {
-		for (i = 0; i < scull_nr_devs; i++) {
-			cdev_del(&scull_devices[i].cdev);
+	if (skypopen_devices) {
+		for (i = 0; i < skypopen_nr_devs; i++) {
+			cdev_del(&skypopen_devices[i].cdev);
 		}
-		kfree(scull_devices);
+		kfree(skypopen_devices);
 	}
 
-
 	/* And all the cloned devices */
-	list_for_each_entry_safe(lptr, next, &scull_c_list, list) {
+	list_for_each_entry_safe(lptr, next, &skypopen_c_list, list) {
+#ifndef WANT_HRTIMER
 		ret= del_timer( &lptr->device.timer_inq );
-		if (ret) printk("The inq timer was still in use...\n");
+		printk( "Stopped skypopen OSS driver read timer\n");
 		ret= del_timer( &lptr->device.timer_outq );
-		if (ret) printk("The outq timer was still in use...\n");
+		printk( "Stopped skypopen OSS driver write timer\n");
+#else// WANT_HRTIMER
+		if(lptr->device.timer_inq_started){
+			ret = hrtimer_cancel( &lptr->device.timer_inq );
+			printk( "Stopped skypopen OSS driver read HRtimer\n");
+		}
+		if(lptr->device.timer_outq_started){
+			ret = hrtimer_cancel( &lptr->device.timer_outq );
+			printk( "Stopped skypopen OSS driver write HRtimer\n");
+		}
+
+#endif// WANT_HRTIMER
 		list_del(&lptr->list);
 		kfree(lptr);
 	}
-	printk("Timer uninstalling\n");
 	/* cleanup_module is never called if registering failed */
-	unregister_chrdev_region(devno, scull_nr_devs);
+	unregister_chrdev_region(devno, skypopen_nr_devs);
+	printk("skypopen OSS driver unloaded\n");
 
 }
 
@@ -278,40 +427,41 @@ void scull_cleanup_module(void)
 /*
  * Set up the char_dev structure for this device.
  */
-static void scull_setup_cdev(struct scull_dev *dev, int index)
+static void skypopen_setup_cdev(struct skypopen_dev *dev, int index)
 {
-	int err, devno = MKDEV(scull_major, scull_minor + index);
+	int err, devno = MKDEV(skypopen_major, skypopen_minor + index);
 
-	cdev_init(&dev->cdev, &scull_fops);
+	cdev_init(&dev->cdev, &skypopen_fops);
 	dev->cdev.owner = THIS_MODULE;
-	dev->cdev.ops = &scull_fops;
+	dev->cdev.ops = &skypopen_fops;
 	err = cdev_add (&dev->cdev, devno, 1);
 	/* Fail gracefully if need be */
 	if (err)
-		printk(KERN_NOTICE "Error %d adding scull%d", err, index);
+		printk(KERN_NOTICE "Error %d adding skypopen%d", err, index);
 }
 
 
 
-int scull_init_module(void)
+int skypopen_init_module(void)
 {
 	int result, i;
 	dev_t dev = 0;
 
+	printk("skypopen OSS driver loading (www.freeswitch.org)\n");
 	/*
 	 * Get a range of minor numbers to work with, asking for a dynamic
 	 * major unless directed otherwise at load time.
 	 */
-	if (scull_major) {
-		dev = MKDEV(scull_major, scull_minor);
-		result = register_chrdev_region(dev, scull_nr_devs, "dsp");
+	if (skypopen_major) {
+		dev = MKDEV(skypopen_major, skypopen_minor);
+		result = register_chrdev_region(dev, skypopen_nr_devs, "dsp");
 	} else {
-		result = alloc_chrdev_region(&dev, scull_minor, scull_nr_devs,
+		result = alloc_chrdev_region(&dev, skypopen_minor, skypopen_nr_devs,
 				"dsp");
-		scull_major = MAJOR(dev);
+		skypopen_major = MAJOR(dev);
 	}
 	if (result < 0) {
-		printk(KERN_WARNING "scull: can't get major %d\n", scull_major);
+		printk(KERN_WARNING "skypopen OSS driver: can't get major %d\n", skypopen_major);
 		return result;
 	}
 
@@ -319,26 +469,26 @@ int scull_init_module(void)
 	 * allocate the devices -- we can't have them static, as the number
 	 * can be specified at load time
 	 */
-	scull_devices = kmalloc(scull_nr_devs * sizeof(struct scull_dev), GFP_KERNEL);
-	if (!scull_devices) {
+	skypopen_devices = kmalloc(skypopen_nr_devs * sizeof(struct skypopen_dev), GFP_KERNEL);
+	if (!skypopen_devices) {
 		result = -ENOMEM;
 		goto fail;  /* Make this more graceful */
 	}
-	memset(scull_devices, 0, scull_nr_devs * sizeof(struct scull_dev));
+	memset(skypopen_devices, 0, skypopen_nr_devs * sizeof(struct skypopen_dev));
 
 	/* Initialize each device. */
-	for (i = 0; i < scull_nr_devs; i++) {
-		scull_setup_cdev(&scull_devices[i], i);
+	for (i = 0; i < skypopen_nr_devs; i++) {
+		skypopen_setup_cdev(&skypopen_devices[i], i);
 	}
 
 	/* At this point call the init function for any friend device */
-	dev = MKDEV(scull_major, scull_minor + scull_nr_devs);
+	dev = MKDEV(skypopen_major, skypopen_minor + skypopen_nr_devs);
 	return 0; /* succeed */
 
 fail:
-	scull_cleanup_module();
+	skypopen_cleanup_module();
 	return result;
 }
 
-module_init(scull_init_module);
-module_exit(scull_cleanup_module);
+module_init(skypopen_init_module);
+module_exit(skypopen_cleanup_module);

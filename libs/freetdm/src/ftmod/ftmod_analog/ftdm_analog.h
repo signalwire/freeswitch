@@ -37,7 +37,9 @@
 
 typedef enum {
 	FTDM_ANALOG_RUNNING = (1 << 0),
-	FTDM_ANALOG_CALLERID = (1 << 1)
+	FTDM_ANALOG_CALLERID = (1 << 1),
+	FTDM_ANALOG_ANSWER_POLARITY_REVERSE = (1 << 2),
+	FTDM_ANALOG_HANGUP_POLARITY_REVERSE = (1 << 3)
 } ftdm_analog_flag_t;
 
 #define FTDM_MAX_HOTLINE_STR		20
@@ -47,11 +49,13 @@ struct ftdm_analog_data {
 	uint32_t flags;
 	uint32_t max_dialstr;
 	uint32_t wait_dialtone_timeout;
+	uint32_t polarity_delay;
 	uint32_t digit_timeout;
 	char hotline[FTDM_MAX_HOTLINE_STR];
 };
 
-
+/* Analog flags to be set in the sflags (signaling flags) channel memeber */
+#define AF_POLARITY_REVERSE (1 << 0)
 
 static void *ftdm_analog_run(ftdm_thread_t *me, void *obj);
 typedef struct ftdm_analog_data ftdm_analog_data_t;

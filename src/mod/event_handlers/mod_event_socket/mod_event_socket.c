@@ -31,8 +31,8 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-#define MAX_QUEUE_LEN 5000
-#define MAX_MISSED 200
+#define MAX_QUEUE_LEN 25000
+#define MAX_MISSED 2000
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -170,7 +170,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 			switch_log_node_t *dnode = switch_log_node_dup(node);
 
-			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
+			if (switch_queue_push(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
 					int ll = l->lost_logs;
 					switch_event_t *event;
@@ -366,7 +366,7 @@ static void event_handler(switch_event_t *event)
 
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				if (switch_queue_trypush(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
+				if (switch_queue_push(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_events) {
 						int le = l->lost_events;
 						l->lost_events = 0;
@@ -1233,7 +1233,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				if (switch_channel_get_state(chan) < CS_HANGUP && switch_channel_test_flag(chan, CF_DIVERT_EVENTS)) {
 					switch_event_t *e = NULL;
 					while (switch_core_session_dequeue_event(listener->session, &e, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-						if (switch_queue_trypush(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
+						if (switch_queue_push(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
 							switch_core_session_queue_event(listener->session, &e);
 							break;
 						}
@@ -1452,7 +1452,7 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 	switch_bool_t ok = SWITCH_TRUE;
 
   top:
-
+	
 	if (!switch_core_hash_find(listener->allowed_api_hash, check_cmd)) {
 		ok = SWITCH_FALSE;
 		goto end;
@@ -1556,14 +1556,18 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			user = cmd + 9;
 
-			if ((pass = strchr(user, ':'))) {
-				*pass++ = '\0';
-			}
-
 			if ((domain_name = strchr(user, '@'))) {
 				*domain_name++ = '\0';
 			}
 
+			if ((pass = strchr(domain_name, ':'))) {
+				*pass++ = '\0';
+			}
+
+			if ((pass = strchr(user, ':'))) {
+				*pass++ = '\0';
+			}
+			
 			if (zstr(user) || zstr(domain_name)) {
 				switch_snprintf(reply, reply_len, "-ERR invalid");
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
@@ -2044,21 +2048,31 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		char *arg = NULL;
 		strip_cr(api_cmd);
 
-		if (!(acs.console_execute = switch_true(console_execute))) {
-			if ((arg = strchr(api_cmd, ' '))) {
-				*arg++ = '\0';
-			}
-		}
-
 		if (listener->allowed_api_hash) {
-			if (!auth_api_command(listener, api_cmd, arg)) {
+			char *api_copy = strdup(api_cmd);
+			char *arg_copy = NULL;
+			int ok = 0;
+
+			if ((arg_copy = strchr(api_copy, ' '))) {
+				*arg_copy++ = '\0';
+			}
+			
+			ok = auth_api_command(listener, api_copy, arg_copy);
+			free(api_copy);
+
+			if (!ok) {
 				switch_snprintf(reply, reply_len, "-ERR permission denied");
 				status = SWITCH_STATUS_SUCCESS;
 				goto done;
 			}
 		}
-
-
+		
+		if (!(acs.console_execute = switch_true(console_execute))) {
+			if ((arg = strchr(api_cmd, ' '))) {
+				*arg++ = '\0';
+			}
+		}
+		
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
 		acs.arg = arg;

@@ -784,16 +784,26 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			err = sangoma_set_tx_queue_sz(ftdmchan->sockfd, &tdm_api, queue_size);
 		}
 		break;
+	case FTDM_COMMAND_SET_POLARITY:
+		{
+			ftdm_polarity_t polarity = FTDM_COMMAND_OBJ_INT;
+			err = sangoma_tdm_set_polarity(ftdmchan->sockfd, &tdm_api, polarity);
+			if (!err) {
+				ftdmchan->polarity = polarity;
+			}
+		}
+		break;
 	default:
 		err = FTDM_NOTIMPL;
 		break;
 	};
 
 	if (err) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
+		int myerrno = errno;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Wanpipe failed to execute command %d: %s\n", command, strerror(myerrno));
+		errno = myerrno;
 		return err;
 	}
-
 
 	return FTDM_SUCCESS;
 }
@@ -1225,6 +1235,131 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 }
 
 /**
+ * \brief Process an event in a channel and set it's OOB event id. The channel must be locked.
+ * \param fchan Channel in which event occured
+ * \param event_id Pointer where we save the OOB event id
+ * \param tdm_api Wanpipe tdm struct that contain the event
+ * \return FTDM_SUCCESS or FTDM_FAIL
+ */
+static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fchan, ftdm_oob_event_t *event_id, wanpipe_tdm_api_t *tdm_api)
+{
+	switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_type) {
+	case WP_API_EVENT_LINK_STATUS:
+		{
+			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
+			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
+				*event_id = FTDM_OOB_ALARM_CLEAR;
+				break;
+			default:
+				*event_id = FTDM_OOB_ALARM_TRAP;
+				break;
+			};
+		}
+		break;
+
+	case WP_API_EVENT_RXHOOK:
+		{
+			if (fchan->type == FTDM_CHAN_TYPE_FXS) {
+				*event_id = tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_OFFHOOK : FTDM_OOB_ONHOOK;
+				if (*event_id == FTDM_OOB_OFFHOOK) {
+					if (ftdm_test_flag(fchan, FTDM_CHANNEL_FLASH)) {
+						ftdm_clear_flag(fchan, FTDM_CHANNEL_FLASH);
+						ftdm_clear_flag(fchan, FTDM_CHANNEL_WINK);
+						*event_id = FTDM_OOB_FLASH;
+						goto event;
+					} else {
+						ftdm_set_flag(fchan, FTDM_CHANNEL_WINK);
+					}
+				} else {
+					if (ftdm_test_flag(fchan, FTDM_CHANNEL_WINK)) {
+						ftdm_clear_flag(fchan, FTDM_CHANNEL_WINK);
+						ftdm_clear_flag(fchan, FTDM_CHANNEL_FLASH);
+						*event_id = FTDM_OOB_WINK;
+						goto event;
+					} else {
+						ftdm_set_flag(fchan, FTDM_CHANNEL_FLASH);
+					}
+				}					
+				break;
+			} else {
+				ftdm_status_t status;
+				wanpipe_tdm_api_t onhook_tdm_api;
+				memset(&onhook_tdm_api, 0, sizeof(onhook_tdm_api));
+				status = sangoma_tdm_txsig_onhook(fchan->sockfd, &onhook_tdm_api);
+				if (status) {
+					snprintf(fchan->last_error, sizeof(fchan->last_error), "ONHOOK Failed");
+					return FTDM_FAIL;
+				}
+				*event_id = onhook_tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;	
+			}
+		}
+		break;
+	case WP_API_EVENT_RING_DETECT:
+		{
+			*event_id = tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_RING_START : FTDM_OOB_RING_STOP;
+		}
+		break;
+		/*
+		disabled this ones when configuring, we don't need them, do we?
+	case WP_API_EVENT_RING_TRIP_DETECT:
+		{
+			*event_id = tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_ONHOOK : FTDM_OOB_OFFHOOK;
+		}
+		break;
+		*/
+	case WP_API_EVENT_RBS:
+		{
+			*event_id = FTDM_OOB_CAS_BITS_CHANGE;
+			fchan->rx_cas_bits = wanpipe_swap_bits(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
+		}
+		break;
+	case WP_API_EVENT_DTMF:
+		{
+			char tmp_dtmf[2] = { tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
+			*event_id = FTDM_OOB_NOOP;
+
+			if (tmp_dtmf[0] == 'f') {
+				ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c, fax tones will be passed through!\n", tmp_dtmf[0]);
+				break;
+			}
+
+			if (tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
+				ftdm_set_flag(fchan, FTDM_CHANNEL_MUTE);
+			}
+
+			if (tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
+				ftdm_clear_flag(fchan, FTDM_CHANNEL_MUTE);
+				if (ftdm_test_flag(fchan, FTDM_CHANNEL_INUSE)) {
+					ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
+					ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
+				}
+			} 
+		}
+		break;
+	case WP_API_EVENT_ALARM:
+		{
+			ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api->wp_tdm_cmd.event.wp_api_event_alarm);
+			*event_id = FTDM_OOB_ALARM_TRAP;
+		}
+		break;
+	case WP_API_EVENT_POLARITY_REVERSE:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Got polarity reverse\n");
+			*event_id = FTDM_OOB_POLARITY_REVERSE;
+		}
+		break;
+	default:
+		{
+			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Unhandled wanpipe event %d\n", tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_type);
+			*event_id = FTDM_OOB_INVALID;
+		}
+		break;
+	}
+event:
+	return FTDM_SUCCESS;
+}
+
+/**
  * \brief Retrieves an event from a wanpipe channel
  * \param channel Channel to retrieve event from
  * \param event FreeTDM event to return
@@ -1237,8 +1372,9 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	wanpipe_tdm_api_t tdm_api;
 	ftdm_span_t *span = ftdmchan->span;
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT))
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
+	}
 
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	status = sangoma_tdm_read_event(ftdmchan->sockfd, &tdm_api);
@@ -1249,114 +1385,10 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	}
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
-	switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
-
-	case WP_TDMAPI_EVENT_LINK_STATUS:
-		{
-			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
-			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
-				event_id = FTDM_OOB_ALARM_CLEAR;
-				break;
-			default:
-				event_id = FTDM_OOB_ALARM_TRAP;
-				break;
-			};
-		}
-		break;
-
-	case WP_TDMAPI_EVENT_RXHOOK:
-		{
-			if (ftdmchan->type == FTDM_CHAN_TYPE_FXS) {
-				event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_OFFHOOK : FTDM_OOB_ONHOOK;
-				if (event_id == FTDM_OOB_OFFHOOK) {
-					if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_FLASH)) {
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_FLASH);
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_WINK);
-						event_id = FTDM_OOB_FLASH;
-						goto event;
-					} else {
-						ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_WINK);
-					}
-				} else {
-					if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_WINK)) {
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_WINK);
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_FLASH);
-						event_id = FTDM_OOB_WINK;
-						goto event;
-					} else {
-						ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_FLASH);
-					}
-				}					
-				break;
-			} else {
-				wanpipe_tdm_api_t onhook_tdm_api;
-				memset(&onhook_tdm_api, 0, sizeof(onhook_tdm_api));
-				status = sangoma_tdm_txsig_onhook(ftdmchan->sockfd, &onhook_tdm_api);
-				if (status) {
-					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "ONHOOK Failed");
-					return FTDM_FAIL;
-				}
-				event_id = onhook_tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;	
-			}
-		}
-		break;
-	case WP_TDMAPI_EVENT_RING_DETECT:
-		{
-			event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_RING_START : FTDM_OOB_RING_STOP;
-		}
-		break;
-		/*
-		disabled this ones when configuring, we don't need them, do we?
-	case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
-		{
-			event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_ONHOOK : FTDM_OOB_OFFHOOK;
-		}
-		break;
-		*/
-	case WP_TDMAPI_EVENT_RBS:
-		{
-			event_id = FTDM_OOB_CAS_BITS_CHANGE;
-			ftdmchan->rx_cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
-		}
-		break;
-	case WP_TDMAPI_EVENT_DTMF:
-		{
-			char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
-			event_id = FTDM_OOB_NOOP;
-
-			if (tmp_dtmf[0] == 'f') {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c, fax tones will be passed through!\n", tmp_dtmf[0]);
-				break;
-			}
-
-			if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
-				ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);
-			}
-
-			if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
-				ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
-					ftdm_channel_queue_dtmf(ftdmchan, tmp_dtmf);
-				}
-			} 
-		}
-		break;
-	case WP_TDMAPI_EVENT_ALARM:
-		{
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
-			event_id = FTDM_OOB_ALARM_TRAP;
-		}
-		break;
-	default:
-		{
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
-			event_id = FTDM_OOB_INVALID;
-		}
-		break;
+	if ((wanpipe_channel_process_event(ftdmchan, &event_id, &tdm_api)) != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
+		return FTDM_FAIL;
 	}
-
-event:
 
 	ftdmchan->last_event_time = 0;
 	span->event_header.e_type = FTDM_EVENT_OOB;
@@ -1419,114 +1451,15 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return FTDM_FAIL;
 			}
-			
 			ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "read wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
-			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 
-			case WP_TDMAPI_EVENT_LINK_STATUS:
-				{
-					switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
-					case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
-						event_id = FTDM_OOB_ALARM_CLEAR;
-						break;
-					default:
-						event_id = FTDM_OOB_ALARM_TRAP;
-						break;
-					};
-				}
-				break;
-
-			case WP_TDMAPI_EVENT_RXHOOK:
-				{
-					if (span->channels[i]->type == FTDM_CHAN_TYPE_FXS) {
-						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_OFFHOOK : FTDM_OOB_ONHOOK;
-						if (event_id == FTDM_OOB_OFFHOOK) {
-							if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_FLASH)) {
-								ftdm_clear_flag_locked(span->channels[i], FTDM_CHANNEL_FLASH);
-								ftdm_clear_flag_locked(span->channels[i], FTDM_CHANNEL_WINK);
-								event_id = FTDM_OOB_FLASH;
-								goto event;
-							} else {
-								ftdm_set_flag_locked(span->channels[i], FTDM_CHANNEL_WINK);
-							}
-						} else {
-							if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_WINK)) {
-								ftdm_clear_flag_locked(span->channels[i], FTDM_CHANNEL_WINK);
-								ftdm_clear_flag_locked(span->channels[i], FTDM_CHANNEL_FLASH);
-								event_id = FTDM_OOB_WINK;
-								goto event;
-							} else {
-								ftdm_set_flag_locked(span->channels[i], FTDM_CHANNEL_FLASH);
-							}
-						}					
-						continue;
-					} else {
-						int err;
-						ftdm_channel_t *ftdmchan = span->channels[i];
-						err=sangoma_tdm_txsig_onhook(ftdmchan->sockfd,&tdm_api);
-						if (err) {
-							snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "ONHOOK Failed");
-							return FTDM_FAIL;
-						}
-						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;	
-					}
-				}
-				break;
-			case WP_TDMAPI_EVENT_RING_DETECT:
-				{
-					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_RING_START : FTDM_OOB_RING_STOP;
-				}
-				break;
-				/*
-				disabled this ones when configuring, we don't need them, do we?
-			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
-				{
-					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? FTDM_OOB_ONHOOK : FTDM_OOB_OFFHOOK;
-				}
-				break;
-				*/
-			case WP_TDMAPI_EVENT_RBS:
-				{
-					event_id = FTDM_OOB_CAS_BITS_CHANGE;
-					span->channels[i]->rx_cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
-				}
-				break;
-			case WP_TDMAPI_EVENT_DTMF:
-				{
-					char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
-					event_id = FTDM_OOB_NOOP;
-
-					if (tmp_dtmf[0] == 'f') {
-						ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c, fax tones will be passed through!\n", tmp_dtmf[0]);
-						break;
-					}
-
-					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
-						ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);
-					}
-
-					if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_MUTE);
-						if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
-							ftdm_channel_queue_dtmf(ftdmchan, tmp_dtmf);
-						}
-					} 
-				}
-				break;
-			case WP_TDMAPI_EVENT_ALARM:
-				{
-					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api.wp_tdm_cmd.event.wp_api_event_alarm);
-					event_id = FTDM_OOB_ALARM_TRAP;
-				}
-				break;
-			default:
-				{
-					ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled wanpipe event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
-					event_id = FTDM_OOB_INVALID;
-				}
-				break;
+			ftdm_channel_lock(ftdmchan);
+			if ((wanpipe_channel_process_event(ftdmchan, &event_id, &tdm_api)) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process events from channel\n");
+				ftdm_channel_unlock(ftdmchan);
+				return FTDM_FAIL;
 			}
+			ftdm_channel_unlock(ftdmchan);
 
 		event:
 
@@ -1538,9 +1471,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 			return FTDM_SUCCESS;
 		}
 	}
-
 	return FTDM_FAIL;
-	
 }
 
 /**

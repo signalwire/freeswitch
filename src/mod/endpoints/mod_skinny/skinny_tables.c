@@ -99,6 +99,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"DisplayPriNotifyMessage", DISPLAY_PRI_NOTIFY_MESSAGE},
     {"ServiceUrlStatMessage", SERVICE_URL_STAT_RES_MESSAGE},
     {"UserToDeviceDataVersion1Message", USER_TO_DEVICE_DATA_VERSION1_MESSAGE},
+    {"XMLAlarmMessage", XML_ALARM_MESSAGE},
     {NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")

@@ -52,42 +52,48 @@ static struct {
     float txgain;
 } zt_globals;
 
+#if defined(__FreeBSD__)
+typedef unsigned long ioctlcmd;
+#else
+typedef int ioctlcmd;
+#endif
+
 /**
  * \brief General IOCTL codes
  */
 struct ioctl_codes {
-    int GET_BLOCKSIZE;
-    int SET_BLOCKSIZE;
-    int FLUSH;
-    int SYNC;
-    int GET_PARAMS;
-    int SET_PARAMS;
-    int HOOK;
-    int GETEVENT;
-    int IOMUX;
-    int SPANSTAT;
-    int MAINT;
-    int GETCONF;
-    int SETCONF;
-    int CONFLINK;
-    int CONFDIAG;
-    int GETGAINS;
-    int SETGAINS;
-    int SPANCONFIG;
-    int CHANCONFIG;
-    int SET_BUFINFO;
-    int GET_BUFINFO;
-    int AUDIOMODE;
-    int ECHOCANCEL;
-    int HDLCRAWMODE;
-    int HDLCFCSMODE;
-    int SPECIFY;
-    int SETLAW;
-    int SETLINEAR;
-    int GETCONFMUTE;
-    int ECHOTRAIN;
-    int SETTXBITS;
-    int GETRXBITS;
+    ioctlcmd GET_BLOCKSIZE;
+    ioctlcmd SET_BLOCKSIZE;
+    ioctlcmd FLUSH;
+    ioctlcmd SYNC;
+    ioctlcmd GET_PARAMS;
+    ioctlcmd SET_PARAMS;
+    ioctlcmd HOOK;
+    ioctlcmd GETEVENT;
+    ioctlcmd IOMUX;
+    ioctlcmd SPANSTAT;
+    ioctlcmd MAINT;
+    ioctlcmd GETCONF;
+    ioctlcmd SETCONF;
+    ioctlcmd CONFLINK;
+    ioctlcmd CONFDIAG;
+    ioctlcmd GETGAINS;
+    ioctlcmd SETGAINS;
+    ioctlcmd SPANCONFIG;
+    ioctlcmd CHANCONFIG;
+    ioctlcmd SET_BUFINFO;
+    ioctlcmd GET_BUFINFO;
+    ioctlcmd AUDIOMODE;
+    ioctlcmd ECHOCANCEL;
+    ioctlcmd HDLCRAWMODE;
+    ioctlcmd HDLCFCSMODE;
+    ioctlcmd SPECIFY;
+    ioctlcmd SETLAW;
+    ioctlcmd SETLINEAR;
+    ioctlcmd GETCONFMUTE;
+    ioctlcmd ECHOTRAIN;
+    ioctlcmd SETTXBITS;
+    ioctlcmd GETRXBITS;
 };
 
 /**
@@ -181,6 +187,7 @@ static ftdm_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
 FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
 FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
+FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event);
 
 /**
  * \brief Initialises codec, and rx/tx gains
@@ -986,6 +993,124 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 }
 
 /**
+ * \brief Process an event from a ftdmchan and set the proper OOB event_id. The channel must be locked.
+ * \param fchan Channel to retrieve event from
+ * \param event_id Pointer to OOB event id
+ * \param zt_event_id Zaptel event id
+ * \return FTDM_SUCCESS or FTDM_FAIL
+ */
+static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, ftdm_oob_event_t *event_id, zt_event_t zt_event_id)
+{
+	switch(zt_event_id) {
+	case ZT_EVENT_RINGEROFF:
+		{
+			return FTDM_FAIL;
+		}
+		break;
+	case ZT_EVENT_RINGERON:
+		{
+			return FTDM_FAIL;
+		}
+		break;
+	case ZT_EVENT_RINGBEGIN:
+		{
+			*event_id = FTDM_OOB_RING_START;
+		}
+		break;
+	case ZT_EVENT_ONHOOK:
+		{
+			*event_id = FTDM_OOB_ONHOOK;
+		}
+		break;
+	case ZT_EVENT_WINKFLASH:
+		{
+			if (fchan->state == FTDM_CHANNEL_STATE_DOWN || fchan->state == FTDM_CHANNEL_STATE_DIALING) {
+				*event_id = FTDM_OOB_WINK;
+			} else {
+				*event_id = FTDM_OOB_FLASH;
+			}
+		}
+		break;
+	case ZT_EVENT_RINGOFFHOOK:
+		{
+			if (fchan->type == FTDM_CHAN_TYPE_FXS || (fchan->type == FTDM_CHAN_TYPE_EM && fchan->state != FTDM_CHANNEL_STATE_UP)) {
+				ftdm_set_flag_locked(fchan, FTDM_CHANNEL_OFFHOOK);
+				*event_id = FTDM_OOB_OFFHOOK;
+			} else if (fchan->type == FTDM_CHAN_TYPE_FXO) {
+				*event_id = FTDM_OOB_RING_START;
+			} else {
+				*event_id = FTDM_OOB_NOOP;
+			}
+		}
+		break;
+	case ZT_EVENT_ALARM:
+		{
+			*event_id = FTDM_OOB_ALARM_TRAP;
+		}
+		break;
+	case ZT_EVENT_NOALARM:
+		{
+			*event_id = FTDM_OOB_ALARM_CLEAR;
+		}
+		break;
+	case ZT_EVENT_BITSCHANGED:
+		{
+			*event_id = FTDM_OOB_CAS_BITS_CHANGE;
+			int bits = 0;
+			int err = ioctl(fchan->sockfd, codes.GETRXBITS, &bits);
+			if (err) {
+				return FTDM_FAIL;
+			}
+			fchan->rx_cas_bits = bits;
+		}
+		break;
+	default:
+		{
+			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
+			*event_id = FTDM_OOB_INVALID;
+		}
+		break;
+	}
+	return FTDM_SUCCESS;
+}
+
+/**
+ * \brief Retrieves an event from a ftdm channel
+ * \param ftdmchan Channel to retrieve event from
+ * \param event FreeTDM event to return
+ * \return Success or failure
+ */
+FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
+{
+	uint32_t event_id = FTDM_OOB_INVALID;
+	zt_event_t zt_event_id = 0;
+	ftdm_span_t *span = ftdmchan->span;
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
+		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
+	}
+
+	if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event from channel: %s\n",
+				strerror(errno));
+		return FTDM_FAIL;
+	}
+
+	/* the core already locked the channel for us, so it's safe to call zt_channel_process_event() here */
+	if ((zt_channel_process_event(ftdmchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
+		return FTDM_FAIL;
+	}
+
+	ftdmchan->last_event_time = 0;
+	span->event_header.e_type = FTDM_EVENT_OOB;
+	span->event_header.enum_id = event_id;
+	span->event_header.channel = ftdmchan;
+	*event = &span->event_header;
+	return FTDM_SUCCESS;
+}
+
+/**
  * \brief Retrieves an event from a ftdmtel span
  * \param span Span to retrieve event from
  * \param event FreeTDM event to return
@@ -997,91 +1122,29 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	zt_event_t zt_event_id = 0;
 
 	for(i = 1; i <= span->chan_count; i++) {
-		if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_EVENT)) {
-			ftdm_clear_flag(span->channels[i], FTDM_CHANNEL_EVENT);
-			if (ioctl(span->channels[i]->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
-				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
-				return FTDM_FAIL;
-			}
-
-			switch(zt_event_id) {
-			case ZT_EVENT_RINGEROFF:
-				{
-					return FTDM_FAIL;
-				}
-				break;
-			case ZT_EVENT_RINGERON:
-				{
-					return FTDM_FAIL;
-				}
-				break;
-			case ZT_EVENT_RINGBEGIN:
-				{
-					event_id = FTDM_OOB_RING_START;
-				}
-				break;
-			case ZT_EVENT_ONHOOK:
-				{
-					event_id = FTDM_OOB_ONHOOK;
-				}
-				break;
-			case ZT_EVENT_WINKFLASH:
-				{
-					if (span->channels[i]->state == FTDM_CHANNEL_STATE_DOWN || span->channels[i]->state == FTDM_CHANNEL_STATE_DIALING) {
-						event_id = FTDM_OOB_WINK;
-					} else {
-						event_id = FTDM_OOB_FLASH;
-					}
-				}
-				break;
-			case ZT_EVENT_RINGOFFHOOK:
-				{
-					if (span->channels[i]->type == FTDM_CHAN_TYPE_FXS || (span->channels[i]->type == FTDM_CHAN_TYPE_EM && span->channels[i]->state != FTDM_CHANNEL_STATE_UP)) {
-						ftdm_set_flag_locked(span->channels[i], FTDM_CHANNEL_OFFHOOK);
-						event_id = FTDM_OOB_OFFHOOK;
-					} else if (span->channels[i]->type == FTDM_CHAN_TYPE_FXO) {
-						event_id = FTDM_OOB_RING_START;
-					} else {
-						event_id = FTDM_OOB_NOOP;
-					}
-				}
-				break;
-			case ZT_EVENT_ALARM:
-				{
-					event_id = FTDM_OOB_ALARM_TRAP;
-				}
-				break;
-			case ZT_EVENT_NOALARM:
-				{
-					event_id = FTDM_OOB_ALARM_CLEAR;
-				}
-				break;
-			case ZT_EVENT_BITSCHANGED:
-				{
-					event_id = FTDM_OOB_CAS_BITS_CHANGE;
-					int bits = 0;
-					int err = ioctl(span->channels[i]->sockfd, codes.GETRXBITS, &bits);
-					if (err) {
-						return FTDM_FAIL;
-					}
-					span->channels[i]->rx_cas_bits = bits;
-				}
-				break;
-			default:
-				{
-					ftdm_log(FTDM_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
-					event_id = FTDM_OOB_INVALID;
-				}
-				break;
-			}
-
-			span->channels[i]->last_event_time = 0;
-			span->event_header.e_type = FTDM_EVENT_OOB;
-			span->event_header.enum_id = event_id;
-			span->event_header.channel = span->channels[i];
-			*event = &span->event_header;
-			return FTDM_SUCCESS;
+		ftdm_channel_t *fchan = span->channels[i];
+		if (ftdm_test_flag(fchan, FTDM_CHANNEL_EVENT)) {
+			ftdm_clear_flag(fchan, FTDM_CHANNEL_EVENT);
 		}
+		if (ioctl(fchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+			snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
+			return FTDM_FAIL;
+		}
+
+		ftdm_channel_lock(fchan);
+		if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
+			ftdm_channel_unlock(fchan);
+			return FTDM_FAIL;
+		}
+		ftdm_channel_unlock(fchan);
+
+		fchan->last_event_time = 0;
+		span->event_header.e_type = FTDM_EVENT_OOB;
+		span->event_header.enum_id = event_id;
+		span->event_header.channel = fchan;
+		*event = &span->event_header;
+		return FTDM_SUCCESS;
 	}
 
 	return FTDM_FAIL;
@@ -1146,11 +1209,23 @@ static FIO_WRITE_FUNCTION(zt_write)
 		bytes += 2;
 	}
 
+tryagain:
 	w = write(ftdmchan->sockfd, data, bytes);
 	
 	if (w >= 0) {
 		*datalen = w;
 		return FTDM_SUCCESS;
+	}
+
+	if (errno == ELAST) {
+		zt_event_t zt_event_id = 0;
+		if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event after ELAST on write: %s\n", strerror(errno));
+			return FTDM_FAIL;
+		}
+		/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dropping event %d to be able to write data\n", zt_event_id);
+		goto tryagain;
 	}
 
 	return FTDM_FAIL;

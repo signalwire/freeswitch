@@ -951,7 +951,6 @@ static void handle_call_answer(ftdm_span_t *span, sangomabc_connection_t *mcon, 
 	}
 }
 
-static __inline__ void advance_chan_states(ftdm_channel_t *ftdmchan);
 static __inline__ void stop_loop(ftdm_channel_t *ftdmchan);
 
 /**
@@ -1002,7 +1001,7 @@ tryagain:
 			} else if (ftdmchan->state == FTDM_CHANNEL_STATE_IN_LOOP && retry) {
 				retry = 0;
 				stop_loop(ftdmchan);
-				advance_chan_states(ftdmchan);
+				ftdm_channel_advance_states(ftdmchan);
 				goto tryagain;
 			} else {
 				ftdm_log(FTDM_LOG_ERROR, "s%dc%d: rejecting incoming call in channel state %s\n", 
@@ -1267,7 +1266,7 @@ static ftdm_channel_t* event_process_states(ftdm_span_t *span, sangomabc_short_e
     }
 
     ftdm_mutex_lock(ftdmchan->mutex);
-    advance_chan_states(ftdmchan);
+    ftdm_channel_advance_states(ftdmchan);
     return ftdmchan;
 }
 
@@ -1354,11 +1353,11 @@ static int parse_sangoma_event(ftdm_span_t *span, sangomabc_connection_t *mcon, 
     }
 
     if(ftdmchan != NULL) {
-        advance_chan_states(ftdmchan);
+    	ftdm_channel_advance_states(ftdmchan);
         ftdm_mutex_unlock(ftdmchan->mutex);
     }
 
-	return 0;
+    return 0;
 
 }
 
@@ -1366,19 +1365,13 @@ static int parse_sangoma_event(ftdm_span_t *span, sangomabc_connection_t *mcon, 
  * \brief Handler for channel state change
  * \param ftdmchan Channel to handle
  */
-static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
+static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 {
 	ftdm_sangoma_boost_data_t *sangoma_boost_data = ftdmchan->span->signal_data;
 	sangomabc_connection_t *mcon = &sangoma_boost_data->mcon;
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
 
-
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
-	} else {
-		return FTDM_SUCCESS;
-	}
 
 	ftdm_assert_return(ftdmchan->last_state != ftdmchan->state, FTDM_FAIL, "Channel state already processed\n");
 
@@ -1388,6 +1381,8 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 	sig.chan_id = ftdmchan->chan_id;
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
+
+	ftdm_channel_complete_state(ftdmchan);
 
 	switch (ftdmchan->state) {
 	case FTDM_CHANNEL_STATE_DOWN:
@@ -1640,15 +1635,7 @@ static __inline__ ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 	default:
 		break;
 	}
-	ftdm_channel_complete_state(ftdmchan);
 	return FTDM_SUCCESS;
-}
-
-static __inline__ void advance_chan_states(ftdm_channel_t *ftdmchan)
-{
-	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		state_advance(ftdmchan);
-	}
 }
 
 /**
@@ -1657,7 +1644,6 @@ static __inline__ void advance_chan_states(ftdm_channel_t *ftdmchan)
 static __inline__ void init_outgoing_array(void)
 {
 	memset(&OUTBOUND_REQUESTS, 0, sizeof(OUTBOUND_REQUESTS));
-
 }
 
 /**
@@ -1685,7 +1671,7 @@ static __inline__ void check_state(ftdm_span_t *span)
 					if (susp && span->channels[j]->state != FTDM_CHANNEL_STATE_DOWN) {
 						ftdm_set_state(span->channels[j], FTDM_CHANNEL_STATE_RESTART);
 					}
-					state_advance(span->channels[j]);
+					ftdm_channel_advance_states(span->channels[j]);
 					ftdm_mutex_unlock(span->channels[j]->mutex);
 				}
 			}
@@ -1695,7 +1681,7 @@ static __inline__ void check_state(ftdm_span_t *span)
 				 * but without taking the chan out of the queue, so check th
 				 * flag before advancing the state */
 				ftdm_mutex_lock(ftdmchan->mutex);
-				state_advance(ftdmchan);
+				ftdm_channel_advance_states(ftdmchan);
 				ftdm_mutex_unlock(ftdmchan->mutex);
 			}
 		}
@@ -2478,7 +2464,7 @@ static BOOST_SIG_STATUS_CB_FUNCTION(ftdm_boost_sig_status_change)
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-	sig.raw_data = &status;
+	sig.ev_data.sigstatus.status = status;
 	ftdm_span_send_signal(ftdmchan->span, &sig);
 	return;
 }
@@ -2687,6 +2673,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_boost_configure_span)
 	span->get_span_sig_status = sangoma_boost_get_span_sig_status;
 	span->set_span_sig_status = sangoma_boost_set_span_sig_status;
 	span->state_map = &boost_state_map;
+	span->state_processor = state_advance;
 	sangoma_boost_data->mcon.debuglevel = FTDM_LOG_LEVEL_DEBUG;
 	sangoma_boost_data->pcon.debuglevel = FTDM_LOG_LEVEL_DEBUG;
 	ftdm_clear_flag(span, FTDM_SPAN_SUGGEST_CHAN_ID);

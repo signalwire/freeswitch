@@ -46,7 +46,6 @@ ftdm_sngss7_data_t g_ftdm_sngss7_data;
 
 /* PROTOTYPES *****************************************************************/
 static void *ftdm_sangoma_ss7_run (ftdm_thread_t * me, void *obj);
-void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_event);
 
 static ftdm_status_t ftdm_sangoma_ss7_stop (ftdm_span_t * span);
@@ -308,9 +307,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* process state changes for this channel until they are all done */
-				while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-					ftdm_sangoma_ss7_process_state_change (ftdmchan);
-				}
+				ftdm_channel_advance_states(ftdmchan);
  
 				/* unlock the channel */
 				ftdm_mutex_unlock (ftdmchan->mutex);				
@@ -403,9 +400,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* while there's a state change present on this channel process it */
-	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_sangoma_ss7_process_state_change(ftdmchan);
-	}
+	ftdm_channel_advance_states(ftdmchan);
 
 	/* figure out the type of event and send it to the right handler */
 	switch (sngss7_event->event_id) {
@@ -468,9 +463,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	} /* switch (sngss7_event->event_id) */
 
 	/* while there's a state change present on this channel process it */
-	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_sangoma_ss7_process_state_change(ftdmchan);
-	}
+	ftdm_channel_advance_states(ftdmchan);
 
 	/* unlock the channel */
 	ftdm_mutex_unlock(ftdmchan->mutex);
@@ -479,7 +472,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 }
 
 /******************************************************************************/
-void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
+ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 {
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	sng_isup_inf_t		*isup_intf = NULL; 
@@ -495,7 +488,7 @@ void ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	SS7_DEBUG_CHAN(ftdmchan, "ftmod_sangoma_ss7 processing state %s\n", ftdm_channel_state2str (ftdmchan->state));
 
 	/* clear the state change flag...since we might be setting a new state */
-	ftdm_clear_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+	ftdm_channel_complete_state(ftdmchan);
 	
 	/*check what state we are supposed to be in */
 	switch (ftdmchan->state) {
@@ -1212,7 +1205,7 @@ suspend_goto_restart:
 	/**************************************************************************/
 	}/*switch (ftdmchan->state) */
 
-	return;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
@@ -1476,6 +1469,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	span->get_channel_sig_status	= ftdm_sangoma_ss7_get_sig_status;
 	span->set_channel_sig_status 	= ftdm_sangoma_ss7_set_sig_status;
 	span->state_map			 		= &sangoma_ss7_state_map;
+	span->state_processor = ftdm_sangoma_ss7_process_state_change;
 	span->signal_data					= ss7_span_info;
 
 	/* set the flag to indicate that this span uses channel state change queues */

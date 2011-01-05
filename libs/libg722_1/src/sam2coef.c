@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C) 2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: sam2coef.c,v 1.12 2008/10/02 11:43:54 steveu Exp $
  */
 
 /*! \file */
@@ -29,17 +27,16 @@
 
 #include "defs.h"
 #include "sam2coef.h"
+#include "utilities.h"
 
-/************************************************************************************
-  Purpose:  Convert Samples to Reversed MLT (Modulated Lapped Transform) Coefficients
+/* Convert Samples to Reversed MLT (Modulated Lapped Transform) Coefficients
  
-  The "Reversed MLT" is an overlapped block transform which uses even symmetry
-  on the left, odd symmetry on the right and a Type IV DCT as the block transform.
-  It is thus similar to a MLT which uses odd symmetry on the left, even symmetry
-  on the right and a Type IV DST as the block transform.  In fact, it is equivalent
-  to reversing the order of the samples, performing an MLT and then negating all
-  the even-numbered coefficients.
-***************************************************************************/
+   The "Reversed MLT" is an overlapped block transform which uses even symmetry
+   on the left, odd symmetry on the right and a Type IV DCT as the block transform.
+   It is thus similar to a MLT which uses odd symmetry on the left, even symmetry
+   on the right and a Type IV DST as the block transform.  In fact, it is equivalent
+   to reversing the order of the samples, performing an MLT and then negating all
+   the even-numbered coefficients. */
 
 #if defined(G722_1_USE_FIXED_POINT)
 int16_t samples_to_rmlt_coefs(const int16_t new_samples[],
@@ -62,34 +59,26 @@ int16_t samples_to_rmlt_coefs(const int16_t new_samples[],
 
     half_dct_length = dct_length >> 1;
 
-    if (dct_length == DCT_LENGTH)
-        win = samples_to_rmlt_window;
-    else
-        win = max_samples_to_rmlt_window;
+    win = (dct_length == DCT_LENGTH)  ?  samples_to_rmlt_window  :  max_samples_to_rmlt_window;
     /* Get the first half of the windowed samples */
     last = half_dct_length - 1;
     for (i = 0;  i < half_dct_length;  i++)
     {
-        acca = 0L;
-        acca = L_mac(acca, win[last - i], old_samples[last - i]);
+        acca = L_mult(win[last - i], old_samples[last - i]);
         acca = L_mac(acca, win[half_dct_length + i], old_samples[half_dct_length + i]);
-        temp = xround(acca);
-        windowed_data[i] = temp;
+        windowed_data[i] = xround(acca);
     }
     /* Get the second half of the windowed samples */
     last = dct_length - 1;
     for (i = 0;  i < half_dct_length;  i++)
     {
-        acca = 0L;
-        acca = L_mac(acca, win[last - i], new_samples[i]);
+        acca = L_mult(win[last - i], new_samples[i]);
         acca = L_mac(acca, negate(win[i]), new_samples[last - i]);
-        temp = xround(acca);
-        windowed_data[half_dct_length + i] = temp;
+        windowed_data[half_dct_length + i] = xround(acca);
     }
 
     /* Save the new samples for next time, when they will be the old samples. */
-    for (i = 0;  i < dct_length;  i++)
-        old_samples[i] = new_samples[i];
+    vec_copyi16(old_samples, new_samples, dct_length);
 
     /* Calculate how many bits to shift up the input to the DCT. */
     temp1 = 0;
@@ -156,10 +145,7 @@ void samples_to_rmlt_coefs(const float new_samples[],
 
     half_dct_length = dct_length >> 1;
    
-    if (dct_length == DCT_LENGTH)
-        win = samples_to_rmlt_window;
-    else
-        win = max_samples_to_rmlt_window;
+    win = (dct_length == DCT_LENGTH)  ?  samples_to_rmlt_window  :  max_samples_to_rmlt_window;
     /* Get the first half of the windowed samples. */
     last = half_dct_length - 1;
     for (i = 0;  i < half_dct_length;  i++)
@@ -177,8 +163,7 @@ void samples_to_rmlt_coefs(const float new_samples[],
         windowed_data[half_dct_length + i] = sum;
     }
     /* Save the new samples for next time, when they will be the old samples. */
-    for (i = 0;  i < dct_length;  i++)
-        old_samples[i] = new_samples[i];
+    vec_copyf(old_samples, new_samples, dct_length);
 
     /* Perform a Type IV DCT on the windowed data to get the coefficients. */
     dct_type_iv(windowed_data, coefs, dct_length);

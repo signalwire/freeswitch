@@ -213,9 +213,13 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	}
 	
 	if (res > 1500) {
+		STEP_MS = res / 1000;
+		STEP_MIC = res;
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
-						  "Do you have your kernel timer frequency set to lower than 1,000Hz? You may experience audio problems.\n", ts.tv_nsec / 1000);
+						  "Do you have your kernel timer frequency set to lower than 1,000Hz? "
+						  "You may experience audio problems. Step MS %d\n", ts.tv_nsec / 1000, STEP_MS);
 		do_sleep(5000000);
 		switch_time_set_cond_yield(SWITCH_TRUE);
 		return;

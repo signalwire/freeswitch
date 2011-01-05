@@ -6,14 +6,12 @@
  * Adapted by Steve Underwood <steveu@coppice.org> from the reference
  * code supplied with ITU G.722.1, which is:
  *
- *   © 2004 Polycom, Inc.
+ *   (C)2004 Polycom, Inc.
  *   All rights reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * $Id: dct4.c,v 1.8 2008/09/29 16:09:26 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -29,6 +27,7 @@
 #include "g722_1/g722_1.h"
 
 #include "defs.h"
+#include "utilities.h"
 
 #if !defined(G722_1_USE_FIXED_POINT)
 
@@ -52,9 +51,7 @@ static const cos_msin_t *cos_msin_table[] =
     cos_msin_640
 };
 
-/*********************************************************************************
- Description: Discrete Cosine Transform, Type IV
-*********************************************************************************/
+/* Discrete Cosine Transform, Type IV */
 void dct_type_iv(float input[], float output[], int dct_length)
 {
     float buffer_a[MAX_DCT_LENGTH];
@@ -64,22 +61,20 @@ void dct_type_iv(float input[], float output[], int dct_length)
     float *in_ptr_low;
     float *in_ptr_high;
     float *next_in_base;
-    float *out_ptr_low;
-    float *out_ptr_high;
+    float *out_ptr;
     float *next_out_base;
     float *out_buffer;
     float *in_buffer;
     float *buffer_swap;
     float *fptr0;
-    const float *fptr2;
-    const float *core_a;
     float in_val_low;
     float in_val_high;
     float cos_even;
     float cos_odd;
     float msin_even;
     float msin_odd;
-    float sum;
+    const float *fptr2;
+    const float *core_a;
     const cos_msin_t **table_ptr_ptr;
     const cos_msin_t *cos_msin_ptr;
     int set_span;
@@ -120,29 +115,24 @@ void dct_type_iv(float input[], float output[], int dct_length)
         for (sets_left = set_count;  sets_left > 0;  sets_left--)
         {
             /* Set up output pointers for the current set */
-            out_ptr_low = next_out_base;
+            out_ptr = next_out_base;
             next_out_base += set_span;
-            out_ptr_high = next_out_base;
 
             /* Loop over all the butterflies in the current set */
-            do
+            for (i = 0;  i < (set_span >> 1);  i++)
             {
                 in_val_low = *in_ptr++;
                 in_val_high = *in_ptr++;
-                *out_ptr_low++ = in_val_low + in_val_high;
-                *--out_ptr_high = in_val_low - in_val_high;
+                out_ptr[i] = in_val_low + in_val_high;
+                out_ptr[set_span - 1 - i] = in_val_low - in_val_high;
             }
-            while (out_ptr_low < out_ptr_high);
         }
 
         /* Decide which buffers to use as input and output next time.
            Except for the first time (when the input buffer is the
            subroutine input) we just alternate the local buffers. */
         in_buffer = out_buffer;
-        if (out_buffer == buffer_a)
-            out_buffer = buffer_b;
-        else
-            out_buffer = buffer_a;
+        out_buffer = (out_buffer == buffer_a)  ?  buffer_b  :  buffer_a;
     }
 
     /* Do dct_size/10 ten-point transforms */
@@ -153,11 +143,8 @@ void dct_type_iv(float input[], float output[], int dct_length)
         fptr2 = core_a;
         for (k = 0;  k < CORE_SIZE;  k++)
         {
-            sum = 0;
-            for (i = 0;  i < CORE_SIZE;  i++)
-                sum += fptr0[i]*fptr2[i];
+            buffer_swap[k] = vec_dot_prodf(fptr0, fptr2, CORE_SIZE);
             fptr2 += CORE_SIZE;
-            buffer_swap[k] = sum;
         }
         fptr0 += CORE_SIZE;
         buffer_swap += CORE_SIZE;
@@ -172,14 +159,10 @@ void dct_type_iv(float input[], float output[], int dct_length)
     {
         /* Initialization for the loop over sets at the current size */
         set_span = dct_length >> set_count_log;
-
         set_count = 1 << set_count_log;
         next_in_base = in_buffer;
-        if (set_count_log == 0)
-            next_out_base = output;
-        else
-            next_out_base = out_buffer;
-        ++table_ptr_ptr;
+        next_out_base = (set_count_log == 0)  ?  output  :  out_buffer;
+        table_ptr_ptr++;
 
         /* Loop over all the sets of this size */
         for (sets_left = set_count;  sets_left > 0;  sets_left--)
@@ -187,26 +170,23 @@ void dct_type_iv(float input[], float output[], int dct_length)
             /* Set up the pointers for the current set */
             in_ptr_low = next_in_base;
             in_ptr_high = in_ptr_low + (set_span >> 1);
-            next_in_base += set_span;
-            out_ptr_low = next_out_base;
-            next_out_base += set_span;
-            out_ptr_high = next_out_base;
+            out_ptr = next_out_base;
             cos_msin_ptr = *table_ptr_ptr;
 
             /* Loop over all the butterfly pairs in the current set */
-            do
+            for (i = 0;  i < (set_span >> 1);  i += 2)
             {
-                cos_even = (*cos_msin_ptr).cosine;
-                msin_even = (*cos_msin_ptr++).minus_sine;
-                *out_ptr_low++ = cos_even * *in_ptr_low - msin_even * *in_ptr_high;
-                *--out_ptr_high = msin_even * *in_ptr_low++ +  cos_even * *in_ptr_high++;
-
-                cos_odd = (*cos_msin_ptr).cosine;
-                msin_odd = (*cos_msin_ptr++).minus_sine;
-                *out_ptr_low++ = cos_odd  * *in_ptr_low  + msin_odd  * *in_ptr_high;
-                *--out_ptr_high = msin_odd  * *in_ptr_low++  -  cos_odd  * *in_ptr_high++;
+                cos_even = cos_msin_ptr[i].cosine;
+                msin_even = cos_msin_ptr[i].minus_sine;
+                cos_odd = cos_msin_ptr[i + 1].cosine;
+                msin_odd = cos_msin_ptr[i + 1].minus_sine;
+                out_ptr[i] = cos_even*in_ptr_low[i] - msin_even*in_ptr_high[i];
+                out_ptr[set_span - 1 - i] = msin_even*in_ptr_low[i] + cos_even*in_ptr_high[i];
+                out_ptr[i + 1] = cos_odd*in_ptr_low[i + 1] + msin_odd*in_ptr_high[i + 1];
+                out_ptr[set_span - 2 - i] = msin_odd*in_ptr_low[i + 1] - cos_odd*in_ptr_high[i + 1];
             }
-            while (out_ptr_low < out_ptr_high);
+            next_in_base += set_span;
+            next_out_base += set_span;
         }
 
         /* Swap input and output buffers for next time */

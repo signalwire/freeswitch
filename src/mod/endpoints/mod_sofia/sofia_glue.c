@@ -2669,7 +2669,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 							  tech_pvt->rm_encoding, 
 							  tech_pvt->codec_ms,
 							  tech_pvt->rm_rate);
-
+			
+			switch_yield(tech_pvt->read_impl.microseconds_per_packet);
 			switch_core_session_lock_codec_write(tech_pvt->session);
 			switch_core_session_lock_codec_read(tech_pvt->session);
 			resetting = 1;
@@ -4687,8 +4688,8 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 
 		if (!sofia_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && !sofia_test_flag(tech_pvt, TFLAG_RECOVERING) &&
-			(switch_channel_test_flag(other_channel, CF_OUTBOUND) &&
-			 switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND) && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
+			(switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_OUTBOUND &&
+ switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
 			sofia_set_flag_locked(tech_pvt, TFLAG_CHANGE_MEDIA);
 		}
@@ -6135,6 +6136,129 @@ void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str)
 	}
 }
 
+char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np)
+{
+	char *contact_str = NULL;
+	const char *contact_host, *contact_user;
+	sip_contact_t const *contact;
+	char *port;
+	const char *display = "\"user\"";
+	char new_port[25] = "";
+	sofia_nat_parse_t lnp = { { 0 } };
+	const char *ipv6;
+	sip_from_t const *from;
+
+	if (!sip || !sip->sip_contact || !sip->sip_contact->m_url) {
+		return NULL;
+	}
+
+	from = sip->sip_from;
+	contact = sip->sip_contact;
+
+	if (!np) {
+		np = &lnp;
+	}
+
+	sofia_glue_get_addr(nua_current_request(profile->nua), np->network_ip, sizeof(np->network_ip), &np->network_port);
+	
+	if (sofia_glue_check_nat(profile, np->network_ip)) {
+		np->is_auto_nat = 1;
+	}
+
+	port = (char *) contact->m_url->url_port;
+	contact_host = sip->sip_contact->m_url->url_host;
+	contact_user = sip->sip_contact->m_url->url_user;
+
+	display = contact->m_display;
+
+
+	if (zstr(display)) {
+		if (from) {
+			display = from->a_display;
+			if (zstr(display)) {
+				display = "\"user\"";
+			}
+		}
+	} else {
+		display = "\"user\"";
+	}
+
+	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+		if (sip->sip_via) {
+			const char *v_port = sip->sip_via->v_port;
+			const char *v_host = sip->sip_via->v_host;
+
+			if (v_host && sip->sip_via->v_received) {
+				np->is_nat = "via received";
+			} else if (v_host && strcmp(np->network_ip, v_host)) {
+				np->is_nat = "via host";
+			} else if (v_port && atoi(v_port) != np->network_port) {
+				np->is_nat = "via port";
+			}
+		}
+	}
+
+	if (!np->is_nat && sip && sip->sip_via && sip->sip_via->v_port &&
+		atoi(sip->sip_via->v_port) == 5060 && np->network_port != 5060 ) {
+		np->is_nat = "via port";
+	}
+
+	if (!np->is_nat && profile->nat_acl_count) {
+		uint32_t x = 0;
+		int ok = 1;
+		char *last_acl = NULL;
+
+		if (!zstr(contact_host)) {
+			for (x = 0; x < profile->nat_acl_count; x++) {
+				last_acl = profile->nat_acl[x];
+				if (!(ok = switch_check_network_list_ip(contact_host, last_acl))) {
+					break;
+				}
+			}
+
+			if (ok) {
+				np->is_nat = last_acl;
+			}
+		}
+	}
+
+	if (np->is_nat && profile->local_network && switch_check_network_list_ip(np->network_ip, profile->local_network)) {
+		if (profile->debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s is on local network, not seting NAT mode.\n", np->network_ip);
+		}
+		np->is_nat = NULL;
+	}
+
+	if (zstr(contact_host)) {
+		np->is_nat = "No contact host";
+	}
+
+	if (np->is_nat) {
+		contact_host = np->network_ip;
+		switch_snprintf(new_port, sizeof(new_port), ":%d", np->network_port);
+		port = NULL;
+	}
+
+
+	if (port) {
+		switch_snprintf(new_port, sizeof(new_port), ":%s", port);
+	}
+
+	ipv6 = strchr(contact_host, ':');
+	if (contact->m_url->url_params) {
+		contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
+									 display, contact->m_url->url_user,
+									 ipv6 ? "[" : "",
+									 contact_host, ipv6 ? "]" : "", new_port, contact->m_url->url_params, np->is_nat ? ";fs_nat=yes" : "");
+	} else {
+		contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
+									 display,
+									 contact->m_url->url_user, ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
+	}
+
+		
+	return contact_str;
+}
 
 
 
