@@ -2101,17 +2101,18 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		return;
 	}
 
-	switch_core_event_hook_add_receive_message(session, messagehook);
-	switch_core_event_hook_add_state_run(session, hanguphook);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s tracking call on uuid %s!\n", switch_channel_get_name(channel), data);
+	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
+	switch_channel_set_variable(channel, "fifo_track_call", "true");
 
 	add_bridge_call(data);
 
 	switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING);
 
-	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
-	switch_channel_set_variable(channel, "fifo_track_call", "true");
+	switch_core_event_hook_add_receive_message(session, messagehook);
+	switch_core_event_hook_add_state_run(session, hanguphook);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s tracking call on uuid %s!\n", switch_channel_get_name(channel), data);
+
 	
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		col1 = "manual_calls_in_count";
