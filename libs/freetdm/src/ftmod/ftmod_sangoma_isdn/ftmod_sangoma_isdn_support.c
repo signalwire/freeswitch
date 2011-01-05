@@ -1033,7 +1033,7 @@ void get_memory_info(void)
 	return;
 }
 
-uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability)
+uint8_t sngisdn_get_infoTranCap_from_user(ftdm_bearer_cap_t bearer_capability)
 {
 	switch(bearer_capability) {
 	case FTDM_BEARER_CAP_SPEECH:
@@ -1049,7 +1049,7 @@ uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability)
 	return FTDM_BEARER_CAP_SPEECH;
 }
 
-uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot)
+uint8_t sngisdn_get_usrInfoLyr1Prot_from_user(ftdm_user_layer1_prot_t layer1_prot)
 {
 	switch(layer1_prot) {
 	case FTDM_USER_LAYER1_PROT_V110:
@@ -1065,25 +1065,22 @@ uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_pr
 	return IN_UIL1_G711ULAW;
 }
 
-ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_user(uint8_t bearer_capability)
+ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_stack(uint8_t bearer_capability)
 {
 	switch(bearer_capability) {
 	case IN_ITC_SPEECH:
-		return FTDM_BEARER_CAP_SPEECH;
-		
+		return FTDM_BEARER_CAP_SPEECH;		
 	case IN_ITC_UNRDIG:
-		return FTDM_BEARER_CAP_64K_UNRESTRICTED;
-		
+		return FTDM_BEARER_CAP_64K_UNRESTRICTED;		
 	case IN_ITC_A31KHZ:
 		return FTDM_BEARER_CAP_3_1KHZ_AUDIO;
-
 	default:
 		return FTDM_BEARER_CAP_SPEECH;
 	}
 	return FTDM_BEARER_CAP_SPEECH;
 }
 
-ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_user(uint8_t layer1_prot)
+ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_stack(uint8_t layer1_prot)
 {
 	switch(layer1_prot) {
 	case IN_UIL1_CCITTV110:
