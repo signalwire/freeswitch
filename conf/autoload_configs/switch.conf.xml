@@ -16,7 +16,7 @@
   </cli-keybindings> 
   
   <default-ptimes>
-    <!-- set this to overide the 20ms assumption of various codecs in the sdp with no ptime defined -->
+    <!-- set this to override the 20ms assumption of various codecs in the sdp with no ptime defined -->
     <!--<codec name="G729" ptime="40"/>-->
   </default-ptimes>
   

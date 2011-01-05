@@ -1,7 +1,7 @@
 /*****************************************************************************
  * priserver.c Refactoring of pritest.c
  *
- * Author(s):   Anthony Minessale II <anthmct@yahoo.com>
+ * Author(s):   Anthony Minessale II <anthm@freeswitch.org>
  *              Nenad Corbic <ncorbic@sangoma.com>
  *
  * Copyright:   (c) 2005 Anthony Minessale II

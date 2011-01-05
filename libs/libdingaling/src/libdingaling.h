@@ -1,6 +1,6 @@
 /* 
  * libDingaLing XMPP Jingle Library
- * Copyright (C) 2005/2006, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *

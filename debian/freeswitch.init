@@ -9,7 +9,7 @@
 # Description:       An advanced platform for voice services
 ### END INIT INFO
 
-# Author: Anthony Minesalle III <anthmct@yahoo.com>
+# Author: Anthony Minesalle III <anthm@freeswitch.org>
 #
 
 # Do NOT "set -e"
