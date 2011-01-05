@@ -362,11 +362,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		int x = 0;
 
 		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (new_dtmf.duration < switch_core_min_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_min_dtmf_duration(0);
 		} else if (!new_dtmf.duration) {
