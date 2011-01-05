@@ -2126,8 +2126,6 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(ftdm_channel_t *chan, const ch
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	
-	ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
-
 	ftdm_set_echocancel_call_end(chan);
 	
 	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
@@ -2138,6 +2136,7 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(ftdm_channel_t *chan, const ch
 		if (chan->hangup_timer) {
 			ftdm_sched_cancel_timer(globals.timingsched, chan->hangup_timer);
 		}
+		ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
 		status = ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
 		/* the signaling stack did not touch the state, 
