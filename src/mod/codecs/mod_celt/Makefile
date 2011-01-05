@@ -1,6 +1,6 @@
 BASE=../../../..
 
-CELT=celt-0.10.0
+CELT=celt-0.7.1
 
 CELT_DIR=$(switch_srcdir)/libs/$(CELT)
 CELT_BUILDDIR=$(switch_builddir)/libs/$(CELT)
