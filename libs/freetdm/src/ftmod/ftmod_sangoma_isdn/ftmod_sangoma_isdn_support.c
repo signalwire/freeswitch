@@ -789,7 +789,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 			break;
 		default:
 			ftdm_log(FTDM_LOG_WARNING, "Invalid prog_ind location:%d\n", loc);
-			progInd->location.val = IN_PD_NOTETEISDN;
+			progInd->location.val = IN_LOC_USER;
 	}
 	return FTDM_SUCCESS;
 }
