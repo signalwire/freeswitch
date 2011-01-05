@@ -5,7 +5,7 @@
 #  voicemail gateway with no mail server>
 #
 # (c) 2005 Anthony Minessale II
-#  Anthony Minessale <anthmct@yahoo.com>
+#  Anthony Minessale <anthm@freeswitch.org>
 #
 ################################################################################
 use Net::SMTP;

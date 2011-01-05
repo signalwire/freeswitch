@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # sipgrep version 0.2. Skin for ngrep. (C) 2005-2006 Alexandr Dubovikov <shurik@start4.info>
-# Modified 2007 Anthony Minessale <anthmct@yahoo.com>
+# Modified 2007 Anthony Minessale <anthm@freeswitch.org>
 
 use Term::ANSIColor;
 use Getopt::Std;

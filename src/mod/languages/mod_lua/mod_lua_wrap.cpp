@@ -7296,6 +7296,31 @@ fail:
 }
 
 
+static int _wrap_Dbh_affected_rows(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("affected_rows",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("affected_rows",1,"LUA::Dbh *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_affected_rows",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  result = (int)(arg1)->affected_rows();
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_Dbh(void *obj) {
 LUA::Dbh *arg1 = (LUA::Dbh *) obj;
 delete arg1;
@@ -7304,6 +7329,7 @@ static swig_lua_method swig_LUA_Dbh_methods[] = {
     {"release", _wrap_Dbh_release}, 
     {"connected", _wrap_Dbh_connected}, 
     {"query", _wrap_Dbh_query}, 
+    {"affected_rows", _wrap_Dbh_affected_rows}, 
     {0,0}
 };
 static swig_lua_attribute swig_LUA_Dbh_attributes[] = {

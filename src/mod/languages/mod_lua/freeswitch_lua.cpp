@@ -384,3 +384,11 @@ bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
   }
   return false;
 }
+
+int Dbh::affected_rows()
+{
+  if (m_connected) {
+    return switch_cache_db_affected_rows(dbh);
+  }
+  return 0;
+}
