@@ -978,6 +978,9 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	switch (msg->message_id) {
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		if (msg->numeric_arg == 42) {
+			goto end;
+		}
 		if ((caller_session = switch_core_session_locate(msg->string_arg))) {
 			caller_channel = switch_core_session_get_channel(caller_session);
 			if (msg->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE) {
