@@ -1255,11 +1255,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
-		caller_data.screen = 1;
+		caller_data.screen = FTDM_SCREENING_VERIFIED_PASSED;
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_HIDE_NUMBER)) {
-		caller_data.pres = 1;
+		caller_data.pres = FTDM_PRES_RESTRICTED;
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_capability"))) {
