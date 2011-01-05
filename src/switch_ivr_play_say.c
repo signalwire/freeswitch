@@ -1573,10 +1573,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file\n");
 
 		if (read_impl.samples_per_second) {
-			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_out / read_impl.samples_per_second);
-			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_out / (read_impl.samples_per_second / 1000));
+			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / read_impl.samples_per_second);
+			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / (read_impl.samples_per_second / 1000));
 		}
-		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_out);
+		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_in);
 
 		switch_core_session_io_write_lock(session);
 		switch_channel_set_private(channel, "__fh", NULL);
@@ -1761,6 +1761,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 	switch_assert(session);
 
+	if (!digit_timeout) {
+		digit_timeout = timeout;
+	}
+
 	if (max_digits < min_digits) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 						  "Max digits %u is less than Min %u, forcing Max to %u\n", max_digits, min_digits, min_digits);
@@ -1868,6 +1872,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
+		}
+
+		if ((min_digits == 0) && (strlen(digit_buffer) == 0) && switch_channel_get_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE) != 0)
+		{
+			return SWITCH_STATUS_SUCCESS;
 		}
 
 		if (!(status == SWITCH_STATUS_TOO_SMALL && strlen(digit_buffer) == 0)) {

@@ -82,7 +82,7 @@ sun)
 	fi
 	;;
 *)
-	COMP_VENDOR_COMPAT_CFLAGS="-Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+	COMP_VENDOR_COMPAT_CFLAGS="-Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
 	COMP_VENDOR_CFLAGS="-std=c99 $COMP_VENDOR_COMPAT_CFLAGS"
 	;;
 esac
@@ -160,7 +160,7 @@ AC_ARG_WITH([pritap],
 	[AS_HELP_STRING([--with-pritap], [Install ftmod_pritap])],
 	[case "${withval}" in
 	 no)	enable_pritap="no" ;;
-	 *)	enable_pritab="yes" ;;
+	 *)	enable_pritap="yes" ;;
 	 esac],
 	[enable_pritap="no"]
 )

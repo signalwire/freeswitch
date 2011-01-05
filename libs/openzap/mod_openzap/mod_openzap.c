@@ -821,7 +821,7 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			} else {
 				zap_set_state_locked_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
@@ -830,7 +830,7 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
 			} else {
@@ -841,7 +841,7 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			} else {
 				/* lets make the ozmod_r2 module life easier by moving thru each
@@ -888,7 +888,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			} else {
 				zap_set_state_wait(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
@@ -897,7 +897,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
 			} else {
@@ -914,7 +914,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
-			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				zap_set_flag(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			} else {
 				/* Don't skip messages in the ISDN call setup
@@ -957,7 +957,7 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
@@ -991,7 +991,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_ANSWERED);
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_PROGRESS);
 			zap_set_flag_locked(tech_pvt->zchan, ZAP_CHANNEL_MEDIA);
@@ -1000,7 +1000,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && 
 				!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
@@ -1052,7 +1052,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			if ((var = switch_channel_get_variable(channel, "openzap_pre_buffer_size"))) {
 				int tmp = atoi(var);
 				if (tmp > -1) {
@@ -1327,7 +1327,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		tech_pvt->caller_profile = caller_profile;
 		
 		
-		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		if (zap_channel_add_token(zchan, switch_core_session_get_uuid(*new_session), zchan->token_count) != ZAP_SUCCESS) {
 			switch_core_session_destroy(new_session);
@@ -1678,7 +1677,9 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
-				if (channel_a && channel_b && !switch_channel_test_flag(channel_a, CF_OUTBOUND) && !switch_channel_test_flag(channel_b, CF_OUTBOUND)) {
+				if (channel_a && channel_b &&  switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND && 
+					switch_channel_direction(channel_b) == SWITCH_CALL_DIRECTION_INBOUND) {
+					
 					cause = SWITCH_CAUSE_ATTENDED_TRANSFER;
 					if (br_a_uuid && br_b_uuid) {
 						switch_ivr_uuid_bridge(br_a_uuid, br_b_uuid);

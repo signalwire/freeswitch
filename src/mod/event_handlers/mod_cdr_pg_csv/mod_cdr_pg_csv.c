@@ -52,8 +52,8 @@ typedef struct cdr_fd cdr_fd_t;
 
 const char *default_template =
 	"\"${local_ip_v4}\",\"${caller_id_name}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${start_stamp}\","
-	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\", \"${accountcode}\","
-	"\"${read_codec}\", \"${write_codec}\"\n";
+	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\",\"${accountcode}\","
+	"\"${read_codec}\",\"${write_codec}\"";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -65,9 +65,9 @@ static struct {
 	int rotate;
 	int debug;
 	cdr_leg_t legs;
-	char *a_table;
-	char *g_table;
 	char *db_info;
+	char *db_table;
+	char *spool_format;
 	PGconn *db_connection;
 	int db_online;
 	switch_mutex_t *db_mutex;
@@ -115,13 +115,13 @@ static void do_rotate(cdr_fd_t *fd)
 
 	if (globals.rotate) {
 		switch_time_exp_lt(&tm, switch_micro_time_now());
-		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
+		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
 
 		len = strlen(fd->path) + strlen(date) + 2;
 		p = switch_mprintf("%s.%s", fd->path, date);
 		assert(p);
 		switch_file_rename(fd->path, p, globals.pool);
-		free(p);
+		switch_safe_free(p);
 	}
 
 	do_reopen(fd);
@@ -139,10 +139,12 @@ static void do_rotate(cdr_fd_t *fd)
 
 }
 
-static void write_cdr(const char *path, const char *log_line)
+static void spool_cdr(const char *path, const char *log_line)
 {
 	cdr_fd_t *fd = NULL;
+	char *log_line_lf = NULL;
 	unsigned int bytes_in, bytes_out;
+	int loops = 0;
 
 	if (!(fd = switch_core_hash_find(globals.fd_hash, path))) {
 		fd = switch_core_alloc(globals.pool, sizeof(*fd));
@@ -154,8 +156,15 @@ static void write_cdr(const char *path, const char *log_line)
 		switch_core_hash_insert(globals.fd_hash, path, fd);
 	}
 
+	if (end_of(log_line) != '\n') {
+		log_line_lf = switch_mprintf("%s\n", log_line);
+	} else {
+		switch_strdup(log_line_lf, log_line);
+	}
+	assert(log_line_lf);
+
 	switch_mutex_lock(fd->mutex);
-	bytes_out = (unsigned) strlen(log_line);
+	bytes_out = (unsigned) strlen(log_line_lf);
 
 	if (fd->fd < 0) {
 		do_reopen(fd);
@@ -169,167 +178,154 @@ static void write_cdr(const char *path, const char *log_line)
 		do_rotate(fd);
 	}
 
-	if ((bytes_in = write(fd->fd, log_line, bytes_out)) != bytes_out) {
+	while ((bytes_in = write(fd->fd, log_line_lf, bytes_out)) != bytes_out && ++loops < 10) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write error to file %s %d/%d\n", path, (int) bytes_in, (int) bytes_out);
+		do_rotate(fd);
+		switch_yield(250000);
 	}
 
-	fd->bytes += bytes_in;
+	if (bytes_in > 0) {
+		fd->bytes += bytes_in;
+	}
 
   end:
 
 	switch_mutex_unlock(fd->mutex);
+	switch_safe_free(log_line_lf);
 }
 
-static int save_cdr(const char* const table, const char* const template, const char* const cdr)
+static switch_status_t insert_cdr(const char * const template, const char * const cdr)
 {
-	char* columns;
-	char* values;
-	char* p;
-	unsigned clen;
-        unsigned vlen;
-	char* query;
-	const char* const query_template = "INSERT INTO %s (%s) VALUES (%s);";
-	PGresult* res;
+	char *columns, *values;
+	char *p, *q;
+	unsigned vlen;
+	char *nullValues, *temp, *tp;
+	int nullCounter = 0, charCounter = 0;
+	char *sql = NULL, *path = NULL;
+	PGresult *res;
 
-	if (!table || !*table || !template || !*template || !cdr || !*cdr) {
+	if (!template || !*template || !cdr || !*cdr) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Bad parameter\n");
-		return 0;
+		return SWITCH_STATUS_FALSE;
 	}
 
-	columns = strdup(template);
-	for (p = columns; *p; ++p) {
+	/* Build comma-separated list of field names by dropping $ { } ; chars */
+	switch_strdup(columns, template);
+	for (p = columns, q = columns; *p; ++p) {
 		switch (*p) {
-		case '$': case '"': case '{': case '}': case ';':
-			*p = ' ';
-			break;
+			case '$': case '"': case '{': case '}': case ';':
+				break;
+			default:
+				*q++ = *p;
 		}
 	}
-	clen = p - columns;
+	*q = '\0';
 
-	values = strdup(cdr);
+	/*
+	 * In the expanded vars, replace double quotes (") with single quotes (')
+	 * for correct PostgreSQL syntax, and replace semi-colon with space to
+	 * prevent SQL injection attacks
+	 */
+	switch_strdup(values, cdr);
 	for (p = values; *p; ++p) {
 		switch(*p) {
-		case '"':
-			*p = '\'';
-			break;
-		case ';':
-			*p = ' ';
-			break;
+			case '"':
+				*p = '\'';
+				break;
+			case ';':
+				*p = ' ';
+				break;
 		}
 	}
 	vlen = p - values;
-/*
-         Patch for changing spaces (; ;) in the template paterns to NULL   (ex.)  ; ; --PACH--> null
-         - added new functionality - space removing
-*/
-        char *spaceColumns;
-	int spaceCounter=0;
-	for (p=columns; *p; ++p)
-	{
-		if (*p==' ')
-		{
-			spaceCounter++;
-		}
-	}
-	spaceColumns = (char*)malloc(clen-spaceCounter+1);
-	char *pt=spaceColumns;
-	for (p=columns; *p; ++p)
-	{
-		if (*p!=' ')
-		{
-			*pt=*p;
-			pt++;
-		}
-	}
-	*pt=0;
-	pt=columns;
-	columns=spaceColumns;
-	free(pt);
-	char *nullValues;
-	int nullCounter=0;
-	int charCounter=0;
-	for (p=values; *p; ++p)
-	{
-		if (*p==',')
-		{
-			if (charCounter==0)
-			{
+
+	/*
+	 * Patch for changing empty strings ('') in the expanded variables to
+	 * PostgreSQL null
+	 */
+	for (p = values; *p; ++p) {
+		if (*p == ',') {
+			if (charCounter == 0) {
 				nullCounter++;
 			}
-			charCounter=0;
-		}
-		else if (*p!=' ' && *p!='\'')
-		{
+			charCounter = 0;
+		} else if (*p != ' ' && *p != '\'') {
 			charCounter++;
 		}
 	}
-	if (charCounter==0)
-	{
+
+	if (charCounter == 0) {
 		nullCounter++;
 	}
-	charCounter=0;
-	nullCounter*=4;
-	vlen+=nullCounter;
-	nullValues=(char*)malloc(strlen(values)+nullCounter+1);
-	charCounter=0;
-	char *temp=nullValues;
-	char *tp=nullValues;
-	for (p=values; *p; ++tp,++p)
-	{
-	    if (*p==',')
-		{
-			if (charCounter==0)
-			{
+
+	nullCounter *= 4;
+	vlen += nullCounter;
+	switch_zmalloc(nullValues, strlen(values) + nullCounter + 1);
+	charCounter = 0;
+	temp = nullValues;
+	tp = nullValues;
+
+	for (p = values; *p; ++tp, ++p) {
+		if (*p == ',') {
+			if (charCounter == 0) {
 				temp++;
-				*temp='n';temp++;
-				if (temp==tp) tp++;
-				*temp='u';temp++;
-				if (temp==tp) tp++;
-				*temp='l';temp++;
-				if (temp==tp) tp++;
-				*temp='l';temp++;
-				while (temp!=tp)
-				{
-					*temp=' ';temp++;
+				*temp = 'n';
+				temp++;
+				if (temp == tp) tp++;
+				*temp = 'u';
+				temp++;
+				if (temp == tp) tp++;
+				*temp = 'l';
+				temp++;
+				if (temp == tp) tp++;
+				*temp = 'l';
+				temp++;
+				while (temp != tp) {
+					*temp = ' ';
+					temp++;
 				}
 			}
-			charCounter=0;
-			temp=tp;
-		}
-		else if (*p!=' ' && *p!='\'')
-		{
+			charCounter = 0;
+			temp = tp;
+		} else if (*p != ' ' && *p != '\'') {
 			charCounter++;
 		}
-		*tp=*p;
+		*tp = *p;
 	}
-	if (charCounter==0)
-	{
+
+	if (charCounter == 0) {
 		temp++;
-		*temp='n';temp++;
-		if (temp==tp) tp++;
-		*temp='u';temp++;
-		if (temp==tp) tp++;
-		*temp='l';temp++;
-		if (temp==tp) tp++;
-		*temp='l';temp++;
-		while (temp!=tp)
-		{
-			*temp=' ';temp++;
+		*temp = 'n';
+		temp++;
+		if (temp == tp) tp++;
+		*temp = 'u';
+		temp++;
+		if (temp == tp) tp++;
+		*temp = 'l';
+		temp++;
+		if (temp == tp) tp++;
+		*temp = 'l';
+		temp++;
+		while (temp != tp) {
+			*temp = ' ';
+			temp++;
 		}
 	}
-	charCounter=0;
-	temp=tp;
-	*tp=0;
-	tp=values;
-	values=nullValues;
-	free(tp);
-//-----------------------------END_OF_PATCH----------------------------------------------------------------
-	query = malloc(strlen(query_template) - 6 + strlen(table) + clen + vlen + 1);
-	sprintf(query, query_template, table, columns, values);
-	free(columns);
-	free(values);
+
+	charCounter = 0;
+	temp = tp;
+	*tp = 0;
+	tp = values;
+	values = nullValues;
+	switch_safe_free(tp);
+
+	sql = switch_mprintf("INSERT INTO %s (%s) VALUES (%s);", globals.db_table, columns, values);
+	assert(sql);
+	switch_safe_free(columns);
+	switch_safe_free(values);
+
 	if (globals.debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Query: \"%s\"\n", query);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Query: \"%s\"\n", sql);
 	}
 
 	switch_mutex_lock(globals.db_mutex);
@@ -337,66 +333,58 @@ static int save_cdr(const char* const table, const char* const template, const c
 	if (!globals.db_online || PQstatus(globals.db_connection) != CONNECTION_OK) {
 		globals.db_connection = PQconnectdb(globals.db_info);
 	}
+
 	if (PQstatus(globals.db_connection) == CONNECTION_OK) {
 		globals.db_online = 1;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection to database failed: %s", PQerrorMessage(globals.db_connection));
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		free(query);
-		return 0;
+		goto error;
 	}
 
-	res = PQexec(globals.db_connection, "BEGIN");
+	res = PQexec(globals.db_connection, sql);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "BEGIN command failed: %s", PQerrorMessage(globals.db_connection));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INSERT command failed: %s", PQresultErrorMessage(res));
 		PQclear(res);
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		free(query);
-		return 0;
+		goto error;
 	}
-	PQclear(res);
 
-	res = PQexec(globals.db_connection, query);
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INSERT command failed: %s", PQerrorMessage(globals.db_connection));
-		PQclear(res);
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		free(query);
-		return 0;
-	}
 	PQclear(res);
-
-	free(query);
-
-	res = PQexec(globals.db_connection, "END");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "END command failed: %s", PQerrorMessage(globals.db_connection));
-		PQclear(res);
-		PQfinish(globals.db_connection);
-		globals.db_online = 0;
-		switch_mutex_unlock(globals.db_mutex);
-		return 0;
-	}
-	PQclear(res);
+	switch_safe_free(sql);
 
 	switch_mutex_unlock(globals.db_mutex);
 
-	return 1;
+	return SWITCH_STATUS_SUCCESS;
+
+
+  error:
+
+	PQfinish(globals.db_connection);
+	globals.db_online = 0;
+	switch_mutex_unlock(globals.db_mutex);
+
+	/* SQL INSERT failed for whatever reason. Spool the attempted query to disk */
+	if (!strcasecmp(globals.spool_format, "sql")) {
+		path = switch_mprintf("%s%scdr-spool.sql", globals.log_dir, SWITCH_PATH_SEPARATOR);
+		assert(path);
+		spool_cdr(path, sql);
+	} else {
+		path = switch_mprintf("%s%scdr-spool.csv", globals.log_dir, SWITCH_PATH_SEPARATOR);
+		assert(path);
+		spool_cdr(path, cdr);
+	}
+
+	switch_safe_free(path);
+	switch_safe_free(sql);
+
+	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t my_on_hangup(switch_core_session_t *session)
+static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *log_dir = NULL, *accountcode = NULL, *a_template_str = NULL, *g_template_str = NULL;
-	char *log_line, *path = NULL;
-	int saved = 0;
+	const char *template_str = NULL;
+	char *expanded_vars = NULL;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -414,12 +402,8 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		}
 	}
 
-	if (!(log_dir = switch_channel_get_variable(channel, "cdr_pg_csv_base"))) {
-		log_dir = globals.log_dir;
-	}
-
-	if (switch_dir_make_recursive(log_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", log_dir);
+	if (switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -432,58 +416,27 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			switch_assert(buf);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CHANNEL_DATA:\n%s\n", buf);
 			switch_event_destroy(&event);
-			free(buf);
+			switch_safe_free(buf);
 		}
 	}
 
-	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
+	template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
 
-	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {
-		a_template_str = (const char *) switch_core_hash_find(globals.template_hash, accountcode);
+	if (!template_str) {
+		template_str = default_template;
 	}
 
-	if (!g_template_str) {
-		g_template_str = "\"${accountcode}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${caller_id}\",\"${channel_name}\",\"${bridge_channel}\",\"${last_app}\",\"${last_arg}\",\"${start_stamp}\",\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${amaflags}\",\"${uuid}\",\"${userfield}\";";
-	}
+	expanded_vars = switch_channel_expand_variables(channel, template_str);
 
-	if (!a_template_str) {
-		a_template_str = g_template_str;
-	}
-
-	log_line = switch_channel_expand_variables(channel, a_template_str);
-
-	saved = 1; // save_cdr(globals.a_table, a_template_str, log_line);
-
-	if (!saved && accountcode) {
-		path = switch_mprintf("%s%s%s.csv", log_dir, SWITCH_PATH_SEPARATOR, accountcode);
-		assert(path);
-		write_cdr(path, log_line);
-		free(path);
-	}
-
-	if (g_template_str != a_template_str) {
-		if (log_line != a_template_str) {
-			switch_safe_free(log_line);
-		}
-		log_line = switch_channel_expand_variables(channel, g_template_str);
-	}
-
-	if (!log_line) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating cdr\n");
+	if (!expanded_vars) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error expanding CDR variables.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	saved = save_cdr(globals.g_table, g_template_str, log_line);
+	insert_cdr(template_str, expanded_vars);
 
-	if (!saved) {
-		path = switch_mprintf("%s%sMaster.csv", log_dir, SWITCH_PATH_SEPARATOR);
-		assert(path);
-		write_cdr(path, log_line);
-		free(path);
-	}
-
-	if (log_line != g_template_str) {
-		free(log_line);
+	if (expanded_vars != template_str) {
+		switch_safe_free(expanded_vars);
 	}
 
 	return status;
@@ -513,7 +466,6 @@ static void event_handler(switch_event_t *event)
 			PQfinish(globals.db_connection);
 			globals.db_online = 0;
 		}
-
 	}
 }
 
@@ -522,9 +474,14 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ my_on_hangup,
+	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media */ NULL,
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park */ NULL,
+	/*.on_reporting */ my_on_reporting
 };
 
 
@@ -574,14 +531,14 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 					globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", val, SWITCH_PATH_SEPARATOR);
 				} else if (!strcasecmp(var, "rotate-on-hup")) {
 					globals.rotate = switch_true(val);
-				} else if (!strcasecmp(var, "default-template")) {
-					globals.default_template = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "a-table")) {
-					globals.a_table = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "g-table")) {
-					globals.g_table = switch_core_strdup(pool, val);
 				} else if (!strcasecmp(var, "db-info")) {
 					globals.db_info = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "db-table") || !strcasecmp(var, "g-table")) {
+					globals.db_table = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "default-template")) {
+					globals.default_template = switch_core_strdup(pool, val);
+				} else if (!strcasecmp(var, "spool-format")) {
+					globals.spool_format = switch_core_strdup(pool, val);
 				}
 			}
 		}
@@ -591,13 +548,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 				char *var = (char *) switch_xml_attr(param, "name");
 				if (var) {
 					char *tpl;
-					size_t len = strlen(param->txt) + 2;
-					if (end_of(param->txt) != '\n') {
-						tpl = switch_core_alloc(pool, len);
-						switch_snprintf(tpl, len, "%s\n", param->txt);
-					} else {
-						tpl = switch_core_strdup(pool, param->txt);
-					}
+					tpl = switch_core_strdup(pool, param->txt);
 
 					switch_core_hash_insert(globals.template_hash, var, tpl);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding template %s.\n", var);
@@ -607,25 +558,24 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 		switch_xml_free(xml);
 	}
 
+	if (!globals.log_dir) {
+		globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+	}
+
+	if (zstr(globals.db_info)) {
+		globals.db_info = switch_core_strdup(pool, "dbname=cdr");
+	}
+
+	if (zstr(globals.db_table)) {
+		globals.db_table = switch_core_strdup(pool, "cdr");
+	}
 
 	if (zstr(globals.default_template)) {
 		globals.default_template = switch_core_strdup(pool, "default");
 	}
 
-	if (!globals.log_dir) {
-		globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
-	}
-
-	if (zstr(globals.a_table)) {
-		globals.a_table = switch_core_strdup(pool, "a");
-	}
-
-	if (zstr(globals.g_table)) {
-		globals.g_table = switch_core_strdup(pool, "g");
-	}
-
-	if (zstr(globals.db_info)) {
-		globals.db_info = switch_core_strdup(pool, "dbname = cdr");
+	if (zstr(globals.spool_format)) {
+		globals.spool_format = switch_core_strdup(pool, "csv");
 	}
 
 	return status;
@@ -636,19 +586,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	load_config(pool);
+
+	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
+		return status;
+	}
+
+	if ((status = switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
+		return status;
 	}
 
 	switch_core_add_state_handler(&state_handlers);
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	load_config(pool);
-
-	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
-	}
 
 	return status;
 }

@@ -576,6 +576,15 @@ SWITCH_DECLARE(int) CoreSession::answer()
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
+SWITCH_DECLARE(int) CoreSession::insertFile(const char *file, const char *insert_file, int sample_point)
+{
+    switch_status_t status;
+	this_check(-1);
+	sanity_check(-1);
+    status = switch_ivr_insert_file(session, file, insert_file, (switch_size_t)sample_point);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
 SWITCH_DECLARE(int) CoreSession::preAnswer()
 {
     switch_status_t status;
@@ -1206,7 +1215,7 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 
 		if (switch_channel_ready(channel_a) && switch_channel_ready(channel_b)) {
 			session_a.begin_allow_threads();
-			if (!switch_channel_test_flag(channel_a, CF_OUTBOUND) && !switch_channel_media_ready(channel_a)) {
+			if (switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_media_ready(channel_a)) {
 				switch_channel_pre_answer(channel_a);
 			}
 

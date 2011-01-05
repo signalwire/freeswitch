@@ -1080,8 +1080,6 @@ switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, swi
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 	tech_pvt->caller_profile = caller_profile;
 
-	switch_channel_set_flag(nchannel, CF_OUTBOUND);
-
 	if ((sql = switch_mprintf(
 			"INSERT INTO skinny_active_lines "
 				"(device_name, device_instance, line_instance, channel_uuid, call_id, call_state) "

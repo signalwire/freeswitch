@@ -265,7 +265,7 @@ static ftdm_state_map_t pritap_state_map = {
 	}
 };
 
-static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
+static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status;
 	ftdm_sigmsg_t sig;
@@ -278,14 +278,16 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 
+        ftdm_channel_complete_state(ftdmchan);
+
 	switch (ftdmchan->state) {
 	case FTDM_CHANNEL_STATE_DOWN:
-		{
-			ftdm_channel_done(ftdmchan);			
+		{			
 			ftdmchan->call_data = NULL;
+			ftdm_channel_close(&ftdmchan);
 
-			ftdm_channel_done(peerchan);
 			peerchan->call_data = NULL;
+			ftdm_channel_close(&peerchan);
 		}
 		break;
 
@@ -321,24 +323,20 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		break;
 	}
 
-	return;
+	return FTDM_SUCCESS;
 }
 
 static __inline__ void pritap_check_state(ftdm_span_t *span)
 {
-    if (ftdm_test_flag(span, FTDM_SPAN_STATE_CHANGE)) {
-        uint32_t j;
-        ftdm_clear_flag_locked(span, FTDM_SPAN_STATE_CHANGE);
-        for(j = 1; j <= span->chan_count; j++) {
-            if (ftdm_test_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_mutex_lock(span->channels[j]->mutex);
-                ftdm_clear_flag((span->channels[j]), FTDM_CHANNEL_STATE_CHANGE);
-                state_advance(span->channels[j]);
-                ftdm_channel_complete_state(span->channels[j]);
-		ftdm_mutex_unlock(span->channels[j]->mutex);
-            }
-        }
-    }
+	if (ftdm_test_flag(span, FTDM_SPAN_STATE_CHANGE)) {
+		uint32_t j;
+		ftdm_clear_flag_locked(span, FTDM_SPAN_STATE_CHANGE);
+		for(j = 1; j <= span->chan_count; j++) {
+			ftdm_mutex_lock(span->channels[j]->mutex);
+			ftdm_channel_advance_states(span->channels[j]);
+			ftdm_mutex_unlock(span->channels[j]->mutex);
+		}
+	}
 }
 
 static int pri_io_read(struct pri *pri, void *buf, int buflen)
@@ -896,6 +894,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	span->get_span_sig_status = pritap_get_span_sig_status;
 	
 	span->state_map = &pritap_state_map;
+	span->state_processor = state_advance;
 
 	return FTDM_SUCCESS;
 }

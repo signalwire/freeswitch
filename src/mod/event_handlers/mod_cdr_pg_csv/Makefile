@@ -8,6 +8,7 @@ else
 LOCAL_LDFLAGS=-L/usr/postgres/8.3/lib -R/usr/postgres/8.3/lib -lpq -static
 endif
 else
+LOCAL_CFLAGS=-I/usr/include/postgresql
 LOCAL_LDFLAGS=-lpq -static
 endif
 include ../../../../build/modmake.rules

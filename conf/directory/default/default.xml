@@ -1,7 +1,7 @@
 <include>
   <user id="default"> <!--if id is numeric mailbox param is not necessary-->
     <!--
-	ATTENTION PLEASE READ THIS... (I know you won't but you've been warrned)
+	ATTENTION PLEASE READ THIS... (I know you won't but you've been warned)
 	
 	Let it be known that this user can register without a password but since we do not assign
 	this user a user_context and we don't authenticate this user they will be put in context 'public'.

@@ -12,31 +12,81 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 	<settings>
 		<param name="debug" value="0"/>
 		<!--<param name="hold-music" value="$${moh_uri}"/>-->
+		<!-- Analog global options (they apply to all spans) 
+		     Remember you can only choose between either call-swap
+		     or 3-way, not both!
+		-->
 		<!--<param name="enable-analog-option" value="call-swap"/>-->
 		<!--<param name="enable-analog-option" value="3-way"/>-->
 	</settings>
 
-	<!-- Sample analog configuration -->
+	<!-- Sample analog configuration (The analog_spans tag is for ftmod_analog) -->
 	<analog_spans>
 		<!-- The span name must match the name in your freetdm.conf -->
 		<span name="myAnalog">
 			<!--<param name="hold-music" value="$${moh_uri}"/>-->
-			<!--<param name="enable-analog-option" value="call-swap"/>-->
-			<!--<param name="enable-analog-option" value="3-way"/>-->
+			<!--
+			     3-way allows you to flash your FXS line and dial
+			     another number and put all the parties in a conference
+
+			     call-swap allows you to flash your FXS line and swap
+			     between one call and another
+
+			     Remember you can only choose between either call-swap
+			     or 3-way, not both!
+
+			<param name="enable-analog-option" value="call-swap"/>
+			<param name="enable-analog-option" value="3-way"/>
+			-->
+
+			<!-- Tones are defined in tones.conf
+			     This setting is very important for analog lines to
+			     work properly
+		       	-->
 			<param name="tonegroup" value="us"/>
+
+			<!-- How much time to wait for digits (in FXS lines) -->
 			<param name="digit-timeout" value="2000"/>
+
+			<!-- Maximum number of digits to wait for (in FXS lines) -->
 			<param name="max-digits" value="11"/>
-			<param name="dialplan" value="XML"/>
-			<param name="context" value="default"/>
+
+			<!-- whether you want to wait for caller id -->
 			<param name="enable-callerid" value="true"/>
+
+			<!-- whether you want to enable callwaiting feature -->
+			<!--<param name="callwaiting" value="true"/>-->
+
+			<!-- whether you want to answer/hangup on polarity reverse for outgoing calls in FXO devices 
+			     and send polarity reverse on answer/hangup for incoming calls in FXS devices -->
+			<!--<param name="answer-polarity-reverse" value="false"/>-->
+			<!--<param name="hangup-polarity-reverse" value="false"/>-->
+			<!--
+			Minimum delay (in milliseconds) required between an answer polarity reverse
+			and hangup polarity reverse in order to assume the second polarity reverse is a real hangup
+			<param name="polarity-delay" value="600"/>
+			-->
+
 			<!-- regex to stop dialing when it matches -->
 			<!--<param name="dial-regex" value="5555"/>-->
+
 			<!-- regex to stop dialing when it does not match -->
 			<!--<param name="fail-dial-regex" value="^5"/>-->
+
+			<!-- FreeSWITCH dialplan type and context to send the calls -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
 		</span>
 	</analog_spans>
 
-	<!-- openr2 (MFC-R2 signaling) spans 
+	<!-- 
+	
+ 	openr2 (MFC-R2 signaling) spans (ftmod_r2)
+	
+	In order to use this type of spans your FreeTDM must have been compiled with ftmod_r2 module.
+	The module is compiled if the openr2 library is present when running the ./configure script
+	in the FreeTDM source code
+
 	MFC-R2 signaling has lots of variants from country to country and even sometimes
 	minor variants inside the same country. The only mandatory parameters here are:
 	variant, but typically you also want to set max_ani and max_dnis.
@@ -46,6 +96,7 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 	best defaults for your country.  If you want to contribute your configs for a particular 
 	country send them to the e-mail of the primary OpenR2 developer that you can find in the 
 	AUTHORS file of the OpenR2 package, they will be added to the samples directory of openr2.
+
 	-->
 	<r2_spans>
 		<span name="wp1" cfgprofile="testr2">

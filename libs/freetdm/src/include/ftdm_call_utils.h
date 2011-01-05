@@ -30,6 +30,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * Ricardo Barroetaveña <rbarroetavena@anura.com.ar>
+ *
  */
 
 #ifndef __FTDM_CALL_UTILS_H__
@@ -113,6 +119,17 @@ FT_DECLARE(ftdm_status_t) ftdm_set_presentation_ind(const char *string, uint8_t 
  * \retval FTDM_FAIL failure
  */
 FT_DECLARE(ftdm_status_t) ftdm_is_number(const char *number);
+
+/*! 
+ * \brief Set the Calling Party Category from an enum
+ *
+ * \param cpc_string string value
+ * \param target the target to set value to
+ *
+ * \retval FTDM_SUCCESS success
+ * \retval FTDM_FAIL failure
+ */
+FT_DECLARE(ftdm_status_t) ftdm_set_calling_party_category(const char *string, uint8_t *target);
 
 #endif /* __FTDM_CALL_UTILS_H__ */
 

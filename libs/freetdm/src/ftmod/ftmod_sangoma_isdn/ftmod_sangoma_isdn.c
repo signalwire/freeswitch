@@ -46,10 +46,9 @@ static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span);
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span);
 
 ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
-static void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_poll_events(ftdm_span_t *span);
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event);
-static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
+static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan);
 static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_event_data_t *sngisdn_event);
 static void ftdm_sangoma_isdn_wakeup_phy(ftdm_channel_t *dchan);
 static void ftdm_sangoma_isdn_dchan_set_queue_size(ftdm_channel_t *ftdmchan);
@@ -65,7 +64,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_ANY_STATE, FTDM_END},
-		{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_SUSPENDED, FTDM_END}
+		{FTDM_CHANNEL_STATE_RESET, FTDM_CHANNEL_STATE_RESTART, FTDM_END}
+	},
+	{
+		ZSD_INBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+		{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_INBOUND,
@@ -170,7 +175,13 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_ANY_STATE, FTDM_END},
-		{FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_SUSPENDED, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		{FTDM_CHANNEL_STATE_RESET, FTDM_CHANNEL_STATE_RESTART, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+	},
+	{
+		ZSD_OUTBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RESET, FTDM_END},
+		{FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
 		ZSD_OUTBOUND,
@@ -203,7 +214,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
 		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
-		 FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP,
+		 FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP,
 		 FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 	},
 	{
@@ -211,12 +222,18 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_PROCEED, FTDM_END},
 		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
-		 FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
-		},
+		 FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+	},
 	{
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+	},
+	{
+		ZSD_OUTBOUND,
+		ZSM_UNACCEPTABLE,
+		{FTDM_CHANNEL_STATE_RINGING, FTDM_END},
 		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 	},
 	{
@@ -251,13 +268,6 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 	}
 	}
 };
-
-static __inline__ void ftdm_sangoma_isdn_advance_chan_states(ftdm_channel_t *ftdmchan)
-{
-	while (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-		ftdm_sangoma_isdn_process_state_change(ftdmchan);
-	}
-}
 
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event)
 {
@@ -439,7 +449,7 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 				while ((ftdmchan = ftdm_queue_dequeue(span->pendingchans))) {
 					/* double check that this channel has a state change pending */
 					ftdm_channel_lock(ftdmchan);
-					ftdm_sangoma_isdn_advance_chan_states(ftdmchan);
+					ftdm_channel_advance_states(ftdmchan);
 					ftdm_channel_unlock(ftdmchan);
 				}
 
@@ -452,11 +462,11 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 				/* twiddle */
 				break;
 			case FTDM_FAIL:
-				ftdm_log(FTDM_LOG_ERROR,"%s:ftdm_interrupt_wait returned error!\n", span->name);
+				ftdm_log(FTDM_LOG_ERROR, "%s: ftdm_interrupt_wait returned error!\n", span->name);
 				break;
 
 			default:
-				ftdm_log(FTDM_LOG_ERROR,"%s:ftdm_interrupt_wait returned with unknown code\n", span->name);
+				ftdm_log(FTDM_LOG_ERROR, "%s: ftdm_interrupt_wait returned with unknown code\n", span->name);
 				break;
 		}
 
@@ -518,7 +528,7 @@ ftdm_channel_t* ftdm_sangoma_isdn_process_event_states(ftdm_span_t *span, sngisd
 			break;
 	}
  	ftdm_channel_lock(ftdmchan);
-	ftdm_sangoma_isdn_advance_chan_states(ftdmchan);
+	ftdm_channel_advance_states(ftdmchan);
 	return ftdmchan;
 }
 
@@ -582,13 +592,14 @@ static void ftdm_sangoma_isdn_process_stack_event (ftdm_span_t *span, sngisdn_ev
 			sngisdn_process_rst_ind(sngisdn_event);
 			break;
 	}
-	if(ftdmchan != NULL) {
-		ftdm_sangoma_isdn_advance_chan_states(ftdmchan);
+	if (ftdmchan != NULL) {
+		ftdm_channel_advance_states(ftdmchan);
 		ftdm_channel_unlock(ftdmchan);
 	}
 }
 
-static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
+/* this function is called with the channel already locked by the core */
+static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 {
 	ftdm_sigmsg_t		sigev;
 	ftdm_channel_state_t initial_state;
@@ -600,13 +611,12 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	sigev.span_id = ftdmchan->span_id;
 	sigev.channel = ftdmchan;
 
-	/*first lock the channel*/
-	ftdm_channel_lock(ftdmchan);
-	/*clear the state change flag...since we might be setting a new state*/
-	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
+	/* Acknowledge the state change */
+	ftdm_channel_complete_state(ftdmchan);
+
 #ifdef FTDM_DEBUG_CHAN_MEMORY
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
-		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ)==0, "Failed to mprotect");
+		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ) == 0, "Failed to mprotect");
 	}
 #endif
 	
@@ -680,8 +690,17 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_RINGING:
 		{
-			ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
-			sngisdn_snd_alert(ftdmchan, prog_ind);
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				/* OUTBOUND...so we were told by the line of this so notify the user */
+				sigev.event_id = FTDM_SIGEVENT_RINGING;
+				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+				}
+			} else {
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+				sngisdn_snd_alert(ftdmchan, prog_ind);
+			}
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS:
@@ -692,12 +711,9 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 				sigev.event_id = FTDM_SIGEVENT_PROGRESS;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
 			} else {
-				/* If we already sent a PROCEED before, do not send a PROGRESS as there is nothing to indicate to the remote switch */
-				if (ftdmchan->last_state != FTDM_CHANNEL_STATE_PROCEED) {
-					/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
-					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
-					sngisdn_snd_progress(ftdmchan, prog_ind);
-				}
+				/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
+				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+				sngisdn_snd_progress(ftdmchan, prog_ind);				
 			}
 		}
 		break;
@@ -780,7 +796,7 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 					sngisdn_snd_release(ftdmchan, 0);
 
 					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-						sngisdn_set_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
+						sngisdn_set_span_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
 					}
 				} else {
 					sngisdn_snd_disconnect(ftdmchan);
@@ -838,6 +854,11 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 			/* IMPLEMENT ME */
 		}
 		break;
+	case FTDM_CHANNEL_STATE_RESET:
+		{
+			sngisdn_snd_restart(ftdmchan);
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "unsupported sngisdn_rcvd state %s\n", ftdm_channel_state2str(ftdmchan->state));
@@ -850,11 +871,10 @@ static void ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdmchan)
 	}
 #ifdef FTDM_DEBUG_CHAN_MEMORY
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
-		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ|PROT_WRITE)==0, "Failed to mprotect");
+		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ|PROT_WRITE) == 0, "Failed to mprotect");
 	}
 #endif
-	ftdm_channel_unlock(ftdmchan);
-	return;
+	return FTDM_SUCCESS;
 }
 
 static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
@@ -862,10 +882,6 @@ static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
 	ftdm_status_t status = FTDM_FAIL;
 
 	switch (sigmsg->event_id) {
-		case FTDM_SIGEVENT_RESTART:
-			/* TODO: Send a channel restart here */
-			/* Implement me */
-			break;
 		case FTDM_SIGEVENT_FACILITY:
 			sngisdn_snd_fac_req(ftdmchan);
 			break;
@@ -951,7 +967,8 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_set_span_sig_status)
 }
 
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
-{	
+{
+	sngisdn_span_data_t *signal_data = span->signal_data;
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
 	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
@@ -960,6 +977,14 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	/* clear the monitor thread stop flag */
 	ftdm_clear_flag(span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
+
+	if (signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+		sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
+	}
+	
+	if (signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+		sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
+	}
 
 	/*start the span monitor thread*/
 	if (ftdm_thread_create_detached(ftdm_sangoma_isdn_run, span) != FTDM_SUCCESS) {
@@ -1064,6 +1089,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->get_span_sig_status = ftdm_sangoma_isdn_get_span_sig_status;
 	span->set_span_sig_status = ftdm_sangoma_isdn_set_span_sig_status;
 	span->state_map	= &sangoma_isdn_state_map;
+	span->state_processor = ftdm_sangoma_isdn_process_state_change;
 	ftdm_set_flag(span, FTDM_SPAN_USE_CHAN_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
@@ -1072,7 +1098,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
 		
-		sngisdn_set_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
+		sngisdn_set_span_avail_rate(span, SNGISDN_AVAIL_PWR_SAVING);
 	}
 
 	/* Initialize scheduling context */
@@ -1167,6 +1193,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		goto done;
 	}
 
+	/* TODO: Move functions to table + function pointers */
 	if (!strcasecmp(argv[0], "trace")) {
 		char *trace_opt;
 		
@@ -1184,6 +1211,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[2]);
 			goto done;
 		}
+		
 		if (!strcasecmp(trace_opt, "q921")) {
 			sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 		} else if (!strcasecmp(trace_opt, "q931")) {
@@ -1192,7 +1220,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			sngisdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
 		} else {
 			stream->write_function(stream, "-ERR invalid trace option <q921|q931> <span name>\n");
-		}	
+		}
 	}
 	if (!strcasecmp(argv[0], "l1_stats")) {
 		ftdm_span_t *span;
@@ -1210,7 +1238,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		}
 		sngisdn_print_phy_stats(stream, span);
 	}
-
+	
 	if (!strcasecmp(argv[0], "show_spans")) {
 		ftdm_span_t *span = NULL;
 		if (argc == 2) {

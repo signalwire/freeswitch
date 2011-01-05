@@ -1118,6 +1118,11 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
+	if ((*session)->plc) {
+		plc_free((*session)->plc);
+		(*session)->plc = NULL;
+	}
+
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data((*session)->channel, event);
 		switch_event_fire(&event);
@@ -1836,6 +1841,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(sw
 			switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", arg);
 		}
 		
+		if (!switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
+			switch_channel_set_flag(session->channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
+		}
+
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
 		switch_core_session_queue_private_event(session, &execute_event, SWITCH_FALSE);
 		
@@ -1886,9 +1895,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 				switch_goto_status(SWITCH_STATUS_FALSE, done);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
-							  "Cannot execute app '%s' media required on an outbound channel that does not have media established\n", app);
-			switch_goto_status(SWITCH_STATUS_FALSE, done);
+			uint32_t ready = 0, sanity = 2000;
+
+			do {
+				sanity--;
+				ready = switch_channel_media_ready(session->channel);
+				switch_cond_next();
+			} while(!ready && sanity);
+
+			if (!ready) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+								  "Cannot execute app '%s' media required on an outbound channel that does not have media established\n", app);
+				switch_goto_status(SWITCH_STATUS_FALSE, done);
+			}
 		}
 	}
 

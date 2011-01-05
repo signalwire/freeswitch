@@ -1589,7 +1589,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 				sigev.span_id = ftdmchan->span_id;
 				sigev.channel = ftdmchan;
 				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.sigstatus = FTDM_SIG_STATE_DOWN;
+				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
 				ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 				/* if this is the first channel in the range */
@@ -1689,7 +1689,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 				sigev.span_id = ftdmchan->span_id;
 				sigev.channel = ftdmchan;
 				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.sigstatus = FTDM_SIG_STATE_UP;
+				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
 				ftdm_span_send_signal(ftdmchan->span, &sigev); 
 
 				/* if this is the first channel in the range */

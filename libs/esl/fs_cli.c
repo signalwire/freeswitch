@@ -657,7 +657,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 				   "-----------------------------------------------\n"
 				   "/help                      \tHelp\n"
 				   "/exit, /quit, /bye, ...    \tExit the program.\n"
-				   "/event, /noevent, /nixevent\tEvent commands.\n"
+				   "/event, /noevents, /nixevent\tEvent commands.\n"
 				   "/log, /nolog               \tLog commands.\n"
 				   "/uuid                      \tFilter logs for a single call uuid\n"
 				   "/filter                    \tFilter commands.\n"
@@ -693,7 +693,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 
 		} else if (
 			!strncasecmp(cmd, "event", 5) || 
-			!strncasecmp(cmd, "noevent", 7) ||
+			!strncasecmp(cmd, "noevents", 8) ||
 			!strncasecmp(cmd, "nixevent", 8) ||
 			!strncasecmp(cmd, "log", 3) || 
 			!strncasecmp(cmd, "nolog", 5) || 

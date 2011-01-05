@@ -100,7 +100,7 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 	caller_channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
 	
-	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(caller_channel, CF_DIALPLAN)) {
 		name = caller_profile->callee_id_name;
 		number = caller_profile->callee_id_number;
 
@@ -435,8 +435,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
 			switch_channel_t *a = un == chan_b ? chan_a : chan_b;
 
-			if (!switch_channel_test_flag(un, CF_OUTBOUND)) {
-				if (switch_channel_test_flag(a, CF_OUTBOUND) || (un == chan_a && !originator)) {
+			if (switch_channel_direction(un) == SWITCH_CALL_DIRECTION_INBOUND) {
+				if (switch_channel_direction(a) == SWITCH_CALL_DIRECTION_OUTBOUND || (un == chan_a && !originator)) {
 					switch_channel_pass_callee_id(a, un);
 				}
 

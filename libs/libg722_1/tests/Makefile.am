@@ -15,8 +15,6 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-##
-## $Id: Makefile.am,v 1.4 2008/10/19 04:05:02 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -33,8 +31,8 @@ LIBDIR = -L$(top_builddir)/src
 
 noinst_PROGRAMS = g722_1_tests
 
-noinst_HEADERS =  itu_bit_stream.c \
+noinst_HEADERS =  g192_bit_stream.h \
                   timing.h
 
-g722_1_tests_SOURCES = g722_1_tests.c itu_bit_stream.c
+g722_1_tests_SOURCES = g722_1_tests.c g192_bit_stream.c
 g722_1_tests_LDADD = $(LIBDIR) -lg722_1

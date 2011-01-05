@@ -101,6 +101,7 @@ class freeswitchJNI {
   public final static native String CoreSession_tts_name_get(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_voice_name_set(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native String CoreSession_voice_name_get(long jarg1, CoreSession jarg1_);
+  public final static native int CoreSession_insertFile(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, int jarg4);
   public final static native int CoreSession_answer(long jarg1, CoreSession jarg1_);
   public final static native int CoreSession_preAnswer(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_hangup(long jarg1, CoreSession jarg1_, String jarg2);

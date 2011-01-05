@@ -116,6 +116,10 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_voice_name_get(swigCPtr, this);
   }
 
+  public int insertFile(String file, String insert_file, int sample_point) {
+    return freeswitchJNI.CoreSession_insertFile(swigCPtr, this, file, insert_file, sample_point);
+  }
+
   public int answer() {
     return freeswitchJNI.CoreSession_answer(swigCPtr, this);
   }

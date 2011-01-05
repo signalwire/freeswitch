@@ -1230,6 +1230,8 @@ SWITCH_DECLARE(int) switch_sockaddr_equal(const switch_sockaddr_t *sa1, const sw
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname,
 														 int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool);
+
 /**
  * Send data over a network.
  * @param sock The socket to send the data over.

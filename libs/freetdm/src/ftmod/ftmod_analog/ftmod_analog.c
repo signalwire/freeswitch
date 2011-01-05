@@ -96,6 +96,10 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_get_channel_sig_status)
 {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+		*status = FTDM_SIG_STATE_DOWN;
+		return FTDM_SUCCESS;
+	}
 	*status = FTDM_SIG_STATE_UP;
 	return FTDM_SUCCESS;
 }
@@ -109,7 +113,25 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_get_channel_sig_status)
 
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_get_span_sig_status)
 {
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
+	/* if ALL channels are in alarm, report DOWN, UP otherwise. */
+	*status = FTDM_SIG_STATE_DOWN;
+	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(fchan);
+		if (!ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
+			*status = FTDM_SIG_STATE_UP;
+			ftdm_channel_unlock(fchan);
+			break;
+		}
+		ftdm_channel_unlock(fchan);
+	}
+	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
 }
 
@@ -162,6 +184,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	uint32_t digit_timeout = 10;
 	uint32_t wait_dialtone_timeout = 30000;
 	uint32_t max_dialstr = MAX_DTMF;
+	uint32_t polarity_delay = 600;
 	const char *var, *val;
 	int *intval;
 	uint32_t flags = FTDM_ANALOG_CALLERID;
@@ -214,6 +237,29 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 			} else {
 				flags &= ~FTDM_ANALOG_CALLERID;
 			}
+		} else if (!strcasecmp(var, "answer_polarity_reverse")) {
+			if (!(val = va_arg(ap, char *))) {
+                		break;
+            		}
+			if (ftdm_true(val)) {
+				flags |= FTDM_ANALOG_ANSWER_POLARITY_REVERSE;
+			} else {
+				flags &= ~FTDM_ANALOG_ANSWER_POLARITY_REVERSE;
+			}
+		} else if (!strcasecmp(var, "hangup_polarity_reverse")) {
+			if (!(val = va_arg(ap, char *))) {
+                		break;
+            		}
+			if (ftdm_true(val)) {
+				flags |= FTDM_ANALOG_HANGUP_POLARITY_REVERSE;
+			} else {
+				flags &= ~FTDM_ANALOG_HANGUP_POLARITY_REVERSE;
+			}
+		} else if (!strcasecmp(var, "polarity_delay")) {
+			if (!(intval = va_arg(ap, int *))) {
+                		break;
+            		}
+			polarity_delay = *intval;
 		} else if (!strcasecmp(var, "callwaiting")) {
 			if (!(intval = va_arg(ap, int *))) {
                 		break;
@@ -254,6 +300,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	analog_data->flags = flags;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->wait_dialtone_timeout = wait_dialtone_timeout;
+	analog_data->polarity_delay = polarity_delay;
 	analog_data->max_dialstr = max_dialstr;
 	span->signal_cb = sig_cb;
 	strncpy(analog_data->hotline, hotline, sizeof(analog_data->hotline));
@@ -377,6 +424,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_analog_data_t *analog_data = ftdmchan->span->signal_data;
 	ftdm_channel_t *closed_chan;
 	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = analog_data->wait_dialtone_timeout;
+	uint32_t answer_on_polarity_counter = 0;
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
 	
@@ -448,7 +496,12 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						if (ftdmchan->needed_tones[FTDM_TONEMAP_DIAL]) {
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 						} else {
-							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
+							/* do not go up if we're waiting for polarity reversal */
+							if (ftdm_test_flag(analog_data, FTDM_ANALOG_ANSWER_POLARITY_REVERSE)) {
+								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+							} else {
+								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
+							}
 						}
 					}
 				}
@@ -493,8 +546,10 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						
 						if (ftdmchan->type == FTDM_CHAN_TYPE_FXS &&
 							   ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK) && 
-							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RINGING || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
-							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_RING)) {
+							(ftdmchan->last_state == FTDM_CHANNEL_STATE_RINGING 
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALTONE 
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_RING
+							 || ftdmchan->last_state == FTDM_CHANNEL_STATE_UP)) {
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 						} else {
 							ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
@@ -530,15 +585,37 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 					if (done) {
 						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
-						ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 						ftdm_clear_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
+						ftdm_channel_complete_state(ftdmchan);
 						ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK] = 0;
 					}
 				}
 			case FTDM_CHANNEL_STATE_UP:
 			case FTDM_CHANNEL_STATE_RING:
+			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 				{
-					ftdm_sleep(interval);
+					if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) &&
+					    ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA && 
+					    ftdm_test_sflag(ftdmchan, AF_POLARITY_REVERSE)) {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Answering on polarity reverse\n");
+						ftdm_clear_sflag(ftdmchan, AF_POLARITY_REVERSE);
+						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_UP);
+						answer_on_polarity_counter = state_counter;
+					} else if (ftdmchan->state == FTDM_CHANNEL_STATE_UP
+						   && ftdm_test_sflag(ftdmchan, AF_POLARITY_REVERSE)){
+						/* if this polarity reverse is close to the answer polarity reverse, ignore it */
+						if (answer_on_polarity_counter 
+						&& (state_counter - answer_on_polarity_counter) > analog_data->polarity_delay) {
+							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Hanging up on polarity reverse\n");
+							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+						} else {
+							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, 
+							"Not hanging up on polarity reverse, too close to Answer reverse\n");
+						}
+						ftdm_clear_sflag(ftdmchan, AF_POLARITY_REVERSE);
+					} else {
+						ftdm_sleep(interval);
+					}
 					continue;
 				}
 				break;
@@ -551,7 +628,6 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				break;
 			}
 		} else {
-			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 			ftdm_clear_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
 			ftdm_channel_complete_state(ftdmchan);
 			indicate = 0;
@@ -591,6 +667,19 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						sig.event_id = FTDM_SIGEVENT_UP;
 					}
 
+					if (ftdmchan->type == FTDM_CHAN_TYPE_FXS &&
+					    !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) &&
+					    ftdm_test_flag(analog_data, FTDM_ANALOG_ANSWER_POLARITY_REVERSE)) {
+						ftdm_polarity_t polarity = FTDM_POLARITY_REVERSE;
+						if (ftdmchan->polarity == FTDM_POLARITY_FORWARD) {
+							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Reversing polarity on answer\n");
+							ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_POLARITY, &polarity);
+						} else {
+							/* the polarity may be already reversed if this is the second time we 
+							 * answer (ie, due to 2 calls being on the same line) */
+						}
+					}
+
 					ftdm_span_send_signal(ftdmchan->span, &sig);
 					continue;
 				}
@@ -615,6 +704,22 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 					continue;
 				}
 				break;
+
+			case FTDM_CHANNEL_STATE_HANGUP:
+				/* this state is only used when the user hangup, if the device hang up (onhook) we currently
+				 * go straight to DOWN. If we ever change this (as other signaling modules do) by using this
+				 * state for both user and device hangup, we should check here for the type of hangup since
+				 * some actions (polarity reverse) do not make sense if the device hung up */
+				if (ftdmchan->type == FTDM_CHAN_TYPE_FXS &&
+				    ftdmchan->last_state == FTDM_CHANNEL_STATE_UP &&
+				    ftdm_test_flag(analog_data, FTDM_ANALOG_HANGUP_POLARITY_REVERSE)) {
+					ftdm_polarity_t polarity = ftdmchan->polarity == FTDM_POLARITY_REVERSE 
+						                 ? FTDM_POLARITY_FORWARD : FTDM_POLARITY_REVERSE;
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Reversing polarity on hangup\n");
+					ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_POLARITY, &polarity);
+				}
+				break;
+
 			case FTDM_CHANNEL_STATE_DOWN:
 				{
 					sig.event_id = FTDM_SIGEVENT_STOP;
@@ -717,7 +822,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				dtmf_offset = strlen(dtmf);
 				last_digit = elapsed;
 				sig.event_id = FTDM_SIGEVENT_COLLECTED_DIGIT;
-				sig.raw_data = dtmf;
+				ftdm_set_string(sig.ev_data.collected.digits, dtmf);
 				if (ftdm_span_send_signal(ftdmchan->span, &sig) == FTDM_BREAK) {
 					collecting = 0;
 				}
@@ -823,6 +928,9 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
  done:
 
+	closed_chan = ftdmchan;
+
+	ftdm_channel_lock(closed_chan);
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_FXO && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
@@ -833,7 +941,8 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	}
 
 	
-	closed_chan = ftdmchan;
+	ftdm_clear_sflag(ftdmchan, AF_POLARITY_REVERSE);
+
 	ftdm_channel_close(&ftdmchan);
 
 	ftdm_channel_command(closed_chan, FTDM_COMMAND_SET_NATIVE_CODEC, NULL);
@@ -851,7 +960,10 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	}
 
 	ftdm_log_chan(closed_chan, FTDM_LOG_DEBUG, "ANALOG CHANNEL %d:%d thread ended.\n", closed_chan->span_id, closed_chan->chan_id);
+
 	ftdm_clear_flag(closed_chan, FTDM_CHANNEL_INTHREAD);
+
+	ftdm_channel_unlock(closed_chan);
 
 	return NULL;
 }
@@ -879,19 +991,32 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	ftdm_mutex_lock(event->channel->mutex);
 	locked++;
 
+	/* MAINTENANCE WARNING: 
+	 * 1. Be aware you are working on the locked channel
+	 * 2. We should not be calling ftdm_span_send_signal or ftdm_set_state when there is already a channel thread running
+	 *    however, since this is old code I am not changing it now, but new code should adhere to that convention
+	 *    otherwise, we have possible races where we compete with the user for state changes, ie, the user requests
+	 *    a state change and then we process an event, the state change from the user is pending so our ftdm_set_state
+	 *    operation will fail. In cases where we win the race, our state change will be accepted but if a user requests
+	 *    a state change before the state change we requested here is processed by the channel thread, we'll end up
+	 *    rejecting the user request.
+	 *
+	 *    See docs/locking.txt for further information about what guarantees should signaling modules provide when
+	 *    locking/unlocking a channel
+	 * */
 	switch(event->enum_id) {
 	case FTDM_OOB_RING_START:
 		{
 			if (event->channel->type != FTDM_CHAN_TYPE_FXO) {
 				ftdm_log_chan_msg(event->channel, FTDM_LOG_ERROR, "Cannot get a RING_START event on a non-fxo channel, please check your config.\n");
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 				goto end;
 			}
 			if (!event->channel->ring_count && (event->channel->state == FTDM_CHANNEL_STATE_DOWN && !ftdm_test_flag(event->channel, FTDM_CHANNEL_INTHREAD))) {
 				if (ftdm_test_flag(analog_data, FTDM_ANALOG_CALLERID)) {
-					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_GET_CALLERID);
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_GET_CALLERID);
 				} else {
-					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_RING);
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_RING);
 				}
 				event->channel->ring_count = 1;
 				ftdm_mutex_unlock(event->channel->mutex);
@@ -909,24 +1034,33 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			}
 
 			if (event->channel->state != FTDM_CHANNEL_STATE_DOWN) {
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
+				if (event->channel->state == FTDM_CHANNEL_STATE_HANGUP && 
+				    ftdm_test_flag(event->channel, FTDM_CHANNEL_STATE_CHANGE)) { 
+					/* we do not need to process HANGUP since the device also hangup already */
+					ftdm_channel_complete_state(event->channel);
+				}
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
-
+			if (event->channel->type == FTDM_CHAN_TYPE_FXS) {
+				/* we always return to forward when the device goes onhook */
+				ftdm_polarity_t forward_polarity = FTDM_POLARITY_FORWARD;
+				ftdm_channel_command(event->channel, FTDM_COMMAND_SET_POLARITY, &forward_polarity);
+			}
 		}
 		break;
 	case FTDM_OOB_FLASH:
 		{
 			if (event->channel->state == FTDM_CHANNEL_STATE_CALLWAITING) {
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_UP);
-				ftdm_clear_flag_locked(event->channel, FTDM_CHANNEL_STATE_CHANGE);
-				ftdm_clear_flag_locked(event->channel->span, FTDM_SPAN_STATE_CHANGE);
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_UP);
+				ftdm_clear_flag(event->channel->span, FTDM_SPAN_STATE_CHANGE);
+				ftdm_channel_complete_state(event->channel);
 				event->channel->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK] = 0;
 			} 
 
 			ftdm_channel_rotate_tokens(event->channel);
 			
 			if (ftdm_test_flag(event->channel, FTDM_CHANNEL_HOLD) && event->channel->token_count != 1) {
-				ftdm_set_state_locked(event->channel,  FTDM_CHANNEL_STATE_UP);
+				ftdm_set_state(event->channel,  FTDM_CHANNEL_STATE_UP);
 			} else {
 				sig.event_id = FTDM_SIGEVENT_FLASH;
 				ftdm_span_send_signal(span, &sig);
@@ -940,12 +1074,12 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 					if (ftdm_test_flag(event->channel, FTDM_CHANNEL_RINGING)) {
 						ftdm_channel_command(event->channel, FTDM_COMMAND_GENERATE_RING_OFF, NULL);
 					}
-					ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_UP);
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_UP);
 				} else {
 					if(!analog_data->max_dialstr) {
-						ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_COLLECT);
+						ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_COLLECT);
 					} else {
-						ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DIALTONE);
+						ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DIALTONE);
 					}						
 					ftdm_mutex_unlock(event->channel->mutex);
 					locked = 0;
@@ -957,9 +1091,53 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 						ftdm_channel_command(event->channel, FTDM_COMMAND_ONHOOK, NULL);
 					}
 				}
-				ftdm_set_state_locked(event->channel, FTDM_CHANNEL_STATE_DOWN);
+				ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_DOWN);
 			}
 		}
+		break;
+	case FTDM_OOB_ALARM_TRAP:
+		{
+			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sig.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
+			ftdm_span_send_signal(span, &sig);
+		}
+		break;
+	case FTDM_OOB_ALARM_CLEAR:
+		{
+			sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+			sig.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
+			ftdm_span_send_signal(span, &sig);
+		}
+		break;
+	case FTDM_OOB_POLARITY_REVERSE:
+		{
+			if (event->channel->type != FTDM_CHAN_TYPE_FXO) {
+				ftdm_log_chan_msg(event->channel, FTDM_LOG_WARNING, 
+						"Ignoring polarity reversal, this should not happen in non-FXO channels!\n");
+				break;
+			}
+			if (!ftdm_test_flag(event->channel, FTDM_CHANNEL_INTHREAD) &&
+			     ftdm_test_flag(event->channel, FTDM_CHANNEL_OFFHOOK)) {
+				ftdm_log_chan_msg(event->channel, FTDM_LOG_WARNING, 
+					"Forcing onhook in channel not in thread after polarity reversal\n");
+				ftdm_channel_command(event->channel, FTDM_COMMAND_ONHOOK, NULL);
+				break;
+			}
+			if (!ftdm_test_flag(analog_data, FTDM_ANALOG_ANSWER_POLARITY_REVERSE) 
+			 && !ftdm_test_flag(analog_data, FTDM_ANALOG_HANGUP_POLARITY_REVERSE)) {
+				ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, 
+					"Ignoring polarity reversal because this channel is not configured for it\n");
+				break;
+			}
+			if (event->channel->state == FTDM_CHANNEL_STATE_DOWN) {
+				ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, 
+					"Ignoring polarity reversal because this channel is down\n");
+				break;
+			}
+			/* we have a good channel, set the polarity flag and let the channel thread deal with it */
+			ftdm_set_sflag(event->channel, AF_POLARITY_REVERSE);
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(event->channel, FTDM_LOG_DEBUG, "Ignoring event [%s] in state [%s]\n", ftdm_oob_event2str(event->enum_id), ftdm_channel_state2str(event->channel->state));

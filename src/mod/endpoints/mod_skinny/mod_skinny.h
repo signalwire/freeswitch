@@ -42,6 +42,7 @@
 #define SKINNY_EVENT_UNREGISTER "skinny::unregister"
 #define SKINNY_EVENT_EXPIRE "skinny::expire"
 #define SKINNY_EVENT_ALARM "skinny::alarm"
+#define SKINNY_EVENT_XML_ALARM "skinny::xml_alarm"
 #define SKINNY_EVENT_CALL_STATE "skinny::call_state"
 #define SKINNY_EVENT_USER_TO_DEVICE "skinny::user_to_device"
 #define SKINNY_EVENT_DEVICE_TO_USER "skinny::device_to_user"

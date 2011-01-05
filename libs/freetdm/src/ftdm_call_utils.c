@@ -30,6 +30,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * Ricardo Barroetaveña <rbarroetavena@anura.com.ar>
+ *
  */
 
 #include "private/ftdm_core.h"
@@ -142,5 +148,22 @@ FT_DECLARE(ftdm_status_t) ftdm_is_number(const char *number)
 		}
 	}
 	return FTDM_SUCCESS;
+}
+
+
+FT_DECLARE(ftdm_status_t) ftdm_set_calling_party_category(const char *string, uint8_t *target)
+{
+	uint8_t val;
+	ftdm_status_t status = FTDM_SUCCESS;
+
+	val = ftdm_str2ftdm_calling_party_category(string);
+	if (val == FTDM_CPC_INVALID) {
+		ftdm_log(FTDM_LOG_WARNING, "Invalid category string (%s)\n", string);
+		val = FTDM_CPC_ORDINARY;
+		status = FTDM_FAIL;
+	}
+
+	*target = val;
+	return status;
 }
 

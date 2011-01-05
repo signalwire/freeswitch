@@ -1428,8 +1428,8 @@ SWITCH_STANDARD_API(cond_function)
 		int a_is_num, b_is_num;
 		*expr++ = '\0';
 		b = expr;
-		s_a = switch_strip_spaces(a);
-		s_b = switch_strip_spaces(b);
+		s_a = switch_strip_spaces(a, SWITCH_TRUE);
+		s_b = switch_strip_spaces(b, SWITCH_TRUE);
 		a_is_num = switch_is_number(s_a);
 		b_is_num = switch_is_number(s_b);
 
@@ -2226,6 +2226,40 @@ SWITCH_STANDARD_API(uuid_deflect)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_RECOVERY_REFRESH_SYNTAX "<uuid> <uri>"
+SWITCH_STANDARD_API(uuid_recovery_refresh)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *text = NULL;
+
+	if (!zstr(cmd) && (uuid = strdup(cmd))) {
+		if ((text = strchr(uuid, ' '))) {
+			*text++ = '\0';
+		}
+	}
+
+	if (zstr(uuid) || zstr(text)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_RECOVERY_REFRESH_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_core_session_message_t msg = { 0 };
+
+			/* Tell the channel to recovery_refresh the call */
+			msg.from = __FILE__;
+			msg.string_arg = text;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH;
+			switch_core_session_receive_message(tsession, &msg);
+			stream->write_function(stream, "+OK:%s\n", msg.string_reply);
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "-ERR No Such Channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SCHED_TRANSFER_SYNTAX "[+]<time> <uuid> <extension> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(sched_transfer_function)
 {
@@ -2488,6 +2522,48 @@ SWITCH_STANDARD_API(uuid_display_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define BUGLIST_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_buglist_function)
+{
+	char *mydata = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (zstr(cmd)) {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		goto error;
+	}
+	if (argv[0]) {
+		switch_core_session_t *lsession = NULL;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_media_bug_enumerate(lsession, stream);
+			switch_core_session_rwunlock(lsession);
+		}
+		goto ok;
+	} else {
+		goto error;
+	}
+
+  error:
+	stream->write_function(stream, "-USAGE: %s\n", BUGLIST_SYNTAX);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+  ok:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SIMPLIFY_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_simplify_function)
 {
@@ -2527,6 +2603,59 @@ SWITCH_STANDARD_API(uuid_simplify_function)
 
   error:
 	stream->write_function(stream, "-USAGE: %s\n", SIMPLIFY_SYNTAX);
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+  ok:
+	switch_safe_free(mydata);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define JITTERBUFFER_SYNTAX "<uuid> [0|<min_msec>[:<max_msec>]]"
+SWITCH_STANDARD_API(uuid_jitterbuffer_function)
+{
+	char *mydata = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (zstr(cmd)) {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 2) {
+		goto error;
+	}
+	if (argv[1]) {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_JITTER_BUFFER;
+		msg.string_arg = argv[1];
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+		goto ok;
+	} else {
+		goto error;
+	}
+
+  error:
+	stream->write_function(stream, "-USAGE: %s\n", JITTERBUFFER_SYNTAX);
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
   ok:
@@ -4278,20 +4407,32 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	char *format = NULL;
 	const char *tz_name = NULL;
 	char date[80] = "";
+	char *mycmd = NULL, *p;
+	switch_time_t when = 0;
 
-	if (!zstr(cmd)) {
-		format = strchr(cmd, ' ');
-		tz_name = cmd;
-		if (format) {
+	if (cmd) mycmd = strdup(cmd);
+
+	if (!zstr(mycmd)) {
+		tz_name = mycmd;
+
+		if ((format = strchr(mycmd, ' '))) {
 			*format++ = '\0';
+		}
+		
+		if ((p = strchr(format, '|'))) {
+			*p++ = '\0';
+			when = atol(format);
+			format = p;
 		}
 	}
 
-	if (switch_strftime_tz(tz_name, format, date, sizeof(date), 0) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
+	if (switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
 		stream->write_function(stream, "%s", date);
 	} else {
 		stream->write_function(stream, "-ERR Invalid Timezone\n");
 	}
+
+	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4715,7 +4856,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sql_escape", "Escape a string to prevent sql injection", sql_escape, SQL_ESCAPE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
-	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
+	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [<epoch>|][format string]");
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss> [count]");
@@ -4731,6 +4872,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_buglist", "List media bugs on a session", uuid_buglist_function, BUGLIST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_debug_audio", "debug audio", uuid_debug_audio_function, DEBUG_AUDIO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
@@ -4750,6 +4892,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send and event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_record", "session record", session_record_function, SESS_REC_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_recovery_refresh", "Send a recovery_refresh", uuid_recovery_refresh, UUID_RECOVERY_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_recv_dtmf", "receive dtmf digits", uuid_recv_dtmf_function, UUID_RECV_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_session_heartbeat", "uuid_session_heartbeat", uuid_session_heartbeat_function, HEARTBEAT_SYNTAX);
@@ -4758,6 +4901,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_transfer", "Transfer a session", transfer_function, TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_dual_transfer", "Transfer a session and its partner", dual_transfer_function, DUAL_TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "Try to cut out of a call path / attended xfer", 
+				   uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	switch_console_set_complete("add alias add");
@@ -4843,6 +4988,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_break ::console::list_uuid both");
 	switch_console_set_complete("add uuid_bridge ::console::list_uuid ::console::list_uuid");
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
+	switch_console_set_complete("add uuid_buglist ::console::list_uuid");
 	switch_console_set_complete("add uuid_chat ::console::list_uuid");
 	switch_console_set_complete("add uuid_debug_audio ::console::list_uuid");
 	switch_console_set_complete("add uuid_deflect ::console::list_uuid");
@@ -4854,6 +5000,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_flush_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_getvar ::console::list_uuid");
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
+	switch_console_set_complete("add uuid_jitterbuffer ::console::list_uuid");
 	switch_console_set_complete("add uuid_kill ::console::list_uuid");
 	switch_console_set_complete("add uuid_limit_release ::console::list_uuid");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid console");
@@ -4870,7 +5017,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid talk");
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid hold");
 	switch_console_set_complete("add uuid_preprocess ::console::list_uuid");
-	switch_console_set_complete("add uuid_record ::console::list_uuid");
+	switch_console_set_complete("add uuid_record ::console::list_uuid ::[start:stop");
+	switch_console_set_complete("add uuid_recovery_refresh ::console::list_uuid");
 	switch_console_set_complete("add uuid_recv_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_send_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_session_heartbeat ::console::list_uuid");

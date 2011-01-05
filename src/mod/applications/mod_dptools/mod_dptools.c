@@ -269,7 +269,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 }
 
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR pause OR resume OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
@@ -957,6 +957,17 @@ SWITCH_STANDARD_APP(redirect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(jitterbuffer_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to change the jitter buffer */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_JITTER_BUFFER;
+	switch_core_session_receive_message(session, &msg);
+}
+
 SWITCH_STANDARD_APP(display_function)
 {
 	switch_core_session_message_t msg = { 0 };
@@ -987,6 +998,17 @@ SWITCH_STANDARD_APP(deflect_function)
 	msg.from = __FILE__;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
+	switch_core_session_receive_message(session, &msg);
+}
+
+SWITCH_STANDARD_APP(recovery_refresh_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to recovery_refresh the call */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH;
 	switch_core_session_receive_message(session, &msg);
 }
 
@@ -1303,13 +1325,22 @@ SWITCH_STANDARD_API(strftime_api_function)
 	char date[80] = "";
 	switch_time_t thetime;
 	char *p;
-	if (!zstr(cmd) && (p = strchr(cmd, '|'))) {
-		thetime = switch_time_make(atoi(cmd), 0);
+	char *mycmd = NULL;
+
+	if (!zstr(cmd)) {
+		mycmd = strdup(cmd);
+	}
+
+	if (!zstr(mycmd) && (p = strchr(cmd, '|'))) {
+		*p++ = '\0';
+		
+		thetime = switch_time_make(atol(cmd), 0);
 		cmd = p + 1;
 	} else {
 		thetime = switch_micro_time_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
+
 	if (zstr(cmd)) {
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	} else {
@@ -3092,6 +3123,11 @@ SWITCH_STANDARD_APP(verbose_events_function)
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_VERBOSE_EVENTS);
 }
 
+SWITCH_STANDARD_APP(cng_plc_function)
+{
+	switch_channel_set_flag(switch_core_session_get_channel(session), CF_CNG_PLC);
+}
+
 SWITCH_STANDARD_APP(early_hangup_function)
 {
 	switch_channel_set_flag(switch_core_session_get_channel(session), CF_EARLY_HANGUP);
@@ -3477,6 +3513,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "<ip> <acl | cidr> [<hangup_cause>]", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "verbose_events", "Make ALL Events verbose.", "Make ALL Events verbose.", verbose_events_function, "",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "cng_plc", "Do PLC on CNG frames", "", cng_plc_function, "",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "early_hangup", "Enable early hangup", "", early_hangup_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "delay_echo", "echo audio at a specified delay", "Delay n ms", delay_function, "<delay ms>", SAF_NONE);
@@ -3513,11 +3551,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "jitterbuffer", "Send session jitterbuffer", "Send a jitterbuffer message to a session.", 
+				   jitterbuffer_function, "<jitterbuffer_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_display", "Send session a new display", "Send session a new display.", display_function, "<text>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "respond", "Send session respond", "Send a respond message to a session.", respond_function, "<respond_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "recovery_refresh", "Send call recovery_refresh", "Send a call recovery_refresh.", recovery_refresh_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",

@@ -342,6 +342,10 @@
 				RelativePath="..\..\libg722_1\src\tables.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\libg722_1\src\utilities.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -386,6 +390,10 @@
 			</File>
 			<File
 				RelativePath="..\..\libg722_1\src\tables.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libg722_1\src\utilities.h"
 				>
 			</File>
 		</Filter>

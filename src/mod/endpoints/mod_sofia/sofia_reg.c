@@ -817,6 +817,19 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_safe_free(auth_str);
 }
 
+uint32_t sofia_reg_reg_count(sofia_profile_t *profile, const char *user, const char *host)
+{
+	char buf[32] = "";
+	char *sql;
+	
+	sql = switch_mprintf("select count(*) from sip_registrations where profile_name='%q' and "
+						 "sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", profile->name, user, host, host);
+	
+	sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+	switch_safe_free(sql);
+	return atoi(buf);													
+}
+
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
 								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
 {
@@ -1065,6 +1078,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (exptime && v_event && *v_event) {
 			char *exp_var;
 			char *allow_multireg = NULL;
+			int force_connectile = 0;
 
 			allow_multireg = switch_event_get_header(*v_event, "sip-allow-multiple-registrations");
 			if (allow_multireg && switch_false(allow_multireg)) {
@@ -1081,8 +1095,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				to_user = force_user;
 			}
 
-			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
-				if (!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) {
+			if (profile->rport_level == 3 && sip->sip_user_agent &&
+				sip->sip_user_agent->g_string && !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7)) {
+				force_connectile = 1;
+			}
+
+			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact")) || force_connectile) {
+				if ((!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) || force_connectile) {
 					char *path_encoded;
 					size_t path_encoded_len;
 					char my_contact_str[1024];
@@ -1139,30 +1158,24 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
-			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-				if (regtype == REG_REGISTER) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP auth %s (REGISTER) on sofia profile '%s' "
-									  "for [%s@%s] from ip %s\n", forbidden ? "failure" : "challenge", profile->name, to_user, to_host, network_ip);
-				}
+			if (auth_res == AUTH_FORBIDDEN) {
+				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+				forbidden = 1;
+			} else {
+				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 			}
 
 			if (profile->debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s]\n",
 								  forbidden ? "forbidden" : "challenge", to_user, to_host);
 			}
-			if (auth_res == AUTH_FORBIDDEN) {
-				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
-				
-				/* Log line added to support Fail2Ban */
-				if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-					if (regtype == REG_INVITE) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth failure (INVITE) on sofia profile '%s' "
-										  "for [%s@%s] from ip %s\n", profile->name, to_user, to_host, network_ip);
-					}
-				}
-			} else {
-				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
+			/* Log line added to support Fail2Ban */
+			if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth %s (%s) on sofia profile '%s' "
+								  "for [%s@%s] from ip %s\n", forbidden ? "failure" : "challenge", 
+								  (regtype == REG_INVITE) ? "INVITE" : "REGISTER", profile->name, to_user, to_host, network_ip);
 			}
+
 			switch_goto_int(r, 1, end);
 		}
 	}
@@ -1193,14 +1206,18 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			realm = from_host;
 		}
 
-		if (regtype == REG_REGISTER) {
-			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
-			if (profile->debug) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
-			}
-		} else {
-			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
+		sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
+
+		if (profile->debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send challenge for [%s@%s]\n", to_user, to_host);
 		}
+		/* Log line added to support Fail2Ban */
+		if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth challenge (%s) on sofia profile '%s' "
+							  "for [%s@%s] from ip %s\n", (regtype == REG_INVITE) ? "INVITE" : "REGISTER", 
+							  profile->name, to_user, to_host, network_ip);
+		}
+
 		switch_goto_int(r, 1, end);
 	}
   reg:
@@ -1294,6 +1311,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
+		if (sofia_reg_reg_count(profile, to_user, reg_host) == 1) {
+			sql = switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' and profile_name='%q' and open_closed='closed'", 
+								 to_user, reg_host, profile->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DELETE PRESENCE SQL: %s\n", sql);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		}
 
 		switch_mutex_unlock(profile->ireg_mutex);
 
@@ -1357,8 +1380,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 
 	} else {
+		int send = 1;
 
-		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		if (multi_reg) {
+			if (sofia_reg_reg_count(profile, to_user, sub_host) > 0) {
+				send = 0;
+			}
+		}
+
+		
+		if (send && switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);

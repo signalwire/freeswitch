@@ -221,6 +221,7 @@
       <prompt phrase="Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2." filename="vm-tutorial_yes_no.wav"/>
       <prompt phrase="I need to record your first and last name. This recording is used throughout the system, including in the company directory." filename="vm-tutorial_record_name.wav"/>
       <prompt phrase="Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now?" filename="vm-tutorial_change_pin.wav"/>
+      <prompt phrase="The person you are trying to reach is not available and does not have voicemail." filename="vm-not_available_no_voicemail.wav"/>
     </voicemail>
     <directory>
 	  <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -241,6 +242,8 @@
 	  <prompt phrase="...letters of the person's name." filename="dir-letters_of_person_name.wav"/>
 	  <prompt phrase="Please try again." filename="dir-please_try_again.wav"/>
 	  <prompt phrase="press" filename="dir-press.wav" info="we can copy vm/vm-press.wav"/>
+      <prompt phrase="For the next entry..." filename="dir-for_next.wav" note="re-recorded because original was wrong"/>
+	  <prompt phrase="Please enter the first few letters of the person's first or last name" filename="dir-enter_person_first_or_last.wav"/>
     </directory>
     <conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
@@ -259,6 +262,12 @@
       <prompt phrase="Invalid pin number, try again." filename="conf-bad-pin.wav"/>
       <prompt phrase="goodbye" filename="conf-goodbye.wav"/>
       <prompt phrase="Welcome to the conference." filename="conf-welcome.wav"/>
+      <prompt phrase="Please enter the conference number, followed by the pound key" filename="conf-enter_conf_number.wav"/>
+      <prompt phrase="Enter the conference PIN number, followed by the pound key." filename="conf-enter_conf_pin.wav"/>
+      <prompt phrase="...has entered the conference." filename="conf-has_joined.wav"/>
+      <prompt phrase="...has left the conference." filename="conf-has_left.wav"/>
+      <prompt phrase="You are already muted." filename="conf-you_are_already_muted.wav"/>
+      <prompt phrase="You are now bi-directionally muted." filename="conf-you_are_now_bidirectionally_muted.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
@@ -362,8 +371,6 @@
       <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now. For a directory, press..." filename="ivr-generic_greeting.wav"/>
       <prompt phrase="...file..." filename="ivr-file.wav"/>
       <prompt phrase="...files..." filename="ivr-files-.wav"/>
-
-      <!-- The following phrases still need to be recorded -->
 	  <prompt phrase="For a wakeup call..." filename="ivr-for_a_wakeup_call.wav"/>
 	  <prompt phrase="This is your wakeup call." filename="ivr-this_is_your_wakeup_call.wav"/>
 	  <prompt phrase="To request a wakeup call..." filename="ivr-request_wakeup_call.wav"/>
@@ -390,15 +397,10 @@
       <prompt phrase="You are the..." filename="ivr-you_are_the.wav"/>
       <prompt phrase="One moment please." filename="ivr-one_moment_please.wav"/>
       <prompt phrase="Your call will be answered in the order it was received." filename="ivr-call_answered_order_received.wav"/>
-      <prompt phrase="Please enter the conference number, followed by the pound key" filename="conf-enter_conf_number.wav"/>
-      <prompt phrase="Enter the conference PIN number, followed by the pound key." filename="conf-enter_conf_pin.wav"/>
-      <prompt phrase="...has entered the conference." filename="conf-has_joined.wav"/>
-      <prompt phrase="...has left the conference." filename="conf-has_left.wav"/>
       <prompt phrase="You entered..." filename="ivr-you_entered.wav"/>
       <prompt phrase="Extension number..." filename="ivr-extension_number.wav"/>
       <prompt phrase="Please hold while your party is being contacted." filename="ivr-please_hold_while_party_contacted.wav"/>
       <prompt phrase="Please enjoy the music while your party is being reached." filename="ivr-please_enjoy_music_while_party_reached.wav"/>
-      <prompt phrase="For the next entry..." filename="dir-for_next.wav" note="re-record because original is wrong"/>
       <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now, or dial nine for a directory." filename="ivr-generic_greeting.wav"/>
       <prompt phrase="If this is correct, press 1. If not, press 2." filename="ivr-if_correct_one_if_not_two.wav"/>
       <prompt phrase="To repeat this information..." filename="ivr-repeat_this_information.wav"/>
@@ -409,10 +411,7 @@
       <prompt phrase="That's it! One more mistake and I WILL hang up on your ass." filename="ivr-one_more_mistake.wav"/>
       <prompt phrase="Congratulations, you pressed star. This does not mean you ARE a star. It simply means that you can press buttons and probably have fingers." filename="ivr-congratulations_you_pressed_star.wav"/>
       <prompt phrase="All of our engineers are busy assisting other sales guys with demonstrating how cool the CudaTel is." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
-      <prompt phrase="The person you are trying to reach is not available and does not have voicemail." filename="vm-not_available_no_voicemail.wav"/>
       <prompt phrase="This message will self-destruct in 5, 4, 3, 2, 1..." filename="ivr-message_self_destruct.wav"/>
-      <prompt phrase="You are already muted." filename="conf-you_are_already_muted.wav"/>
-      <prompt phrase="You are now bi-directionally muted." filename="conf-you_are_now_bidirectionally_muted.wav"/>
 	  <prompt phrase="All your call are belong to us." filename="ivr-all_your_call_are_belong_to_us.wav"/>
 	  <prompt phrase="I just love the way you press those touch tones!" filename="ivr-love_those_touch_tones.wav"/>
 	  <prompt phrase="Yes, we have no bananas." filename="ivr-yes_we_have_no_bananas.wav"/>
@@ -425,20 +424,10 @@
 	  <prompt phrase="Please contact the system administrator for assistance." filename="ivr-contact_system_administrator.wav"/>	
 	  <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
 	  <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
-	  <prompt phrase="Please enter the first few letters of the person's first or last name" filename="dir-enter_person_first_or_last.wav"/>
 	  <prompt phrase="There are no calls waiting in this queue." filename="ivr-no_calls_waiting_in_queue.wav"/>
-	  <prompt phrase="Brian West" filename="misc-Brian_West.wav"/>
-	  <prompt phrase="Anthony Minessale" filename="misc-Anthony_Minessale.wav"/>
-	  <prompt phrase="Michael Jerris" filename="misc-Michael_Jerris.wav"/>
-	  <prompt phrase="Raymond Chandler" filename="misc-Raymond_Chandler.wav"/>
-	  <prompt phrase="Michael Collins" filename="misc-Michael_Collins.wav"/>
-	  <prompt phrase="Mark Mann" filename="misc-Mark_Mann.wav"/>
-	  <prompt phrase="William King" filename="misc-William_King.wav"/>
-	  <prompt phrase="Rudy Fleminger" filename="misc-Rudy_Fleminger.wav"/>
-	  <prompt phrase="Andrew Thompson" filename="misc-Andrew_Thompson.wav"/>
-	  <prompt phrase="Graham Saathoff" filename="misc-Graham_Saathoff.wav"/>
-	  <prompt phrase="Nicholaus Belluni" filename="misc-Nicholaus_Belluni.wav"/>
-	  <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav"/>
+
+      <!-- The following phrases still need to be recorded -->
+	  <prompt phrase="You are caller number one. Of course, *every* caller is number one in our book so you may be waiting a while." filename="ivr-youre_number_one.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>

@@ -291,6 +291,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\esl_buffer.c"
+				>
+			</File>
+			<File
 				RelativePath=".\esl_config.c"
 				>
 			</File>
@@ -314,6 +318,10 @@
 			>
 			<File
 				RelativePath=".\include\esl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\esl_buffer.h"
 				>
 			</File>
 			<File

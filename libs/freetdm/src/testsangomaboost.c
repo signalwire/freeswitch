@@ -48,10 +48,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#if defined(__linux__) && !defined(__USE_BSD)
-#define __USE_BSD
-#endif
-#include <unistd.h>
+
 #include "freetdm.h"
 
 

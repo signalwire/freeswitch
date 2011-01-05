@@ -384,8 +384,9 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 		switch_codec_implementation_t video_impl = { 0 };
 		char tmp[128] = "";
 
-
 		if (switch_core_session_get_read_impl(session, &impl) == SWITCH_STATUS_SUCCESS) {
+			const char *ep = switch_channel_get_variable(caller_channel, "ep_codec_string");
+
 			if (switch_core_session_get_video_read_impl(session, &video_impl) == SWITCH_STATUS_SUCCESS) {
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui,%s",
 								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000,
@@ -394,9 +395,15 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui",
 								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
 			}
-			switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n",
-							  switch_channel_get_name(caller_channel), tmp);
+		
+			if (ep && switch_stristr(impl.iananame, ep)) {
+				switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n",
+								  switch_channel_get_name(caller_channel), tmp);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_DEBUG, "Codec string %s not supported on %s, skipping inheritance\n",
+								  tmp, switch_channel_get_name(caller_channel));
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_WARNING,
 							  "Error inheriting codec.  Channel %s has no read codec yet.\n",
@@ -488,7 +495,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				pindex = (uint32_t) i;
 			} else if (!oglobals->sent_ring && oglobals->ignore_early_media == 2 && len == 1 && caller_channel && !oglobals->ignore_ring_ready) {
 				switch_channel_pass_callee_id(originate_status[0].peer_channel, caller_channel);
-				//switch_channel_ring_ready(caller_channel);
+				switch_channel_ring_ready(caller_channel);
 				oglobals->sent_ring = 1;
 			}
 
@@ -1751,6 +1758,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	early_state_t early_state = { 0 };
 	int read_packet = 0;
 	int check_reject = 1;
+	switch_codec_implementation_t read_impl = { 0 };
 	
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
@@ -1777,6 +1785,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
 
+		switch_core_session_get_read_impl(session, &read_impl);
 
 		if ((to_var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 			timelimit_sec = atoi(to_var);
@@ -2381,24 +2390,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					new_profile->chan_name = SWITCH_BLANK_STRING;
 					new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
 
-					if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-						const char *callee_id_name = new_profile->callee_id_name;
-						const char *callee_id_number = new_profile->callee_id_number;
-
-						if (zstr(callee_id_number)) {
-							callee_id_number = caller_caller_profile->destination_number;
-						}
-
-						if (zstr(callee_id_name)) {
-							callee_id_name = callee_id_number;
-						}
-
-						new_profile->caller_id_name = callee_id_name;
-						new_profile->caller_id_number = callee_id_number;
-						new_profile->callee_id_name = SWITCH_BLANK_STRING;
-						new_profile->callee_id_number = SWITCH_BLANK_STRING;
-					}
-
 					if (cid_name_override) {
 						new_profile->caller_id_name = switch_core_strdup(new_profile->pool, cid_name_override);
 					}
@@ -2425,6 +2416,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 																cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
 					}
 				}
+
+				new_profile->callee_id_name = switch_core_strdup(new_profile->pool, "Outbound Call");
+				new_profile->callee_id_number = switch_core_strdup(new_profile->pool, new_profile->destination_number);
 
 				originate_status[i].caller_profile = NULL;
 				originate_status[i].peer_channel = NULL;
@@ -3066,7 +3060,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if ((ringback.fh || silence || ringback.audio_buffer || oglobals.bridge_early_media > -1) && write_frame.codec && write_frame.datalen) {
 						if (silence) {
-							write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
+							write_frame.datalen = read_impl.decoded_bytes_per_packet;
 							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, silence);
 						}
 

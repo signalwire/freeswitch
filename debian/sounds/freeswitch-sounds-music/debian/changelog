@@ -1,3 +1,9 @@
+freeswitch-sounds-music (1.0.8~git.master.20101222.1-1) unstable; urgency=low
+
+   * Clean ups
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Wed, 22 Dec 2010 22:55:02 +0200
+
 freeswitch-sounds-music (1.0.head-git.master,20101014.1-1) unstable; urgency=low
 
   * Change upstream package version numbering scheme for unreleased versions:
@@ -5,7 +11,7 @@ freeswitch-sounds-music (1.0.head-git.master,20101014.1-1) unstable; urgency=low
   * Change source format to 3.0 (quilt).
   * Upgrade debhelper compatibility to version 7.
 
- -- Michal Bielicki <michal.bielicki@seventhsignal.de> Fr, 14 Oct 2010 05:05:02 +0200
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de> Fri, 14 Oct 2010 05:05:02 +0200
 
 freeswitch-sounds-music (1.0.8-0ubuntu3) jaunty; urgency=low
 

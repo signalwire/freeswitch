@@ -158,12 +158,16 @@ typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef __int16 int16_t;
 typedef __int8 int8_t;
+#define FTDM_O_BINARY O_BINARY
+#define FTDM_SIZE_FMT "Id"
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif /* _MSC_VER */
 #else /* __WINDOWS__ */
+#define FTDM_O_BINARY 0
+#define FTDM_SIZE_FMT "zd"
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
 #include <stdio.h>
@@ -179,7 +183,16 @@ typedef enum {
 	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
 	FTDM_NOTIMPL, /*!< Operation not implemented */
 	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
-	FTDM_EINVAL /*!< Invalid argument */
+
+	/*!< Any new return codes should try to mimc unix style error codes, no need to reinvent */
+	/* Remapping some of the codes that were before */
+	FTDM_ENOMEM = FTDM_MEMERR, /*!< Memory error */
+	FTDM_ETIMEDOUT = FTDM_TIMEOUT, /*!< Operation timedout */
+	FTDM_ENOSYS = FTDM_NOTIMPL, /*!< The function is not implemented */
+
+	FTDM_EINVAL, /*!< Invalid argument */
+	FTDM_ECANCELED, /*!< Operation cancelled */
+	FTDM_EBUSY, /*!< Device busy */
 } ftdm_status_t;
 
 /*! \brief FreeTDM bool type. */
