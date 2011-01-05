@@ -242,6 +242,7 @@ struct switch_rtp {
 
 	switch_time_t send_time;
 	switch_byte_t auto_adj_used;
+	uint8_t pause_jb;
 };
 
 struct switch_rtcp_senderinfo {
@@ -1640,6 +1641,26 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause)
+{
+	
+	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!!pause == !!rtp_session->pause_jb) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (rtp_session->pause_jb && !pause) {
+		stfu_n_reset(rtp_session->jb);
+	}
+
+	rtp_session->pause_jb = pause ? 1 : 0;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_deactivate_jitter_buffer(switch_rtp_t *rtp_session)
 {
 	
@@ -2174,7 +2195,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	ts = ntohl(rtp_session->recv_msg.header.ts);
 	
 	if (*bytes && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) && 
-		ts && !rtp_session->jb && ts == rtp_session->last_cng_ts) {
+		ts && !rtp_session->jb && !rtp_session->pause_jb && ts == rtp_session->last_cng_ts) {
 		/* we already sent this frame..... */
 		*bytes = 0;
 		return SWITCH_STATUS_SUCCESS;
@@ -2204,7 +2225,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	rtp_session->last_read_ts = ts;
 
-	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
+	if (rtp_session->jb && !rtp_session->pause_jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
 			stfu_n_reset(rtp_session->jb);
@@ -2217,7 +2238,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		status = SWITCH_STATUS_FALSE;
 	}
 
-	if (rtp_session->jb && !rtp_session->checked_jb) {
+	if (rtp_session->jb && !rtp_session->pause_jb && !rtp_session->checked_jb) {
 		if ((jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
 			memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
 

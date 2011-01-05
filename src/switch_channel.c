@@ -1261,6 +1261,24 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_cap(switch_channel_t *channel, swit
 	return channel->caps[cap] ? 1 : 0;
 }
 
+SWITCH_DECLARE(uint32_t) switch_channel_test_cap_partner(switch_channel_t *channel, switch_channel_cap_t cap)
+{
+	const char *uuid;
+	int r = 0;
+
+	switch_assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		switch_core_session_t *session;
+		if ((session = switch_core_session_locate(uuid))) {
+			r = switch_channel_test_cap(switch_core_session_get_channel(session), cap);
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	return r;
+}
+
 SWITCH_DECLARE(char *) switch_channel_get_flag_string(switch_channel_t *channel)
 {
 	switch_stream_handle_t stream = { 0 };

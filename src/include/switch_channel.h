@@ -344,6 +344,7 @@ SWITCH_DECLARE(void) switch_channel_set_cap_value(switch_channel_t *channel, swi
 
 SWITCH_DECLARE(void) switch_channel_clear_cap(switch_channel_t *channel, switch_channel_cap_t cap);
 SWITCH_DECLARE(uint32_t) switch_channel_test_cap(switch_channel_t *channel, switch_channel_cap_t cap);
+SWITCH_DECLARE(uint32_t) switch_channel_test_cap_partner(switch_channel_t *channel, switch_channel_cap_t cap);
 
 /*!
   \brief Set given flag(s) on a given channel's bridge partner

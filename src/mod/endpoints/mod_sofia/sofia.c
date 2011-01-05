@@ -2351,6 +2351,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
 						}
+					} else if (!strcasecmp(var, "auto-jitterbuffer-msec")) {
+						int msec = atoi(val);
+						if (msec > 19) {
+							profile->jb_msec = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "sip-trace")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_TPORT_LOG);
@@ -3088,6 +3093,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
+						}
+					} else if (!strcasecmp(var, "auto-jitterbuffer-msec")) {
+						int msec = atoi(val);
+						if (msec > 19) {
+							profile->jb_msec = switch_core_strdup(profile->pool, val);
 						}
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {

@@ -1142,7 +1142,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) ||
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
 		const char *app, *data;
-
+		
 		switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {

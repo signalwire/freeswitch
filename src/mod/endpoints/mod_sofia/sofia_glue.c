@@ -832,6 +832,8 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);
 	switch_channel_set_cap(tech_pvt->channel, CC_BYPASS_MEDIA);
 	switch_channel_set_cap(tech_pvt->channel, CC_PROXY_MEDIA);
+	switch_channel_set_cap(tech_pvt->channel, CC_JITTERBUFFER);
+	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 
 	switch_core_session_set_private(session, tech_pvt);
 
@@ -3152,8 +3154,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			}
 		}
 
-		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
-			int len = atoi(val);
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec")) || (val = tech_pvt->profile->jb_msec)) {
+			int jb_msec = atoi(val);
 			int maxlen = 0;
 			char *p;
 
@@ -3162,13 +3164,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				maxlen = atoi(p);
 			}
 
-			if (len < 20 || len > 10000) {
+			if (jb_msec < 20 || jb_msec > 10000) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR,
-								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", len);
+								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", jb_msec);
 			} else {
 				int qlen, maxqlen = 50;
 				
-				qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+				qlen = jb_msec / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
 				if (maxlen) {
 					maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
@@ -3178,11 +3180,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 													  tech_pvt->read_impl.samples_per_packet, 
 													  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
-									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
 					switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
-									  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+									  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
 				}
 				
 			}
@@ -6064,6 +6066,19 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		switch_core_session_rwunlock(other_session);
 	}
 }
+
+void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on)
+{
+	switch_core_session_message_t *msg;
+	msg = switch_core_session_alloc(session, sizeof(*msg));
+	MESSAGE_STAMP_FFL(msg);
+	msg->message_id = SWITCH_MESSAGE_INDICATE_JITTER_BUFFER;
+	msg->string_arg = switch_core_session_strdup(session, on ? "pause" : "resume");
+	msg->from = __FILE__;
+
+	switch_core_session_queue_message(session, msg);
+}
+
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl)
 {

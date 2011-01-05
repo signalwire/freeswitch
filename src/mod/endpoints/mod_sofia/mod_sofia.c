@@ -1346,7 +1346,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					char *p;
 					const char *s;
 
-					if (!strncasecmp(msg->string_arg, "debug:", 6)) {
+					if (!strcasecmp(msg->string_arg, "pause")) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+						goto end;
+					} else if (!strcasecmp(msg->string_arg, "resume")) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+						goto end;
+					} else if (!strncasecmp(msg->string_arg, "debug:", 6)) {
 						s = msg->string_arg + 6;
 						if (s && !strcmp(s, "off")) {
 							s = NULL;
@@ -1426,10 +1432,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 
 			sofia_glue_tech_simplify(tech_pvt);
-
+			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;
 				int ok = 0;
+				
+				if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(tech_pvt->channel, CC_FS_RTP)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(channel));					
+					switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+				}
 
 				if (sofia_test_flag(tech_pvt, TFLAG_PASS_RFC2833) && switch_channel_test_flag_partner(channel, CF_FS_RTP)) {
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
@@ -1455,6 +1467,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			const char *val;
 			int ok = 0;
+			
+			if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								  "%s RESUME Jitterbuffer\n", switch_channel_get_name(channel));					
+				switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+			}
 
 			if (switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s deactivate passthru 2833 mode.\n",
