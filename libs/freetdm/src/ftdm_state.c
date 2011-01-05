@@ -338,6 +338,7 @@ end:
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	if (status != FTDM_SUCCESS) {
+		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_BLOCKING);
 		ftdm_log_chan_ex(ftdmchan, file, func, line, 
 				FTDM_LOG_LEVEL_WARNING, "state change from %s to %s was most likely not completed after aprox %dms\n",
 				ftdm_channel_state2str(ftdmchan->last_state), ftdm_channel_state2str(state), DEFAULT_WAIT_TIME);
