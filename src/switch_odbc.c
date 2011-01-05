@@ -56,6 +56,7 @@ struct switch_odbc_handle {
 	switch_odbc_state_t state;
 	char odbc_driver[256];
 	BOOL is_firebird;
+	int affected_rows;
 };
 #endif
 
@@ -88,6 +89,7 @@ SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(const char *dsn, c
 
 	new_handle->env = SQL_NULL_HANDLE;
 	new_handle->state = SWITCH_ODBC_STATE_INIT;
+	new_handle->affected_rows = 0;
 
 	return new_handle;
 
@@ -355,12 +357,15 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 	SQLCHAR name[1024];
 	SQLLEN m = 0;
 
+	handle->affected_rows = 0;
+
 	if (switch_odbc_handle_exec(handle, sql, &stmt, err) == SWITCH_ODBC_SUCCESS) {
 		SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
 		SQLULEN ColumnSize;
 		int result;
 
 		SQLRowCount(stmt, &m);
+		handle->affected_rows = (int) m;
 
 		if (m <= 0) {
 			goto done;
@@ -395,6 +400,9 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	SQLHSTMT stmt = NULL;
 	int result;
 	char *err_str = NULL;
+	SQLLEN m = 0;
+
+	handle->affected_rows = 0;
 
 	if (!db_is_up(handle)) {
 		goto error;
@@ -413,6 +421,9 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
 		goto error;
 	}
+
+	SQLRowCount(stmt, &m);
+	handle->affected_rows = (int) m;
 
 	if (rstmt) {
 		*rstmt = stmt;
@@ -462,6 +473,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	int err_cnt = 0;
 	int done = 0;
 
+	handle->affected_rows = 0;
+
 	switch_assert(callback != NULL);
 
 	if (!db_is_up(handle)) {
@@ -486,6 +499,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 	SQLNumResultCols(stmt, &c);
 	SQLRowCount(stmt, &m);
+	handle->affected_rows = (int) m;
 
 
 	while (!done) {
@@ -618,6 +632,15 @@ SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle
 	return ret;
 #else
 	return NULL;
+#endif
+}
+
+SWITCH_DECLARE(int) switch_odbc_handle_affected_rows(switch_odbc_handle_t *handle)
+{
+#ifdef SWITCH_HAVE_ODBC
+	return handle->affected_rows;
+#else
+	return 0;
 #endif
 }
 

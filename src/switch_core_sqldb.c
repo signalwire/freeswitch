@@ -573,6 +573,24 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 }
 
 
+SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
+{
+	switch (dbh->type) {
+	case SCDB_TYPE_CORE_DB:
+		{
+			return switch_core_db_changes(dbh->native_handle.core_db_dbh);
+		}
+		break;
+	case SCDB_TYPE_ODBC:
+		{
+			return switch_odbc_handle_affected_rows(dbh->native_handle.odbc_dbh);
+		}
+		break;
+	}
+	return 0;
+}
+
+
 SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t *dbh, char *sql, char *str, size_t len, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;

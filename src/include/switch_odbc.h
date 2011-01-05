@@ -92,6 +92,9 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 
 SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, switch_odbc_statement_handle_t stmt);
+
+SWITCH_DECLARE(int) switch_odbc_handle_affected_rows(switch_odbc_handle_t *handle);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
