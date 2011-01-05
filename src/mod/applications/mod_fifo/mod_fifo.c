@@ -397,12 +397,12 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 					const char *moh_a = NULL, *moh_b = NULL;
 
 					if (!(moh_b = switch_channel_get_variable(bchan, "fifo_music"))) {
-						moh_b = switch_channel_get_variable(bchan, "hold_music");
+						moh_b = switch_channel_get_variable(bchan, SWITCH_HOLD_MUSIC_VARIABLE);
 					}
 
 					if (!(moh_a = switch_channel_get_variable(channel, "fifo_hold_music"))) {
 						if (!(moh_a = switch_channel_get_variable(channel, "fifo_music"))) {
-							moh_a = switch_channel_get_variable(channel, "hold_music");
+							moh_a = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 						}
 					}
 

@@ -156,6 +156,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
+#define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
 #define SWITCH_BRIDGE_EXPORT_VARS_VARIABLE "bridge_export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"

@@ -389,7 +389,7 @@ SWITCH_STANDARD_APP(dtmf_unbind_function)
 	int kval = 0;
 
 	if (key) {
-		kval = atoi(key);
+		kval = switch_dtmftoi(key);
 	}
 
 	switch_ivr_unbind_dtmf_meta_session(session, kval);
@@ -405,7 +405,7 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
-		int kval = atoi(argv[0]);
+		int kval = switch_dtmftoi(argv[0]);
 		switch_bind_flag_t bind_flags = 0;
 
 		if (strchr(argv[1], 'a')) {
@@ -2531,7 +2531,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			camp_data = (char *) data;
 		}
 
-		if (!(moh = switch_channel_get_variable(caller_channel, "hold_music"))) {
+		if (!(moh = switch_channel_get_variable(caller_channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 			moh = switch_channel_get_variable(caller_channel, "campon_hold_music");
 		}
 

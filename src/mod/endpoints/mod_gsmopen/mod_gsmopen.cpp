@@ -1512,7 +1512,7 @@ static switch_status_t load_config(int reload_type)
 					hotline = val;
 				} else if (!strcasecmp(var, "dial_regex")) {
 					dial_regex = val;
-				} else if (!strcasecmp(var, "hold_music")) {
+				} else if (!strcasecmp(var, SWITCH_HOLD_MUSIC_VARIABLE)) {
 					hold_music = val;
 				} else if (!strcasecmp(var, "fail_dial_regex")) {
 					fail_dial_regex = val;

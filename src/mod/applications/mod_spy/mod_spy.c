@@ -83,7 +83,7 @@ static switch_status_t spy_on_exchange_media(switch_core_session_t *session)
 static switch_status_t spy_on_park(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *moh = switch_channel_get_variable(channel, "hold_music");
+	const char *moh = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 
 	while (switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_PARK) {
 		if (moh) {

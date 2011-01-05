@@ -646,6 +646,30 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 
 }
 
+SWITCH_DECLARE(const char *) switch_channel_get_hold_music(switch_channel_t *channel)
+{
+	const char *var = switch_channel_get_variable(channel, SWITCH_TEMP_HOLD_MUSIC_VARIABLE);
+
+	if (!var) {
+		var = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
+	}
+
+	return var;
+}
+
+SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channel_t *channel)
+{
+	switch_core_session_t *session;
+	const char *r = NULL;
+
+	if (switch_core_session_get_partner(channel->session, &session) == SWITCH_STATUS_SUCCESS) {
+		r = switch_channel_get_hold_music(switch_core_session_get_channel(session));
+		switch_core_session_rwunlock(session);
+	}
+
+	return r;
+}
+
 SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup)
 {
 	const char *v = NULL, *r = NULL;

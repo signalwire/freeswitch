@@ -234,7 +234,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
-			tmp = switch_channel_get_variable(channel, "hold_music");
+			tmp = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 		}
 		if (tmp)
 			music = tmp;
