@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.7.1\libcelt"
+				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.10.0\libcelt"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -108,7 +108,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.7.1\libcelt"
+				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.10.0\libcelt"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -172,7 +172,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.7.1\libcelt"
+				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.10.0\libcelt"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -238,7 +238,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.7.1\libcelt"
+				AdditionalIncludeDirectories="..\..\..\..\libs\celt-0.10.0\libcelt"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool

@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading CELT."
-					CommandLine="if not exist &quot;$(ProjectDir)..\celt-0.7.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/celt-0.7.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\config.h&quot; &quot;$(ProjectDir)..\celt-0.7.1\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\float_cast.h&quot; &quot;$(ProjectDir)..\celt-0.7.1\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\celt-0.10.0&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\config.h&quot; &quot;$(ProjectDir)..\celt-0.10.0\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\float_cast.h&quot; &quot;$(ProjectDir)..\celt-0.10.0\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\CELT"
 				/>
 			</FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading CELT."
-					CommandLine="if not exist &quot;$(ProjectDir)..\celt-0.7.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/celt-0.7.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\config.h&quot; &quot;$(ProjectDir)..\celt-0.7.1\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\float_cast.h&quot; &quot;$(ProjectDir)..\celt-0.7.1\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\celt-0.10.0&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\config.h&quot; &quot;$(ProjectDir)..\celt-0.10.0\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;xcopy &quot;$(ProjectDir)\celt\float_cast.h&quot; &quot;$(ProjectDir)..\celt-0.10.0\libcelt&quot; /C /D /Y /S /I&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\CELT"
 				/>
 			</FileConfiguration>
