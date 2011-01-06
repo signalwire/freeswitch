@@ -163,7 +163,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 										 "mode=30",	/* default fmtp to send (can be overridden by the init function) */
 										 8000,	/* samples transferred per second */
 										 8000,	/* actual samples transferred per second */
-										 13300,	/* bits transferred per second */
+										 13330,	/* bits transferred per second */
 										 30000,	/* number of microseconds per frame */
 										 ILBC_BLOCK_LEN_30MS,	/* number of samples per frame */
 										 ILBC_BLOCK_LEN_30MS * 2,	/* number of bytes per frame decompressed */
