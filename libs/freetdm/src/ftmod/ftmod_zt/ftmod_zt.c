@@ -1064,6 +1064,12 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 			fchan->rx_cas_bits = bits;
 		}
 		break;
+	case ZT_EVENT_NONE:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "No event\n");
+			*event_id = FTDM_OOB_NOOP;
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
