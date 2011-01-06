@@ -1078,7 +1078,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (exptime && v_event && *v_event) {
 			char *exp_var;
 			char *allow_multireg = NULL;
-			int force_connectile = 0;
+			int auto_connectile = 0;
 
 			allow_multireg = switch_event_get_header(*v_event, "sip-allow-multiple-registrations");
 			if (allow_multireg && switch_false(allow_multireg)) {
@@ -1097,11 +1097,26 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 			if (profile->rport_level == 3 && sip->sip_user_agent &&
 				sip->sip_user_agent->g_string && !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7)) {
-				force_connectile = 1;
+				if (sip && sip->sip_via) {
+					const char *host = sip->sip_via->v_host;
+					const char *c_port = sip->sip_via->v_port;
+					int port = 0;
+
+					if (c_port) port = atoi(c_port);
+					if (!port)  port = 5060;
+
+					if (host && strcmp(network_ip, host)) {
+						auto_connectile = 1;
+					} else if (port != network_port) {
+						auto_connectile = 1;
+					}
+				} else {
+					auto_connectile = 1;
+				}
 			}
 
-			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact")) || force_connectile) {
-				if ((!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) || force_connectile) {
+			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact")) || auto_connectile) {
+				if ((!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) || auto_connectile) {
 					char *path_encoded;
 					size_t path_encoded_len;
 					char my_contact_str[1024];
