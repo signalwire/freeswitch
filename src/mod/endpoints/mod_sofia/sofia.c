@@ -2056,10 +2056,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				from_user = username;
 			}
 
-			if (zstr(extension)) {
-				extension = username;
-			}
-
 			if (zstr(proxy)) {
 				proxy = realm;
 			}
@@ -2151,8 +2147,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				sipip = profile->sipip;
 			}
 
-			gateway->extension = switch_core_strdup(gateway->pool, extension);
+			if (zstr(extension)) {
+				extension = username;
+			} else {
+				gateway->real_extension = switch_core_strdup(gateway->pool, extension);
+			}
 
+			gateway->extension = switch_core_strdup(gateway->pool, extension);
 
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
@@ -6222,6 +6223,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char acl_token[512] = "";
 	sofia_transport_t transport;
 	const char *gw_name = NULL;
+	const char *gw_param_name = NULL;
 	char *call_info_str = NULL;
 	nua_handle_t *bnh = NULL;
 	char sip_acl_authed_by[512] = "";
@@ -6854,7 +6856,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	if (sip->sip_request->rq_url->url_params) {
-		gw_name = sofia_glue_find_parameter_value(session, sip->sip_request->rq_url->url_params, "gw=");
+		gw_param_name = sofia_glue_find_parameter_value(session, sip->sip_request->rq_url->url_params, "gw=");
 	}
 
 	if (strstr(destination_number, "gw+")) {
@@ -6869,19 +6871,35 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
-	if (gw_name) {
-		sofia_gateway_t *gateway;
-		if (gw_name && (gateway = sofia_reg_find_gateway(gw_name))) {
+	if (gw_name || gw_param_name) {
+		sofia_gateway_t *gateway = NULL;
+		char *extension = NULL;
+
+		if (gw_name && ((gateway = sofia_reg_find_gateway(gw_name)))) {
+			gw_param_name = NULL;
+			extension = gateway->extension;
+		}
+
+		if (!gateway && gw_param_name) {
+			gateway = sofia_reg_find_gateway(gw_param_name);
+			extension = gateway->real_extension;
+		}
+
+		if (gateway) {
 			context = switch_core_session_strdup(session, gateway->register_context);
 			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
 
-			if (gateway->extension) {
-				if (!strcasecmp(gateway->extension, "auto_to_user")) {
+			if (!zstr(extension)) {
+				if (!strcasecmp(extension, "auto_to_user")) {
 					destination_number = sip->sip_to->a_url->url_user;
+				} else if (!strcasecmp(extension, "auto")) {
+					if (gw_name) {
+						destination_number = sip->sip_to->a_url->url_user;
+					}
 				} else {
-					destination_number = switch_core_session_strdup(session, gateway->extension);
+					destination_number = switch_core_session_strdup(session, extension);
 				}
-			} else {
+			} else if (!gw_param_name) {
 				destination_number = sip->sip_to->a_url->url_user;
 			}
 
