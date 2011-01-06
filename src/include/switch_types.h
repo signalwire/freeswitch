@@ -1817,6 +1817,8 @@ typedef struct switch_loadable_module_function_table {
 
 typedef int (*switch_modulename_callback_func_t) (void *user_data, const char *module_name);
 
+typedef struct switch_slin_data switch_slin_data_t;
+
 #define SWITCH_MODULE_DEFINITION_EX(name, load, shutdown, runtime, flags)					\
 static const char modname[] =  #name ;														\
 SWITCH_MOD_DECLARE_DATA switch_loadable_module_function_table_t name##_module_interface = {	\
