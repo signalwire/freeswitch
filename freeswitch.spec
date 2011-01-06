@@ -613,7 +613,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.ttml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/extensions.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/m3ua.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mime.types
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml

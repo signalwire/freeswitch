@@ -31,13 +31,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * The Initial Developer of the Original Code is
- * Anthony Minessale II <anthmct@yahoo.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
  * 
- * Anthony Minessale II <anthmct@yahoo.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * Boris Buklov (BBV) <buklov@mail.ru>
  *

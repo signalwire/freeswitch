@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -156,6 +156,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
+#define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
 #define SWITCH_BRIDGE_EXPORT_VARS_VARIABLE "bridge_export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
@@ -1035,6 +1036,8 @@ typedef enum {
 	CC_MEDIA_ACK = 1,
 	CC_BYPASS_MEDIA,
 	CC_PROXY_MEDIA,
+	CC_JITTERBUFFER,
+	CC_FS_RTP,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CC_FLAG_MAX
 } switch_channel_cap_t;

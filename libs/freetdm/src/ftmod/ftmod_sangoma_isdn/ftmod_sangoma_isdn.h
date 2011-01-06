@@ -408,11 +408,10 @@ ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
 
-		
-uint8_t sngisdn_get_infoTranCap_from_stack(ftdm_bearer_cap_t bearer_capability);
-uint8_t sngisdn_get_usrInfoLyr1Prot_from_stack(ftdm_user_layer1_prot_t layer1_prot);
-ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_user(uint8_t bearer_capability);
-ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_user(uint8_t layer1_prot);
+uint8_t sngisdn_get_infoTranCap_from_user(ftdm_bearer_cap_t bearer_capability);
+uint8_t sngisdn_get_usrInfoLyr1Prot_from_user(ftdm_user_layer1_prot_t layer1_prot);
+ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_stack(uint8_t bearer_capability);
+ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_stack(uint8_t layer1_prot);
 
 static __inline__ uint32_t sngisdn_test_flag(sngisdn_chan_data_t *sngisdn_info, sngisdn_flag_t flag)
 {

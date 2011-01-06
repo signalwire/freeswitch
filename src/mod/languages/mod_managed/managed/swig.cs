@@ -2333,6 +2333,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static int switch_cache_db_affected_rows(switch_cache_db_handle_t dbh) {
+    int ret = freeswitchPINVOKE.switch_cache_db_affected_rows(switch_cache_db_handle_t.getCPtr(dbh));
+    return ret;
+  }
+
   public static void switch_cache_db_status(switch_stream_handle stream) {
     freeswitchPINVOKE.switch_cache_db_status(switch_stream_handle.getCPtr(stream));
   }
@@ -8208,6 +8213,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_execute_sql_callback")]
   public static extern int switch_cache_db_execute_sql_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, ref string jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_affected_rows")]
+  public static extern int switch_cache_db_affected_rows(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_status")]
   public static extern void switch_cache_db_status(HandleRef jarg1);

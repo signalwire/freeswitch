@@ -4,7 +4,7 @@
 #
 #  Copyright (C) 2006, Anthony Minessale
 #
-#  Anthony Minessale <anthmct@yahoo.com>
+#  Anthony Minessale <anthm@freeswitch.org>
 #
 #  This program is free software, distributed under the terms of
 #  Perl itself

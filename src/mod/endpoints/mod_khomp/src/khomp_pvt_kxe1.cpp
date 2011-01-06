@@ -2744,7 +2744,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
                 callFXS()->_uuid_other_session = getUUID(peer_session);    
                 const char *stream = NULL;
 
-                if (!(stream = switch_channel_get_variable(peer_channel, SWITCH_HOLD_MUSIC_VARIABLE)))
+                if (!(stream = switch_channel_get_hold_music(peer_channel)))
                 {
                     stream = "silence";
                 }

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -2351,6 +2351,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
 						}
+					} else if (!strcasecmp(var, "auto-jitterbuffer-msec")) {
+						int msec = atoi(val);
+						if (msec > 19) {
+							profile->jb_msec = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "sip-trace")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_TPORT_LOG);
@@ -3088,6 +3093,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
+						}
+					} else if (!strcasecmp(var, "auto-jitterbuffer-msec")) {
+						int msec = atoi(val);
+						if (msec > 19) {
+							profile->jb_msec = switch_core_strdup(profile->pool, val);
 						}
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
@@ -5550,7 +5560,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_event_hook_add_state_change(a_session, xfer_hanguphook);
 								switch_channel_set_variable(a_channel, "att_xfer_kill_uuid", switch_core_session_get_uuid(b_session));
 
-								if ((tmp = switch_channel_get_variable(a_channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+								if ((tmp = switch_channel_get_hold_music(a_channel))) {
 									moh = tmp;
 								}
 

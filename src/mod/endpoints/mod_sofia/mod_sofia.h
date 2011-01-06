@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -501,6 +501,7 @@ struct sofia_profile {
 	char *challenge_realm;
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
+	char *jb_msec;
 	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
@@ -1050,3 +1051,4 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
 void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np);
+void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);

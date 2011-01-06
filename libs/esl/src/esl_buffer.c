@@ -82,7 +82,7 @@ ESL_DECLARE(esl_status_t) esl_buffer_create(esl_buffer_t **buffer, esl_size_t bl
 ESL_DECLARE(esl_size_t) esl_buffer_len(esl_buffer_t *buffer)
 {
 
-	assert(buffer != NULL);
+	esl_assert(buffer != NULL);
 
 	return buffer->datalen;
 
@@ -91,8 +91,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_len(esl_buffer_t *buffer)
 
 ESL_DECLARE(esl_size_t) esl_buffer_freespace(esl_buffer_t *buffer)
 {
-	assert(buffer != NULL);
-
+	esl_assert(buffer != NULL);
 
 	if (buffer->max_len) {
 		return (esl_size_t) (buffer->max_len - buffer->used);
@@ -103,7 +102,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_freespace(esl_buffer_t *buffer)
 
 ESL_DECLARE(esl_size_t) esl_buffer_inuse(esl_buffer_t *buffer)
 {
-	assert(buffer != NULL);
+	esl_assert(buffer != NULL);
 
 	return buffer->used;
 }
@@ -112,7 +111,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_seek(esl_buffer_t *buffer, esl_size_t datalen
 {
 	esl_size_t reading = 0;
 
-	assert(buffer != NULL);
+	esl_assert(buffer != NULL);
 
 	if (buffer->used < 1) {
 		buffer->used = 0;
@@ -133,7 +132,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_toss(esl_buffer_t *buffer, esl_size_t datalen
 {
 	esl_size_t reading = 0;
 
-	assert(buffer != NULL);
+	esl_assert(buffer != NULL);
 
 	if (buffer->used < 1) {
 		buffer->used = 0;
@@ -174,8 +173,8 @@ ESL_DECLARE(esl_size_t) esl_buffer_read(esl_buffer_t *buffer, void *data, esl_si
 {
 	esl_size_t reading = 0;
 
-	assert(buffer != NULL);
-	assert(data != NULL);
+	esl_assert(buffer != NULL);
+	esl_assert(data != NULL);
 
 
 	if (buffer->used < 1) {
@@ -201,7 +200,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_packet_count(esl_buffer_t *buffer)
 	char *pe, *p, *e, *head = (char *) buffer->head;
 	esl_size_t x = 0;
 	
-	assert(buffer != NULL);
+	esl_assert(buffer != NULL);
 
 	e = (head + buffer->used);
 
@@ -224,8 +223,8 @@ ESL_DECLARE(esl_size_t) esl_buffer_read_packet(esl_buffer_t *buffer, void *data,
 	char *pe, *p, *e, *head = (char *) buffer->head;
 	esl_size_t datalen = 0;
 
-	assert(buffer != NULL);
-	assert(data != NULL);
+	esl_assert(buffer != NULL);
+	esl_assert(data != NULL);
 
 	e = (head + buffer->used);
 
@@ -251,9 +250,9 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 {
 	esl_size_t freespace, actual_freespace;
 
-	assert(buffer != NULL);
-	assert(data != NULL);
-	assert(buffer->data != NULL);
+	esl_assert(buffer != NULL);
+	esl_assert(data != NULL);
+	esl_assert(buffer->data != NULL);
 
 	if (!datalen) {
 		return buffer->used;
@@ -312,8 +311,8 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 
 ESL_DECLARE(void) esl_buffer_zero(esl_buffer_t *buffer)
 {
-	assert(buffer != NULL);
-	assert(buffer->data != NULL);
+	esl_assert(buffer != NULL);
+	esl_assert(buffer->data != NULL);
 
 	buffer->used = 0;
 	buffer->actually_used = 0;

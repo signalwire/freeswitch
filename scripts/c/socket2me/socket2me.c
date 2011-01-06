@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
- * Copyright (C) 2007, Anthony Minessale II <anthmct@yahoo.com>
+ * Copyright (C) 2007, Anthony Minessale II <anthm@freeswitch.org>
  */
 
 #include <stdio.h>

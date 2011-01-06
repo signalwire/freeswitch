@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -184,6 +184,32 @@ static inline switch_bool_t switch_is_digit_string(const char *s)
 	return SWITCH_TRUE;
 }
 
+static inline char switch_itodtmf(char i)
+{
+	char r = i;
+
+	if (i > 9 && i < 14) {
+		r = i + 55;
+	}
+
+	return r;
+}
+
+static inline int switch_dtmftoi(char *s)
+{
+	int r;
+
+	switch_assert(s);
+
+	if (!(r = atoi(s))) {
+		int l = tolower(*s);
+		if (l > 96 && l < 101) {
+			r = l - 87;
+		}
+	}
+
+	return r;
+}
 
 static inline uint32_t switch_known_bitrate(switch_payload_t payload)
 {

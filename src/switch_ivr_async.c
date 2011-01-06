@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -2727,7 +2727,7 @@ typedef struct {
 } dtmf_meta_app_t;
 
 typedef struct {
-	dtmf_meta_app_t map[10];
+	dtmf_meta_app_t map[14];
 	time_t last_digit;
 	switch_bool_t meta_on;
 	char meta;
@@ -2825,11 +2825,11 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 	}
 
 	if (md->sr[direction].meta_on) {
-		if (dtmf->digit >= '0' && dtmf->digit <= '9') {
+		if (is_dtmf(dtmf->digit)) {
 			int ok = 0;
 			*digit = dtmf->digit;
-			dval = atoi(digit);
-
+			dval = switch_dtmftoi(digit);
+			
 			if (direction == SWITCH_DTMF_RECV && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_ALEG)) {
 				ok = 1;
 			} else if (direction == SWITCH_DTMF_SEND && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_BLEG)) {
@@ -2974,14 +2974,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 	if (meta != '*' && meta != '#') {
 		str[0] = meta;
 
-		if (atoi(str) == (int)key) {
+		if (switch_dtmftoi(str) == (char)key) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u, same as META CHAR\n", key);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 
 
-	if (key > 9) {
+	if (key > 13) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid key %u\n", key);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -3000,8 +3000,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 			md->sr[SWITCH_DTMF_RECV].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_RECV].map[key].flags |= SMF_HOLD_BLEG;
 			md->sr[SWITCH_DTMF_RECV].map[key].bind_flags = bind_flags;
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound A-Leg: %c%d %s\n", meta, key, app);
+			
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound A-Leg: %c%c %s\n", meta, switch_itodtmf((char)key), app);
 		}
 		if ((bind_flags & SBF_DIAL_BLEG)) {
 			md->sr[SWITCH_DTMF_SEND].meta = meta;
@@ -3009,12 +3009,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 			md->sr[SWITCH_DTMF_SEND].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_SEND].map[key].flags |= SMF_HOLD_BLEG;
 			md->sr[SWITCH_DTMF_SEND].map[key].bind_flags = bind_flags;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound B-Leg: %c%d %s\n", meta, key, app);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Bound B-Leg: %c%c %s\n", meta, switch_itodtmf((char)key), app);
 		}
 
 	} else {
 		if ((bind_flags & SBF_DIAL_ALEG)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound A-Leg: %c%d\n", meta, key);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound A-Leg: %c%c\n", meta, switch_itodtmf((char)key));
 			md->sr[SWITCH_DTMF_SEND].map[key].app = NULL;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "UnBound: B-Leg %c%d\n", meta, key);

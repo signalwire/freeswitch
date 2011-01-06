@@ -143,7 +143,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
-				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
+				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_usrInfoLyr1Prot_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
 				ftdmchan->caller_data.bearer_capability = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].infoTranCap.val);
 			}
 			
@@ -380,7 +380,10 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 				case FTDM_CHANNEL_STATE_PROGRESS:
 				case FTDM_CHANNEL_STATE_RINGING:
 					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media available\n");
 						sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
+					} else {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media not available\n");
 					}
 					switch (evntType) {
 						case MI_CALLPROC:
@@ -395,10 +398,8 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 							break;
 						case MI_PROGRESS:
 							if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
-								
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 							} else if (ftdmchan->state != FTDM_CHANNEL_STATE_PROGRESS) {
-																
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 							}
 							break;

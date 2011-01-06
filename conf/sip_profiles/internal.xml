@@ -337,6 +337,9 @@
 		A completed transaction is kept around for the duration of T4 in order to catch late responses. 
 		The T4 is the maximum duration for the messages to stay in the network and the duration of SIP timer K. -->
 	<!-- <param name="timer-T4" value="4000" /> -->
+
+	<!-- Turn on a jitterbuffer for every call -->
+	<!-- <param name="auto-jitterbuffer-msec" value="60"/> -->
     
   </settings>
 </profile>

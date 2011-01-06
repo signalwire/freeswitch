@@ -63,6 +63,7 @@ namespace LUA {
       bool release();
       bool connected();
       bool query(char *sql, SWIGLUA_FN lua_fun);
+      int affected_rows();
   };
 }
 #endif
