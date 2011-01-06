@@ -2394,7 +2394,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			if (moh_b) {
 				moh = moh_b;
 			} else {
-				moh = switch_channel_get_variable(other_channel, SWITCH_HOLD_MUSIC_VARIABLE);
+				moh = switch_channel_get_hold_music(other_channel);
 			}
 
 			if (!zstr(moh) && strcasecmp(moh, "silence") && !switch_channel_test_flag(other_channel, CF_BROADCAST)) {
@@ -2405,7 +2405,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			if (moh_a) {
 				moh = moh_a;
 			} else {
-				moh = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
+				moh = switch_channel_get_hold_music(channel);
 			}
 
 			if (!zstr(moh) && strcasecmp(moh, "silence")) {

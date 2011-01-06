@@ -3663,7 +3663,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
 			}
 
-			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+			if (!(stream = switch_channel_get_hold_music(tech_pvt->channel))) {
 				stream = tech_pvt->profile->hold_music;
 			}
 

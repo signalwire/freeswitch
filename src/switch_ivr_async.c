@@ -2825,11 +2825,11 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 	}
 
 	if (md->sr[direction].meta_on) {
-		if (dtmf->digit >= '0' && dtmf->digit <= '9') {
+		if (is_dtmf(dtmf->digit)) {
 			int ok = 0;
 			*digit = dtmf->digit;
-			dval = atoi(digit);
-
+			dval = switch_dtmftoi(digit);
+			
 			if (direction == SWITCH_DTMF_RECV && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_ALEG)) {
 				ok = 1;
 			} else if (direction == SWITCH_DTMF_SEND && (md->sr[direction].map[dval].bind_flags & SBF_DIAL_BLEG)) {

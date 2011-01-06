@@ -5560,7 +5560,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_event_hook_add_state_change(a_session, xfer_hanguphook);
 								switch_channel_set_variable(a_channel, "att_xfer_kill_uuid", switch_core_session_get_uuid(b_session));
 
-								if ((tmp = switch_channel_get_variable(a_channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+								if ((tmp = switch_channel_get_hold_music(a_channel))) {
 									moh = tmp;
 								}
 

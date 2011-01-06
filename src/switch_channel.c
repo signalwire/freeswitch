@@ -648,9 +648,9 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 
 SWITCH_DECLARE(const char *) switch_channel_get_hold_music(switch_channel_t *channel)
 {
-	const char *var = switch_channel_get_variable(channel, SWITCH_TEMP_HOLD_MUSIC_VARIABLE);
+	const char *var;
 
-	if (!var) {
+	if (!(var = switch_channel_get_variable(channel, SWITCH_TEMP_HOLD_MUSIC_VARIABLE))) {
 		var = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 	}
 
