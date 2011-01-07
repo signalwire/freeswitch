@@ -126,6 +126,7 @@ struct switch_rtp_rfc2833_data {
 	uint16_t in_digit_seq;
 	uint32_t in_digit_ts;
 	uint32_t in_digit_sanity;
+	uint32_t in_interleaved;
 	uint32_t timestamp_dtmf;
 	uint16_t last_duration;
 	uint32_t flip;
@@ -2963,10 +2964,27 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (rtp_session->dtmf_data.in_digit_ts) {
+
+		}
+
+
+		if (rtp_session->dtmf_data.in_digit_ts) {
 			if (!switch_rtp_ready(rtp_session)) {
 				goto end;
 			}
-			return_cng_frame();
+
+			if (!rtp_session->dtmf_data.in_interleaved && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
+				/* Drat, they are sending audio still as well as DTMF ok fine..... *sigh* */
+				rtp_session->dtmf_data.in_interleaved = 1;
+			}
+			
+			if (rtp_session->dtmf_data.in_interleaved || (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION)) {
+				if (rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+					goto recvfrom;
+				}
+			} else {
+				return_cng_frame();
+			}
 		}
 
 	timer_check:
@@ -3276,7 +3294,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	}
 
 	frame->datalen = bytes;
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
