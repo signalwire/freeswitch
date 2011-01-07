@@ -164,6 +164,59 @@ static int ftdm_parse_state_map(ftdm_channel_t *ftdmchan, ftdm_channel_state_t s
 	return ok;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_channel_cancel_state(const char *file, const char *func, int line, ftdm_channel_t *fchan)
+{
+	ftdm_time_t diff;
+	ftdm_channel_state_t state;
+	ftdm_channel_state_t last_state;
+	uint8_t hindex = 0;
+
+	if (!ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE)) {
+		ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Cannot cancel state change from %s to %s, it was already processed\n", 
+				ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(fchan->state));
+		return FTDM_FAIL;
+	}
+
+	if (fchan->state_status != FTDM_STATE_STATUS_NEW) {
+		ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Failed to cancel state change from %s to %s, state is not new anymore\n", 
+				ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(fchan->state));
+		return FTDM_FAIL;
+	}
+
+	/* compute the last history index */
+	hindex = (fchan->hindex == 0) ? (ftdm_array_len(fchan->history) - 1) : (fchan->hindex - 1);
+	diff = fchan->history[hindex].end_time - fchan->history[hindex].time;
+
+	/* go back in time and revert the state to the previous state */
+	state = fchan->state;
+	last_state = fchan->last_state;
+
+	fchan->state = fchan->last_state;
+	fchan->state_status = FTDM_STATE_STATUS_COMPLETED;
+	fchan->last_state = fchan->history[hindex].last_state;
+	fchan->hindex = hindex;
+
+	/* clear the state change flag */
+	ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
+
+	/* ack any pending indications as cancelled */
+	ftdm_ack_indication(fchan, fchan->indication, FTDM_ECANCELED);
+
+	/* wake up anyone sleeping waiting for the state change to complete, it won't ever be completed */
+	if (ftdm_test_flag(fchan, FTDM_CHANNEL_BLOCKING)) {
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_BLOCKING);
+		ftdm_interrupt_signal(fchan->state_completed_interrupt);
+	}
+
+	/* NOTE
+	 * we could potentially also take out the channel from the pendingchans queue, but I believe is easier just leave it,
+	 * the only side effect will be a call to ftdm_channel_advance_states() for a channel that has nothing to advance */
+	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Cancelled state change from %s to %s in %llums\n", 
+			ftdm_channel_state2str(last_state), ftdm_channel_state2str(state), diff);
+	
+	return FTDM_SUCCESS;
+}
+
 /* this function MUST be called with the channel lock held. If waitrq == 1, the channel will be unlocked/locked (never call it with waitrq == 1 with an lock recursivity > 1) */
 #define DEFAULT_WAIT_TIME 1000
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq)

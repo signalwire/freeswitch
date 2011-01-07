@@ -2142,6 +2142,10 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(ftdm_channel_t *chan, const ch
 			ftdm_sched_cancel_timer(globals.timingsched, chan->hangup_timer);
 		}
 		ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
+		/* if a state change requested by the user was pending, a hangup certainly cancels that request  */
+		if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
+			ftdm_channel_cancel_state(file, func, line, chan);
+		}
 		status = ftdm_channel_set_state(file, func, line, chan, FTDM_CHANNEL_STATE_HANGUP, 1);
 	} else {
 		/* the signaling stack did not touch the state, 
@@ -2372,19 +2376,57 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 
 	ftdm_channel_lock(ftdmchan);
 
-	if (ftdmchan->span->outgoing_call) {
-		status = ftdmchan->span->outgoing_call(ftdmchan);
-	} else {
-		status = FTDM_NOTIMPL;
-		ftdm_log(FTDM_LOG_ERROR, "outgoing_call method not implemented in this span!\n");
+	if (!ftdmchan->span->outgoing_call) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "outgoing_call method not implemented in this span!\n");
+		status = FTDM_ENOSYS;
+		goto done;
 	}
 
-	if (status == FTDM_SUCCESS) {
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED);
-		ftdm_call_set_call_id(ftdmchan, &ftdmchan->caller_data);
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in channel that is not open!\n");
+		goto done;
+	}
+
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED)) {
+			status = FTDM_BREAK;
+			/* we set the outbound flag when the user open a channel, but if the signaling stack sends an
+			 * incoming call we clear it, which indicates the inbound call was received before we could try
+			 * to place the outbound call */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Inbound call won the race, you should hunt in another channel!\n");
+			goto done;
+		} 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in non outbound channel in state %s!\n", ftdm_channel_state2str(ftdmchan->state));
+		goto done;
+	}
+
+	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in channel in state %s!\n", ftdm_channel_state2str(ftdmchan->state));
+		goto done;
+	}
+
+	status = ftdmchan->span->outgoing_call(ftdmchan);
+	if (status == FTDM_BREAK) {
+		/* the signaling module detected glare on time */
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Glare detected, you should hunt in another channel!\n");
+		goto done;
+	}
+	
+	if (status != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to place call!\n");
+		goto done;
+	}
+
+	/* in case of success, *before* unlocking the channel, we must set the call started flag and the call id 
+	 * that is a guarantee that signaling modules expect from us */
+	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED);
+	ftdm_call_set_call_id(ftdmchan, &ftdmchan->caller_data);
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
+		/* be aware this waiting unlocks the channel and locks it back when done */
 		ftdm_wait_for_flag_cleared(ftdmchan, FTDM_CHANNEL_STATE_CHANGE, 100);
 	}
 
+done:
 	ftdm_channel_unlock(ftdmchan);
 
 #ifdef __WINDOWS__
@@ -5355,7 +5397,10 @@ static void execute_safety_hangup(void *data)
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	if (sigmsg->channel) {
-		ftdm_mutex_lock(sigmsg->channel->mutex);		
+		ftdm_mutex_lock(sigmsg->channel->mutex);
+		sigmsg->chan_id = sigmsg->channel->chan_id;
+		sigmsg->span_id = sigmsg->channel->span_id;
+		sigmsg->call_id = sigmsg->channel->caller_data.call_id;
 	}
 	
 	/* some core things to do on special events */
@@ -5373,6 +5418,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 	case FTDM_SIGEVENT_START:
 		{
+			ftdm_assert(!ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED), "Started call twice!");
+
+			if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_OUTBOUND)) {
+				ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_WARNING, "Inbound call taking over outbound channel\n");
+				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_OUTBOUND);
+			}
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
 			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
 			ftdm_set_echocancel_call_begin(sigmsg->channel);
@@ -5410,9 +5461,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 	}
 
-	if (sigmsg->channel) {
-		sigmsg->call_id = sigmsg->channel->caller_data.call_id;
-	}
 	/* if the signaling module uses a queue for signaling notifications, then enqueue it */
 	if (ftdm_test_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE)) {
 		ftdm_span_queue_signal(span, sigmsg);

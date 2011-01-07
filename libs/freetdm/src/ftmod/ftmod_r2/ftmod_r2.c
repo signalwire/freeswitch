@@ -71,7 +71,6 @@ typedef struct ftdm_r2_call_t {
 	int accepted:1;
 	int answer_pending:1;
 	int disconnect_rcvd:1;
-	int ftdm_call_started:1;
 	int protocol_error:1;
 	ftdm_size_t dnis_index;
 	ftdm_size_t ani_index;
@@ -293,6 +292,9 @@ static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, open
 
 	case OR2_CAUSE_FORCED_RELEASE:
 		return FTDM_CAUSE_NORMAL_CLEARING;
+
+	case OR2_CAUSE_GLARE:
+		return FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 	}
 	ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Mapping openr2 cause %d to unspecified\n", cause);
 	return FTDM_CAUSE_NORMAL_UNSPECIFIED;
@@ -345,7 +347,6 @@ static void ft_r2_clean_call(ftdm_r2_call_t *call)
 	call->accepted = 0;
 	call->answer_pending = 0;
 	call->disconnect_rcvd = 0;
-	call->ftdm_call_started = 0;
 	call->protocol_error = 0;
 	call->dnis_index = 0;
 	call->ani_index = 0;
@@ -443,13 +444,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 
 	r2data = ftdmchan->span->signal_data;
 
-	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
-		/* collision, an incoming seized the channel between our take and use timing */
-		ftdm_log_chan(ftdmchan, 
-		FTDM_LOG_CRIT, "R2 cannot dial out in channel in state %s, try another channel!.\n", ftdm_channel_state2str(ftdmchan->state));
-		return FTDM_FAIL;
-	}
-
 	ft_r2_clean_call(ftdmchan->call_data);
 
 	if (ftdmchan->caller_data.cpc == FTDM_CPC_INVALID || ftdmchan->caller_data.cpc == FTDM_CPC_UNKNOWN) {
@@ -475,7 +469,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 		return FTDM_FAIL;
 	}
 
-	R2CALL(ftdmchan)->ftdm_call_started = 1;
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
 
 	ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
@@ -625,7 +618,23 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Cannot start call when channel is in use (state = %s)\n", ftdm_channel_state2str(ftdmchan->state));
+		if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED)) {
+				/* The user requested this channel but has not yet placed a call on it, we can take it over
+				 * and the user will receive FTDM_BREAK if attempts to place a call in the channel
+				 * informing him that the channel was taken over by an incoming call, although he may know
+				 * that already anyways since we sent a SIGEVENT_START on the channel */
+				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
+			} else {
+				/* The user requested the channel and placed the call, apparently openr2 could not detect the
+				 * glare on time, but this should not happen with our locking/thread model since we always
+				 * check for state changes before processing network events (like CAS change) therefore
+				 * openr2 should at this time be aware of the call that we placed on this channel and should
+				 * have initiated the release of the call per ITU R2 spec */
+			}
+		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Cannot start call when channel is in use (state = %s)\n", ftdm_channel_state2str(ftdmchan->state));
+		}
 		return;
 	}
 
@@ -1007,8 +1016,19 @@ static void ftdm_r2_on_call_log_created(openr2_chan_t *r2chan, const char *logna
 	snprintf(r2call->logname, sizeof(r2call->logname), "%s", logname);
 }
 
+static void ftdm_r2_on_call_proceed(openr2_chan_t *r2chan)
+{
+	ftdm_sigmsg_t sigev;
+	ftdm_channel_t *fchan = openr2_chan_get_client_data(r2chan);
+	memset(&sigev, 0, sizeof(sigev));
+	sigev.event_id = FTDM_SIGEVENT_PROCEED;
+	sigev.channel = fchan;
+	ftdm_span_send_signal(fchan->span, &sigev);
+}
+
 static openr2_event_interface_t ftdm_r2_event_iface = {
 	/* .on_call_init */ ftdm_r2_on_call_init,
+	/* .on_call_proceed */ ftdm_r2_on_call_proceed,
 	/* .on_call_offered */ ftdm_r2_on_call_offered,
 	/* .on_call_accepted */ ftdm_r2_on_call_accepted,
 	/* .on_call_answered */ ftdm_r2_on_call_answered,
@@ -1691,8 +1711,7 @@ static ftdm_status_t ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 				uint32_t interval = 0;
 				ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_INTERVAL, &interval);
 				ftdm_assert(interval != 0, "Invalid interval!");
-				ftdm_log_chan(ftdmchan, 
-					FTDM_LOG_DEBUG, "Starting processing of outgoing call in channel with interval %d\n", interval);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Starting outgoing call with interval %d\n", interval);
 				openr2_chan_enable_read(r2chan);
 			}
 			break;
@@ -1702,10 +1721,7 @@ static ftdm_status_t ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 
 			/* notify the user about the new call */
 			sigev.event_id = FTDM_SIGEVENT_START;
-
 			ftdm_span_send_signal(ftdmchan->span, &sigev);
-			r2call->ftdm_call_started = 1; 
-
 			break;
 
 			/* the call is making progress */
@@ -1719,9 +1735,6 @@ static ftdm_status_t ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 					} 
 				} else {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Notifying progress\n");
-					sigev.event_id = FTDM_SIGEVENT_PROCEED;
-					ftdm_span_send_signal(ftdmchan->span, &sigev);
-
 					sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
 					ftdm_span_send_signal(ftdmchan->span, &sigev);
 				}
@@ -1772,7 +1785,7 @@ static ftdm_status_t ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 		case FTDM_CHANNEL_STATE_TERMINATING:
 			{
 				/* if the call has not been started yet we must go to HANGUP right here */ 
-				if (!r2call->ftdm_call_started) {
+				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED)) {
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				} else {
 					openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
