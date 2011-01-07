@@ -79,13 +79,10 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 		ftdm_set_flag(fchan, FTDM_CHANNEL_MEDIA);	
 	}
 
-	/* if there is a pending ack for an indication
-	 * MAINTENANCE WARNING: we're assuming an indication performed 
-	 * via state change will involve a single state change
-	 */
-	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IND_ACK_PENDING)) {
-		ftdm_ack_indication(fchan, fchan->indication, FTDM_SUCCESS);
-	}
+	/* MAINTENANCE WARNING
+	 * we're assuming an indication performed 
+	 * via state change will involve a single state change */
+	ftdm_ack_indication(fchan, fchan->indication, FTDM_SUCCESS);
 
 	hindex = (fchan->hindex == 0) ? (ftdm_array_len(fchan->history) - 1) : (fchan->hindex - 1);
 	

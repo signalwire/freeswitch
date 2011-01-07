@@ -2032,6 +2032,11 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_unhold(const char *file, const char
 FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *fchan, ftdm_channel_indication_t indication, ftdm_status_t status)
 {
 	ftdm_sigmsg_t msg;
+	
+	if (!ftdm_test_flag(fchan, FTDM_CHANNEL_IND_ACK_PENDING)) {
+		return;
+	}
+
 	ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Acknowledging indication %s in state %s (rc = %d)\n", 
 			ftdm_channel_indication2str(indication), ftdm_channel_state2str(fchan->state), status);
 	ftdm_clear_flag(fchan, FTDM_CHANNEL_IND_ACK_PENDING);
@@ -2255,7 +2260,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 	}
 
 	ftdmchan->indication = indication;
-	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING);
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING);
+	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
