@@ -6188,6 +6188,14 @@ void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str)
 	if (switch_stristr("~NEVER_SEND_MARKER", str)) {
 		*flag_pole &= ~RTP_BUG_NEVER_SEND_MARKER;
 	}
+
+	if (switch_stristr("IGNORE_DTMF_DURATION", str)) {
+		*flag_pole |= RTP_BUG_IGNORE_DTMF_DURATION;
+	}
+
+	if (switch_stristr("~IGNORE_DTMF_DURATION", str)) {
+		*flag_pole &= ~RTP_BUG_IGNORE_DTMF_DURATION;
+	}
 }
 
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np)
