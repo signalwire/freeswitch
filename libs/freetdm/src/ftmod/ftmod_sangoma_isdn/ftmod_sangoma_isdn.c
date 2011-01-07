@@ -788,21 +788,21 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				 /* set the flag to indicate this hangup is started from the local side */
 				sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_REL);
 
-				/* If we never sent ack to incoming call, we need to send release instead of disconnect */
-				if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RING ||
-					ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALING) {
-
-					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
-					sngisdn_snd_release(ftdmchan, 0);
-
-					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-						sngisdn_set_span_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
-					}
-				} else {
-					sngisdn_snd_disconnect(ftdmchan);
+				switch(ftdmchan->last_state) {
+					case FTDM_CHANNEL_STATE_RING:
+						/* If we never sent PROCEED/ALERT/PROGRESS/CONNECT on an incoming call, we need to send release instead of disconnect */
+						sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+						sngisdn_snd_release(ftdmchan, 0);
+						break;
+					case FTDM_CHANNEL_STATE_DIALING:
+						/* If we never received a PROCEED/ALERT/PROGRESS/CONNECT on an outgoing call, we need to send release instead of disconnect */
+						sngisdn_snd_release(ftdmchan, 0);
+						break;
+					default:
+						sngisdn_snd_disconnect(ftdmchan);
+						break;
 				}
 			}
-
 			/* now go to the HANGUP complete state */
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
