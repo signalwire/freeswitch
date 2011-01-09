@@ -1485,6 +1485,8 @@ SWITCH_STANDARD_APP(ivr_application_function)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unable to find menu\n");
 				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No menus configured\n");
 			}
 			switch_xml_free(cxml);
 		} else {
