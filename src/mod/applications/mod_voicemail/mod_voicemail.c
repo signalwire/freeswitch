@@ -2337,6 +2337,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	const char *filename;
 	switch_xml_t x_param, x_params;
 	char *vm_email = NULL;
+	char *vm_email_from = NULL;
 	char *vm_notify_email = NULL;
 	char *email_addr = NULL;
 	char *vm_timezone = NULL;
@@ -2401,6 +2402,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			vm_email = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-notify-mailto")) {
 			vm_notify_email = switch_core_strdup(pool, val);
+		} else if (!strcasecmp(var, "vm-mailfrom")) {
+			vm_email_from = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "email-addr")) {
 			email_addr = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
@@ -2544,7 +2547,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_message_len", duration_str);
 
-		if (zstr(profile->email_from)) {
+		if (!zstr(vm_email_from)) {
+			from = switch_core_strdup(pool, vm_email_from);
+		} else if (zstr(profile->email_from)) {
 			from = switch_core_sprintf(pool, "%s@%s", myid, domain_name);
 		} else {
 			from = switch_event_expand_headers(params, profile->email_from);
