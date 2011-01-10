@@ -2410,14 +2410,6 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 	}
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED)) {
-			status = FTDM_BREAK;
-			/* we set the outbound flag when the user open a channel, but if the signaling stack sends an
-			 * incoming call we clear it, which indicates the inbound call was received before we could try
-			 * to place the outbound call */
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Inbound call won the race, you should hunt in another channel!\n");
-			goto done;
-		} 
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in non outbound channel in state %s!\n", ftdm_channel_state2str(ftdmchan->state));
 		goto done;
 	}
