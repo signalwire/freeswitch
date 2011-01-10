@@ -77,6 +77,12 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	} else if (state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 		ftdm_set_flag(fchan, FTDM_CHANNEL_PROGRESS);	
 		ftdm_set_flag(fchan, FTDM_CHANNEL_MEDIA);	
+	} else if (state == FTDM_CHANNEL_STATE_DIALING) {
+		ftdm_sigmsg_t msg;
+		memset(&msg, 0, sizeof(msg));
+		msg.channel = fchan;
+		msg.event_id = FTDM_SIGEVENT_DIALING;
+		ftdm_span_send_signal(fchan->span, &msg);
 	}
 
 	/* MAINTENANCE WARNING

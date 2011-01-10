@@ -1073,6 +1073,64 @@ static const char* channel_get_variable(switch_core_session_t *session, switch_e
        return NULL;
 }
 
+typedef struct {
+	switch_event_t *var_event;
+	switch_core_session_t *new_session;
+	private_t *tech_pvt;
+	switch_caller_profile_t *caller_profile;
+} hunt_data_t;
+
+static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t *caller_data)
+{
+	uint32_t span_id, chan_id;
+	const char *var;
+	char *sess_uuid;
+	char name[128];
+	ftdm_status_t status;
+	hunt_data_t *hdata = caller_data->priv;
+	switch_channel_t *channel = switch_core_session_get_channel(hdata->new_session);
+
+	if ((var = switch_event_get_header(hdata->var_event, "freetdm_pre_buffer_size"))) {
+		int tmp = atoi(var);
+		if (tmp > -1) {
+			ftdm_channel_command(fchan, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tmp);
+		}
+	}
+
+	span_id = ftdm_channel_get_span_id(fchan);
+	chan_id = ftdm_channel_get_id(fchan);
+
+	tech_init(hdata->tech_pvt, hdata->new_session, fchan);
+	hdata->tech_pvt->caller_profile = hdata->caller_profile;
+
+	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, caller_data->dnis.digits);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
+	switch_channel_set_name(channel, name);
+	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(fchan));
+	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", span_id);
+	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chan_id);
+
+	switch_channel_set_state(channel, CS_INIT);
+	sess_uuid = switch_core_session_get_uuid(hdata->new_session);
+	status = ftdm_channel_add_token(fchan, sess_uuid, ftdm_channel_get_token_count(fchan));
+	switch_assert(status == FTDM_SUCCESS);
+
+	if (SPAN_CONFIG[span_id].limit_calls) {
+		char spanresource[512];
+		snprintf(spanresource, sizeof(spanresource), "span_%s_%s", ftdm_channel_get_span_name(fchan), 
+				caller_data->dnis.digits);
+		ftdm_log(FTDM_LOG_DEBUG, "Adding rate limit resource on channel %d:%d (%s/%s/%d/%d)\n", 
+				span_id, chan_id, FREETDM_LIMIT_REALM, 
+				spanresource, SPAN_CONFIG[span_id].limit_calls, SPAN_CONFIG[span_id].limit_seconds);
+		if (switch_limit_incr("hash", hdata->new_session, FREETDM_LIMIT_REALM, spanresource, 
+					SPAN_CONFIG[span_id].limit_calls, SPAN_CONFIG[span_id].limit_seconds) != SWITCH_STATUS_SUCCESS) {
+			return FTDM_BREAK;
+		}
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attached session %s to channel %d:%d\n", sess_uuid, span_id, chan_id);
+	return FTDM_SUCCESS;
+}
+
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
 that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
@@ -1081,13 +1139,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_core_session_t **new_session, switch_memory_pool_t **pool,
 													switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
-
+	hunt_data_t hunt_data;
 	const char *dest = NULL;
 	char *data = NULL;
 	int span_id = -1, group_id = -1, chan_id = 0;
-	ftdm_channel_t *ftdmchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-	char name[128];
 	ftdm_status_t status;
 	int direction = FTDM_TOP_DOWN;
 	ftdm_caller_data_t caller_data = {{ 0 }};
@@ -1097,6 +1153,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int argc = 0;
 	const char *var;
 	const char *dest_num = NULL, *callerid_num = NULL;
+	ftdm_hunting_scheme_t hunting;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1125,7 +1182,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	
 	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
-        return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+        	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 	
 	if (switch_is_number(argv[0])) {
@@ -1309,30 +1366,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	ftdm_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
 	ftdm_set_string(caller_data.cid_num.digits, switch_str_nil(outbound_profile->caller_id_number));
 
+	memset(&hunting, 0, sizeof(hunting));
+
 	if (group_id >= 0) {
-		status = ftdm_channel_open_by_group(group_id, direction, &caller_data, &ftdmchan);
+		hunting.mode = FTDM_HUNT_GROUP;
+		hunting.mode_data.group.group_id = group_id;
+		hunting.mode_data.group.direction = direction;
 	} else if (chan_id) {
-		status = ftdm_channel_open(span_id, chan_id, &ftdmchan);
+		hunting.mode = FTDM_HUNT_CHAN;
+		hunting.mode_data.chan.span_id = span_id;
+		hunting.mode_data.chan.chan_id = chan_id;
 	} else {
-		status = ftdm_channel_open_by_span(span_id, direction, &caller_data, &ftdmchan);
+		hunting.mode = FTDM_HUNT_SPAN;
+		hunting.mode_data.span.span_id = span_id;
+		hunting.mode_data.span.direction = direction;
 	}
-	
-	if (status != FTDM_SUCCESS) {
-		if (caller_data.hangup_cause == SWITCH_CAUSE_NONE) {
-			caller_data.hangup_cause = SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
-		}
-		return caller_data.hangup_cause;
-	}
-
-	if ((var = switch_event_get_header(var_event, "freetdm_pre_buffer_size"))) {
-		int tmp = atoi(var);
-		if (tmp > -1) {
-			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tmp);
-		}
-	}
-
-	span_id = ftdm_channel_get_span_id(ftdmchan);
-	chan_id = ftdm_channel_get_id(ftdmchan);
 
 	for (h = var_event->headers; h; h = h->next) {
 		if (!strncasecmp(h->name, FREETDM_VAR_PREFIX, FREETDM_VAR_PREFIX_LEN)) {
@@ -1343,57 +1391,33 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			}
 		}
 	}
-	
+
 	if ((*new_session = switch_core_session_request(freetdm_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_caller_profile_t *caller_profile;
 		switch_channel_t *channel = switch_core_session_get_channel(*new_session);
 		
 		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
-			tech_init(tech_pvt, *new_session, ftdmchan);
-		} else {
+		if (!(tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto fail;
 		}
 
-		snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, dest);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
-		switch_channel_set_name(channel, name);
-		switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(ftdmchan));
-		switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", span_id);
-		switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chan_id);
-		ftdm_channel_set_caller_data(ftdmchan, &caller_data);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
 		caller_profile->caller_id_number = switch_core_strdup(caller_profile->pool, switch_str_nil(callerid_num));
 		switch_channel_set_caller_profile(channel, caller_profile);
-		tech_pvt->caller_profile = caller_profile;
-		
-		
-		switch_channel_set_state(channel, CS_INIT);
-		if (ftdm_channel_add_token(ftdmchan, switch_core_session_get_uuid(*new_session), ftdm_channel_get_token_count(ftdmchan)) != FTDM_SUCCESS) {
-			switch_core_session_destroy(new_session);
-			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-            		goto fail;
-		}
 
+		hunting.result_cb = on_channel_found;
+		hunt_data.var_event = var_event;
+		hunt_data.new_session = *new_session;
+		hunt_data.caller_profile = caller_profile;
+		hunt_data.tech_pvt = tech_pvt;
+		caller_data.priv = &hunt_data;
 
-		if (SPAN_CONFIG[span_id].limit_calls) {
-			char spanresource[512];
-			snprintf(spanresource, sizeof(spanresource), "span_%s_%s", ftdm_channel_get_span_name(ftdmchan), caller_data.dnis.digits);
-			ftdm_log(FTDM_LOG_DEBUG, "Adding rate limit resource on channel %d:%d (%s/%s/%d/%d)\n", span_id, chan_id, FREETDM_LIMIT_REALM, 
-					spanresource, SPAN_CONFIG[span_id].limit_calls, SPAN_CONFIG[span_id].limit_seconds);
-			if (switch_limit_incr("hash", *new_session, FREETDM_LIMIT_REALM, spanresource, SPAN_CONFIG[span_id].limit_calls, SPAN_CONFIG[span_id].limit_seconds) != SWITCH_STATUS_SUCCESS) {
-				switch_core_session_destroy(new_session);
-				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-				goto fail;
-			}
-		}
-
-		if ((status = ftdm_channel_call_place(ftdmchan)) != FTDM_SUCCESS) {
+		if ((status = ftdm_call_place(&caller_data, &hunting)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);
 			}
@@ -1402,28 +1426,22 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				switch_core_codec_destroy(&tech_pvt->write_codec);
 			}
 			switch_core_session_destroy(new_session);
-			if (status == FTDM_BREAK) { /* glare, we don't want to touch the channel since is being used for incoming call now */
+			if (status == FTDM_BREAK || status == FTDM_EBUSY) { 
 				cause = SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
-				ftdmchan = NULL;
 			} else {
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-            goto fail;
+            		goto fail;
 		}
 
-		ftdm_channel_init(ftdmchan);
+		ftdm_channel_init(caller_data.fchan);
 		
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
 fail:
 
-	if (ftdmchan) {
-		ftdm_channel_call_hangup_with_cause(ftdmchan, FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE);
-	}
-
 	return cause;
-
 }
 
 static void ftdm_enable_channel_dtmf(ftdm_channel_t *fchan, switch_channel_t *channel)
@@ -1645,6 +1663,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 
 	case FTDM_SIGEVENT_RELEASED: 
 	case FTDM_SIGEVENT_INDICATION_COMPLETED:
+	case FTDM_SIGEVENT_DIALING:
 		{ 
 			/* Swallow these events */
 			return FTDM_BREAK;

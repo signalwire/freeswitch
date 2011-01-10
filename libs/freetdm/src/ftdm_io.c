@@ -1425,8 +1425,9 @@ static __inline__ int request_voice_channel(ftdm_channel_t *check, ftdm_channel_
 				 * sometimes with the group or span lock held and were
 				 * blocking anyone hunting for channels available and
 				 * I believe teh channel_request() function may take
-				 * a bit of time 
-				 * */
+				 * a bit of time. However channel_request is a callback
+				 * used by boost and may be only a few other old sig mods
+				 * and it should be deprecated */
 				ftdm_mutex_unlock(check->mutex);
 				ftdm_set_caller_data(check->span, caller_data);
 				status = check->span->channel_request(check->span, check->chan_id, 
@@ -1439,7 +1440,9 @@ static __inline__ int request_voice_channel(ftdm_channel_t *check, ftdm_channel_
 				if (status == FTDM_SUCCESS) {
 					*ftdmchan = check;
 					ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
+#if 0
 					ftdm_mutex_unlock(check->mutex);
+#endif
 					return 1;
 				}
 			}
@@ -1491,9 +1494,9 @@ static ftdm_status_t __inline__ get_best_rated(ftdm_channel_t **fchan, ftdm_chan
 	}
 	*fchan = best_rated;
 	ftdm_set_flag(best_rated, FTDM_CHANNEL_OUTBOUND);
-	
+#if 0	
 	ftdm_mutex_unlock(best_rated->mutex);
-
+#endif
 	return FTDM_SUCCESS;
 }
 
@@ -1523,7 +1526,7 @@ FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan)
 	return availability;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_channel_t *check = NULL;
@@ -1604,6 +1607,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_dir
 	return status;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+{
+	ftdm_status_t status;
+	status = _ftdm_channel_open_by_group(group_id, direction, caller_data, ftdmchan);
+	if (status == FTDM_SUCCESS) {
+		ftdm_channel_t *fchan = *ftdmchan;
+		ftdm_channel_unlock(fchan);
+	}
+	return status;
+}
 
 FT_DECLARE(ftdm_status_t) ftdm_span_channel_use_count(ftdm_span_t *span, uint32_t *count)
 {
@@ -1626,7 +1639,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_channel_use_count(ftdm_span_t *span, uint32_
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+/* Hunt a channel by span, if successful the channel is returned locked */
+static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_channel_t *check = NULL;
@@ -1724,6 +1738,17 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
 	return status;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+{
+	ftdm_status_t status;
+	status = _ftdm_channel_open_by_span(span_id, direction, caller_data, ftdmchan);
+	if (status == FTDM_SUCCESS) {
+		ftdm_channel_t *fchan = *ftdmchan;
+		ftdm_channel_unlock(fchan);
+	}
+	return status;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -1774,7 +1799,7 @@ done:
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
+static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
 {
 	ftdm_channel_t *check = NULL;
 	ftdm_span_t *span = NULL;
@@ -1855,6 +1880,10 @@ openchan:
 	ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
 	ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
 	*ftdmchan = check;
+#if 1
+	/* we've got the channel, do not unlock it */
+	goto done;
+#endif
 
 unlockchan:
 	ftdm_mutex_unlock(check->mutex);
@@ -1865,6 +1894,17 @@ done:
 		ftdm_log(FTDM_LOG_ERROR, "Failed to open channel %d:%d\n", span_id, chan_id);
 	}
 
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
+{
+	ftdm_status_t status;
+	status = _ftdm_channel_open(span_id, chan_id, ftdmchan);
+	if (status == FTDM_SUCCESS) {
+		ftdm_channel_t *fchan = *ftdmchan;
+		ftdm_channel_unlock(fchan);
+	}
 	return status;
 }
 
@@ -2048,24 +2088,10 @@ FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *fchan, ftdm_channel_indicat
 	ftdm_span_send_signal(fchan->span, &msg);
 }
 
-/*! \brief Answer call without locking the channel. The caller must have locked first
- *  \note This function was added because ftdm_channel_call_indicate needs to answer the call
- *        when its already locking the channel, ftdm_channel_set_state cannot be called with the same
- *        lock locked once or more (recursive lock) and wait for the result  */
+/*! Answer call without locking the channel. The caller must have locked first */
 static ftdm_status_t _ftdm_channel_call_answer_nl(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
-
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-		status = FTDM_EINVAL;
-		goto done;
-	}
-
-	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring answer because the call is already TERMINATING\n");
-		status = FTDM_ECANCELED;
-		goto done;
-	}
 
 	if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_SKIP_STATES)) {
 		/* We will fail RFC's if we not skip states, but some modules apart from ftmod_sangoma_isdn 
@@ -2116,13 +2142,12 @@ done:
 
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
-	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_status_t status;
 
-	ftdm_channel_lock(ftdmchan);
+	/* we leave the locking up to ftdm_channel_call_indicate, DO NOT lock here since ftdm_channel_call_indicate expects
+	 * the lock recursivity to be 1 */
+	status = _ftdm_channel_call_indicate(file, func, line, ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER);
 
-	status = _ftdm_channel_call_answer_nl(file, func, line, ftdmchan);
-
-	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
 
@@ -2319,7 +2344,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 1);
 		break;
 	case FTDM_CHANNEL_INDICATE_ANSWER:
-		/* _ftdm_channel_call_answer takes care of the indication ack */
 		status = _ftdm_channel_call_answer_nl(file, func, line, ftdmchan);
 		break;
 	default:
@@ -2365,7 +2389,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
+static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
 	
@@ -2373,8 +2397,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 	ftdm_assert_return(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), FTDM_FAIL, "Call place, but outbound flag not set\n");
 
 	ftdm_set_echocancel_call_begin(ftdmchan);
-
-	ftdm_channel_lock(ftdmchan);
 
 	if (!ftdmchan->span->outgoing_call) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "outgoing_call method not implemented in this span!\n");
@@ -2427,13 +2449,69 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 	}
 
 done:
-	ftdm_channel_unlock(ftdmchan);
-
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(file);
 	UNREFERENCED_PARAMETER(func);
 	UNREFERENCED_PARAMETER(line);
 #endif
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan)
+{
+	ftdm_status_t status;
+	ftdm_channel_lock(ftdmchan);
+
+	status = _ftdm_channel_call_place_nl(file, func, line, ftdmchan);
+
+	ftdm_channel_unlock(ftdmchan);
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, int line, 
+		ftdm_caller_data_t *caller_data, ftdm_hunting_scheme_t *hunting)
+{
+	ftdm_assert_return(caller_data, FTDM_EINVAL, "Invalid caller data\n");
+	ftdm_assert_return(hunting, FTDM_EINVAL, "Invalid hunting scheme\n");
+
+	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_channel_t *fchan = NULL;
+
+	if (hunting->mode == FTDM_HUNT_SPAN) {
+		status = _ftdm_channel_open_by_span(hunting->mode_data.span.span_id, 
+				hunting->mode_data.span.direction, caller_data, &fchan);
+	} else if (hunting->mode == FTDM_HUNT_GROUP) {
+		status = _ftdm_channel_open_by_group(hunting->mode_data.group.group_id, 
+				hunting->mode_data.group.direction, caller_data, &fchan);
+	} else if (hunting->mode == FTDM_HUNT_CHAN) {
+		status = _ftdm_channel_open(hunting->mode_data.chan.span_id, hunting->mode_data.chan.chan_id, &fchan);
+	} else {
+		ftdm_log(FTDM_LOG_ERROR, "Cannot make outbound call with invalid hunting mode %d\n", hunting->mode);
+		return FTDM_EINVAL;
+	}
+
+	if (status != FTDM_SUCCESS) {
+		return FTDM_EBUSY;
+	}
+
+	/* we have a locked channel and are not afraid of using it! */
+	status = hunting->result_cb(fchan, caller_data);
+	if (status != FTDM_SUCCESS) {
+		status = FTDM_ECANCELED;
+		goto done;
+	}
+
+	ftdm_channel_set_caller_data(fchan, caller_data);
+
+	status = _ftdm_channel_call_place_nl(file, func, line, fchan);
+	if (status != FTDM_SUCCESS) {
+		goto done;
+	}
+
+	caller_data->fchan = fchan;
+done:
+	ftdm_channel_unlock(fchan);
+
 	return status;
 }
 
