@@ -2152,7 +2152,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 }
 
 /* lock must be acquired by the caller! */
-static ftdm_status_t _ftdm_channel_call_hangup_nl(ftdm_channel_t *chan, const char *file, const char *func, int line)
+static ftdm_status_t _ftdm_channel_call_hangup_nl(const char *file, const char *func, int line, ftdm_channel_t *chan)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	
@@ -2194,7 +2194,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file,
 
 	ftdmchan->caller_data.hangup_cause = cause;
 	
-	status = _ftdm_channel_call_hangup_nl(ftdmchan, file, func, line);
+	status = _ftdm_channel_call_hangup_nl(file, func, line, ftdmchan);
 
 	ftdm_channel_unlock(ftdmchan);
 	return status;
@@ -2208,7 +2208,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char
 	
 	ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
 
-	status = _ftdm_channel_call_hangup_nl(ftdmchan, file, func, line);
+	status = _ftdm_channel_call_hangup_nl(file, func, line, ftdmchan);
 
 	ftdm_channel_unlock(ftdmchan);
 	return status;
@@ -2505,6 +2505,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 
 	status = _ftdm_channel_call_place_nl(file, func, line, fchan);
 	if (status != FTDM_SUCCESS) {
+		_ftdm_channel_call_hangup_nl(file, func, line, fchan);
 		goto done;
 	}
 
@@ -2704,10 +2705,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 			ftdm_log_chan_msg(check, FTDM_LOG_WARNING, "Channel not opened, proceeding anyway\n");
 		}
 		status = check->fio->close(check);
-		if (status == FTDM_SUCCESS) {
-			ftdm_channel_done(check);
-			*ftdmchan = NULL;
-		}
+		ftdm_assert(status == FTDM_SUCCESS, "Failed to close channel!\n");
+		ftdm_channel_done(check);
+		*ftdmchan = NULL;
 		check->ring_count = 0;
 		ftdm_mutex_unlock(check->mutex);
 	}
@@ -5465,7 +5465,7 @@ static void execute_safety_hangup(void *data)
 	fchan->hangup_timer = 0;
 	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
-		_ftdm_channel_call_hangup_nl(fchan, __FILE__, __FUNCTION__, __LINE__);
+		_ftdm_channel_call_hangup_nl(__FILE__, __FUNCTION__, __LINE__, fchan);
 	} else {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
 	}

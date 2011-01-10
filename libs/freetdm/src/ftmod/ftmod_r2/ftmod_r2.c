@@ -50,8 +50,6 @@
 #include "freetdm.h"
 #include "private/ftdm_core.h"
 
-typedef int openr2_call_status_t;
-
 /* when the user stops a span, we clear FTDM_R2_SPAN_STARTED, so that the signaling thread
  * knows it must stop, and we wait for FTDM_R2_RUNNING to be clear, which tells us the
  * signaling thread is done. */
@@ -438,7 +436,7 @@ static __inline openr2_calling_party_category_t ftdm_r2_ftdm_cpc_to_openr2_cpc(f
 /* this function must be called with the chan mutex held! */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 {
-	openr2_call_status_t callstatus;
+	int ret;
 	ftdm_r2_data_t *r2data;
 	openr2_calling_party_category_t category = OR2_CALLING_PARTY_CATEGORY_NATIONAL_SUBSCRIBER;
 
@@ -458,13 +456,13 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_OUTPUT_DUMP, &r2data->mf_dump_size);
 	}
 
-	callstatus = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
+	ret = openr2_chan_make_call(R2CALL(ftdmchan)->r2chan, 
 			ftdmchan->caller_data.cid_num.digits,
 			ftdmchan->caller_data.dnis.digits, 
 			category,
 			ftdmchan->caller_data.pres == FTDM_PRES_ALLOWED ? 0 : 1);
 
-	if (callstatus) {
+	if (ret) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to make call in R2 channel, openr2_chan_make_call failed\n");
 		return FTDM_FAIL;
 	}
@@ -618,23 +616,7 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
-		if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED)) {
-				/* The user requested this channel but has not yet placed a call on it, we can take it over
-				 * and the user will receive FTDM_BREAK if attempts to place a call in the channel
-				 * informing him that the channel was taken over by an incoming call, although he may know
-				 * that already anyways since we sent a SIGEVENT_START on the channel */
-				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
-			} else {
-				/* The user requested the channel and placed the call, apparently openr2 could not detect the
-				 * glare on time, but this should not happen with our locking/thread model since we always
-				 * check for state changes before processing network events (like CAS change) therefore
-				 * openr2 should at this time be aware of the call that we placed on this channel and should
-				 * have initiated the release of the call per ITU R2 spec */
-			}
-		} else {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Cannot start call when channel is in use (state = %s)\n", ftdm_channel_state2str(ftdmchan->state));
-		}
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Cannot start call when channel is in use (state = %s)\n", ftdm_channel_state2str(ftdmchan->state));
 		return;
 	}
 
