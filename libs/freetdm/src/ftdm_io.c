@@ -634,6 +634,10 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	ftdm_mutex_lock(span->mutex);
 
 	/* stop the signaling */
+
+	/* This is a forced stopped */
+	ftdm_clear_flag(span, FTDM_SPAN_NON_STOPPABLE);
+	
 	ftdm_span_stop(span);
 
 	/* destroy the channels */
@@ -739,6 +743,11 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 	ftdm_status_t status =  FTDM_SUCCESS;
 	
 	ftdm_mutex_lock(span->mutex);
+	
+	if (ftdm_test_flag(span, FTDM_SPAN_NON_STOPPABLE)) {
+		status = FTDM_NOTIMPL;
+		goto done;
+	}
 
 	if (!ftdm_test_flag(span, FTDM_SPAN_STARTED)) {
 		status = FTDM_EINVAL;

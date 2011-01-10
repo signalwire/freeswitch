@@ -1094,6 +1094,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SKIP_STATES);
+	ftdm_set_flag(span, FTDM_SPAN_NON_STOPPABLE);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {
