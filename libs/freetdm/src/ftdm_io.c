@@ -2281,7 +2281,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_BUSY, 1);
 		break;
 	case FTDM_CHANNEL_INDICATE_PROCEED:
-		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE)) {
+		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE) ||
+		   	ftdmchan->state == FTDM_CHANNEL_STATE_PROCEED) {
 			ftdm_ack_indication(ftdmchan, indication, status);
 			goto done;
 		}
