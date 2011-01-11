@@ -3261,21 +3261,25 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 						switch_rtp_t *other_rtp_session = switch_channel_get_private(other_channel, "__zrtp_audio_rtp_session");
 
 						if (other_rtp_session) {
-							if (zrtp_status_ok == zrtp_session_get(other_rtp_session->zrtp_session, &zrtp_session_info)) {
-								if (rtp_session->zrtp_mitm_tries > ZRTP_MITM_TRIES) {
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
-									switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-									switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
-								} else if (zrtp_status_ok == zrtp_resolve_mitm_call(other_rtp_session->zrtp_stream, rtp_session->zrtp_stream)) {
-									switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-									switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
-									zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid,
-													  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
-									rtp_session->zrtp_mitm_tries++;
+							if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+								switch_mutex_lock(other_rtp_session->read_mutex);
+								if (zrtp_status_ok == zrtp_session_get(other_rtp_session->zrtp_session, &zrtp_session_info)) {
+									if (rtp_session->zrtp_mitm_tries > ZRTP_MITM_TRIES) {
+										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+										switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+										switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+									} else if (zrtp_status_ok == zrtp_resolve_mitm_call(other_rtp_session->zrtp_stream, rtp_session->zrtp_stream)) {
+										switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+										switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+										zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid,
+														  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+										rtp_session->zrtp_mitm_tries++;
+									}
 								}
+								switch_mutex_unlock(other_rtp_session->read_mutex);
 							}
 						}
 
