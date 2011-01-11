@@ -161,6 +161,15 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip, swit
 	char *full;
 
 	if (sip) {
+		if (sip->sip_route) {
+			if ((full = sip_header_as_string(profile->home, (void *) sip->sip_route))) {
+				const char *v = switch_channel_get_variable(channel, "sip_full_route");
+				if (!v) { 
+					switch_channel_set_variable(channel, "sip_full_route", full);
+				}
+				su_free(profile->home, full);
+			}
+		}
 		if (sip->sip_via) {
 			if ((full = sip_header_as_string(profile->home, (void *) sip->sip_via))) {
 				const char *v = switch_channel_get_variable(channel, "sip_full_via");
@@ -7098,15 +7107,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		/* Loop thru unknown Headers Here so we can do something with them */
 		for (un = sip->sip_unknown; un; un = un->un_next) {
-			if (!strncasecmp(un->un_name, "Route", 5)) {
-				if (!zstr(un->un_value)) {
-					char *tmp_name;
-					if ((tmp_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
-						switch_channel_set_variable(channel, tmp_name, un->un_value);
-						free(tmp_name);
-					}
-				} 
-			} else if (!strncasecmp(un->un_name, "Diversion", 9)) {
+			if (!strncasecmp(un->un_name, "Diversion", 9)) {
 				/* Basic Diversion Support for Diversion Indication in SIP */
 				/* draft-levy-sip-diversion-08 */
 				if (!zstr(un->un_value)) {
