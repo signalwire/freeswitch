@@ -632,9 +632,13 @@ typedef enum {
 	  This flag will never send any. Sheesh....
 	 */
 	
+	RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6)
 	
-
-
+	/*
+	  Guess Who? ... Yep, Sonus (and who know's who else) likes to interweave DTMF with the audio stream making it take
+	  2X as long as it should and sending an incorrect duration making the DTMF very delayed.
+	  This flag will treat every dtmf as if it were 50ms and queue it on recipt of the leading packet rather than at the end.
+	 */
 
 } switch_rtp_bug_flag_t;
 
@@ -1816,6 +1820,8 @@ typedef struct switch_loadable_module_function_table {
 } switch_loadable_module_function_table_t;
 
 typedef int (*switch_modulename_callback_func_t) (void *user_data, const char *module_name);
+
+typedef struct switch_slin_data switch_slin_data_t;
 
 #define SWITCH_MODULE_DEFINITION_EX(name, load, shutdown, runtime, flags)					\
 static const char modname[] =  #name ;														\

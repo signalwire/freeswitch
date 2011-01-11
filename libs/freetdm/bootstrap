@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 autoheader
 libtoolize --force --copy
 aclocal

@@ -133,13 +133,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			get_redir_num(ftdmchan, &conEvnt->redirNmb);
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
-			get_facility_ie(ftdmchan, &conEvnt->facilityStr);
+			get_facility_ie(ftdmchan, &conEvnt->facilityStr);			
 			
 			if (get_calling_name_from_display(ftdmchan, &conEvnt->display) != FTDM_SUCCESS) {
 				get_calling_name_from_usr_usr(ftdmchan, &conEvnt->usrUsr);
 			}
 
-			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
@@ -147,10 +146,17 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				ftdmchan->caller_data.bearer_capability = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].infoTranCap.val);
 			}
 			
-			
 			if (conEvnt->shift11.eh.pres && conEvnt->ni2OctStr.eh.pres) {
 				if (conEvnt->ni2OctStr.str.len == 4 && conEvnt->ni2OctStr.str.val[0] == 0x37) {
-					snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", conEvnt->ni2OctStr.str.val[3]);
+					uint8_t encoding = (conEvnt->ni2OctStr.str.val[2] >> 5);
+					if (encoding == 0 || encoding == 1) {
+						/* BCD even or BCD odd */
+						uint8_t value = (conEvnt->ni2OctStr.str.val[3] & 0x0F)*10 + ((conEvnt->ni2OctStr.str.val[3] >> 4) & 0x0F);
+						snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", value);
+					} else if (encoding == 2) {
+						/* IA 5 */
+						snprintf(ftdmchan->caller_data.aniII, 5, "%c", conEvnt->ni2OctStr.str.val[3]);
+					}
 				}
 			}
 

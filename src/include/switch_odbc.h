@@ -34,6 +34,8 @@
 
 #include <switch.h>
 
+#define DEFAULT_ODBC_RETRIES 120
+
 SWITCH_BEGIN_EXTERN_C struct switch_odbc_handle;
 typedef void *switch_odbc_statement_handle_t;
 
@@ -50,6 +52,7 @@ typedef enum {
 } switch_odbc_status_t;
 
 SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(const char *dsn, const char *username, const char *password);
+SWITCH_DECLARE(void) switch_odbc_set_num_retries(switch_odbc_handle_t *handle, int num_retries);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep);

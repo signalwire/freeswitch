@@ -634,6 +634,10 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	ftdm_mutex_lock(span->mutex);
 
 	/* stop the signaling */
+
+	/* This is a forced stopped */
+	ftdm_clear_flag(span, FTDM_SPAN_NON_STOPPABLE);
+	
 	ftdm_span_stop(span);
 
 	/* destroy the channels */
@@ -739,6 +743,11 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 	ftdm_status_t status =  FTDM_SUCCESS;
 	
 	ftdm_mutex_lock(span->mutex);
+	
+	if (ftdm_test_flag(span, FTDM_SPAN_NON_STOPPABLE)) {
+		status = FTDM_NOTIMPL;
+		goto done;
+	}
 
 	if (!ftdm_test_flag(span, FTDM_SPAN_STARTED)) {
 		status = FTDM_EINVAL;
@@ -2288,7 +2297,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		status = ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_BUSY, 1);
 		break;
 	case FTDM_CHANNEL_INDICATE_PROCEED:
-		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE)) {
+		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE) ||
+		   	ftdmchan->state == FTDM_CHANNEL_STATE_PROCEED) {
 			ftdm_ack_indication(ftdmchan, indication, status);
 			goto done;
 		}
@@ -2929,23 +2939,27 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_ENABLE_DTMF_DETECT:
 		{
 			/* if they don't have thier own, use ours */
-			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-				teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
-				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled software DTMF detector\n");
-				GOTO_STATUS(done, FTDM_SUCCESS);
+			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+				if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled software DTMF detector\n");
+					GOTO_STATUS(done, FTDM_SUCCESS);
+				}
 			}
 		}
 		break;
 	case FTDM_COMMAND_DISABLE_DTMF_DETECT:
 		{
-			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-                    		teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-                    		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
-				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled software DTMF detector\n");
-				GOTO_STATUS(done, FTDM_SUCCESS);
+			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+				if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+								teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+								ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled software DTMF detector\n");
+					GOTO_STATUS(done, FTDM_SUCCESS);
+				}
 			}
 		}
 		break;
