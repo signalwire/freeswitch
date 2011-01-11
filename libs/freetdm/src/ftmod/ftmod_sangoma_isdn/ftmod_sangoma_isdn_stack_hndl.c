@@ -605,7 +605,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "cause:%d\n", ftdmchan->caller_data.hangup_cause);
 				} else {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "RELEASE COMPLETE did not have a cause code\n");
-					ftdmchan->caller_data.hangup_cause = 0;
+					ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 				}
 
 				sngisdn_set_flag(sngisdn_info, FLAG_REMOTE_ABORT);
