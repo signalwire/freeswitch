@@ -2440,6 +2440,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	recvfrom:
 		bytes = 0;
 		read_loops++;
+		poll_loop = 0;
 
 		if (!switch_rtp_ready(rtp_session)) {
 			break;
@@ -2466,21 +2467,27 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			status = read_rtp_packet(rtp_session, &bytes, flags);
 		} else {
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
+				char tmp[128] = "";
+				strerror_r(poll_status, tmp, sizeof(tmp));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Poll failed with error: %d [%s]\n", poll_status, tmp);
 				ret = -1;
 				goto end;
 			}
 
 			poll_loop = 1;
-			rtp_session->missed_count += (poll_sec * 1000) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet / 1000 : 20);
-			bytes = 0;
 
-			if (rtp_session->max_missed_packets) {
-				if (rtp_session->missed_count >= rtp_session->max_missed_packets) {
-					ret = -2;
-					goto end;
+			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+				rtp_session->missed_count += (poll_sec * 1000) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet / 1000 : 20);
+				bytes = 0;
+
+				if (rtp_session->max_missed_packets) {
+					if (rtp_session->missed_count >= rtp_session->max_missed_packets) {
+						ret = -2;
+						goto end;
+					}
 				}
 			}
-			
+
 			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 				(rtp_session->dtmf_data.out_digit_dur == 0 || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO))) {
 				return_cng_frame();
