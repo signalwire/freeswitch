@@ -2463,11 +2463,11 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, int line, 
 		ftdm_caller_data_t *caller_data, ftdm_hunting_scheme_t *hunting)
 {
-	ftdm_assert_return(caller_data, FTDM_EINVAL, "Invalid caller data\n");
-	ftdm_assert_return(hunting, FTDM_EINVAL, "Invalid hunting scheme\n");
-
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_channel_t *fchan = NULL;
+
+	ftdm_assert_return(caller_data, FTDM_EINVAL, "Invalid caller data\n");
+	ftdm_assert_return(hunting, FTDM_EINVAL, "Invalid hunting scheme\n");
 
 	if (hunting->mode == FTDM_HUNT_SPAN) {
 		status = _ftdm_channel_open_by_span(hunting->mode_data.span.span_id, 
