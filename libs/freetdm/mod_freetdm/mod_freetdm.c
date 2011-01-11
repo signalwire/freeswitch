@@ -1101,7 +1101,6 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 	chan_id = ftdm_channel_get_id(fchan);
 
 	tech_init(hdata->tech_pvt, hdata->new_session, fchan);
-	hdata->tech_pvt->caller_profile = hdata->caller_profile;
 
 	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, caller_data->dnis.digits);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
@@ -1109,6 +1108,9 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(fchan));
 	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", span_id);
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chan_id);
+
+	switch_channel_set_caller_profile(channel, hdata->caller_profile);
+	hdata->tech_pvt->caller_profile = hdata->caller_profile;
 
 	switch_channel_set_state(channel, CS_INIT);
 	sess_uuid = switch_core_session_get_uuid(hdata->new_session);
@@ -1395,7 +1397,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((*new_session = switch_core_session_request(freetdm_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_caller_profile_t *caller_profile;
-		switch_channel_t *channel = switch_core_session_get_channel(*new_session);
 		
 		switch_core_session_add_stream(*new_session, NULL);
 		if (!(tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t)))) {
@@ -1408,7 +1409,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
 		caller_profile->caller_id_number = switch_core_strdup(caller_profile->pool, switch_str_nil(callerid_num));
-		switch_channel_set_caller_profile(channel, caller_profile);
 
 		hunting.result_cb = on_channel_found;
 		hunt_data.var_event = var_event;
