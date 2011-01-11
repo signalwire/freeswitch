@@ -251,7 +251,8 @@ libfreeswitch_la_SOURCES = \
 	libs/miniupnpc/upnperrors.c \
 	libs/libnatpmp/natpmp.c \
 	libs/libnatpmp/getgateway.c\
-	libs/spandsp/src/plc.c
+	libs/spandsp/src/plc.c \
+	libs/spandsp/src/bit_operations.c
 
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
