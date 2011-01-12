@@ -1094,9 +1094,9 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 						esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
 						if (!strcasecmp(hname, "event-name")) {
 							esl_event_del_header(handle->last_ievent, "event-name");
+						        esl_name_event(hval, &handle->last_ievent->event_id);
 						}
 						esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
-						esl_name_event(hval, &handle->last_ievent->event_id);
 					}
 				
 					beg = c + 1;
