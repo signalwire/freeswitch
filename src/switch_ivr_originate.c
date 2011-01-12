@@ -2691,6 +2691,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						originate_status[i].tagged = 1;
 					}
 
+					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_channel_name"))) {
+						switch_channel_set_name(originate_status[i].peer_channel, vvar);
+					}
+
 					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_callee_id_name"))) {
 						switch_channel_set_profile_var(originate_status[i].peer_channel, "callee_id_name", vvar);
 					}
