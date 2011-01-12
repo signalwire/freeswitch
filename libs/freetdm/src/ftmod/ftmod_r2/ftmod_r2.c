@@ -329,6 +329,9 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 	case FTDM_CAUSE_NORMAL_UNSPECIFIED:
 		return OR2_CAUSE_UNSPECIFIED;
 
+	case FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL:
+		return OR2_CAUSE_GLARE;
+
 	}
 	ftdm_log_chan(fchan, FTDM_LOG_WARNING, "freetdm hangup cause %d mapped to openr2 cause %s\n",
 			fchan->caller_data.hangup_cause, openr2_proto_get_disconnect_string(OR2_CAUSE_UNSPECIFIED));
