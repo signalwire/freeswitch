@@ -365,8 +365,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				ftdm_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
 			}
 			configured++;
-			ftdm_log_chan(chan, FTDM_LOG_INFO, "configured wanpipe device s%dc%d as FreeTDM channel %d:%d fd:%d DTMF: %s\n",
-				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
+			ftdm_log_chan(chan, FTDM_LOG_INFO, "Configured wanpipe device fd:%d DTMF: %s\n", sockfd, dtmf);
 
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_span_add_channel failed for wanpipe span %d channel %d\n", spanno, x);
