@@ -403,6 +403,7 @@ struct sofia_gateway {
 	char *register_from;
 	char *register_contact;
 	char *extension;
+	char *real_extension;
 	char *register_to;
 	char *register_proxy;
 	char *register_sticky_proxy;

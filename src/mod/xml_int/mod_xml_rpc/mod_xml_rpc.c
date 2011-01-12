@@ -744,6 +744,7 @@ abyss_bool handler_hook(TSession * r)
 
 		if (dateValue) {
 			ResponseAddField(r, "Date", dateValue);
+			free(dateValue);
 		}
 	}
 

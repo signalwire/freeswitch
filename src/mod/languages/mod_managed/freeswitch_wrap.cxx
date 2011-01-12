@@ -1422,6 +1422,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_HOLD_MUSIC_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_TEMP_HOLD_MUSIC_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "temp_hold_music";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_EXPORT_VARS_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -12299,6 +12310,30 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_digit_string(char * jarg1) {
   
   arg1 = (char *)jarg1; 
   result = (switch_bool_t)switch_is_digit_string((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT char SWIGSTDCALL CSharp_switch_itodtmf(char jarg1) {
+  char jresult ;
+  char arg1 ;
+  char result;
+  
+  arg1 = (char)jarg1; 
+  result = (char)switch_itodtmf(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_dtmftoi(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_dtmftoi(arg1);
   jresult = result; 
   return jresult;
 }
@@ -23501,6 +23536,30 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_variable_partner(void * 
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_hold_music(void * jarg1) {
+  char * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (char *)switch_channel_get_hold_music(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_hold_music_partner(void * jarg1) {
+  char * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (char *)switch_channel_get_hold_music_partner(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_export_variable_var_check(void * jarg1, char * jarg2, char * jarg3, char * jarg4, int jarg5) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -23741,6 +23800,20 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_test_cap(void * jarg1
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_channel_cap_t)jarg2; 
   result = (uint32_t)switch_channel_test_cap(arg1,arg2);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_test_cap_partner(void * jarg1, int jarg2) {
+  unsigned long jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_channel_cap_t arg2 ;
+  uint32_t result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_channel_cap_t)jarg2; 
+  result = (uint32_t)switch_channel_test_cap_partner(arg1,arg2);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -29072,6 +29145,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_deactivate_jitter_buffer(void * jar
   
   arg1 = (switch_rtp_t *)jarg1; 
   result = (switch_status_t)switch_rtp_deactivate_jitter_buffer(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_pause_jitter_buffer(void * jarg1, int jarg2) {
+  int jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_bool_t arg2 ;
+  switch_status_t result;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  result = (switch_status_t)switch_rtp_pause_jitter_buffer(arg1,arg2);
   jresult = result; 
   return jresult;
 }

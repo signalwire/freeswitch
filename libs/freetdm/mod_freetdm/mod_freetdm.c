@@ -4196,6 +4196,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	freetdm_endpoint_interface->state_handler = &freetdm_state_handlers;
 	
 	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, FT_SYNTAX);
+	switch_console_set_complete("add ftdm start");
+	switch_console_set_complete("add ftdm stop");
+	switch_console_set_complete("add ftdm retart");
+	switch_console_set_complete("add ftdm dump");
+	switch_console_set_complete("add ftdm sigstatus get");
+	switch_console_set_complete("add ftdm sigstatus set");
+	switch_console_set_complete("add ftdm trace");
+	switch_console_set_complete("add ftdm notrace");
+	switch_console_set_complete("add ftdm q931_pcap");
+	switch_console_set_complete("add ftdm gains");
+	switch_console_set_complete("add ftdm dtmf on");
+	switch_console_set_complete("add ftdm dtmf off");
+
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);

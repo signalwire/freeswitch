@@ -186,6 +186,9 @@ typedef enum {
 	/* If this flag is set, the signalling module supports jumping directly to state up, without
 		going through PROGRESS/PROGRESS_MEDIA */
 	FTDM_SPAN_USE_SKIP_STATES = (1 << 12),
+	/* If this flag is set, then this span cannot be stopped individually, it can only be stopped
+		on freetdm unload */
+	FTDM_SPAN_NON_STOPPABLE = (1 << 13),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
