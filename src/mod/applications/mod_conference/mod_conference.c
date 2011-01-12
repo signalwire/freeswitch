@@ -5845,6 +5845,8 @@ SWITCH_STANDARD_APP(conference_function)
 	if (rl) {
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
+
+	switch_channel_set_variable(channel, "last_transfered_conference", NULL);
 }
 
 /* Create a thread for the conference and launch it */
