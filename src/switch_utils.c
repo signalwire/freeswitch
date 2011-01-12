@@ -372,7 +372,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 	if (s && *s == open) {
 		depth++;
 		for (e = s + 1; e && *e; e++) {
-			if (*e == open) {
+			if (*e == open && open != close) {
 				depth++;
 			} else if (*e == close) {
 				depth--;
