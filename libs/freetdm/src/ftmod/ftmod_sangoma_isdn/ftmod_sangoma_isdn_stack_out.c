@@ -491,8 +491,8 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 		/* Should we trigger congestion here? */
 		l1_frame.flags |= SNG_L1FRAME_QUEUE_FULL;
 	}
-	
-	sng_isdn_data_ind(signal_data->link_id, &l1_frame);
+
+	sng_isdn_data_ind(signal_data->dchan_id, &l1_frame);
 }
 
 void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
@@ -506,11 +506,11 @@ void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
 	switch(event) {
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;
-			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+			sng_isdn_event_ind(signal_data->dchan_id, &l1_event);
 			break;
 		case FTDM_OOB_ALARM_TRAP:
 			l1_event.type = SNG_L1EVENT_ALARM_ON;
-			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+			sng_isdn_event_ind(signal_data->dchan_id, &l1_event);
 			break;
 		default:
 			/* We do not care about the other OOB events for now */

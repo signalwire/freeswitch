@@ -146,7 +146,8 @@ ftdm_status_t sngisdn_deactivate_phy(ftdm_span_t *span)
 
 	cntrl.t.cntrl.action = AUBND_DIS;
 	cntrl.t.cntrl.subAction = SAELMNT;
-	cntrl.t.cntrl.sapId = signal_data->link_id;
+
+	cntrl.t.cntrl.sapId = signal_data->dchan_id;
 	
 	if (sng_isdn_phy_cntrl(&pst, &cntrl)) {
 		return FTDM_FAIL;
@@ -180,7 +181,8 @@ ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span)
 
 	cntrl.t.cntrl.action = AENA;
 	cntrl.t.cntrl.subAction = SAELMNT;
-	cntrl.t.cntrl.sapId = signal_data->link_id;
+
+	cntrl.t.cntrl.sapId = signal_data->dchan_id;
 	
 	if (sng_isdn_phy_cntrl(&pst, &cntrl)) {
 		return FTDM_FAIL;
@@ -298,7 +300,8 @@ ftdm_status_t sngisdn_cntrl_q931(ftdm_span_t *span, uint8_t action, uint8_t suba
 	if (action == AENA && subaction == SATRC) {
 		cntrl.t.cntrl.trcLen = -1; /* Trace the entire message buffer */
 	}
-	cntrl.t.cntrl.sapId = signal_data->link_id;
+
+	cntrl.t.cntrl.sapId = signal_data->dchan_id;
 	cntrl.t.cntrl.ces = 0;
 
 	if(sng_isdn_q931_cntrl(&pst, &cntrl)) {
@@ -339,11 +342,11 @@ ftdm_status_t sngisdn_cntrl_q921(ftdm_span_t *span, uint8_t action, uint8_t suba
 	cntrl.t.cntrl.subAction    = subaction;
 
 #if (SMBD_LMINT3 || BD_LMINT3)
-	cntrl.t.cntrl.lnkNmb       = signal_data->link_id;
+	cntrl.t.cntrl.lnkNmb       = signal_data->dchan_id;
 	cntrl.t.cntrl.sapi         = NOTUSED;
 	cntrl.t.cntrl.tei          = NOTUSED;
 #else /* _LMINT3 */
-	cntrl.hdr.elmId.elmntInst1 = signal_data->link_id;
+	cntrl.hdr.elmId.elmntInst1 = signal_data->dchan_id;
 	cntrl.hdr.elmId.elmntInst2 = NOTUSED;
 	cntrl.hdr.elmId.elmntInst3 = NOTUSED;
 #endif /* _LMINT3 */

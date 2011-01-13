@@ -150,7 +150,7 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 
 	g_sngisdn_data.spans[signal_data->link_id] = signal_data;
 	
-	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d link_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id, signal_data->link_id);
 
 	
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
