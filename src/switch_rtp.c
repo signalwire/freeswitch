@@ -2493,7 +2493,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				return_cng_frame();
 			}
 		}
-		
+
+		if (rtp_session->recv_msg.header.pt != 13 && 
+			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
+			rtp_session->recv_msg.header.pt != rtp_session->payload) {
+			/* drop frames of incorrect payload number and return CNG frame instead */
+			return_cng_frame();
+		}
+
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && rtp_session->rtcp_read_pollfd) {
 			rtcp_poll_status = switch_poll(rtp_session->rtcp_read_pollfd, 1, &rtcp_fdr, 0);
 						
