@@ -2602,6 +2602,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
+				if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "push_channel_name"))) {
+					char *new_name = switch_core_session_sprintf(session, "%s__B", switch_channel_get_name(caller_channel));
+					//switch_channel_set_variable(originate_status[i].peer_channel, "origination_channel_name", new_name);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_channel_name", new_name);
+					new_name = switch_core_session_sprintf(session, "_%s", switch_channel_get_name(caller_channel));
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-Channel-Name", new_name);
+				}
+
 				/* make a special var event with mixture of the {} and the [] vars to pass down as global vars to the outgoing channel 
 				   so if something like the user channel does another originate our options will be passed down properly
 				 */
@@ -2690,7 +2698,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_true(switch_channel_get_variable(originate_status[i].peer_channel, "leg_required"))) {
 						originate_status[i].tagged = 1;
 					}
-
+					
 					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_channel_name"))) {
 						switch_channel_set_name(originate_status[i].peer_channel, vvar);
 					}
