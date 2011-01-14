@@ -2283,13 +2283,13 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 
 	ftdm_assert_return(ftdmchan, FTDM_FAIL, "Null channel\n");
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Indicating %s in state %s\n",
+	ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Indicating %s in state %s\n",
 			ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 
 	ftdm_channel_lock(ftdmchan);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot indicate %s in channel with indication %s still pending in state %s\n",
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Cannot indicate %s in channel with indication %s still pending in state %s\n",
 				ftdm_channel_indication2str(indication), 
 				ftdm_channel_indication2str(ftdmchan->indication),
 				ftdm_channel_state2str(ftdmchan->state));
@@ -2303,14 +2303,14 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_EINVAL;
 		goto done;
 	}
 
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Ignoring indication %s because the call is in %s state\n",
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Ignoring indication %s because the call is in %s state\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_ECANCELED;
 		goto done;
@@ -2347,7 +2347,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 
 			/* set state unlocks the channel so we need to re-confirm that the channel hasn't gone to hell */
 			if (ftdmchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring progress media because the call is terminating\n");
+				ftdm_log_chan_ex_msg(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Ignoring progress media because the call is terminating\n");
 				goto done;
 			}
 		}
