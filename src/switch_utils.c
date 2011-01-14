@@ -812,7 +812,7 @@ SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 	size_t len;
 
 	if (zstr(sp)) {
-		return (char *) sp;
+		return strdup(SWITCH_BLANK_STRING);
 	}
 
 	while ((*sp == 13 ) || (*sp == 10 ) || (*sp == 9 ) || (*sp == 32) || (*sp == 11) ) {
@@ -820,7 +820,7 @@ SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 	}
 	
 	if (zstr(sp)) {
-		return (char *) sp;
+		return strdup(SWITCH_BLANK_STRING);
 	}
 
 	s = strdup(sp);
@@ -829,7 +829,7 @@ SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str)
 	if ((len = strlen(s)) > 0) {
 		p = s + (len - 1);
 
-		while (p > s && ((*p == 13 ) || (*p == 10 ) || (*p == 9 ) || (*p == 32) || (*p == 11))) {
+		while ((p >= s) && ((*p == 13 ) || (*p == 10 ) || (*p == 9 ) || (*p == 32) || (*p == 11))) {
 			*p-- = '\0';
 		}
 	}
@@ -844,7 +844,7 @@ SWITCH_DECLARE(char *) switch_strip_spaces(char *str, switch_bool_t dup)
 	size_t len;
 
 	if (zstr(sp)) {
-		return sp;
+		return dup ? strdup(SWITCH_BLANK_STRING) : sp;
 	}
 
 	while (*sp == ' ') {
@@ -865,7 +865,7 @@ SWITCH_DECLARE(char *) switch_strip_spaces(char *str, switch_bool_t dup)
 	if ((len = strlen(s)) > 0) {
 		p = s + (len - 1);
 
-		while (p && *p && p > s && *p == ' ') {
+		while (p && *p && (p >= s) && *p == ' ') {
 			*p-- = '\0';
 		}
 	}
