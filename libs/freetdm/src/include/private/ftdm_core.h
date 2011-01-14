@@ -664,7 +664,11 @@ FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 	} 
 
 #define ftdm_log_chan_ex(fchan, file, func, line, level, format, ...) ftdm_log(file, func, line, level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
+
+#define ftdm_log_chan_ex_msg(fchan, file, func, line, level, msg) ftdm_log(file, func, line, level, "[s%dc%d][%d:%d] " msg, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id)
+
 #define ftdm_log_chan(fchan, level, format, ...) ftdm_log(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
+
 #define ftdm_log_chan_msg(fchan, level, msg) ftdm_log(level, "[s%dc%d][%d:%d] " msg, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id)
 
 #define ftdm_log_chan_throttle(fchan, level, format, ...) ftdm_log_throttle(level, "[s%dc%d][%d:%d] " format, fchan->span_id, fchan->chan_id, fchan->physical_span_id, fchan->physical_chan_id, __VA_ARGS__)
