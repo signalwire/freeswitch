@@ -70,7 +70,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 			port = tech_pvt->proxy_sdp_audio_port;
 		}
 	}
-
+	
 	if (!port) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO PORT!\n", switch_channel_get_name(tech_pvt->channel));
 		return;
@@ -4108,6 +4108,15 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 		if (!strcasecmp(attr->a_name, "sendonly") || !strcasecmp(attr->a_name, "inactive")) {
 			sendonly = 1;
+		} else if (!strcasecmp(attr->a_name, "recvonly")) {
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, 0);
+				tech_pvt->max_missed_hold_packets = 0;
+				tech_pvt->max_missed_packets = 0;
+			} else {
+				switch_channel_set_variable(tech_pvt->channel, "rtp_timeout_sec", "0");
+				switch_channel_set_variable(tech_pvt->channel, "rtp_hold_timeout_sec", "0");
+			}
 		} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
 			sendonly = 0;
 		} else if (!strcasecmp(attr->a_name, "ptime")) {
