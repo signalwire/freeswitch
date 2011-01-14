@@ -394,7 +394,6 @@ typedef enum {
 	FTDM_SIGEVENT_ADD_CALL, /*!< New call should be added to the channel */
 	FTDM_SIGEVENT_RESTART, /*!< Restart has been requested. Typically you hangup your call resources here */
 	FTDM_SIGEVENT_SIGSTATUS_CHANGED, /*!< Signaling protocol status changed (ie: D-chan up), see new status in raw_data ftdm_sigmsg_t member */
-	FTDM_SIGEVENT_COLLISION, /*!< Outgoing call was dropped because an incoming call arrived at the same time */
 	FTDM_SIGEVENT_FACILITY, /*!< In call facility event */
 	FTDM_SIGEVENT_TRACE, /*!<Interpreted trace event */
 	FTDM_SIGEVENT_TRACE_RAW, /*!<Raw trace event */
