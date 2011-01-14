@@ -406,31 +406,60 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_DIALING, FTDM_END},
-			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_UP, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
+			 FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS,
+			 FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END}
+			{FTDM_CHANNEL_STATE_PROCEED, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
+			 FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
+			{FTDM_CHANNEL_STATE_RINGING, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
+			 FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
-			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+			{FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP,
+			 FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
 			ZSD_OUTBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_UP, FTDM_END},
 			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END}
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
+		},
+		{
+			ZSD_OUTBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
 		},
 
 		/****************************************/
@@ -462,32 +491,57 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_RING, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END}
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+			{FTDM_CHANNEL_STATE_PROCEED, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS,
+			 FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
-			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
+			{FTDM_CHANNEL_STATE_RINGING, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA,
+			 FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
-			{FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
-			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, 
-			 FTDM_CHANNEL_STATE_CANCEL, FTDM_CHANNEL_STATE_UP, FTDM_END},
+			{FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_UP, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_UP, FTDM_END},
 			{FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_TERMINATING, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_HANGUP, FTDM_END},
+			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_HANGUP_COMPLETE, FTDM_END},
+			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
 		},
 	}
 };
@@ -533,8 +587,6 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 		break;
 
 	case FTDM_CHANNEL_STATE_PROGRESS:
-	/* RINGING is an alias for PROGRESS state in inbound calls ATM */
-	case FTDM_CHANNEL_STATE_RINGING:
 		{
 			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS;
@@ -542,7 +594,23 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
-				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
+				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
+			} else {
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
+			}
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_RINGING:
+		{
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
+				sig.event_id = FTDM_SIGEVENT_RINGING;
+				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
+				}
+			} else if (call) {
+//				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
+				pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
@@ -561,7 +629,26 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
 					ftdm_channel_open_chan(chan);
 				}
-				pri_proceeding(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
+				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
+			} else {
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
+			}
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_PROCEED:
+		{
+			if (ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
+				/* PROCEED from other end, notify user */
+				sig.event_id = FTDM_SIGEVENT_PROCEED;
+				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
+					ftdm_log(FTDM_LOG_ERROR, "Failed to send PROCEED sigevent on Channel %d:%d\n",
+						ftdm_channel_get_span_id(chan),
+						ftdm_channel_get_id(chan));
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
+				}
+			} else if (call) {
+				pri_proceeding(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
@@ -572,11 +659,12 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 		{
 			/*
 			 * This needs more auditing for BRI PTMP:
-			 * does pri_acknowledge() steal the call from other devices?
+			 * does pri_acknowledge() steal the call from other devices? (yes, it does)
 			 */
 			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
 				if (call) {
-					pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
+					pri_proceeding(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
+//					pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
 					sig.event_id = FTDM_SIGEVENT_START;
 					if ((status = ftdm_span_send_signal(ftdm_channel_get_span(chan), &sig) != FTDM_SUCCESS)) {
 						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
@@ -690,15 +778,22 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 				pri_hangup(isdn_data->spri.pri, call, caller_data->hangup_cause);
-				pri_destroycall(isdn_data->spri.pri, call);
+//				pri_destroycall(isdn_data->spri.pri, call);
 
 				chan->call_data = NULL;
 			}
-			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
 
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+		{
+			if (call) {
+				pri_destroycall(isdn_data->spri.pri, call);
+				chan->call_data = NULL;
+			}
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
+		}
 		break;
 
 	case FTDM_CHANNEL_STATE_TERMINATING:
@@ -869,7 +964,7 @@ static int on_proceeding(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 			}
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROCEED);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Proceeding on channel %d:%d but it's not in the span?\n",
 						ftdm_span_get_id(span), pevent->proceeding.channel);
@@ -909,9 +1004,12 @@ static int on_progress(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
 				goto out;
 			}
+			ftdm_log(FTDM_LOG_DEBUG, "-- Progress on channel %d:%d with media\n", ftdm_span_get_id(span), pevent->proceeding.channel);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		} else {
+			ftdm_log(FTDM_LOG_DEBUG, "-- Progress on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
 		}
-		ftdm_log(FTDM_LOG_DEBUG, "-- Progress on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Progress on channel %d:%d but it's not in the span?\n",
 						ftdm_span_get_id(span), pevent->proceeding.channel);
@@ -936,10 +1034,10 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d\n", ftdm_span_get_id(span), pevent->ringing.channel);
 
 		/* we may get on_ringing even when we're already in FTDM_CHANNEL_STATE_PROGRESS_MEDIA */
-		if (ftdm_channel_get_state(chan) == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
-			/* dont try to move to STATE_PROGRESS to avoid annoying veto warning */
-			return 0;
-		}
+//		if (ftdm_channel_get_state(chan) == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
+//			/* dont try to move to STATE_PROGRESS to avoid annoying veto warning */
+//			return 0;
+//		}
 
 		/* Open channel if inband information is available */
 		if ((pevent->ringing.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
@@ -959,7 +1057,8 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 				goto out;
 			}
 		}
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
+//		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
+		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RINGING);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d but it's not in the span?\n",
 			ftdm_span_get_id(span), pevent->ringing.channel);
@@ -1912,6 +2011,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 
 	span->get_channel_sig_status = isdn_get_channel_sig_status;
 	span->get_span_sig_status = isdn_get_span_sig_status;
+
+	/* move calls to PROCEED state when they hit dialplan (ROUTING state in FreeSWITCH) */
+	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
 
 	if ((isdn_data->opts & FTMOD_LIBPRI_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;

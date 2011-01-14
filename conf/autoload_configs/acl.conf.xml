@@ -21,7 +21,10 @@
 	digest authenticated.
     -->
     <list name="domains" default="deny">
+      <!-- domain= is special it scans the domain from the directory to build the ACL -->
       <node type="allow" domain="$${domain}"/>
+      <!-- use cidr= if you wish to allow ip ranges to this domains acl. -->
+      <!-- <node type="allow" cidr="192.168.0.0/24"/> -->
     </list>
 
   </network-lists>
