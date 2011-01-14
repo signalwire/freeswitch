@@ -5046,7 +5046,7 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference, 
 			goto done;
 		}
 
-		if (conference->sound_prefix) {
+		if (!switch_is_file_path(path) && conference->sound_prefix) {
 			if (!(dpath = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, path))) {
 				status = SWITCH_STATUS_MEMERR;
 				goto done;
@@ -5827,7 +5827,7 @@ SWITCH_STANDARD_APP(conference_function)
 				toplay = conference->kicked_sound; 
 			}
 
-			if (conference->sound_prefix) {
+			if (!switch_is_file_path(toplay) && conference->sound_prefix) {
 				dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, toplay);
 				switch_assert(dfile);
 				toplay = dfile;
@@ -5845,6 +5845,8 @@ SWITCH_STANDARD_APP(conference_function)
 	if (rl) {
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
+
+	switch_channel_set_variable(channel, "last_transfered_conference", NULL);
 }
 
 /* Create a thread for the conference and launch it */

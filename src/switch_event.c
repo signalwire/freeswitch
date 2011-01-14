@@ -744,7 +744,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 		tp = tp->next;
 
 		x++;
-		switch_assert(x < 1000);
+		switch_assert(x < 1000000);
 		hash = switch_ci_hashfunc_default(header_name, &hlen);
 
 		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (zstr(val) || !strcmp(hp->value, val))) {

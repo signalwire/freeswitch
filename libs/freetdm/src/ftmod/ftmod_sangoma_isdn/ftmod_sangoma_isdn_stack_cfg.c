@@ -216,7 +216,7 @@ ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 	cfg.hdr.entId.inst  = S_INST;
 	cfg.hdr.elmId.elmnt = STPSAP;
 
-	cfg.hdr.elmId.elmntInst1    = signal_data->link_id;
+	cfg.hdr.elmId.elmntInst1    = signal_data->dchan_id;
 
 	if (!signal_data->dchan) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:No d-channels specified\n", span->name);
@@ -241,7 +241,8 @@ ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 			ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported trunk type %d\n", span->name, span->trunk_type);
 			return FTDM_FAIL;
 	}
-	cfg.t.cfg.s.l1PSAP.spId		= signal_data->link_id;
+
+	cfg.t.cfg.s.l1PSAP.spId		= signal_data->dchan_id;
 
 	if (sng_isdn_phy_config(&pst, &cfg)) {
 		return FTDM_FAIL;
@@ -315,7 +316,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 	cfg.hdr.entId.inst  = S_INST;
 	cfg.hdr.elmId.elmnt = STMSAP;
 
-	cfg.t.cfg.s.bdMSAP.lnkNmb      = signal_data->link_id;
+	cfg.t.cfg.s.bdMSAP.lnkNmb      = signal_data->dchan_id;
 
 	cfg.t.cfg.s.bdMSAP.maxOutsFrms = 24;            /* MAC window */
 	cfg.t.cfg.s.bdMSAP.tQUpperTrs  = 32;           /* Tx Queue Upper Threshold */
@@ -408,7 +409,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management
 	cfg.hdr.entId.inst  = S_INST;
 	cfg.hdr.elmId.elmnt = STDLSAP;
 
-	cfg.t.cfg.s.bdDLSAP.lnkNmb		= signal_data->link_id;
+	cfg.t.cfg.s.bdDLSAP.lnkNmb		= signal_data->dchan_id;
 
 	cfg.t.cfg.s.bdDLSAP.n201		= 1028;          	/* n201 */
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
@@ -613,9 +614,9 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 
 	cfg.hdr.response.selector=0;
 
+	cfg.t.cfg.s.inDLSAP.sapId = signal_data->dchan_id;
+	cfg.t.cfg.s.inDLSAP.spId = signal_data->dchan_id;
 
-	cfg.t.cfg.s.inDLSAP.sapId = signal_data->link_id;
-	cfg.t.cfg.s.inDLSAP.spId = signal_data->link_id;
 	cfg.t.cfg.s.inDLSAP.swtch = sng_isdn_stack_switchtype(signal_data->switchtype);
 
 	cfg.t.cfg.s.inDLSAP.n201 = 1024;
@@ -876,8 +877,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 
 	cfg.hdr.response.selector=0;
 
-	cfg.t.cfg.s.inLCe.sapId = signal_data->link_id;
-
+	cfg.t.cfg.s.inLCe.sapId = signal_data->dchan_id;
 
 	cfg.t.cfg.s.inLCe.lnkUpDwnInd = TRUE;
 	cfg.t.cfg.s.inLCe.tCon.enb = TRUE;

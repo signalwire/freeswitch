@@ -38,6 +38,7 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span);
 static ftdm_status_t add_local_number(const char* val, ftdm_span_t *span);
 static ftdm_status_t parse_yesno(const char* var, const char* val, uint8_t *target);
+static ftdm_status_t set_switchtype_defaults(ftdm_span_t *span);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
 
@@ -149,7 +150,7 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 
 	g_sngisdn_data.spans[signal_data->link_id] = signal_data;
 	
-	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d link_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id, signal_data->link_id);
 
 	
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
@@ -191,6 +192,63 @@ static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
+static ftdm_status_t set_switchtype_defaults(ftdm_span_t *span)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+	switch(signal_data->switchtype) {
+		case SNGISDN_SWITCH_NI2:
+		case SNGISDN_SWITCH_5ESS:
+		case SNGISDN_SWITCH_4ESS:
+		case SNGISDN_SWITCH_DMS100:
+			if (span->default_caller_data.dnis.plan >= FTDM_NPI_INVALID) {
+				ftdm_set_npi("isdn", &span->default_caller_data.dnis.plan);
+			}
+			if (span->default_caller_data.dnis.type >= FTDM_TON_INVALID) {
+				ftdm_set_ton("national", &span->default_caller_data.dnis.type);
+			}
+			if (span->default_caller_data.cid_num.plan >= FTDM_NPI_INVALID) {
+				ftdm_set_npi("isdn", &span->default_caller_data.cid_num.plan);
+			}
+			if (span->default_caller_data.cid_num.type >= FTDM_TON_INVALID) {
+				ftdm_set_ton("national", &span->default_caller_data.cid_num.type);
+			}
+			if (span->default_caller_data.rdnis.plan >= FTDM_NPI_INVALID) {
+				ftdm_set_npi("isdn", &span->default_caller_data.rdnis.plan);
+			}
+			if (span->default_caller_data.rdnis.type >= FTDM_TON_INVALID) {
+				ftdm_set_ton("national", &span->default_caller_data.rdnis.type);
+			}
+			break;
+		case SNGISDN_SWITCH_EUROISDN:
+		case SNGISDN_SWITCH_QSIG:
+		case SNGISDN_SWITCH_INSNET:
+			if (span->default_caller_data.dnis.plan >= FTDM_NPI_INVALID) {
+				ftdm_set_npi("unknown", &span->default_caller_data.dnis.plan);
+			}
+			if (span->default_caller_data.dnis.type >= FTDM_TON_INVALID) {
+				ftdm_set_ton("unknown", &span->default_caller_data.dnis.type);
+			}
+			if (span->default_caller_data.cid_num.plan >= FTDM_NPI_INVALID) {
+				ftdm_set_npi("unknown", &span->default_caller_data.cid_num.plan);
+			}
+			if (span->default_caller_data.cid_num.type >= FTDM_TON_INVALID) {
+				ftdm_set_ton("unknown", &span->default_caller_data.cid_num.type);
+			}
+			if (span->default_caller_data.rdnis.plan >= FTDM_NPI_INVALID) {
+				ftdm_set_npi("unknown", &span->default_caller_data.rdnis.plan);
+			}
+			if (span->default_caller_data.rdnis.type >= FTDM_TON_INVALID) {
+				ftdm_set_ton("unknown", &span->default_caller_data.rdnis.type);
+			}
+			break;
+		case SNGISDN_SWITCH_INVALID:
+		default:
+			ftdm_log(FTDM_LOG_ERROR, "Unsupported switchtype[%d]\n", signal_data->switchtype);
+			return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span)
 {
 	unsigned paramindex;
@@ -205,30 +263,18 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->ignore_cause_value = SNGISDN_OPT_DEFAULT;
 	signal_data->timer_t3 = 8;
 	signal_data->restart_opt = SNGISDN_OPT_DEFAULT;
-
 	signal_data->link_id = span->span_id;
-	span->default_caller_data.bearer_capability = IN_ITC_SPEECH;
+	
+	span->default_caller_data.dnis.plan = FTDM_NPI_INVALID;
+	span->default_caller_data.dnis.type = FTDM_TON_INVALID;
+	span->default_caller_data.cid_num.plan = FTDM_NPI_INVALID;
+	span->default_caller_data.cid_num.type = FTDM_TON_INVALID;
+	span->default_caller_data.rdnis.plan = FTDM_NPI_INVALID;
+	span->default_caller_data.rdnis.type = FTDM_TON_INVALID;
 
+	span->default_caller_data.bearer_capability = IN_ITC_SPEECH;
 	/* Cannot set default bearer_layer1 yet, as we do not know the switchtype */
 	span->default_caller_data.bearer_layer1 = FTDM_INVALID_INT_PARM;
-
-	if (span->trunk_type == FTDM_TRUNK_BRI ||
-		span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-
-		ftdm_set_npi("unknown", &span->default_caller_data.dnis.plan);
-		ftdm_set_ton("unknown", &span->default_caller_data.dnis.type);
-		ftdm_set_npi("unknown", &span->default_caller_data.cid_num.plan);
-		ftdm_set_ton("unknown", &span->default_caller_data.cid_num.type);
-		ftdm_set_npi("unknown", &span->default_caller_data.rdnis.plan);
-		ftdm_set_ton("unknown", &span->default_caller_data.rdnis.type);
-	} else {
-		ftdm_set_npi("isdn", &span->default_caller_data.dnis.plan);
-		ftdm_set_ton("national", &span->default_caller_data.dnis.type);
-		ftdm_set_npi("isdn", &span->default_caller_data.cid_num.plan);
-		ftdm_set_ton("national", &span->default_caller_data.cid_num.type);
-		ftdm_set_npi("isdn", &span->default_caller_data.rdnis.plan);
-		ftdm_set_ton("national", &span->default_caller_data.rdnis.type);
-	}
 
 	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
 		ftdm_log(FTDM_LOG_DEBUG, "Sangoma ISDN key=value, %s=%s\n", ftdm_parameters[paramindex].var, ftdm_parameters[paramindex].val);
@@ -237,6 +283,9 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 		
 		if (!strcasecmp(var, "switchtype")) {
 			if (parse_switchtype(val, span) != FTDM_SUCCESS) {
+				return FTDM_FAIL;
+			}
+			if (set_switchtype_defaults(span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
 		} else if (!strcasecmp(var, "signalling") ||

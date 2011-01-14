@@ -43,8 +43,6 @@ SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
 
 struct mod_sofia_globals mod_sofia_globals;
 switch_endpoint_interface_t *sofia_endpoint_interface;
-static switch_frame_t silence_frame = { 0 };
-static char silence_data[13] = "";
 
 #define STRLEN 15
 
@@ -1094,8 +1092,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 										sofia_glue_do_invite(session);
 									}
 #endif
-
-									*frame = &silence_frame;
+									*frame = &tech_pvt->read_frame;
+									switch_set_flag((*frame), SFF_CNG);
+									(*frame)->datalen = tech_pvt->read_impl.encoded_bytes_per_packet;
+									memset((*frame)->data, 0, (*frame)->datalen);
 									return SWITCH_STATUS_SUCCESS;
 								}
 
@@ -4717,11 +4717,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_api_interface_t *api_interface;
 	switch_management_interface_t *management_interface;
 	struct in_addr in;
-
-	silence_frame.data = silence_data;
-	silence_frame.datalen = sizeof(silence_data);
-	silence_frame.buflen = sizeof(silence_data);
-	silence_frame.flags = SFF_CNG;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
