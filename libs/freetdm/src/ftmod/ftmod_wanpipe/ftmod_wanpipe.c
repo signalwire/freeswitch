@@ -1179,7 +1179,7 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 	unsigned int alarms = 0;
 	int err;
 
-	memset(&tdm_api,0,sizeof(tdm_api));
+	memset(&tdm_api, 0, sizeof(tdm_api));
 
 #ifdef LIBSANGOMA_VERSION
 	if ((err = sangoma_tdm_get_fe_alarms(ftdmchan->sockfd, &tdm_api, &alarms))) {
@@ -1225,9 +1225,19 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 		alarms &= ~WAN_TE_BIT_ALARM_RAI;
 	}
 
+	if (!ftdmchan->alarm_flags) {
+		if (FTDM_IS_DIGITAL_CHANNEL(ftdmchan)) {
+			ftdm_channel_hw_link_status_t sangoma_status = 0;
+			/* there is a bug in wanpipe where alarms were not properly set when they should be
+			 * on at application startup, until that is fixed we check the link status here too */
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_LINK_STATUS, &sangoma_status);
+			ftdmchan->alarm_flags = sangoma_status == FTDM_HW_LINK_DISCONNECTED ? 1 : 0;
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Link status is %d\n", sangoma_status);
+		}
+	}
+
 	if (alarms) {
-		/* FIXME: investigate what else does the driver report */
-		ftdm_log(FTDM_LOG_DEBUG, "Unmapped wanpipe alarms: %d\n", alarms);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Unmapped wanpipe alarms: %d\n", alarms);
 	}
 
 	return FTDM_SUCCESS;

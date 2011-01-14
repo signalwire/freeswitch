@@ -820,8 +820,14 @@ static void ftdm_r2_on_call_read(openr2_chan_t *r2chan, const unsigned char *buf
 
 static void ftdm_r2_on_hardware_alarm(openr2_chan_t *r2chan, int alarm)
 {
-	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Alarm notification: %d\n", alarm);
+	ftdm_channel_t *fchan = openr2_chan_get_client_data(r2chan);
+
+	ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Alarm notification %d when in state %s (sigstatus = %d)\n", 
+			alarm, ftdm_channel_state2str(fchan->state), ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP) ? 1 : 0);
+
+	if (alarm && ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
+		ftdm_r2_set_chan_sig_status(fchan, FTDM_SIG_STATE_DOWN);
+	}
 }
 
 static void ftdm_r2_on_os_error(openr2_chan_t *r2chan, int errorcode)
@@ -875,14 +881,18 @@ static void ftdm_r2_on_line_blocked(openr2_chan_t *r2chan)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end blocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
-	ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+		ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
+	}
 }
 
 static void ftdm_r2_on_line_idle(openr2_chan_t *r2chan)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end unblocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
-	ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+		ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+	}
 }
 
 static void ftdm_r2_write_log(openr2_log_level_t level, const char *file, const char *function, int line, const char *message)
@@ -914,7 +924,7 @@ static void ftdm_r2_write_log(openr2_log_level_t level, const char *file, const 
 static void ftdm_r2_on_context_log(openr2_context_t *r2context, const char *file, const char *function, unsigned int line, 
 	openr2_log_level_t level, const char *fmt, va_list ap)
 {
-#define CONTEXT_TAG "Context -"
+#define CONTEXT_TAG "Context - "
 	char logmsg[256];
 	char completemsg[sizeof(logmsg) + sizeof(CONTEXT_TAG) - 1];
 	vsnprintf(logmsg, sizeof(logmsg), fmt, ap);
@@ -1191,6 +1201,14 @@ static int ftdm_r2_io_get_oob_event(openr2_chan_t *r2chan, openr2_oob_event_t *e
 	return 0;
 }
 
+static int ftdm_r2_io_get_alarm_state(openr2_chan_t *r2chan, int *alarm)
+{
+	ftdm_channel_t *fchan = openr2_chan_get_fd(r2chan);
+	ftdm_assert_return(alarm, -1, "Alarm pointer is null\n");
+	*alarm = ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM) ? 1 : 0;
+	return 0;
+}
+
 static openr2_io_interface_t ftdm_r2_io_iface = {
 	/* .open */ ftdm_r2_io_open, /* never called */
 	/* .close */ ftdm_r2_io_close, /* never called */
@@ -1201,7 +1219,8 @@ static openr2_io_interface_t ftdm_r2_io_iface = {
 	/* .read */ ftdm_r2_io_read,
 	/* .setup */ ftdm_r2_io_setup, /* never called */
 	/* .wait */ ftdm_r2_io_wait,
-	/* .get_oob_event */ ftdm_r2_io_get_oob_event /* never called */
+	/* .get_oob_event */ ftdm_r2_io_get_oob_event,
+	/* .get_alarm_state */ ftdm_r2_io_get_alarm_state 
 };
 
 /* resolve a loglevel string, such as "debug,notice,warning",  to an openr2 log level integer */

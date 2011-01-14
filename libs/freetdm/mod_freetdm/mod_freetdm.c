@@ -3763,9 +3763,7 @@ SWITCH_STANDARD_API(ft_function)
 					flags = "call swap";
 				}
 				fchan = ftdm_span_get_channel(SPAN_CONFIG[j].span, 1);
-				if (fchan) {
-					ftdm_channel_get_alarms(fchan, &alarmbits);
-				}
+				ftdm_channel_get_alarms(fchan, &alarmbits);
 				
 				if ((FTDM_SUCCESS == ftdm_span_get_sig_status(SPAN_CONFIG[j].span, &sigstatus))) {
 					stream->write_function(stream,

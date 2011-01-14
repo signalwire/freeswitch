@@ -168,10 +168,17 @@ typedef enum {
 FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 
 /*! \brief Test if a channel is a voice channel */
-#define FTDM_IS_VOICE_CHANNEL(ftdm_chan) ((ftdm_chan)->type != FTDM_CHAN_TYPE_DQ921 && (ftdm_chan)->type != FTDM_CHAN_TYPE_DQ931)
+#define FTDM_IS_VOICE_CHANNEL(fchan) ((fchan)->type != FTDM_CHAN_TYPE_DQ921 && (fchan)->type != FTDM_CHAN_TYPE_DQ931)
 
 /*! \brief Test if a channel is a D-channel */
-#define FTDM_IS_DCHAN(ftdm_chan) ((ftdm_chan)->type == FTDM_CHAN_TYPE_DQ921 || (ftdm_chan)->type == FTDM_CHAN_TYPE_DQ931)
+#define FTDM_IS_DCHAN(ftdm_chan) ((fchan)->type == FTDM_CHAN_TYPE_DQ921 || (fchan)->type == FTDM_CHAN_TYPE_DQ931)
+
+/*! \brief Test if a channel is digital channel */
+#define FTDM_IS_DIGITAL_CHANNEL(fchan) ((fchan)->span->trunk_type == FTDM_TRUNK_E1 || \
+	                                (fchan)->span->trunk_type == FTDM_TRUNK_T1 || \
+	                                (fchan)->span->trunk_type == FTDM_TRUNK_J1 || \
+	                                (fchan)->span->trunk_type == FTDM_TRUNK_BRI || \
+	                                (fchan)->span->trunk_type == FTDM_TRUNK_BRI_PTMP)
 
 /*! \brief Logging function prototype to be used for all FreeTDM logs 
  *  you should use ftdm_global_set_logger to set your own logger

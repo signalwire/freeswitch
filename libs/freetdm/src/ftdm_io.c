@@ -682,42 +682,53 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_get_alarms(ftdm_channel_t *ftdmchan, ftdm
 {
 	ftdm_status_t status = FTDM_FAIL;
 
-	ftdm_assert_return(alarmbits != NULL, FTDM_FAIL, "null argument\n");
+	ftdm_assert_return(alarmbits != NULL, FTDM_EINVAL, "null alarmbits argument\n");
+	ftdm_assert_return(ftdmchan != NULL, FTDM_EINVAL, "null channel argument\n");
+	ftdm_assert_return(ftdmchan->span != NULL, FTDM_EINVAL, "null span\n");
+	ftdm_assert_return(ftdmchan->span->fio != NULL, FTDM_EINVAL, "null io\n");
 
 	*alarmbits = FTDM_ALARM_NONE;
 
+	if (!ftdmchan->span->fio->get_alarms) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "No get_alarms interface for this channel\n");
+		return FTDM_ENOSYS;
+	}
+
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CONFIGURED)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Cannot get alarms from an unconfigured channel\n");
+		return FTDM_EINVAL;
+	}
+
 	ftdm_channel_lock(ftdmchan);
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CONFIGURED)) {
-		if (ftdmchan->span->fio->get_alarms) {
-			if ((status = ftdmchan->span->fio->get_alarms(ftdmchan)) == FTDM_SUCCESS) {
-				*ftdmchan->last_error = '\0';
-				*alarmbits = ftdmchan->alarm_flags;
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RED)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RED/");
-				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_YELLOW)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "YELLOW/");
-				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RAI)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RAI/");
-				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_BLUE)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "BLUE/");
-				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_AIS)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "AIS/");
-				}
-				if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_GENERAL)) {
-					snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "GENERAL");
-				}
-				*(ftdmchan->last_error + strlen(ftdmchan->last_error) - 1) = '\0';
-
-			}
-		} else {
-			status = FTDM_NOTIMPL;
-		}
+	if ((status = ftdmchan->span->fio->get_alarms(ftdmchan)) != FTDM_SUCCESS) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to get alarms from channel\n");
+		goto done;
 	}
+
+	*ftdmchan->last_error = '\0';
+	*alarmbits = ftdmchan->alarm_flags;
+	if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RED)) {
+		snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RED/");
+	}
+	if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_YELLOW)) {
+		snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "YELLOW/");
+	}
+	if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_RAI)) {
+		snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "RAI/");
+	}
+	if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_BLUE)) {
+		snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "BLUE/");
+	}
+	if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_AIS)) {
+		snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "AIS/");
+	}
+	if (ftdm_test_alarm_flag(ftdmchan, FTDM_ALARM_GENERAL)) {
+		snprintf(ftdmchan->last_error + strlen(ftdmchan->last_error), sizeof(ftdmchan->last_error) - strlen(ftdmchan->last_error), "GENERAL");
+	}
+	*(ftdmchan->last_error + strlen(ftdmchan->last_error) - 1) = '\0';
+
+done:
 
 	ftdm_channel_unlock(ftdmchan);	
 
