@@ -2419,6 +2419,17 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						}
+
+					} else if (!strcasecmp(var, "send-presence-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+						} else if (!strcasecmp(val, "first-only")) {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
+						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
@@ -3008,6 +3019,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
+				sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
 				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
 				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
@@ -3089,6 +3101,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
+						}
+					} else if (!strcasecmp(var, "send-presence-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+						} else if (!strcasecmp(val, "first-only")) {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
 						}
 					} else if (!strcasecmp(var, "cid-in-1xx")) {
 						if (switch_true(val)) {
