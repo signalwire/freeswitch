@@ -4040,7 +4040,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	sdp_attribute_t *attr;
 	int first = 0, last = 0;
 	int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
-	int sendonly = 0;
+	int sendonly = 0, recvonly = 0;
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
@@ -4108,7 +4108,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 		if (!strcasecmp(attr->a_name, "sendonly") || !strcasecmp(attr->a_name, "inactive")) {
 			sendonly = 1;
+			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "recvonly");
 		} else if (!strcasecmp(attr->a_name, "recvonly")) {
+			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "sendonly");
+			recvonly = 1;
+
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, 0);
 				tech_pvt->max_missed_hold_packets = 0;
@@ -4125,6 +4129,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			dmaxptime = atoi(attr->a_value);
 		}
 	}
+
+	if (sendonly != 1 && recvonly != 1) {
+		switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", NULL);
+	}
+
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_HOLD) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "sip_disable_hold")) && switch_true(val))) {
