@@ -2529,26 +2529,34 @@ done:
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t sigstatus)
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *fchan, ftdm_signaling_status_t sigstatus)
 {
-	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "Null channel\n");
-	ftdm_assert_return(ftdmchan->span != NULL, FTDM_FAIL, "Null span\n");
+	ftdm_status_t res;
+
+	ftdm_assert_return(fchan != NULL, FTDM_FAIL, "Null channel\n");
+	ftdm_assert_return(fchan->span != NULL, FTDM_FAIL, "Null span\n");
+	ftdm_assert_return(fchan->span->set_channel_sig_status != NULL, FTDM_ENOSYS, "Not implemented\n");
+
+	ftdm_channel_lock(fchan);
+
+	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
+		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status of an alarmed channel\n");
+		res = FTDM_EINVAL;
+		goto done;
+	}
 
 	if (sigstatus == FTDM_SIG_STATE_DOWN) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "The user is not allowed to set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
-		return FTDM_FAIL;
+		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
+		res = FTDM_EINVAL;
+		goto done;
 	}
 
-	if (ftdmchan->span->set_channel_sig_status) {
-		ftdm_status_t res;
-		ftdm_channel_lock(ftdmchan);
-		res = ftdmchan->span->set_channel_sig_status(ftdmchan, sigstatus);
-		ftdm_channel_unlock(ftdmchan);
-		return res;
-	} else {
-		ftdm_log(FTDM_LOG_ERROR, "set_channel_sig_status method not implemented!\n");
-		return FTDM_FAIL;
-	}
+	res = fchan->span->set_channel_sig_status(fchan, sigstatus);
+done:
+
+	ftdm_channel_unlock(fchan);
+
+	return res;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_get_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t *sigstatus)
@@ -5505,8 +5513,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		{
 			if (sigmsg->ev_data.sigstatus.status == FTDM_SIG_STATE_UP) {
 				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SUSPENDED);
 			} else {
 				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+				if (sigmsg->ev_data.sigstatus.status == FTDM_SIG_STATE_SUSPENDED) {
+					ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SUSPENDED);
+				} else {
+					ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SUSPENDED);
+				}
 			}
 		}
 		break;

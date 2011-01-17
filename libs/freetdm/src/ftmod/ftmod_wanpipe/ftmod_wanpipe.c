@@ -1257,6 +1257,7 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 	switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_type) {
 	case WP_API_EVENT_LINK_STATUS:
 		{
+#if 0
 			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
 				*event_id = FTDM_OOB_ALARM_CLEAR;
@@ -1265,6 +1266,11 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 				*event_id = FTDM_OOB_ALARM_TRAP;
 				break;
 			};
+#else
+			/* The WP_API_EVENT_ALARM event should be used to clear alarms */
+			ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe link status event\n", ftdm_oob_event2str(*event_id));
+			*event_id = FTDM_OOB_NOOP;
+#endif
 		}
 		break;
 
@@ -1353,8 +1359,13 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 		break;
 	case WP_API_EVENT_ALARM:
 		{
-			ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Got wanpipe alarms %d\n", tdm_api->wp_tdm_cmd.event.wp_api_event_alarm);
-			*event_id = FTDM_OOB_ALARM_TRAP;
+			if (tdm_api->wp_tdm_cmd.event.wp_api_event_alarm) {
+				ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Got Wanpipe alarms %d\n", tdm_api->wp_tdm_cmd.event.wp_api_event_alarm);
+				*event_id = FTDM_OOB_ALARM_TRAP;
+			} else {
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Wanpipe alarms cleared\n");
+				*event_id = FTDM_OOB_ALARM_CLEAR;
+			}
 		}
 		break;
 	case WP_API_EVENT_POLARITY_REVERSE:
