@@ -377,6 +377,13 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	sofia_glue_check_dtmf_type(tech_pvt);
 
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
+		use_cng = 0;
+		tech_pvt->cng_pt = 0;
+	}
+
 	if (!tech_pvt->payload_space) {
 		int i;
 
@@ -388,6 +395,13 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			tech_pvt->ianacodes[i] = imp->ianacode;
 			
 			if (tech_pvt->ianacodes[i] > 64) {
+				if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95 && tech_pvt->te == tech_pvt->payload_space) {
+					tech_pvt->payload_space++;
+				}
+				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) &&
+					tech_pvt->cng_pt && use_cng  && tech_pvt->cng_pt == tech_pvt->payload_space) {
+					tech_pvt->payload_space++;
+				}
 				tech_pvt->ianacodes[i] = tech_pvt->payload_space++;
 			}
 		}
@@ -399,13 +413,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	if ((val = switch_channel_get_variable(tech_pvt->channel, "verbose_sdp")) && switch_true(val)) {
 		verbose_sdp = 1;
-	}
-
-	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
-		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
-		((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
-		use_cng = 0;
-		tech_pvt->cng_pt = 0;
 	}
 
 	if (!force && !ip && !sr
