@@ -70,6 +70,7 @@ typedef struct ftdm_r2_call_t {
 	int answer_pending:1;
 	int disconnect_rcvd:1;
 	int protocol_error:1;
+	int localsuspend_on_alarm:1;
 	ftdm_size_t dnis_index;
 	ftdm_size_t ani_index;
 	char logname[255];
@@ -499,8 +500,16 @@ static ftdm_status_t ftdm_r2_stop(ftdm_span_t *span)
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_channel_sig_status)
 {
+	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
+	openr2_cas_signal_t rxcas, txcas;
+
+	/* get the current rx and tx cas bits */
+	openr2_chan_get_cas(r2chan, &rxcas, &txcas);
+
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 		*status = FTDM_SIG_STATE_UP;
+	} else if (rxcas ==  OR2_CAS_BLOCK || txcas == OR2_CAS_BLOCK) {
+		*status = FTDM_SIG_STATE_SUSPENDED;
 	} else {
 		*status = FTDM_SIG_STATE_DOWN;
 	}
@@ -561,6 +570,11 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(ftdm_r2_get_span_sig_status)
 	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
 		ftdm_channel_lock(fchan);
+		if (ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
+			*status = FTDM_SIG_STATE_DOWN;
+			ftdm_channel_unlock(fchan);
+			break;
+		}
 		if (ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
 			*status = FTDM_SIG_STATE_UP;
 			ftdm_channel_unlock(fchan);
@@ -825,8 +839,11 @@ static void ftdm_r2_on_hardware_alarm(openr2_chan_t *r2chan, int alarm)
 	ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Alarm notification %d when in state %s (sigstatus = %d)\n", 
 			alarm, ftdm_channel_state2str(fchan->state), ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP) ? 1 : 0);
 
-	if (alarm && ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP)) {
-		ftdm_r2_set_chan_sig_status(fchan, FTDM_SIG_STATE_DOWN);
+	if (alarm) {
+		R2CALL(fchan)->localsuspend_on_alarm = ftdm_test_flag(fchan, FTDM_CHANNEL_SUSPENDED) ? 1 : 0;
+		if (ftdm_test_flag(fchan, FTDM_CHANNEL_SIG_UP) || ftdm_test_flag(fchan, FTDM_CHANNEL_SUSPENDED)) {
+			ftdm_r2_set_chan_sig_status(fchan, FTDM_SIG_STATE_DOWN);
+		}
 	}
 }
 
@@ -881,18 +898,31 @@ static void ftdm_r2_on_line_blocked(openr2_chan_t *r2chan)
 {
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end blocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)
+	    || !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
 		ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
 	}
 }
 
 static void ftdm_r2_on_line_idle(openr2_chan_t *r2chan)
 {
+	openr2_cas_signal_t rxcas, txcas;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
+	
+	/* get the current rx and tx cas bits */
+	openr2_chan_get_cas(r2chan, &rxcas, &txcas);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Far end unblocked in state %s\n", ftdm_channel_state2str(ftdmchan->state));
-	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
+	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP) 
+	     && txcas == OR2_CAS_IDLE) {
+		/* if txcas is not idle, it means we're still blocked as far as the user is concerned, do not send SIGEVENT UP,
+		 * it will be done when the user set the line to IDLE (if the remote is still also IDLE) */
 		ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+	} else if (txcas == OR2_CAS_BLOCK && R2CALL(ftdmchan)->localsuspend_on_alarm) {
+		/* the user requested to block, we do not notify about state up until the user set the bits to IDLE, however
+		 * if we're just getting back from alarmed condition, we notify about suspended again */
+		ftdm_r2_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
 	}
+	R2CALL(ftdmchan)->localsuspend_on_alarm = 0;
 }
 
 static void ftdm_r2_write_log(openr2_log_level_t level, const char *file, const char *function, int line, const char *message)
@@ -2018,9 +2048,6 @@ static void __inline__ block_channel(ftdm_channel_t *fchan, ftdm_stream_handle_t
 	if (fchan->state != FTDM_CHANNEL_STATE_DOWN) {
 		stream->write_function(stream, "cannot block channel %d:%d because has a call in progress\n", 
 				fchan->span_id, fchan->chan_id);
-	} else if (ftdm_test_flag(fchan, FTDM_CHANNEL_SUSPENDED)) {
-		stream->write_function(stream, "cannot block channel %d:%d because is already blocked\n", 
-				fchan->span_id, fchan->chan_id);
 	} else {
 		if (!openr2_chan_set_blocked(r2chan)) {
 			ftdm_set_flag(fchan, FTDM_CHANNEL_SUSPENDED);
@@ -2038,17 +2065,12 @@ static void __inline__ unblock_channel(ftdm_channel_t *fchan, ftdm_stream_handle
 {
 	openr2_chan_t *r2chan = R2CALL(fchan)->r2chan;
 	ftdm_mutex_lock(fchan->mutex);
-	if (ftdm_test_flag(fchan, FTDM_CHANNEL_SUSPENDED)) {
-		if (!openr2_chan_set_idle(r2chan)) {
-			ftdm_clear_flag(fchan, FTDM_CHANNEL_SUSPENDED);
-			stream->write_function(stream, "unblocked channel %d:%d\n", 
-					fchan->span_id, fchan->chan_id);
-		} else {
-			stream->write_function(stream, "failed to unblock channel %d:%d\n", 
-					fchan->span_id, fchan->chan_id);
-		}
+	if (!openr2_chan_set_idle(r2chan)) {
+		ftdm_clear_flag(fchan, FTDM_CHANNEL_SUSPENDED);
+		stream->write_function(stream, "unblocked channel %d:%d\n", 
+				fchan->span_id, fchan->chan_id);
 	} else {
-		stream->write_function(stream, "cannot unblock channel %d:%d because is not blocked\n", 
+		stream->write_function(stream, "failed to unblock channel %d:%d\n", 
 				fchan->span_id, fchan->chan_id);
 	}
 	ftdm_mutex_unlock(fchan->mutex);

@@ -1064,6 +1064,9 @@ FT_DECLARE(ftdm_codec_t) ftdm_channel_get_codec(const ftdm_channel_t *ftdmchan);
 /*! 
  * \brief Get the last error string for the channel
  *
+ * \deprecated This API will disappear in the future and not every 
+ *             FreeTDM API set the last error value
+ *
  * \param ftdmchan The channel to get the error from
  *
  * \retval The error string (not thread-safe, the string is per channel, not per thread)
@@ -1135,6 +1138,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_find(uint32_t id, ftdm_span_t **span);
 
 /*! 
  * \brief Get the last error string for the given span
+ *
+ * \deprecated This API will disappear in the future and not every 
+ *             FreeTDM API set the last error value
  *
  * \param span The span to get the last error from
  *

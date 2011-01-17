@@ -5,5 +5,9 @@
   then ftdm_event_t would be renamed to ftdm_oob_event_t and the enum_id renamed to type, then ftdm_span_next_event()
   will only return OOB events
 
-- query span hw status (connected/disconnected) on startup 
+- Deprecate last_error members. 
+  It requires a lot of discipline to set the last_error string for every failure.
+  It does not add much value to the user either, most of the errors are criptic and
+  cannot be shown to end users, we already provide extensive logging for problem
+  troubleshooting.
 
