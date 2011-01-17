@@ -3627,7 +3627,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
 		"sofia profile <profile_name> [[start|stop|restart|rescan]|"
-		"flush_inbound_reg [<call_id>] [reboot]|"
+		"flush_inbound_reg [<call_id>|<[user]@domain>] [reboot]|"
 		"[register|unregister] [<gateway name>|all]|"
 		"killgw <gateway name>|"
 		"[stun-auto-disable|stun-enabled] [true|false]]|"
