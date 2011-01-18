@@ -171,7 +171,7 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 #define FTDM_IS_VOICE_CHANNEL(fchan) ((fchan)->type != FTDM_CHAN_TYPE_DQ921 && (fchan)->type != FTDM_CHAN_TYPE_DQ931)
 
 /*! \brief Test if a channel is a D-channel */
-#define FTDM_IS_DCHAN(ftdm_chan) ((fchan)->type == FTDM_CHAN_TYPE_DQ921 || (fchan)->type == FTDM_CHAN_TYPE_DQ931)
+#define FTDM_IS_DCHAN(fchan) ((fchan)->type == FTDM_CHAN_TYPE_DQ921 || (fchan)->type == FTDM_CHAN_TYPE_DQ931)
 
 /*! \brief Test if a channel is digital channel */
 #define FTDM_IS_DIGITAL_CHANNEL(fchan) ((fchan)->span->trunk_type == FTDM_TRUNK_E1 || \
