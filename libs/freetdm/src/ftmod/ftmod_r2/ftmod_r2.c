@@ -647,9 +647,6 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 		return;
 	}
 
-	/* mark the channel in use (so no outgoing calls can be placed here) */
-	ftdm_channel_use(ftdmchan);	
-
 	memset(ftdmchan->caller_data.dnis.digits, 0, sizeof(ftdmchan->caller_data.collected));
 	memset(ftdmchan->caller_data.ani.digits, 0, sizeof(ftdmchan->caller_data.collected));
 
