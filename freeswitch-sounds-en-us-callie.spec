@@ -46,10 +46,7 @@ BuildArch: noarch
 BuildRequires: sox
 Requires: freeswitch
 Requires: freeswitch-sounds-en-us-callie-48000
-
-%if %{is_rhel5}0
-%BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-%endif
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
 FreeSWITCH 48kHz en-us Callie prompts plus, during the installation,
@@ -111,9 +108,24 @@ FreeSWITCH Callie prompts package that pulls in the 8KHz, 16KHz,
 
 %prep
 %setup -b0 -q -n en
+mkdir -p ./usr/callie
+# create buildsounds-callie.sh script in working dir
+echo  '#!/bin/bash
 
-# copy buildsounds-callie.sh script to working dir
-%{__install} -m 0750 build/buildsounds-callie.sh ./us/callie
+sounds_location=$1
+for rate in 32000 16000 8000
+do 
+    for i in ascii base256 conference currency digits directory ivr misc phonetic-ascii time voicemail zrtp
+    do
+	mkdir -p $sounds_location/$i/$rate
+	for f in `find $sounds_location/$i/48000 -name \*.wav`
+	do
+	    echo "generating" $sounds_location/$i/$rate/`basename $f`
+	    sox $f -r $rate $sounds_location/$i/$rate/`basename $f`
+	done
+    done
+done' > ./us/callie/buildsounds-callie.sh
+%{__chmod} 0750 ./us/callie/buildsounds-callie.sh
 
 ##############################################################################
 # Build
@@ -179,6 +191,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/conference/8000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/currency/8000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/digits/8000
+%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/en/us/callie/directory/8000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/ivr/8000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/misc/8000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/phonetic-ascii/8000
@@ -190,6 +203,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/conference/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/currency/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/digits/8000/*.wav
+%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/en/us/callie/directory/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/ivr/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/misc/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/phonetic-ascii/8000/*.wav
@@ -204,6 +218,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/conference/16000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/currency/16000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/digits/16000
+%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/en/us/callie/directory/16000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/ivr/16000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/misc/16000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/phonetic-ascii/16000
@@ -215,6 +230,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/conference/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/currency/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/digits/16000/*.wav
+%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/en/us/callie/directory/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/ivr/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/misc/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/phonetic-ascii/16000/*.wav
@@ -229,6 +245,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/conference/32000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/currency/32000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/digits/32000
+%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/en/us/callie/directory/32000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/ivr/32000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/misc/32000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/phonetic-ascii/32000
@@ -240,6 +257,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/conference/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/currency/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/digits/32000/*.wav
+%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/en/us/callie/directory/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/ivr/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/misc/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/phonetic-ascii/32000/*.wav
@@ -254,6 +272,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/conference/48000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/currency/48000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/digits/48000
+%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/en/us/callie/directory/48000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/ivr/48000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/misc/48000
 %attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/en/us/callie/phonetic-ascii/48000
@@ -265,6 +284,7 @@ cd %{_prefix}/sounds/en/us/callie
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/conference/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/currency/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/digits/48000/*.wav
+%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/en/us/callie/directory/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/ivr/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/misc/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{_prefix}/sounds/en/us/callie/phonetic-ascii/48000/*.wav
