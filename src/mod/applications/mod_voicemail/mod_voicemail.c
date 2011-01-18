@@ -311,6 +311,7 @@ static void destroy_profile(const char *profile_name, switch_bool_t block)
 
 /* Static buffer, 2 bytes */
 static switch_xml_config_string_options_t config_dtmf = { NULL, 2, "[0-9#\\*]" };
+static switch_xml_config_string_options_t config_dtmf_optional = { NULL, 2, "[0-9#\\*]?" };
 static switch_xml_config_string_options_t config_login_keys = { NULL, 16, "[0-9#\\*]*" };
 static switch_xml_config_string_options_t config_file_ext = { NULL, 10, NULL };
 static switch_xml_config_int_options_t config_int_0_10000 = { SWITCH_TRUE, 0, SWITCH_TRUE, 10000 };
@@ -520,8 +521,8 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "urgent-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->urgent_key, "*", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "operator-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-						   &profile->operator_key, "", &config_dtmf, NULL, NULL);
-	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "vmain-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->vmain_key, "", &config_dtmf, NULL, NULL);
+						   &profile->operator_key, "", &config_dtmf_optional, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "vmain-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->vmain_key, "", &config_dtmf_optional, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "vmain-extension", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->vmain_ext, "", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "forward-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,

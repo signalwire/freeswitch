@@ -53,7 +53,7 @@ Vendor:       	http://www.freeswitch.org/
 #					Source files and where to get them
 #
 ######################################################################################################################
-Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
+Source0:    http://files.freeswitch.org/%{name}-%{version}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/celt-0.7.1.tar.gz
 Source2:	http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
@@ -89,8 +89,13 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel
 BuildRequires: perl
+%if 0%{?fedora_version} >= 8
+BuildRequires: perl-ExtUtils-Embed
+%endif
 BuildRequires: pkgconfig
+%if %{_vendor} == redhat && 0%{?fedora} <= 6
 BuildRequires: termcap
+%endif
 BuildRequires: unixODBC-devel
 BuildRequires: gdbm-devel
 BuildRequires: db4-devel
@@ -893,7 +898,7 @@ fi
 %files python
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_python*.so*
-%attr(0644, root, bin) /usr/lib/python2.4/site-packages/freeswitch.py*
+%attr(0644, root, bin) /usr/lib/python*/site-packages/freeswitch.py*
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/python.conf.xml
 
@@ -951,6 +956,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jan 18 2011 - michal.bielicki@seventhsignal.de
+- Fedora adjustments
 * Fri Oct 15 2010 - michal.bielicki@seventhsignal.de
 - added mod_curl
 * Sat Oct 09 2010 - michal.bielicki@seventhsignal.de
