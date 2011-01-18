@@ -89,7 +89,7 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel
 BuildRequires: perl
-% 0%{?fedora_version} >= 8
+%if 0%{?fedora_version} >= 8
 BuildRequires: perl-ExtUtils-Embed
 %endif
 BuildRequires: pkgconfig
