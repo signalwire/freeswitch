@@ -2417,8 +2417,6 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
 	ftdm_assert_return(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND), FTDM_FAIL, "Call place, but outbound flag not set\n");
 
-	ftdm_set_echocancel_call_begin(ftdmchan);
-
 	if (!ftdmchan->span->outgoing_call) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "outgoing_call method not implemented in this span!\n");
 		status = FTDM_ENOSYS;
@@ -5545,6 +5543,13 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			* is needed at all?
 			* */
 			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+		}
+		break;
+
+	case FTDM_SIGEVENT_PROGRESS_MEDIA:
+		{
+			ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Enabling echo cancellation on progress media\n");
+			ftdm_set_echocancel_call_begin(sigmsg->channel);
 		}
 		break;
 
