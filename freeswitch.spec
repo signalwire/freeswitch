@@ -89,11 +89,13 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel
 BuildRequires: perl
-%if %{_vendor} == redhat && 0%{?fedora} <= 8
+% 0%{?fedora_version} >= 8
 BuildRequires: perl-ExtUtils-Embed
 %endif
 BuildRequires: pkgconfig
+%if %{_vendor} == redhat && 0%{?fedora} <= 6
 BuildRequires: termcap
+%endif
 BuildRequires: unixODBC-devel
 BuildRequires: gdbm-devel
 BuildRequires: db4-devel
@@ -954,6 +956,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jan 18 2011 - michal.bielicki@seventhsignal.de
+- Fedora adjustments
 * Fri Oct 15 2010 - michal.bielicki@seventhsignal.de
 - added mod_curl
 * Sat Oct 09 2010 - michal.bielicki@seventhsignal.de
