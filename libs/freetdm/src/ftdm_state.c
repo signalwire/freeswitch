@@ -70,13 +70,13 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 
 	if (state == FTDM_CHANNEL_STATE_PROGRESS) {
 		ftdm_set_flag(fchan, FTDM_CHANNEL_PROGRESS);
-	} else if (state == FTDM_CHANNEL_STATE_UP) {
-		ftdm_set_flag(fchan, FTDM_CHANNEL_PROGRESS);
-		ftdm_set_flag(fchan, FTDM_CHANNEL_MEDIA);	
-		ftdm_set_flag(fchan, FTDM_CHANNEL_ANSWERED);	
 	} else if (state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 		ftdm_set_flag(fchan, FTDM_CHANNEL_PROGRESS);	
-		ftdm_set_flag(fchan, FTDM_CHANNEL_MEDIA);	
+		ftdm_test_and_set_media(fchan);
+	} else if (state == FTDM_CHANNEL_STATE_UP) {
+		ftdm_set_flag(fchan, FTDM_CHANNEL_PROGRESS);
+		ftdm_set_flag(fchan, FTDM_CHANNEL_ANSWERED);	
+		ftdm_test_and_set_media(fchan);
 	} else if (state == FTDM_CHANNEL_STATE_DIALING) {
 		ftdm_sigmsg_t msg;
 		memset(&msg, 0, sizeof(msg));

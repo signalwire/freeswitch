@@ -230,6 +230,8 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 		ftdm_channel_t *chan;
 		ftdm_socket_t sockfd = FTDM_INVALID_SOCKET;
 		const char *dtmf = "none";
+		const char *hwec_str = "none";
+		const char *hwec_idle = "none";
 		if (!strncasecmp(span->name, "smg_prid_nfas", 8) && span->trunk_type == FTDM_TRUNK_T1 && x == 24) {
 #ifdef LIBSANGOMA_VERSION
 			sockfd = __tdmv_api_open_span_chan(spanno, x);
@@ -271,6 +273,8 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 			|| type == FTDM_CHAN_TYPE_B) {
 				int err;
 				
+				hwec_str = "unavailable";
+				hwec_idle = "enabled";
 				dtmf = "software";
 
 				err = sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
@@ -289,6 +293,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 
 				err = sangoma_tdm_get_hw_ec(chan->sockfd, &tdm_api);
 				if (err > 0) {
+					hwec_str = "available";
 					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_HWEC);
 				}
 				
@@ -296,6 +301,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				err = sangoma_tdm_get_hwec_persist_status(chan->sockfd, &tdm_api);
 				if (err == 0) {
 					ftdm_channel_set_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE);
+					hwec_idle = "disabled";
 				}
 #else
 				if (span->trunk_type ==  FTDM_TRUNK_BRI || span->trunk_type ==  FTDM_TRUNK_BRI_PTMP) {
@@ -365,7 +371,8 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				ftdm_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
 			}
 			configured++;
-			ftdm_log_chan(chan, FTDM_LOG_INFO, "Configured wanpipe device fd:%d DTMF: %s\n", sockfd, dtmf);
+			ftdm_log_chan(chan, FTDM_LOG_INFO, "Configured wanpipe device FD: %d, DTMF: %s, HWEC: %s, HWEC_IDLE: %s\n", 
+					sockfd, dtmf, hwec_str, hwec_idle);
 
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "ftdm_span_add_channel failed for wanpipe span %d channel %d\n", spanno, x);
