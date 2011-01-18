@@ -1257,20 +1257,18 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 	switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_type) {
 	case WP_API_EVENT_LINK_STATUS:
 		{
-#if 0
 			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
-				*event_id = FTDM_OOB_ALARM_CLEAR;
+				/* *event_id = FTDM_OOB_ALARM_CLEAR; */
+				ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe link connected event\n");
 				break;
 			default:
-				*event_id = FTDM_OOB_ALARM_TRAP;
+				/* *event_id = FTDM_OOB_ALARM_TRAP; */
+				ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe link disconnected event\n");
 				break;
 			};
-#else
 			/* The WP_API_EVENT_ALARM event should be used to clear alarms */
-			ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe link status event\n", ftdm_oob_event2str(*event_id));
 			*event_id = FTDM_OOB_NOOP;
-#endif
 		}
 		break;
 
