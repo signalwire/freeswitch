@@ -606,16 +606,16 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 	sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
 						 ",user_agent,server_user,server_host,profile_name,network_ip"
 						 ",%d from sip_registrations where call_id='%q' %s", reboot, call_id, sqlextra);
-	switch_safe_free(sqlextra);
 
 	switch_mutex_lock(profile->ireg_mutex);
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
 	switch_mutex_unlock(profile->ireg_mutex);
 	switch_safe_free(sql);
 
-	sql = switch_mprintf("delete from sip_registrations where call_id='%q' or (sip_user='%q' and sip_host='%q')", call_id, user, host);
+	sql = switch_mprintf("delete from sip_registrations where call_id='%q' %s", call_id, sqlextra);
 	sofia_glue_execute_sql_now(profile, &sql, SWITCH_FALSE);
 
+	switch_safe_free(sqlextra);
 	switch_safe_free(sql);
 	switch_safe_free(dup);
 

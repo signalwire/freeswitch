@@ -70,7 +70,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 			port = tech_pvt->proxy_sdp_audio_port;
 		}
 	}
-
+	
 	if (!port) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO PORT!\n", switch_channel_get_name(tech_pvt->channel));
 		return;
@@ -377,6 +377,13 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	sofia_glue_check_dtmf_type(tech_pvt);
 
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
+		((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
+		use_cng = 0;
+		tech_pvt->cng_pt = 0;
+	}
+
 	if (!tech_pvt->payload_space) {
 		int i;
 
@@ -388,6 +395,13 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			tech_pvt->ianacodes[i] = imp->ianacode;
 			
 			if (tech_pvt->ianacodes[i] > 64) {
+				if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95 && tech_pvt->te == tech_pvt->payload_space) {
+					tech_pvt->payload_space++;
+				}
+				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) &&
+					tech_pvt->cng_pt && use_cng  && tech_pvt->cng_pt == tech_pvt->payload_space) {
+					tech_pvt->payload_space++;
+				}
 				tech_pvt->ianacodes[i] = tech_pvt->payload_space++;
 			}
 		}
@@ -399,13 +413,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	if ((val = switch_channel_get_variable(tech_pvt->channel, "verbose_sdp")) && switch_true(val)) {
 		verbose_sdp = 1;
-	}
-
-	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
-		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
-		((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
-		use_cng = 0;
-		tech_pvt->cng_pt = 0;
 	}
 
 	if (!force && !ip && !sr
@@ -4040,7 +4047,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	sdp_attribute_t *attr;
 	int first = 0, last = 0;
 	int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
-	int sendonly = 0;
+	int sendonly = 0, recvonly = 0;
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
@@ -4108,6 +4115,19 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 		if (!strcasecmp(attr->a_name, "sendonly") || !strcasecmp(attr->a_name, "inactive")) {
 			sendonly = 1;
+			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "recvonly");
+		} else if (!strcasecmp(attr->a_name, "recvonly")) {
+			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "sendonly");
+			recvonly = 1;
+
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, 0);
+				tech_pvt->max_missed_hold_packets = 0;
+				tech_pvt->max_missed_packets = 0;
+			} else {
+				switch_channel_set_variable(tech_pvt->channel, "rtp_timeout_sec", "0");
+				switch_channel_set_variable(tech_pvt->channel, "rtp_hold_timeout_sec", "0");
+			}
 		} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
 			sendonly = 0;
 		} else if (!strcasecmp(attr->a_name, "ptime")) {
@@ -4116,6 +4136,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			dmaxptime = atoi(attr->a_value);
 		}
 	}
+
+	if (sendonly != 1 && recvonly != 1) {
+		switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", NULL);
+	}
+
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_HOLD) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "sip_disable_hold")) && switch_true(val))) {
