@@ -430,7 +430,7 @@ typedef enum {
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
-		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "COLLISION", "FACILITY", \
+		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "FACILITY", \
 		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "INVALID"
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
