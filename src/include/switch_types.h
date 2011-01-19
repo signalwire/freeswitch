@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -156,6 +156,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
+#define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
 #define SWITCH_BRIDGE_EXPORT_VARS_VARIABLE "bridge_export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
@@ -631,9 +632,13 @@ typedef enum {
 	  This flag will never send any. Sheesh....
 	 */
 	
+	RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6)
 	
-
-
+	/*
+	  Guess Who? ... Yep, Sonus (and who know's who else) likes to interweave DTMF with the audio stream making it take
+	  2X as long as it should and sending an incorrect duration making the DTMF very delayed.
+	  This flag will treat every dtmf as if it were 50ms and queue it on recipt of the leading packet rather than at the end.
+	 */
 
 } switch_rtp_bug_flag_t;
 
@@ -854,7 +859,7 @@ typedef enum {
 	SWITCH_STATUS_FALSE,
 	SWITCH_STATUS_TIMEOUT,
 	SWITCH_STATUS_RESTART,
-	SWITCH_STATUS_TERM,
+	SWITCH_STATUS_INTR,
 	SWITCH_STATUS_NOTIMPL,
 	SWITCH_STATUS_MEMERR,
 	SWITCH_STATUS_NOOP,
@@ -871,6 +876,7 @@ typedef enum {
 	SWITCH_STATUS_TOO_SMALL,
 	SWITCH_STATUS_FOUND,
 	SWITCH_STATUS_CONTINUE,
+	SWITCH_STATUS_TERM,
 	SWITCH_STATUS_NOT_INITALIZED
 } switch_status_t;
 
@@ -1035,6 +1041,8 @@ typedef enum {
 	CC_MEDIA_ACK = 1,
 	CC_BYPASS_MEDIA,
 	CC_PROXY_MEDIA,
+	CC_JITTERBUFFER,
+	CC_FS_RTP,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CC_FLAG_MAX
 } switch_channel_cap_t;
@@ -1813,6 +1821,8 @@ typedef struct switch_loadable_module_function_table {
 } switch_loadable_module_function_table_t;
 
 typedef int (*switch_modulename_callback_func_t) (void *user_data, const char *module_name);
+
+typedef struct switch_slin_data switch_slin_data_t;
 
 #define SWITCH_MODULE_DEFINITION_EX(name, load, shutdown, runtime, flags)					\
 static const char modname[] =  #name ;														\

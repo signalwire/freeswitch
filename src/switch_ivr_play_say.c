@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -2394,7 +2394,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			if (moh_b) {
 				moh = moh_b;
 			} else {
-				moh = switch_channel_get_variable(other_channel, "hold_music");
+				moh = switch_channel_get_hold_music(other_channel);
 			}
 
 			if (!zstr(moh) && strcasecmp(moh, "silence") && !switch_channel_test_flag(other_channel, CF_BROADCAST)) {
@@ -2405,7 +2405,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			if (moh_a) {
 				moh = moh_a;
 			} else {
-				moh = switch_channel_get_variable(channel, "hold_music");
+				moh = switch_channel_get_hold_music(channel);
 			}
 
 			if (!zstr(moh) && strcasecmp(moh, "silence")) {

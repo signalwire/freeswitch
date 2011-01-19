@@ -177,6 +177,12 @@ struct ftdm_state_map {
 };
 typedef struct ftdm_state_map ftdm_state_map_t;
 
+/*!\brief Cancel the state processing for a channel (the channel must be locked when calling this function)
+ * \note Only the core should use this function
+ */ 
+FT_DECLARE(ftdm_status_t) ftdm_channel_cancel_state(const char *file, const char *func, int line,
+		ftdm_channel_t *ftdmchan);
+
 /*!\brief Set the state for a channel (the channel must be locked when calling this function)
  * \note Signaling modules should use ftdm_set_state macro instead
  * \note If this function is called with the wait parameter set to a non-zero value, the recursivity

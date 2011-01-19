@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -397,12 +397,12 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 					const char *moh_a = NULL, *moh_b = NULL;
 
 					if (!(moh_b = switch_channel_get_variable(bchan, "fifo_music"))) {
-						moh_b = switch_channel_get_variable(bchan, "hold_music");
+						moh_b = switch_channel_get_hold_music(bchan);
 					}
 
 					if (!(moh_a = switch_channel_get_variable(channel, "fifo_hold_music"))) {
 						if (!(moh_a = switch_channel_get_variable(channel, "fifo_music"))) {
-							moh_a = switch_channel_get_variable(channel, "hold_music");
+							moh_a = switch_channel_get_hold_music(channel);
 						}
 					}
 
@@ -582,6 +582,8 @@ static int check_caller_outbound_call(const char *key)
 {
 	int x = 0;
 
+	if (!key) return x;
+
 	switch_mutex_lock(globals.caller_orig_mutex);
 	x = !!switch_core_hash_find(globals.caller_orig_hash, key);
 	switch_mutex_unlock(globals.caller_orig_mutex);
@@ -592,6 +594,8 @@ static int check_caller_outbound_call(const char *key)
 
 static void add_caller_outbound_call(const char *key, switch_call_cause_t *cancel_cause)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.caller_orig_mutex);
 	switch_core_hash_insert(globals.caller_orig_hash, key, cancel_cause);
 	switch_mutex_unlock(globals.caller_orig_mutex);
@@ -599,6 +603,8 @@ static void add_caller_outbound_call(const char *key, switch_call_cause_t *cance
 
 static void del_caller_outbound_call(const char *key)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.caller_orig_mutex);
 	switch_core_hash_delete(globals.caller_orig_hash, key);
 	switch_mutex_unlock(globals.caller_orig_mutex);
@@ -607,6 +613,8 @@ static void del_caller_outbound_call(const char *key)
 static void cancel_caller_outbound_call(const char *key, switch_call_cause_t cause)
 {
 	switch_call_cause_t *cancel_cause = NULL;
+
+	if (!key) return;
 
 	switch_mutex_lock(globals.caller_orig_mutex);
     if ((cancel_cause = (switch_call_cause_t *) switch_core_hash_find(globals.caller_orig_hash, key))) {
@@ -624,6 +632,8 @@ static int check_bridge_call(const char *key)
 {
 	int x = 0;
 
+	if (!key) return x;
+
 	switch_mutex_lock(globals.bridge_mutex);
 	x = !!switch_core_hash_find(globals.bridge_hash, key);
 	switch_mutex_unlock(globals.bridge_mutex);
@@ -634,6 +644,8 @@ static int check_bridge_call(const char *key)
 
 static void add_bridge_call(const char *key)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.bridge_mutex);
 	switch_core_hash_insert(globals.bridge_hash, key, (void *)&marker);
 	switch_mutex_unlock(globals.bridge_mutex);
@@ -651,6 +663,8 @@ static int check_consumer_outbound_call(const char *key)
 {
 	int x = 0;
 
+	if (!key) return x;
+
 	switch_mutex_lock(globals.consumer_orig_mutex);
 	x = !!switch_core_hash_find(globals.consumer_orig_hash, key);
 	switch_mutex_unlock(globals.consumer_orig_mutex);
@@ -660,6 +674,8 @@ static int check_consumer_outbound_call(const char *key)
 
 static void add_consumer_outbound_call(const char *key, switch_call_cause_t *cancel_cause)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.consumer_orig_mutex);
 	switch_core_hash_insert(globals.consumer_orig_hash, key, cancel_cause);
 	switch_mutex_unlock(globals.consumer_orig_mutex);
@@ -667,6 +683,8 @@ static void add_consumer_outbound_call(const char *key, switch_call_cause_t *can
 
 static void del_consumer_outbound_call(const char *key)
 {
+	if (!key) return;
+
 	switch_mutex_lock(globals.consumer_orig_mutex);
 	switch_core_hash_delete(globals.consumer_orig_hash, key);
 	switch_mutex_unlock(globals.consumer_orig_mutex);
@@ -675,6 +693,8 @@ static void del_consumer_outbound_call(const char *key)
 static void cancel_consumer_outbound_call(const char *key, switch_call_cause_t cause)
 {
 	switch_call_cause_t *cancel_cause = NULL;
+
+	if (!key) return;
 
 	switch_mutex_lock(globals.consumer_orig_mutex);
     if ((cancel_cause = (switch_call_cause_t *) switch_core_hash_find(globals.consumer_orig_hash, key))) {
@@ -953,9 +973,14 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	consumer_channel = switch_core_session_get_channel(consumer_session);
 	outbound_id = switch_channel_get_variable(consumer_channel, "fifo_outbound_uuid");
 
+	if (!outbound_id) return SWITCH_STATUS_SUCCESS;
+
 	switch (msg->message_id) {
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		if (msg->numeric_arg == 42) {
+			goto end;
+		}
 		if ((caller_session = switch_core_session_locate(msg->string_arg))) {
 			caller_channel = switch_core_session_get_channel(caller_session);
 			if (msg->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE) {
@@ -1008,7 +1033,6 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 									  switch_channel_get_variable(caller_channel, "fifo_import_prefix"));
 			}
 
-				
 			ced_name = switch_channel_get_variable(consumer_channel, "callee_id_name");
 			ced_number = switch_channel_get_variable(consumer_channel, "callee_id_number");
 
@@ -1949,6 +1973,8 @@ static uint32_t fifo_add_outbound(const char *node_name, const char *url, uint32
 		priority = MAX_PRI - 1;
 	}
 
+	if (!node_name) return 0;
+
 	switch_mutex_lock(globals.mutex);
 
 	if (!(node = switch_core_hash_find(globals.fifo_hash, node_name))) {
@@ -2079,17 +2105,18 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 		return;
 	}
 
-	switch_core_event_hook_add_receive_message(session, messagehook);
-	switch_core_event_hook_add_state_run(session, hanguphook);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s tracking call on uuid %s!\n", switch_channel_get_name(channel), data);
+	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
+	switch_channel_set_variable(channel, "fifo_track_call", "true");
 
 	add_bridge_call(data);
 
 	switch_channel_set_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_TRACKING);
 
-	switch_channel_set_variable(channel, "fifo_outbound_uuid", data);
-	switch_channel_set_variable(channel, "fifo_track_call", "true");
+	switch_core_event_hook_add_receive_message(session, messagehook);
+	switch_core_event_hook_add_state_run(session, hanguphook);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s tracking call on uuid %s!\n", switch_channel_get_name(channel), data);
+
 	
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		col1 = "manual_calls_in_count";
@@ -4166,6 +4193,8 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 	char *sql, *name_dup, *p;
 	fifo_node_t *node = NULL;
 
+	if (!fifo_name) return;
+
 	if (switch_stristr("fifo_outbound_uuid=", originate_string)) {
 		extract_fifo_outbound_uuid(originate_string, digest, sizeof(digest));
 	} else {
@@ -4212,6 +4241,9 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	char outbound_count[80] = "";
 	callback_t cbt = { 0 };
 	fifo_node_t *node = NULL;
+
+	if (!fifo_name) return;
+
 
 	if (switch_stristr("fifo_outbound_uuid=", originate_string)) {
 		extract_fifo_outbound_uuid(originate_string, digest, sizeof(digest));

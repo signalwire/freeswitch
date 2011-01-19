@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -54,7 +54,7 @@ static switch_status_t switch_celt_init(switch_codec_t *codec, switch_codec_flag
 	}
 
 	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, codec->implementation->samples_per_packet, NULL);
-	celt_mode_info(context->mode_object, CELT_GET_FRAME_SIZE, &context->frame_size);
+
 	context->bytes_per_packet = (codec->implementation->bits_per_second * context->frame_size / codec->implementation->actual_samples_per_second + 4) / 8;
 
 	/*
@@ -111,7 +111,7 @@ static switch_status_t switch_celt_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (void *) decoded_data, NULL,
+	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (void *) decoded_data, codec->implementation->samples_per_packet,
 											   (unsigned char *) encoded_data, context->bytes_per_packet);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -130,7 +130,7 @@ static switch_status_t switch_celt_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (celt_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data)) {
+	if (celt_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, codec->implementation->samples_per_packet)) {
 		return SWITCH_STATUS_GENERR;
 	}
 

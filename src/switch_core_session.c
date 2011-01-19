@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -57,6 +57,39 @@ SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *sess
 {
 	session->soft_lock = 0;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_session_t *session, switch_slin_data_t *data)
+													
+{
+	switch_codec_implementation_t read_impl = { 0 };
+	int interval;
+
+	switch_core_session_get_read_impl(session, &read_impl);
+	interval = read_impl.microseconds_per_packet / 1000;
+	data->session = session;
+
+	if (switch_core_codec_init(&data->codec,
+							   "L16",
+							   NULL,
+							   read_impl.actual_samples_per_second,
+							   interval,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+						  SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %dms\n", read_impl.actual_samples_per_second, interval);
+
+		memset(&data->write_frame, 0, sizeof(data->write_frame));
+
+		data->write_frame.codec = &data->codec;
+		data->write_frame.data = data->frame_data;
+		data->write_frame.buflen = sizeof(data->frame_data);
+		data->write_frame.datalen = 0;
+		switch_core_session_set_read_codec(session, &data->codec);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)

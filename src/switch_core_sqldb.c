@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -570,6 +570,24 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 
 	return status;
 
+}
+
+
+SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
+{
+	switch (dbh->type) {
+	case SCDB_TYPE_CORE_DB:
+		{
+			return switch_core_db_changes(dbh->native_handle.core_db_dbh);
+		}
+		break;
+	case SCDB_TYPE_ODBC:
+		{
+			return switch_odbc_handle_affected_rows(dbh->native_handle.odbc_dbh);
+		}
+		break;
+	}
+	return 0;
 }
 
 

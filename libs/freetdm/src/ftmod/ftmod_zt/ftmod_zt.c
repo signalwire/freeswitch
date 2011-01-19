@@ -1064,6 +1064,12 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 			fchan->rx_cas_bits = bits;
 		}
 		break;
+	case ZT_EVENT_NONE:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "No event\n");
+			*event_id = FTDM_OOB_NOOP;
+		}
+		break;
 	default:
 		{
 			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
@@ -1125,26 +1131,26 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 		ftdm_channel_t *fchan = span->channels[i];
 		if (ftdm_test_flag(fchan, FTDM_CHANNEL_EVENT)) {
 			ftdm_clear_flag(fchan, FTDM_CHANNEL_EVENT);
-		}
-		if (ioctl(fchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
-			snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
-			return FTDM_FAIL;
-		}
+			if (ioctl(fchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
+				return FTDM_FAIL;
+			}
 
-		ftdm_channel_lock(fchan);
-		if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
-			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
+			ftdm_channel_lock(fchan);
+			if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Failed to process event from channel\n");
+				ftdm_channel_unlock(fchan);
+				return FTDM_FAIL;
+			}
 			ftdm_channel_unlock(fchan);
-			return FTDM_FAIL;
-		}
-		ftdm_channel_unlock(fchan);
 
-		fchan->last_event_time = 0;
-		span->event_header.e_type = FTDM_EVENT_OOB;
-		span->event_header.enum_id = event_id;
-		span->event_header.channel = fchan;
-		*event = &span->event_header;
-		return FTDM_SUCCESS;
+			fchan->last_event_time = 0;
+			span->event_header.e_type = FTDM_EVENT_OOB;
+			span->event_header.enum_id = event_id;
+			span->event_header.channel = fchan;
+			*event = &span->event_header;
+			return FTDM_SUCCESS;
+		}
 	}
 
 	return FTDM_FAIL;

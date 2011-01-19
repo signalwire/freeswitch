@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -263,10 +263,14 @@ SWITCH_HASH_DELETE_FUNC(limit_hash_remote_cleanup_callback)
 SWITCH_STANDARD_SCHED_FUNC(limit_hash_cleanup_callback)
 {
 	switch_thread_rwlock_wrlock(globals.limit_hash_rwlock);
-	switch_core_hash_delete_multi(globals.limit_hash, limit_hash_cleanup_delete_callback, NULL);
+	if (globals.limit_hash) {
+		switch_core_hash_delete_multi(globals.limit_hash, limit_hash_cleanup_delete_callback, NULL);
+	}
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
-	
-	task->runtime = switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL;
+
+	if (globals.limit_hash) {	
+		task->runtime = switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL;
+	}
 }
 
 /* !\brief Releases usage of a limit_hash-controlled ressource  */
@@ -991,7 +995,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 		free(val);
 		switch_core_hash_delete(globals.db_hash, key);
 	}
-	
+
+	switch_core_hash_destroy(&globals.limit_hash);
+	switch_core_hash_destroy(&globals.db_hash);	
 
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 	switch_thread_rwlock_unlock(globals.db_hash_rwlock);
@@ -999,8 +1005,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 	switch_thread_rwlock_destroy(globals.db_hash_rwlock);
 	switch_thread_rwlock_destroy(globals.limit_hash_rwlock);
 
-	switch_core_hash_destroy(&globals.limit_hash);
-	switch_core_hash_destroy(&globals.db_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }

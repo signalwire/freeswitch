@@ -114,6 +114,8 @@
     <!-- 'true' means every time 'first-only' means on the first register -->
     <!--<param name="send-message-query-on-register" value="true"/>-->
     
+    <!-- 'true' means every time 'first-only' means on the first register -->
+    <!--<param name="send-presence-on-register" value="first-only"/> -->
       
 
     <!-- Caller-ID type (choose one, can be overridden by inbound call type and/or sip_cid_type channel variable -->
@@ -337,6 +339,9 @@
 		A completed transaction is kept around for the duration of T4 in order to catch late responses. 
 		The T4 is the maximum duration for the messages to stay in the network and the duration of SIP timer K. -->
 	<!-- <param name="timer-T4" value="4000" /> -->
+
+	<!-- Turn on a jitterbuffer for every call -->
+	<!-- <param name="auto-jitterbuffer-msec" value="60"/> -->
     
   </settings>
 </profile>

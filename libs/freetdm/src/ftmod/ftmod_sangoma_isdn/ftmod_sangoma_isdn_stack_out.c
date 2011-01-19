@@ -39,7 +39,7 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	ConEvnt conEvnt;	
 	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
-	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
+	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
 
 	ftdm_assert((!sngisdn_info->suInstId && !sngisdn_info->spInstId), "Trying to call out, but call data was not cleared\n");
 	
@@ -261,7 +261,7 @@ void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
-	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+	if (!sngisdn_info->suInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending FACILITY, but no call data, ignoring (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		return;
 	}
@@ -491,8 +491,8 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 		/* Should we trigger congestion here? */
 		l1_frame.flags |= SNG_L1FRAME_QUEUE_FULL;
 	}
-	
-	sng_isdn_data_ind(signal_data->link_id, &l1_frame);
+
+	sng_isdn_data_ind(signal_data->dchan_id, &l1_frame);
 }
 
 void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
@@ -506,11 +506,11 @@ void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
 	switch(event) {
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;
-			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+			sng_isdn_event_ind(signal_data->dchan_id, &l1_event);
 			break;
 		case FTDM_OOB_ALARM_TRAP:
 			l1_event.type = SNG_L1EVENT_ALARM_ON;
-			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+			sng_isdn_event_ind(signal_data->dchan_id, &l1_event);
 			break;
 		default:
 			/* We do not care about the other OOB events for now */

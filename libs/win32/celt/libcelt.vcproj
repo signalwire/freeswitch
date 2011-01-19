@@ -44,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\celt-0.7.1\libcelt"
+				AdditionalIncludeDirectories="..\..\celt-0.10.0\libcelt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\celt-0.7.1\libcelt"
+				AdditionalIncludeDirectories="..\..\celt-0.10.0\libcelt"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H;_AMD64_;_WIN64"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -171,7 +171,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;..\..\celt-0.7.1\libcelt&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\celt-0.10.0\libcelt&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -235,7 +235,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;..\..\celt-0.7.1\libcelt&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\celt-0.10.0\libcelt&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H;_AMD64_;_WIN64"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -281,71 +281,79 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\bands.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\bands.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\celt.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\celt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\cwrs.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\cwrs.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\entcode.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\entcode.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\entdec.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\entdec.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\entenc.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\entenc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\header.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\header.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\kiss_fft.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\kiss_fft.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\laplace.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\laplace.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\mdct.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\mathops.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\modes.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\mdct.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\pitch.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\modes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\quant_bands.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\pitch.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\rangedec.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\plc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\rangeenc.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\quant_bands.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\rate.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\rangedec.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\celt-0.7.1\libcelt\vq.c"
+				RelativePath="..\..\celt-0.10.0\libcelt\rangeenc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\celt-0.10.0\libcelt\rate.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\celt-0.10.0\libcelt\vq.c"
 				>
 			</File>
 		</Filter>

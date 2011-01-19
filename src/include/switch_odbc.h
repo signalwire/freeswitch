@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -34,6 +34,8 @@
 
 #include <switch.h>
 
+#define DEFAULT_ODBC_RETRIES 120
+
 SWITCH_BEGIN_EXTERN_C struct switch_odbc_handle;
 typedef void *switch_odbc_statement_handle_t;
 
@@ -50,6 +52,7 @@ typedef enum {
 } switch_odbc_status_t;
 
 SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(const char *dsn, const char *username, const char *password);
+SWITCH_DECLARE(void) switch_odbc_set_num_retries(switch_odbc_handle_t *handle, int num_retries);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep);
@@ -92,6 +95,9 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 
 SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, switch_odbc_statement_handle_t stmt);
+
+SWITCH_DECLARE(int) switch_odbc_handle_affected_rows(switch_odbc_handle_t *handle);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

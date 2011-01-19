@@ -662,7 +662,9 @@ void sngisdn_rcv_phy_ind(SuId suId, Reason reason)
 void sngisdn_rcv_q921_ind(BdMngmt *status)
 {	
 	ftdm_span_t *ftdmspan;
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[status->t.usta.lnkNmb];
+
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[status->t.usta.lnkNmb].spans[1];
+	
 	if (!signal_data) {
 		ftdm_log(FTDM_LOG_INFO, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.lnkNmb);
 		return;
@@ -715,7 +717,7 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 		case LCM_EVENT_DOWN:
 		{
 			ftdm_span_t *ftdmspan;
-			sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[status->t.usta.suId];
+			sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[status->t.usta.suId].spans[1];
 			if (!signal_data) {
 				ftdm_log(FTDM_LOG_INFO, "Received q931 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
 				return;
@@ -784,15 +786,16 @@ void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 	uint8_t data;
 	ftdm_trace_dir_t dir;
 	uint8_t tdata[1000];
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[trc->t.trc.suId];
+
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[trc->t.trc.suId].spans[1];
 
 	ftdm_assert(mBuf != NULLP, "Received a Q931 trace with no buffer");
 	mlen = ((SsMsgInfo*)(mBuf->b_rptr))->len;
 	
 	if (trc->t.trc.evnt == TL3PKTTX) {
-		dir = FTDM_TRACE_OUTGOING;
+		dir = FTDM_TRACE_DIR_OUTGOING;
 	} else {
-		dir = FTDM_TRACE_INCOMING;
+		dir = FTDM_TRACE_DIR_INCOMING;
 	}
 	
 	if (mlen) {
@@ -830,16 +833,17 @@ void sngisdn_rcv_q921_trace(BdMngmt *trc, Buffer *mBuf)
 	uint8_t data;
 	ftdm_trace_dir_t dir;
 	uint8_t tdata[1000];
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[trc->t.trc.lnkNmb];
+
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[trc->t.trc.lnkNmb].spans[1];
 
 	if (trc->t.trc.evnt == TL2TMR) {
 		return;
 	}
 
 	if (trc->t.trc.evnt == TL2FRMTX) {
-		dir = FTDM_TRACE_OUTGOING;
+		dir = FTDM_TRACE_DIR_OUTGOING;
 	} else {
-		dir = FTDM_TRACE_INCOMING;
+		dir = FTDM_TRACE_DIR_INCOMING;
 	}
 	
 	ftdm_assert(mBuf != NULLP, "Received a Q921 trace with no buffer");
@@ -879,7 +883,7 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 {
 	ftdm_status_t status;
 	ftdm_wait_flag_t flags = FTDM_WRITE;
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];	
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[spId].spans[1];
 	ftdm_size_t length = l1_frame->len;
 
 	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
@@ -912,8 +916,8 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 }
 
 int16_t sngisdn_rcv_l1_cmd_req(uint16_t spId, sng_l1_cmd_t *l1_cmd)
-{	
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
+{
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[spId].spans[1];
 	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
 	
 	switch(l1_cmd->type) {

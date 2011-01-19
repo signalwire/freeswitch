@@ -71,13 +71,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				sngisdn_info->glare.suInstId = suInstId; /* Do not generate a suInstId now, we will generate when glared call gets extracted */
 				sngisdn_info->glare.spInstId = spInstId;
 				sngisdn_info->glare.dChan = dChan;
-				sngisdn_info->glare.ces = ces;
+				sngisdn_info->glare.ces = ces;				
 				break;
 			}
 			
 			sngisdn_info->suInstId = get_unique_suInstId(suId);
 			sngisdn_info->spInstId = spInstId;
-			
 
 			if (conEvnt->cdPtyNmb.eh.pres && signal_data->num_local_numbers) {
 				uint8_t local_number_matched = 0;
@@ -125,30 +124,39 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 
 			/* Fill in call information */
+#ifdef NETBORDER_CALL_REF
+			get_callref(ftdmchan, &conEvnt->callRef);
+#endif
 			get_calling_num(ftdmchan, &conEvnt->cgPtyNmb);
 			get_calling_num2(ftdmchan, &conEvnt->cgPtyNmb2);
 			get_called_num(ftdmchan, &conEvnt->cdPtyNmb);
 			get_redir_num(ftdmchan, &conEvnt->redirNmb);
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
-			get_facility_ie(ftdmchan, &conEvnt->facilityStr);
+			get_facility_ie(ftdmchan, &conEvnt->facilityStr);			
 			
 			if (get_calling_name_from_display(ftdmchan, &conEvnt->display) != FTDM_SUCCESS) {
 				get_calling_name_from_usr_usr(ftdmchan, &conEvnt->usrUsr);
 			}
 
-			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {
-				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
+				ftdmchan->caller_data.bearer_layer1 = sngisdn_get_usrInfoLyr1Prot_from_stack(conEvnt->bearCap[0].usrInfoLyr1Prot.val);
 				ftdmchan->caller_data.bearer_capability = sngisdn_get_infoTranCap_from_stack(conEvnt->bearCap[0].infoTranCap.val);
 			}
 			
-			
 			if (conEvnt->shift11.eh.pres && conEvnt->ni2OctStr.eh.pres) {
 				if (conEvnt->ni2OctStr.str.len == 4 && conEvnt->ni2OctStr.str.val[0] == 0x37) {
-					snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", conEvnt->ni2OctStr.str.val[3]);
+					uint8_t encoding = (conEvnt->ni2OctStr.str.val[2] >> 5);
+					if (encoding == 0 || encoding == 1) {
+						/* BCD even or BCD odd */
+						uint8_t value = (conEvnt->ni2OctStr.str.val[3] & 0x0F)*10 + ((conEvnt->ni2OctStr.str.val[3] >> 4) & 0x0F);
+						snprintf(ftdmchan->caller_data.aniII, 5, "%.2d", value);
+					} else if (encoding == 2) {
+						/* IA 5 */
+						snprintf(ftdmchan->caller_data.aniII, 5, "%c", conEvnt->ni2OctStr.str.val[3]);
+					}
 				}
 			}
 
@@ -282,6 +290,9 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 			case FTDM_CHANNEL_STATE_PROGRESS:
 			case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 			case FTDM_CHANNEL_STATE_DIALING:
+#ifdef NETBORDER_CALL_REF
+				get_callref(ftdmchan, &cnStEvnt->callRef);
+#endif
 				get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 				get_facility_ie(ftdmchan, &cnStEvnt->facilityStr);
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
@@ -354,6 +365,9 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 		case MI_CALLPROC:			
 		case MI_PROGRESS:
 		case MI_ALERTING:
+#ifdef NETBORDER_CALL_REF
+			get_callref(ftdmchan, &cnStEvnt->callRef);
+#endif
 			get_prog_ind_ie(ftdmchan, &cnStEvnt->progInd);
 			get_facility_ie(ftdmchan, &cnStEvnt->facilityStr);
 
@@ -372,7 +386,10 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 				case FTDM_CHANNEL_STATE_PROGRESS:
 				case FTDM_CHANNEL_STATE_RINGING:
 					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media available\n");
 						sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
+					} else {
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media not available\n");
 					}
 					switch (evntType) {
 						case MI_CALLPROC:
@@ -387,10 +404,8 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 							break;
 						case MI_PROGRESS:
 							if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
-								
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 							} else if (ftdmchan->state != FTDM_CHANNEL_STATE_PROGRESS) {
-																
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 							}
 							break;
@@ -590,7 +605,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "cause:%d\n", ftdmchan->caller_data.hangup_cause);
 				} else {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "RELEASE COMPLETE did not have a cause code\n");
-					ftdmchan->caller_data.hangup_cause = 0;
+					ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 				}
 
 				sngisdn_set_flag(sngisdn_info, FLAG_REMOTE_ABORT);

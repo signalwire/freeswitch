@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -540,8 +540,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					const char *stream;
 					b_uuid = switch_core_session_strdup(session, b_uuid);
 
-					if (!(stream = switch_channel_get_variable_partner(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-						stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
+					if (!(stream = switch_channel_get_hold_music_partner(channel))) {
+						stream = switch_channel_get_hold_music(channel);
 					}
 
 					if (stream && switch_is_moh(stream)) {
@@ -1269,7 +1269,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 
 	switch_core_session_receive_message(session, &msg);
 
-	if (moh && (stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+	if (moh && (stream = switch_channel_get_hold_music(channel))) {
 		if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 		}
@@ -1513,6 +1513,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 	/* clear all state handlers */
 	switch_channel_clear_state_handler(channel, NULL);
+
+	/* reset temp hold music */
+	switch_channel_set_variable(channel, SWITCH_TEMP_HOLD_MUSIC_VARIABLE, NULL);
 
 	if ((profile = switch_channel_get_caller_profile(channel))) {
 		const char *var;

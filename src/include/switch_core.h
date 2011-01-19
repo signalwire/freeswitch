@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -115,7 +115,6 @@ struct switch_core_thread_session {
 struct switch_core_session;
 struct switch_core_runtime;
 struct switch_core_port_allocator;
-
 
 /*!
   \defgroup core1 Core Library 
@@ -713,6 +712,7 @@ SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *sessio
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_session_t *session, switch_slin_data_t *data);
 
 /*! 
   \brief Retrieve the unique identifier from the core
@@ -2161,6 +2161,13 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 */
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql,
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
+
+/*!
+ \brief Get the affected rows of the last performed query
+ \param [in] dbh The handle
+ \param [out] the number of affected rows
+*/
+SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh);
 
 /*! 
  \brief Provides some feedback as to the status of the db connection pool

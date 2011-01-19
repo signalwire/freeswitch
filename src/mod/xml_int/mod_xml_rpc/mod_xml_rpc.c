@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -744,6 +744,7 @@ abyss_bool handler_hook(TSession * r)
 
 		if (dateValue) {
 			ResponseAddField(r, "Date", dateValue);
+			free(dateValue);
 		}
 	}
 

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -606,16 +606,16 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 	sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
 						 ",user_agent,server_user,server_host,profile_name,network_ip"
 						 ",%d from sip_registrations where call_id='%q' %s", reboot, call_id, sqlextra);
-	switch_safe_free(sqlextra);
 
 	switch_mutex_lock(profile->ireg_mutex);
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
 	switch_mutex_unlock(profile->ireg_mutex);
 	switch_safe_free(sql);
 
-	sql = switch_mprintf("delete from sip_registrations where call_id='%q' or (sip_user='%q' and sip_host='%q')", call_id, user, host);
+	sql = switch_mprintf("delete from sip_registrations where call_id='%q' %s", call_id, sqlextra);
 	sofia_glue_execute_sql_now(profile, &sql, SWITCH_FALSE);
 
+	switch_safe_free(sqlextra);
 	switch_safe_free(sql);
 	switch_safe_free(dup);
 
@@ -875,8 +875,18 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	long reg_count = 0;
 	int delete_subs;
 	const char *agent = "unknown";
-		
+	const char *pres_on_reg = NULL;
+	int send_pres = 0;
+
 	delete_subs = sofia_test_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
+
+	if (v_event && *v_event) pres_on_reg = switch_event_get_header(*v_event, "send-presence-on-register");
+
+	if (!(send_pres = switch_true(pres_on_reg))) {
+		if (pres_on_reg && !strcasecmp(pres_on_reg, "first-only")) {
+			send_pres = 2;
+		}
+	}
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -1078,7 +1088,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (exptime && v_event && *v_event) {
 			char *exp_var;
 			char *allow_multireg = NULL;
-			int force_connectile = 0;
+			int auto_connectile = 0;
 
 			allow_multireg = switch_event_get_header(*v_event, "sip-allow-multiple-registrations");
 			if (allow_multireg && switch_false(allow_multireg)) {
@@ -1097,11 +1107,26 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 			if (profile->rport_level == 3 && sip->sip_user_agent &&
 				sip->sip_user_agent->g_string && !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7)) {
-				force_connectile = 1;
+				if (sip && sip->sip_via) {
+					const char *host = sip->sip_via->v_host;
+					const char *c_port = sip->sip_via->v_port;
+					int port = 0;
+
+					if (c_port) port = atoi(c_port);
+					if (!port)  port = 5060;
+
+					if (host && strcmp(network_ip, host)) {
+						auto_connectile = 1;
+					} else if (port != network_port) {
+						auto_connectile = 1;
+					}
+				} else {
+					auto_connectile = 1;
+				}
 			}
 
-			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact")) || force_connectile) {
-				if ((!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) || force_connectile) {
+			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact")) || auto_connectile) {
+				if ((!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) || auto_connectile) {
 					char *path_encoded;
 					size_t path_encoded_len;
 					char my_contact_str[1024];
@@ -1314,7 +1339,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (sofia_reg_reg_count(profile, to_user, reg_host) == 1) {
 			sql = switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' and profile_name='%q' and open_closed='closed'", 
 								 to_user, reg_host, profile->name);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DELETE PRESENCE SQL: %s\n", sql);
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DELETE PRESENCE SQL: %s\n", sql);
+			}
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
@@ -1388,7 +1415,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 
-		
 		if (send && switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
@@ -1476,27 +1502,31 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				}
 			}
 
-			if (sofia_test_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER)) {
-				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, sub_host);
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-					switch_event_fire(&s_event);
+			if (sofia_test_pflag(profile, PFLAG_PRESENCE_ON_REGISTER) || 
+				(reg_count == 1 && sofia_test_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER)) 
+				|| send_pres == 1 || (reg_count == 1 && send_pres == 2)) {
+				
+				if (sofia_test_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER)) {
+					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
+						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, sub_host);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+						switch_event_fire(&s_event);
+					}
+				} else {
+					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
+						switch_event_fire(&s_event);
+					}		
 				}
-			} else {
-				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
-					switch_event_fire(&s_event);
-				}		
 			}
-			
 		} else {
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);

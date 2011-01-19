@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -362,11 +362,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		int x = 0;
 
 		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (new_dtmf.duration < switch_core_min_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
 							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
 			new_dtmf.duration = switch_core_min_dtmf_duration(0);
 		} else if (!new_dtmf.duration) {
@@ -644,6 +644,30 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 		switch_event_fire(&event);
 	}
 
+}
+
+SWITCH_DECLARE(const char *) switch_channel_get_hold_music(switch_channel_t *channel)
+{
+	const char *var;
+
+	if (!(var = switch_channel_get_variable(channel, SWITCH_TEMP_HOLD_MUSIC_VARIABLE))) {
+		var = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
+	}
+
+	return var;
+}
+
+SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channel_t *channel)
+{
+	switch_core_session_t *session;
+	const char *r = NULL;
+
+	if (switch_core_session_get_partner(channel->session, &session) == SWITCH_STATUS_SUCCESS) {
+		r = switch_channel_get_hold_music(switch_core_session_get_channel(session));
+		switch_core_session_rwunlock(session);
+	}
+
+	return r;
 }
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup)
@@ -1259,6 +1283,24 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_cap(switch_channel_t *channel, swit
 {
 	switch_assert(channel != NULL);
 	return channel->caps[cap] ? 1 : 0;
+}
+
+SWITCH_DECLARE(uint32_t) switch_channel_test_cap_partner(switch_channel_t *channel, switch_channel_cap_t cap)
+{
+	const char *uuid;
+	int r = 0;
+
+	switch_assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		switch_core_session_t *session;
+		if ((session = switch_core_session_locate(uuid))) {
+			r = switch_channel_test_cap(switch_core_session_get_channel(session), cap);
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	return r;
 }
 
 SWITCH_DECLARE(char *) switch_channel_get_flag_string(switch_channel_t *channel)

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -43,8 +43,6 @@ SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
 
 struct mod_sofia_globals mod_sofia_globals;
 switch_endpoint_interface_t *sofia_endpoint_interface;
-static switch_frame_t silence_frame = { 0 };
-static char silence_data[13] = "";
 
 #define STRLEN 15
 
@@ -1094,8 +1092,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 										sofia_glue_do_invite(session);
 									}
 #endif
-
-									*frame = &silence_frame;
+									*frame = &tech_pvt->read_frame;
+									switch_set_flag((*frame), SFF_CNG);
+									(*frame)->datalen = tech_pvt->read_impl.encoded_bytes_per_packet;
+									memset((*frame)->data, 0, (*frame)->datalen);
 									return SWITCH_STATUS_SUCCESS;
 								}
 
@@ -1346,7 +1346,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					char *p;
 					const char *s;
 
-					if (!strncasecmp(msg->string_arg, "debug:", 6)) {
+					if (!strcasecmp(msg->string_arg, "pause")) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+						goto end;
+					} else if (!strcasecmp(msg->string_arg, "resume")) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+						goto end;
+					} else if (!strncasecmp(msg->string_arg, "debug:", 6)) {
 						s = msg->string_arg + 6;
 						if (s && !strcmp(s, "off")) {
 							s = NULL;
@@ -1426,10 +1432,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 
 			sofia_glue_tech_simplify(tech_pvt);
-
+			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;
 				int ok = 0;
+				
+				if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(tech_pvt->channel, CC_FS_RTP)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(channel));					
+					switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+				}
 
 				if (sofia_test_flag(tech_pvt, TFLAG_PASS_RFC2833) && switch_channel_test_flag_partner(channel, CF_FS_RTP)) {
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
@@ -1455,6 +1467,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			const char *val;
 			int ok = 0;
+			
+			if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								  "%s RESUME Jitterbuffer\n", switch_channel_get_name(channel));					
+				switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+			}
 
 			if (switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s deactivate passthru 2833 mode.\n",
@@ -3704,7 +3722,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
 		"sofia profile <profile_name> [[start|stop|restart|rescan]|"
-		"flush_inbound_reg [<call_id>] [reboot]|"
+		"flush_inbound_reg [<call_id>|<[user]@domain>] [reboot]|"
 		"[register|unregister] [<gateway name>|all]|"
 		"killgw <gateway name>|"
 		"[stun-auto-disable|stun-enabled] [true|false]]|"
@@ -3772,11 +3790,39 @@ SWITCH_STANDARD_API(sofia_function)
 		int wdon = -1;
 
 		if (argc > 1) {
+			if (!strcasecmp(argv[1], "debug")) {
+
+				if (argc > 2) {
+					if (strstr(argv[2], "presence")) {
+						mod_sofia_globals.debug_presence = 1;
+						stream->write_function(stream, "+OK Debugging presence\n");
+					}
+					
+					if (strstr(argv[2], "sla")) {
+						mod_sofia_globals.debug_sla = 1;
+						stream->write_function(stream, "+OK Debugging sla\n");
+					}
+					
+					if (strstr(argv[2], "none")) {
+						stream->write_function(stream, "+OK Debugging nothing\n");
+						mod_sofia_globals.debug_presence = 0;
+						mod_sofia_globals.debug_sla = 0;
+					}
+				}
+
+				stream->write_function(stream, "+OK Debugging summary: presence: %s sla: %s\n", 
+									   mod_sofia_globals.debug_presence ? "on" : "off",
+									   mod_sofia_globals.debug_sla ? "on" : "off");
+				
+				goto done;
+			}
+			
 			if (!strcasecmp(argv[1], "siptrace")) {
 				if (argc > 2) {
 					ston = switch_true(argv[2]);
 				}
 			}
+
 			if (!strcasecmp(argv[1], "watchdog")) {
 				if (argc > 2) {
 					wdon = switch_true(argv[2]);
@@ -3791,7 +3837,7 @@ SWITCH_STANDARD_API(sofia_function)
 			sofia_glue_global_watchdog(wdon);
 			stream->write_function(stream, "+OK Global watchdog %s", wdon ? "on" : "off");
 		} else {
-			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|watchdog <on|off>");
+			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|watchdog <on|off>|debug <sla|presence|none");
 		}
 		
 		goto done;
@@ -4795,11 +4841,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_management_interface_t *management_interface;
 	struct in_addr in;
 
-	silence_frame.data = silence_data;
-	silence_frame.datalen = sizeof(silence_data);
-	silence_frame.buflen = sizeof(silence_data);
-	silence_frame.flags = SFF_CNG;
-
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
 	mod_sofia_globals.destroy_private.is_static = 1;
@@ -4919,6 +4960,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_console_set_complete("add sofia global siptrace ::[on:off");
 	switch_console_set_complete("add sofia global watchdog ::[on:off");
+
+	switch_console_set_complete("add sofia global debug ::[presence:sla:none");
+
 
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");

@@ -120,7 +120,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_RING, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_END}
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROCEED, FTDM_CHANNEL_STATE_RINGING, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END}
 	},
 	{
 		ZSD_INBOUND,
@@ -139,7 +139,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_INBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_PROGRESS, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 	},
 	{
 		ZSD_INBOUND,
@@ -234,7 +234,7 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 		ZSD_OUTBOUND,
 		ZSM_UNACCEPTABLE,
 		{FTDM_CHANNEL_STATE_RINGING, FTDM_END},
-		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
+		{FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_PROGRESS, FTDM_CHANNEL_STATE_PROGRESS_MEDIA, FTDM_CHANNEL_STATE_UP, FTDM_END},
 	},
 	{
 		ZSD_OUTBOUND,
@@ -788,21 +788,21 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				 /* set the flag to indicate this hangup is started from the local side */
 				sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_REL);
 
-				/* If we never sent ack to incoming call, we need to send release instead of disconnect */
-				if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RING ||
-					ftdmchan->last_state == FTDM_CHANNEL_STATE_DIALING) {
-
-					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
-					sngisdn_snd_release(ftdmchan, 0);
-
-					if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-						sngisdn_set_span_avail_rate(ftdmchan->span, SNGISDN_AVAIL_DOWN);
-					}
-				} else {
-					sngisdn_snd_disconnect(ftdmchan);
+				switch(ftdmchan->last_state) {
+					case FTDM_CHANNEL_STATE_RING:
+						/* If we never sent PROCEED/ALERT/PROGRESS/CONNECT on an incoming call, we need to send release instead of disconnect */
+						sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+						sngisdn_snd_release(ftdmchan, 0);
+						break;
+					case FTDM_CHANNEL_STATE_DIALING:
+						/* If we never received a PROCEED/ALERT/PROGRESS/CONNECT on an outgoing call, we need to send release instead of disconnect */
+						sngisdn_snd_release(ftdmchan, 0);
+						break;
+					default:
+						sngisdn_snd_disconnect(ftdmchan);
+						break;
 				}
 			}
-
 			/* now go to the HANGUP complete state */
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
@@ -884,6 +884,7 @@ static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
 	switch (sigmsg->event_id) {
 		case FTDM_SIGEVENT_FACILITY:
 			sngisdn_snd_fac_req(ftdmchan);
+			status = FTDM_SUCCESS;
 			break;
 		default:
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unsupported signalling msg requested\n");
@@ -931,7 +932,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
-
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_chan_sig_status)
 {
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
@@ -1094,6 +1094,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	ftdm_set_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_PROCEED_STATE);
 	ftdm_set_flag(span, FTDM_SPAN_USE_SKIP_STATES);
+	ftdm_set_flag(span, FTDM_SPAN_NON_STOPPABLE);
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
 		span->trunk_type == FTDM_TRUNK_BRI) {

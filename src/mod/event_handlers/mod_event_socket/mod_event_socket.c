@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1548,7 +1548,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			char api_reply[512] = "Allowed-API: all\n";
 			char log_reply[512] = "";
 			int allowed_log = 1;
-
+			char *tmp;
 
 			switch_clear_flag(listener, LFLAG_ALLOW_LOG);
 
@@ -1564,8 +1564,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				*pass++ = '\0';
 			}
 
-			if ((pass = strchr(user, ':'))) {
-				*pass++ = '\0';
+			if ((tmp = strchr(user, ':'))) {
+				*tmp++ = '\0';
+				pass = tmp;
 			}
 			
 			if (zstr(user) || zstr(domain_name)) {

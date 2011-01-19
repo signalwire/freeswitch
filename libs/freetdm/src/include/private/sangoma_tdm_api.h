@@ -1,7 +1,7 @@
 /*****************************************************************************
  * sangoma_tdm_api.h	Sangoma TDM API Portability functions
  *
- * Author(s):	Anthony Minessale II <anthmct@yahoo.com>
+ * Author(s):	Anthony Minessale II <anthm@freeswitch.org>
  *              Nenad Corbic <ncorbic@sangoma.com>
  *				Michael Jerris <mike@jerris.com>
  *				David Rokhvarg <davidr@sangoma.com>

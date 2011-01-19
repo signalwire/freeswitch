@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -234,7 +234,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
-			tmp = switch_channel_get_variable(channel, "hold_music");
+			tmp = switch_channel_get_hold_music(channel);
 		}
 		if (tmp)
 			music = tmp;

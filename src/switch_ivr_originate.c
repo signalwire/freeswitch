@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1705,6 +1705,16 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 										 switch_channel_get_state(_peer) == CS_RESET || \
 										 !switch_channel_test_flag(_peer, CF_ORIGINATING)))
 
+static void wait_for_cause(switch_channel_t *channel)
+{
+	int sanity = 5;
+
+	while (--sanity > 0 && peer_eligible(channel) && switch_channel_get_cause(channel) == SWITCH_CAUSE_NONE) {
+		switch_yield(10000);
+	}
+}
+
+
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
@@ -2602,6 +2612,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
+				if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "push_channel_name"))) {
+					char *new_name = switch_core_session_sprintf(session, "%s__B", switch_channel_get_name(caller_channel));
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_channel_name", new_name);
+					new_name = switch_core_session_sprintf(session, "_%s", switch_channel_get_name(caller_channel));
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Channel-Name", new_name);
+				}
+
 				/* make a special var event with mixture of the {} and the [] vars to pass down as global vars to the outgoing channel 
 				   so if something like the user channel does another originate our options will be passed down properly
 				 */
@@ -2689,6 +2706,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if (switch_true(switch_channel_get_variable(originate_status[i].peer_channel, "leg_required"))) {
 						originate_status[i].tagged = 1;
+					}
+					
+					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_channel_name"))) {
+						switch_channel_set_name(originate_status[i].peer_channel, vvar);
 					}
 
 					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "origination_callee_id_name"))) {
@@ -3260,7 +3281,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (i != oglobals.idx) {
 					holding = NULL;
-
+					
 					if (oglobals.idx == IDX_TIMEOUT || to) {
 						reason = SWITCH_CAUSE_NO_ANSWER;
 					} else {
@@ -3269,6 +3290,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						} else {
 							if (and_argc > 1) {
 								reason = SWITCH_CAUSE_LOSE_RACE;
+							} else if (!switch_channel_ready(originate_status[i].peer_channel)) {
+								wait_for_cause(originate_status[i].peer_channel);
+								if (switch_channel_down(originate_status[i].peer_channel)) {
+									reason = switch_channel_get_cause(originate_status[i].peer_channel);
+								}
 							} else {
 								reason = SWITCH_CAUSE_NO_ANSWER;
 							}
@@ -3374,6 +3400,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (peer_channel) {
+					wait_for_cause(peer_channel);
 					*cause = switch_channel_get_cause(peer_channel);
 				} else {
 					for (i = 0; i < and_argc; i++) {
@@ -3424,6 +3451,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						*cause = switch_channel_get_cause(caller_channel);
 					} else {
 						*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+						for (i = 0; i < and_argc; i++) {
+							if (!peer_eligible(originate_status[i].peer_channel)) {
+								continue;
+							}
+
+							wait_for_cause(originate_status[i].peer_channel);
+							
+							if (switch_channel_down(originate_status[i].peer_channel)) {
+								*cause = switch_channel_get_cause(originate_status[i].peer_channel);
+								break;
+							}
+							
+						}
 					}
 				}
 
@@ -3518,7 +3558,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								continue;
 							}
 							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
-							
+							wait_for_cause(pchannel);
 							if (switch_channel_down(pchannel)) {
 								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
 								if (switch_stristr(cause_str, fail_on_single_reject_var)) {

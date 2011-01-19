@@ -15,55 +15,61 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\bands.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\bands.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\celt.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\celt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\cwrs.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\cwrs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\entcode.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\entcode.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\entdec.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\entdec.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\entenc.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\entenc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\header.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\header.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\kiss_fft.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\kiss_fft.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\laplace.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\laplace.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\mdct.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\mdct.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\modes.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\modes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\pitch.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\pitch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\quant_bands.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\quant_bands.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\rangedec.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\rangedec.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\rangeenc.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\rangeenc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\rate.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\rate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\celt-0.7.1\libcelt\vq.c">
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\vq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\mathops.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\celt-0.10.0\libcelt\plc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

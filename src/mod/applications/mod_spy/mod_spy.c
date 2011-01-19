@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -83,7 +83,7 @@ static switch_status_t spy_on_exchange_media(switch_core_session_t *session)
 static switch_status_t spy_on_park(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *moh = switch_channel_get_variable(channel, "hold_music");
+	const char *moh = switch_channel_get_hold_music(channel);
 
 	while (switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_PARK) {
 		if (moh) {
