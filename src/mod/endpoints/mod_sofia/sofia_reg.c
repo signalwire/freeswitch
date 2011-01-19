@@ -1139,7 +1139,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					switch_url_encode(my_contact_str, path_encoded + 20, path_encoded_len - 20);
 					reg_desc = "Registered(AUTO-NAT-2.0)";
 					exptime = 30;
-					switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
+
+					/* place fs_path (the encoded path) inside the <...> of the contact string, if possible */
+					if (contact_str[strlen(contact_str) - 1] == '>') {
+						switch_snprintf(contact_str + strlen(contact_str) - 1, sizeof(contact_str) - strlen(contact_str) + 1, "%s>", path_encoded);
+					} else {
+						switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
+					}
 					free(path_encoded);
 				} else {
 					if (*received_data && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
