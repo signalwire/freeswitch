@@ -16,7 +16,7 @@
 			<match>
 				<action function="play-file" data="directory/dir-to_search_by.wav"/>
 				<action function="play-file" data="directory/dir-first_name.wav"/>
-				<action function="play-file" data="directory/dir-press.wav"/>
+				<action function="play-file" data="voicemail/vm-press.wav"/>
 				<action function="say" data="$2" method="pronounced" type="name_spelled"/>
 			</match>
 		</input>
@@ -24,7 +24,7 @@
 			<match>
 				<action function="play-file" data="directory/dir-to_search_by.wav"/>
 				<action function="play-file" data="directory/dir-last_name.wav"/>
-				<action function="play-file" data="directory/dir-press.wav"/>
+				<action function="play-file" data="voicemail/vm-press.wav"/>
 				<action function="say" data="$2" method="pronounced" type="name_spelled"/>
 			</match>
 		</input>
