@@ -295,7 +295,7 @@ static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, open
 	case OR2_CAUSE_GLARE:
 		return FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 	}
-	ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Mapping openr2 cause %d to unspecified\n", cause);
+	ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "Mapping openr2 cause %d to unspecified\n", cause);
 	return FTDM_CAUSE_NORMAL_UNSPECIFIED;
 }
 

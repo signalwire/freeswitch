@@ -132,8 +132,8 @@ extern "C" {
 
 
 #define ftdm_channel_test_feature(obj, flag) ((obj)->features & flag)
-#define ftdm_channel_set_feature(obj, flag) (obj)->features |= (flag)
-#define ftdm_channel_clear_feature(obj, flag) (obj)->features &= ~(flag)
+#define ftdm_channel_set_feature(obj, flag) (obj)->features = (ftdm_channel_feature_t)((obj)->features | flag)
+#define ftdm_channel_clear_feature(obj, flag) (obj)->features = (ftdm_channel_feature_t)((obj)->features & ( ~(flag) ))
 #define ftdm_channel_set_member_locked(obj, _m, _v) ftdm_mutex_lock(obj->mutex); obj->_m = _v; ftdm_mutex_unlock(obj->mutex)
 
 /*!
