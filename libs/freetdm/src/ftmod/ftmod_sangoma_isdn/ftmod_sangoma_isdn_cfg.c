@@ -389,10 +389,11 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	}
 
 	if (span->default_caller_data.bearer_layer1 == FTDM_INVALID_INT_PARM) {
-		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
-			span->default_caller_data.bearer_layer1 = IN_UIL1_G711ULAW;
-		} else {
+		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN ||
+			signal_data->switchtype == SNGISDN_SWITCH_QSIG) {
 			span->default_caller_data.bearer_layer1 = IN_UIL1_G711ALAW;
+		} else {
+			span->default_caller_data.bearer_layer1 = IN_UIL1_G711ULAW;
 		}
 	}
 	return FTDM_SUCCESS;
