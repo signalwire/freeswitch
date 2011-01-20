@@ -192,6 +192,24 @@ static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span)
 	return FTDM_SUCCESS;
 }
 
+static ftdm_status_t parse_early_media(const char* opt, ftdm_span_t *span)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+	if (!strcasecmp(opt, "on-proceed")) {
+		signal_data->early_media_flags |= SNGISDN_EARLY_MEDIA_ON_PROCEED;
+	} else if (!strcasecmp(opt, "on-progress")) {
+		signal_data->early_media_flags |= SNGISDN_EARLY_MEDIA_ON_PROGRESS;
+	} else if (!strcasecmp(opt, "on-alert")) {
+		signal_data->early_media_flags |= SNGISDN_EARLY_MEDIA_ON_ALERT;
+	} else {
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported early-media option %s\n", opt);
+		return FTDM_FAIL;
+	}
+	ftdm_log(FTDM_LOG_DEBUG, "Early media opt:0x%x\n", signal_data->early_media_flags);
+	return FTDM_SUCCESS;
+}
+
+
 static ftdm_status_t set_switchtype_defaults(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
@@ -248,6 +266,7 @@ static ftdm_status_t set_switchtype_defaults(ftdm_span_t *span)
 	}
 	return FTDM_SUCCESS;
 }
+
 
 ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span)
 {
@@ -351,10 +370,14 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->raw_trace_q931);
 		} else if (!strcasecmp(var, "q921-raw-trace")) {
 			parse_yesno(var, val, &signal_data->raw_trace_q921);
+		} else if (!strcasecmp(var, "early-media-override")) {
+			if (parse_early_media(val, span) != FTDM_SUCCESS) {
+				return FTDM_FAIL;
+			}
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
-	}
+	} /* for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) */
 	
 	if (signal_data->switchtype == SNGISDN_SWITCH_INVALID) {
 		ftdm_log(FTDM_LOG_ERROR, "%s: switchtype not specified", span->name);
