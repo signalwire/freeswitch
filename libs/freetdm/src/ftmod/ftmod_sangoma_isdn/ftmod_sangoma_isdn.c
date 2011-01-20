@@ -394,8 +394,7 @@ static void *ftdm_sangoma_isdn_dchan_run(ftdm_thread_t *me, void *obj)
 			default:
 				ftdm_log_chan_msg(dchan, FTDM_LOG_CRIT, "Unhandled IO event\n");
 		}
-	}
-	ftdm_channel_close(&dchan);
+	}	
 	return NULL;
 }
 

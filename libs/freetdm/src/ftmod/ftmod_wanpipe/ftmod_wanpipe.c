@@ -239,7 +239,11 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 			ftdm_log(FTDM_LOG_ERROR, "span %d channel %d cannot be configured as smg_prid_nfas, you need to compile freetdm with newer libsangoma\n", spanno, x);
 #endif
 		} else {
+#ifdef LIBSANGOMA_VERSION
+			sockfd = __tdmv_api_open_span_chan(spanno, x);
+#else
 			sockfd = tdmv_api_open_span_chan(spanno, x);
+#endif
 		}
 
 		if (sockfd == FTDM_INVALID_SOCKET) {
