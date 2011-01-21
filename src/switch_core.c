@@ -151,10 +151,18 @@ static void check_ip(void)
 SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 {
 	send_heartbeat();
-	check_ip();
 
 	/* reschedule this task */
 	task->runtime = switch_epoch_time_now(NULL) + 20;
+}
+
+
+SWITCH_STANDARD_SCHED_FUNC(check_ip_callback)
+{
+	check_ip();
+
+	/* reschedule this task */
+	task->runtime = switch_epoch_time_now(NULL) + 60;
 }
 
 
@@ -1356,6 +1364,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.initiated = switch_time_now();
 	
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
+
+	switch_scheduler_add_task(switch_epoch_time_now(NULL), check_ip_callback, "check_ip", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL | SSHF_OWN_THREAD);
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
