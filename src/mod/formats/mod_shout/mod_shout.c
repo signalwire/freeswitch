@@ -585,7 +585,7 @@ static void launch_write_stream_thread(shout_context_t *context)
 
 #define TC_BUFFER_SIZE 1024 * 32
 #define STR(_x) #_x
-#define MPGERROR() {err = "MPG123 Error at " __FILE__ " : " STR(__LINE__) "."; mpg123err = mpg123_strerror(context->mh); goto error; }
+#define MPGERROR() {err = "MPG123 Error at " __FILE__ ":" STR(__LINE__) "."; mpg123err = mpg123_strerror(context->mh); goto error; }
 static switch_status_t shout_file_open(switch_file_handle_t *handle, const char *path)
 {
 	shout_context_t *context;
