@@ -1269,6 +1269,10 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 	int					 	num_parms = mtp_route->n_parameters;
 	int					 	i;
 
+	ftdm_conf_node_t		*linkset;
+	int						ls_id;
+	int						numLinks;
+
 	/* initalize the mtpRoute structure */
 	memset(&mtpRoute, 0x0, sizeof(mtpRoute));
 
@@ -1298,11 +1302,6 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 		/**********************************************************************/
 			mtpRoute.dpc = atoi(parm->val);
 			SS7_DEBUG("Found an mtpRoute dpc = %d\n", mtpRoute.dpc);
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "linksetId")) {
-		/**********************************************************************/
-			mtpRoute.linkSetId = atoi(parm->val);
-			SS7_DEBUG("Found an mtpRoute linkset = %s\n", parm->val);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "isSTP")) {
 		/**********************************************************************/
@@ -1383,14 +1382,46 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 		parm = parm + 1;
 	}
 
-	/* pull up the linktype, switchtype, and SSF from the linkset */
-	mtpRoute.linkType = g_ftdm_sngss7_data.cfg.mtpLinkSet[mtpRoute.linkSetId].linkType;
-	mtpRoute.switchType = g_ftdm_sngss7_data.cfg.mtpLinkSet[mtpRoute.linkSetId].switchType;
-	mtpRoute.ssf = g_ftdm_sngss7_data.cfg.mtpLinkSet[mtpRoute.linkSetId].ssf;
-
 	/* fill in the rest of the values in the mtpRoute struct  */
 	mtpRoute.nwId = mtpRoute.id;
 	mtpRoute.cmbLinkSetId = mtpRoute.id;
+
+	/* parse in the list of linksets this route is reachable by */
+	linkset = mtp_route->child->child;
+
+	while (linkset != NULL) {
+	/**************************************************************************/
+		/* extract the linkset Id */
+		ls_id = atoi(linkset->parameters->val);
+
+		if (g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].id != 0) {
+			SS7_DEBUG("Found mtpRoute linkset id = %d that is valid\n",ls_id);
+		} else {
+			SS7_ERROR("Found mtpRoute linkset id = %d that is invalid\n",ls_id);
+			goto move_along;
+		}
+
+		/* pull up the linktype, switchtype, and SSF from the linkset */
+		mtpRoute.linkType = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].linkType;
+		mtpRoute.switchType = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].switchType;
+		mtpRoute.ssf = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].ssf;
+		
+		/* extract the number of cmbLinkSetId aleady on this linkset */
+		numLinks = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].numLinks;
+		
+		/* add this routes cmbLinkSetId to the list */
+		g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].links[numLinks] = mtpRoute.cmbLinkSetId;
+
+		/* increment the number of cmbLinkSets on this linkset */
+		g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].numLinks++;
+
+move_along:
+		/* move to the next linkset element */
+		linkset = linkset->next;
+
+	/**************************************************************************/
+	} /* while (linkset != null) */
+
 
 	ftmod_ss7_fill_in_mtp3_route(&mtpRoute);
 
