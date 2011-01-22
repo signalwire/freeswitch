@@ -532,6 +532,7 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 						  session_element->uuid_str);
 	}
 
+	switch_event_destroy(&call_event);
 	ei_x_free(&lbuf);
 	return SWITCH_STATUS_SUCCESS;
 }
