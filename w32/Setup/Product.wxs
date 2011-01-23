@@ -57,6 +57,9 @@
 							 WorkingDirectory="INSTALLLOCATION"/>
 				<RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
 				<RegistryValue Root="HKCU" Key="Software\FreeSWITCH\FreeSWITCH" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <CreateFolder Directory="INSTALLLOCATION">
+          <Permission User="Authenticated Users" GenericAll="yes" />
+        </CreateFolder>
 			</Component>
 			<Component Id="FSCliShortcut" Guid="D209546C-C728-4d8f-BDB2-29AED8824282">
 				<Shortcut Id="FSCliStartMenuShortcut"
@@ -65,6 +68,9 @@
 							 Target="[INSTALLLOCATION]fs_cli.exe"
 							 WorkingDirectory="INSTALLLOCATION"/>
 				<RegistryValue Root="HKCU" Key="Software\FreeSWITCH\FS_CLI" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <CreateFolder Directory="INSTALLLOCATION">
+          <Permission User="Authenticated Users" GenericAll="yes" />
+        </CreateFolder>
 			</Component>
 		</DirectoryRef>
 
