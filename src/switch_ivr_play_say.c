@@ -372,6 +372,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_event_t *event;
 	int divisor = 0;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
+	int restart_limit_on_dtmf = 0;
 	const char *prefix;
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
@@ -528,6 +529,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 		asis = 1;
 	}
+	
+	restart_limit_on_dtmf = switch_true(switch_channel_get_variable(channel, "record_restart_limit_on_dtmf"));
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
 		vval = switch_core_session_strdup(session, p);
@@ -637,6 +640,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
+
+				if (limit && restart_limit_on_dtmf) {
+					start = switch_epoch_time_now(NULL);
+				}
+
 				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					break;
