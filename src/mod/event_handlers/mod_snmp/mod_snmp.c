@@ -98,6 +98,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 	netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
 
 	init_agent("mod_snmp");
+
+	/*
+	 * Override master/subagent ping interval to 5s, to ensure that
+	 * agent_check_and_process() never blocks for longer than that.
+	 */
+	netsnmp_ds_set_int(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_AGENTX_PING_INTERVAL, 5);
+
 	init_subagent();  
 	init_snmp("mod_snmp");
 
@@ -107,8 +114,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime)
 {
-	/* block on select() */
-	agent_check_and_process(1);
+	while (!globals.shutdown) {
+		/* Block on select() */
+		agent_check_and_process(1);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
