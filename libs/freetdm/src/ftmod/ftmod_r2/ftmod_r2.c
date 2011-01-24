@@ -295,7 +295,7 @@ static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, open
 	case OR2_CAUSE_GLARE:
 		return FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL;
 	}
-	ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Mapping openr2 cause %d to unspecified\n", cause);
+	ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "Mapping openr2 cause %d to unspecified\n", cause);
 	return FTDM_CAUSE_NORMAL_UNSPECIFIED;
 }
 
@@ -646,9 +646,6 @@ static void ftdm_r2_on_call_init(openr2_chan_t *r2chan)
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to open channel during incoming call! [%s]\n", ftdmchan->last_error);
 		return;
 	}
-
-	/* mark the channel in use (so no outgoing calls can be placed here) */
-	ftdm_channel_use(ftdmchan);	
 
 	memset(ftdmchan->caller_data.dnis.digits, 0, sizeof(ftdmchan->caller_data.collected));
 	memset(ftdmchan->caller_data.ani.digits, 0, sizeof(ftdmchan->caller_data.collected));

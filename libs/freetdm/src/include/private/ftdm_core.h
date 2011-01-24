@@ -132,8 +132,8 @@ extern "C" {
 
 
 #define ftdm_channel_test_feature(obj, flag) ((obj)->features & flag)
-#define ftdm_channel_set_feature(obj, flag) (obj)->features |= (flag)
-#define ftdm_channel_clear_feature(obj, flag) (obj)->features &= ~(flag)
+#define ftdm_channel_set_feature(obj, flag) (obj)->features = (ftdm_channel_feature_t)((obj)->features | flag)
+#define ftdm_channel_clear_feature(obj, flag) (obj)->features = (ftdm_channel_feature_t)((obj)->features & ( ~(flag) ))
 #define ftdm_channel_set_member_locked(obj, _m, _v) ftdm_mutex_lock(obj->mutex); obj->_m = _v; ftdm_mutex_unlock(obj->mutex)
 
 /*!
@@ -622,6 +622,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 /*! \brief clear the tone detector state */
 FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
+/* start/stop echo cancelling at the beginning/end of a call */
+FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan);
+FT_DECLARE(void) ftdm_set_echocancel_call_end(ftdm_channel_t *chan);
 
 /*!
   \brief Assert condition
@@ -676,6 +679,14 @@ FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
 #define ftdm_span_lock(span) ftdm_mutex_lock(span->mutex)
 #define ftdm_span_unlock(span) ftdm_mutex_unlock(span->mutex)
+
+#define ftdm_test_and_set_media(fchan) \
+		do { \
+			if (!ftdm_test_flag((fchan), FTDM_CHANNEL_MEDIA)) { \
+				ftdm_set_flag((fchan), FTDM_CHANNEL_MEDIA); \
+				ftdm_set_echocancel_call_begin((fchan)); \
+			} \
+		} while (0);
 
 FT_DECLARE_DATA extern const char *FTDM_LEVEL_NAMES[9];
 

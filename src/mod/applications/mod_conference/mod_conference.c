@@ -477,6 +477,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mute-Detect", "%s", switch_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Type", "%s", switch_test_flag(member, MFLAG_MOD) ? "moderator" : "member");
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 
 	return status;
 }
@@ -5596,6 +5597,7 @@ SWITCH_STANDARD_APP(conference_function)
 			char pin_buf[80] = "";
 			int pin_retries = 3;	/* XXX - this should be configurable - i'm too lazy to do it right now... */
 			int pin_valid = 0;
+			int be_friendly = 0;
 			switch_status_t status = SWITCH_STATUS_SUCCESS;
 			char *supplied_pin_value;
 
@@ -5630,19 +5632,23 @@ SWITCH_STANDARD_APP(conference_function)
 				switch_status_t pstatus = SWITCH_STATUS_FALSE;
 
 				/* be friendly */
-				if (conference->pin_sound) {
-					pstatus = conference_local_play_file(conference, session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
-				} else if (conference->tts_engine && conference->tts_voice) {
-					pstatus =
-						switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, "please enter the conference pin number", NULL);
-				} else {
-					pstatus = switch_ivr_speak_text(session, "flite", "slt", "please enter the conference pin number", NULL);
+				if (!be_friendly) {
+					if (conference->pin_sound) {
+						pstatus = conference_local_play_file(conference, session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
+					} else if (conference->tts_engine && conference->tts_voice) {
+						pstatus =
+							switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, "please enter the conference pin number", NULL);
+					} else {
+						pstatus = switch_ivr_speak_text(session, "flite", "slt", "please enter the conference pin number", NULL);
+					}
+
+					if (pstatus != SWITCH_STATUS_SUCCESS && pstatus != SWITCH_STATUS_BREAK) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot ask the user for a pin, ending call");
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					}
 				}
 
-				if (pstatus != SWITCH_STATUS_SUCCESS && pstatus != SWITCH_STATUS_BREAK) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot ask the user for a pin, ending call");
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				}
+				be_friendly = 1;
 
 				/* wait for them if neccessary */
 				if (strlen(pin_buf) < strlen(dpin)) {
@@ -5659,13 +5665,12 @@ SWITCH_STANDARD_APP(conference_function)
 
 				pin_valid = (status == SWITCH_STATUS_SUCCESS && strcmp(pin_buf, dpin) == 0);
 				if (!pin_valid) {
-					/* zero the collected pin */
-					memset(pin_buf, 0, sizeof(pin_buf));
-
 					/* more friendliness */
 					if (conference->bad_pin_sound) {
 						conference_local_play_file(conference, session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
 					}
+					/* zero the collected pin */
+					memset(pin_buf, 0, sizeof(pin_buf));
 				}
 				pin_retries--;
 			}
