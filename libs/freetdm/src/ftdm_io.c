@@ -5533,7 +5533,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			}
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
 			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
-			ftdm_set_echocancel_call_begin(sigmsg->channel);
 			if (sigmsg->channel->dtmfdbg.requested) {
 				ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL);
 			}
