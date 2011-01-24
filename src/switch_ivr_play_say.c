@@ -634,7 +634,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			break;
 		}
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -862,7 +862,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		switch_ivr_parse_all_events(session);
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -1314,7 +1314,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			switch_ivr_parse_all_events(session);
 
-			if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+			if (args) {
 				/*
 				   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 				   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -1875,7 +1875,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		switch_status_t status;
 
 		memset(digit_buffer, 0, digit_buffer_length);
-		switch_channel_flush_dtmf(channel);
+
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name,
 								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
@@ -2037,7 +2037,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			switch_event_destroy(&event);
 		}
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			/* dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			 * if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
