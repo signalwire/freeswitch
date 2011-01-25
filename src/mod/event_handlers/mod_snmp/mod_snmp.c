@@ -101,8 +101,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime)
 {
 	if (!globals.shutdown) {
-		/* Block on select() */
 		switch_mutex_lock(globals.mutex);
+		/* Block on select() */
 		agent_check_and_process(1);
 		switch_mutex_unlock(globals.mutex);
 	}
