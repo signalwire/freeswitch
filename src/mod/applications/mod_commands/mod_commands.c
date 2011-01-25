@@ -2372,7 +2372,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|both]"
+#define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|holdb|both]"
 SWITCH_STANDARD_API(uuid_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
