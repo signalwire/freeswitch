@@ -85,8 +85,11 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     if test "${enable_64}" = "yes"; then
         CFLAGS="$CFLAGS -m64 -lgpg-error"
         CXXFLAGS="$CXXFLAGS -m64 -lgpg-error"
+	SUNFLAGS="-lgpg.error"
     fi
 fi
+
+AC_SUBST(SUNCFLAGS)
 
 dnl Generating makefiles
 AC_CONFIG_FILES([
