@@ -83,9 +83,13 @@ AC_ARG_ENABLE(64,
 
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     if test "${enable_64}" = "yes"; then
-        CFLAGS="$CFLAGS -m64 -lgpg-error"
-        CXXFLAGS="$CXXFLAGS -m64 -lgpg-error"
-	SUNFLAGS="-lgpg.error"
+        CFLAGS="$CFLAGS -xc99=all -mt -m64 -lgpg-error"
+        CXXFLAGS="$CXXFLAGS -xc99=all -mt -m64 -lgpg-error"
+	SUNFLAGS="-xc99=all -mt -m64 -lgpg-error"
+    else 
+	CFLAGS="$CFLAGS -xc99=all -mt -lgpg-error"
+	CXXFLAGS="$CXXFLAGS -xc99=all -mt -lgpg-error"
+	SUNFLAGS="-xc99=all -mt -lgpg-error"
     fi
 fi
 
