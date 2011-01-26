@@ -873,38 +873,32 @@ ftdm_status_t set_bear_cap_ie(ftdm_channel_t *ftdmchan, BearCap *bearCap)
 	bearCap->tranMode.pres = PRSNT_NODEF;
 	bearCap->tranMode.val = IN_TM_CIRCUIT;
 
-	if (!FTDM_SPAN_IS_BRI(ftdmchan->span)) {
-		/* Trillium stack rejests lyr1Ident on BRI, but Netbricks always sends it.
-		Check with Trillium if this ever causes calls to fail in the field */
+	bearCap->usrInfoLyr1Prot.pres = PRSNT_NODEF;
+	bearCap->usrInfoLyr1Prot.val = sngisdn_get_usrInfoLyr1Prot_from_user(ftdmchan->caller_data.bearer_layer1);
 
-		/* PRI only params */
-		bearCap->usrInfoLyr1Prot.pres = PRSNT_NODEF;
-		bearCap->usrInfoLyr1Prot.val = sngisdn_get_usrInfoLyr1Prot_from_user(ftdmchan->caller_data.bearer_layer1);
-
-		switch (signal_data->switchtype) {
-			case SNGISDN_SWITCH_NI2:
-			case SNGISDN_SWITCH_4ESS:
-			case SNGISDN_SWITCH_5ESS:
-			case SNGISDN_SWITCH_DMS100:
-			case SNGISDN_SWITCH_INSNET:
-				if (bearCap->usrInfoLyr1Prot.val == IN_UIL1_G711ALAW) {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Overriding bearer cap to u-law\n");
-					bearCap->usrInfoLyr1Prot.val = IN_UIL1_G711ULAW;
-				}
-				break;
-			case SNGISDN_SWITCH_EUROISDN:
-			case SNGISDN_SWITCH_QSIG:
-				if (bearCap->usrInfoLyr1Prot.val == IN_UIL1_G711ULAW) {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Overriding bearer cap to a-law\n");
-					bearCap->usrInfoLyr1Prot.val = IN_UIL1_G711ALAW;
-				}
-				break;
-		}
-
-		
-		bearCap->lyr1Ident.pres = PRSNT_NODEF;
-		bearCap->lyr1Ident.val = IN_L1_IDENT;
+	switch (signal_data->switchtype) {
+		case SNGISDN_SWITCH_NI2:
+		case SNGISDN_SWITCH_4ESS:
+		case SNGISDN_SWITCH_5ESS:
+		case SNGISDN_SWITCH_DMS100:
+		case SNGISDN_SWITCH_INSNET:
+			if (bearCap->usrInfoLyr1Prot.val == IN_UIL1_G711ALAW) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Overriding bearer cap to u-law\n");
+				bearCap->usrInfoLyr1Prot.val = IN_UIL1_G711ULAW;
+			}
+			break;
+		case SNGISDN_SWITCH_EUROISDN:
+		case SNGISDN_SWITCH_QSIG:
+			if (bearCap->usrInfoLyr1Prot.val == IN_UIL1_G711ULAW) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Overriding bearer cap to a-law\n");
+				bearCap->usrInfoLyr1Prot.val = IN_UIL1_G711ALAW;
+			}
+			break;
 	}
+
+	bearCap->lyr1Ident.pres = PRSNT_NODEF;
+	bearCap->lyr1Ident.val = IN_L1_IDENT;
+	
 	return FTDM_SUCCESS;
 }
 
