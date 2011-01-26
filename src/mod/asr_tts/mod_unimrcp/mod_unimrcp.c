@@ -49,6 +49,7 @@
 #include "mrcp_resource_loader.h"
 #include "mpf_engine.h"
 #include "mpf_codec_manager.h"
+#include "mpf_dtmf_generator.h"
 #include "mpf_rtp_termination_factory.h"
 #include "mrcp_sofiasip_client_agent.h"
 #include "mrcp_unirtsp_client_agent.h"
@@ -442,6 +443,12 @@ struct recognizer_data {
 	int start_of_input;
 	/** true, if input timers have started */
 	int timers_started;
+	/** UniMRCP mpf stream */
+	mpf_audio_stream_t *unimrcp_stream;
+	/** DTMF generator */
+	mpf_dtmf_generator_t *dtmf_generator;
+	/** true, if presently transmitting DTMF */
+	char dtmf_generator_active;
 };
 typedef struct recognizer_data recognizer_data_t;
 
@@ -457,6 +464,7 @@ static switch_status_t recog_asr_disable_grammar(switch_asr_handle_t *ah, const 
 static switch_status_t recog_asr_disable_all_grammars(switch_asr_handle_t *ah);
 static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
+static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags);
 #if 0
 static switch_status_t recog_asr_start(switch_asr_handle_t *ah, const char *name);
 #endif
@@ -472,6 +480,7 @@ static void recog_asr_float_param(switch_asr_handle_t *ah, char *param, double v
 /* recognizer's interface for UniMRCP */
 static apt_bool_t recog_message_handler(const mrcp_app_message_t *app_message);
 static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_message_t *message);
+static apt_bool_t recog_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec);
 static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *frame);
 
 /* recognizer specific speech_channel_funcs */
@@ -3114,6 +3123,9 @@ static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_
 	speech_channel_destroy(schannel);
 	switch_core_hash_destroy(&r->grammars);
 	switch_core_hash_destroy(&r->enabled_grammars);
+	if (r->dtmf_generator) {
+		mpf_dtmf_generator_destroy(r->dtmf_generator);
+	}
 
 	/* this lets FreeSWITCH's speech_thread know the handle is closed */
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
@@ -3132,6 +3144,39 @@ static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsig
 	switch_size_t slen = len;
 	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
 	return speech_channel_write(schannel, data, &slen);
+}
+
+/**
+ * Process asr_feed_dtmf request from FreeSWITCH
+ *
+ * @param ah the FreeSWITCH speech recognition handle
+ * @return SWITCH_STATUS_SUCCESS if successful 
+ */
+static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags)
+{
+	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+	char digits[2];
+
+	if (!r->dtmf_generator) {
+		if (!r->unimrcp_stream) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: No UniMRCP stream object open\n", schannel->name);
+			return SWITCH_STATUS_FALSE;
+		}
+		r->dtmf_generator = mpf_dtmf_generator_create(r->unimrcp_stream, schannel->unimrcp_session->pool);
+		if (!r->dtmf_generator) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: Failed to create DTMF generator\n", schannel->name);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	digits[0] = dtmf->digit;
+	digits[1] = '\0';
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Queued DTMF: %s\n", schannel->name, digits);
+	mpf_dtmf_generator_enqueue(r->dtmf_generator, digits);
+	r->dtmf_generator_active = 1;
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #if 0
@@ -3380,6 +3425,23 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 }
 
 /**
+ * UniMRCP callback requesting open for speech recognition
+ *
+ * @param stream the UniMRCP stream
+ * @param codec the codec
+ * @return TRUE
+ */
+static apt_bool_t recog_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec)
+{
+	speech_channel_t *schannel = (speech_channel_t *) stream->obj;
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+	
+	r->unimrcp_stream = stream;
+	
+	return TRUE;
+}
+
+/**
  * UniMRCP callback requesting next frame for speech recognition
  *
  * @param stream the UniMRCP stream
@@ -3389,6 +3451,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *frame)
 {
 	speech_channel_t *schannel = (speech_channel_t *) stream->obj;
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
 	switch_size_t to_read = frame->codec_frame.size;
 
 	/* grab the data.  pad it if there isn't enough */
@@ -3397,6 +3460,13 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 			memset((uint8_t *) frame->codec_frame.buffer + to_read, schannel->silence, frame->codec_frame.size - to_read);
 		}
 		frame->type |= MEDIA_FRAME_TYPE_AUDIO;
+	}
+	
+	if (r->dtmf_generator_active) {
+		if (!mpf_dtmf_generator_put_frame(r->dtmf_generator, frame)) {
+			if (!mpf_dtmf_generator_sending(r->dtmf_generator))
+				r->dtmf_generator_active = 0;
+		}
 	}
 
 	return TRUE;
@@ -3421,6 +3491,7 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	asr_interface->asr_disable_all_grammars = recog_asr_disable_all_grammars;
 	asr_interface->asr_close = recog_asr_close;
 	asr_interface->asr_feed = recog_asr_feed;
+	asr_interface->asr_feed_dtmf = recog_asr_feed_dtmf;
 #if 0
 	asr_interface->asr_start = recog_asr_start;
 #endif
@@ -3443,7 +3514,7 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	globals.recog.dispatcher.on_channel_remove = speech_on_channel_remove;
 	globals.recog.dispatcher.on_message_receive = recog_on_message_receive;
 	globals.recog.audio_stream_vtable.destroy = NULL;
-	globals.recog.audio_stream_vtable.open_rx = NULL;
+	globals.recog.audio_stream_vtable.open_rx = recog_stream_open;
 	globals.recog.audio_stream_vtable.close_rx = NULL;
 	globals.recog.audio_stream_vtable.read_frame = recog_stream_read;
 	globals.recog.audio_stream_vtable.open_tx = NULL;

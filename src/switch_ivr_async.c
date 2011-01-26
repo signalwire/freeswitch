@@ -2660,6 +2660,20 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 	return SWITCH_TRUE;
 }
 
+static switch_status_t speech_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+
+	if (switch_core_asr_feed_dtmf(sth->ah, dtmf, &flags) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Feeding DTMF\n");
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_detect_speech(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2872,6 +2886,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	if ((status = switch_core_media_bug_add(session, "detect_speech", key,
 											speech_callback, sth, 0, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
+		return status;
+	}
+
+	if ((status = switch_core_event_hook_add_recv_dtmf(session, speech_on_dtmf)) != SWITCH_STATUS_SUCCESS) {
+		switch_ivr_stop_detect_speech(session);
 		return status;
 	}
 

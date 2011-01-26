@@ -1715,6 +1715,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
 
 /*!
+  \brief Feed DTMF to an asr handle
+  \param ah the handle to feed data to
+  \param dtmf a string of DTMF digits
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags);
+
+/*!
   \brief Check an asr handle for results
   \param ah the handle to check
   \param flags flags to influence behaviour

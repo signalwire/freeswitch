@@ -239,6 +239,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 	return ah->asr_interface->asr_feed(ah, data, len, flags);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_feed_dtmf) {
+		status = ah->asr_interface->asr_feed_dtmf(ah, dtmf, flags);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
 	switch_assert(ah != NULL);
