@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  *
  * switch_module_interfaces.h -- Module Interface Definitions
@@ -396,6 +397,12 @@ struct switch_asr_interface {
 	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_asr_interface *next;
+	/*! function to enable a grammar to the asr interface */
+	switch_status_t (*asr_enable_grammar) (switch_asr_handle_t *ah, const char *name);
+	/*! function to disable a grammar to the asr interface */
+	switch_status_t (*asr_disable_grammar) (switch_asr_handle_t *ah, const char *name);
+	/*! function to disable all grammars to the asr interface */
+	switch_status_t (*asr_disable_all_grammars) (switch_asr_handle_t *ah);
 };
 
 /*! an abstract representation of an asr speech interface. */

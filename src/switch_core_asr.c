@@ -27,6 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Christopher M. Rienzo <chris@rienzo.net>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  *
  * switch_core_asr.c -- Main Core Library (Speech Detection Interface)
@@ -156,6 +157,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle
 
 	switch_assert(ah != NULL);
 	status = ah->asr_interface->asr_unload_grammar(ah, name);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_enable_grammar(switch_asr_handle_t *ah, const char *name)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_enable_grammar) {
+		status = ah->asr_interface->asr_enable_grammar(ah, name);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_grammar(switch_asr_handle_t *ah, const char *name)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_disable_grammar) {
+		status = ah->asr_interface->asr_disable_grammar(ah, name);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_all_grammars(switch_asr_handle_t *ah)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_disable_all_grammars) {
+		status = ah->asr_interface->asr_disable_all_grammars(ah);
+	}
 
 	return status;
 }
