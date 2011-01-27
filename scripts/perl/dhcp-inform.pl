@@ -61,12 +61,7 @@ while ($sock->recv($newmsg, 1024)) {
     }
     print "Sending option 66 as $opt_u\n";
 
-    $handle = IO::Socket::INET->new(Proto => 'udp',
-				    PeerPort => '68',
-				    LocalPort => '67',
-				    ReuseAddr => 1,
-				    PeerAddr => $dhcpreq->ciaddr(),
-				   ) or die "socket: $@";
-    $handle->send($dhcpresp->serialize())
+
+    $sock->send($dhcpresp->serialize())
   }
 }
