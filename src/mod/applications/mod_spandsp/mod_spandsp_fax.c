@@ -40,6 +40,9 @@
 #define MAX_FEC_ENTRIES             4
 #define MAX_FEC_SPAN                4
 
+#define SPANDSP_EVENT_TXFAXRESULT "spandsp::txfaxresult"
+#define SPANDSP_EVENT_RXFAXRESULT "spandsp::rxfaxresult"
+
 /*****************************************************************************
 	OUR DEFINES AND STRUCTS
 *****************************************************************************/
@@ -305,7 +308,14 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	pvt_t *pvt;
-	char *tmp;
+	char *fax_document_transferred_pages = NULL;
+	char *fax_document_total_pages = NULL;
+	char *fax_image_resolution = NULL;
+	char *fax_image_size = NULL;
+	char *fax_bad_rows = NULL;
+	char *fax_transfer_rate = NULL;
+	char *fax_result_code = NULL;
+	switch_event_t *event;
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
@@ -353,13 +363,12 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	/*
-	   Set our channel variables
+	   Set our channel variables, variables are also used in event
 	 */
 
-	tmp = switch_mprintf("%i", result);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_result_code", tmp);
-		switch_safe_free(tmp);
+	fax_result_code = switch_core_session_sprintf(session, "%i", result);
+	if (fax_result_code) {
+		switch_channel_set_variable(channel, "fax_result_code", fax_result_code);
 	}
 
 	switch_channel_set_variable(channel, "fax_result_text", t30_completion_code_to_str(result));
@@ -368,49 +377,56 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
 
-	tmp = switch_mprintf("%i", pvt->app_mode == FUNCTION_TX ? t.pages_tx : t.pages_rx);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_document_transferred_pages", tmp);
-		switch_safe_free(tmp);
+	fax_document_transferred_pages = switch_core_session_sprintf(session, "%i", pvt->app_mode == FUNCTION_TX ? t.pages_tx : t.pages_rx);
+	if (fax_document_transferred_pages) {
+		switch_channel_set_variable(channel, "fax_document_transferred_pages", fax_document_transferred_pages);
 	}
 
-	tmp = switch_mprintf("%i", t.pages_in_file);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_document_total_pages", tmp);
-		switch_safe_free(tmp);
+	fax_document_total_pages = switch_core_session_sprintf(session, "%i", t.pages_in_file);
+	if (fax_document_total_pages) {
+		switch_channel_set_variable(channel, "fax_document_total_pages", fax_document_total_pages);
 	}
 
-	tmp = switch_mprintf("%ix%i", t.x_resolution, t.y_resolution);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_image_resolution", tmp);
-		switch_safe_free(tmp);
+	fax_image_resolution = switch_core_session_sprintf(session, "%ix%i", t.x_resolution, t.y_resolution);
+	if (fax_image_resolution) {
+		switch_channel_set_variable(channel, "fax_image_resolution", fax_image_resolution);
 	}
 
-	tmp = switch_mprintf("%d", t.image_size);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_image_size", tmp);
-		switch_safe_free(tmp);
+	fax_image_size = switch_core_session_sprintf(session, "%d", t.image_size);
+	if (fax_image_size) {
+		switch_channel_set_variable(channel, "fax_image_size", fax_image_size);
 	}
 
-	tmp = switch_mprintf("%d", t.bad_rows);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_bad_rows", tmp);
-		switch_safe_free(tmp);
+	fax_bad_rows = switch_core_session_sprintf(session, "%d", t.bad_rows);
+	if (fax_bad_rows) {
+		switch_channel_set_variable(channel, "fax_bad_rows", fax_bad_rows);
 	}
 
-	tmp = switch_mprintf("%i", t.bit_rate);
-	if (tmp) {
-		switch_channel_set_variable(channel, "fax_transfer_rate", tmp);
-		switch_safe_free(tmp);
+	fax_transfer_rate = switch_core_session_sprintf(session, "%i", t.bit_rate);
+	if (fax_transfer_rate) {
+		switch_channel_set_variable(channel, "fax_transfer_rate", fax_transfer_rate);
 	}
 
 	/* switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING); */
 
 	pvt->done = 1;
 
-	/*
-	   TODO Fire events
-	 */
+	/* Fire event */
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXRESULT : SPANDSP_EVENT_RXFAXRESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_image_resolution);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t.error_correcting_mode) ? "on" : "off");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
+		switch_core_session_queue_private_event(session, &event, SWITCH_FALSE);
+	}
 }
 
 static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
@@ -1026,7 +1042,6 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Fax TX filename not set.\n");
 			goto done;
 		} else if (pvt->app_mode == FUNCTION_RX) {
-			char *fname;
 			const char *prefix;
 			switch_time_t time;
 
@@ -1036,11 +1051,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 				prefix = globals.prepend_string;
 			}
 
-			fname = switch_mprintf("%s/%s-%ld-%ld.tif", globals.spool, prefix, globals.total_sessions, time);
-			if (fname) {
-				pvt->filename = switch_core_session_strdup(session, fname);
-				switch_safe_free(fname);
-			} else {
+			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%ld.tif", globals.spool, prefix, globals.total_sessions, time))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
 				goto done;
 			}
