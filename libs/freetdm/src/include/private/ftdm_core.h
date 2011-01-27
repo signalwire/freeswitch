@@ -94,7 +94,10 @@
 			   !strcasecmp(expr, "active") ||	\
 			   atoi(expr))) ? 1 : 0
 
-
+#ifdef WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <mmsystem.h>
+#endif
 
 #include <time.h>
 #ifndef __WINDOWS__
