@@ -312,15 +312,21 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 Dbh::Dbh(char *dsn, char *user, char *pass)
 {
   switch_cache_db_connection_options_t options = { {0} };
+  const char *prefix = "core:";
+  m_connected = false;
 
-  options.odbc_options.dsn = dsn;
-  options.odbc_options.user = user;
-  options.odbc_options.pass = pass;
-
-  if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) == SWITCH_STATUS_SUCCESS) {
-    m_connected = true;
+  if (strstr(dsn, prefix) == dsn) {
+    options.core_db_options.db_path = &dsn[strlen(prefix)];
+    if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) == SWITCH_STATUS_SUCCESS) {
+      m_connected = true;
+    }
   } else {
-    m_connected = false;
+    options.odbc_options.dsn = dsn;
+    options.odbc_options.user = user;
+    options.odbc_options.pass = pass;
+    if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) == SWITCH_STATUS_SUCCESS) {
+      m_connected = true;
+    }
   }
 }
 
