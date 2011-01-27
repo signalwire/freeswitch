@@ -350,6 +350,16 @@ bool Dbh::connected()
   return m_connected;
 }
 
+bool Dbh::test_reactive(char *test_sql, char *drop_sql, char *reactive_sql)
+{
+  if (m_connected) {
+    if (switch_cache_db_test_reactive(dbh, test_sql, drop_sql, reactive_sql) == SWITCH_TRUE) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 {
   SWIGLUA_FN *lua_fun = (SWIGLUA_FN *)pArg;
