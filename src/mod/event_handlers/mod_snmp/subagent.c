@@ -49,6 +49,14 @@ void init_subagent(void)
 }
 
 
+static int sql_count_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	uint32_t *count = (uint32_t *) pArg;
+	*count = atoi(argv[0]);
+	return 0;
+}
+
+
 int handle_identity(netsnmp_mib_handler *handler, netsnmp_handler_registration *reginfo, netsnmp_agent_request_info *reqinfo, netsnmp_request_info *requests)
 {
 	netsnmp_request_info *request = NULL;
@@ -113,13 +121,20 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
 			break;
 		case SS_CURRENT_CALLS:
-			/*
-			 * This is zero for now, since there is no convenient way to get total call
-			 * count (not to be confused with session count), without touching the
-			 * database.
-			 */
-			int_val = 0;
+			{
+			switch_cache_db_handle_t *dbh;
+			char sql[1024] = "", hostname[256] = "";
+
+			if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+				return SNMP_ERR_GENERR;
+			}
+
+			gethostname(hostname, sizeof(hostname));
+			sprintf(sql, "SELECT COUNT(*) FROM calls WHERE hostname='%s'", hostname);
+			switch_cache_db_execute_sql_callback(dbh, sql, sql_count_callback, &int_val, NULL);
 			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			switch_cache_db_release_db_handle(&dbh);
+			}
 			break;
 		case SS_SESSIONS_PER_SECOND:
 			switch_core_session_ctl(SCSC_LAST_SPS, &int_val);
