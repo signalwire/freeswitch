@@ -7413,6 +7413,20 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_get_dmachine(void * jar
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_set_codec_slin(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_slin_data_t *arg2 = (switch_slin_data_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_slin_data_t *)jarg2; 
+  result = (switch_status_t)switch_core_session_set_codec_slin(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_uuid() {
   char * jresult ;
   char *result = 0 ;
@@ -22789,6 +22803,119 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_api_interface(void * jarg1) {
   switch_api_interface *arg1 = (switch_api_interface *) 0 ;
   
   arg1 = (switch_api_interface *)jarg1; 
+  delete arg1;
+  
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_slin_data_session_set(void * jarg1, void * jarg2) {
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  switch_core_session_t *arg2 = (switch_core_session_t *) 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  arg2 = (switch_core_session_t *)jarg2; 
+  if (arg1) (arg1)->session = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_slin_data_session_get(void * jarg1) {
+  void * jresult ;
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  switch_core_session_t *result = 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  result = (switch_core_session_t *) ((arg1)->session);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_slin_data_write_frame_set(void * jarg1, void * jarg2) {
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  switch_frame_t *arg2 = (switch_frame_t *) 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  arg2 = (switch_frame_t *)jarg2; 
+  if (arg1) (arg1)->write_frame = *arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_slin_data_write_frame_get(void * jarg1) {
+  void * jresult ;
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  switch_frame_t *result = 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  result = (switch_frame_t *)& ((arg1)->write_frame);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_slin_data_codec_set(void * jarg1, void * jarg2) {
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  switch_codec_t *arg2 = (switch_codec_t *) 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  arg2 = (switch_codec_t *)jarg2; 
+  if (arg1) (arg1)->codec = *arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_slin_data_codec_get(void * jarg1) {
+  void * jresult ;
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  switch_codec_t *result = 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  result = (switch_codec_t *)& ((arg1)->codec);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_slin_data_frame_data_set(void * jarg1, char * jarg2) {
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  char *arg2 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) strncpy((char *)arg1->frame_data, (const char *)arg2, 4096);
+    else arg1->frame_data[0] = 0;
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_slin_data_frame_data_get(void * jarg1) {
+  char * jresult ;
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
+  result = (char *)(char *) ((arg1)->frame_data);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_slin_data() {
+  void * jresult ;
+  switch_slin_data *result = 0 ;
+  
+  result = (switch_slin_data *)new switch_slin_data();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_slin_data(void * jarg1) {
+  switch_slin_data *arg1 = (switch_slin_data *) 0 ;
+  
+  arg1 = (switch_slin_data *)jarg1; 
   delete arg1;
   
 }

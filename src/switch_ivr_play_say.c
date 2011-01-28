@@ -372,6 +372,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_event_t *event;
 	int divisor = 0;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
+	int restart_limit_on_dtmf = 0;
 	const char *prefix;
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
@@ -528,6 +529,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 		asis = 1;
 	}
+	
+	restart_limit_on_dtmf = switch_true(switch_channel_get_variable(channel, "record_restart_limit_on_dtmf"));
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
 		vval = switch_core_session_strdup(session, p);
@@ -631,12 +634,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			break;
 		}
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
+
+				if (limit && restart_limit_on_dtmf) {
+					start = switch_epoch_time_now(NULL);
+				}
+
 				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
 					break;
@@ -854,7 +862,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		switch_ivr_parse_all_events(session);
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -1306,7 +1314,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			switch_ivr_parse_all_events(session);
 
-			if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+			if (args) {
 				/*
 				   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 				   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -1867,7 +1875,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		switch_status_t status;
 
 		memset(digit_buffer, 0, digit_buffer_length);
-		switch_channel_flush_dtmf(channel);
+
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name,
 								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
@@ -2029,7 +2037,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			switch_event_destroy(&event);
 		}
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			/* dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			 * if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */

@@ -90,7 +90,7 @@ static void remove_binding(listener_t *listener, erlang_pid * pid)
 {
 	struct erlang_binding *ptr, *lst = NULL;
 
-	switch_thread_rwlock_wrlock(globals.listener_rwlock);
+	switch_thread_rwlock_wrlock(globals.bindings_rwlock);
 
 	switch_xml_set_binding_sections(bindings.search_binding, SWITCH_XML_SECTION_MAX);
 
@@ -100,7 +100,7 @@ static void remove_binding(listener_t *listener, erlang_pid * pid)
 				if (ptr->next) {
 					bindings.head = ptr->next;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removed all (only?) listeners\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removed all (only?) binding\n");
 					bindings.head = NULL;
 					break;
 				}
@@ -111,13 +111,13 @@ static void remove_binding(listener_t *listener, erlang_pid * pid)
 					lst->next = NULL;
 				}
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removed listener\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removed binding\n");
 		} else {
 			switch_xml_set_binding_sections(bindings.search_binding, switch_xml_get_binding_sections(bindings.search_binding) | ptr->section);
 		}
 	}
 
-	switch_thread_rwlock_unlock(globals.listener_rwlock);
+	switch_thread_rwlock_unlock(globals.bindings_rwlock);
 }
 
 
@@ -381,6 +381,8 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	section = switch_xml_parse_section_string((char *) sectionstr);
 
+	switch_thread_rwlock_rdlock(globals.bindings_rwlock);
+
 	for (ptr = bindings.head; ptr; ptr = ptr->next) {
 		if (ptr->section != section)
 			continue;
@@ -416,6 +418,8 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 		ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
 		switch_mutex_unlock(ptr->listener->sock_mutex);
 	}
+
+	switch_thread_rwlock_unlock(globals.bindings_rwlock);
 
 	ei_x_free(&buf);
 
@@ -532,6 +536,7 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 						  session_element->uuid_str);
 	}
 
+	switch_event_destroy(&call_event);
 	ei_x_free(&lbuf);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1637,6 +1642,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	memset(&prefs, 0, sizeof(prefs));
 
 	switch_thread_rwlock_create(&globals.listener_rwlock, pool);
+	switch_thread_rwlock_create(&globals.bindings_rwlock, pool);
 	switch_mutex_init(&globals.fetch_reply_mutex, SWITCH_MUTEX_DEFAULT, pool);
 	switch_mutex_init(&globals.listener_count_mutex, SWITCH_MUTEX_UNNESTED, pool);
 	switch_core_hash_init(&globals.fetch_reply_hash, pool);

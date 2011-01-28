@@ -349,7 +349,7 @@ scripts/fsxs: scripts/fsxs.in
 	    -e "s|@INCLUDES\@|-I$(prefix)/include|" \
 	    -e "s|@SOLINK\@|$(SOLINK)|" \
 	    -e "s|@LDFLAGS\@|-L$(prefix)/lib|" \
-	    -e "s|@LIBS\@|`./libs/apr/apr-1-config --libs` `./libs/apr-util/apu-1-config --libs`|" \
+	    -e "s|@LIBS\@||" \
 	    $(top_srcdir)/scripts/fsxs.in > scripts/fsxs
 
 ##

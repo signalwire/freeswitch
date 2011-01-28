@@ -11,6 +11,9 @@
     <!-- IP or Hostname of Default Route -->
     <param name="default-gateway" value="192.168.66.6"/>
 
+    <!-- Number of times to retry ODBC connection on connection problems, default is 120 -->
+    <param name="odbc-retries" value="120"/>
+
     <!-- Customer Query. Use this with Care!!! We are not responsible if you mess
          This up!!! Query *MUST* return columns in the following order!
 	 gateway varchar(128) - contains destination gateway host:port pair (ex: 192.168.1.1:5060 )

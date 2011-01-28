@@ -152,7 +152,8 @@ typedef enum {
 	CFLAG_BRIDGE_TO = (1 << 6),
 	CFLAG_WAIT_MOD = (1 << 7),
 	CFLAG_VID_FLOOR = (1 << 8),
-	CFLAG_WASTE_BANDWIDTH = (1 << 9)
+	CFLAG_WASTE_BANDWIDTH = (1 << 9),
+	CFLAG_OUTCALL = (1 << 10)
 } conf_flag_t;
 
 typedef enum {
@@ -288,6 +289,8 @@ typedef struct conference_obj {
 	uint32_t avg_tally;
 	switch_time_t run_time;
 	char *uuid_str;
+	uint32_t originating;
+	switch_call_cause_t cancel_cause;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -395,11 +398,16 @@ SWITCH_STANDARD_API(conf_api_main);
 static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *conference_name,
 										  switch_core_session_t *session,
-										  char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num, switch_call_cause_t *cause);
+										  char *bridgeto, uint32_t timeout, 
+										  char *flags, 
+										  char *cid_name, 
+										  char *cid_num, 
+										  switch_call_cause_t *cause,
+										  switch_call_cause_t *cancel_cause);
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num, const char *call_uuid);
+											 const char *cid_num, const char *call_uuid, switch_call_cause_t *cancel_cause);
 SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t *conference);
 static void launch_conference_video_thread(conference_obj_t *conference);
@@ -477,6 +485,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mute-Detect", "%s", switch_test_flag(member, MFLAG_MUTE_DETECT) ? "true" : "false" );
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Type", "%s", switch_test_flag(member, MFLAG_MOD) ? "moderator" : "member");
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 
 	return status;
 }
@@ -1379,6 +1388,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	}
 	/* Rinse ... Repeat */
   end:
+
+	if (switch_test_flag(conference, CFLAG_OUTCALL)) {
+		conference->cancel_cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Ending pending outcall channels for Conference: '%s'\n", conference->name);
+		while(conference->originating) {
+			switch_yield(200000);
+		}
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
@@ -2403,6 +2420,8 @@ static void conference_loop_output(conference_member_t *member)
 
 			switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
 
+			switch_set_flag(member->conference, CFLAG_OUTCALL);
+
 			if (toval) {
 				to = atoi(toval);
 				if (to < 10 || to > 500) {
@@ -2421,7 +2440,8 @@ static void conference_loop_output(conference_member_t *member)
 				for (x = 0; x < argc; x++) {
 					char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
 					switch_assert(dial_str);
-					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL);
+					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL, 
+										  &member->conference->cancel_cause);
 					switch_safe_free(dial_str);
 				}
 				switch_safe_free(cpstr);
@@ -4243,9 +4263,9 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 	}
 
 	if (conference) {
-		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause, NULL);
 	} else {
-		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], &cause, NULL);
 	}
 	stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
 
@@ -4268,9 +4288,9 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 	switch_uuid_format(uuid_str, &uuid);
 
 	if (conference) {
-		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str);
+		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL);
 	} else {
-		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str);
+		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL);
 	}
 
 	stream->write_function(stream, "OK Job-UUID: %s\n", uuid_str);
@@ -4784,7 +4804,11 @@ SWITCH_STANDARD_API(conf_api_main)
 static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *conference_name,
 										  switch_core_session_t *session,
-										  char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num, switch_call_cause_t *cause)
+										  char *bridgeto, uint32_t timeout, 
+										  char *flags, char *cid_name, 
+										  char *cid_num, 
+										  switch_call_cause_t *cause,
+										  switch_call_cause_t *cancel_cause)
 {
 	switch_core_session_t *peer_session = NULL;
 	switch_channel_t *peer_channel;
@@ -4830,8 +4854,15 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	/* establish an outbound call leg */
 
-	if (switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NO_LIMITS, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	switch_mutex_lock(conference->mutex);
+	conference->originating++;
+	switch_mutex_unlock(conference->mutex);
+	status = switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NO_LIMITS, cancel_cause);
+	switch_mutex_lock(conference->mutex);
+	conference->originating--;
+	switch_mutex_unlock(conference->mutex);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n",
 						  switch_channel_cause2str(*cause));
 		if (caller_channel) {
@@ -4908,6 +4939,7 @@ struct bg_call {
 	char *cid_num;
 	char *conference_name;
 	char *uuid;
+	switch_call_cause_t *cancel_cause;
 	switch_memory_pool_t *pool;
 };
 
@@ -4920,7 +4952,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		switch_event_t *event;
 
 		conference_outcall(call->conference, call->conference_name,
-						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
+						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause, call->cancel_cause);
 
 		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -4948,7 +4980,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num, const char *call_uuid)
+											 const char *cid_num, const char *call_uuid, switch_call_cause_t *cancel_cause)
 {
 	struct bg_call *call = NULL;
 	switch_thread_t *thread;
@@ -4962,6 +4994,7 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	call->conference = conference;
 	call->session = session;
 	call->timeout = timeout;
+	call->cancel_cause = cancel_cause;
 
 	if (conference) {
 		pool = conference->pool;
@@ -5664,8 +5697,9 @@ SWITCH_STANDARD_APP(conference_function)
 
 					/* more friendliness */
 					if (conference->bad_pin_sound) {
-						conference_local_play_file(conference, session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
+						conference_local_play_file(conference, session, conference->bad_pin_sound, 20, NULL, 0);
 					}
+					switch_channel_flush_dtmf(channel);
 				}
 				pin_retries--;
 			}
@@ -5715,7 +5749,7 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
 		switch_call_cause_t cause;
-		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, &cause) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, &cause, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	} else {
