@@ -71,6 +71,9 @@
     <ClInclude Include="..\src\include\private\uart.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\include\private\ftdm_state.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\fsk.c">
@@ -122,6 +125,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\uart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftdm_state.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

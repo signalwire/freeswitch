@@ -188,6 +188,7 @@
     <ClInclude Include="..\src\include\ftdm_os.h" />
     <ClInclude Include="..\src\include\private\ftdm_sched.h" />
     <ClInclude Include="..\src\include\ftdm_threadmutex.h" />
+    <ClInclude Include="..\src\include\private\ftdm_state.h" />
     <ClInclude Include="..\src\include\private\ftdm_types.h" />
     <ClInclude Include="..\src\include\private\g711.h" />
     <ClInclude Include="..\src\include\private\hashtable.h" />
@@ -209,6 +210,7 @@
     <ClCompile Include="..\src\ftdm_io.c" />
     <ClCompile Include="..\src\ftdm_queue.c" />
     <ClCompile Include="..\src\ftdm_sched.c" />
+    <ClCompile Include="..\src\ftdm_state.c" />
     <ClCompile Include="..\src\ftdm_threadmutex.c" />
     <ClCompile Include="..\src\g711.c" />
     <ClCompile Include="..\src\hashtable.c" />
