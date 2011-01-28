@@ -24,6 +24,7 @@
     <load module="mod_event_socket"/>
     <!-- <load module="mod_zeroconf"/> -->
     <!-- <load module="mod_erlang_event"/> -->
+    <!-- <load module="mod_snmp"/> -->
 
     <!-- Directory Interfaces -->
     <!-- <load module="mod_ldap"/> -->

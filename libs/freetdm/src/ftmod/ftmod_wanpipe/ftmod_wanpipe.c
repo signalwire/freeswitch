@@ -664,6 +664,8 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			}
 		}
 		break;
+	case FTDM_COMMAND_DISABLE_ECHOTRAIN: { err = 0; }
+		break;
 	case FTDM_COMMAND_ENABLE_DTMF_DETECT:
 		{
 #ifdef WP_API_FEATURE_DTMF_EVENTS

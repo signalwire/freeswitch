@@ -224,7 +224,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		switch_ivr_parse_all_events(session);
 
 
-		if (args && (args->input_callback || args->buf || args->buflen || args->dmachine)) {
+		if (args) {
 			switch_dtmf_t dtmf;
 
 			/*

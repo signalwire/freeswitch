@@ -1357,6 +1357,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_session_set_codec_slin(SWIGTYPE_p_switch_core_session session, switch_slin_data data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_set_codec_slin(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_slin_data.getCPtr(data));
+    return ret;
+  }
+
   public static string switch_core_get_uuid() {
     string ret = freeswitchPINVOKE.switch_core_get_uuid();
     return ret;
@@ -7504,6 +7509,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_dmachine")]
   public static extern IntPtr switch_core_session_get_dmachine(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_codec_slin")]
+  public static extern int switch_core_session_set_codec_slin(HandleRef jarg1, HandleRef jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_uuid")]
   public static extern string switch_core_get_uuid();
 
@@ -11187,6 +11195,36 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_api_interface")]
   public static extern void delete_switch_api_interface(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_session_set")]
+  public static extern void switch_slin_data_session_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_session_get")]
+  public static extern IntPtr switch_slin_data_session_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_write_frame_set")]
+  public static extern void switch_slin_data_write_frame_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_write_frame_get")]
+  public static extern IntPtr switch_slin_data_write_frame_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_codec_set")]
+  public static extern void switch_slin_data_codec_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_codec_get")]
+  public static extern IntPtr switch_slin_data_codec_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_frame_data_set")]
+  public static extern void switch_slin_data_frame_data_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_slin_data_frame_data_get")]
+  public static extern string switch_slin_data_frame_data_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_slin_data")]
+  public static extern IntPtr new_switch_slin_data();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_slin_data")]
+  public static extern void delete_switch_slin_data(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_timetable_profile_created_set")]
   public static extern void switch_channel_timetable_profile_created_set(HandleRef jarg1, HandleRef jarg2);
@@ -28401,7 +28439,8 @@ public enum switch_rtp_bug_flag_t {
   RTP_BUG_IGNORE_MARK_BIT = (1 << 2),
   RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
   RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
-  RTP_BUG_NEVER_SEND_MARKER = (1 << 5)
+  RTP_BUG_NEVER_SEND_MARKER = (1 << 5),
+  RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6)
 }
 
 }
@@ -29437,6 +29476,96 @@ public enum switch_signal_t {
 
 namespace FreeSWITCH.Native {
 
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_slin_data : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_slin_data(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_slin_data obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_slin_data() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_slin_data(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public SWIGTYPE_p_switch_core_session session {
+    set {
+      freeswitchPINVOKE.switch_slin_data_session_set(swigCPtr, SWIGTYPE_p_switch_core_session.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_slin_data_session_get(swigCPtr);
+      SWIGTYPE_p_switch_core_session ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_frame write_frame {
+    set {
+      freeswitchPINVOKE.switch_slin_data_write_frame_set(swigCPtr, switch_frame.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_slin_data_write_frame_get(swigCPtr);
+      switch_frame ret = (cPtr == IntPtr.Zero) ? null : new switch_frame(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public switch_codec codec {
+    set {
+      freeswitchPINVOKE.switch_slin_data_codec_set(swigCPtr, switch_codec.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_slin_data_codec_get(swigCPtr);
+      switch_codec ret = (cPtr == IntPtr.Zero) ? null : new switch_codec(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public string frame_data {
+    set {
+      freeswitchPINVOKE.switch_slin_data_frame_data_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_slin_data_frame_data_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_slin_data() : this(freeswitchPINVOKE.new_switch_slin_data(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
 [System.Flags] public enum switch_speech_flag_enum_t {
   SWITCH_SPEECH_FLAG_NONE = 0,
   SWITCH_SPEECH_FLAG_HASTEXT = (1 << 0),
@@ -30146,7 +30275,7 @@ public enum switch_status_t {
   SWITCH_STATUS_FALSE,
   SWITCH_STATUS_TIMEOUT,
   SWITCH_STATUS_RESTART,
-  SWITCH_STATUS_TERM,
+  SWITCH_STATUS_INTR,
   SWITCH_STATUS_NOTIMPL,
   SWITCH_STATUS_MEMERR,
   SWITCH_STATUS_NOOP,
@@ -30163,6 +30292,7 @@ public enum switch_status_t {
   SWITCH_STATUS_TOO_SMALL,
   SWITCH_STATUS_FOUND,
   SWITCH_STATUS_CONTINUE,
+  SWITCH_STATUS_TERM,
   SWITCH_STATUS_NOT_INITALIZED
 }
 

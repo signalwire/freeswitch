@@ -161,6 +161,7 @@ struct api_command_struct {
 
 struct globals_struct {
 	switch_thread_rwlock_t *listener_rwlock;
+	switch_thread_rwlock_t *bindings_rwlock;
 	switch_event_node_t *node;
 	switch_mutex_t *ref_mutex;
 	switch_mutex_t *fetch_reply_mutex;

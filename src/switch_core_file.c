@@ -391,10 +391,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 				if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
 					*len = 0;
 				}
-				fh->samples_out += blen;
 			}
 		}
 
+		fh->samples_out += orig_len;
 		return status;
 	} else {
 		switch_status_t status;

@@ -78,6 +78,7 @@ event_handlers/mod_cdr_sqlite
 #event_handlers/mod_cdr_pg_csv
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_erlang_event
+#event_handlers/mod_snmp
 formats/mod_native_file
 formats/mod_sndfile
 #formats/mod_shout

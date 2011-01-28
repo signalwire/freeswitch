@@ -1,0 +1,110 @@
+FREESWITCH-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    OBJECT-TYPE, MODULE-IDENTITY,
+    Integer32, Gauge32, Counter32, Counter64, TimeTicks,
+    enterprises,
+        FROM SNMPv2-SMI
+
+    DisplayString
+        FROM SNMPv2-TC
+;
+
+
+freeswitch MODULE-IDENTITY
+    LAST-UPDATED    "201101170000Z"
+    ORGANIZATION    "www.freeswitch.org"
+    CONTACT-INFO
+        "Primary contact: Anthony Minessale II
+         Email: anthm@freeswitch.org"
+    DESCRIPTION
+        "This file defines the private FreeSWITCH SNMP MIB extensions."
+    REVISION        "201101170000Z"
+    DESCRIPTION
+        "First draft by daniel.swarbrick@seventhsignal.de"
+    ::= { enterprises 27880 }
+
+
+core        OBJECT IDENTIFIER ::= { freeswitch 1 }
+mod-sofia   OBJECT IDENTIFIER ::= { freeswitch 1001 }
+mod-skinny  OBJECT IDENTIFIER ::= { freeswitch 1002 }
+
+
+identity    OBJECT IDENTIFIER ::= { core 1 }
+
+versionString OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "FreeSWITCH version as a string"
+    ::= { identity 1 } 
+
+uuid OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "FreeSWITCH core UUID"
+    ::= { identity 2 } 
+
+
+systemStats OBJECT IDENTIFIER ::= { core 2 }
+
+uptime OBJECT-TYPE
+    SYNTAX      TimeTicks
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "FreeSWITCH process uptime in hundredths of seconds"
+    ::= { systemStats 1 }
+
+sessionsSinceStartup OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number of sessions since FreeSWITCH process was started"
+    ::= { systemStats 2 }
+
+currentSessions OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Currently active sessions"
+    ::= { systemStats 3 }
+
+maxSessions OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Maximum permissible active sessions"
+    ::= { systemStats 4 }
+
+currentCalls OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Currently active calls"
+    ::= { systemStats 5 }
+
+sessionsPerSecond OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Current sessions per second"
+    ::= { systemStats 6 }
+
+maxSessionsPerSecond OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Maximum permissible sessions per second"
+    ::= { systemStats 7 }
+
+END
