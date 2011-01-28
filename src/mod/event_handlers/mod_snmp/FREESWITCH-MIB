@@ -107,4 +107,88 @@ maxSessionsPerSecond OBJECT-TYPE
         "Maximum permissible sessions per second"
     ::= { systemStats 7 }
 
+
+ChannelEntry ::= SEQUENCE {
+    chanUUID        DisplayString,
+    chanDirection   DisplayString,
+    chanCreated     DisplayString,
+    chanName        DisplayString,
+    chanState       DisplayString,
+    chanCIDName     DisplayString,
+    chanCIDNum      DisplayString
+}
+
+channelList OBJECT-TYPE
+    SYNTAX      SEQUENCE OF ChannelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A table containing a list of active channels"
+    ::= { core 9 }
+
+channelEntry OBJECT-TYPE
+    SYNTAX      ChannelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A channel entry"
+    INDEX { chanIndex }
+    ::= { channelList 1 }
+
+chanUUID OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The channel UUID."
+    ::= { channelEntry 1 }
+
+chanDirection OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The channel direction."
+    ::= { channelEntry 2 }
+
+chanCreated OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel creation timestamp."
+    ::= { channelEntry 3 }
+
+chanName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The channel name."
+    ::= { channelEntry 4 }
+
+chanState OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The channel state."
+    ::= { channelEntry 5 }
+
+chanCIDName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The channel caller ID name."
+    ::= { channelEntry 6 }
+
+chanCIDNum OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "The channel caller ID number."
+    ::= { channelEntry 7 }
+
 END

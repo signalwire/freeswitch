@@ -36,17 +36,10 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include "subagent.h"
 
-
-void init_subagent(void)
-{
-	static oid identity_oid[] = { 1,3,6,1,4,1,27880,1,1 };
-	static oid systemStats_oid[] = { 1,3,6,1,4,1,27880,1,2 };
-
-	DEBUGMSGTL(("init_subagent", "Initializing\n"));
-
-	netsnmp_register_scalar_group(netsnmp_create_handler_registration("identity", handle_identity, identity_oid, OID_LENGTH(identity_oid), HANDLER_CAN_RONLY), 1, 2);
-	netsnmp_register_scalar_group(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY), 1, 7);
-}
+netsnmp_table_registration_info *ch_table_info;
+netsnmp_tdata *ch_table;
+netsnmp_handler_registration *ch_reginfo;
+uint32_t idx;
 
 
 static int sql_count_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -54,6 +47,94 @@ static int sql_count_callback(void *pArg, int argc, char **argv, char **columnNa
 	uint32_t *count = (uint32_t *) pArg;
 	*count = atoi(argv[0]);
 	return 0;
+}
+
+
+static int channelList_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	chan_entry_t *entry;
+	netsnmp_tdata_row *row;
+
+	switch_zmalloc(entry, sizeof(chan_entry_t));
+	if (!entry)
+		return 0;
+
+	row = netsnmp_tdata_create_row();
+	if (!row) {
+		switch_safe_free(entry);
+		return 0;
+	}
+	row->data = entry;
+
+	entry->idx = idx++;
+	strncpy(entry->uuid, argv[0], sizeof(entry->uuid));
+	strncpy(entry->direction, argv[1], sizeof(entry->direction));
+	strncpy(entry->created, argv[2], sizeof(entry->created));
+	strncpy(entry->name, argv[4], sizeof(entry->name));
+	strncpy(entry->state, argv[5], sizeof(entry->state));
+	strncpy(entry->cid_name, argv[6], sizeof(entry->cid_name));
+	strncpy(entry->cid_num, argv[7], sizeof(entry->cid_num));
+
+	netsnmp_tdata_row_add_index(row, ASN_INTEGER, &entry->idx, sizeof(entry->idx));
+	netsnmp_tdata_add_row(ch_table, row);
+	return 0;
+}
+
+
+void channelList_free(netsnmp_cache *cache, void *magic)
+{
+	netsnmp_tdata_row *row = netsnmp_tdata_row_first(ch_table);
+
+	/* Delete table rows one by one */
+	while (row) {
+		netsnmp_tdata_remove_and_delete_row(ch_table, row);
+		switch_safe_free(row->data);
+		row = netsnmp_tdata_row_first(ch_table);
+	}
+}
+
+
+int channelList_load(netsnmp_cache *cache, void *vmagic)
+{
+	switch_cache_db_handle_t *dbh;
+	char sql[1024] = "", hostname[256] = "";
+
+	channelList_free(cache, NULL);
+
+	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		return 0;
+	}
+
+	idx = 1;
+	gethostname(hostname, sizeof(hostname));
+	sprintf(sql, "SELECT * FROM channels WHERE hostname='%s' ORDER BY created_epoch", hostname);
+	switch_cache_db_execute_sql_callback(dbh, sql, channelList_callback, NULL, NULL);
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	return 0;
+}
+
+
+void init_subagent(switch_memory_pool_t *pool)
+{
+	static oid identity_oid[] = { 1,3,6,1,4,1,27880,1,1 };
+	static oid systemStats_oid[] = { 1,3,6,1,4,1,27880,1,2 };
+	static oid channelList_oid[] = { 1,3,6,1,4,1,27880,1,9 };
+
+	DEBUGMSGTL(("init_subagent", "mod_snmp subagent initializing\n"));
+
+	netsnmp_register_scalar_group(netsnmp_create_handler_registration("identity", handle_identity, identity_oid, OID_LENGTH(identity_oid), HANDLER_CAN_RONLY), 1, 2);
+	netsnmp_register_scalar_group(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY), 1, 7);
+
+	ch_table_info = switch_core_alloc(pool, sizeof(netsnmp_table_registration_info));
+	netsnmp_table_helper_add_index(ch_table_info, ASN_INTEGER);
+	ch_table_info->min_column = 1;
+	ch_table_info->max_column = 7;
+	ch_table = netsnmp_tdata_create_table("channelList", 0);
+	ch_reginfo = netsnmp_create_handler_registration("channelList", handle_channelList, channelList_oid, OID_LENGTH(channelList_oid), HANDLER_CAN_RONLY);
+	netsnmp_tdata_register(ch_reginfo, ch_table, ch_table_info);
+	netsnmp_inject_handler(ch_reginfo, netsnmp_get_cache_handler(5, channelList_load, channelList_free, channelList_oid, OID_LENGTH(channelList_oid)));
 }
 
 
@@ -97,7 +178,7 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 	netsnmp_request_info *request = NULL;
 	oid subid;
 	switch_time_t uptime;
-	uint32_t int_val;
+	uint32_t int_val = 0;
 
 	switch(reqinfo->mode) {
 	case MODE_GET:
@@ -159,6 +240,55 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 	return SNMP_ERR_NOERROR;
 }
 
+
+int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registration *reginfo, netsnmp_agent_request_info *reqinfo, netsnmp_request_info *requests)
+{
+	netsnmp_request_info *request;
+	netsnmp_table_request_info *table_info;
+	chan_entry_t *entry;
+
+	switch (reqinfo->mode) {
+	case MODE_GET:
+		for (request = requests; request; request = request->next) {
+			table_info = netsnmp_extract_table_info(request);
+			entry = (chan_entry_t *) netsnmp_tdata_extract_entry(request);
+
+			switch (table_info->colnum) {
+			case CH_UUID:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->uuid, strlen(entry->uuid));
+				break;
+			case CH_DIRECTION:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->direction, strlen(entry->direction));
+				break;
+			case CH_CREATED:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->created, strlen(entry->created));
+				break;
+			case CH_NAME:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->name, strlen(entry->name));
+				break;
+			case CH_STATE:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->state, strlen(entry->state));
+				break;
+			case CH_CID_NAME:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->cid_name, strlen(entry->cid_name));
+				break;
+			case CH_CID_NUM:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->cid_num, strlen(entry->cid_num));
+				break;
+			default:
+				snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", table_info->colnum);
+				netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+			}
+		}
+		break;
+	default:
+		/* we should never get here, so this is a really bad error */
+		snmp_log(LOG_ERR, "Unknown mode (%d) in handle_foo\n", reqinfo->mode );
+		return SNMP_ERR_GENERR;
+	}
+
+	return SNMP_ERR_NOERROR;
+}
 
 
 /* For Emacs:
