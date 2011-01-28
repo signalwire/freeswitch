@@ -61,5 +61,4 @@
       <X-PRE-PROCESS cmd="include" data="lang/ru/*.xml"/>
     </macros>
   </section>
-
 </document>
