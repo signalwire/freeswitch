@@ -38,6 +38,7 @@
 
 static struct {
 	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
 	int shutdown;
 } globals;
 
@@ -45,6 +46,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_snmp_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime);
 SWITCH_MODULE_DEFINITION(mod_snmp, mod_snmp_load, mod_snmp_shutdown, mod_snmp_runtime);
+
+
+static switch_status_t snmp_manage(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
+{
+	if (action == SMA_GET) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mutex lock request from relative OID %s.\n", relative_oid);
+		switch_mutex_lock(globals.mutex);
+	} else if (action == SMA_SET) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mutex unlock request from relative OID %s.\n", relative_oid);
+		switch_mutex_unlock(globals.mutex);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 
 static int snmp_callback_log(int major, int minor, void *serverarg, void *clientarg)
@@ -55,27 +70,13 @@ static int snmp_callback_log(int major, int minor, void *serverarg, void *client
 }
 
 
-static switch_state_handler_table_t state_handlers = {
-	/*.on_init */ NULL,
-	/*.on_routing */ NULL,
-	/*.on_execute */ NULL,
-	/*.on_hangup */ NULL,
-	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL,
-	/*.on_consume_media */ NULL,
-	/*.on_hibernate */ NULL,
-	/*.on_reset */ NULL,
-	/*.on_park */ NULL,
-	/*.on_reporting */ NULL
-};
-
-
 static switch_status_t load_config(switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	return status;
 }
@@ -84,11 +85,14 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_management_interface_t *management_interface;
 
 	load_config(pool);
 
-	switch_core_add_state_handler(&state_handlers);
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
+	management_interface->relative_oid = "1000";
+	management_interface->management_function = snmp_manage;
 
 	/* Register callback function so we get Net-SNMP logging handled by FreeSWITCH */
 	snmp_register_callback(SNMP_CALLBACK_LIBRARY, SNMP_CALLBACK_LOGGING, snmp_callback_log, NULL);
@@ -100,10 +104,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 	init_agent("mod_snmp");
 
 	/*
-	 * Override master/subagent ping interval to 5s, to ensure that
+	 * Override master/subagent ping interval to 2s, to ensure that
 	 * agent_check_and_process() never blocks for longer than that.
 	 */
-	netsnmp_ds_set_int(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_AGENTX_PING_INTERVAL, 5);
+	netsnmp_ds_set_int(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_AGENTX_PING_INTERVAL, 2);
 
 	init_subagent();  
 	init_snmp("mod_snmp");
@@ -114,10 +118,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime)
 {
-	while (!globals.shutdown) {
+	if (!globals.shutdown) {
+		switch_mutex_lock(globals.mutex);
 		/* Block on select() */
 		agent_check_and_process(1);
+		switch_mutex_unlock(globals.mutex);
 	}
+
+	switch_yield(5000);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -126,9 +134,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_snmp_shutdown)
 {
 	globals.shutdown = 1;
-	switch_core_remove_state_handler(&state_handlers);
 
+	switch_mutex_lock(globals.mutex);
 	snmp_shutdown("mod_snmp");
+	switch_mutex_unlock(globals.mutex);
+
+	switch_mutex_destroy(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }

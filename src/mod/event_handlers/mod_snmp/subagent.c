@@ -37,72 +37,47 @@
 #include "subagent.h"
 
 
-static oid identity_oid[] = { 1,3,6,1,4,1,27880,1,1 };
-static oid systemStats_oid[] = { 1,3,6,1,4,1,27880,1,2 };
-
-/* identity sub-IDs - these must match MIB */
-enum {
-	versionString_oid = 1,
-	uuid_oid
-};
-
-
-/* systemStats sub-IDs - these must match MIB */
-enum {
-	uptime_oid = 1,
-	sessionsSinceStartup_oid,
-	currentSessions_oid,
-	maxSessions_oid,
-	currentCalls_oid,
-	sessionsPerSecond_oid,
-	maxSessionsPerSecond_oid
-};
-
-
 void init_subagent(void)
 {
-	DEBUGMSGTL(("init_nstAgentSubagentObject", "Initializing\n"));
+	static oid identity_oid[] = { 1,3,6,1,4,1,27880,1,1 };
+	static oid systemStats_oid[] = { 1,3,6,1,4,1,27880,1,2 };
 
-	netsnmp_register_handler(netsnmp_create_handler_registration("identity", handle_identity, identity_oid, OID_LENGTH(identity_oid), HANDLER_CAN_RONLY));
-	netsnmp_register_handler(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY));
+	DEBUGMSGTL(("init_subagent", "Initializing\n"));
+
+	netsnmp_register_scalar_group(netsnmp_create_handler_registration("identity", handle_identity, identity_oid, OID_LENGTH(identity_oid), HANDLER_CAN_RONLY), 1, 2);
+	netsnmp_register_scalar_group(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY), 1, 7);
 }
 
 
 int handle_identity(netsnmp_mib_handler *handler, netsnmp_handler_registration *reginfo, netsnmp_agent_request_info *reqinfo, netsnmp_request_info *requests)
 {
-	static char const version[] = SWITCH_VERSION_FULL;
-	char uuid[40] = "";
 	netsnmp_request_info *request = NULL;
 	oid subid;
+	static char const version[] = SWITCH_VERSION_FULL;
+	char uuid[40] = "";
 
 	switch(reqinfo->mode) {
-		case MODE_GET:
-			for (request = requests; request; request = request->next) {
-				subid = request->requestvb->name[OID_LENGTH(systemStats_oid)];
+	case MODE_GET:
+		subid = requests->requestvb->name[reginfo->rootoid_len - 2];
 
-				switch (subid) {
-					case versionString_oid:
-						snmp_set_var_typed_value(requests->requestvb, ASN_OCTET_STR, (u_char *) &version, strlen(version));
-						break;
-					case uuid_oid:
-						strncpy(uuid, switch_core_get_uuid(), sizeof(uuid));
-						snmp_set_var_typed_value(requests->requestvb, ASN_OCTET_STR, (u_char *) &uuid, strlen(uuid));
-						break;
-					default:
-						snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", (int) subid);
-						netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
-				}
-			}
+		switch (subid) {
+		case ID_VERSION_STR:
+			snmp_set_var_typed_value(requests->requestvb, ASN_OCTET_STR, (u_char *) &version, strlen(version));
 			break;
-
-		case MODE_GETNEXT:
-			snmp_log(LOG_ERR, "MODE_GETNEXT not supported (yet)\n");
+		case ID_UUID:
+			strncpy(uuid, switch_core_get_uuid(), sizeof(uuid));
+			snmp_set_var_typed_value(requests->requestvb, ASN_OCTET_STR, (u_char *) &uuid, strlen(uuid));
 			break;
-
 		default:
-			/* we should never get here, so this is a really bad error */
-			snmp_log(LOG_ERR, "Unknown mode (%d) in handle_versionString\n", reqinfo->mode );
-			return SNMP_ERR_GENERR;
+			snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", (int) subid);
+			netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+		}
+		break;
+
+	default:
+		/* we should never get here, so this is a really bad error */
+		snmp_log(LOG_ERR, "Unknown mode (%d) in handle_identity\n", reqinfo->mode );
+		return SNMP_ERR_GENERR;
 	}
 
 	return SNMP_ERR_NOERROR;
@@ -117,59 +92,53 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 	uint32_t int_val;
 
 	switch(reqinfo->mode) {
-		case MODE_GET:
-			for (request = requests; request; request = request->next) {
-				subid = request->requestvb->name[OID_LENGTH(systemStats_oid)];
+	case MODE_GET:
+		subid = requests->requestvb->name[reginfo->rootoid_len - 2];
 
-				switch (subid) {
-					case uptime_oid:
-						uptime = switch_core_uptime() / 10000;
-						snmp_set_var_typed_value(requests->requestvb, ASN_TIMETICKS, (u_char *) &uptime, sizeof(uptime));
-						break;
-					case sessionsSinceStartup_oid:
-						int_val = switch_core_session_id() - 1;
-						snmp_set_var_typed_value(requests->requestvb, ASN_COUNTER, (u_char *) &int_val, sizeof(int_val));
-						break;
-					case currentSessions_oid:
-						int_val = switch_core_session_count();
-						snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
-						break;
-					case maxSessions_oid:
-						switch_core_session_ctl(SCSC_MAX_SESSIONS, &int_val);;
-						snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
-						break;
-					case currentCalls_oid:
-						/*
-						 * This is zero for now, since there is no convenient way to get total call
-						 * count (not to be confused with session count), without touching the
-						 * database.
-						 */
-						int_val = 0;
-						snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
-						break;
-					case sessionsPerSecond_oid:
-						switch_core_session_ctl(SCSC_LAST_SPS, &int_val);
-						snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
-						break;
-					case maxSessionsPerSecond_oid:
-						switch_core_session_ctl(SCSC_SPS, &int_val);
-						snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
-						break;
-					default:
-						snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", (int) subid);
-						netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
-				}
-			}
+		switch (subid) {
+		case SS_UPTIME:
+			uptime = switch_core_uptime() / 10000;
+			snmp_set_var_typed_value(requests->requestvb, ASN_TIMETICKS, (u_char *) &uptime, sizeof(uptime));
 			break;
-
-		case MODE_GETNEXT:
-			snmp_log(LOG_ERR, "MODE_GETNEXT not supported (yet)\n");
+		case SS_SESSIONS_SINCE_STARTUP:
+			int_val = switch_core_session_id() - 1;
+			snmp_set_var_typed_value(requests->requestvb, ASN_COUNTER, (u_char *) &int_val, sizeof(int_val));
 			break;
-
+		case SS_CURRENT_SESSIONS:
+			int_val = switch_core_session_count();
+			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			break;
+		case SS_MAX_SESSIONS:
+			switch_core_session_ctl(SCSC_MAX_SESSIONS, &int_val);;
+			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			break;
+		case SS_CURRENT_CALLS:
+			/*
+			 * This is zero for now, since there is no convenient way to get total call
+			 * count (not to be confused with session count), without touching the
+			 * database.
+			 */
+			int_val = 0;
+			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			break;
+		case SS_SESSIONS_PER_SECOND:
+			switch_core_session_ctl(SCSC_LAST_SPS, &int_val);
+			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			break;
+		case SS_MAX_SESSIONS_PER_SECOND:
+			switch_core_session_ctl(SCSC_SPS, &int_val);
+			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			break;
 		default:
-			/* we should never get here, so this is a really bad error */
-			snmp_log(LOG_ERR, "Unknown mode (%d) in handle_systemStats\n", reqinfo->mode);
-			return SNMP_ERR_GENERR;
+			snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", (int) subid);
+			netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+		}
+		break;
+
+	default:
+		/* we should never get here, so this is a really bad error */
+		snmp_log(LOG_ERR, "Unknown mode (%d) in handle_systemStats\n", reqinfo->mode);
+		return SNMP_ERR_GENERR;
 	}
 
 	return SNMP_ERR_NOERROR;

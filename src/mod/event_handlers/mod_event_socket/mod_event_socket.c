@@ -32,7 +32,7 @@
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 25000
-#define MAX_MISSED 2000
+#define MAX_MISSED 500
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -143,7 +143,7 @@ static const char *format2str(event_format_t format)
 }
 
 static void remove_listener(listener_t *listener);
-static void kill_listener(listener_t *l);
+static void kill_listener(listener_t *l, const char *message);
 static void kill_all_listeners(void);
 
 static uint32_t next_id(void)
@@ -170,7 +170,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 			switch_log_node_t *dnode = switch_log_node_dup(node);
 
-			if (switch_queue_push(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
+			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
 					int ll = l->lost_logs;
 					switch_event_t *event;
@@ -184,7 +184,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			} else {
 				switch_log_node_free(&dnode);
 				if (++l->lost_logs > MAX_MISSED) {
-					kill_listener(l);
+					kill_listener(l, "Disconnected due to log queue failure.\n");
 				}
 			}
 		}
@@ -366,7 +366,7 @@ static void event_handler(switch_event_t *event)
 
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				if (switch_queue_push(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
+				if (switch_queue_trypush(l->event_queue, clone) == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_events) {
 						int le = l->lost_events;
 						l->lost_events = 0;
@@ -379,7 +379,7 @@ static void event_handler(switch_event_t *event)
 					}
 				} else {
 					if (++l->lost_events > MAX_MISSED) {
-						kill_listener(l);
+						kill_listener(l, "Disconnected due to event queue failure.\n");
 					}
 					switch_event_destroy(&clone);
 				}
@@ -579,8 +579,41 @@ static void remove_listener(listener_t *listener)
 	switch_mutex_unlock(globals.listener_mutex);
 }
 
-static void kill_listener(listener_t *l)
+static void send_disconnect(listener_t *listener, const char *message)
 {
+	
+	char disco_buf[512] = "";
+	switch_size_t len, mlen;
+
+	if (zstr(message)) {
+		message = "Disconnected.\n";
+	}
+
+	mlen = strlen(message);
+	
+	if (listener->session) {
+		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
+						"Controlled-Session-UUID: %s\n"
+						"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), mlen);
+	} else {
+		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
+	}
+	
+	len = strlen(disco_buf);
+	switch_socket_send(listener->sock, disco_buf, &len);
+	if (len > 0) {
+		len = mlen;
+		switch_socket_send(listener->sock, message, &len);
+	}
+}
+
+static void kill_listener(listener_t *l, const char *message)
+{
+
+	if (message) {
+		send_disconnect(l, message);
+	}
+
 	switch_clear_flag(l, LFLAG_RUNNING);
 	if (l->sock) {
 		switch_socket_shutdown(l->sock, SWITCH_SHUTDOWN_READWRITE);
@@ -595,7 +628,7 @@ static void kill_all_listeners(void)
 
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
-		kill_listener(l);
+		kill_listener(l, "The system is being shut down.\n");
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 }
@@ -1233,7 +1266,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				if (switch_channel_get_state(chan) < CS_HANGUP && switch_channel_test_flag(chan, CF_DIVERT_EVENTS)) {
 					switch_event_t *e = NULL;
 					while (switch_core_session_dequeue_event(listener->session, &e, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-						if (switch_queue_push(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
+						if (switch_queue_trypush(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
 							switch_core_session_queue_event(listener->session, &e);
 							break;
 						}
@@ -2540,22 +2573,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 
 	if (listener->sock) {
-		char disco_buf[512] = "";
-		const char message[] = "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n";
-		int mlen = strlen(message);
-
-		if (listener->session) {
-			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
-							"Controlled-Session-UUID: %s\n"
-							"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), mlen);
-		} else {
-			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
-		}
-
-		len = strlen(disco_buf);
-		switch_socket_send(listener->sock, disco_buf, &len);
-		len = mlen;
-		switch_socket_send(listener->sock, message, &len);
+		send_disconnect(listener, "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n");
 		close_socket(&listener->sock);
 	}
 

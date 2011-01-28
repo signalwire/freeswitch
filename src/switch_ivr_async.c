@@ -3129,6 +3129,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 					switch_event_t *dup;
 
 					if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, dup);
 						switch_event_fire(&dup);
 					}
 

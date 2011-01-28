@@ -77,11 +77,11 @@ struct private_object {
 
 	switch_frame_t cng_frame;
 	unsigned char cng_databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_timer_t timer;
 	switch_caller_profile_t *caller_profile;
 	int32_t bowout_frame_count;
 	char *other_uuid;
 	switch_queue_t *frame_queue;
+	switch_codec_implementation_t read_impl;
 };
 
 typedef struct private_object private_t;
@@ -111,7 +111,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	int interval = 20;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const switch_codec_implementation_t *read_impl;
 
 	if (codec) {
 		iananame = codec->implementation->iananame;
@@ -166,15 +165,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 
-	if (tech_pvt->flag_mutex) {
-		switch_core_timer_destroy(&tech_pvt->timer);
-	}
-
-	read_impl = tech_pvt->read_codec.implementation;
-
-	switch_core_timer_init(&tech_pvt->timer, "soft",
-						   read_impl->microseconds_per_packet / 1000, read_impl->samples_per_packet * 4, switch_core_session_get_pool(session));
-
+	tech_pvt->read_impl = *tech_pvt->read_codec.implementation;
 
 	if (!tech_pvt->flag_mutex) {
 		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -376,7 +367,6 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (tech_pvt) {
-		switch_core_timer_destroy(&tech_pvt->timer);
 
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -568,12 +558,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 
-	switch_core_timer_next(&tech_pvt->timer);
-
 	mutex = tech_pvt->mutex;
-	switch_mutex_lock(mutex);
 
-	if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+
+	if (switch_queue_pop_timeout(tech_pvt->frame_queue, &pop, tech_pvt->read_impl.microseconds_per_packet) == SWITCH_STATUS_SUCCESS && pop) {
 		if (tech_pvt->write_frame) {
 			switch_frame_free(&tech_pvt->write_frame);
 		}
@@ -584,6 +572,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	} else {
 		switch_set_flag(tech_pvt, TFLAG_CNG);
 	}
+
+	switch_mutex_lock(mutex);
 
 	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
 		unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -774,8 +764,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				switch_frame_t *frame = (switch_frame_t *) pop;
 				switch_frame_free(&frame);
 			}
-
-			switch_core_timer_sync(&tech_pvt->timer);
 
 		}
 		break;
