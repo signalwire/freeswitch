@@ -109,7 +109,7 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
 			break;
 		case SS_MAX_SESSIONS:
-			switch_core_session_ctl(SCSC_MAX_SESSIONS, &int_val);;
+			switch_core_session_ctl(SCSC_MAX_SESSIONS, &int_val);
 			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
 			break;
 		case SS_CURRENT_CALLS:
