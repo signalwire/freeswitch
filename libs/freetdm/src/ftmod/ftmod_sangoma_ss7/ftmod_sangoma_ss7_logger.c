@@ -79,8 +79,8 @@ void handle_sng_log(uint8_t level, char *fmt,...)
 		ftdm_log(FTDM_LOG_INFO, "sng_ss7->%s", data);
 		break;
 	/**************************************************************************/
-	case SNG_LOGLEVEL_STATS:
-		ftdm_log(FTDM_LOG_INFO, "sng_ss7->%s", data);
+	case SNG_LOGLEVEL_NOTICE:
+		ftdm_log(FTDM_LOG_NOTICE, "sng_ss7->%s", data);
 		break;
 	/**************************************************************************/
 	case SNG_LOGLEVEL_ERROR:

@@ -80,8 +80,7 @@ int  ft_to_sngss7_cfg_all(void)
 
 		/* start of by checking if the license and sig file are valid */
 		if (sng_validate_license(g_ftdm_sngss7_data.cfg.license,
-								 g_ftdm_sngss7_data.cfg.signature,
-								 g_ftdm_sngss7_data.cfg.spc)) {
+								 g_ftdm_sngss7_data.cfg.signature)) {
 
 			SS7_CRITICAL("License verification failed..ending!\n");
 			return 1;
