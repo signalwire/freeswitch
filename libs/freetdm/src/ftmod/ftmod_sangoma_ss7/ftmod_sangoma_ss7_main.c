@@ -495,8 +495,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_COLLECT:	/* IAM received but wating on digits */
 
-		isup_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
-
 		if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
 			SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
 			break;
@@ -516,8 +514,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/*now go to the RING state */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
 			
-		} else if (i >= isup_intf->min_digits) {
-			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, isup_intf->min_digits);
+		} else if (i >= sngss7_info->circuit->min_digits) {
+			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, sngss7_info->circuit->min_digits);
 
 			/*now go to the RING state */
 			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_RING);
@@ -527,7 +525,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
 				SS7_INFO_CHAN(ftdmchan,"Received %d out of %d so far: %s...starting T35\n",
 										i,
-										isup_intf->min_digits,
+										sngss7_info->circuit->min_digits,
 										ftdmchan->caller_data.dnis.digits);
 		
 				/* start ISUP t35 */

@@ -1509,11 +1509,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 
 			SS7_DEBUG("Found an isup mptRouteId = %d\n", sng_isup.mtpRouteId);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "min_digits")) {
-			sng_isup.min_digits = atoi(parm->val);
-
-			SS7_DEBUG("\tFound min_digits = %d\n", sng_isup.min_digits);
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "ssf")) {
 		/**********************************************************************/
 			ret = find_ssf_type_in_map(parm->val);
