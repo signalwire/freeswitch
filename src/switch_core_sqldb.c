@@ -1160,15 +1160,14 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_DESTROY:
 		{
 			const char *uuid = switch_event_get_header(event, "unique-id");
-			const char *sig = switch_event_get_header(event, "signal_bridge");
 			
 			if (uuid) {
 				new_sql() = switch_mprintf("delete from channels where uuid='%q' and hostname='%q'",
 										   uuid, switch_core_get_variable("hostname"));
-				if (switch_true(sig)) {
-					new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' || callee_uuid='%q') and hostname='%q'",
-											   uuid, uuid, switch_core_get_variable("hostname"));
-				}
+
+				new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' or callee_uuid='%q') and hostname='%q'",
+										   uuid, uuid, switch_core_get_variable("hostname"));
+
 			}
 		}
 		break;
@@ -1410,7 +1409,7 @@ static void core_event_handler(switch_event_t *event)
 		}
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
-		new_sql() = switch_mprintf("delete from calls where caller_uuid='%s' and hostname='%q'",
+		new_sql() = switch_mprintf("delete from calls where (caller_uuid='%s' or callee_uuid='%q') and hostname='%q'",
 								   switch_event_get_header_nil(event, "caller-unique-id"), switch_core_get_variable("hostname"));
 		break;
 	case SWITCH_EVENT_SHUTDOWN:
