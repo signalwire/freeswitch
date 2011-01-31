@@ -9238,6 +9238,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_feed(void * jarg1, void * jarg
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_feed_dtmf(void * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  switch_dtmf_t *arg2 = (switch_dtmf_t *) 0 ;
+  switch_asr_flag_t *arg3 = (switch_asr_flag_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  arg2 = (switch_dtmf_t *)jarg2; 
+  arg3 = (switch_asr_flag_t *)jarg3; 
+  result = (switch_status_t)switch_core_asr_feed_dtmf(arg1,(switch_dtmf_t const *)arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_check_results(void * jarg1, void * jarg2) {
   int jresult ;
   switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
@@ -9293,6 +9309,46 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_unload_grammar(void * jarg1, c
   arg1 = (switch_asr_handle_t *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (switch_status_t)switch_core_asr_unload_grammar(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_enable_grammar(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_core_asr_enable_grammar(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_disable_grammar(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_core_asr_disable_grammar(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_asr_disable_all_grammars(void * jarg1) {
+  int jresult ;
+  switch_asr_handle_t *arg1 = (switch_asr_handle_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_asr_handle_t *)jarg1; 
+  result = (switch_status_t)switch_core_asr_disable_all_grammars(arg1);
   jresult = result; 
   return jresult;
 }
@@ -18820,6 +18876,98 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_next_get(void * jarg1)
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_enable_grammar_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*arg2)(switch_asr_handle_t *,char const *) = (switch_status_t (*)(switch_asr_handle_t *,char const *)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_asr_handle_t *,char const *))jarg2; 
+  if (arg1) (arg1)->asr_enable_grammar = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_enable_grammar_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*result)(switch_asr_handle_t *,char const *) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_asr_handle_t *,char const *)) ((arg1)->asr_enable_grammar);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_disable_grammar_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*arg2)(switch_asr_handle_t *,char const *) = (switch_status_t (*)(switch_asr_handle_t *,char const *)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_asr_handle_t *,char const *))jarg2; 
+  if (arg1) (arg1)->asr_disable_grammar = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_disable_grammar_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*result)(switch_asr_handle_t *,char const *) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_asr_handle_t *,char const *)) ((arg1)->asr_disable_grammar);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_disable_all_grammars_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*arg2)(switch_asr_handle_t *) = (switch_status_t (*)(switch_asr_handle_t *)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_asr_handle_t *))jarg2; 
+  if (arg1) (arg1)->asr_disable_all_grammars = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_disable_all_grammars_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*result)(switch_asr_handle_t *) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_asr_handle_t *)) ((arg1)->asr_disable_all_grammars);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_asr_interface_asr_feed_dtmf_set(void * jarg1, void * jarg2) {
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*arg2)(switch_asr_handle_t *,switch_dtmf_t const *,switch_asr_flag_t *) = (switch_status_t (*)(switch_asr_handle_t *,switch_dtmf_t const *,switch_asr_flag_t *)) 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_asr_handle_t *,switch_dtmf_t const *,switch_asr_flag_t *))jarg2; 
+  if (arg1) (arg1)->asr_feed_dtmf = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_asr_interface_asr_feed_dtmf_get(void * jarg1) {
+  void * jresult ;
+  switch_asr_interface *arg1 = (switch_asr_interface *) 0 ;
+  switch_status_t (*result)(switch_asr_handle_t *,switch_dtmf_t const *,switch_asr_flag_t *) = 0 ;
+  
+  arg1 = (switch_asr_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_asr_handle_t *,switch_dtmf_t const *,switch_asr_flag_t *)) ((arg1)->asr_feed_dtmf);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_asr_interface() {
   void * jresult ;
   switch_asr_interface *result = 0 ;
@@ -27013,6 +27161,46 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_detect_speech_unload_grammar(void *
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_detect_speech_enable_grammar(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_ivr_detect_speech_enable_grammar(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_detect_speech_disable_grammar(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_ivr_detect_speech_disable_grammar(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_detect_speech_disable_all_grammars(void * jarg1) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (switch_status_t)switch_ivr_detect_speech_disable_all_grammars(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_set_param_detect_speech(void * jarg1, char * jarg2, char * jarg3) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
@@ -27024,6 +27212,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_set_param_detect_speech(void * jarg
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   result = (switch_status_t)switch_ivr_set_param_detect_speech(arg1,(char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_detect_speech_start_input_timers(void * jarg1) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (switch_status_t)switch_ivr_detect_speech_start_input_timers(arg1);
   jresult = result; 
   return jresult;
 }
