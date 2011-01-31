@@ -201,14 +201,14 @@ static void event_handler(switch_event_t *event)
 		}
 
 		if (!(peer_session = switch_core_session_locate(peer_uuid))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant locate peer session for uuid %s\n", peer_uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't locate peer session for uuid %s\n", peer_uuid);
 			return;
 		}
 
 		peer_channel = switch_core_session_get_channel(peer_session);
 		
 		if (switch_event_create(&peer_event, SWITCH_EVENT_CHANNEL_BRIDGE) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant create bridge event for peer channel %s\n", peer_uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't create bridge event for peer channel %s\n", peer_uuid);
 			goto end;
 		}
 
@@ -249,7 +249,7 @@ SWITCH_STANDARD_APP(userspy_function)
 			status = switch_core_hash_insert(globals.spy_hash, argv[0], (void *) uuid);
 
 			if ((status != SWITCH_STATUS_SUCCESS)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cant insert to spy hash\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't insert to spy hash\n");
 				switch_channel_hangup(channel, SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED);
 				switch_thread_rwlock_unlock(globals.spy_hash_lock);
 				return;
