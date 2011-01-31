@@ -201,7 +201,7 @@ static void event_handler(switch_event_t *event)
 		}
 
 		if (!(peer_session = switch_core_session_locate(peer_uuid))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't locate peer session for uuid %s\n", peer_uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't locate peer session for uuid %s\n", peer_uuid);
 			return;
 		}
 
