@@ -2755,6 +2755,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 						}
 					}
+
+					if (session) {
+						switch_channel_set_variable(originate_status[i].peer_channel, "originating_leg_uuid", switch_core_session_get_uuid(session));
+					}
+
+					if ((vvar = switch_channel_get_variable_dup(originate_status[i].peer_channel, "execute_on_originate", SWITCH_FALSE))) {
+						char *app = switch_core_session_strdup(originate_status[i].peer_session, vvar);
+						char *arg = NULL;
+
+						if (strstr(app, "::")) {
+							switch_core_session_execute_application_async(originate_status[i].peer_session, app, arg);
+						} else {
+							if ((arg = strchr(app, ' '))) {
+								*arg++ = '\0';
+							}
+							
+							switch_core_session_execute_application(originate_status[i].peer_session, app, arg);
+						}
+						
+					}
 				}
 
 				if (table) {
@@ -2773,7 +2793,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					*cause = SWITCH_CAUSE_SUCCESS;
 					goto outer_for;
 				}
-
+				
 				if (!switch_core_session_running(originate_status[i].peer_session)) {
 					if (originate_status[i].per_channel_delay_start) {
 						switch_channel_set_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);

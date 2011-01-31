@@ -630,6 +630,11 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			char *probe_user = NULL, *probe_euser, *probe_host, *p;
 			struct dialog_helper dh = { { 0 } };
 
+			if (strcasecmp(proto, SOFIA_CHAT_PROTO) != 0) {
+				goto done;
+			}
+
+
 			if (!to || !(probe_user = strdup(to))) {
 				goto done;
 			}
@@ -2405,6 +2410,20 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_event_fire(&sevent);
 		}
 
+	} else if (to_user && (strcasecmp(proto, SOFIA_CHAT_PROTO) != 0)) {
+		if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto", proto);
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "long", profile->name);
+			switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+			switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "to", "%s%s%s@%s", proto, "+", to_user, to_host);
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
+			switch_event_fire(&sevent);
+	
+		}
 	} else {
 		if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);

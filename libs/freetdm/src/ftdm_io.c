@@ -37,6 +37,9 @@
  *
  */
 
+#ifdef MOYTEST
+crap
+#endif
 #define _GNU_SOURCE
 #include "private/ftdm_core.h"
 #include <stdarg.h>

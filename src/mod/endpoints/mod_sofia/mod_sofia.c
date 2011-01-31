@@ -4945,7 +4945,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	sofia_endpoint_interface->state_handler = &sofia_event_handlers;
 
 	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
-	management_interface->relative_oid = "1";
+	management_interface->relative_oid = "1001";
 	management_interface->management_function = sofia_manage;
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");

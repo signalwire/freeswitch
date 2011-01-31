@@ -846,7 +846,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, 
 		 */
 	}
 
-	if (r == 35) {
+	if (r == 35 || r == 730035) {
 		r = SWITCH_STATUS_BREAK;
 	}
 

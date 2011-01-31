@@ -44,6 +44,7 @@
 /* PROTOTYPES *****************************************************************/
 int ft_to_sngss7_cfg_all(void);
 
+int ftmod_ss7_relay_gen_config(void);
 int ftmod_ss7_mtp1_gen_config(void);
 int ftmod_ss7_mtp2_gen_config(void);
 int ftmod_ss7_mtp3_gen_config(void);
@@ -65,6 +66,8 @@ int ftmod_ss7_isup_ckt_config(int id);
 int ftmod_ss7_isup_isap_config(int id);
 
 int ftmod_ss7_cc_isap_config(int id);
+
+int ftmod_ss7_relay_chan_config(int id);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -75,58 +78,156 @@ int  ft_to_sngss7_cfg_all(void)
 	/* check if we have done gen_config already */
 	if (!(g_ftdm_sngss7_data.gen_config)) {
 
+		/* start of by checking if the license and sig file are valid */
 		if (sng_validate_license(g_ftdm_sngss7_data.cfg.license,
-								 g_ftdm_sngss7_data.cfg.signature,
-								 g_ftdm_sngss7_data.cfg.spc)) {
+								 g_ftdm_sngss7_data.cfg.signature)) {
 
 			SS7_CRITICAL("License verification failed..ending!\n");
 			return 1;
 		}
 
-		if (ftmod_ss7_mtp1_gen_config()) {
-			SS7_CRITICAL("MTP1 General configuration FAILED!\n");
-			return 1;
-		} else {
-			SS7_INFO("MTP1 General configuration DONE\n");
+		/* if the procId is not 0 then we are using relay mode */
+		if (g_ftdm_sngss7_data.cfg.procId != 0) {
+			/* set the desired procID value */
+			sng_set_procId((uint16_t)g_ftdm_sngss7_data.cfg.procId);
 		}
 
-		if (ftmod_ss7_mtp2_gen_config()) {
-			SS7_CRITICAL("MTP2 General configuration FAILED!\n");
+		/* start up the stack manager */
+		if (sng_isup_init_sm()) {
+			SS7_CRITICAL("Failed to start Stack Manager\n");
 			return 1;
 		} else {
-			SS7_INFO("MTP2 General configuration DONE\n");
+			SS7_INFO("Started Stack Manager!\n");
 		}
 
-		if (ftmod_ss7_mtp3_gen_config()) {
-			SS7_CRITICAL("MTP3 General configuration FAILED!\n");
-			return 1;
-		} else {
-			SS7_INFO("MTP3 General configuration DONE\n");
-		}
+		/* check if the configuration had a Relay Channel */
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) { 
+			/* start up the relay task */
+			if (sng_isup_init_relay()) {
+				SS7_CRITICAL("Failed to start Relay\n");
+				return 1;
+			} else {
+				SS7_INFO("Started Relay!\n");
+			}
 
-		if (ftmod_ss7_isup_gen_config()) {
-			SS7_CRITICAL("ISUP General configuration FAILED!\n");
-			return 1;
-		} else {
-			SS7_INFO("ISUP General configuration DONE\n");
-		}
+			/* run general configuration on the relay task */
+			if (ftmod_ss7_relay_gen_config()) {
+				SS7_CRITICAL("Relay General configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("Relay General configuration DONE\n");
+			}
 
-		if (ftmod_ss7_cc_gen_config()) {
-			SS7_CRITICAL("CC General configuration FAILED!\n");
-			return 1;
-		} else {
-			SS7_INFO("CC General configuration DONE\n");
-		}
+		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) */
+
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) {
+			if (sng_isup_init_cc()) {
+				SS7_CRITICAL("Failed to start Call-Control\n");
+				return 1;
+			} else {
+				SS7_INFO("Started Call-Control!\n");
+			}
+			if (ftmod_ss7_cc_gen_config()) {
+				SS7_CRITICAL("CC General configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("CC General configuration DONE\n");
+			}
+			if (ftmod_ss7_cc_isap_config(1)) {
+				SS7_CRITICAL("CC ISAP configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("CC ISAP configuration DONE!\n");
+			}
+		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) */
+
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) {
+			if (sng_isup_init_isup()) {
+				SS7_CRITICAL("Failed to start ISUP\n");
+				return 1;
+			} else {
+				SS7_INFO("Started ISUP!\n");
+			}	
+			if (ftmod_ss7_isup_gen_config()) {
+				SS7_CRITICAL("ISUP General configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("ISUP General configuration DONE\n");
+			}
+		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) */
+
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3)) {
+			if (sng_isup_init_mtp3()) {
+				SS7_CRITICAL("Failed to start MTP3\n");
+				return 1;
+			} else {
+				SS7_INFO("Started MTP3!\n");
+			}
+
+			if (ftmod_ss7_mtp3_gen_config()) {
+				SS7_CRITICAL("MTP3 General configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("MTP3 General configuration DONE\n");
+			}
+		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3)) */
+
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) {
+			if (sng_isup_init_mtp2()) {
+				SS7_CRITICAL("Failed to start MTP2\n");
+				return 1;
+			} else {
+				SS7_INFO("Started MTP2!\n");
+			}
+			if (sng_isup_init_mtp1()) {
+				SS7_CRITICAL("Failed to start MTP2\n");
+				return 1;
+			} else {
+				SS7_INFO("Started MTP1!\n");
+			}
+			if (ftmod_ss7_mtp1_gen_config()) {
+				SS7_CRITICAL("MTP1 General configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("MTP1 General configuration DONE\n");
+			}
+			if (ftmod_ss7_mtp2_gen_config()) {
+				SS7_CRITICAL("MTP2 General configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("MTP2 General configuration DONE\n");
+			}
+		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) */
 
 		/* update the global gen_config so we don't do it again */
 		g_ftdm_sngss7_data.gen_config = 1;
-	}
+	} /* if (!(g_ftdm_sngss7_data.gen_config)) */
 
+	/* go through all the relays channels and configure it */
+	x = 1;
+	while (g_ftdm_sngss7_data.cfg.relay[x].id != 0) {
+		/* check if this relay channel has been configured already */
+		if (!(g_ftdm_sngss7_data.cfg.relay[x].flags & SNGSS7_CONFIGURED)) {
+
+			/* send the specific configuration */
+			if (ftmod_ss7_relay_chan_config(x)) {
+				SS7_CRITICAL("Relay Channel %d configuration FAILED!\n", x);
+				return 1;
+			} else {
+				SS7_INFO("Relay Channel %d configuration DONE!\n", x);
+			}
+
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.relay[x].flags |= SNGSS7_CONFIGURED;
+		} /* if !SNGSS7_CONFIGURED */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.relay[x].id != 0) */
 
 	x = 1;
-	while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
+	while (x < (MAX_MTP_LINKS + 1)) {
 		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.mtpLink[x].flags & CONFIGURED)) {
+		if (!(g_ftdm_sngss7_data.cfg.mtp1Link[x].flags & SNGSS7_CONFIGURED) &&
+			  (g_ftdm_sngss7_data.cfg.mtp1Link[x].id != 0)) {
 
 			/* configure mtp1 */
 			if (ftmod_ss7_mtp1_psap_config(x)) {
@@ -136,6 +237,18 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_INFO("MTP1 PSAP %d configuration DONE!\n", x);
 			}
 
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.mtp1Link[x].flags |= SNGSS7_CONFIGURED;
+		}
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.mtp1Link[x].id != 0) */
+
+	x = 1;
+	while (x < (MAX_MTP_LINKS + 1)) {
+		/* check if this link has been configured already */
+		if (!(g_ftdm_sngss7_data.cfg.mtp2Link[x].flags & SNGSS7_CONFIGURED) &&
+			 (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0)) {
+
 			/* configure mtp2 */
 			if (ftmod_ss7_mtp2_dlsap_config(x)) {
 				SS7_CRITICAL("MTP2 DLSAP %d configuration FAILED!\n",x);
@@ -143,6 +256,18 @@ int  ft_to_sngss7_cfg_all(void)
 			} else {
 				SS7_INFO("MTP2 DLSAP %d configuration DONE!\n", x);
 			}
+
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.mtp2Link[x].flags |= SNGSS7_CONFIGURED;
+		}
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) */
+
+	x = 1;
+	while (x < (MAX_MTP_LINKS + 1)) {
+		/* check if this link has been configured already */
+		if (!(g_ftdm_sngss7_data.cfg.mtp3Link[x].flags & SNGSS7_CONFIGURED) &&
+			 (g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0)) {
 
 			/* configure mtp3 */
 			if (ftmod_ss7_mtp3_dlsap_config(x)) {
@@ -152,17 +277,17 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_INFO("MTP3 DLSAP %d configuration DONE!\n", x);
 			}
 
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.mtpLink[x].flags |= CONFIGURED;
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.mtp3Link[x].flags |= SNGSS7_CONFIGURED;
 		}
 		
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) */
+	} /* while (g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) */
 
 	x = 1;
 	while (g_ftdm_sngss7_data.cfg.nsap[x].id != 0) {
 		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.nsap[x].flags & CONFIGURED)) {
+		if (!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_CONFIGURED)) {
 
 			if (ftmod_ss7_mtp3_nsap_config(x)) {
 				SS7_CRITICAL("MTP3 NSAP %d configuration FAILED!\n", x);
@@ -178,9 +303,9 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_INFO("ISUP NSAP %d configuration DONE!\n", x);
 			}
 
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.nsap[x].flags |= CONFIGURED;
-		} /* if !CONFIGURED */
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.nsap[x].flags |= SNGSS7_CONFIGURED;
+		} /* if !SNGSS7_CONFIGURED */
 		
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.nsap[x].id != 0) */
@@ -188,7 +313,7 @@ int  ft_to_sngss7_cfg_all(void)
 	x = 1;
 	while (g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
 		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags & CONFIGURED)) {
+		if (!(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags & SNGSS7_CONFIGURED)) {
 
 			if (ftmod_ss7_mtp3_linkset_config(x)) {
 				SS7_CRITICAL("MTP3 LINKSET %d configuration FAILED!\n", x);
@@ -197,9 +322,9 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_INFO("MTP3 LINKSET %d configuration DONE!\n", x);
 			}
 
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags |= CONFIGURED;
-		} /* if !CONFIGURED */
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags |= SNGSS7_CONFIGURED;
+		} /* if !SNGSS7_CONFIGURED */
 		
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) */
@@ -207,7 +332,7 @@ int  ft_to_sngss7_cfg_all(void)
 	x = 1;
 	while ((g_ftdm_sngss7_data.cfg.mtpRoute[x].id != 0)) {
 		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.mtpRoute[x].flags & CONFIGURED)) {
+		if (!(g_ftdm_sngss7_data.cfg.mtpRoute[x].flags & SNGSS7_CONFIGURED)) {
 
 			if (ftmod_ss7_mtp3_route_config(x)) {
 				SS7_CRITICAL("MTP3 ROUTE %d configuration FAILED!\n", x);
@@ -216,31 +341,33 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_INFO("MTP3 ROUTE %d configuration DONE!\n",x);
 			}
 
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.mtpRoute[x].flags |= CONFIGURED;
-		} /* if !CONFIGURED */
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.mtpRoute[x].flags |= SNGSS7_CONFIGURED;
+		} /* if !SNGSS7_CONFIGURED */
 		
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.mtpRoute[x].id != 0) */
 
-	if (!(g_ftdm_sngss7_data.cfg.mtpRoute[0].flags & CONFIGURED)) {
-
-		if (ftmod_ss7_mtp3_route_config(0)) {
-			SS7_CRITICAL("MTP3 ROUTE 0 configuration FAILED!\n");
-			return 1;
-		} else {
-			SS7_INFO("MTP3 ROUTE 0 configuration DONE!\n");
-		}
-
-		/* set the CONFIGURED flag */
-		g_ftdm_sngss7_data.cfg.mtpRoute[0].flags |= CONFIGURED;
-	} /* if !CONFIGURED */
+	if (g_ftdm_sngss7_data.cfg.mtpRoute[1].id != 0) {
+		if (!(g_ftdm_sngss7_data.cfg.mtpRoute[0].flags & SNGSS7_CONFIGURED)) {
+	
+			if (ftmod_ss7_mtp3_route_config(0)) {
+				SS7_CRITICAL("MTP3 ROUTE 0 configuration FAILED!\n");
+				return 1;
+			} else {
+				SS7_INFO("MTP3 ROUTE 0 configuration DONE!\n");
+			}
+	
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.mtpRoute[0].flags |= SNGSS7_CONFIGURED;
+		} /* if !SNGSS7_CONFIGURED */
+	}
 
 
 	x = 1;
 	while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) {
 		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.isap[x].flags & CONFIGURED)) {
+		if (!(g_ftdm_sngss7_data.cfg.isap[x].flags & SNGSS7_CONFIGURED)) {
 			
 			if (ftmod_ss7_isup_isap_config(x)) {
 				SS7_CRITICAL("ISUP ISAP %d configuration FAILED!\n", x);
@@ -249,62 +376,94 @@ int  ft_to_sngss7_cfg_all(void)
 				SS7_INFO("ISUP ISAP %d configuration DONE!\n", x);
 			}
 
-			if (ftmod_ss7_cc_isap_config(x)) {
-				SS7_CRITICAL("CC ISAP %d configuration FAILED!\n", x);
-				return 1;
-			} else {
-				SS7_INFO("CC ISAP %d configuration DONE!\n", x);
-			}
-
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.isap[x].flags |= CONFIGURED;
-		} /* if !CONFIGURED */
+			/* set the SNGSS7_CONFIGURED flag */
+			g_ftdm_sngss7_data.cfg.isap[x].flags |= SNGSS7_CONFIGURED;
+		} /* if !SNGSS7_CONFIGURED */
 		
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) */
 
-	x = 1;
-	while (g_ftdm_sngss7_data.cfg.isupIntf[x].id != 0) {
-		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.isupIntf[x].flags & CONFIGURED)) {
-
-			if (ftmod_ss7_isup_intf_config(x)) {
-				SS7_CRITICAL("ISUP INTF %d configuration FAILED!\n", x);
-				return 1;
-			} else {
-				SS7_INFO("ISUP INTF %d configuration DONE!\n", x);
-				/* set the interface to paused */
-				sngss7_set_flag(&g_ftdm_sngss7_data.cfg.isupIntf[x], SNGSS7_PAUSED);
-			}
-
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.isupIntf[x].flags |= CONFIGURED;
-		} /* if !CONFIGURED */
-		
-		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupIntf[x].id != 0) */
-
-	x = 1;
-	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
-		/* check if this link has been configured already */
-		if (!(g_ftdm_sngss7_data.cfg.isupCkt[x].flags & CONFIGURED)) {
-			if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == 0) {
-				if (ftmod_ss7_isup_ckt_config(x)) {
-					SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", x);
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) {
+		x = 1;
+		while (g_ftdm_sngss7_data.cfg.isupIntf[x].id != 0) {
+			/* check if this link has been configured already */
+			if (!(g_ftdm_sngss7_data.cfg.isupIntf[x].flags & SNGSS7_CONFIGURED)) {
+	
+				if (ftmod_ss7_isup_intf_config(x)) {
+					SS7_CRITICAL("ISUP INTF %d configuration FAILED!\n", x);
 					return 1;
 				} else {
-					SS7_INFO("ISUP CKT %d configuration DONE!\n", x);
+					SS7_INFO("ISUP INTF %d configuration DONE!\n", x);
+					/* set the interface to paused */
+					sngss7_set_flag(&g_ftdm_sngss7_data.cfg.isupIntf[x], SNGSS7_PAUSED);
 				}
+	
+				/* set the SNGSS7_CONFIGURED flag */
+				g_ftdm_sngss7_data.cfg.isupIntf[x].flags |= SNGSS7_CONFIGURED;
+			} /* if !SNGSS7_CONFIGURED */
+			
+			x++;
+		} /* while (g_ftdm_sngss7_data.cfg.isupIntf[x].id != 0) */
+	} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) */
+
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			if (ftmod_ss7_isup_ckt_config(x)) {
+				SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", x);
+				return 1;
+			} else {
+				SS7_INFO("ISUP CKT %d configuration DONE!\n", x);
 			}
 
-			/* set the CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.isupCkt[x].flags |= CONFIGURED;
-		} /* if !CONFIGURED */
+		} /* if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+
+		/* set the SNGSS7_CONFIGURED flag */
+		g_ftdm_sngss7_data.cfg.isupCkt[x].flags |= SNGSS7_CONFIGURED;
 		
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) */
 
 	return 0;
+}
+
+/******************************************************************************/
+int ftmod_ss7_relay_gen_config(void)
+{
+	RyMngmt	cfg;	/*configuration structure*/
+	Pst		pst;	/*post structure*/
+	
+	/* initalize the post structure */
+	smPstInit(&pst);
+	
+	/* insert the destination Entity */
+	pst.dstEnt = ENTRY;
+	
+	/* clear the configuration structure */
+	memset(&cfg, 0x0, sizeof(RyMngmt));
+	
+	/* fill in some general sections of the header */
+	smHdrInit(&cfg.hdr);
+
+	/* fill in the post structure */
+	smPstInit( &cfg.t.cfg.s.ryGenCfg.lmPst );
+	
+	/*fill in the specific fields of the header */
+	cfg.hdr.msgType						= TCFG;
+	cfg.hdr.entId.ent 					= ENTRY;
+	cfg.hdr.entId.inst					= S_INST;
+	cfg.hdr.elmId.elmnt 				= STGEN;
+
+	cfg.t.cfg.s.ryGenCfg.lmPst.srcEnt	= ENTRY;
+	cfg.t.cfg.s.ryGenCfg.lmPst.dstEnt	= ENTSM;
+
+	cfg.t.cfg.s.ryGenCfg.nmbChan		= 10;
+	cfg.t.cfg.s.ryGenCfg.tmrRes			= RY_PERIOD;
+	cfg.t.cfg.s.ryGenCfg.usta			= 1;
+	
+
+	return(sng_cfg_relay(&pst, &cfg));
 }
 
 /******************************************************************************/
@@ -575,7 +734,7 @@ int ftmod_ss7_mtp1_psap_config(int id)
 {
 	L1Mngmt			cfg;
 	Pst				pst;
-	sng_mtp_link_t	*k = &g_ftdm_sngss7_data.cfg.mtpLink[id];
+	sng_mtp1_link_t	*k = &g_ftdm_sngss7_data.cfg.mtp1Link[id];
 	
 	/* initalize the post structure */
 	smPstInit(&pst);
@@ -597,8 +756,8 @@ int ftmod_ss7_mtp1_psap_config(int id)
 	
 	cfg.hdr.elmId.elmntInst1	= k->id;
 	
-	cfg.t.cfg.s.l1PSAP.span		= k->mtp1.span;
-	cfg.t.cfg.s.l1PSAP.chan		= k->mtp1.chan;
+	cfg.t.cfg.s.l1PSAP.span		= k->span;
+	cfg.t.cfg.s.l1PSAP.chan		= k->chan;
 	cfg.t.cfg.s.l1PSAP.spId		= k->id;
 
 	return(sng_cfg_mtp1(&pst, &cfg));
@@ -609,7 +768,7 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 {
 	SdMngmt	cfg;
 	Pst		pst;
-	sng_mtp_link_t	*k = &g_ftdm_sngss7_data.cfg.mtpLink[id];
+	sng_mtp2_link_t	*k = &g_ftdm_sngss7_data.cfg.mtp2Link[id];
 
 	/* initalize the post structure */
 	smPstInit( &pst);
@@ -633,10 +792,15 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 
 	cfg.t.cfg.s.sdDLSAP.mem.region		= S_REG;					/* memory region */
 	cfg.t.cfg.s.sdDLSAP.mem.pool		= S_POOL;					/* memory pool */
-	cfg.t.cfg.s.sdDLSAP.swtch			= k->mtp2.linkType;			/* protocol type */
+	cfg.t.cfg.s.sdDLSAP.swtch			= k->linkType;			/* protocol type */
 	cfg.t.cfg.s.sdDLSAP.priorDl			= PRIOR0;					/* priority for data link layer */
 	cfg.t.cfg.s.sdDLSAP.routeDl			= RTESPEC;					/* route for data link layer */
 	cfg.t.cfg.s.sdDLSAP.selectorDl		= 0;						/* upper interface selector */
+	if (k->mtp1ProcId > 0) {
+		cfg.t.cfg.s.sdDLSAP.dstProcId	= k->mtp1ProcId;		/* the procid of MAC/L1/MTP1 */
+	} else {
+		cfg.t.cfg.s.sdDLSAP.dstProcId	= SFndProcId();				/* the procid of MAC/L1/MTP1 */
+	}
 	cfg.t.cfg.s.sdDLSAP.dstProcId		= SFndProcId();				/* the procid of MAC/L1/MTP1 */
 	cfg.t.cfg.s.sdDLSAP.entMac			= ENTL1;					/* entity for MAC */
 	cfg.t.cfg.s.sdDLSAP.instMac			= S_INST;					/* instance for MAC */
@@ -646,22 +810,22 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 	cfg.t.cfg.s.sdDLSAP.memMac.region	= S_REG;					/* memory region and pool id for MAC */
 	cfg.t.cfg.s.sdDLSAP.memMac.pool		= S_POOL;
 	cfg.t.cfg.s.sdDLSAP.maxOutsFrms		= MAX_SD_OUTSTANDING;		/* maximum outstanding frames */
-	cfg.t.cfg.s.sdDLSAP.errType			= k->mtp2.errorType;
+	cfg.t.cfg.s.sdDLSAP.errType			= k->errorType;
 	cfg.t.cfg.s.sdDLSAP.t1.enb			= TRUE;						/* timer 1 - Alignment Ready Timer */
-	cfg.t.cfg.s.sdDLSAP.t1.val			= k->mtp2.t1;
+	cfg.t.cfg.s.sdDLSAP.t1.val			= k->t1;
 	cfg.t.cfg.s.sdDLSAP.t2.enb			= TRUE;						/* timer 2 - Not Aligned Timer */
-	cfg.t.cfg.s.sdDLSAP.t2.val			= k->mtp2.t2;
+	cfg.t.cfg.s.sdDLSAP.t2.val			= k->t2;
 	cfg.t.cfg.s.sdDLSAP.t3.enb			= TRUE;						/* timer 3 - Aligned Timer */
-	cfg.t.cfg.s.sdDLSAP.t3.val			= k->mtp2.t3;
+	cfg.t.cfg.s.sdDLSAP.t3.val			= k->t3;
 	cfg.t.cfg.s.sdDLSAP.t5.enb			= TRUE;						/* timer 5 - Sending SIB timer */
-	cfg.t.cfg.s.sdDLSAP.t5.val			= k->mtp2.t5;
+	cfg.t.cfg.s.sdDLSAP.t5.val			= k->t5;
 	cfg.t.cfg.s.sdDLSAP.t6.enb			= TRUE;						/* timer 6 - Remote Congestion Timer */
-	cfg.t.cfg.s.sdDLSAP.t6.val			= k->mtp2.t6;
+	cfg.t.cfg.s.sdDLSAP.t6.val			= k->t6;
 	cfg.t.cfg.s.sdDLSAP.t7.enb			= TRUE;						/* timer 7 - Excessive delay of acknowledgement timer */
-	cfg.t.cfg.s.sdDLSAP.t7.val			= k->mtp2.t7;
-	cfg.t.cfg.s.sdDLSAP.provEmrgcy		= k->mtp2.t4e;				/* emergency proving period */
-	cfg.t.cfg.s.sdDLSAP.provNormal		= k->mtp2.t4n;				/* normal proving period */
-	cfg.t.cfg.s.sdDLSAP.lssuLen			= k->mtp2.lssuLength;			/* one or two byte LSSU length */
+	cfg.t.cfg.s.sdDLSAP.t7.val			= k->t7;
+	cfg.t.cfg.s.sdDLSAP.provEmrgcy		= k->t4e;				/* emergency proving period */
+	cfg.t.cfg.s.sdDLSAP.provNormal		= k->t4n;				/* normal proving period */
+	cfg.t.cfg.s.sdDLSAP.lssuLen			= k->lssuLength;			/* one or two byte LSSU length */
 	cfg.t.cfg.s.sdDLSAP.maxFrmLen		= MAX_SD_FRAME_LEN;			/* max frame length for MSU */
 	cfg.t.cfg.s.sdDLSAP.congDisc		= FALSE;					/* congestion discard TRUE or FALSE */
 	cfg.t.cfg.s.sdDLSAP.sdT				= MAX_SD_SUERM;				/* SUERM error rate threshold */
@@ -670,7 +834,7 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 	cfg.t.cfg.s.sdDLSAP.sdN1			= MAX_SD_MSU_RETRANS;		/* maximum number of MSUs for retransmission */
 	cfg.t.cfg.s.sdDLSAP.sdN2			= MAX_SD_OCTETS_RETRANS;	/* maximum number of MSU octets for retrans */
 	cfg.t.cfg.s.sdDLSAP.sdCp			= MAX_SD_ALIGN_ATTEMPTS;	/* maximum number of alignment attempts */
-	cfg.t.cfg.s.sdDLSAP.spIdSE			= k->mtp2.mtp1Id;				/* service provider id */
+	cfg.t.cfg.s.sdDLSAP.spIdSE			= k->mtp1Id;				/* service provider id */
 	cfg.t.cfg.s.sdDLSAP.sdtFlcStartTr	= 256;						/* SDT interface flow control start thresh */
 	cfg.t.cfg.s.sdDLSAP.sdtFlcEndTr		= 512;						/* SDT interface flow control end thresh */
 
@@ -707,7 +871,6 @@ int ftmod_ss7_mtp2_dlsap_config(int id)
 #endif /*RUG*/
 
 	return(sng_cfg_mtp2(&pst, &cfg));
-	return 0;
 }
 
 /******************************************************************************/
@@ -715,7 +878,7 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 {
 	Pst				pst;
 	SnMngmt			cfg;
-	sng_mtp_link_t	*k = &g_ftdm_sngss7_data.cfg.mtpLink[id];
+	sng_mtp3_link_t	*k = &g_ftdm_sngss7_data.cfg.mtp3Link[id];
 
 
 	/* initalize the post structure */
@@ -738,14 +901,14 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 
 	cfg.hdr.elmId.elmntInst1 			= k->id;
 
-	cfg.t.cfg.s.snDLSAP.lnkSetId		= k->mtp3.linkSetId;	/* link set ID */
-	cfg.t.cfg.s.snDLSAP.opc				= k->mtp3.spc;			/* Originating Postatic int Code */
-	cfg.t.cfg.s.snDLSAP.adjDpc			= k->mtp3.apc;			/* Adlacent Destination Postatic int Code */
+	cfg.t.cfg.s.snDLSAP.lnkSetId		= k->linkSetId;			/* link set ID */
+	cfg.t.cfg.s.snDLSAP.opc				= k->spc;				/* Originating Postatic int Code */
+	cfg.t.cfg.s.snDLSAP.adjDpc			= k->apc;				/* Adlacent Destination Postatic int Code */
 	cfg.t.cfg.s.snDLSAP.lnkPrior		= 0;					/* link priority within the link set */
 	cfg.t.cfg.s.snDLSAP.msgSize			= MAX_SN_MSG_SIZE;		/* message length */
 	cfg.t.cfg.s.snDLSAP.msgPrior		= 0;					/* management message priority */
-	cfg.t.cfg.s.snDLSAP.lnkType			= k->mtp3.linkType;		/* link type ANSI, ITU, BICI or CHINA */
-	cfg.t.cfg.s.snDLSAP.upSwtch			= k->mtp3.switchType;	/* user part switch type */
+	cfg.t.cfg.s.snDLSAP.lnkType			= k->linkType;			/* link type ANSI, ITU, BICI or CHINA */
+	cfg.t.cfg.s.snDLSAP.upSwtch			= k->switchType;		/* user part switch type */
 	cfg.t.cfg.s.snDLSAP.maxSLTtry		= MAX_SLTM_RETRIES;		/* maximun times to retry SLTM */
 	cfg.t.cfg.s.snDLSAP.p0QLen			= 32;					/* size of the priority 0 Q */
 	cfg.t.cfg.s.snDLSAP.p1QLen			= 32;					/* size of the priority 1 Q */
@@ -756,7 +919,7 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 	cfg.t.cfg.s.snDLSAP.maxCredit		= MAX_SN_CREDIT;		/* max credit */
 #endif /* SDT2 */
 	cfg.t.cfg.s.snDLSAP.lnkId			= 0;					/* signalling link allocation procedure identity */
-	cfg.t.cfg.s.snDLSAP.lnkTstSLC		= k->mtp3.slc;			/* link selection code for link test */
+	cfg.t.cfg.s.snDLSAP.lnkTstSLC		= k->slc;				/* link selection code for link test */
 	cfg.t.cfg.s.snDLSAP.tstLen			= 6;					/* link test pattern length */
 	cfg.t.cfg.s.snDLSAP.tst[0]			= 'K';					/* link test pattern */
 	cfg.t.cfg.s.snDLSAP.tst[1]			= 'O';					/* link test pattern */
@@ -764,8 +927,8 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 	cfg.t.cfg.s.snDLSAP.tst[3]			= 'R';					/* link test pattern */
 	cfg.t.cfg.s.snDLSAP.tst[4]			= 'A';					/* link test pattern */
 	cfg.t.cfg.s.snDLSAP.tst[5]			= 'D';					/* link test pattern */
-	cfg.t.cfg.s.snDLSAP.ssf				= k->mtp3.ssf;			/* sub service field */ 
-	cfg.t.cfg.s.snDLSAP.dstProcId		= SFndProcId();			/* destination processor id */
+	cfg.t.cfg.s.snDLSAP.ssf				= k->ssf;				/* sub service field */ 
+	cfg.t.cfg.s.snDLSAP.dstProcId		= k->mtp2ProcId;		/* destination processor id */
 	cfg.t.cfg.s.snDLSAP.dstEnt			= ENTSD;				/* entity */
 	cfg.t.cfg.s.snDLSAP.dstInst			= S_INST;				/* instance */
 	cfg.t.cfg.s.snDLSAP.prior			= PRIOR0;				/* priority */
@@ -773,9 +936,9 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 	cfg.t.cfg.s.snDLSAP.selector		= 0;					/* lower layer selector */
 	cfg.t.cfg.s.snDLSAP.mem.region		= S_REG;				/* memory region id */
 	cfg.t.cfg.s.snDLSAP.mem.pool		= S_POOL;				/* memory pool id */
-	cfg.t.cfg.s.snDLSAP.spId			= k->mtp3.mtp2Id		;/* service provider id */
+	cfg.t.cfg.s.snDLSAP.spId			= k->mtp2Id;			/* service provider id */
 
-	switch (k->mtp3.linkType) {
+	switch (k->linkType) {
 	/**************************************************************************/
 	case (LSN_SW_ANS):
 	case (LSN_SW_ANS96):
@@ -793,9 +956,9 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 		cfg.t.cfg.s.snDLSAP.dpcLen		= DPC14;				/* dpc length 14 bits */
 		break;
 	/**************************************************************************/
-	} /* switch (k->mtp3.linkType) */
+	} /* switch (k->linkType) */
 
-	switch (k->mtp3.linkType) {
+	switch (k->linkType) {
 	/**************************************************************************/
 	case (LSN_SW_ANS):
 	case (LSN_SW_ANS96):
@@ -811,51 +974,51 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 		cfg.t.cfg.s.snDLSAP.flushContFlag	= FALSE;			/* flush continue handling */
 		break;
 	/**************************************************************************/
-	} /* switch (k->mtp3.linkType) */
+	} /* switch (k->linkType) */
 
 	cfg.t.cfg.s.snDLSAP.tmr.t1.enb		= TRUE;					/* t1 - delay to avoid missequencing on changeover */
-	cfg.t.cfg.s.snDLSAP.tmr.t1.val		= k->mtp3.t1;
+	cfg.t.cfg.s.snDLSAP.tmr.t1.val		= k->t1;
 	cfg.t.cfg.s.snDLSAP.tmr.t2.enb		= TRUE;					/* t2 - waiting for changeover ack */
-	cfg.t.cfg.s.snDLSAP.tmr.t2.val		= k->mtp3.t2;
+	cfg.t.cfg.s.snDLSAP.tmr.t2.val		= k->t2;
 	cfg.t.cfg.s.snDLSAP.tmr.t3.enb		= TRUE;					/* t3 - delay to avoid missequencing on changeback */
-	cfg.t.cfg.s.snDLSAP.tmr.t3.val		= k->mtp3.t3;
+	cfg.t.cfg.s.snDLSAP.tmr.t3.val		= k->t3;
 	cfg.t.cfg.s.snDLSAP.tmr.t4.enb		= TRUE;					/* t4 - waiting for first changeback ack */
-	cfg.t.cfg.s.snDLSAP.tmr.t4.val		= k->mtp3.t4;
+	cfg.t.cfg.s.snDLSAP.tmr.t4.val		= k->t4;
 	cfg.t.cfg.s.snDLSAP.tmr.t5.enb		= TRUE;					/* t5 - waiting for second changeback ack */
-	cfg.t.cfg.s.snDLSAP.tmr.t5.val		= k->mtp3.t5;
+	cfg.t.cfg.s.snDLSAP.tmr.t5.val		= k->t5;
 	cfg.t.cfg.s.snDLSAP.tmr.t7.enb		= TRUE;					/* t7 - waiting for link connection ack */
-	cfg.t.cfg.s.snDLSAP.tmr.t7.val		= k->mtp3.t7;
+	cfg.t.cfg.s.snDLSAP.tmr.t7.val		= k->t7;
 	cfg.t.cfg.s.snDLSAP.tmr.t12.enb		= TRUE;					/* t12 - waiting for uninhibit ack */
-	cfg.t.cfg.s.snDLSAP.tmr.t12.val		= k->mtp3.t12;
+	cfg.t.cfg.s.snDLSAP.tmr.t12.val		= k->t12;
 	cfg.t.cfg.s.snDLSAP.tmr.t13.enb		= TRUE;					/* t13 - waiting for forced uninhibit */
-	cfg.t.cfg.s.snDLSAP.tmr.t13.val		= k->mtp3.t13;
+	cfg.t.cfg.s.snDLSAP.tmr.t13.val		= k->t13;
 	cfg.t.cfg.s.snDLSAP.tmr.t14.enb		= TRUE;					/* t14 - waiting for inhibition ack */
-	cfg.t.cfg.s.snDLSAP.tmr.t14.val		= k->mtp3.t14;
+	cfg.t.cfg.s.snDLSAP.tmr.t14.val		= k->t14;
 	cfg.t.cfg.s.snDLSAP.tmr.t17.enb		= TRUE;					/* t17 - delay to avoid oscillation of initial alignment failure */
-	cfg.t.cfg.s.snDLSAP.tmr.t17.val		= k->mtp3.t17;
+	cfg.t.cfg.s.snDLSAP.tmr.t17.val		= k->t17;
 	cfg.t.cfg.s.snDLSAP.tmr.t22.enb		= TRUE;					/* t22 - local inhibit test timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t22.val		= k->mtp3.t22;
+	cfg.t.cfg.s.snDLSAP.tmr.t22.val		= k->t22;
 	cfg.t.cfg.s.snDLSAP.tmr.t23.enb		= TRUE;					/* t23 - remote inhibit test timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t23.val		= k->mtp3.t23;
+	cfg.t.cfg.s.snDLSAP.tmr.t23.val		= k->t23;
 	cfg.t.cfg.s.snDLSAP.tmr.t24.enb		= TRUE;					/* t24 - stabilizing timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t24.val		= k->mtp3.t24;
+	cfg.t.cfg.s.snDLSAP.tmr.t24.val		= k->t24;
 	cfg.t.cfg.s.snDLSAP.tmr.t31.enb		= TRUE;					/* t31 - BSN requested timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t31.val		= k->mtp3.t31;
+	cfg.t.cfg.s.snDLSAP.tmr.t31.val		= k->t31;
 	cfg.t.cfg.s.snDLSAP.tmr.t32.enb		= TRUE;					/* t32 - SLT timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t32.val		= k->mtp3.t32;
+	cfg.t.cfg.s.snDLSAP.tmr.t32.val		= k->t32;
 	cfg.t.cfg.s.snDLSAP.tmr.t33.enb		= TRUE;					/* t33 - connecting timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t33.val		= k->mtp3.t33;
+	cfg.t.cfg.s.snDLSAP.tmr.t33.val		= k->t33;
 	cfg.t.cfg.s.snDLSAP.tmr.t34.enb		= TRUE;					/* t34 - periodic signalling link test timer */
-	cfg.t.cfg.s.snDLSAP.tmr.t34.val		= k->mtp3.t34;
+	cfg.t.cfg.s.snDLSAP.tmr.t34.val		= k->t34;
 #if (SS7_ANS92 || SS7_ANS88 || SS7_ANS96 || defined(TDS_ROLL_UPGRADE_SUPPORT))
 	cfg.t.cfg.s.snDLSAP.tmr.t35.enb		= TRUE;					/* t35 - false link congestion timer, same as t31 of ANSI'96*/
-	cfg.t.cfg.s.snDLSAP.tmr.t35.val		= k->mtp3.t35;
+	cfg.t.cfg.s.snDLSAP.tmr.t35.val		= k->t35;
 	cfg.t.cfg.s.snDLSAP.tmr.t36.enb		= TRUE;					/* t36 - false link congestion timer, same as t33 of ANSI'96*/
-	cfg.t.cfg.s.snDLSAP.tmr.t36.val		= k->mtp3.t36;	
+	cfg.t.cfg.s.snDLSAP.tmr.t36.val		= k->t36;	
 	cfg.t.cfg.s.snDLSAP.tmr.t37.enb		= TRUE;					/* t37 - false link congestion timer, same as t34 of ANSI'96*/
-	cfg.t.cfg.s.snDLSAP.tmr.t37.val		= k->mtp3.t37;
+	cfg.t.cfg.s.snDLSAP.tmr.t37.val		= k->t37;
 	cfg.t.cfg.s.snDLSAP.tmr.tCraft.enb	= TRUE;					/* link referral craft timer - T19 in ANSI */
-	cfg.t.cfg.s.snDLSAP.tmr.tCraft.val	= k->mtp3.tcraft;
+	cfg.t.cfg.s.snDLSAP.tmr.tCraft.val	= k->tcraft;
 #endif
 #ifdef SDT2
 	cfg.t.cfg.s.snDLSAP.tmr.tFlc.enb	= TRUE;					/* flow control timer */
@@ -1217,6 +1380,11 @@ int ftmod_ss7_isup_ckt_config(int id)
 	/* insert the destination Entity */
 	pst.dstEnt = ENTSI;
 
+	/* check the for the correct ProcId and make sure it goes to the right system */
+	if (g_ftdm_sngss7_data.cfg.procId != 1) {
+		pst.dstProcId = 1;
+	}
+
 	/*clear the configuration structure*/
 	memset(&cfg, 0x0, sizeof(SiMngmt));
 
@@ -1417,11 +1585,11 @@ int ftmod_ss7_isup_isap_config(int id)
 }
 
 /******************************************************************************/
-int ftmod_ss7_cc_isap_config(int id)
+int ftmod_ss7_cc_isap_config(int dstProcId)
 {
 	CcMngmt	 cfg;
 	Pst		 pst;
-	sng_isap_t	*k = &g_ftdm_sngss7_data.cfg.isap[id];
+
 
 	/* initalize the post structure */
 	smPstInit(&pst);
@@ -1441,11 +1609,11 @@ int ftmod_ss7_cc_isap_config(int id)
 	cfg.hdr.entId.inst					= S_INST;
 	cfg.hdr.elmId.elmnt					= STISAP;
 
-	cfg.hdr.elmId.elmntInst1 			= k->id;
+	cfg.hdr.elmId.elmntInst1 			= 1;
 
-	cfg.t.cfg.s.ccISAP.suId			 	= k->suId;
-	cfg.t.cfg.s.ccISAP.spId			 	= k->spId;
-	cfg.t.cfg.s.ccISAP.pst.dstProcId	= SFndProcId();
+	cfg.t.cfg.s.ccISAP.suId			 	= 1;
+	cfg.t.cfg.s.ccISAP.spId			 	= 1;
+	cfg.t.cfg.s.ccISAP.pst.dstProcId	= dstProcId;
 	cfg.t.cfg.s.ccISAP.pst.dstEnt		= ENTSI;
 	cfg.t.cfg.s.ccISAP.pst.dstInst		= S_INST;
 	cfg.t.cfg.s.ccISAP.pst.srcProcId	= SFndProcId();
@@ -1461,6 +1629,70 @@ int ftmod_ss7_cc_isap_config(int id)
 }
 
 /******************************************************************************/
+int ftmod_ss7_relay_chan_config(int id)
+{
+	RyMngmt	cfg;	/*configuration structure*/
+	Pst		pst;	/*post structure*/
+	sng_relay_t		*k = &g_ftdm_sngss7_data.cfg.relay[id];
+	
+	/* initalize the post structure */
+	smPstInit(&pst);
+	
+	/* insert the destination Entity */
+	pst.dstEnt = ENTRY;
+	
+	/* clear the configuration structure */
+	memset(&cfg, 0x0, sizeof(RyMngmt));
+	
+	/* fill in some general sections of the header */
+	smHdrInit(&cfg.hdr);
+
+	/*fill in the specific fields of the header */
+	cfg.hdr.msgType							= TCFG;
+	cfg.hdr.entId.ent 						= ENTRY;
+	cfg.hdr.entId.inst						= S_INST;
+	cfg.hdr.elmId.elmnt 					= STCHCFG;
+
+	cfg.hdr.elmId.elmntInst1 				= k->id;
+
+	cfg.t.cfg.s.ryChanCfg.id				= k->id;					/* channel id */
+	cfg.t.cfg.s.ryChanCfg.type				= k->type;					/* channel type */
+/*	cfg.t.cfg.s.ryChanCfg.msInd				=;*/						/* master/slave indicator */
+	if (k->type == LRY_CT_TCP_LISTEN) {
+		cfg.t.cfg.s.ryChanCfg.low			= 0;						/* low proc id for channel */
+		cfg.t.cfg.s.ryChanCfg.high			= 0;						/* high proc id for channel */
+	} else {
+		cfg.t.cfg.s.ryChanCfg.low			= k->procId;				/* low proc id for channel */
+		cfg.t.cfg.s.ryChanCfg.high			= k->procId;				/* high proc id for channel */
+	}
+	cfg.t.cfg.s.ryChanCfg.nmbScanQ			= MAX_RELAY_NMBSCAN;		/* number of times to scan the queue */
+	cfg.t.cfg.s.ryChanCfg.flags				= LRY_FLG_INTR;				/* flags */
+	cfg.t.cfg.s.ryChanCfg.congThrsh			= MAX_RELAY_CONGTHRSH;		/* congestion threshold */
+	cfg.t.cfg.s.ryChanCfg.dropThrsh			= 0;						/* drop threshold */
+	cfg.t.cfg.s.ryChanCfg.contThrsh			= MAX_RELAY_CONGTHRSH + 1;	/* continue threshold */
+	cfg.t.cfg.s.ryChanCfg.kaTxTmr.enb		= 1;						/* keep alive transmit timer config */
+	cfg.t.cfg.s.ryChanCfg.kaTxTmr.val		= RY_TX_KP_ALIVE_TMR;
+	cfg.t.cfg.s.ryChanCfg.kaRxTmr.enb		= 1;						/* keep alive receive timer config */
+	cfg.t.cfg.s.ryChanCfg.kaRxTmr.val		= RY_RX_KP_ALIVE_TMR;
+	cfg.t.cfg.s.ryChanCfg.btTmr.enb			= 1;						/* boot timer */
+	cfg.t.cfg.s.ryChanCfg.btTmr.val			= RY_BT_TMR;
+	cfg.t.cfg.s.ryChanCfg.region			= S_REG;					/* Relay region */
+	cfg.t.cfg.s.ryChanCfg.pool				= S_POOL;					/* Relay pool */
+#if (RY_ENBUDPSOCK || RY_ENBTCPSOCK) 
+	cfg.t.cfg.s.ryChanCfg.listenPortNo		= k->port;					/* Listen Port of Rx Relay Channel*/
+	strncpy(cfg.t.cfg.s.ryChanCfg.transmittoHostName, k->hostname, (size_t)RY_REMHOSTNAME_SIZE);
+	cfg.t.cfg.s.ryChanCfg.transmittoPortNo	= k->port;					/* TransmitTo PortId for Tx Relay Channel */
+	cfg.t.cfg.s.ryChanCfg.targetProcId		= k->procId;				/* procId of the node present in the other end of this channel                     */
+# ifdef LRY1
+	cfg.t.cfg.s.ryChanCfg.sockParam			=;   /* Socket Parameters */
+# endif /* LRY1 */
+# ifdef LRYV2
+	cfg.t.cfg.s.ryChanCfg.selfHostName[RY_REMHOSTNAME_SIZE];
+# endif /* LRY2 */
+#endif /* RY_ENBUDPSOCK || RY_ENBTCPSOCK */
+
+	return(sng_cfg_relay(&pst, &cfg));
+}
 
 /******************************************************************************/
 /* For Emacs:

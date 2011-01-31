@@ -8,11 +8,11 @@ bin_PROGRAMS = ikslint iksroster iksperf
 
 noinst_HEADERS = perf.h
 
-ikslint_LDADD = $(top_builddir)/src/libiksemel.la
+ikslint_LDADD = $(top_builddir)/src/libiksemel.la @SUNCFLAGS@
 ikslint_SOURCES = ikslint.c hash.c
 
-iksroster_LDADD = $(top_builddir)/src/libiksemel.la
+iksroster_LDADD = $(top_builddir)/src/libiksemel.la @SUNCFLAGS@
 iksroster_SOURCES = iksroster.c
 
-iksperf_LDADD = $(top_builddir)/src/libiksemel.la
+iksperf_LDADD = $(top_builddir)/src/libiksemel.la @SUNCFLAGS@
 iksperf_SOURCES = iksperf.c perf.c

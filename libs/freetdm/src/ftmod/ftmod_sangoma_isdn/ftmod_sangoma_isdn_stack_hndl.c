@@ -167,12 +167,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				char retrieved_str[255];
 
 				ret_val = sng_isdn_retrieve_facility_caller_name(conEvnt->facilityStr.facilityStr.val, conEvnt->facilityStr.facilityStr.len, retrieved_str);
-                                        /*
-                                                return values for "sng_isdn_retrieve_facility_information_following":
-				If there will be no information following, or fails to decode IE, returns -1
-				If there will be no information following, but current FACILITY IE contains a caller name, returns 0
-				If there will be information following, returns 1
-										*/
+				/*
+					return values for "sng_isdn_retrieve_facility_information_following":
+					If there will be no information following, or fails to decode IE, returns -1
+					If there will be no information following, but current FACILITY IE contains a caller name, returns 0
+					If there will be information following, returns 1
+				*/
 
 				if (ret_val == 1) {
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Expecting Caller name in FACILITY\n");
@@ -346,6 +346,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 	
 	sngisdn_chan_data_t *sngisdn_info = sngisdn_event->sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	
 	CnStEvnt *cnStEvnt = &sngisdn_event->event.cnStEvnt;
 
@@ -384,7 +385,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 				case FTDM_CHANNEL_STATE_DIALING:
 				case FTDM_CHANNEL_STATE_PROCEED:
 				case FTDM_CHANNEL_STATE_PROGRESS:
-				case FTDM_CHANNEL_STATE_RINGING:
+				case FTDM_CHANNEL_STATE_RINGING:					
 					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media available\n");
 						sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
@@ -393,16 +394,34 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 					}
 					switch (evntType) {
 						case MI_CALLPROC:
+							if (!sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY) &&
+								(signal_data->early_media_flags & SNGISDN_EARLY_MEDIA_ON_PROCEED)) {
+								
+								ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media override on proceed\n");
+								sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
+							}
 							if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROCEED);
 							}
 							break;
 						case MI_ALERTING:
+							if (!sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY) &&
+								(signal_data->early_media_flags & SNGISDN_EARLY_MEDIA_ON_ALERT)) {
+								
+								ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media override on alert\n");
+								sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
+							}
 							if (ftdmchan->state == FTDM_CHANNEL_STATE_PROCEED) {
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RINGING);
 							}
 							break;
 						case MI_PROGRESS:
+							if (!sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY) &&
+								(signal_data->early_media_flags & SNGISDN_EARLY_MEDIA_ON_PROGRESS)) {
+								
+								ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media override on progress\n");
+								sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
+							}
 							if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
 								ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 							} else if (ftdmchan->state != FTDM_CHANNEL_STATE_PROGRESS) {

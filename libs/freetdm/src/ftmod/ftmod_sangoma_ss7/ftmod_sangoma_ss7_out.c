@@ -125,9 +125,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	iam.txMedReq.trMedReq.pres 			= PRSNT_NODEF;
 	iam.txMedReq.trMedReq.val 			= ftdmchan->caller_data.bearer_capability;
 
-	if ((g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS88) ||
-		(g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS92) ||
-		(g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS95)) {
+	if ((g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS88) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS92) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS95)) {
 
 		/* include only if we're running ANSI */
 		iam.fwdCallInd.transCallNInd.pres   = PRSNT_NODEF;
@@ -178,7 +178,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		iam.usrServInfoA.rateMultiplier.pres	= PRSNT_NODEF;
 		iam.usrServInfoA.rateMultiplier.val		= 0x1;				/* 1x rate multipler */
 	} /* if ANSI */
-	
+
 	/* copy down the called number information */
 	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
 	
@@ -192,7 +192,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
 		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
 	} else {
-		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].clg_nadi;
+		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
 		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
 	}
 
@@ -201,7 +201,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
 		iam.cdPtyNum.natAddrInd.val	= atoi(cld_nadi);
 	} else {
-		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].cld_nadi;
+		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
 		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", iam.cdPtyNum.natAddrInd.val);
 	}
 
@@ -310,7 +310,6 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
-	sng_isup_inf_t		*isup_intf =  &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
 	SiCnStEvnt acm;
 	
 	memset (&acm, 0x0, sizeof (acm));
@@ -360,8 +359,8 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.sccpMethInd.val		= SCCPMTH_NOIND;
 
 	/* fill in any optional parameters */
-	if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) {
-		SS7_DEBUG_CHAN(ftdmchan, "Found ACM_OBCI_BITA flag:0x%X\n", isup_intf->options);
+	if (sngss7_test_options(&g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id], SNGSS7_ACM_OBCI_BITA)) {
+		SS7_DEBUG_CHAN(ftdmchan, "Found ACM_OBCI_BITA flag:0x%X\n", g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].options);
 		acm.optBckCalInd.eh.pres				= PRSNT_NODEF;
 		acm.optBckCalInd.inbndInfoInd.pres		= PRSNT_NODEF;
 		acm.optBckCalInd.inbndInfoInd.val		= 0x1;

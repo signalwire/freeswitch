@@ -89,6 +89,7 @@ class Dbh {
     ~Dbh();
     bool release();
     bool connected();
+    bool test_reactive(char *test_sql, char *drop_sql = NULL, char *reactive_sql = NULL);
     bool query(char *sql, SWIGLUA_FN lua_fun);
     int affected_rows();
 };

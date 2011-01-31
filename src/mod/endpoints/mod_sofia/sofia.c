@@ -808,6 +808,18 @@ void sofia_event_callback(nua_event_t event,
 		}
 	}
 	
+	if ((event == nua_i_invite) && (!session)) {
+		uint32_t sess_count = switch_core_session_count();
+		uint32_t sess_max = switch_core_session_limit(0);
+		
+		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready()) {
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No more sessions allowed at this time.\n");
+
+			goto done;
+		}
+	}
 	
 	if (sofia_test_pflag(profile, PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
 		sip_authorization_t const *authorization = NULL;

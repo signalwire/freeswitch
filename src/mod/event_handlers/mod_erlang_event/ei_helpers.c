@@ -111,6 +111,7 @@ void ei_encode_switch_event_headers(ei_x_buff * ebuf, switch_event_t *event)
 	for (hp = event->headers; hp; hp = hp->next) {
 		ei_x_encode_tuple_header(ebuf, 2);
 		_ei_x_encode_string(ebuf, hp->name);
+		switch_url_decode(hp->value);
 		_ei_x_encode_string(ebuf, hp->value);
 	}
 

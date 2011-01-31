@@ -676,6 +676,9 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				/*OUTBOUND...so we were told by the line of this so noifiy the user*/
 				sigev.event_id = FTDM_SIGEVENT_PROCEED;
 				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+				}
 			} else {
 				if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
 					/* By default, we do not send a progress indicator in the proceed */

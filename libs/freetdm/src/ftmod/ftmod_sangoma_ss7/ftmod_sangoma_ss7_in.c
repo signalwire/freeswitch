@@ -409,13 +409,80 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
+	uint32_t			intfId;
+	int 				x;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		return;
-	}
+	/* check if the eventType is a pause/resume */
+	switch (evntType) {
+	/**************************************************************************/
+	case (SIT_STA_PAUSEIND):
+	case (SIT_STA_RESUMEIND):
+
+		/* the circuit for this type of event may not exist on the local system
+		 * so first check if the circuit is local
+		 */
+		if ((circuit >= (g_ftdm_sngss7_data.cfg.procId * 1000)) &&
+			(circuit < ((g_ftdm_sngss7_data.cfg.procId +1) * 1000))) {
+
+			/* the circuit is on the local system, handle normally */
+			goto sta_ind_local;
+		}
+
+		/* the circuit is not local, so find a local circuit with the same intfId
+		 * by finding the orginial circuit in our array first, finding the intfId 
+		 * from there, then go through the local circuits to see if we find a 
+		 * match and use that circuit instead
+		 */
+		intfId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
+
+		x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
+		while ((g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) &&
+			   (g_ftdm_sngss7_data.cfg.isupCkt[x].id < ((g_ftdm_sngss7_data.cfg.procId +1) * 1000))) {
+		/**********************************************************************/
+			/* confirm this is a voice channel and not a gap/sig (no ftdmchan there) */
+			if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) goto move_along;
+
+			/* compare the intfIds */
+			if (g_ftdm_sngss7_data.cfg.isupCkt[x].infId == intfId) {
+				/* we have a match, setup the pointers to the correct values */
+				circuit = x;
+				
+				if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+					SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+					SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+					return;
+				}
+
+				/* bounce out of the loop */
+				break;
+			} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].intfId == intfId) */
+
+move_along:
+			/* move along ... nothing to see here */
+			x++;
+
+		/**********************************************************************/
+		} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) */
+
+		/* check if we found any circuits that are on the intfId, drop the message
+		 * if none are found
+		 */
+		if (ftdmchan == NULL) goto sta_ind_end;
+
+		break;
+	/**************************************************************************/
+	default:
+sta_ind_local:
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return;
+		}
+		
+		break;
+	/**************************************************************************/
+	} /* switch (evntType) */
 
 	/* initalize the sngss7_event */
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
@@ -440,6 +507,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
 
+sta_ind_end:
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 

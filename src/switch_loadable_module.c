@@ -1047,20 +1047,24 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Module is not unloadable.\n");
 			*err = "Module is not unloadable";
 			status = SWITCH_STATUS_NOUNLOAD;
-			goto end;
+			goto unlock;
 		} else {
-			if ((status = do_shutdown(module, SWITCH_TRUE, SWITCH_TRUE, !force, err) != SWITCH_STATUS_SUCCESS)) {
-				goto end;
+			/* Prevent anything from using the module while it's shutting down */
+			switch_core_hash_delete(loadable_modules.module_hash, fname);
+			switch_mutex_unlock(loadable_modules.mutex);
+			if ((status = do_shutdown(module, SWITCH_TRUE, SWITCH_TRUE, !force, err)) != SWITCH_STATUS_SUCCESS) {
+				/* Something went wrong in the module's shutdown function, add it again */
+				switch_core_hash_insert_locked(loadable_modules.module_hash, fname, module, loadable_modules.mutex);
 			}
+			goto end;
 		}
-		switch_core_hash_delete(loadable_modules.module_hash, fname);
 	} else {
 		*err = "No such module!";
 		status = SWITCH_STATUS_FALSE;
 	}
-  end:
+unlock:
 	switch_mutex_unlock(loadable_modules.mutex);
-
+  end:
 	if (force) {
 		switch_yield(1000000);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PHEW!\n");

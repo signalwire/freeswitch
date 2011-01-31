@@ -2372,7 +2372,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|both]"
+#define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|holdb|both]"
 SWITCH_STANDARD_API(uuid_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -2389,15 +2389,26 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 		switch_media_flag_t flags = SMF_NONE;
 
 		if (argv[2]) {
-			if (!strcasecmp(argv[2], "both")) {
+			if (switch_stristr("both", (argv[2]))) {
 				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
-			} else if (!strcasecmp(argv[2], "aleg")) {
+			}
+
+			if (switch_stristr("aleg", argv[2])) {
 				flags |= SMF_ECHO_ALEG;
-			} else if (!strcasecmp(argv[2], "bleg")) {
+			} 
+
+			if (switch_stristr("bleg", argv[2])) {
+				flags &= ~SMF_HOLD_BLEG;
 				flags |= SMF_ECHO_BLEG;
 			}
+
+			if (switch_stristr("holdb", argv[2])) {
+				flags &= ~SMF_ECHO_BLEG;
+				flags |= SMF_HOLD_BLEG;
+			}
+
 		} else {
-			flags |= SMF_ECHO_ALEG;
+			flags = SMF_ECHO_ALEG | SMF_HOLD_BLEG;
 		}
 
 		status = switch_ivr_broadcast(argv[0], argv[1], flags);
