@@ -26,6 +26,7 @@
  *
  * Brian West <brian@freeswitch.org>
  * Christopher M. Rienzo <chris@rienzo.net>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * mod_unimrcp.c -- UniMRCP module (MRCP client)
  *
@@ -48,6 +49,7 @@
 #include "mrcp_resource_loader.h"
 #include "mpf_engine.h"
 #include "mpf_codec_manager.h"
+#include "mpf_dtmf_generator.h"
 #include "mpf_rtp_termination_factory.h"
 #include "mrcp_sofiasip_client_agent.h"
 #include "mrcp_unirtsp_client_agent.h"
@@ -433,14 +435,20 @@ static const char *grammar_type_to_mime(grammar_type_t type, profile_t *profile)
 struct recognizer_data {
 	/** the available grammars */
 	switch_hash_t *grammars;
-	/** the last grammar used (for pause/resume) */
-	grammar_t *last_grammar;
+	/** the enabled grammars */
+	switch_hash_t *enabled_grammars;
 	/** recognize result */
 	char *result;
 	/** true, if voice has started */
 	int start_of_input;
 	/** true, if input timers have started */
 	int timers_started;
+	/** UniMRCP mpf stream */
+	mpf_audio_stream_t *unimrcp_stream;
+	/** DTMF generator */
+	mpf_dtmf_generator_t *dtmf_generator;
+	/** true, if presently transmitting DTMF */
+	char dtmf_generator_active;
 };
 typedef struct recognizer_data recognizer_data_t;
 
@@ -451,8 +459,12 @@ static switch_status_t recog_shutdown();
 static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec, int rate, const char *dest, switch_asr_flag_t *flags);
 static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *name);
 static switch_status_t recog_asr_unload_grammar(switch_asr_handle_t *ah, const char *name);
+static switch_status_t recog_asr_enable_grammar(switch_asr_handle_t *ah, const char *name);
+static switch_status_t recog_asr_disable_grammar(switch_asr_handle_t *ah, const char *name);
+static switch_status_t recog_asr_disable_all_grammars(switch_asr_handle_t *ah);
 static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
+static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags);
 #if 0
 static switch_status_t recog_asr_start(switch_asr_handle_t *ah, const char *name);
 #endif
@@ -468,12 +480,16 @@ static void recog_asr_float_param(switch_asr_handle_t *ah, char *param, double v
 /* recognizer's interface for UniMRCP */
 static apt_bool_t recog_message_handler(const mrcp_app_message_t *app_message);
 static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_message_t *message);
+static apt_bool_t recog_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec);
 static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *frame);
 
 /* recognizer specific speech_channel_funcs */
-static switch_status_t recog_channel_start(speech_channel_t *schannel, const char *name);
+static switch_status_t recog_channel_start(speech_channel_t *schannel);
 static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, const char *name, grammar_type_t type, const char *data);
 static switch_status_t recog_channel_unload_grammar(speech_channel_t *schannel, const char *name);
+static switch_status_t recog_channel_enable_grammar(speech_channel_t *schannel, const char *name);
+static switch_status_t recog_channel_disable_grammar(speech_channel_t *schannel, const char *name);
+static switch_status_t recog_channel_disable_all_grammars(speech_channel_t *schannel);
 static switch_status_t recog_channel_check_results(speech_channel_t *schannel);
 static switch_status_t recog_channel_set_start_of_input(speech_channel_t *schannel);
 static switch_status_t recog_channel_start_input_timers(speech_channel_t *schannel);
@@ -2055,19 +2071,24 @@ static const char *grammar_type_to_mime(grammar_type_t type, profile_t *profile)
  * Start RECOGNIZE request
  *
  * @param schannel the channel to start
- * @param name the name of the grammar to use or NULL if to reuse the last grammar
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t recog_channel_start(speech_channel_t *schannel, const char *name)
+static switch_status_t recog_channel_start(speech_channel_t *schannel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_hash_index_t *egk;
 	mrcp_message_t *mrcp_message;
 	mrcp_recog_header_t *recog_header;
 	mrcp_generic_header_t *generic_header;
 	recognizer_data_t *r;
 	char *start_input_timers;
 	const char *mime_type;
-	grammar_t *grammar = NULL;
+	char *key;
+	switch_size_t len;
+	grammar_t *grammar;
+	switch_size_t grammar_uri_count = 0;
+	switch_size_t grammar_uri_list_len = 0;
+	char *grammar_uri_list = NULL;
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -2088,21 +2109,55 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 	start_input_timers = (char *) switch_core_hash_find(schannel->params, "start-input-timers");
 	r->timers_started = zstr(start_input_timers) || strcasecmp(start_input_timers, "false");
 
-	/* get the cached grammar */
-	if (zstr(name)) {
-		grammar = r->last_grammar;
-	} else {
-		grammar = (grammar_t *) switch_core_hash_find(r->grammars, name);
-		r->last_grammar = grammar;
-	}
-	if (grammar == NULL) {
-		if (name) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Undefined grammar, %s\n", schannel->name, name);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) No grammar specified\n", schannel->name);
+	/* count enabled grammars */
+	for (egk = switch_hash_first(NULL, r->enabled_grammars); egk; egk = switch_hash_next(egk)) {
+		// NOTE: This postponed type check is necessary to allow a non-URI-list grammar to execute alone
+		if (grammar_uri_count == 1 && grammar->type != GRAMMAR_TYPE_URI)
+			goto no_grammar_alone;
+		++grammar_uri_count;
+		switch_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
+		if (grammar->type != GRAMMAR_TYPE_URI && grammar_uri_count != 1) {
+		      no_grammar_alone:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar '%s' can only be used alone (not a URI list)\n", schannel->name, key);
+			status = SWITCH_STATUS_FALSE;
+			goto done;
 		}
+		len = strlen(grammar->data);
+		if (!len)
+			continue;
+		grammar_uri_list_len += len;
+		if (grammar->data[len - 1] != '\n')
+			grammar_uri_list_len += 2;
+	}
+
+	switch (grammar_uri_count) {
+	case 0:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) No grammar specified\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
+	case 1:
+		/* grammar should already be the unique grammar */
+		break;
+	default:
+		/* get the enabled grammars list */
+		grammar_uri_list = switch_core_alloc(schannel->memory_pool, grammar_uri_list_len + 1);
+		grammar_uri_list_len = 0;
+		for (egk = switch_hash_first(NULL, r->enabled_grammars); egk; egk = switch_hash_next(egk)) {
+			switch_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
+			len = strlen(grammar->data);
+			if (!len)
+				continue;
+			memcpy(&(grammar_uri_list[grammar_uri_list_len]), grammar->data, len);
+			grammar_uri_list_len += len;
+			if (grammar_uri_list[grammar_uri_list_len - 1] != '\n')
+			{
+				grammar_uri_list_len += 2;
+				grammar_uri_list[grammar_uri_list_len - 2] = '\r';
+				grammar_uri_list[grammar_uri_list_len - 1] = '\n';
+			}
+		}
+		grammar_uri_list[grammar_uri_list_len++] = '\0';
+		grammar = NULL;
 	}
 
 	/* create MRCP message */
@@ -2120,7 +2175,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 	}
 
 	/* set Content-Type */
-	mime_type = grammar_type_to_mime(grammar->type, schannel->profile);
+	mime_type = grammar_type_to_mime(grammar ? grammar->type : GRAMMAR_TYPE_URI, schannel->profile);
 	if (zstr(mime_type)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -2129,7 +2184,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 	mrcp_generic_header_property_add(mrcp_message, GENERIC_HEADER_CONTENT_TYPE);
 
 	/* set Content-ID for inline grammars */
-	if (grammar->type != GRAMMAR_TYPE_URI) {
+	if (grammar && grammar->type != GRAMMAR_TYPE_URI) {
 		apt_string_assign(&generic_header->content_id, grammar->name, mrcp_message->pool);
 		mrcp_generic_header_property_add(mrcp_message, GENERIC_HEADER_CONTENT_ID);
 	}
@@ -2151,7 +2206,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel, const cha
 	recog_channel_set_params(schannel, mrcp_message, generic_header, recog_header);
 
 	/* set message body */
-	apt_string_assign(&mrcp_message->body, grammar->data, mrcp_message->pool);
+	apt_string_assign(&mrcp_message->body, grammar ? grammar->data : grammar_uri_list, mrcp_message->pool);
 
 	/* Empty audio queue and send RECOGNIZE to MRCP server */
 	audio_queue_clear(schannel->audio_queue);
@@ -2286,8 +2341,80 @@ static switch_status_t recog_channel_unload_grammar(speech_channel_t *schannel, 
 	} else {
 		recognizer_data_t *r = (recognizer_data_t *) schannel->data;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Unloading grammar %s\n", schannel->name, grammar_name);
+		switch_core_hash_delete(r->enabled_grammars, grammar_name);
 		switch_core_hash_delete(r->grammars, grammar_name);
 	}
+
+	return status;
+}
+
+/**
+ * Enable speech recognition grammar
+ *
+ * @param schannel the recognizer channel
+ * @param grammar_name the name of the grammar to enable
+ * @return SWITCH_STATUS_SUCCESS if successful
+ */
+static switch_status_t recog_channel_enable_grammar(speech_channel_t *schannel, const char *grammar_name)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (zstr(grammar_name)) {
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+		grammar_t *grammar;
+		grammar = (grammar_t *) switch_core_hash_find(r->grammars, grammar_name);
+		if (grammar == NULL)
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Undefined grammar, %s\n", schannel->name, grammar_name);
+			status = SWITCH_STATUS_FALSE;
+		}
+		else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Enabling grammar %s\n", schannel->name, grammar_name);
+			switch_core_hash_insert(r->enabled_grammars, grammar_name, grammar);
+		}
+	}
+
+	return status;
+}
+
+/**
+ * Disable speech recognition grammar
+ *
+ * @param schannel the recognizer channel
+ * @param grammar_name the name of the grammar to disable
+ * @return SWITCH_STATUS_SUCCESS if successful
+ */
+static switch_status_t recog_channel_disable_grammar(speech_channel_t *schannel, const char *grammar_name)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (zstr(grammar_name)) {
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Disabling grammar %s\n", schannel->name, grammar_name);
+		switch_core_hash_delete(r->enabled_grammars, grammar_name);
+	}
+
+	return status;
+}
+
+/**
+ * Disable all speech recognition grammars
+ *
+ * @param schannel the recognizer channel
+ * @return SWITCH_STATUS_SUCCESS if successful
+ */
+static switch_status_t recog_channel_disable_all_grammars(speech_channel_t *schannel)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Disabling all grammars\n", schannel->name);
+	switch_core_hash_destroy(&r->enabled_grammars);
+	switch_core_hash_init(&r->enabled_grammars, schannel->memory_pool);
 
 	return status;
 }
@@ -2451,6 +2578,8 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 			if (id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) \"%s\": \"%s\"\n", schannel->name, param_name, param_val);
 				recog_channel_set_header(schannel, id->id, param_val, msg, recog_hdr);
+			} else if (!strcasecmp(param_name, "start-recognize")) {
+				// This parameter is used internally only, not in MRCP headers
 			} else {
 				/* this is probably a vendor-specific MRCP param */
 				apt_str_t apt_param_name = { 0 };
@@ -2737,6 +2866,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	schannel->data = r;
 	memset(r, 0, sizeof(recognizer_data_t));
 	switch_core_hash_init(&r->grammars, ah->memory_pool);
+	switch_core_hash_init(&r->enabled_grammars, ah->memory_pool);
 
 	/* Open the channel */
 	if (zstr(profile_name)) {
@@ -2782,6 +2912,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
 	const char *grammar_data = NULL;
 	char *grammar_file_data = NULL;
+	char *start_recognize;
 	switch_file_t *grammar_file = NULL;
 	switch_size_t grammar_file_size = 0, to_read = 0;
 	grammar_type_t type = GRAMMAR_TYPE_UNKNOWN;
@@ -2886,7 +3017,19 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		goto done;
 	}
 
-	status = recog_channel_start(schannel, name);
+	start_recognize = (char *) switch_core_hash_find(schannel->params, "start-recognize");
+	if (zstr(start_recognize) || strcasecmp(start_recognize, "false"))
+	{
+		if (recog_channel_disable_all_grammars(schannel) != SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+		if (recog_channel_enable_grammar(schannel, name) != SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+		status = recog_channel_start(schannel);
+	}
 
   done:
 
@@ -2915,6 +3058,57 @@ static switch_status_t recog_asr_unload_grammar(switch_asr_handle_t *ah, const c
 }
 
 /**
+ * Process asr_enable_grammar request from FreeSWITCH.
+ *
+ * FreeSWITCH sends this request to enable recognition on this grammar.
+ * @param ah the FreeSWITCH speech recognition handle
+ * @param name the grammar name.
+ */
+static switch_status_t recog_asr_enable_grammar(switch_asr_handle_t *ah, const char *name)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
+	if (zstr(name) || speech_channel_stop(schannel) != SWITCH_STATUS_SUCCESS || recog_channel_enable_grammar(schannel, name) != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+	}
+	return status;
+}
+
+/**
+ * Process asr_disable_grammar request from FreeSWITCH.
+ *
+ * FreeSWITCH sends this request to disable recognition on this grammar.
+ * @param ah the FreeSWITCH speech recognition handle
+ * @param name the grammar name.
+ */
+static switch_status_t recog_asr_disable_grammar(switch_asr_handle_t *ah, const char *name)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
+	if (zstr(name) || speech_channel_stop(schannel) != SWITCH_STATUS_SUCCESS || recog_channel_disable_grammar(schannel, name) != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+	}
+	return status;
+}
+
+/**
+ * Process asr_disable_all_grammars request from FreeSWITCH.
+ *
+ * FreeSWITCH sends this request to disable recognition of all grammars.
+ * @param ah the FreeSWITCH speech recognition handle
+ * @param name the grammar name.
+ */
+static switch_status_t recog_asr_disable_all_grammars(switch_asr_handle_t *ah)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
+	if (speech_channel_stop(schannel) != SWITCH_STATUS_SUCCESS || recog_channel_disable_all_grammars(schannel) != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+	}
+	return status;
+}
+
+/**
  * Process asr_close request from FreeSWITCH
  *
  * @param ah the FreeSWITCH speech recognition handle
@@ -2928,6 +3122,10 @@ static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_
 	speech_channel_stop(schannel);
 	speech_channel_destroy(schannel);
 	switch_core_hash_destroy(&r->grammars);
+	switch_core_hash_destroy(&r->enabled_grammars);
+	if (r->dtmf_generator) {
+		mpf_dtmf_generator_destroy(r->dtmf_generator);
+	}
 
 	/* this lets FreeSWITCH's speech_thread know the handle is closed */
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
@@ -2948,18 +3146,50 @@ static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsig
 	return speech_channel_write(schannel, data, &slen);
 }
 
+/**
+ * Process asr_feed_dtmf request from FreeSWITCH
+ *
+ * @param ah the FreeSWITCH speech recognition handle
+ * @return SWITCH_STATUS_SUCCESS if successful 
+ */
+static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags)
+{
+	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+	char digits[2];
+
+	if (!r->dtmf_generator) {
+		if (!r->unimrcp_stream) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: No UniMRCP stream object open\n", schannel->name);
+			return SWITCH_STATUS_FALSE;
+		}
+		r->dtmf_generator = mpf_dtmf_generator_create(r->unimrcp_stream, schannel->unimrcp_session->pool);
+		if (!r->dtmf_generator) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: Failed to create DTMF generator\n", schannel->name);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	digits[0] = dtmf->digit;
+	digits[1] = '\0';
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Queued DTMF: %s\n", schannel->name, digits);
+	mpf_dtmf_generator_enqueue(r->dtmf_generator, digits);
+	r->dtmf_generator_active = 1;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #if 0
 /**
  * Process asr_start request from FreeSWITCH
  * @param ah the FreeSWITCH speech recognition handle
- * @param name name of the grammar to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t recog_asr_start(switch_asr_handle_t *ah, const char *name)
+static switch_status_t recog_asr_start(switch_asr_handle_t *ah)
 {
 	switch_status_t status;
 	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
-	status = recog_channel_start(schannel, name);
+	status = recog_channel_start(schannel);
 	return status;
 }
 #endif
@@ -2972,7 +3202,7 @@ static switch_status_t recog_asr_start(switch_asr_handle_t *ah, const char *name
 static switch_status_t recog_asr_resume(switch_asr_handle_t *ah)
 {
 	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
-	return recog_channel_start(schannel, NULL);
+	return recog_channel_start(schannel);
 }
 
 /**
@@ -3195,6 +3425,23 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 }
 
 /**
+ * UniMRCP callback requesting open for speech recognition
+ *
+ * @param stream the UniMRCP stream
+ * @param codec the codec
+ * @return TRUE
+ */
+static apt_bool_t recog_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *codec)
+{
+	speech_channel_t *schannel = (speech_channel_t *) stream->obj;
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+	
+	r->unimrcp_stream = stream;
+	
+	return TRUE;
+}
+
+/**
  * UniMRCP callback requesting next frame for speech recognition
  *
  * @param stream the UniMRCP stream
@@ -3204,6 +3451,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *frame)
 {
 	speech_channel_t *schannel = (speech_channel_t *) stream->obj;
+	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
 	switch_size_t to_read = frame->codec_frame.size;
 
 	/* grab the data.  pad it if there isn't enough */
@@ -3212,6 +3460,13 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 			memset((uint8_t *) frame->codec_frame.buffer + to_read, schannel->silence, frame->codec_frame.size - to_read);
 		}
 		frame->type |= MEDIA_FRAME_TYPE_AUDIO;
+	}
+	
+	if (r->dtmf_generator_active) {
+		if (!mpf_dtmf_generator_put_frame(r->dtmf_generator, frame)) {
+			if (!mpf_dtmf_generator_sending(r->dtmf_generator))
+				r->dtmf_generator_active = 0;
+		}
 	}
 
 	return TRUE;
@@ -3231,8 +3486,12 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	asr_interface->asr_open = recog_asr_open;
 	asr_interface->asr_load_grammar = recog_asr_load_grammar;
 	asr_interface->asr_unload_grammar = recog_asr_unload_grammar;
+	asr_interface->asr_enable_grammar = recog_asr_enable_grammar;
+	asr_interface->asr_disable_grammar = recog_asr_disable_grammar;
+	asr_interface->asr_disable_all_grammars = recog_asr_disable_all_grammars;
 	asr_interface->asr_close = recog_asr_close;
 	asr_interface->asr_feed = recog_asr_feed;
+	asr_interface->asr_feed_dtmf = recog_asr_feed_dtmf;
 #if 0
 	asr_interface->asr_start = recog_asr_start;
 #endif
@@ -3255,7 +3514,7 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	globals.recog.dispatcher.on_channel_remove = speech_on_channel_remove;
 	globals.recog.dispatcher.on_message_receive = recog_on_message_receive;
 	globals.recog.audio_stream_vtable.destroy = NULL;
-	globals.recog.audio_stream_vtable.open_rx = NULL;
+	globals.recog.audio_stream_vtable.open_rx = recog_stream_open;
 	globals.recog.audio_stream_vtable.close_rx = NULL;
 	globals.recog.audio_stream_vtable.read_frame = recog_stream_read;
 	globals.recog.audio_stream_vtable.open_tx = NULL;
