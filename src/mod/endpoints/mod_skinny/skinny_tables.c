@@ -39,6 +39,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
     {"RegisterMessage", REGISTER_MESSAGE},
     {"PortMessage", PORT_MESSAGE},
     {"KeypadButtonMessage", KEYPAD_BUTTON_MESSAGE},
+    {"EnblocCallMessage", ENBLOC_CALL_MESSAGE},
     {"StimulusMessage", STIMULUS_MESSAGE},
     {"OffHookMessage", OFF_HOOK_MESSAGE},
     {"OnHookMessage", ON_HOOK_MESSAGE},
