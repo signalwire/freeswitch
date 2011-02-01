@@ -608,9 +608,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			if (encode_status != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
-
+		} else {
+			switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 		}
-		//switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
 	}
 
@@ -642,7 +642,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	if (switch_test_flag(frame, SFF_CNG) || switch_test_flag(tech_pvt, TFLAG_CNG) || (switch_test_flag(tech_pvt, TFLAG_BOWOUT) && switch_test_flag(tech_pvt, TFLAG_BOWOUT_USED))) {
+	if (switch_test_flag(frame, SFF_CNG) || 
+		switch_test_flag(tech_pvt, TFLAG_CNG) || (switch_test_flag(tech_pvt, TFLAG_BOWOUT) && switch_test_flag(tech_pvt, TFLAG_BOWOUT_USED))) {
+		switch_core_timer_sync(&tech_pvt->timer);
+		switch_core_timer_sync(&tech_pvt->other_tech_pvt->timer);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
