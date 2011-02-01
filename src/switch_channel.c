@@ -2595,14 +2595,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 		if (var) {
 			char *arg = NULL;
 			app = switch_core_session_strdup(channel->session, var);
-			if ((arg = strchr(app, ' '))) {
-				*arg++ = '\0';
-			}
 
-			if (switch_core_session_in_thread(channel->session)) {
-				switch_core_session_execute_application(channel->session, app, arg);
-			} else {
+			if (strstr(app, "::")) {
 				switch_core_session_execute_application_async(channel->session, app, arg);
+			} else {
+				if ((arg = strchr(app, ' '))) {
+					*arg++ = '\0';
+				}
+				
+				switch_core_session_execute_application(channel->session, app, arg);
 			}
 		}
 
@@ -2653,14 +2654,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			 (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))) && !zstr(var)) {
 			char *arg = NULL;
 			app = switch_core_session_strdup(channel->session, var);
-			if ((arg = strchr(app, ' '))) {
-				*arg++ = '\0';
-			}
 
-			if (switch_core_session_in_thread(channel->session)) {
-				switch_core_session_execute_application(channel->session, app, arg);
-			} else {
+
+			if (strstr(app, "::")) {
 				switch_core_session_execute_application_async(channel->session, app, arg);
+			} else {
+				if ((arg = strchr(app, ' '))) {
+					*arg++ = '\0';
+				}
+				
+				switch_core_session_execute_application(channel->session, app, arg);
 			}
 		}
 
@@ -2825,27 +2828,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		 (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))))
 		&& !zstr(var)) {
 		char *arg = NULL;
-		char *colon = NULL;
 
 		app = switch_core_session_strdup(channel->session, var);
 
-		arg = strchr(app, ' ');
-		colon = strchr(app, ':');
-		if (colon && (!arg || arg > colon) && *(colon + 1) == ':') {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s (BROADCAST)\n", channel->name, app);
-			switch_ivr_broadcast(switch_core_session_get_uuid(channel->session), app, SMF_NONE);
+		if (strstr(app, "::")) {
+			switch_core_session_execute_application_async(channel->session, app, arg);
 		} else {
-			if (arg) {
+			if ((arg = strchr(app, ' '))) {
 				*arg++ = '\0';
 			}
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)\n", channel->name, app,
-							  switch_str_nil(arg));
-
-			if (switch_core_session_in_thread(channel->session)) {
-				switch_core_session_execute_application(channel->session, app, arg);
-			} else {
-				switch_core_session_execute_application_async(channel->session, app, arg);
-			}
+			
+			switch_core_session_execute_application(channel->session, app, arg);
 		}
 	}
 

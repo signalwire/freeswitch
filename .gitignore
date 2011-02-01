@@ -33,6 +33,12 @@
 *.ilk
 *.bsc
 *.pch
+*.tar
+*.gz
+*.tgz
+*.xz
+*.bz2
+*.tbz2
 core.*
 /Path
 /w32/Library/lastversion
@@ -79,7 +85,6 @@ configure.lineno
 /scripts/fsxs
 /scripts/gentls_cert
 /a.out.dSYM
-/freeswitch-sounds-*
 src/mod/applications/mod_easyroute/Makefile
 src/mod/applications/mod_lcr/Makefile
 src/mod/applications/mod_nibblebill/Makefile

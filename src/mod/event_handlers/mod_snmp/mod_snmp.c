@@ -48,6 +48,20 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime);
 SWITCH_MODULE_DEFINITION(mod_snmp, mod_snmp_load, mod_snmp_shutdown, mod_snmp_runtime);
 
 
+static switch_status_t snmp_manage(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
+{
+	if (action == SMA_GET) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mutex lock request from relative OID %s.\n", relative_oid);
+		switch_mutex_lock(globals.mutex);
+	} else if (action == SMA_SET) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mutex unlock request from relative OID %s.\n", relative_oid);
+		switch_mutex_unlock(globals.mutex);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static int snmp_callback_log(int major, int minor, void *serverarg, void *clientarg)
 {
 	struct snmp_log_message *slm = (struct snmp_log_message *) serverarg;
@@ -71,10 +85,14 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_management_interface_t *management_interface;
 
 	load_config(pool);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
+	management_interface->relative_oid = "1000";
+	management_interface->management_function = snmp_manage;
 
 	/* Register callback function so we get Net-SNMP logging handled by FreeSWITCH */
 	snmp_register_callback(SNMP_CALLBACK_LIBRARY, SNMP_CALLBACK_LOGGING, snmp_callback_log, NULL);
@@ -86,12 +104,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 	init_agent("mod_snmp");
 
 	/*
-	 * Override master/subagent ping interval to 5s, to ensure that
+	 * Override master/subagent ping interval to 2s, to ensure that
 	 * agent_check_and_process() never blocks for longer than that.
 	 */
-	netsnmp_ds_set_int(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_AGENTX_PING_INTERVAL, 5);
+	netsnmp_ds_set_int(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_AGENTX_PING_INTERVAL, 2);
 
-	init_subagent();  
+	init_subagent(pool);
 	init_snmp("mod_snmp");
 
 	return status;
@@ -106,6 +124,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_snmp_runtime)
 		agent_check_and_process(1);
 		switch_mutex_unlock(globals.mutex);
 	}
+
+	switch_yield(5000);
 
 	return SWITCH_STATUS_SUCCESS;
 }
