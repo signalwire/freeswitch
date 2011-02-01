@@ -42,6 +42,17 @@ netsnmp_handler_registration *ch_reginfo;
 uint32_t idx;
 
 
+static void time_t_to_datetime(time_t epoch, char *buf, switch_size_t buflen)
+{
+	struct tm *dt;
+	uint16_t year;
+
+	dt = gmtime(&epoch);
+	year = dt->tm_year + 1900;
+	switch_snprintf(buf, buflen, "%c%c%c%c%c%c%c%c+%c%c", year >> 8, year & 0xff, dt->tm_mon + 1, dt->tm_mday, dt->tm_hour, dt->tm_min, dt->tm_sec, 0, 0, 0);
+}
+
+
 static int sql_count_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	uint32_t *count = (uint32_t *) pArg;
@@ -69,11 +80,31 @@ static int channelList_callback(void *pArg, int argc, char **argv, char **column
 	entry->idx = idx++;
 	strncpy(entry->uuid, argv[0], sizeof(entry->uuid));
 	strncpy(entry->direction, argv[1], sizeof(entry->direction));
-	strncpy(entry->created, argv[2], sizeof(entry->created));
+	entry->created_epoch = atoi(argv[3]);
 	strncpy(entry->name, argv[4], sizeof(entry->name));
 	strncpy(entry->state, argv[5], sizeof(entry->state));
 	strncpy(entry->cid_name, argv[6], sizeof(entry->cid_name));
 	strncpy(entry->cid_num, argv[7], sizeof(entry->cid_num));
+	strncpy(entry->dest, argv[9], sizeof(entry->dest));
+	strncpy(entry->application, argv[10], sizeof(entry->application));
+	strncpy(entry->application_data, argv[11], sizeof(entry->application_data));
+	strncpy(entry->dialplan, argv[12], sizeof(entry->dialplan));
+	strncpy(entry->context, argv[13], sizeof(entry->context));
+	strncpy(entry->read_codec, argv[14], sizeof(entry->read_codec));
+	entry->read_rate = atoi(argv[15]);
+	entry->read_bitrate = atoi(argv[16]);
+	strncpy(entry->write_codec, argv[17], sizeof(entry->write_codec));
+	entry->write_rate = atoi(argv[18]);
+	entry->write_bitrate = atoi(argv[19]);
+
+	memset(&entry->ip_addr, 0, sizeof(entry->ip_addr));
+	if (strchr(argv[8], ':')) {
+		switch_inet_pton(AF_INET6, argv[8], &entry->ip_addr);
+		entry->addr_family = AF_INET6;
+	} else {
+		switch_inet_pton(AF_INET, argv[8], &entry->ip_addr);
+		entry->addr_family = AF_INET;
+	}
 
 	netsnmp_tdata_row_add_index(row, ASN_INTEGER, &entry->idx, sizeof(entry->idx));
 	netsnmp_tdata_add_row(ch_table, row);
@@ -128,9 +159,9 @@ void init_subagent(switch_memory_pool_t *pool)
 	netsnmp_register_scalar_group(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY), 1, 7);
 
 	ch_table_info = switch_core_alloc(pool, sizeof(netsnmp_table_registration_info));
-	netsnmp_table_helper_add_index(ch_table_info, ASN_INTEGER);
-	ch_table_info->min_column = 1;
-	ch_table_info->max_column = 7;
+	netsnmp_table_helper_add_indexes(ch_table_info, ASN_INTEGER, 0);
+	ch_table_info->min_column = CH_INDEX;
+	ch_table_info->max_column = CH_WRITE_BITRATE;
 	ch_table = netsnmp_tdata_create_table("channelList", 0);
 	ch_reginfo = netsnmp_create_handler_registration("channelList", handle_channelList, channelList_oid, OID_LENGTH(channelList_oid), HANDLER_CAN_RONLY);
 	netsnmp_tdata_register(ch_reginfo, ch_table, ch_table_info);
@@ -191,15 +222,15 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			break;
 		case SS_SESSIONS_SINCE_STARTUP:
 			int_val = switch_core_session_id() - 1;
-			snmp_set_var_typed_value(requests->requestvb, ASN_COUNTER, (u_char *) &int_val, sizeof(int_val));
+			snmp_set_var_typed_integer(requests->requestvb, ASN_COUNTER, int_val);
 			break;
 		case SS_CURRENT_SESSIONS:
 			int_val = switch_core_session_count();
-			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			break;
 		case SS_MAX_SESSIONS:
 			switch_core_session_ctl(SCSC_MAX_SESSIONS, &int_val);
-			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			break;
 		case SS_CURRENT_CALLS:
 			{
@@ -213,17 +244,17 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			gethostname(hostname, sizeof(hostname));
 			sprintf(sql, "SELECT COUNT(*) FROM calls WHERE hostname='%s'", hostname);
 			switch_cache_db_execute_sql_callback(dbh, sql, sql_count_callback, &int_val, NULL);
-			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			switch_cache_db_release_db_handle(&dbh);
 			}
 			break;
 		case SS_SESSIONS_PER_SECOND:
 			switch_core_session_ctl(SCSC_LAST_SPS, &int_val);
-			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			break;
 		case SS_MAX_SESSIONS_PER_SECOND:
 			switch_core_session_ctl(SCSC_SPS, &int_val);
-			snmp_set_var_typed_value(requests->requestvb, ASN_GAUGE, (u_char *) &int_val, sizeof(int_val));
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			break;
 		default:
 			snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", (int) subid);
@@ -246,6 +277,7 @@ int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 	netsnmp_request_info *request;
 	netsnmp_table_request_info *table_info;
 	chan_entry_t *entry;
+	char dt_str[12];
 
 	switch (reqinfo->mode) {
 	case MODE_GET:
@@ -254,6 +286,9 @@ int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			entry = (chan_entry_t *) netsnmp_tdata_extract_entry(request);
 
 			switch (table_info->colnum) {
+			case CH_INDEX:
+				snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER, entry->idx);
+				break;
 			case CH_UUID:
 				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->uuid, strlen(entry->uuid));
 				break;
@@ -261,7 +296,8 @@ int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->direction, strlen(entry->direction));
 				break;
 			case CH_CREATED:
-				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->created, strlen(entry->created));
+				time_t_to_datetime(entry->created_epoch, (char *) &dt_str, sizeof(dt_str));
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) &dt_str, sizeof(dt_str));
 				break;
 			case CH_NAME:
 				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->name, strlen(entry->name));
@@ -274,6 +310,53 @@ int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 				break;
 			case CH_CID_NUM:
 				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->cid_num, strlen(entry->cid_num));
+				break;
+			case CH_IP_ADDR_TYPE:
+				if (entry->addr_family == AF_INET6) {
+					snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER, INETADDRESSTYPE_IPV6);
+				} else {
+					snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER, INETADDRESSTYPE_IPV4);
+				}
+				break;
+			case CH_IP_ADDR:
+				if (entry->addr_family == AF_INET6) {
+					snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) &entry->ip_addr.v6, sizeof(entry->ip_addr.v6));
+				} else {
+					snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) &entry->ip_addr.v4, sizeof(entry->ip_addr.v4));
+				}
+				break;
+			case CH_DEST:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->dest, strlen(entry->dest));
+				break;
+			case CH_APPLICATION:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->application, strlen(entry->application));
+				break;
+			case CH_APPLICATION_DATA:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->application_data, strlen(entry->application_data));
+				break;
+			case CH_DIALPLAN:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->dialplan, strlen(entry->dialplan));
+				break;
+			case CH_CONTEXT:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->context, strlen(entry->context));
+				break;
+			case CH_READ_CODEC:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->read_codec, strlen(entry->read_codec));
+				break;
+			case CH_READ_RATE:
+				snmp_set_var_typed_value(request->requestvb, ASN_GAUGE, (u_char *) &entry->read_rate, sizeof(entry->read_rate));
+				break;
+			case CH_READ_BITRATE:
+				snmp_set_var_typed_value(request->requestvb, ASN_GAUGE, (u_char *) &entry->read_bitrate, sizeof(entry->read_bitrate));
+				break;
+			case CH_WRITE_CODEC:
+				snmp_set_var_typed_value(request->requestvb, ASN_OCTET_STR, (u_char *) entry->write_codec, strlen(entry->write_codec));
+				break;
+			case CH_WRITE_RATE:
+				snmp_set_var_typed_value(request->requestvb, ASN_GAUGE, (u_char *) &entry->write_rate, sizeof(entry->write_rate));
+				break;
+			case CH_WRITE_BITRATE:
+				snmp_set_var_typed_value(request->requestvb, ASN_GAUGE, (u_char *) &entry->write_bitrate, sizeof(entry->write_bitrate));
 				break;
 			default:
 				snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", table_info->colnum);
