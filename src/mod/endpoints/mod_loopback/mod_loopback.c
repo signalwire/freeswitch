@@ -82,6 +82,7 @@ struct private_object {
 	int32_t bowout_frame_count;
 	char *other_uuid;
 	switch_queue_t *frame_queue;
+	int64_t packet_count;
 };
 
 typedef struct private_object private_t;
@@ -577,40 +578,22 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		if (tech_pvt->write_frame) {
 			switch_frame_free(&tech_pvt->write_frame);
 		}
-
+		
 		tech_pvt->write_frame = (switch_frame_t *) pop;
 		tech_pvt->write_frame->codec = &tech_pvt->read_codec;
 		*frame = tech_pvt->write_frame;
+		tech_pvt->packet_count++;
+		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
+		switch_clear_flag(tech_pvt->write_frame, SFF_CNG);
 	} else {
 		switch_set_flag(tech_pvt, TFLAG_CNG);
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
-		unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-		uint32_t flag = 0;
-		switch_status_t encode_status;
-		uint32_t rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
-
 		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->cng_frame.datalen = tech_pvt->read_codec.implementation->decoded_bytes_per_packet;
-
-		memset(tech_pvt->cng_frame.data, 0, tech_pvt->cng_frame.datalen);
-		memset(&data, 0, tech_pvt->read_codec.implementation->decoded_bytes_per_packet);
-
-		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, "L16")) {
-			encode_status = switch_core_codec_encode(&tech_pvt->read_codec,
-													 NULL,
-													 data,
-													 tech_pvt->read_codec.implementation->decoded_bytes_per_packet,
-													 tech_pvt->read_codec.implementation->actual_samples_per_second,
-													 tech_pvt->cng_frame.data, &tech_pvt->cng_frame.datalen, &rate, &flag);
-			if (encode_status != SWITCH_STATUS_SUCCESS) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			}
-		} else {
-			switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
-		}
+		switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
 	}
 
