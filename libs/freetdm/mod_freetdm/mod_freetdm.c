@@ -1570,8 +1570,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI2", "%s", channel_caller_data->aniII);
 		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS", "%s", channel_caller_data->dnis.digits);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%s", channel_caller_data->dnis.type);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%s", channel_caller_data->dnis.plan);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%d", channel_caller_data->dnis.type);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
