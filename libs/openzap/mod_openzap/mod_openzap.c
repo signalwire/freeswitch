@@ -1234,19 +1234,19 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		zap_set_string(caller_data.ani.digits, dest);
 	}
 	
-	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton")) || (var = switch_core_get_variable("openzap_outbound_ton"))) {
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting TON to: %s\n", var);
 		zap_set_ton(var, &caller_data.ani.type);
 	} else {
 		caller_data.ani.type = outbound_profile->destination_number_ton;
 	}
 
-	if ((var = switch_event_get_header(var_event, "openzap_custom_call_data")) || (var = switch_core_get_variable("openzap_custom_call_data"))) {
+	if ((var = switch_event_get_header(var_event, "openzap_custom_call_data"))) {
 		zap_set_string((char *)caller_data.raw_data, var);
 		caller_data.raw_data_len = strlen(var);
 	}
 	
-	if ((var = switch_event_get_header(var_event, "openzap_outbound_npi")) || (var = switch_core_get_variable("openzap_outbound_npi"))) {
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_npi"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting NPI to: %s\n", var);
 		zap_set_npi(var, &caller_data.ani.plan);
 	} else {
