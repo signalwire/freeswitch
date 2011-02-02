@@ -5364,6 +5364,11 @@ public class freeswitch {
     freeswitchPINVOKE.consoleCleanLog(msg);
   }
 
+  public static bool email(string to, string from, string headers, string body, string file, string convert_cmd, string convert_ext) {
+    bool ret = freeswitchPINVOKE.email(to, from, headers, body, file, convert_cmd, convert_ext);
+    return ret;
+  }
+
   public static void console_log(string level_str, string msg) {
     freeswitchPINVOKE.console_log(level_str, msg);
   }
@@ -13587,6 +13592,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_consoleCleanLog")]
   public static extern void consoleCleanLog(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_email")]
+  public static extern bool email(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_IvrMenu")]
   public static extern IntPtr new_IvrMenu(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16);

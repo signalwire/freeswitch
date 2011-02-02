@@ -33352,6 +33352,30 @@ SWIGEXPORT void SWIGSTDCALL CSharp_consoleCleanLog(char * jarg1) {
 }
 
 
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_email(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7) {
+  unsigned int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  char *arg6 = (char *) NULL ;
+  char *arg7 = (char *) NULL ;
+  bool result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (char *)jarg5; 
+  arg6 = (char *)jarg6; 
+  arg7 = (char *)jarg7; 
+  result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_IvrMenu(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, char * jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16) {
   void * jresult ;
   IVRMenu *arg1 = (IVRMenu *) 0 ;
