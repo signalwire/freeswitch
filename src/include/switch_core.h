@@ -759,6 +759,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(_In_z_ 
   \return the value of the desired variable
 */
 SWITCH_DECLARE(char *) switch_core_get_variable(_In_z_ const char *varname);
+SWITCH_DECLARE(char *) switch_core_get_variable_dup(_In_z_ const char *varname);
+SWITCH_DECLARE(char *) switch_core_get_variable_pdup(_In_z_ const char *varname, switch_memory_pool_t *pool);
+SWITCH_DECLARE(const char *) switch_core_get_hostname(void);
 
 /*! 
   \brief Add a global variable to the core

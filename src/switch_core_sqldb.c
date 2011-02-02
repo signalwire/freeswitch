@@ -1134,7 +1134,7 @@ static void core_event_handler(switch_event_t *event)
 				new_sql() = switch_mprintf("insert into tasks values(%q,'%q','%q',%q, '%q')",
 										   id,
 										   switch_event_get_header_nil(event, "task-desc"),
-										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", switch_core_get_variable("hostname")
+										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", switch_core_get_hostname()
 										   );
 			}
 		}
@@ -1142,7 +1142,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_DEL_SCHEDULE:
 	case SWITCH_EVENT_EXE_SCHEDULE:
 		new_sql() = switch_mprintf("delete from tasks where task_id=%q and hostname='%q'",
-								   switch_event_get_header_nil(event, "task-id"), switch_core_get_variable("hostname"));
+								   switch_event_get_header_nil(event, "task-id"), switch_core_get_hostname());
 		break;
 	case SWITCH_EVENT_RE_SCHEDULE:
 		{
@@ -1153,7 +1153,7 @@ static void core_event_handler(switch_event_t *event)
 				new_sql() = switch_mprintf("update tasks set task_desc='%q',task_group='%q', task_sql_manager=%q where task_id=%q and hostname='%q'",
 										   switch_event_get_header_nil(event, "task-desc"),
 										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", id,
-										   switch_core_get_variable("hostname"));
+										   switch_core_get_hostname());
 			}
 		}
 		break;
@@ -1163,10 +1163,10 @@ static void core_event_handler(switch_event_t *event)
 			
 			if (uuid) {
 				new_sql() = switch_mprintf("delete from channels where uuid='%q' and hostname='%q'",
-										   uuid, switch_core_get_variable("hostname"));
+										   uuid, switch_core_get_hostname());
 
 				new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' or callee_uuid='%q') and hostname='%q'",
-										   uuid, uuid, switch_core_get_variable("hostname"));
+										   uuid, uuid, switch_core_get_hostname());
 
 			}
 		}
@@ -1178,12 +1178,12 @@ static void core_event_handler(switch_event_t *event)
 									   "update calls set callee_uuid='%q' where callee_uuid='%q' and hostname='%q'",
 									   switch_event_get_header_nil(event, "unique-id"),
 									   switch_event_get_header_nil(event, "old-unique-id"),
-									   switch_core_get_variable("hostname"),
+									   switch_core_get_hostname(),
 									   switch_event_get_header_nil(event, "unique-id"),
 									   switch_event_get_header_nil(event, "old-unique-id"),
-									   switch_core_get_variable("hostname"),
+									   switch_core_get_hostname(),
 									   switch_event_get_header_nil(event, "unique-id"),
-									   switch_event_get_header_nil(event, "old-unique-id"), switch_core_get_variable("hostname")
+									   switch_event_get_header_nil(event, "old-unique-id"), switch_core_get_hostname()
 									   );
 			break;
 		}
@@ -1198,7 +1198,7 @@ static void core_event_handler(switch_event_t *event)
 								   switch_event_get_header_nil(event, "channel-state"),
 								   switch_event_get_header_nil(event, "channel-call-state"),
 								   switch_event_get_header_nil(event, "caller-dialplan"),
-								   switch_event_get_header_nil(event, "caller-context"), switch_core_get_variable("hostname")
+								   switch_event_get_header_nil(event, "caller-context"), switch_core_get_hostname()
 								   );
 		break;
 	case SWITCH_EVENT_CODEC:
@@ -1211,7 +1211,7 @@ static void core_event_handler(switch_event_t *event)
 			 switch_event_get_header_nil(event, "channel-write-codec-name"),
 			 switch_event_get_header_nil(event, "channel-write-codec-rate"),
 			 switch_event_get_header_nil(event, "channel-write-codec-bit-rate"),
-			 switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+			 switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 		break;
 	case SWITCH_EVENT_CHANNEL_HOLD:
 	case SWITCH_EVENT_CHANNEL_UNHOLD:
@@ -1223,7 +1223,7 @@ static void core_event_handler(switch_event_t *event)
 								   switch_event_get_header_nil(event, "application-data"),
 								   switch_event_get_header_nil(event, "channel-presence-id"),
 								   switch_event_get_header_nil(event, "channel-presence-data"),
-								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname")
+								   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname()
 								   );
 
 	}
@@ -1238,7 +1238,7 @@ static void core_event_handler(switch_event_t *event)
 										   switch_event_get_header_nil(event, "channel-presence-data"),
 										   switch_event_get_header_nil(event, "channel-call-uuid"),
 										   extra_cols,
-										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 				free(extra_cols);
 			} else {
 				new_sql() = switch_mprintf("update channels set "
@@ -1246,7 +1246,7 @@ static void core_event_handler(switch_event_t *event)
 										   switch_event_get_header_nil(event, "channel-presence-id"),
 										   switch_event_get_header_nil(event, "channel-presence-data"),
 										   switch_event_get_header_nil(event, "channel-call-uuid"),
-										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 			}
 
 		}
@@ -1281,7 +1281,7 @@ static void core_event_handler(switch_event_t *event)
 										   switch_str_nil(name),
 										   switch_str_nil(number),
 										   switch_event_get_header_nil(event, "direction"),
-										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 
 				name = switch_event_get_header(event, "callee-name");
 				number = switch_event_get_header(event, "callee-number");
@@ -1298,7 +1298,7 @@ static void core_event_handler(switch_event_t *event)
 		{
 			new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q' and hostname='%q'",
 									   switch_event_get_header_nil(event, "channel-call-state"),
-									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 
 		}
 		break;
@@ -1330,7 +1330,7 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "channel-presence-id"),
 											   switch_event_get_header_nil(event, "channel-presence-data"),
 											   extra_cols,
-											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 					free(extra_cols);
 				} else {
 					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
@@ -1345,13 +1345,13 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "caller-context"),
 											   switch_event_get_header_nil(event, "channel-presence-id"),
 											   switch_event_get_header_nil(event, "channel-presence-data"),
-											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 				}
 				break;
 			default:
 				new_sql() = switch_mprintf("update channels set state='%s' where uuid='%s' and hostname='%q'",
 										   switch_event_get_header_nil(event, "channel-state"),
-										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 				break;
 			}
 
@@ -1377,7 +1377,7 @@ static void core_event_handler(switch_event_t *event)
 
 			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' and hostname='%q'",
 									   switch_event_get_header_nil(event, "channel-call-uuid"),
-									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_variable("hostname"));
+									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_hostname());
 
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 				func_name = "function";
@@ -1404,7 +1404,7 @@ static void core_event_handler(switch_event_t *event)
 									   callee_cid_num,
 									   switch_event_get_header_nil(event, "Other-Leg-destination-number"),
 									   switch_event_get_header_nil(event, "Other-Leg-channel-name"),
-									   switch_event_get_header_nil(event, "Other-Leg-unique-id"), switch_core_get_variable("hostname")
+									   switch_event_get_header_nil(event, "Other-Leg-unique-id"), switch_core_get_hostname()
 									   );
 		}
 		break;
@@ -1413,14 +1413,14 @@ static void core_event_handler(switch_event_t *event)
 			char *uuid = switch_event_get_header_nil(event, "caller-unique-id");
 
 			new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' or callee_uuid='%q') and hostname='%q'",
-									   uuid, uuid, switch_core_get_variable("hostname"));
+									   uuid, uuid, switch_core_get_hostname());
 			break;
 		}
 	case SWITCH_EVENT_SHUTDOWN:
 		new_sql() = switch_mprintf("delete from channels where hostname='%q';"
 								   "delete from interfaces where hostname='%q';"
 								   "delete from calls where hostname='%q'",
-								   switch_core_get_variable("hostname"), switch_core_get_variable("hostname"), switch_core_get_variable("hostname")
+								   switch_core_get_hostname(), switch_core_get_hostname(), switch_core_get_hostname()
 								   );
 		break;
 	case SWITCH_EVENT_LOG:
@@ -1438,7 +1438,7 @@ static void core_event_handler(switch_event_t *event)
 					switch_mprintf
 					("insert into interfaces (type,name,description,syntax,ikey,filename,hostname) values('%q','%q','%q','%q','%q','%q','%q')", type, name,
 					 switch_str_nil(description), switch_str_nil(syntax), switch_str_nil(key), switch_str_nil(filename),
-					 switch_core_get_variable("hostname")
+					 switch_core_get_hostname()
 					 );
 			}
 			break;
@@ -1449,7 +1449,7 @@ static void core_event_handler(switch_event_t *event)
 			const char *name = switch_event_get_header_nil(event, "name");
 			if (!zstr(type) && !zstr(name)) {
 				new_sql() = switch_mprintf("delete from interfaces where type='%q' and name='%q' and hostname='%q'", type, name,
-										   switch_core_get_variable("hostname"));
+										   switch_core_get_hostname());
 			}
 			break;
 		}
@@ -1461,7 +1461,7 @@ static void core_event_handler(switch_event_t *event)
 				break;
 			}
 			new_sql() = switch_mprintf("update channels set secure='%s' where uuid='%s' and hostname='%q'",
-									   type, switch_event_get_header_nil(event, "caller-unique-id"), switch_core_get_variable("hostname")
+									   type, switch_event_get_header_nil(event, "caller-unique-id"), switch_core_get_hostname()
 									   );
 			break;
 		}
@@ -1472,12 +1472,12 @@ static void core_event_handler(switch_event_t *event)
 			if (!strcmp("add", op)) {
 				new_sql() = switch_mprintf("insert into nat (port, proto, sticky, hostname) values (%s, %s, %d,'%q')",
 										   switch_event_get_header_nil(event, "port"),
-										   switch_event_get_header_nil(event, "proto"), sticky, switch_core_get_variable("hostname")
+										   switch_event_get_header_nil(event, "proto"), sticky, switch_core_get_hostname()
 										   );
 			} else if (!strcmp("del", op)) {
 				new_sql() = switch_mprintf("delete from nat where port=%s and proto=%s and hostname='%q'",
 										   switch_event_get_header_nil(event, "port"),
-										   switch_event_get_header_nil(event, "proto"), switch_core_get_variable("hostname"));
+										   switch_event_get_header_nil(event, "proto"), switch_core_get_hostname());
 			} else if (!strcmp("status", op)) {
 				/* call show nat api */
 			} else if (!strcmp("status_response", op)) {
@@ -1664,7 +1664,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			char sql[512] = "";
 			char *tables[] = { "channels", "calls", "interfaces", "tasks", NULL };
 			int i;
-			const char *hostname = switch_core_get_variable("hostname");
+			const char *hostname = switch_core_get_hostname();
 
 			for (i = 0; tables[i]; i++) {
 				switch_snprintf(sql, sizeof(sql), "delete from %s where hostname='%s'", tables[i], hostname);

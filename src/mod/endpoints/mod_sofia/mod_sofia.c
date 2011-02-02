@@ -3501,7 +3501,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	}
 
 	if (zstr(domain)) {
-		domain = switch_core_get_variable("domain");
+		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
 	}
 
 	if (!user) goto end;
@@ -4776,7 +4776,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
-	mod_sofia_globals.auto_nat = (switch_core_get_variable("nat_type") ? 1 : 0);
+	mod_sofia_globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);

@@ -313,7 +313,7 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 	if (session) {
 		profile = switch_channel_get_variable(switch_core_session_get_channel(session), "sip_profile");
 	} else {
-		profile = switch_core_get_variable("sip_profile");
+		profile = switch_core_get_variable_pdup("sip_profile", switch_core_session_get_pool(session));
 	}
 	if (zstr(profile)) {
 		profile = "default";
