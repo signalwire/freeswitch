@@ -508,6 +508,12 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
       <Project>{8b3b4c4c-13c2-446c-beb0-f412cc2cfb9a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\openssl\libeay32.2010.vcxproj">
+      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\openssl\ssleay32.2010.vcxproj">
+      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\pthread\pthread.2010.vcxproj">
       <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
