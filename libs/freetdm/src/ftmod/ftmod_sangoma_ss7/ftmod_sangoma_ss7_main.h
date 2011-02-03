@@ -219,13 +219,18 @@ typedef struct sng_link_set {
 	uint32_t		links[16];
 } sng_link_set_t;
 
+typedef struct sng_link_set_list {
+	uint32_t					lsId;
+	struct sng_link_set_list	*next;
+} sng_link_set_list_t;
+
 typedef struct sng_route {
 	char			name[MAX_NAME_LEN];
 	uint32_t		flags;
 	uint32_t		id;
 	uint32_t		dpc;
 	uint32_t		cmbLinkSetId;
-	uint32_t		linkSetId;
+	struct sng_link_set_list	lnkSets;
 	uint32_t		linkType;
 	uint32_t		switchType;
 	uint32_t		ssf;

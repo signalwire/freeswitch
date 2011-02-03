@@ -1570,26 +1570,33 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) {
 		sng_isup_free_cc();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC);
 	}
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) {
 		ftmod_ss7_shutdown_isup();
 		sng_isup_free_isup();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP);
 	}
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3)) {
 		ftmod_ss7_shutdown_mtp3();
 		sng_isup_free_mtp3();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3);
 	}
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) {
 		ftmod_ss7_shutdown_mtp2();
 		sng_isup_free_mtp2();
 		sng_isup_free_mtp1();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2);
 	}
 
-	ftmod_ss7_shutdown_relay();
-	sng_isup_free_relay();
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) {
+		ftmod_ss7_shutdown_relay();
+		sng_isup_free_relay();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY);
+	}
 
 	sng_isup_free_sm();
 

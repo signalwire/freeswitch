@@ -74,6 +74,7 @@ int ftmod_ss7_relay_chan_config(int id);
 int  ft_to_sngss7_cfg_all(void)
 {
 	int x = 0;
+	int ret = 0;
 
 	/* check if we have done gen_config already */
 	if (!(g_ftdm_sngss7_data.gen_config)) {
@@ -289,15 +290,17 @@ int  ft_to_sngss7_cfg_all(void)
 		/* check if this link has been configured already */
 		if (!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_CONFIGURED)) {
 
-			if (ftmod_ss7_mtp3_nsap_config(x)) {
-				SS7_CRITICAL("MTP3 NSAP %d configuration FAILED!\n", x);
+			ret = ftmod_ss7_mtp3_nsap_config(x);
+			if (ret) {
+				SS7_CRITICAL("MTP3 NSAP %d configuration FAILED!(%s)\n", x, DECODE_LCM_REASON(ret));
 				return 1;
 			} else {
 				SS7_INFO("MTP3 NSAP %d configuration DONE!\n", x);
 			}
 
-			if (ftmod_ss7_isup_nsap_config(x)) {
-				SS7_CRITICAL("ISUP NSAP %d configuration FAILED!\n", x);
+			ret = ftmod_ss7_isup_nsap_config(x);
+			if (ret) {
+				SS7_CRITICAL("ISUP NSAP %d configuration FAILED!(%s)\n", x, DECODE_LCM_REASON(ret));
 				return 1;
 			} else {
 				SS7_INFO("ISUP NSAP %d configuration DONE!\n", x);
@@ -580,7 +583,7 @@ int ftmod_ss7_mtp3_gen_config(void)
 
 	cfg.t.cfg.s.snGen.ssfValid		= TRUE;				/* ssf validation required */
 	cfg.t.cfg.s.snGen.nmbDLSap		= MAX_SN_LINKS;		/* number of MTP Data Link SAPs */
-	cfg.t.cfg.s.snGen.nmbNSap		= MAX_SN_VARIANTS;	/* number of Upper Layer Saps */
+	cfg.t.cfg.s.snGen.nmbNSap		= MAX_SN_ROUTES;	/* number of Upper Layer Saps */
 	cfg.t.cfg.s.snGen.nmbRouts		= MAX_SN_ROUTES;	/* maximum number of routing entries */
 	cfg.t.cfg.s.snGen.nmbLnkSets	= MAX_SN_LINKSETS;	/* number of link sets */
 	cfg.t.cfg.s.snGen.nmbRteInst	= MAX_SN_ROUTES*16;	/* number of simultaneous Rte instances */
