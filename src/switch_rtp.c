@@ -791,8 +791,8 @@ static void zrtp_logger(int level, const char *data, int len, int offset)
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 #ifdef ENABLE_ZRTP
-	const char *zid_string = switch_core_get_variable("switch_serial");
-	const char *zrtp_enabled = switch_core_get_variable("zrtp_enabled");
+	const char *zid_string = switch_core_get_variable_pdup("switch_serial", pool);
+	const char *zrtp_enabled = switch_core_get_variable_pdup("zrtp_enabled", pool);
 	zrtp_config_t zrtp_config;
 	char zrtp_cache_path[256] = "";
 	zrtp_on = zrtp_enabled ? switch_true(zrtp_enabled) : 0;

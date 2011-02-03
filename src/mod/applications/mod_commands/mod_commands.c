@@ -349,7 +349,7 @@ SWITCH_STANDARD_API(timer_test_function)
 
 SWITCH_STANDARD_API(group_call_function)
 {
-	char *domain;
+	char *domain, *dup_domain = NULL;
 	char *group_name = NULL;
 	char *flags;
 	int ok = 0;
@@ -392,7 +392,9 @@ SWITCH_STANDARD_API(group_call_function)
 	if (domain) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+			domain = dup_domain;
+		}
 	}
 
 	if (!zstr(domain)) {
@@ -544,13 +546,14 @@ SWITCH_STANDARD_API(group_call_function)
 	}
 
   end:
-
+	
 	switch_safe_free(group_name);
+	switch_safe_free(dup_domain);
 
 	if (!ok) {
 		stream->write_function(stream, "error/NO_ROUTE_DESTINATION");
 	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -559,7 +562,7 @@ SWITCH_STANDARD_API(in_group_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group;
 	int argc;
-	char *mydata = NULL, *argv[2], *user, *domain;
+	char *mydata = NULL, *argv[2], *user, *domain, *dup_domain = NULL;
 	char delim = ',';
 	switch_event_t *params = NULL;
 	const char *rval = "false";
@@ -579,7 +582,9 @@ SWITCH_STANDARD_API(in_group_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+			domain = dup_domain;
+		}
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
@@ -601,6 +606,7 @@ SWITCH_STANDARD_API(in_group_function)
 
 	switch_xml_free(xml);
 	switch_safe_free(mydata);
+	switch_safe_free(dup_domain);
 	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -610,7 +616,7 @@ SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	int argc;
-	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain;
+	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain, *dup_domain = NULL;
 	char delim = ' ';
 	const char *container = "params", *elem = "param";
 	const char *result = NULL;
@@ -631,7 +637,9 @@ SWITCH_STANDARD_API(user_data_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		if (!(domain = switch_core_get_variable("domain"))) {
+		if ((dup_domain = switch_core_get_variable("domain"))) {
+			domain = dup_domain;
+		} else {
 			domain = "cluecon.com";
 		}
 	}
@@ -694,6 +702,7 @@ SWITCH_STANDARD_API(user_data_function)
 	}
 	switch_xml_free(xml);
 	switch_safe_free(mydata);
+	switch_safe_free(dup_domain);
 	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4375,7 +4384,9 @@ SWITCH_STANDARD_API(global_getvar_function)
 	if (zstr(cmd)) {
 		switch_core_dump_variables(stream);
 	} else {
-		stream->write_function(stream, "%s", switch_str_nil(switch_core_get_variable(cmd)));
+		char *var = switch_core_get_variable_dup(cmd);
+		stream->write_function(stream, "%s", switch_str_nil(var));
+		switch_safe_free(var);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

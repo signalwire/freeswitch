@@ -77,7 +77,7 @@ static int next_file(switch_file_handle_t *handle)
 
 
 	if (!prefix) {
-		if (!(prefix = switch_core_get_variable("sound_prefix"))) {
+		if (!(prefix = switch_core_get_variable_pdup("sound_prefix", handle->memory_pool))) {
 			prefix = SWITCH_GLOBAL_dirs.sounds_dir;
 		}
 	}

@@ -2049,7 +2049,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
 		char *ip = globals.guess_ip;
 		if (val && !strcasecmp(val, "auto-nat")) {
-			ip = globals.auto_nat ? switch_core_get_variable("nat_public_addr") : globals.guess_ip;
+			ip = globals.auto_nat ? switch_core_get_variable_pdup("nat_public_addr", module_pool) : globals.guess_ip;
 		} else if (val && !strcasecmp(val, "auto")) {
 			globals.auto_nat = 0;
 			ip = globals.guess_ip;
@@ -2523,7 +2523,7 @@ static switch_status_t load_config(void)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
-	globals.auto_nat = (switch_core_get_variable("nat_type") ? 1 : 0);
+	globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
 	switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), NULL, AF_INET);
 
