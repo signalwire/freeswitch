@@ -159,7 +159,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "OPUS (BETA 0.9.0)");
 
-	for (x = 0; x < 3; x++) {
+	for (x = 0; x < 2; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 115,	/* the IANA code number */
 											 "Opus-0.9.0",/* the IANA code name */
