@@ -801,12 +801,14 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 						sngisdn_snd_release(ftdmchan, 0);
 						break;
 					case FTDM_CHANNEL_STATE_PROCEED:
-						if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) &&
-							((sngisdn_span_data_t*)(ftdmchan->span->signal_data))->switchtype == SNGISDN_SWITCH_5ESS) {
+						if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+							if (((sngisdn_span_data_t*)(ftdmchan->span->signal_data))->switchtype == SNGISDN_SWITCH_4ESS ||
+							    ((sngisdn_span_data_t*)(ftdmchan->span->signal_data))->switchtype == SNGISDN_SWITCH_5ESS) {
 							
-							/* When using 5ESS, if the user wants to clear an inbound call, the correct procedure is to send a PROGRESS with in-band info available, and play tones. Then send a DISCONNECT. If we reached this point, it means user did not try to play-tones, so send a RELEASE because remote side does not expect DISCONNECT in state 3 */
-							sngisdn_snd_release(ftdmchan, 0);
-							break;
+								/* When using 5ESS, if the user wants to clear an inbound call, the correct procedure is to send a PROGRESS with in-band info available, and play tones. Then send a DISCONNECT. If we reached this point, it means user did not try to play-tones, so send a RELEASE because remote side does not expect DISCONNECT in state 3 */
+								sngisdn_snd_release(ftdmchan, 0);
+								break;
+							}
 						}
 						/* fall-through */
 					default:
