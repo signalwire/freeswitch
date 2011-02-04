@@ -151,11 +151,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_CODEC(codec_interface, "OPUS (BETA)");
+	SWITCH_ADD_CODEC(codec_interface, "OPUS (BETA 0.9.0)");
 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 115,	/* the IANA code number */
-										 "OPUS",	/* the IANA code name */
+										 "Opus-0.9.0",/* the IANA code name */
 										 NULL,	/* default fmtp to send (can be overridden by the init function) */
 										 48000,	/* samples transferred per second */
 										 48000,	/* actual samples transferred per second */
@@ -174,7 +174,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 										 115,	/* the IANA code number */
-										 "OPUS",	/* the IANA code name */
+										 "Opus-0.9.0",	/* the IANA code name */
 										 NULL,	/* default fmtp to send (can be overridden by the init function) */
 										 48000,	/* samples transferred per second */
 										 48000,	/* actual samples transferred per second */
