@@ -147,52 +147,43 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
 	switch_codec_interface_t *codec_interface;
+	int samples = 80;
+	int bytes = 960;
+	int mss = 10000;
+	int x = 0;
+	int rate = 48000;
+	int bits = 32000;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_CODEC(codec_interface, "OPUS (BETA 0.9.0)");
 
-	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 115,	/* the IANA code number */
-										 "Opus-0.9.0",/* the IANA code name */
-										 NULL,	/* default fmtp to send (can be overridden by the init function) */
-										 48000,	/* samples transferred per second */
-										 48000,	/* actual samples transferred per second */
-										 32000,	/* bits transferred per second */
-										 10000,	/* number of microseconds per frame */
-										 80,	/* number of samples per frame */
-										 960,	/* number of bytes per frame decompressed */
-										 0,	/* number of bytes per frame compressed */
-										 1,	/* number of channels represented */
-										 1,	/* number of frames per network packet */
-										 switch_opus_init,	/* function to initialize a codec handle using this implementation */
-										 switch_opus_encode,	/* function to encode raw data into encoded data */
-										 switch_opus_decode,	/* function to decode encoded data into raw data */
-										 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+	for (x = 0; x < 3; x++) {
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 115,	/* the IANA code number */
+											 "Opus-0.9.0",/* the IANA code name */
+											 NULL,	/* default fmtp to send (can be overridden by the init function) */
+											 rate,	/* samples transferred per second */
+											 rate,	/* actual samples transferred per second */
+											 bits,	/* bits transferred per second */
+											 mss,	/* number of microseconds per frame */
+											 samples,	/* number of samples per frame */
+											 bytes,	/* number of bytes per frame decompressed */
+											 0,	/* number of bytes per frame compressed */
+											 1,	/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_opus_init,	/* function to initialize a codec handle using this implementation */
+											 switch_opus_encode,	/* function to encode raw data into encoded data */
+											 switch_opus_decode,	/* function to decode encoded data into raw data */
+											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+		
+		bytes *= 2;
+		samples *= 2;
+		mss *= 2;
 
-
-	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 115,	/* the IANA code number */
-										 "Opus-0.9.0",	/* the IANA code name */
-										 NULL,	/* default fmtp to send (can be overridden by the init function) */
-										 48000,	/* samples transferred per second */
-										 48000,	/* actual samples transferred per second */
-										 32000,	/* bits transferred per second */
-										 20000,	/* number of microseconds per frame */
-										 160,	/* number of samples per frame */
-										 1920,	/* number of bytes per frame decompressed */
-										 0,	/* number of bytes per frame compressed */
-										 1,	/* number of channels represented */
-										 1,	/* number of frames per network packet */
-										 switch_opus_init,	/* function to initialize a codec handle using this implementation */
-										 switch_opus_encode,	/* function to encode raw data into encoded data */
-										 switch_opus_decode,	/* function to decode encoded data into raw data */
-										 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
-
-
-
-
+	}
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
