@@ -309,11 +309,13 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 												switch_call_cause_t *cancel_cause)
 {
 	const char *profile;
+	char *dup_profile = NULL;
 
 	if (session) {
 		profile = switch_channel_get_variable(switch_core_session_get_channel(session), "sip_profile");
 	} else {
-		profile = switch_core_get_variable_pdup("sip_profile", switch_core_session_get_pool(session));
+		dup_profile = switch_core_get_variable_dup("sip_profile");
+		profile = dup_profile;
 	}
 	if (zstr(profile)) {
 		profile = "default";
@@ -322,6 +324,8 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 	outbound_profile->destination_number = switch_core_sprintf(outbound_profile->pool, "%s/%s", profile, outbound_profile->destination_number);
 
 	UNPROTECT_INTERFACE(sip_endpoint_interface);
+
+	switch_safe_free(dup_profile);
 
 	return switch_core_session_outgoing_channel(session, var_event, "sofia", outbound_profile, new_session, pool, SOF_NONE, cancel_cause);
 }
