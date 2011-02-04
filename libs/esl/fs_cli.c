@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #define CMD_BUFLEN 1024
+static int WARN_STOP = 0;
 
 #ifdef WIN32
 #define strdup(src) _strdup(src)
@@ -535,6 +536,13 @@ static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int
 static void handle_SIGINT(int sig)
 {
 	if (sig);
+
+	WARN_STOP = 1;
+
+	signal(SIGINT, handle_SIGINT);
+#ifdef SIGTSTP
+	signal(SIGTSTP, handle_SIGINT);
+#endif
 	return;
 }
 
@@ -581,6 +589,12 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 	while(thread_running && handle->connected) {
 		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
+
+		if (WARN_STOP) {
+			printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
+			WARN_STOP = 0;
+		}
+
 		if (status == ESL_FAIL) {
 			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
@@ -1023,6 +1037,9 @@ int main(int argc, char *argv[])
 	}
 	
 	signal(SIGINT, handle_SIGINT);
+#ifdef SIGTSTP
+	signal(SIGTSTP, handle_SIGINT);
+#endif
 #ifdef SIGQUIT
 	signal(SIGQUIT, handle_SIGQUIT);
 #endif
