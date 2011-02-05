@@ -3378,8 +3378,9 @@ static JSBool js_global_get(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	if (argc > 0) {
 		var_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		val = switch_core_get_variable(var_name);
+		val = switch_core_get_variable_dup(var_name);
 		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, val));
+		free(val);
 		return JS_TRUE;
 	}
 

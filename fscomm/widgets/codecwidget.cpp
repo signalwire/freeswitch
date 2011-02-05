@@ -131,6 +131,8 @@ void CodecWidget::setCodecString(QString codecList)
         QStringList parsed = codecList.split("{");
         QString var = parsed.at(1);
         var = var.split("}").at(0);
+		// warning switch_core_get_Variable may return an unsafe pointer in some cases.
+		// revise to use switch_core_get_variable_dup, and then free it after you are done.
         var = switch_core_get_variable(var.toAscii().data());
         if ( ! var.isEmpty() ) {
             codecList = var;

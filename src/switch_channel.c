@@ -672,7 +672,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channe
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup)
 {
-	const char *v = NULL, *r = NULL;
+	const char *v = NULL, *r = NULL, *vdup = NULL;
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
@@ -690,13 +690,16 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 		}
 
 		if (!cp || !(v = switch_caller_get_field_by_name(cp, varname))) {
-			v = switch_core_get_variable(varname);
+			if ((vdup = switch_core_get_variable_pdup(varname, switch_core_session_get_pool(channel->session)))) {
+				v = vdup;
+			}
 		}
 	}
 
-	if (dup) {
-		if (v)
+	if (dup && v != vdup) {
+		if (v) {
 			r = switch_core_session_strdup(channel->session, v);
+		}
 	} else {
 		r = v;
 	}

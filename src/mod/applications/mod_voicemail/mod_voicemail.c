@@ -2734,6 +2734,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	switch_memory_pool_t *pool = NULL;
 	char *forwarded_by = NULL;
 	char *read_flags = NORMAL_FLAG_STRING;
+	char *dup_domain = NULL;
 	
 	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
@@ -2781,7 +2782,9 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	}
 
 	if (zstr(domain)) {
-		domain = switch_core_get_variable("domain");
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+			domain = dup_domain;
+		}
 		profile_name = domain;
 	}
 
@@ -2915,6 +2918,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
   end:
 
 	switch_safe_free(dup);
+	switch_safe_free(dup_domain);
 
 	return status;
 }

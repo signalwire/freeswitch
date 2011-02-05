@@ -791,8 +791,8 @@ static void zrtp_logger(int level, const char *data, int len, int offset)
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 #ifdef ENABLE_ZRTP
-	const char *zid_string = switch_core_get_variable("switch_serial");
-	const char *zrtp_enabled = switch_core_get_variable("zrtp_enabled");
+	const char *zid_string = switch_core_get_variable_pdup("switch_serial", pool);
+	const char *zrtp_enabled = switch_core_get_variable_pdup("zrtp_enabled", pool);
 	zrtp_config_t zrtp_config;
 	char zrtp_cache_path[256] = "";
 	zrtp_on = zrtp_enabled ? switch_true(zrtp_enabled) : 0;
@@ -1875,6 +1875,10 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name)
 {
 
+	if (!switch_rtp_ready(rtp_session)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	stfu_n_debug(rtp_session->jb, name);
 	stfu_global_set_logger(jb_logger);
 

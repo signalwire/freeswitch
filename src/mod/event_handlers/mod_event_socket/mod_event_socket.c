@@ -2642,7 +2642,7 @@ static int config(void)
 				} else if (!strcmp(var, "debug")) {
 					globals.debug = atoi(val);
 				} else if (!strcmp(var, "nat-map")) {
-					if (switch_true(val) && switch_core_get_variable("nat_type")) {
+					if (switch_true(val) && switch_nat_get_type()) {
 						prefs.nat_map = 1;
 					}
 				} else if (!strcmp(var, "listen-port")) {
@@ -2795,7 +2795,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	close_socket(&listen_list.sock);
 
-	if (prefs.nat_map && switch_core_get_variable("nat_type")) {
+	if (prefs.nat_map && switch_nat_get_type()) {
 		switch_nat_del_mapping(prefs.port, SWITCH_NAT_TCP);
 	}
 

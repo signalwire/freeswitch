@@ -1561,6 +1561,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	char *cloned_sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
+	char *gvar = NULL;
 
 	nv = switch_string_var_check_const(in) || switch_string_has_escaped_data(in);
 
@@ -1689,7 +1690,10 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 					}
 
 					if (!(sub_val = switch_event_get_header(event, vname))) {
-						sub_val = switch_core_get_variable(vname);
+						switch_safe_free(gvar);
+						if ((gvar = switch_core_get_variable_dup(vname))) {
+							sub_val = gvar;
+						}
 					}
 
 					if (offset || ooffset) {
@@ -1785,6 +1789,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 		}
 	}
 	free(indup);
+	switch_safe_free(gvar);
 
 	return data;
 }

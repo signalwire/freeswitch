@@ -220,6 +220,7 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 				char *sp;
 				switch_event_t *event;
 				const char *app_var;
+				int total = 0;
 
 				switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA);
 				
@@ -255,6 +256,7 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 					}
 
 					if (varname && val) {
+						total++;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s setting FSK var [%s][%s]\n", 
 										  switch_channel_get_name(channel), varname, val);
 						switch_channel_set_variable(channel, varname, val);
@@ -270,7 +272,7 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 					}
 				}
 				
-				if ((app_var = switch_channel_get_variable(channel, "execute_on_fsk"))) {
+				if (total && (app_var = switch_channel_get_variable(channel, "execute_on_fsk"))) {
 					char *app_arg;
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s processing execute_on_fsk [%s]\n", 

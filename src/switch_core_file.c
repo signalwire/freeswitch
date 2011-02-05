@@ -102,7 +102,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			}
 
 			if (!spool_path) {
-				spool_path = switch_core_get_variable(SWITCH_AUDIO_SPOOL_PATH_VARIABLE);
+				spool_path = switch_core_get_variable_pdup(SWITCH_AUDIO_SPOOL_PATH_VARIABLE, fh->memory_pool);
 			}
 
 			file_path = fh->file_path;
