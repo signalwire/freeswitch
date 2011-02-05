@@ -3778,6 +3778,7 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	switch_xml_set_attr_d(x_conference, "member-count", ival);
 	switch_snprintf(i, sizeof(i), "%u", conference->rate);
 	switch_xml_set_attr_d(x_conference, "rate", ival);
+	switch_xml_set_attr_d(x_conference, "uuid", conference->uuid_str);
 
 	if (switch_test_flag(conference, CFLAG_LOCKED)) {
 		switch_xml_set_attr_d(x_conference, "locked", "true");

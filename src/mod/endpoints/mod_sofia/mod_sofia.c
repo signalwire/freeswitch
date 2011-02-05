@@ -707,11 +707,20 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		cid = generate_pai_str(tech_pvt);
 
 
-		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && tech_pvt->early_sdp && strcmp(tech_pvt->early_sdp, tech_pvt->local_sdp_str)) {
-			/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
-			   we do so in this case we will abandon the SOA rules and go rogue.
-			 */
-			sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) && tech_pvt->early_sdp) {
+			char *a, *b;
+			
+			/* start at the s= line to avoid some devices who update the o= between messages */
+			a = strstr(tech_pvt->early_sdp, "s=");
+			b = strstr(tech_pvt->local_sdp_str, "s=");
+
+			if (!a || !b || strcmp(a, b)) {
+
+				/* The SIP RFC for SOA forbids sending a 183 with one sdp then a 200 with another but it won't do us much good unless 
+				   we do so in this case we will abandon the SOA rules and go rogue.
+				*/
+				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+			}
 		}
 
 		if (sofia_use_soa(tech_pvt)) {
@@ -3492,7 +3501,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	}
 
 	if (zstr(domain)) {
-		domain = switch_core_get_variable("domain");
+		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
 	}
 
 	if (!user) goto end;
@@ -4767,7 +4776,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
-	mod_sofia_globals.auto_nat = (switch_core_get_variable("nat_type") ? 1 : 0);
+	mod_sofia_globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);

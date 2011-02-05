@@ -28,6 +28,7 @@
  * Michael Murdock <mike at mmurdock dot org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -269,7 +270,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 }
 
 
-#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR pause OR resume OR stop OR param <name> <value>"
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR grammaron/grammaroff <gram_name> OR grammarsalloff OR pause OR resume OR start_input_timers OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
@@ -282,6 +283,12 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
 		} else if (!strcasecmp(argv[0], "nogrammar")) {
 			switch_ivr_detect_speech_unload_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "grammaron")) {
+			switch_ivr_detect_speech_enable_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "grammaroff")) {
+			switch_ivr_detect_speech_disable_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "grammarsalloff")) {
+			switch_ivr_detect_speech_disable_all_grammars(session);
 		} else if (!strcasecmp(argv[0], "pause")) {
 			switch_ivr_pause_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "resume")) {
@@ -290,6 +297,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_stop_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "param")) {
 			switch_ivr_set_param_detect_speech(session, argv[1], argv[2]);
+		} else if (!strcasecmp(argv[0], "start_input_timers")) {
+			switch_ivr_detect_speech_start_input_timers(session);
 		} else if (argc >= 3) {
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
@@ -2765,7 +2774,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *cid_name_override = NULL;
 	char *cid_num_override = NULL;
-	char *domain = NULL;
+	char *domain = NULL, *dup_domain = NULL;
 	switch_channel_t *new_channel = NULL;
 	unsigned int timelimit = 60;
 	const char *skip, *var;
@@ -2778,7 +2787,8 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if ((domain = strchr(group, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		dup_domain = domain;
 	}
 
 	if (!domain) {
@@ -2850,6 +2860,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 
 	switch_safe_free(template);
 	switch_safe_free(group);
+	switch_safe_free(dup_domain);
 
 	if (cause == SWITCH_CAUSE_NONE) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -2878,7 +2889,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
-	char *user = NULL, *domain = NULL;
+	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
 	static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
@@ -2899,7 +2910,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		domain = switch_core_get_variable_dup("domain");
+		dup_domain = domain;
 	}
 
 	if (!domain) {
@@ -3106,6 +3118,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	switch_safe_free(user);
+	switch_safe_free(dup_domain);
 
 	return cause;
 }
@@ -3184,10 +3197,11 @@ static switch_status_t event_chat_send(const char *proto, const char *from, cons
 		if (body)
 			switch_event_add_body(event, "%s", body);
 		if (to) {
-			const char *v;
+			char *v;
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "To", to);
-			if ((v = switch_core_get_variable(to))) {
+			if ((v = switch_core_get_variable_dup(to))) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
+				free(v);
 			}
 		}
 
@@ -3205,15 +3219,15 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 									 const char *body, const char *type, const char *hint)
 {
 	if (to) {
-		const char *v;
+		char *v = NULL;
 		switch_stream_handle_t stream = { 0 };
 		char *cmd = NULL, *arg;
 
-		if (!(v = switch_core_get_variable(to))) {
-			v = to;
+		if (!(v = switch_core_get_variable_dup(to))) {
+			v = strdup(to);
 		}
 
-		cmd = strdup(v);
+		cmd = v;
 		switch_assert(cmd);
 
 		switch_url_decode(cmd);
