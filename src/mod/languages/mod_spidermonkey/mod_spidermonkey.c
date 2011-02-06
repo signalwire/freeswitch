@@ -2126,6 +2126,15 @@ static JSBool session_media_ready(JSContext * cx, JSObject * obj, uintN argc, js
 }
 
 
+static JSBool session_ring_ready(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+
+	*rval = BOOLEAN_TO_JSVAL((jss && jss->session && switch_channel_test_flag(switch_core_session_get_channel(jss->session), CF_RING_READY)) ? JS_TRUE : JS_FALSE);
+
+	return JS_TRUE;
+}
+
 static JSBool session_answered(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -2673,6 +2682,7 @@ static JSFunctionSpec session_methods[] = {
 	{"ready", session_ready, 0},
 	{"answered", session_answered, 0},
 	{"mediaReady", session_media_ready, 0},
+	{"ringReady", session_ring_ready, 0},
 	{"waitForAnswer", session_wait_for_answer, 0},
 	{"waitForMedia", session_wait_for_media, 0},
 	{"getEvent", session_get_event, 0},
