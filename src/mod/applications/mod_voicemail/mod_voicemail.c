@@ -1277,9 +1277,14 @@ static void message_count(vm_profile_t *profile, const char *id_in, const char *
 
 	myid = resolve_id(id_in, domain_name, "message-count");
 
-	switch_snprintf(sql, sizeof(sql), "select 1, read_flags, count(read_epoch) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' "
-									  "and read_epoch=0 group by read_flags union select 0, read_flags, count(read_epoch) from voicemail_msgs where username='%s' "
-									  "and domain='%s' and in_folder='%s' and read_epoch<>0 group by read_flags;", myid, domain_name, myfolder);
+	switch_snprintf(sql, sizeof(sql), "select 1, read_flags, count(read_epoch) from voicemail_msgs where "
+					"username='%s' and domain='%s' and in_folder='%s' "
+					"and read_epoch=0 group by read_flags union select 0, read_flags, count(read_epoch) from voicemail_msgs where username='%s' "
+					"and domain='%s' and in_folder='%s' and read_epoch<>0 group by read_flags;", 
+					myid, domain_name, myfolder, myid, domain_name, myfolder);
+					
+				   
+
 	vm_execute_sql_callback(profile, profile->mutex, sql, message_count_callback, &cbt);
 
 	*total_new_messages = cbt.total_new_messages + cbt.total_new_urgent_messages;
