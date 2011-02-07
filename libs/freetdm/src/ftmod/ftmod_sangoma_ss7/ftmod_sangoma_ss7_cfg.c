@@ -74,6 +74,7 @@ int ftmod_ss7_relay_chan_config(int id);
 int  ft_to_sngss7_cfg_all(void)
 {
 	int x = 0;
+	int ret = 0;
 
 	/* check if we have done gen_config already */
 	if (!(g_ftdm_sngss7_data.gen_config)) {
@@ -98,6 +99,7 @@ int  ft_to_sngss7_cfg_all(void)
 			return 1;
 		} else {
 			SS7_INFO("Started Stack Manager!\n");
+			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM);
 		}
 
 		/* check if the configuration had a Relay Channel */
@@ -289,15 +291,17 @@ int  ft_to_sngss7_cfg_all(void)
 		/* check if this link has been configured already */
 		if (!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_CONFIGURED)) {
 
-			if (ftmod_ss7_mtp3_nsap_config(x)) {
-				SS7_CRITICAL("MTP3 NSAP %d configuration FAILED!\n", x);
+			ret = ftmod_ss7_mtp3_nsap_config(x);
+			if (ret) {
+				SS7_CRITICAL("MTP3 NSAP %d configuration FAILED!(%s)\n", x, DECODE_LCM_REASON(ret));
 				return 1;
 			} else {
 				SS7_INFO("MTP3 NSAP %d configuration DONE!\n", x);
 			}
 
-			if (ftmod_ss7_isup_nsap_config(x)) {
-				SS7_CRITICAL("ISUP NSAP %d configuration FAILED!\n", x);
+			ret = ftmod_ss7_isup_nsap_config(x);
+			if (ret) {
+				SS7_CRITICAL("ISUP NSAP %d configuration FAILED!(%s)\n", x, DECODE_LCM_REASON(ret));
 				return 1;
 			} else {
 				SS7_INFO("ISUP NSAP %d configuration DONE!\n", x);
@@ -572,15 +576,13 @@ int ftmod_ss7_mtp3_gen_config(void)
 
 
 	cfg.t.cfg.s.snGen.typeSP		= LSN_TYPE_SP;		/* type of signalling postatic int */
-	cfg.t.cfg.s.snGen.spCode1		= g_ftdm_sngss7_data.cfg.spc;	/* our DPC for CCITT version */
-
+	cfg.t.cfg.s.snGen.spCode1		= 0;				/* our DPC for CCITT version */
 #if (SS7_ANS92 || SS7_ANS88 || SS7_ANS96 || SS7_CHINA || defined(TDS_ROLL_UPGRADE_SUPPORT))
-	cfg.t.cfg.s.snGen.spCode2		= g_ftdm_sngss7_data.cfg.spc;	/* our DPC for ANSI or CHINA version */
+	cfg.t.cfg.s.snGen.spCode2		= 0;				/* our DPC for ANSI or CHINA version */
 #endif
-
 	cfg.t.cfg.s.snGen.ssfValid		= TRUE;				/* ssf validation required */
 	cfg.t.cfg.s.snGen.nmbDLSap		= MAX_SN_LINKS;		/* number of MTP Data Link SAPs */
-	cfg.t.cfg.s.snGen.nmbNSap		= MAX_SN_VARIANTS;	/* number of Upper Layer Saps */
+	cfg.t.cfg.s.snGen.nmbNSap		= MAX_SN_ROUTES;	/* number of Upper Layer Saps */
 	cfg.t.cfg.s.snGen.nmbRouts		= MAX_SN_ROUTES;	/* maximum number of routing entries */
 	cfg.t.cfg.s.snGen.nmbLnkSets	= MAX_SN_LINKSETS;	/* number of link sets */
 	cfg.t.cfg.s.snGen.nmbRteInst	= MAX_SN_ROUTES*16;	/* number of simultaneous Rte instances */

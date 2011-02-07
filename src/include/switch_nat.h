@@ -49,7 +49,7 @@ typedef enum {
 	SWITCH_NAT_TCP
 } switch_nat_ip_proto_t;
 
-
+SWITCH_DECLARE(const char *) switch_nat_get_type(void);
 
 /*! 
   \brief Initilize the NAT Traversal System

@@ -2625,8 +2625,10 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				cc_queue_t *queue = NULL;
 				if ((queue = get_queue(queue_name))) {
 					queue_rwunlock(queue);
+					stream->write_function(stream, "%s", "+OK\n");
+				} else {
+					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
 				}
-				stream->write_function(stream, "%s", "+OK\n");
 			}
 		} else if (action && !strcasecmp(action, "unload")) {
 			if (argc-initial_argc < 1) {
@@ -2648,8 +2650,10 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				destroy_queue(queue_name, SWITCH_FALSE);
 				if ((queue = get_queue(queue_name))) {
 					queue_rwunlock(queue);
+					stream->write_function(stream, "%s", "+OK\n");
+				} else {
+					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
 				}
-				stream->write_function(stream, "%s", "+OK\n");
 			}
 		} else if (action && !strcasecmp(action, "list")) {
 			if (argc-initial_argc < 1) {
@@ -2671,7 +2675,6 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-
 				struct list_result cbt;
 				cbt.row_process = 0;
 				cbt.stream = stream;

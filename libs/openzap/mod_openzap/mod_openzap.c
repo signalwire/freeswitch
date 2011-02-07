@@ -135,7 +135,9 @@ void dump_chan_xml(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *s
 
 static void zap_set_npi(const char *npi_string, uint8_t *target)
 {
-	if (!strcasecmp(npi_string, "isdn") || !strcasecmp(npi_string, "e164")) {
+	if (switch_is_number(npi_string)) {
+		*target = (uint8_t)atoi(npi_string);
+	} else if (!strcasecmp(npi_string, "isdn") || !strcasecmp(npi_string, "e164")) {
 		*target = ZAP_NPI_ISDN;
 	} else if (!strcasecmp(npi_string, "data")) {
 		*target = ZAP_NPI_DATA;
@@ -157,7 +159,9 @@ static void zap_set_npi(const char *npi_string, uint8_t *target)
 
 static void zap_set_ton(const char *ton_string, uint8_t *target)
 {
-	if (!strcasecmp(ton_string, "national")) {
+	if (switch_is_number(ton_string)) {
+		*target = (uint8_t)atoi(ton_string);
+	} else if (!strcasecmp(ton_string, "national")) {
 		*target = ZAP_TON_NATIONAL;
 	} else if (!strcasecmp(ton_string, "international")) {
 		*target = ZAP_TON_INTERNATIONAL;
@@ -1230,27 +1234,25 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		zap_set_string(caller_data.ani.digits, dest);
 	}
 	
-	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton")) || (var = switch_core_get_variable("openzap_outbound_ton"))) {
-		if (!strcasecmp(var, "national")) {
-			caller_data.ani.type = ZAP_TON_NATIONAL;
-		} else if (!strcasecmp(var, "international")) {
-			caller_data.ani.type = ZAP_TON_INTERNATIONAL;
-		} else if (!strcasecmp(var, "local")) {
-			caller_data.ani.type = ZAP_TON_SUBSCRIBER_NUMBER;
-		} else if (!strcasecmp(var, "unknown")) {
-			caller_data.ani.type = ZAP_TON_UNKNOWN;
-		}
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting TON to: %s\n", var);
+		zap_set_ton(var, &caller_data.ani.type);
 	} else {
 		caller_data.ani.type = outbound_profile->destination_number_ton;
 	}
 
-	if ((var = switch_event_get_header(var_event, "openzap_custom_call_data")) || (var = switch_core_get_variable("openzap_custom_call_data"))) {
+	if ((var = switch_event_get_header(var_event, "openzap_custom_call_data"))) {
 		zap_set_string((char *)caller_data.raw_data, var);
 		caller_data.raw_data_len = strlen(var);
 	}
-
-	caller_data.ani.plan = outbound_profile->destination_number_numplan;
-
+	
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_npi"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting NPI to: %s\n", var);
+		zap_set_npi(var, &caller_data.ani.plan);
+	} else {
+		caller_data.ani.plan = outbound_profile->destination_number_numplan;
+	}
+	
 	/* blindly copy data from outbound_profile. They will be overwritten 
 	 * by calling zap_caller_data if needed after */
 	caller_data.cid_num.type = outbound_profile->caller_ton;

@@ -1067,9 +1067,16 @@ static const char* channel_get_variable(switch_core_session_t *session, switch_e
                        return variable;
                }
        }
+
+
+	   // This is unsafe, I don't see anywhere in the whole code where this is called with NULL session anyway.
+	   // There is a new switch_core_get_variable_dup that will strdup it for you and then you must free it.
+	   // That messes up the abstraction completely so I am just commenting it out for you.....
+	   /*
        if ((variable = switch_core_get_variable(variable_name))) {
                return variable;
        }
+	   */
        return NULL;
 }
 
@@ -1570,8 +1577,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI2", "%s", channel_caller_data->aniII);
 		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS", "%s", channel_caller_data->dnis.digits);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%s", channel_caller_data->dnis.type);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%s", channel_caller_data->dnis.plan);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%d", channel_caller_data->dnis.type);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);

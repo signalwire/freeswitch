@@ -27,6 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Christopher M. Rienzo <chris@rienzo.net>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  *
  * switch_core_asr.c -- Main Core Library (Speech Detection Interface)
@@ -160,6 +161,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_asr_enable_grammar(switch_asr_handle_t *ah, const char *name)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_enable_grammar) {
+		status = ah->asr_interface->asr_enable_grammar(ah, name);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_grammar(switch_asr_handle_t *ah, const char *name)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_disable_grammar) {
+		status = ah->asr_interface->asr_disable_grammar(ah, name);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_all_grammars(switch_asr_handle_t *ah)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_disable_all_grammars) {
+		status = ah->asr_interface->asr_disable_all_grammars(ah);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_asr_pause(switch_asr_handle_t *ah)
 {
 	switch_assert(ah != NULL);
@@ -197,6 +237,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 	switch_assert(ah != NULL);
 
 	return ah->asr_interface->asr_feed(ah, data, len, flags);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_feed_dtmf) {
+		status = ah->asr_interface->asr_feed_dtmf(ah, dtmf, flags);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)

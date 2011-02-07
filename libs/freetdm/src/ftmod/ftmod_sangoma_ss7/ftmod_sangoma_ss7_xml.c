@@ -464,11 +464,6 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 			SS7_DEBUG("Found license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("Found signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "spc")) {
-		/**********************************************************************/
-			g_ftdm_sngss7_data.cfg.spc = atoi(parm->val);
-			SS7_DEBUG("Found SPC = %d\n", g_ftdm_sngss7_data.cfg.spc);
-		/**********************************************************************/
 		} else {
 		/**********************************************************************/
 			SS7_ERROR("Found an invalid parameter \"%s\"!\n", parm->val);
@@ -1268,9 +1263,9 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 	ftdm_conf_parameter_t	*parm = mtp_route->parameters;
 	int					 	num_parms = mtp_route->n_parameters;
 	int					 	i;
+	sng_link_set_list_t		*lnkSet;
 
 	ftdm_conf_node_t		*linkset;
-	int						ls_id;
 	int						numLinks;
 
 	/* initalize the mtpRoute structure */
@@ -1383,42 +1378,50 @@ static int ftmod_ss7_parse_mtp_route(ftdm_conf_node_t *mtp_route)
 	}
 
 	/* fill in the rest of the values in the mtpRoute struct  */
-	mtpRoute.nwId = mtpRoute.id;
+	mtpRoute.nwId = 0;
 	mtpRoute.cmbLinkSetId = mtpRoute.id;
 
 	/* parse in the list of linksets this route is reachable by */
 	linkset = mtp_route->child->child;
 
+	/* initalize the link-list of linkSet Ids */
+	lnkSet = &mtpRoute.lnkSets;
+
 	while (linkset != NULL) {
 	/**************************************************************************/
 		/* extract the linkset Id */
-		ls_id = atoi(linkset->parameters->val);
+		lnkSet->lsId = atoi(linkset->parameters->val);
 
-		if (g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].id != 0) {
-			SS7_DEBUG("Found mtpRoute linkset id = %d that is valid\n",ls_id);
+		if (g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].id != 0) {
+			SS7_DEBUG("Found mtpRoute linkset id = %d that is valid\n",lnkSet->lsId);
 		} else {
-			SS7_ERROR("Found mtpRoute linkset id = %d that is invalid\n",ls_id);
+			SS7_ERROR("Found mtpRoute linkset id = %d that is invalid\n",lnkSet->lsId);
 			goto move_along;
 		}
 
 		/* pull up the linktype, switchtype, and SSF from the linkset */
-		mtpRoute.linkType = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].linkType;
-		mtpRoute.switchType = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].switchType;
-		mtpRoute.ssf = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].ssf;
+		mtpRoute.linkType = g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].linkType;
+		mtpRoute.switchType = g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].switchType;
+		mtpRoute.ssf = g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].ssf;
 		
 		/* extract the number of cmbLinkSetId aleady on this linkset */
-		numLinks = g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].numLinks;
+		numLinks = g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].numLinks;
 		
 		/* add this routes cmbLinkSetId to the list */
-		g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].links[numLinks] = mtpRoute.cmbLinkSetId;
+		g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].links[numLinks] = mtpRoute.cmbLinkSetId;
 
 		/* increment the number of cmbLinkSets on this linkset */
-		g_ftdm_sngss7_data.cfg.mtpLinkSet[ls_id].numLinks++;
+		g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].numLinks++;
+
+		/* update the linked list */
+		lnkSet->next = ftdm_malloc(sizeof(sng_link_set_list_t));
+		lnkSet = lnkSet->next;
+		lnkSet->lsId = 0;
+		lnkSet->next = NULL;
 
 move_along:
 		/* move to the next linkset element */
 		linkset = linkset->next;
-
 	/**************************************************************************/
 	} /* while (linkset != null) */
 
@@ -1465,6 +1468,7 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 {
 	sng_isup_inf_t			sng_isup;
 	sng_isap_t				sng_isap;
+	sng_link_set_list_t		*lnkSet;
 	ftdm_conf_parameter_t	*parm = isup_interface->parameters;
 	int						num_parms = isup_interface->n_parameters;
 	int						i;
@@ -1500,7 +1504,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 		} else if (!strcasecmp(parm->var, "spc")) {
 		/**********************************************************************/
 			sng_isup.spc = atoi(parm->val);
-			g_ftdm_sngss7_data.cfg.spc = sng_isup.spc;
 			SS7_DEBUG("Found an isup SPC = %d\n", sng_isup.spc);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "mtprouteId")) {
@@ -1747,17 +1750,14 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	sngss7_set_flag(&sng_isup, SNGSS7_PAUSED);
 
 	/* trickle down the SPC to all sub entities */
-	int	linkSetId;
+	lnkSet = &g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].lnkSets;
 
-	linkSetId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].linkSetId;
+	g_ftdm_sngss7_data.cfg.mtp3Link[lnkSet->lsId].spc = sng_isup.spc;
+	lnkSet = lnkSet->next;
 
-	i = 1;
-	while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
-		if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == linkSetId) {
-			g_ftdm_sngss7_data.cfg.mtp3Link[i].spc = g_ftdm_sngss7_data.cfg.spc;
-		}
-
-		i++;
+	while (lnkSet->next != NULL) {
+		g_ftdm_sngss7_data.cfg.mtp3Link[lnkSet->lsId].spc = sng_isup.spc;
+		lnkSet = lnkSet->next;
 	}
 
 	/* pull values from the lower levels */
@@ -2342,7 +2342,10 @@ static int ftmod_ss7_fill_in_mtpLinkSet(sng_link_set_t *mtpLinkSet)
 /******************************************************************************/
 static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 {
-	int i = mtp3_route->id;
+	sng_link_set_list_t	*lnkSet = NULL;
+	int 				i = mtp3_route->id;
+	int					tmp = 0;
+
 
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
@@ -2355,10 +2358,19 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	}
 
 	/* fill in the cmbLinkSet in the linkset structure */
-	int tmp = g_ftdm_sngss7_data.cfg.mtpLinkSet[mtp3_route->linkSetId].numLinks;
+	lnkSet = &mtp3_route->lnkSets;
 
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[mtp3_route->linkSetId].links[tmp] = mtp3_route->cmbLinkSetId;
-	g_ftdm_sngss7_data.cfg.mtpLinkSet[mtp3_route->linkSetId].numLinks++;
+	tmp = g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].numLinks;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].links[tmp] = mtp3_route->cmbLinkSetId;
+	g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].numLinks++;
+
+	while (lnkSet->next != NULL) {
+		tmp = g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].numLinks;
+		g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].links[tmp] = mtp3_route->cmbLinkSetId;
+		g_ftdm_sngss7_data.cfg.mtpLinkSet[lnkSet->lsId].numLinks++;
+
+		lnkSet = lnkSet->next;
+	}
 
 	strcpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[i].name, (char *)mtp3_route->name);
 
@@ -2369,7 +2381,7 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].cmbLinkSetId	= mtp3_route->cmbLinkSetId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].isSTP		= mtp3_route->isSTP;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].nwId			= mtp3_route->nwId;
-	g_ftdm_sngss7_data.cfg.mtpRoute[i].linkSetId	= mtp3_route->linkSetId;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].lnkSets		= mtp3_route->lnkSets;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= mtp3_route->ssf;
 	if (mtp3_route->t6 != 0) {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t6		= mtp3_route->t6;
@@ -2439,8 +2451,7 @@ static int ftmod_ss7_fill_in_nsap(sng_route_t *mtp3_route)
 	i = 1;
 	while (g_ftdm_sngss7_data.cfg.nsap[i].id != 0) {
 		if ((g_ftdm_sngss7_data.cfg.nsap[i].linkType == mtp3_route->linkType) &&
-			(g_ftdm_sngss7_data.cfg.nsap[i].switchType == mtp3_route->switchType) &&
-			(g_ftdm_sngss7_data.cfg.nsap[i].ssf == mtp3_route->ssf)) {
+			(g_ftdm_sngss7_data.cfg.nsap[i].switchType == mtp3_route->switchType)) {
 
 			/* we have a match so break out of this loop */
 			break;
@@ -2789,6 +2800,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 	sngss7_chan_data_t	*ss7_info = NULL;
 	int					x;
 	int					count = 1;
+	int					flag;
 
 	while (ccSpan->ch_map[0] != '\0') {
 	/**************************************************************************/
@@ -2799,13 +2811,45 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			return FTDM_FAIL;
 		}
 
-		/* find the spot in master array for this circuit */
-		x = (ccSpan->procId * 1000) + count;
+		/* find a spot for this circuit in the global structure */
+		x = (ccSpan->procId * 1000);
+		flag = 0;
+		while (flag == 0) {
+		/**********************************************************************/
+			/* check the id value ( 0 = new, 0 > circuit can be existing) */
+			if (g_ftdm_sngss7_data.cfg.isupCkt[x].id == 0) {
+				/* we're at the end of the list of circuitsl aka this is new */
+				SS7_DEBUG("Found a new circuit %d, ccSpanId=%d, chan=%d\n",
+							x, 
+							ccSpan->id, 
+							count);
 
-		/* check if this circuit has already been filled in */
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
-			SS7_DEVEL_DEBUG("Filling in circuit that already exists...%d\n", x);
-		}
+				/* throw the flag to end the loop */
+				flag = 1;
+			} else {
+				/* check the ccspan.id and chan to see if the circuit already exists */
+				if ((g_ftdm_sngss7_data.cfg.isupCkt[x].ccSpanId == ccSpan->id) &&
+					(g_ftdm_sngss7_data.cfg.isupCkt[x].chan == count)) {
+
+					/* we are processing a circuit that already exists */
+					SS7_DEBUG("Found an existing circuit %d, ccSpanId=%d, chan%d\n",
+								x, 
+								ccSpan->id, 
+								count);
+	
+					/* throw the flag to end the loop */
+					flag = 1;
+
+					/* not supporting reconfig at this time */
+					SS7_DEBUG("Not supporting ckt reconfig at this time!\n");
+					goto move_along;
+				} else {
+					/* this is not the droid you are looking for */
+					x++;
+				}
+			}
+		/**********************************************************************/
+		} /* while (flag == 0) */
 
 		/* prepare the global info sturcture */
 		ss7_info = ftdm_calloc(1, sizeof(sngss7_chan_data_t));
@@ -2901,6 +2945,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 					g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
 					g_ftdm_sngss7_data.cfg.isupCkt[x].id);
 
+move_along:
 		/* increment the span channel count */
 		count++;
 

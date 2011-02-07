@@ -177,7 +177,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 
 					if (int_options) {
 						/* Enforce validation options */
-						if ((int_options->enforce_min && !(intval > int_options->min)) || (int_options->enforce_max && !(intval < int_options->max))) {
+						if ((int_options->enforce_min && !(intval >= int_options->min)) || (int_options->enforce_max && !(intval <= int_options->max))) {
 							/* Validation failed, set default */
 							intval = (int) (intptr_t) item->defaultvalue;
 							/* Then complain */

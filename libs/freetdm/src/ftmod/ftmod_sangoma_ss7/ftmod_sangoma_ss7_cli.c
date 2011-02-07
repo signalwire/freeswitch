@@ -1131,45 +1131,56 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 					ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 					ftdmchan = ss7_info->ftdmchan;
 
-					/* grab the signaling_status */
-					ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
+					if (ftdmchan == NULL) {
+						/* this should never happen!!! */
+						stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|FTDMCHAN DOES NOT EXISTS",
+														ckt->span,
+														ckt->chan,
+														ckt->cic);
+						
+					} else {
+						/* grab the signaling_status */
+						ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
+		
+						stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%4s|state=%s|",
+														ckt->span,
+														ckt->chan,
+														ckt->cic,
+														ftdm_signaling_status2str(sigstatus),
+														ftdm_channel_state2str(ftdmchan->state));
+		
+						if ((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || 
+							(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+							stream->write_function(stream, "l_mn=Y|");
+						}else {
+							stream->write_function(stream, "l_mn=N|");
+						}
+		
+						if ((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || 
+							(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+							stream->write_function(stream, "r_mn=Y|");
+						}else {
+							stream->write_function(stream, "r_mn=N|");
+						}
+		
+						if (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+							stream->write_function(stream, "l_hw=Y|");
+						}else {
+							stream->write_function(stream, "l_hw=N|");
+						}
+		
+						if (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
+							stream->write_function(stream, "r_hw=Y|");
+						}else {
+							stream->write_function(stream, "r_hw=N|");
+						}
 	
-					stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%4s|state=%s|",
-													ckt->span,
-													ckt->chan,
-													ckt->cic,
-													ftdm_signaling_status2str(sigstatus),
-													ftdm_channel_state2str(ftdmchan->state));
-	
-					if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
-						stream->write_function(stream, "l_mn=Y|");
-					}else {
-						stream->write_function(stream, "l_mn=N|");
+						if (sngss7_test_ckt_flag(ss7_info, FLAG_RELAY_DOWN)) {
+							stream->write_function(stream, "relay=Y|");
+						}else {
+							stream->write_function(stream, "relay=N|");
+						}
 					}
-	
-					if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
-						stream->write_function(stream, "r_mn=Y|");
-					}else {
-						stream->write_function(stream, "r_mn=N|");
-					}
-	
-					if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
-						stream->write_function(stream, "l_hw=Y|");
-					}else {
-						stream->write_function(stream, "l_hw=N|");
-					}
-	
-					if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
-						stream->write_function(stream, "r_hw=Y|");
-					}else {
-						stream->write_function(stream, "r_hw=N|");
-					}
-
-					if(sngss7_test_ckt_flag(ss7_info, FLAG_RELAY_DOWN)) {
-						stream->write_function(stream, "relay=Y|");
-					}else {
-						stream->write_function(stream, "relay=N|");
-					}		
 	
 					stream->write_function(stream, "flags=0x%X",ss7_info->ckt_flags);
 	
