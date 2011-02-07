@@ -464,11 +464,6 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 			SS7_DEBUG("Found license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("Found signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "spc")) {
-		/**********************************************************************/
-			g_ftdm_sngss7_data.cfg.spc = atoi(parm->val);
-			SS7_DEBUG("Found SPC = %d\n", g_ftdm_sngss7_data.cfg.spc);
-		/**********************************************************************/
 		} else {
 		/**********************************************************************/
 			SS7_ERROR("Found an invalid parameter \"%s\"!\n", parm->val);

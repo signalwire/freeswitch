@@ -1598,7 +1598,9 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY);
 	}
 
-	sng_isup_free_sm();
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM)) {
+		sng_isup_free_sm();
+	}
 
 	sng_isup_free_gen();
 

@@ -99,6 +99,7 @@ int  ft_to_sngss7_cfg_all(void)
 			return 1;
 		} else {
 			SS7_INFO("Started Stack Manager!\n");
+			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM);
 		}
 
 		/* check if the configuration had a Relay Channel */
@@ -575,12 +576,10 @@ int ftmod_ss7_mtp3_gen_config(void)
 
 
 	cfg.t.cfg.s.snGen.typeSP		= LSN_TYPE_SP;		/* type of signalling postatic int */
-	cfg.t.cfg.s.snGen.spCode1		= g_ftdm_sngss7_data.cfg.spc;	/* our DPC for CCITT version */
-
+	cfg.t.cfg.s.snGen.spCode1		= 0;				/* our DPC for CCITT version */
 #if (SS7_ANS92 || SS7_ANS88 || SS7_ANS96 || SS7_CHINA || defined(TDS_ROLL_UPGRADE_SUPPORT))
-	cfg.t.cfg.s.snGen.spCode2		= g_ftdm_sngss7_data.cfg.spc;	/* our DPC for ANSI or CHINA version */
+	cfg.t.cfg.s.snGen.spCode2		= 0;				/* our DPC for ANSI or CHINA version */
 #endif
-
 	cfg.t.cfg.s.snGen.ssfValid		= TRUE;				/* ssf validation required */
 	cfg.t.cfg.s.snGen.nmbDLSap		= MAX_SN_LINKS;		/* number of MTP Data Link SAPs */
 	cfg.t.cfg.s.snGen.nmbNSap		= MAX_SN_ROUTES;	/* number of Upper Layer Saps */
