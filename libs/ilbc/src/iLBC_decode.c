@@ -47,7 +47,9 @@
     	{
             fld dbl
             frndint
+            fstp dbl
         }
+        return (long int) dbl;
     }
 #elif defined (_WIN64)
 #include <intrin.h>
