@@ -37,18 +37,27 @@
 #include <switch.h>
 #include <libpq-fe.h>
 
+SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_pg_csv_shutdown);
+SWITCH_MODULE_DEFINITION(mod_cdr_pg_csv, mod_cdr_pg_csv_load, mod_cdr_pg_csv_shutdown, NULL);
+
+
 typedef enum {
 	CDR_LEG_A = (1 << 0),
 	CDR_LEG_B = (1 << 1)
 } cdr_leg_t;
 
-struct cdr_fd {
+typedef enum {
+	SPOOL_FORMAT_CSV,
+	SPOOL_FORMAT_SQL
+} spool_format_t;
+
+typedef struct {
 	int fd;
 	char *path;
 	int64_t bytes;
 	switch_mutex_t *mutex;
-};
-typedef struct cdr_fd cdr_fd_t;
+} cdr_fd_t;
 
 const char *default_template =
 	"\"${local_ip_v4}\",\"${caller_id_name}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${start_stamp}\","
@@ -59,23 +68,59 @@ static struct {
 	switch_memory_pool_t *pool;
 	switch_hash_t *fd_hash;
 	switch_hash_t *template_hash;
-	char *log_dir;
-	char *default_template;
 	int shutdown;
-	int rotate;
-	int debug;
-	cdr_leg_t legs;
 	char *db_info;
 	char *db_table;
-	char *spool_format;
 	PGconn *db_connection;
 	int db_online;
+	cdr_leg_t legs;
+	char *spool_dir;
+	spool_format_t spool_format;
+	int rotate;
+	int debug;
+	char *default_template;
 	switch_mutex_t *db_mutex;
 } globals = { 0 };
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_pg_csv_shutdown);
-SWITCH_MODULE_DEFINITION(mod_cdr_pg_csv, mod_cdr_pg_csv_load, mod_cdr_pg_csv_shutdown, NULL);
+static switch_xml_config_enum_item_t config_opt_cdr_leg_enum[] = {
+        {"a", CDR_LEG_A},
+        {"b", CDR_LEG_B},
+        {"ab", CDR_LEG_A | CDR_LEG_B},
+        {NULL, 0}
+};
+
+static switch_xml_config_enum_item_t config_opt_spool_format_enum[] = {
+        {"csv", SPOOL_FORMAT_CSV},
+        {"sql", SPOOL_FORMAT_SQL},
+        {NULL, 0}
+};
+
+static switch_status_t config_validate_spool_dir(switch_xml_config_item_t *item, const char *newvalue, switch_config_callback_type_t callback_type, switch_bool_t changed)
+{
+	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD)) {
+		if (zstr(newvalue)) {
+			globals.spool_dir = switch_core_sprintf(globals.pool, "%s%scdr-pg-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_xml_config_item_t config_settings[] = {
+	/* key, type, flags, ptr, default_value, data, syntax, helptext */
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("db-info", CONFIG_RELOADABLE, &globals.db_info, "dbname=cdr", NULL, NULL),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("db-table", CONFIG_RELOADABLE, &globals.db_table, "cdr", NULL, NULL),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("default-template", CONFIG_RELOADABLE, &globals.default_template, "default", NULL, NULL),
+	SWITCH_CONFIG_ITEM("legs", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.legs, (void *) CDR_LEG_A, &config_opt_cdr_leg_enum, "a|b|ab", NULL),
+	SWITCH_CONFIG_ITEM("spool-format", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.spool_format, (void *) SPOOL_FORMAT_CSV, &config_opt_spool_format_enum, "csv|sql", "Disk spool format to use if SQL insert fails."),
+	SWITCH_CONFIG_ITEM("rotate-on-hup", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.rotate, SWITCH_FALSE, NULL, NULL, NULL),
+	SWITCH_CONFIG_ITEM("debug", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.debug, SWITCH_FALSE, NULL, NULL, NULL),
+
+	/* key, type, flags, ptr, defaultvalue, function, functiondata, syntax, helptext */
+	SWITCH_CONFIG_ITEM_CALLBACK("spool-dir", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &globals.spool_dir, NULL, config_validate_spool_dir, NULL, NULL, NULL),
+	SWITCH_CONFIG_ITEM_END()
+};
+
 
 static off_t fd_size(int fd)
 {
@@ -363,12 +408,12 @@ static switch_status_t insert_cdr(const char * const template, const char * cons
 	switch_mutex_unlock(globals.db_mutex);
 
 	/* SQL INSERT failed for whatever reason. Spool the attempted query to disk */
-	if (!strcasecmp(globals.spool_format, "sql")) {
-		path = switch_mprintf("%s%scdr-spool.sql", globals.log_dir, SWITCH_PATH_SEPARATOR);
+	if (globals.spool_format == SPOOL_FORMAT_SQL) {
+		path = switch_mprintf("%s%scdr-spool.sql", globals.spool_dir, SWITCH_PATH_SEPARATOR);
 		assert(path);
 		spool_cdr(path, sql);
 	} else {
-		path = switch_mprintf("%s%scdr-spool.csv", globals.log_dir, SWITCH_PATH_SEPARATOR);
+		path = switch_mprintf("%s%scdr-spool.csv", globals.spool_dir, SWITCH_PATH_SEPARATOR);
 		assert(path);
 		spool_cdr(path, cdr);
 	}
@@ -402,8 +447,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		}
 	}
 
-	if (switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
+	if (switch_dir_make_recursive(globals.spool_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.spool_dir);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -485,7 +530,6 @@ static switch_state_handler_table_t state_handlers = {
 };
 
 
-
 static switch_status_t load_config(switch_memory_pool_t *pool)
 {
 	char *cf = "cdr_pg_csv.conf";
@@ -509,40 +553,11 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding default template.\n");
 	globals.legs = CDR_LEG_A;
 
+	if (switch_xml_config_parse_module_settings("cdr_pg_csv.conf", SWITCH_FALSE, config_settings) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-
-		if ((settings = switch_xml_child(cfg, "settings"))) {
-			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-				char *var = (char *) switch_xml_attr_soft(param, "name");
-				char *val = (char *) switch_xml_attr_soft(param, "value");
-				if (!strcasecmp(var, "debug")) {
-					globals.debug = switch_true(val);
-				} else if (!strcasecmp(var, "legs")) {
-					globals.legs = 0;
-
-					if (strchr(val, 'a')) {
-						globals.legs |= CDR_LEG_A;
-					}
-
-					if (strchr(val, 'b')) {
-						globals.legs |= CDR_LEG_B;
-					}
-				} else if (!strcasecmp(var, "log-base")) {
-					globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", val, SWITCH_PATH_SEPARATOR);
-				} else if (!strcasecmp(var, "rotate-on-hup")) {
-					globals.rotate = switch_true(val);
-				} else if (!strcasecmp(var, "db-info")) {
-					globals.db_info = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "db-table") || !strcasecmp(var, "g-table")) {
-					globals.db_table = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "default-template")) {
-					globals.default_template = switch_core_strdup(pool, val);
-				} else if (!strcasecmp(var, "spool-format")) {
-					globals.spool_format = switch_core_strdup(pool, val);
-				}
-			}
-		}
-
 		if ((settings = switch_xml_child(cfg, "templates"))) {
 			for (param = switch_xml_child(settings, "template"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr(param, "name");
@@ -558,26 +573,6 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 		switch_xml_free(xml);
 	}
 
-	if (!globals.log_dir) {
-		globals.log_dir = switch_core_sprintf(pool, "%s%scdr-pg-csv", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
-	}
-
-	if (zstr(globals.db_info)) {
-		globals.db_info = switch_core_strdup(pool, "dbname=cdr");
-	}
-
-	if (zstr(globals.db_table)) {
-		globals.db_table = switch_core_strdup(pool, "cdr");
-	}
-
-	if (zstr(globals.default_template)) {
-		globals.default_template = switch_core_strdup(pool, "default");
-	}
-
-	if (zstr(globals.spool_format)) {
-		globals.spool_format = switch_core_strdup(pool, "csv");
-	}
-
 	return status;
 }
 
@@ -588,8 +583,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load)
 
 	load_config(pool);
 
-	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);
+	if ((status = switch_dir_make_recursive(globals.spool_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.spool_dir);
 		return status;
 	}
 
