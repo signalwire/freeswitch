@@ -16,10 +16,25 @@
 
     <!-- This is like the info app but after the call is hung up -->
     <!--<param name="debug" value="true"/>-->
-
-    <param name="default-template" value="example"/>
   </settings>
-  <templates>
-    <template name="example">"${local_ip_v4}","${caller_id_name}","${caller_id_number}","${destination_number}","${context}","${start_stamp}","${answer_stamp}","${end_stamp}","${duration}","${billsec}","${hangup_cause}","${uuid}","${bleg_uuid}","${accountcode}","${read_codec}","${write_codec}","${sip_hangup_disposition}","${ani}"</template>
-  </templates>
+  <schema>
+    <field var="local_ip_v4"/>
+    <field var="caller_id_name"/>
+    <field var="caller_id_number"/>
+    <field var="destination_number"/>
+    <field var="context"/>
+    <field var="start_stamp"/>
+    <field var="answer_stamp"/>
+    <field var="end_stamp"/>
+    <field var="duration" quote="false"/>
+    <field var="billsec" quote="false"/>
+    <field var="hangup_cause"/>
+    <field var="uuid"/>
+    <field var="bleg_uuid"/>
+    <field var="accountcode"/>
+    <field var="read_codec"/>
+    <field var="write_codec"/>
+    <!-- <field var="sip_hangup_disposition"/> -->
+    <!-- <field var="ani"/> -->
+  </schema>
 </configuration>
