@@ -1,6 +1,8 @@
 using namespace LUA;
 
-SWITCH_BEGIN_EXTERN_C void mod_lua_conjure_event(lua_State * L, switch_event_t *event, const char *name, int destroy_me)
+SWITCH_BEGIN_EXTERN_C
+
+void mod_lua_conjure_event(lua_State * L, switch_event_t *event, const char *name, int destroy_me)
 {
 	Event *result = new Event(event);
 	SWIG_NewPointerObj(L, result, SWIGTYPE_p_Event, destroy_me);

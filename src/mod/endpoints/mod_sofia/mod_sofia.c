@@ -3708,7 +3708,7 @@ SWITCH_STANDARD_API(sofia_function)
 
 				if (argc > 2) {
 					if (strstr(argv[2], "presence")) {
-						mod_sofia_globals.debug_presence = 1;
+						mod_sofia_globals.debug_presence = 10;
 						stream->write_function(stream, "+OK Debugging presence\n");
 					}
 					
