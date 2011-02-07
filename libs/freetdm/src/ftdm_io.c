@@ -37,9 +37,6 @@
  *
  */
 
-#ifdef MOYTEST
-crap
-#endif
 #define _GNU_SOURCE
 #include "private/ftdm_core.h"
 #include <stdarg.h>
@@ -2509,10 +2506,12 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 	}
 
 	/* we have a locked channel and are not afraid of using it! */
-	status = hunting->result_cb(fchan, caller_data);
-	if (status != FTDM_SUCCESS) {
-		status = FTDM_ECANCELED;
-		goto done;
+	if (hunting->result_cb) {
+		status = hunting->result_cb(fchan, caller_data);
+		if (status != FTDM_SUCCESS) {
+			status = FTDM_ECANCELED;
+			goto done;
+		}
 	}
 
 	ftdm_channel_set_caller_data(fchan, caller_data);
