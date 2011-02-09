@@ -83,6 +83,11 @@ typedef enum {
 } sng_ckt_type_t;
 
 typedef enum {
+	SNG_RTE_UP	= 0,
+	SNG_RTE_DN
+} sng_route_direction_t;
+
+typedef enum {
 	SNGSS7_LPA_FOR_COT		= (1 << 0),	/* send LPA when COT arrives */
 	SNGSS7_ACM_OBCI_BITA	= (1 << 10)	/* in-band indication */
 } sng_intf_options_t;
@@ -236,6 +241,7 @@ typedef struct sng_route {
 	uint32_t		ssf;
 	uint32_t		nwId;
 	uint32_t		isSTP;
+	uint32_t		dir;
 	uint32_t		t6;
 	uint32_t		t8;
 	uint32_t		t10;
