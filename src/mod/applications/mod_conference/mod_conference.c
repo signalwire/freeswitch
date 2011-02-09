@@ -401,13 +401,14 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *bridgeto, uint32_t timeout, 
 										  char *flags, 
 										  char *cid_name, 
-										  char *cid_num, 
+										  char *cid_num,
+										  char *profile,
 										  switch_call_cause_t *cause,
 										  switch_call_cause_t *cancel_cause);
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num, const char *call_uuid, switch_call_cause_t *cancel_cause);
+											 const char *cid_num, const char *call_uuid, const char *profile, switch_call_cause_t *cancel_cause);
 SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t *conference);
 static void launch_conference_video_thread(conference_obj_t *conference);
@@ -2410,6 +2411,7 @@ static void conference_loop_output(conference_member_t *member)
 			const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
 			const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
 			const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
+			const char *profile = switch_channel_get_variable(channel, "conference_auto_outcall_profile");
 			const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
 			const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
 			int to = 60;
@@ -2441,7 +2443,7 @@ static void conference_loop_output(conference_member_t *member)
 					char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
 					switch_assert(dial_str);
 					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL, 
-										  &member->conference->cancel_cause);
+										  profile, &member->conference->cancel_cause);
 					switch_safe_free(dial_str);
 				}
 				switch_safe_free(cpstr);
@@ -4264,9 +4266,9 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 	}
 
 	if (conference) {
-		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause, NULL);
+		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL);
 	} else {
-		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], &cause, NULL);
+		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL);
 	}
 	stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
 
@@ -4289,9 +4291,9 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 	switch_uuid_format(uuid_str, &uuid);
 
 	if (conference) {
-		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL);
+		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL, NULL);
 	} else {
-		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL);
+		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL, NULL);
 	}
 
 	stream->write_function(stream, "OK Job-UUID: %s\n", uuid_str);
@@ -4807,7 +4809,8 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  switch_core_session_t *session,
 										  char *bridgeto, uint32_t timeout, 
 										  char *flags, char *cid_name, 
-										  char *cid_num, 
+										  char *cid_num,
+										  char *profile,
 										  switch_call_cause_t *cause,
 										  switch_call_cause_t *cancel_cause)
 {
@@ -4817,6 +4820,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_channel_t *caller_channel = NULL;
 	char appdata[512];
 	int rdlock = 0;
+	switch_bool_t have_flags = SWITCH_FALSE;
 
 	*cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
@@ -4902,13 +4906,16 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 			status = SWITCH_STATUS_MEMERR;
 			goto done;
 		}
-		/* add them to the conference */
+
 		if (flags && strcasecmp(flags, "none")) {
-			switch_snprintf(appdata, sizeof(appdata), "%s+flags{%s}", conference_name, flags);
-			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
-		} else {
-			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference_name);
+			have_flags = SWITCH_TRUE;
 		}
+		/* add them to the conference */
+
+		switch_snprintf(appdata, sizeof(appdata), "%s%s%s%s%s%s", conference_name,
+				profile?"@":"", profile?profile:"",
+				have_flags?"+flags{":"", have_flags?flags:"", have_flags?"}":"");
+		switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
 
 		switch_channel_set_caller_extension(peer_channel, extension);
 		switch_channel_set_state(peer_channel, CS_EXECUTE);
@@ -4940,6 +4947,7 @@ struct bg_call {
 	char *cid_num;
 	char *conference_name;
 	char *uuid;
+	char *profile;
 	switch_call_cause_t *cancel_cause;
 	switch_memory_pool_t *pool;
 };
@@ -4953,7 +4961,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		switch_event_t *event;
 
 		conference_outcall(call->conference, call->conference_name,
-						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause, call->cancel_cause);
+						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause);
 
 		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -4969,6 +4977,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		switch_safe_free(call->cid_num);
 		switch_safe_free(call->conference_name);
 		switch_safe_free(call->uuid);
+		switch_safe_free(call->profile);
 		if (call->pool) {
 			switch_core_destroy_memory_pool(&call->pool);
 		}
@@ -4981,7 +4990,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num, const char *call_uuid, switch_call_cause_t *cancel_cause)
+											 const char *cid_num, const char *call_uuid, const char *profile, switch_call_cause_t *cancel_cause)
 {
 	struct bg_call *call = NULL;
 	switch_thread_t *thread;
@@ -5024,6 +5033,10 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	if (call_uuid) {
 		call->uuid = strdup(call_uuid);
 	}
+
+        if (profile) {
+                call->profile = strdup(profile);
+        }
 
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -5750,7 +5763,7 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
 		switch_call_cause_t cause;
-		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, &cause, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	} else {
