@@ -178,18 +178,20 @@ typedef int ftdm_socket_t;
 /*! \brief FreeTDM APIs possible return codes */
 typedef enum {
 	FTDM_SUCCESS, /*!< Success */
-	FTDM_FAIL, /*!< Failure, generic error return code, use ftdm_channel_get_last_error or ftdm_span_get_last_error for details */
-	FTDM_MEMERR, /*!< Memory error, most likely allocation failure */
+	FTDM_FAIL, /*!< Failure, generic error return code when no more specific return code can be used */
+
+	FTDM_MEMERR, /*!< Allocation failure */
+	FTDM_ENOMEM = FTDM_MEMERR,
+
 	FTDM_TIMEOUT, /*!< Operation timed out (ie: polling on a device)*/
+	FTDM_ETIMEDOUT = FTDM_TIMEOUT,
+
 	FTDM_NOTIMPL, /*!< Operation not implemented */
+	FTDM_ENOSYS = FTDM_NOTIMPL, /*!< The function is not implemented */
+
 	FTDM_BREAK, /*!< Request the caller to perform a break (context-dependant, ie: stop getting DNIS/ANI) */
 
 	/*!< Any new return codes should try to mimc unix style error codes, no need to reinvent */
-	/* Remapping some of the codes that were before */
-	FTDM_ENOMEM = FTDM_MEMERR, /*!< Memory error */
-	FTDM_ETIMEDOUT = FTDM_TIMEOUT, /*!< Operation timedout */
-	FTDM_ENOSYS = FTDM_NOTIMPL, /*!< The function is not implemented */
-
 	FTDM_EINVAL, /*!< Invalid argument */
 	FTDM_ECANCELED, /*!< Operation cancelled */
 	FTDM_EBUSY, /*!< Device busy */

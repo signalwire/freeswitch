@@ -838,11 +838,11 @@ typedef enum {
 /*! \brief FreeTDM supported hardware alarms. */
 typedef enum {
 	FTDM_ALARM_NONE    = 0,
-	FTDM_ALARM_RED     = (1 << 1),
-	FTDM_ALARM_YELLOW  = (1 << 2),
-	FTDM_ALARM_RAI     = (1 << 3),
-	FTDM_ALARM_BLUE    = (1 << 4),
-	FTDM_ALARM_AIS     = (1 << 5),
+	FTDM_ALARM_RED     = (1 << 0),
+	FTDM_ALARM_YELLOW  = (1 << 1),
+	FTDM_ALARM_RAI     = (1 << 2),
+	FTDM_ALARM_BLUE    = (1 << 3),
+	FTDM_ALARM_AIS     = (1 << 4),
 	FTDM_ALARM_GENERAL = (1 << 30)
 } ftdm_alarm_flag_t;
 
