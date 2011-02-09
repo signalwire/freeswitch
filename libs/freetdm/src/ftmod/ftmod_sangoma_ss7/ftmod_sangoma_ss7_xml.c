@@ -2383,6 +2383,7 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].nwId			= mtp3_route->nwId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].lnkSets		= mtp3_route->lnkSets;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= mtp3_route->ssf;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].dir			= SNG_RTE_DN;
 	if (mtp3_route->t6 != 0) {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t6		= mtp3_route->t6;
 	} else {
@@ -2438,6 +2439,52 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	} else {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t26	   = 100;
 	}
+
+	return 0;
+}
+
+/******************************************************************************/
+static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, int ssf)
+{
+	int i = 1;
+
+	while (g_ftdm_sngss7_data.cfg.mtpRoute[i].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc == spc) {
+			/* we have a match so break out of this loop */
+			break;
+		}
+		/* move on to the next one */
+		i++;
+	}
+
+	if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].id = i;
+		SS7_DEBUG("found new mtp3 self route\n");
+	} else {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].id = i;
+		SS7_DEBUG("found existing mtp3 self route\n");
+	}
+
+	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[i].name, "self-route", MAX_NAME_LEN-1);
+
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].id			= i;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc			= spc;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].linkType		= linkType;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].switchType	= switchType;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].cmbLinkSetId	= i;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].isSTP		= 0;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= ssf;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].dir			= SNG_RTE_UP;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t6			= 8;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t8			= 12;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t10			= 300;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t11			= 300;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t15			= 30;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t16			= 20;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t18			= 200;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t19			= 690;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t21			= 650; 
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t25			= 100;
 
 	return 0;
 }
@@ -2750,45 +2797,6 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 	} else {
 		g_ftdm_sngss7_data.cfg.isap[i].tfnlrelrsp	= 10;
 	}
-
-	return 0;
-}
-
-/******************************************************************************/
-static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, int ssf)
-{
-
-	if (g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc == 0){
-		SS7_DEBUG("found new mtp3 self route\n");
-	} else if (g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc == spc) {
-		SS7_DEBUG("found existing mtp3 self route\n");
-		return FTDM_SUCCESS;
-	} else {
-		SS7_ERROR("found new mtp3 self route but it does not match the route already configured (dpc=%d:spc=%d)\n",
-					g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc,
-					spc);
-		return FTDM_FAIL;
-	}
-
-	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[0].name, "self-route", MAX_NAME_LEN-1);
-
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].id			= 0;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc			= spc;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].linkType		= linkType;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].switchType	= switchType;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].cmbLinkSetId	= 0;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].isSTP		= 0;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].ssf			= ssf;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t6			= 8;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t8			= 12;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t10			= 300;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t11			= 300;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t15			= 30;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t16			= 20;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t18			= 200;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t19			= 690;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t21			= 650; 
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t25			= 100;
 
 	return 0;
 }

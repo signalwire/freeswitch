@@ -352,22 +352,6 @@ int  ft_to_sngss7_cfg_all(void)
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.mtpRoute[x].id != 0) */
 
-	if (g_ftdm_sngss7_data.cfg.mtpRoute[1].id != 0) {
-		if (!(g_ftdm_sngss7_data.cfg.mtpRoute[0].flags & SNGSS7_CONFIGURED)) {
-	
-			if (ftmod_ss7_mtp3_route_config(0)) {
-				SS7_CRITICAL("MTP3 ROUTE 0 configuration FAILED!\n");
-				return 1;
-			} else {
-				SS7_INFO("MTP3 ROUTE 0 configuration DONE!\n");
-			}
-	
-			/* set the SNGSS7_CONFIGURED flag */
-			g_ftdm_sngss7_data.cfg.mtpRoute[0].flags |= SNGSS7_CONFIGURED;
-		} /* if !SNGSS7_CONFIGURED */
-	}
-
-
 	x = 1;
 	while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) {
 		/* check if this link has been configured already */
@@ -1161,10 +1145,10 @@ int ftmod_ss7_mtp3_route_config(int id)
 	cfg.t.cfg.s.snRout.swtchType		= k->linkType;				/* switch type */
 	cfg.t.cfg.s.snRout.upSwtch			= k->switchType;			/* user part switch type */
 	cfg.t.cfg.s.snRout.cmbLnkSetId		= k->cmbLinkSetId;			/* combined link set ID */
-	if (k->id == 0) {
-		cfg.t.cfg.s.snRout.dir		 		= LSN_RTE_UP;				/* direction */
+	if (k->dir == SNG_RTE_UP) {
+		cfg.t.cfg.s.snRout.dir		 	= LSN_RTE_UP;				/* direction */
 	} else {
-		cfg.t.cfg.s.snRout.dir		 		= LSN_RTE_DN;				/* direction */
+		cfg.t.cfg.s.snRout.dir		 	= LSN_RTE_DN;				/* direction */
 	}
 	cfg.t.cfg.s.snRout.rteToAdjSp		= 0;						/* flag indicating this route to adjacent SP */ 
 	cfg.t.cfg.s.snRout.ssf				= k->ssf;					/* sub service field */

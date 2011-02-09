@@ -667,25 +667,33 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.maxBSrvCnt = 2;
 	cfg.t.cfg.s.inDLSAP.maxDSrvCnt = 2;
 #endif /* ISDN_SRV */
-	
-	if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
-		cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
-		cfg.t.cfg.s.inDLSAP.intType = NETWORK;
-		cfg.t.cfg.s.inDLSAP.clrGlr = FALSE;			/* in case of glare, do not clear local call */
-		cfg.t.cfg.s.inDLSAP.statEnqOpt = TRUE;
 
-		if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN ||
-			signal_data->switchtype == SNGISDN_SWITCH_INSNET) {
-			cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
-		} else {
-			cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
-		}
-	} else {
-		cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
-		cfg.t.cfg.s.inDLSAP.intType = USER;
+	if (signal_data->switchtype == SNGISDN_SWITCH_QSIG) {
+		cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
+		cfg.t.cfg.s.inDLSAP.intType = SYM_USER;
 		cfg.t.cfg.s.inDLSAP.clrGlr = TRUE;			/* in case of glare, clear local call */
 		cfg.t.cfg.s.inDLSAP.statEnqOpt = FALSE;
 		cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
+	} else {
+		if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
+			cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
+			cfg.t.cfg.s.inDLSAP.intType = NETWORK;
+			cfg.t.cfg.s.inDLSAP.clrGlr = FALSE;			/* in case of glare, do not clear local call */
+			cfg.t.cfg.s.inDLSAP.statEnqOpt = TRUE;
+
+			if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN ||
+				signal_data->switchtype == SNGISDN_SWITCH_INSNET) {
+				cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
+			} else {
+				cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
+			}
+		} else {
+			cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
+			cfg.t.cfg.s.inDLSAP.intType = USER;
+			cfg.t.cfg.s.inDLSAP.clrGlr = TRUE;			/* in case of glare, clear local call */
+			cfg.t.cfg.s.inDLSAP.statEnqOpt = FALSE;
+			cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
+		}
 	}
 
 	/* Override the restart options if user selected that option */
