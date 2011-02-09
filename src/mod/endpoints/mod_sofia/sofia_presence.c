@@ -2576,7 +2576,7 @@ uint32_t sofia_presence_contact_count(sofia_profile_t *profile, const char *cont
 	char buf[32] = "";
 	char *sql;
 	
-	sql = switch_mprintf("select count(*) from sip_subscriptions where profile_name='%q' and contact_str='%q'", profile->name, contact_str);
+	sql = switch_mprintf("select count(*) from sip_subscriptions where profile_name='%q' and contact='%q'", profile->name, contact_str);
 	
 	sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
 	switch_safe_free(sql);

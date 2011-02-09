@@ -260,6 +260,7 @@ static switch_status_t audio_queue_create(audio_queue_t ** queue, const char *na
 static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switch_size_t *data_len);
 static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch_size_t *data_len, int block);
 static switch_status_t audio_queue_clear(audio_queue_t *queue);
+static switch_status_t audio_queue_signal(audio_queue_t *queue);
 static switch_status_t audio_queue_destroy(audio_queue_t *queue);
 
 /*********************************************************************************************************************************************
@@ -287,6 +288,8 @@ enum speech_channel_state {
 	SPEECH_CHANNEL_READY,
 	/** processing speech request */
 	SPEECH_CHANNEL_PROCESSING,
+	/** finished processing speech request */
+	SPEECH_CHANNEL_DONE,
 	/** error opening channel */
 	SPEECH_CHANNEL_ERROR
 };
@@ -667,10 +670,12 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switch_size_t *data_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+#ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
+	switch_size_t len = *data_len;
+#endif
 	switch_mutex_lock(queue->mutex);
 
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-	switch_size_t len = *data_len;
 	if (queue->file_write) {
 		switch_file_write(queue->file_write, data, &len);
 	}
@@ -708,6 +713,9 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 {
 	switch_size_t requested = *data_len;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+#ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
+	switch_size_t len = *data_len;
+#endif
 	switch_mutex_lock(queue->mutex);
 
 	/* wait for data, if allowed */
@@ -736,7 +744,6 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue read total = %ld\tread = %ld\trequested = %ld\n", queue->name,
 					  queue->read_bytes, *data_len, requested);
-	switch_size_t len = *data_len;
 	if (queue->file_read) {
 		switch_file_write(queue->file_read, data, &len);
 	}
@@ -758,6 +765,20 @@ static switch_status_t audio_queue_clear(audio_queue_t *queue)
 {
 	switch_mutex_lock(queue->mutex);
 	switch_buffer_zero(queue->buffer);
+	switch_thread_cond_signal(queue->cond);
+	switch_mutex_unlock(queue->mutex);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
+ * Wake any threads waiting on this queue
+ *
+ * @param queue the queue to empty
+ * @return SWITCH_STATUS_SUCCESS
+ */
+static switch_status_t audio_queue_signal(audio_queue_t *queue)
+{
+	switch_mutex_lock(queue->mutex);
 	switch_thread_cond_signal(queue->cond);
 	switch_mutex_unlock(queue->mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -1341,6 +1362,8 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 			goto done;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s stopped\n", schannel->name, speech_channel_type_to_string(schannel->type));
+	} else if (schannel->state == SPEECH_CHANNEL_DONE) {
+		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 	}
 
   done:
@@ -1438,9 +1461,19 @@ static switch_status_t speech_channel_read(speech_channel_t *schannel, void *dat
 	}
 
 	switch_mutex_lock(schannel->mutex);
-	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
+	switch (schannel->state) {
+	case SPEECH_CHANNEL_DONE:
+		/* pull any remaining audio - never blocking */
+		if (audio_queue_read(schannel->audio_queue, data, len, 0) == SWITCH_STATUS_FALSE) {
+			/* all frames read */
+			status = SWITCH_STATUS_BREAK;
+		}
+		break;
+	case SPEECH_CHANNEL_PROCESSING:
+		/* IN-PROGRESS */
 		audio_queue_read(schannel->audio_queue, data, len, block);
-	} else {
+		break;
+	default:
 		status = SWITCH_STATUS_BREAK;
 	}
 	switch_mutex_unlock(schannel->mutex);
@@ -1463,6 +1496,8 @@ static const char *speech_channel_state_to_string(speech_channel_state_t state)
 		return "READY";
 	case SPEECH_CHANNEL_PROCESSING:
 		return "PROCESSING";
+	case SPEECH_CHANNEL_DONE:
+		return "DONE";
 	case SPEECH_CHANNEL_ERROR:
 		return "ERROR";
 	}
@@ -1498,7 +1533,7 @@ static switch_status_t speech_channel_set_state_unlocked(speech_channel_t *schan
 {
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING && state != SPEECH_CHANNEL_PROCESSING) {
 		/* wake anyone waiting for audio data */
-		audio_queue_clear(schannel->audio_queue);
+		audio_queue_signal(schannel->audio_queue);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s ==> %s\n", schannel->name, speech_channel_state_to_string(schannel->state),
@@ -1651,6 +1686,8 @@ static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *d
 			memset((uint8_t *) data + bytes_read, schannel->silence, *datalen - bytes_read);
 		}
 	} else {
+		/* ready for next speak request */
+		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 		*datalen = 0;
 		status = SWITCH_STATUS_BREAK;
 	}
@@ -1878,7 +1915,7 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				/* got COMPLETE */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) COMPLETE\n", schannel->name);
-				speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
+				speech_channel_set_state(schannel, SPEECH_CHANNEL_DONE);
 			} else {
 				/* received unexpected request state */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected STOP response, request_state = %d\n", schannel->name,
@@ -1896,7 +1933,7 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 		if (message->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) {
 			/* got SPEAK-COMPLETE */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SPEAK-COMPLETE\n", schannel->name);
-			speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
+			speech_channel_set_state(schannel, SPEECH_CHANNEL_DONE);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);

@@ -4480,7 +4480,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
-					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate) {
+					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc")) {
 						/* nevermind */
 						match = 0;
 					}

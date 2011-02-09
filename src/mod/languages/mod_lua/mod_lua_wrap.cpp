@@ -1582,6 +1582,55 @@ fail:
 }
 
 
+static int _wrap_email(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  char *arg6 = (char *) NULL ;
+  char *arg7 = (char *) NULL ;
+  bool result;
+  
+  SWIG_check_num_args("email",2,7)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("email",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("email",2,"char *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("email",3,"char *");
+  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("email",4,"char *");
+  if(lua_gettop(L)>=5 && !lua_isstring(L,5)) SWIG_fail_arg("email",5,"char *");
+  if(lua_gettop(L)>=6 && !lua_isstring(L,6)) SWIG_fail_arg("email",6,"char *");
+  if(lua_gettop(L)>=7 && !lua_isstring(L,7)) SWIG_fail_arg("email",7,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
+  if(lua_gettop(L)>=5){
+    arg5 = (char *)lua_tostring(L, 5);
+  }
+  if(lua_gettop(L)>=6){
+    arg6 = (char *)lua_tostring(L, 6);
+  }
+  if(lua_gettop(L)>=7){
+    arg7 = (char *)lua_tostring(L, 7);
+  }
+  result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_new_IVRMenu(lua_State* L) {
   int SWIG_arg = -1;
   IVRMenu *arg1 = (IVRMenu *) 0 ;
@@ -7525,6 +7574,7 @@ static swig_lua_class _wrap_class_LUA_Dbh = { "Dbh", &SWIGTYPE_p_LUA__Dbh,_wrap_
 static const struct luaL_reg swig_commands[] = {
     { "consoleLog", _wrap_consoleLog},
     { "consoleCleanLog", _wrap_consoleCleanLog},
+    { "email", _wrap_email},
     { "console_log", _wrap_console_log},
     { "console_clean_log", _wrap_console_clean_log},
     { "msleep", _wrap_msleep},

@@ -1865,6 +1865,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_app_flags(const char *ap
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(switch_core_session_t *session, const char *app, const char *arg)
 {
 	switch_event_t *execute_event;
+	char *ap, *arp;
+	
+	if (!arg && strstr(app, "::")) {
+		ap = switch_core_session_strdup(session, app);
+		app = ap;
+
+		if ((arp = strstr(ap, "::"))) {
+			*arp = '\0';
+			arg = arp + 2;
+		}
+	}
 	
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -1893,6 +1904,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 {
 	switch_application_interface_t *application_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!arg && strstr(app, "::")) {
+		return switch_core_session_execute_application_async(session, app, arg);
+	}
 
 	if (switch_channel_down(session->channel)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);

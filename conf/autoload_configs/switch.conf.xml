@@ -23,6 +23,10 @@
   <settings>
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
+
+    <!-- minimum idle CPU before refusing calls -->
+    <param name="min-idle-cpu" value="25"/>
+
     <!--
 	Max number of sessions to allow at any given time.
 	

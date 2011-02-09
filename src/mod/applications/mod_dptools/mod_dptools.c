@@ -2774,7 +2774,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *cid_name_override = NULL;
 	char *cid_num_override = NULL;
-	char *domain = NULL;
+	char *domain = NULL, *dup_domain = NULL;
 	switch_channel_t *new_channel = NULL;
 	unsigned int timelimit = 60;
 	const char *skip, *var;
@@ -2788,6 +2788,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 		*domain++ = '\0';
 	} else {
 		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		dup_domain = domain;
 	}
 
 	if (!domain) {
@@ -2859,6 +2860,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 
 	switch_safe_free(template);
 	switch_safe_free(group);
+	switch_safe_free(dup_domain);
 
 	if (cause == SWITCH_CAUSE_NONE) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -2887,7 +2889,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
-	char *user = NULL, *domain = NULL;
+	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
 	static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
@@ -2908,7 +2910,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		domain = switch_core_get_variable_dup("domain");
+		dup_domain = domain;
 	}
 
 	if (!domain) {
@@ -3115,6 +3118,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	switch_safe_free(user);
+	switch_safe_free(dup_domain);
 
 	return cause;
 }
