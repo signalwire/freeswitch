@@ -3458,7 +3458,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 {
 	char *data;
 	char *user = NULL;
-	char *domain = NULL;
+	char *domain = NULL, *dup_domain = NULL;
 	char *concat = NULL;
 	char *profile_name = NULL;
 	char *p;
@@ -3503,7 +3503,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	}
 
 	if (zstr(domain)) {
-		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		dup_domain = switch_core_get_variable_dup("domain");
+		domain = dup_domain;
 	}
 
 	if (!user) goto end;
@@ -3662,6 +3663,7 @@ copydone:
 	switch_safe_free(mystream.data);					
 
 	switch_safe_free(data);
+	switch_safe_free(dup_domain);
 
 	return SWITCH_STATUS_SUCCESS;
 }

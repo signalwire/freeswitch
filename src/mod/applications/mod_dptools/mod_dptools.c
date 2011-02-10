@@ -1864,6 +1864,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 		goto end;
 	}
 
@@ -1878,6 +1879,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	if (zstr(bond) && switch_channel_down(peer_channel)) {
 		switch_core_session_rwunlock(peer_session);
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 		goto end;
 	}
 
