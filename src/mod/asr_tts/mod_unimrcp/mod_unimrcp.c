@@ -1363,7 +1363,7 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s stopped\n", schannel->name, speech_channel_type_to_string(schannel->type));
 	} else if (schannel->state == SPEECH_CHANNEL_DONE) {
-		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
+		speech_channel_set_state_unlocked(schannel, SPEECH_CHANNEL_READY);
 	}
 
   done:
