@@ -75,6 +75,14 @@ ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 
 ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
 ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
+
+int find_mtp2_error_type_in_map(const char *err_type);
+int find_link_type_in_map(const char *linkType);
+int find_switch_type_in_map(const char *switchType);
+int find_ssf_type_in_map(const char *ssfType);
+int find_cic_cntrl_in_map(const char *cntrlType);
+
+ftdm_status_t check_status_of_all_isup_intf(void);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -432,7 +440,7 @@ int check_cics_in_range(sngss7_chan_data_t *sngss7_info)
 			}
 
 			/* check if the channel still has the reset flag done is up */
-			if (!sngss7_test_flag(tmp_sngss7_info, FLAG_GRP_RESET_RX_DN)) {
+			if (!sngss7_test_ckt_flag(tmp_sngss7_info, FLAG_GRP_RESET_RX_DN)) {
 				SS7_DEBUG_CHAN(tmp_ftdmchan, "[CIC:%d] Still processing reset...\n", tmp_sngss7_info->circuit->cic);
 				return 0;
 			}
@@ -475,19 +483,19 @@ ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_in
 int check_for_reset(sngss7_chan_data_t *sngss7_info)
 {
 
-	if (sngss7_test_flag(sngss7_info,FLAG_RESET_RX)) {
+	if (sngss7_test_ckt_flag(sngss7_info,FLAG_RESET_RX)) {
 		return 1;
 	}
 	
-	if (sngss7_test_flag(sngss7_info,FLAG_RESET_TX)) {
+	if (sngss7_test_ckt_flag(sngss7_info,FLAG_RESET_TX)) {
 		return 1;
 	}
 	
-	if (sngss7_test_flag(sngss7_info,FLAG_GRP_RESET_RX)) {
+	if (sngss7_test_ckt_flag(sngss7_info,FLAG_GRP_RESET_RX)) {
 		return 1;
 	}
 	
-	if (sngss7_test_flag(sngss7_info,FLAG_GRP_RESET_TX)) {
+	if (sngss7_test_ckt_flag(sngss7_info,FLAG_GRP_RESET_TX)) {
 		return 1;
 	}
 
@@ -498,11 +506,13 @@ int check_for_reset(sngss7_chan_data_t *sngss7_info)
 /******************************************************************************/
 unsigned long get_unique_id(void)
 {
+	int	procId = sng_get_procId(); 
 
-	if (sngss7_id < 420000000) {
+	/* id values are between (procId * 1,000,000) and ((procId + 1) * 1,000,000) */ 
+	if (sngss7_id < ((procId + 1) * 1000000) ) {
 		sngss7_id++;
 	} else {
-		sngss7_id = 1;
+		sngss7_id = procId * 1000000;
 	}
 
 	return(sngss7_id);
@@ -525,7 +535,7 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 		}
 
 		/* check if the GRP_RESET_RX flag is already up */
-		if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
 			/* we have already processed this channel...move along */
 			continue;
 		}
@@ -543,7 +553,7 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic + sngss7_span->rx_grs.range));
 
 		/* flag the channel as having received a reset */
-		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX);
 
 		switch (ftdmchan->state) {
 		/**************************************************************************/
@@ -598,10 +608,10 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 		/* check if there is a state change pending on the channel */
 		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
 			/* check the state to the GRP_RESET_RX_DN flag */
-			if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
+			if (!sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
 				/* this channel is still resetting...do nothing */
 					goto GRS_UNLOCK_ALL;
-			} /* if (!sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
+			} /* if (!sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
 		} else {
 			/* state change pending */
 			goto GRS_UNLOCK_ALL;
@@ -625,16 +635,16 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 		}
 
 		/* throw the GRP reset flag complete flag */
-		sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
 
 		/* move the channel to the down state */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 		/* update the status map if the ckt is in blocked state */
-		if ((sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
-			(sngss7_test_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
-			(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
-			(sngss7_test_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+			(sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
+			(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
+			(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 		
 			sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
 		} /* if blocked */
@@ -679,7 +689,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 		}
 
 		/* check if the channel is already procoessing the GRA */
-		if (sngss7_test_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
 			/* move along */
 			continue;
 		}
@@ -701,7 +711,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 		case FTDM_CHANNEL_STATE_RESTART:
 			
 			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
 
 			/* go to DOWN */
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
@@ -720,7 +730,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 			
 			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
 
 			break;
 		/**********************************************************************/
@@ -775,7 +785,7 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 		sigev.channel = ftdmchan;
 
 		/* if we have the PAUSED flag and the sig status is still UP */
-		if ((sngss7_test_flag(sngss7_info, FLAG_INFID_PAUSED)) &&
+		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) &&
 			(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
 
 			/* clear up any pending state changes */
@@ -790,7 +800,7 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 
 		/* if the RESUME flag is up go to SUSPENDED to process the flag */
 		/* after doing this the flag will be cleared */
-		if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) {
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME)) {
 
 			/* clear up any pending state changes */
 			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
@@ -839,7 +849,7 @@ ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 		}
 
 		/* throw the ckt block flag */
-		sngss7_set_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+		sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
 
 		/* set the channel to suspended state */
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -858,9 +868,9 @@ ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
 {
 	/* clear all the flags related to an incoming GRS */
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX);
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_DN);
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
 
 	return FTDM_SUCCESS;
 }
@@ -892,10 +902,10 @@ ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info)
 ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
 {
 	/* clear all the flags related to an outgoing GRS */
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_BASE);
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX);
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_SENT);
-	sngss7_clear_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
 
 	return FTDM_SUCCESS;
 }
@@ -918,7 +928,7 @@ ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info)
 ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info)
 {
 	/* clear all the flags related to an incoming RSC */
-	sngss7_clear_flag(sngss7_info, FLAG_RESET_RX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_RESET_RX);
 
 	return FTDM_SUCCESS;
 }
@@ -927,9 +937,9 @@ ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info)
 ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info)
 {
 	/* clear all the flags related to an outgoing RSC */
-	sngss7_clear_flag(sngss7_info, FLAG_RESET_TX);
-	sngss7_clear_flag(sngss7_info, FLAG_RESET_SENT);
-	sngss7_clear_flag(sngss7_info, FLAG_RESET_TX_RSP);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_RESET_TX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_RESET_SENT);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP);
 
 	return FTDM_SUCCESS;
 }
@@ -1143,6 +1153,197 @@ ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int typ
 	p = 2;
 	subAddrIE[p] = 0xa0 | (odd << 3);
 
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+int find_mtp2_error_type_in_map(const char *err_type)
+{
+	int i = 0;
+
+	while (sng_mtp2_error_type_map[i].init == 1) {
+		/* check if string matches the sng_type name */ 
+		if (!strcasecmp(err_type, sng_mtp2_error_type_map[i].sng_type)) {
+			/* we've found a match break from the loop */
+			break;
+		} else {
+			/* move on to the next on */
+			i++;
+		}
+	} /* while (sng_mtp2_error_type_map[i].init == 1) */
+
+	/* check how we exited the loop */
+	if (sng_mtp2_error_type_map[i].init == 0) {
+		return -1;
+	} else {
+		return i;
+	} /* if (sng_mtp2_error_type_map[i].init == 0) */
+}
+
+/******************************************************************************/
+int find_link_type_in_map(const char *linkType)
+{
+	int i = 0;
+
+	while (sng_link_type_map[i].init == 1) {
+		/* check if string matches the sng_type name */ 
+		if (!strcasecmp(linkType, sng_link_type_map[i].sng_type)) {
+			/* we've found a match break from the loop */
+			break;
+		} else {
+			/* move on to the next on */
+			i++;
+		}
+	} /* while (sng_link_type_map[i].init == 1) */
+
+	/* check how we exited the loop */
+	if (sng_link_type_map[i].init == 0) {
+		return -1;
+	} else {
+		return i;
+	} /* if (sng_link_type_map[i].init == 0) */
+}
+
+/******************************************************************************/
+int find_switch_type_in_map(const char *switchType)
+{
+	int i = 0;
+
+	while (sng_switch_type_map[i].init == 1) {
+		/* check if string matches the sng_type name */ 
+		if (!strcasecmp(switchType, sng_switch_type_map[i].sng_type)) {
+			/* we've found a match break from the loop */
+			break;
+		} else {
+			/* move on to the next on */
+			i++;
+		}
+	} /* while (sng_switch_type_map[i].init == 1) */
+
+	/* check how we exited the loop */
+	if (sng_switch_type_map[i].init == 0) {
+		return -1;
+	} else {
+		return i;
+	} /* if (sng_switch_type_map[i].init == 0) */
+}
+
+/******************************************************************************/
+int find_ssf_type_in_map(const char *ssfType)
+{
+	int i = 0;
+
+	while (sng_ssf_type_map[i].init == 1) {
+		/* check if string matches the sng_type name */ 
+		if (!strcasecmp(ssfType, sng_ssf_type_map[i].sng_type)) {
+			/* we've found a match break from the loop */
+			break;
+		} else {
+			/* move on to the next on */
+			i++;
+		}
+	} /* while (sng_ssf_type_map[i].init == 1) */
+
+	/* check how we exited the loop */
+	if (sng_ssf_type_map[i].init == 0) {
+		return -1;
+	} else {
+		return i;
+	} /* if (sng_ssf_type_map[i].init == 0) */
+}
+
+/******************************************************************************/
+int find_cic_cntrl_in_map(const char *cntrlType)
+{
+	int i = 0;
+
+	while (sng_cic_cntrl_type_map[i].init == 1) {
+		/* check if string matches the sng_type name */ 
+		if (!strcasecmp(cntrlType, sng_cic_cntrl_type_map[i].sng_type)) {
+			/* we've found a match break from the loop */
+			break;
+		} else {
+			/* move on to the next on */
+			i++;
+		}
+	} /* while (sng_cic_cntrl_type_map[i].init == 1) */
+
+	/* check how we exited the loop */
+	if (sng_cic_cntrl_type_map[i].init == 0) {
+		return -1;
+	} else {
+		return i;
+	} /* if (sng_cic_cntrl_type_map[i].init == 0) */
+}
+
+/******************************************************************************/
+ftdm_status_t check_status_of_all_isup_intf(void)
+{
+	sng_isup_inf_t		*sngss7_intf = NULL;
+	uint8_t				status = 0xff;
+	int					x;
+
+	/* go through all the isupIntfs and ask the stack to give their current state */
+	x = 1;
+	for (x = 1; x < (MAX_ISUP_INFS + 1); x++) {
+	/**************************************************************************/
+
+		if (g_ftdm_sngss7_data.cfg.isupIntf[x].id == 0) continue;
+
+		sngss7_intf = &g_ftdm_sngss7_data.cfg.isupIntf[x];
+
+		if (ftmod_ss7_isup_intf_sta(sngss7_intf->id, &status)) {
+			SS7_ERROR("Failed to get status of ISUP intf %d\n", sngss7_intf->id);
+			continue;
+		}
+
+		switch (status){
+		/**********************************************************************/
+		case (SI_INTF_AVAIL):
+			SS7_DEBUG("State of ISUP intf %d = AVAIL\n", sngss7_intf->id); 
+
+			/* check the current state for interface that we know */
+			if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
+				/* we thing the intf is paused...put into resume */ 
+				sngss7_clear_flag(sngss7_intf, SNGSS7_PAUSED);
+			} else {
+				/* nothing to since we already know that interface is active */
+			}
+			break;
+		/**********************************************************************/
+		case (SI_INTF_UNAVAIL):
+			SS7_DEBUG("State of ISUP intf %d = UNAVAIL\n", sngss7_intf->id); 
+			/* check the current state for interface that we know */
+			if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
+				/* nothing to since we already know that interface is active */ 
+			} else {
+				/* put the interface into pause */
+				sngss7_set_flag(sngss7_intf, SNGSS7_PAUSED);
+			}
+			break;
+		/**********************************************************************/
+		case (SI_INTF_CONG1):
+			SS7_DEBUG("State of ISUP intf %d = Congestion 1\n", sngss7_intf->id);
+			break;
+		/**********************************************************************/
+		case (SI_INTF_CONG2):
+			SS7_DEBUG("State of ISUP intf %d = Congestion 2\n", sngss7_intf->id);
+			break;
+		/**********************************************************************/
+		case (SI_INTF_CONG3):
+			SS7_DEBUG("State of ISUP intf %d = Congestion 3\n", sngss7_intf->id);
+			break;
+		/**********************************************************************/
+		default:
+			/* should do something here to handle the possiblity of an unknown case */
+			SS7_ERROR("Unknown ISUP intf Status code (%d) for Intf = %d\n", status, sngss7_intf->id);
+			break;
+		/**********************************************************************/
+		} /* switch (status) */
+
+	/**************************************************************************/
+	} /* for (x = 1; x < MAX_ISUP_INFS + 1); i++) */
 
 	return FTDM_SUCCESS;
 }

@@ -637,8 +637,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		tech_pvt->other_tech_pvt &&
 		switch_test_flag(tech_pvt, TFLAG_BRIDGE) &&
 		switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_BRIDGE) &&
+
 		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
+
+		!switch_channel_test_flag(tech_pvt->channel, CF_INNER_BRIDGE) &&
+		!switch_channel_test_flag(tech_pvt->other_channel, CF_INNER_BRIDGE) &&
+
 		switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) && !--tech_pvt->bowout_frame_count <= 0) {
 		const char *a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);

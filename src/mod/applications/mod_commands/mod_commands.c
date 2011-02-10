@@ -4439,19 +4439,23 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 
 		if ((format = strchr(mycmd, ' '))) {
 			*format++ = '\0';
-		}
 		
-		if ((p = strchr(format, '|'))) {
-			*p++ = '\0';
-			when = atol(format);
-			format = p;
+			if (format && (p = strchr(format, '|'))) {
+				*p++ = '\0';
+				when = atol(format);
+				format = p;
+			}
 		}
 	}
 
-	if (switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
+	if (zstr(format)) {
+		format = "%Y-%m-%d";
+	}
+	
+	if (format && switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
 		stream->write_function(stream, "%s", date);
 	} else {
-		stream->write_function(stream, "-ERR Invalid Timezone\n");
+		stream->write_function(stream, "-ERR Invalid Timezone/Format\n");
 	}
 
 	switch_safe_free(mycmd);

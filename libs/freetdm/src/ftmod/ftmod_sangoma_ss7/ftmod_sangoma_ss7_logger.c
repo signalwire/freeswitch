@@ -48,6 +48,8 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta);
 void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta);
 void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta);
 void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta);
+void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta);
+
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -77,8 +79,8 @@ void handle_sng_log(uint8_t level, char *fmt,...)
 		ftdm_log(FTDM_LOG_INFO, "sng_ss7->%s", data);
 		break;
 	/**************************************************************************/
-	case SNG_LOGLEVEL_STATS:
-		ftdm_log(FTDM_LOG_INFO, "sng_ss7->%s", data);
+	case SNG_LOGLEVEL_NOTICE:
+		ftdm_log(FTDM_LOG_NOTICE, "sng_ss7->%s", data);
 		break;
 	/**************************************************************************/
 	case SNG_LOGLEVEL_ERROR:
@@ -132,17 +134,17 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 					
 
@@ -173,17 +175,17 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
 			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
@@ -196,17 +198,17 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
 			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
@@ -220,17 +222,17 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
 			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : RTB Queue Len(%d)|Oldest BSN(%d)|Tx Queue Len(%d)|Outstanding Frames(%d)\n",
@@ -246,17 +248,17 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
 			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : RTB Queue Len(%d)\n",
@@ -269,17 +271,17 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->t.usta.evntParm[0]) {
+			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->t.usta.evntParm[0]);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
 			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %d\n",
@@ -290,9 +292,11 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 		/**********************************************************************/
 		case (LCM_EVENT_UI_INV_EVT):
 		case (LCM_EVENT_LI_INV_EVT):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s : %s : Primitive (%d)\n",
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s(%d) : %s(%d) : Primitive (%d)\n",
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
+										sta->t.usta.alarm.event,
 										DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
+										sta->t.usta.alarm.cause,
 										sta->t.usta.evntParm[0]);
 			break;
 		/**********************************************************************/
@@ -362,22 +366,23 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtpLink[x].id != 0) {
-				if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == sta->hdr.elmId.elmntInst1) {
+			while (g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+				if (g_ftdm_sngss7_data.cfg.mtp3Link[x].id == sta->hdr.elmId.elmntInst1) {
 					break;
 				}
 				x++;
 			}
 
-			if (g_ftdm_sngss7_data.cfg.mtpLink[x].id == 0) {
+			if (g_ftdm_sngss7_data.cfg.mtp3Link[x].id == 0) {
 				sprintf(buf, "[SAPID:%d]", sta->hdr.elmId.elmntInst1);
 			} else {
-				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtpLink[x].name);
+				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp3Link[x].name);
 			}
 
 		switch (sta->t.usta.alarm.event) {
 		/**********************************************************************/
 		case (LSN_EVENT_INV_OPC_OTHER_END):
+			
 			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : OPC(0x%X%X%X%X)\n",
 										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
@@ -460,7 +465,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][DPC:0x%d%d%d%d] %s : %s\n",
+			ftdm_log(FTDM_LOG_ERROR,"[MTP3][DPC:0x%X%X%X%X] %s : %s\n",
 										sta->t.usta.evntParm[0],
 										sta->t.usta.evntParm[1],
 										sta->t.usta.evntParm[2],
@@ -744,7 +749,63 @@ void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta)
 
 	return;
 }   /* handle_cc_alarm */
+
 /******************************************************************************/
+void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
+{
+
+
+	switch (sta->hdr.elmId.elmnt) {
+	/**************************************************************************/
+	case (LRY_USTA_ERR): /* ERROR */
+		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Error: tx procId %d: err procId %d: channel %d: seq %s: reason %s\n",
+												sta->t.usta.s.ryErrUsta.sendPid,
+												sta->t.usta.s.ryErrUsta.errPid,
+												sta->t.usta.s.ryErrUsta.id,
+												DECODE_LRY_SEQ(sta->t.usta.s.ryErrUsta.sequence),
+												DECODE_LRY_REASON(sta->t.usta.s.ryErrUsta.reason));
+
+		/* process the event */
+		handle_relay_disconnect_on_error(sta);
+
+		break;
+	/**************************************************************************/
+	case (LRY_USTA_CNG): /* Congestion */
+		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Congestion: tx procId %d: rem procId %d: channel %d: %s\n",
+												sta->t.usta.s.ryCongUsta.sendPid,
+												sta->t.usta.s.ryCongUsta.remPid,
+												sta->t.usta.s.ryCongUsta.id,
+												DECODE_LRY_CONG_FLAGS(sta->t.usta.s.ryCongUsta.flags));
+		break;
+	/**************************************************************************/
+	case (LRY_USTA_UP): /* channel up */
+		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Channel UP: tx procId %d: channel %d\n",
+												sta->t.usta.s.ryUpUsta.sendPid,
+												sta->t.usta.s.ryUpUsta.id);
+
+		/* process the event */
+		handle_relay_connect(sta);
+
+		break;
+	/**************************************************************************/
+	case (LRY_USTA_DN): /* channel down */
+		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Channel DOWN: tx procId %d: channel %d\n",
+												sta->t.usta.s.ryUpUsta.sendPid,
+												sta->t.usta.s.ryUpUsta.id);
+
+		/* process the event */
+		handle_relay_disconnect_on_down(sta);
+
+		break;
+	/**************************************************************************/
+	default:
+		ftdm_log(FTDM_LOG_ERROR,"Unknown Relay Alram\n");
+		break;
+	/**************************************************************************/
+	} /* switch (sta->hdr.elmId.elmnt) */
+
+	return;
+}
 
 /******************************************************************************/
 /* For Emacs:
