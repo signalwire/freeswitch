@@ -4071,15 +4071,22 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	greedy = !!sofia_test_pflag(tech_pvt->profile, PFLAG_GREEDY);
 	scrooge = !!sofia_test_pflag(tech_pvt->profile, PFLAG_SCROOGE);
 
-	if (!greedy || !scrooge) {
-		if ((val = switch_channel_get_variable(channel, "sip_codec_negotiation"))) {
-			if (!strcasecmp(val, "greedy")) {
-				greedy = 1;
-			} else if (!strcasecmp(val, "scrooge")) {
-				scrooge = 1;
-				greedy = 1;
-			}
-		}
+	if ((val = switch_channel_get_variable(channel, "sip_codec_negotiation"))) {
+		if (!strcasecmp(val, "generous")) {
+			greedy = 0;
+			scrooge = 0;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sip_codec_negotiation overriding sofia inbound-codec-negotiation : generous\n" );
+		} else if (!strcasecmp(val, "greedy")) {
+			greedy = 1;
+			scrooge = 0;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sip_codec_negotiation overriding sofia inbound-codec-negotiation : greedy\n" );
+		} else if (!strcasecmp(val, "scrooge")) {
+			scrooge = 1;
+			greedy = 1;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sip_codec_negotiation overriding sofia inbound-codec-negotiation : scrooge\n" );
+		} else {
+		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sip_codec_negotiation ignored invalid value : '%s' \n", val );	
+		}		
 	}
 
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
@@ -4473,7 +4480,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
-					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate) {
+					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc")) {
 						/* nevermind */
 						match = 0;
 					}

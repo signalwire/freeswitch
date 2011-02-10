@@ -385,8 +385,12 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 				case FTDM_CHANNEL_STATE_DIALING:
 				case FTDM_CHANNEL_STATE_PROCEED:
 				case FTDM_CHANNEL_STATE_PROGRESS:
-				case FTDM_CHANNEL_STATE_RINGING:					
-					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
+				case FTDM_CHANNEL_STATE_RINGING:
+					if ((cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) ||
+						(cnStEvnt->progInd1.eh.pres && cnStEvnt->progInd1.progDesc.val == IN_PD_IBAVAIL) ||
+						(cnStEvnt->progInd2.eh.pres && cnStEvnt->progInd2.progDesc.val == IN_PD_IBAVAIL) ||
+						(cnStEvnt->progInd3.eh.pres && cnStEvnt->progInd3.progDesc.val == IN_PD_IBAVAIL)) {
+						
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media available\n");
 						sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
 					} else {
@@ -796,6 +800,23 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing FACILITY IND (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
+
+	if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
+		/* If Facility decoding is disabled, we do not care about current call state, just pass event up to user */
+		ftdm_sigmsg_t sigev;
+		if (facEvnt->facElmt.facStr.pres) {
+			get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len-2);
+		}
+		memset(&sigev, 0, sizeof(sigev));
+		sigev.chan_id = ftdmchan->chan_id;
+		sigev.span_id = ftdmchan->span_id;
+		sigev.channel = ftdmchan;
+		
+		sigev.event_id = FTDM_SIGEVENT_FACILITY;
+		ftdm_span_send_signal(ftdmchan->span, &sigev);
+		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
 
 	switch (ftdmchan->state) {
 		case FTDM_CHANNEL_STATE_GET_CALLERID:

@@ -554,6 +554,7 @@ struct ftdm_sigmsg {
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
 	uint32_t call_id; /*!< unique call id for this call */
+	void *call_priv; /*!< Private data for the FreeTDM user from ftdm_caller_data->priv */
 	union {
 		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
 		ftdm_event_trace_t trace;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */

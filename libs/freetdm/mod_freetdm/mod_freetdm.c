@@ -1067,9 +1067,16 @@ static const char* channel_get_variable(switch_core_session_t *session, switch_e
                        return variable;
                }
        }
+
+
+	   // This is unsafe, I don't see anywhere in the whole code where this is called with NULL session anyway.
+	   // There is a new switch_core_get_variable_dup that will strdup it for you and then you must free it.
+	   // That messes up the abstraction completely so I am just commenting it out for you.....
+	   /*
        if ((variable = switch_core_get_variable(variable_name))) {
                return variable;
        }
+	   */
        return NULL;
 }
 
@@ -1570,8 +1577,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI2", "%s", channel_caller_data->aniII);
 		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS", "%s", channel_caller_data->dnis.digits);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%s", channel_caller_data->dnis.type);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%s", channel_caller_data->dnis.plan);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%d", channel_caller_data->dnis.type);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
@@ -2360,8 +2367,9 @@ static int add_config_list_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode
 
 static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confname)
 {
-	switch_xml_t signode, ss7configs, isup;
-	ftdm_conf_node_t *rootnode;
+	switch_xml_t signode, ss7configs, isup, gen, param;
+	ftdm_conf_node_t *rootnode, *list;
+	char *var, *val;
 
 	/* try to find the conf in the hash first */
 	rootnode = switch_core_hash_find(globals.ss7_configs, confname);
@@ -2405,15 +2413,63 @@ static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confn
 		return NULL;
 	}
 
+	/* add sng_gen */
+	gen = switch_xml_child(isup, "sng_gen");
+	if (gen == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_gen for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	if ((FTDM_SUCCESS != ftdm_conf_node_create("sng_gen", &list, rootnode))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create %s node for %s\n", "sng_gen", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	for (param = switch_xml_child(gen, "param"); param; param = param->next) {
+		var = (char *) switch_xml_attr_soft(param, "name");
+		val = (char *) switch_xml_attr_soft(param, "value");
+		ftdm_conf_node_add_param(list, var, val);
+	}
+
+	/* add relay channels */
+	if (add_config_list_nodes(isup, rootnode, "sng_relay", "relay_channel", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_relay for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp1 links */
+	if (add_config_list_nodes(isup, rootnode, "mtp1_links", "mtp1_link", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp1_links for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp2 links */
+	if (add_config_list_nodes(isup, rootnode, "mtp2_links", "mtp2_link", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp2_links for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp3 links */
+	if (add_config_list_nodes(isup, rootnode, "mtp3_links", "mtp3_link", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp3_links for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
 	/* add mtp linksets */
-	if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", "mtp_links", "mtp_link")) {
+	if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", NULL, NULL)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_linksets for sng_isup config %s\n", confname);
 		ftdm_conf_node_destroy(rootnode);
 		return NULL;
 	}
 
 	/* add mtp routes */
-	if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", NULL, NULL)) {
+	if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", "linksets", "linkset")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_routes for sng_isup config %s\n", confname);
 		ftdm_conf_node_destroy(rootnode);
 		return NULL;
@@ -2422,6 +2478,13 @@ static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confn
 	/* add isup interfaces */
 	if (add_config_list_nodes(isup, rootnode, "isup_interfaces", "isup_interface", NULL, NULL)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process isup_interfaces for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add cc spans */
+	if (add_config_list_nodes(isup, rootnode, "cc_spans", "cc_span", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process cc_spans for sng_isup config %s\n", confname);
 		ftdm_conf_node_destroy(rootnode);
 		return NULL;
 	}

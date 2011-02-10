@@ -683,8 +683,8 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				if (!sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
 					/* By default, we do not send a progress indicator in the proceed */
 					ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
-					
 					sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
+					
 					sngisdn_snd_proceed(ftdmchan, prog_ind);
 				}
 			}
@@ -800,6 +800,17 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 						/* If we never received a PROCEED/ALERT/PROGRESS/CONNECT on an outgoing call, we need to send release instead of disconnect */
 						sngisdn_snd_release(ftdmchan, 0);
 						break;
+					case FTDM_CHANNEL_STATE_PROCEED:
+						if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+							if (((sngisdn_span_data_t*)(ftdmchan->span->signal_data))->switchtype == SNGISDN_SWITCH_4ESS ||
+							    ((sngisdn_span_data_t*)(ftdmchan->span->signal_data))->switchtype == SNGISDN_SWITCH_5ESS) {
+							
+								/* When using 5ESS, if the user wants to clear an inbound call, the correct procedure is to send a PROGRESS with in-band info available, and play tones. Then send a DISCONNECT. If we reached this point, it means user did not try to play-tones, so send a RELEASE because remote side does not expect DISCONNECT in state 3 */
+								sngisdn_snd_release(ftdmchan, 0);
+								break;
+							}
+						}
+						/* fall-through */
 					default:
 						sngisdn_snd_disconnect(ftdmchan);
 						break;
@@ -901,9 +912,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 	sngisdn_chan_data_t  *sngisdn_info = ftdmchan->call_data;
 	ftdm_status_t status = FTDM_FAIL;	
 	
-	/* lock the channel while we check whether it is availble */
-	ftdm_channel_lock(ftdmchan);
-
 	switch (ftdmchan->state) {
 
 		case FTDM_CHANNEL_STATE_DOWN:
@@ -928,10 +936,9 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Outgoing call requested channel in already in use\n");
 			status = FTDM_BREAK;
 		}
-		break;		  
+		break;
 	}
 
-	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_chan_sig_status)

@@ -1171,6 +1171,29 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_enbloc_call_message(listener_t *listener, skinny_message_t *request)
+{
+	uint32_t line_instance = 1;
+	switch_core_session_t *session = NULL;
+
+	skinny_check_data_length(request, sizeof(request->data.enbloc_call.called_party));
+
+	if(skinny_check_data_length_soft(request, sizeof(request->data.enbloc_call))) {
+		if (request->data.enbloc_call.line_instance > 0) {
+			line_instance = request->data.enbloc_call.line_instance;
+		}
+	}
+
+	session = skinny_profile_find_session(listener->profile, listener, &line_instance, 0);
+
+	if(session) {
+		skinny_session_process_dest(session, listener, line_instance, request->data.enbloc_call.called_party, '\0', 0);
+		switch_core_session_rwunlock(session);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -2004,6 +2027,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_port_message(listener, request);
 		case KEYPAD_BUTTON_MESSAGE:
 			return skinny_handle_keypad_button_message(listener, request);
+		case ENBLOC_CALL_MESSAGE:
+			return skinny_handle_enbloc_call_message(listener, request);
 		case STIMULUS_MESSAGE:
 			return skinny_handle_stimulus_message(listener, request);
 		case OFF_HOOK_MESSAGE:

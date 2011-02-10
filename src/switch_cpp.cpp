@@ -1195,6 +1195,13 @@ SWITCH_DECLARE(void) console_clean_log(char *msg)
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, "%s", switch_str_nil(msg));
 }
 
+SWITCH_DECLARE(bool) email(char *to, char *from, char *headers, char *body, char *file, char *convert_cmd, char *convert_ext)
+{
+    if (switch_simple_email(to, from, headers, body, file, convert_cmd, convert_ext) == SWITCH_TRUE) {
+      return true;
+    }
+    return false;
+}
 
 SWITCH_DECLARE(void) msleep(unsigned ms)
 {

@@ -2506,10 +2506,12 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 	}
 
 	/* we have a locked channel and are not afraid of using it! */
-	status = hunting->result_cb(fchan, caller_data);
-	if (status != FTDM_SUCCESS) {
-		status = FTDM_ECANCELED;
-		goto done;
+	if (hunting->result_cb) {
+		status = hunting->result_cb(fchan, caller_data);
+		if (status != FTDM_SUCCESS) {
+			status = FTDM_ECANCELED;
+			goto done;
+		}
 	}
 
 	ftdm_channel_set_caller_data(fchan, caller_data);
@@ -5502,6 +5504,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		sigmsg->chan_id = sigmsg->channel->chan_id;
 		sigmsg->span_id = sigmsg->channel->span_id;
 		sigmsg->call_id = sigmsg->channel->caller_data.call_id;
+		sigmsg->call_priv = sigmsg->channel->caller_data.priv;
 	}
 	
 	/* some core things to do on special events */
