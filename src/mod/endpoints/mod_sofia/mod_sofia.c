@@ -3588,7 +3588,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 				newptr = newreply;
 
 				/* pointer to the end of the allocated buffer for safety checks */
-				bufend = newreply + allocsize - 1;
+				bufend = newreply + allocsize;
 				*bufend = 0;
 
 				/* go thru all the urls and replace the user part */
