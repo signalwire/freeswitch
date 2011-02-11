@@ -366,7 +366,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		check_for_res_sus_flag(ftdmspan);
 
 		/* Poll for events, e.g HW DTMF */
-		switch (ftdm_span_poll_event(ftdmspan, 0)) {
+		switch (ftdm_span_poll_event(ftdmspan, 0, NULL)) {
 		/**********************************************************************/
 		case FTDM_SUCCESS:
 			while (ftdm_span_next_event(ftdmspan, &event) == FTDM_SUCCESS);
