@@ -1749,33 +1749,46 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	/* default the interface to paused state */
 	sngss7_set_flag(&sng_isup, SNGSS7_PAUSED);
 
+
+
 	/* trickle down the SPC to all sub entities */
 	lnkSet = &g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].lnkSets;
-
-	g_ftdm_sngss7_data.cfg.mtp3Link[lnkSet->lsId].spc = sng_isup.spc;
-	lnkSet = lnkSet->next;
-
 	while (lnkSet->next != NULL) {
-		g_ftdm_sngss7_data.cfg.mtp3Link[lnkSet->lsId].spc = sng_isup.spc;
+	/**************************************************************************/
+		/* go through all the links and check if they belong to this linkset*/
+		i = 1;
+		while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
+			/* check if this link is in the linkset */
+			if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == lnkSet->lsId) {
+				/* fill in the spc */
+				g_ftdm_sngss7_data.cfg.mtp3Link[i].spc = sng_isup.spc;
+			}
+	
+			i++;
+		}
+	
+		/* move to the next lnkSet */
 		lnkSet = lnkSet->next;
-	}
+	/**************************************************************************/
+	} /* while (lnkSet->next != NULL) */
 
 	/* pull values from the lower levels */
-	sng_isup.dpc = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].dpc;
-	sng_isup.switchType = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].switchType;
-	sng_isup.nwId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].nwId;
-
 	sng_isap.switchType = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].switchType;
 
+	/* fill in the isap */
 	ftmod_ss7_fill_in_isap(&sng_isap);
 
-	sng_isup.isap = sng_isap.id;
+	/* pull values from the lower levels */
+	sng_isup.isap 		= sng_isap.id;
+	sng_isup.dpc 		= g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].dpc;
+	sng_isup.switchType	= g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].switchType;
+	sng_isup.nwId 		= g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].nwId;
 
+	/* fill in the isup interface */
 	ftmod_ss7_fill_in_isup_interface(&sng_isup);
 
 	/* setup the self mtp3 route */
 	i = sng_isup.mtpRouteId;
-
 	if(ftmod_ss7_fill_in_self_route(sng_isup.spc,
 									g_ftdm_sngss7_data.cfg.mtpRoute[i].linkType,
 									g_ftdm_sngss7_data.cfg.mtpRoute[i].switchType,
