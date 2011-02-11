@@ -3588,7 +3588,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 }
 
 /* This function takes care of automatically generating DTMF or FSK tones when needed */
-static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan, ftdm_size_t datalen)
+static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan)
 {
 	/*
 	 * datalen: size in bytes of the chunk of data the user requested to read (this function 
@@ -3650,9 +3650,7 @@ static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan, ftdm_size_
 	/* if we picked a buffer, time to read from it and write the linear data to the device */
 	if (buffer) {
 		uint8_t auxbuf[1024];
-		/* we initialize dlen to datalen, which is the size in bytes the 
-		 * user wants to read (typically chunks of 160 bytes, 20ms G.711) */
-		ftdm_size_t dlen = datalen;
+		ftdm_size_t dlen = ftdmchan->packet_len;
 		ftdm_size_t len, br, max = sizeof(auxbuf);
 		
 		/* if the codec is not linear, then data is really twice as much cuz
@@ -3662,10 +3660,10 @@ static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan, ftdm_size_
 		}
 
 		/* we do not expect the user chunks to be bigger than auxbuf */
-		ftdm_assert(dlen <= sizeof(auxbuf), "Unexpected size for user data chunk size\n");
+		ftdm_assert((dlen <= sizeof(auxbuf)), "Unexpected size for user data chunk size\n");
 
 		/* dblen is the size in use for dtmf_buffer or fsk_buffer, and dlen is the size
-		 * of the read chunks of the user, we pick the smaller one */
+		 * of the io chunks to write, we pick the smaller one */
 		len = dblen > dlen ? dlen : dblen;
 
 		/* we can't read more than the size of our auxiliary buffer */
@@ -3770,7 +3768,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 			rdata[i] = ftdmchan->rxgain_table[rdata[i]];
 		}
 	}
-	handle_tone_generation(ftdmchan, *datalen);
+	handle_tone_generation(ftdmchan);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
