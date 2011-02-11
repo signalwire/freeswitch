@@ -1055,28 +1055,18 @@ switch_io_routines_t freetdm_io_routines = {
 static const char* channel_get_variable(switch_core_session_t *session, switch_event_t *var_event, const char *variable_name)
 {
        const char *variable = NULL;
-
        if (var_event) {
                if ((variable = switch_event_get_header(var_event, variable_name))) {
                        return variable;
                }
        }
+
        if (session) {
                switch_channel_t *channel = switch_core_session_get_channel(session);
                if ((variable = switch_channel_get_variable(channel, variable_name))) {
                        return variable;
                }
        }
-
-
-	   // This is unsafe, I don't see anywhere in the whole code where this is called with NULL session anyway.
-	   // There is a new switch_core_get_variable_dup that will strdup it for you and then you must free it.
-	   // That messes up the abstraction completely so I am just commenting it out for you.....
-	   /*
-       if ((variable = switch_core_get_variable(variable_name))) {
-               return variable;
-       }
-	   */
        return NULL;
 }
 
