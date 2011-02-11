@@ -2833,7 +2833,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		}
 
 		/* find a spot for this circuit in the global structure */
-		x = (ccSpan->procId * 1000);
+		x = (ccSpan->procId * 1000) + 1;
 		flag = 0;
 		while (flag == 0) {
 		/**********************************************************************/
