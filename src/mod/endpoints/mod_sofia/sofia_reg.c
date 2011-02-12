@@ -877,6 +877,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *agent = "unknown";
 	const char *pres_on_reg = NULL;
 	int send_pres = 0;
+	int is_tls = 0, is_tcp = 0;
 
 	delete_subs = sofia_test_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
 
@@ -944,8 +945,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		char *path_encoded = NULL;
 		int path_encoded_len = 0;
 		const char *proto = "sip";
-		int is_tls = 0, is_tcp = 0;
-
 
 		if (switch_stristr("transport=tls", sip->sip_contact->m_url->url_params)) {
 			is_tls += 1;
@@ -1292,6 +1291,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		char guess_ip4[256];
 		const char *username = "unknown";
 		const char *realm = reg_host;
+		char *url = NULL;
+		char *contact = NULL;
 
 		if (auth_params) {
 			username = switch_event_get_header(auth_params, "sip_auth_username");
@@ -1327,7 +1328,15 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 
+		contact = sofia_glue_get_url_from_contact(contact_str, 1);
+		url = switch_mprintf("sofia/%q/sip:%q", profile->name, sofia_glue_strip_proto(contact));
 		
+		switch_core_add_registration(to_user, reg_host, call_id, url, (long) switch_epoch_time_now(NULL) + (long) exptime + 60,
+									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp");
+
+		switch_safe_free(url);
+		switch_safe_free(contact);
+
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"

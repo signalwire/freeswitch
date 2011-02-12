@@ -87,6 +87,7 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 
 
 #define SQL_CACHE_TIMEOUT 120
+#define SQL_REG_TIMEOUT 15
 
 static void sql_close(time_t prune)
 {
@@ -906,7 +907,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 
 static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *thread, void *obj)
 {
-	int sec = 0;
+	int sec = 0, reg_sec = 0;;
 
 	sql_manager.db_thread_running = 1;
 
@@ -915,6 +916,11 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *threa
 			sql_close(switch_epoch_time_now(NULL));		
 			wake_thread(0);
 			sec = 0;
+		}
+
+		if (++reg_sec == SQL_REG_TIMEOUT) {
+			switch_core_expire_registration(0);
+			reg_sec = 0;
 		}
 		switch_yield(1000000);
 	}
@@ -1616,6 +1622,108 @@ static char create_nat_sql[] =
 	"   hostname VARCHAR(256)\n"
 	");\n";
 
+
+static char create_registrations_sql[] =
+	"CREATE TABLE registrations (\n"
+	"   user      VARCHAR(256),\n"
+	"   realm     VARCHAR(256),\n"
+	"   token     VARCHAR(256),\n"
+	"   url      TEXT,\n"
+	"   expires  INTEGER,\n"
+	"   network_ip VARCHAR(256),\n"
+	"   network_port VARCHAR(256),\n"
+	"   network_proto VARCHAR(256),\n"
+	"   hostname VARCHAR(256)\n"
+	");\n"
+	"create index regindex1 on registrations (user,real,hostname);\n";
+	
+
+SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
+															 const char *network_ip, const char *network_port, const char *network_proto)
+{
+	switch_cache_db_handle_t *dbh;
+	char *sql;
+
+	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	sql = switch_mprintf("delete from registrations where hostname='%q' and (url='%q' or token='%q')", switch_core_get_hostname(), url, switch_str_nil(token));
+	switch_cache_db_execute_sql(dbh, sql, NULL);
+	free(sql);
+
+	sql = switch_mprintf("insert into registrations (user,realm,token,url,expires,network_ip,network_port,network_proto,hostname) "
+						 "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
+						 switch_str_nil(user),
+						 switch_str_nil(realm),
+						 switch_str_nil(token),
+						 switch_str_nil(url),
+						 expires,
+						 switch_str_nil(network_ip),
+						 switch_str_nil(network_port),
+						 switch_str_nil(network_proto),
+						 switch_core_get_hostname()
+						 );
+	
+	switch_cache_db_execute_sql(dbh, sql, NULL);
+	switch_cache_db_release_db_handle(&dbh);
+
+	free(sql);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, const char *realm, const char *token)
+{
+
+	switch_cache_db_handle_t *dbh;
+	char *sql;
+
+	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	sql = switch_mprintf("delete from registrations where user='%q' and realm='%q' and hostname='%q'", user, realm, switch_core_get_hostname());
+
+	switch_cache_db_execute_sql(dbh, sql, NULL);
+	switch_cache_db_release_db_handle(&dbh);
+
+	free(sql);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
+{
+	
+	switch_cache_db_handle_t *dbh;
+	char *sql;
+	switch_time_t now;
+
+	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	now = switch_epoch_time_now(NULL);
+
+	if (force) {
+		sql = switch_mprintf("delete from registrations where hostname='%q'", switch_core_get_hostname());
+	} else {
+		sql = switch_mprintf("delete from registrations where expires <= %ld and hostname='%q'", now, switch_core_get_hostname());
+	}
+
+	switch_cache_db_execute_sql(dbh, sql, NULL);
+	switch_cache_db_release_db_handle(&dbh);
+
+	free(sql);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_t manage)
 {
 	switch_threadattr_t *thd_attr;
@@ -1690,6 +1798,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_test_reactive(dbh, "select hostname from complete", "DROP TABLE complete", create_complete_sql);
 	switch_cache_db_test_reactive(dbh, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 	switch_cache_db_test_reactive(dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
+	switch_cache_db_test_reactive(dbh, "delete from registrations where network_proto='tcp' or network_proto='tls'", 
+								  "DROP TABLE registrations", create_registrations_sql);
 
 
 	switch (dbh->type) {
@@ -1706,6 +1816,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			}
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
+			switch_cache_db_test_reactive(dbh, "delete from registrations where network_proto='tcp' or network_proto='tls'", 
+										  "DROP TABLE registrations", create_registrations_sql);
 
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 				switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);

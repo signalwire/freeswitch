@@ -3314,6 +3314,7 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 
 	return 0;
 }
+
 static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct cb_helper_sql2str *cbt = (struct cb_helper_sql2str *) pArg;
