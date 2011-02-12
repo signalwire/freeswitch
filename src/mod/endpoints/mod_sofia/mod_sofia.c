@@ -1366,7 +1366,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if (s && !strcmp(s, "off")) {
 							s = NULL;
 						}
-						switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
+						status = switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
 						goto end;
 					}
 

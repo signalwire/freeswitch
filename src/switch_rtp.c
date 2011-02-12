@@ -1875,7 +1875,7 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name)
 {
 
-	if (!switch_rtp_ready(rtp_session)) {
+	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
