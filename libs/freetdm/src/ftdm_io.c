@@ -5532,6 +5532,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 		sigmsg->chan_id = sigmsg->channel->chan_id;
 		sigmsg->span_id = sigmsg->channel->span_id;
 		sigmsg->call_id = sigmsg->channel->caller_data.call_id;
+		sigmsg->call_priv = sigmsg->channel->caller_data.priv;
 	}
 	
 	/* some core things to do on special events */
@@ -5563,10 +5564,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			}
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
 			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
-			if (sigmsg->channel->dtmfdbg.requested) {
-				ftdm_channel_command(sigmsg->channel, FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL);
-			}
-
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
 			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
 			* is needed at all?
