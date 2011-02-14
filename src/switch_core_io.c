@@ -318,11 +318,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				switch_codec_t *use_codec = read_frame->codec;
 				if (do_bugs) {
 					switch_thread_rwlock_wrlock(session->bug_rwlock);
+					if (!session->bugs) {
+						do_bugs = 0;
+						switch_thread_rwlock_unlock(session->bug_rwlock);
+						goto done;
+					}
+
 					if (!switch_core_codec_ready(&session->bug_codec)) {
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL);
 					}
 					use_codec = &session->bug_codec;
 					switch_thread_rwlock_unlock(session->bug_rwlock);
+
+					switch_thread_rwlock_wrlock(session->bug_rwlock);
+					if (!session->bugs) {
+						do_bugs = 0;
+					}
+					switch_thread_rwlock_unlock(session->bug_rwlock);
+					if (!do_bugs) goto done;
 				}
 
 				if (switch_test_flag(read_frame, SFF_PLC)) {
