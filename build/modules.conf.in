@@ -42,6 +42,7 @@ codecs/mod_amr
 #codecs/mod_silk
 #codecs/mod_codec2
 codecs/mod_g729
+#codecs/mod_com_g729
 codecs/mod_h26x
 codecs/mod_bv
 codecs/mod_ilbc
