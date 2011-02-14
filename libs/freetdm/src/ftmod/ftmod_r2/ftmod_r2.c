@@ -725,9 +725,10 @@ static void dump_mf(openr2_chan_t *r2chan)
 	if (r2data->mf_dump_size) {
 		char *logname = R2CALL(ftdmchan)->logname;
 		
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", logname);
-		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
-				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", !ftdm_strlen_zero(logname)
+				? logname : r2data->logdir);
+		snprintf(dfile, sizeof(dfile), !ftdm_strlen_zero(logname) ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
+				!ftdm_strlen_zero(logname) ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
 		f = fopen(dfile, "wb");
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
@@ -737,8 +738,8 @@ static void dump_mf(openr2_chan_t *r2chan)
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO input in file %s, error: %s", dfile, strerror(errno));
 		}
 
-		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
-				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
+		snprintf(dfile, sizeof(dfile), !ftdm_strlen_zero(logname) ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
+				!ftdm_strlen_zero(logname) ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
 		f = fopen(dfile, "wb");
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
