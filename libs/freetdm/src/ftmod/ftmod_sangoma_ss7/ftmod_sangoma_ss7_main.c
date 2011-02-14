@@ -273,6 +273,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[2];
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
+	ftdm_event_t 		*event = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 
@@ -363,6 +364,22 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 
 		/* check each channel on the span to see if there is an un-procressed SUS/RES flag */
 		check_for_res_sus_flag(ftdmspan);
+
+		/* Poll for events, e.g HW DTMF */
+		switch (ftdm_span_poll_event(ftdmspan, 0, NULL)) {
+		/**********************************************************************/
+		case FTDM_SUCCESS:
+			while (ftdm_span_next_event(ftdmspan, &event) == FTDM_SUCCESS);
+			break;
+		/**********************************************************************/
+		case FTDM_TIMEOUT:
+			/* No events pending */
+			break;
+		/**********************************************************************/
+		default:
+			SS7_ERROR("%s:Failed to poll span event\n", ftdmspan->name);
+		/**********************************************************************/
+		} /* switch (ftdm_span_poll_event(span, 0)) */
 	} /* master while loop */
 
 	/* clear the IN_THREAD flag so that we know the thread is done */

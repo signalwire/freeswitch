@@ -1749,33 +1749,46 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	/* default the interface to paused state */
 	sngss7_set_flag(&sng_isup, SNGSS7_PAUSED);
 
+
+
 	/* trickle down the SPC to all sub entities */
 	lnkSet = &g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].lnkSets;
-
-	g_ftdm_sngss7_data.cfg.mtp3Link[lnkSet->lsId].spc = sng_isup.spc;
-	lnkSet = lnkSet->next;
-
 	while (lnkSet->next != NULL) {
-		g_ftdm_sngss7_data.cfg.mtp3Link[lnkSet->lsId].spc = sng_isup.spc;
+	/**************************************************************************/
+		/* go through all the links and check if they belong to this linkset*/
+		i = 1;
+		while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
+			/* check if this link is in the linkset */
+			if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == lnkSet->lsId) {
+				/* fill in the spc */
+				g_ftdm_sngss7_data.cfg.mtp3Link[i].spc = sng_isup.spc;
+			}
+	
+			i++;
+		}
+	
+		/* move to the next lnkSet */
 		lnkSet = lnkSet->next;
-	}
+	/**************************************************************************/
+	} /* while (lnkSet->next != NULL) */
 
 	/* pull values from the lower levels */
-	sng_isup.dpc = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].dpc;
-	sng_isup.switchType = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].switchType;
-	sng_isup.nwId = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].nwId;
-
 	sng_isap.switchType = g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].switchType;
 
+	/* fill in the isap */
 	ftmod_ss7_fill_in_isap(&sng_isap);
 
-	sng_isup.isap = sng_isap.id;
+	/* pull values from the lower levels */
+	sng_isup.isap 		= sng_isap.id;
+	sng_isup.dpc 		= g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].dpc;
+	sng_isup.switchType	= g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].switchType;
+	sng_isup.nwId 		= g_ftdm_sngss7_data.cfg.mtpRoute[sng_isup.mtpRouteId].nwId;
 
+	/* fill in the isup interface */
 	ftmod_ss7_fill_in_isup_interface(&sng_isup);
 
 	/* setup the self mtp3 route */
 	i = sng_isup.mtpRouteId;
-
 	if(ftmod_ss7_fill_in_self_route(sng_isup.spc,
 									g_ftdm_sngss7_data.cfg.mtpRoute[i].linkType,
 									g_ftdm_sngss7_data.cfg.mtpRoute[i].switchType,
@@ -2383,6 +2396,7 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].nwId			= mtp3_route->nwId;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].lnkSets		= mtp3_route->lnkSets;
 	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= mtp3_route->ssf;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].dir			= SNG_RTE_DN;
 	if (mtp3_route->t6 != 0) {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t6		= mtp3_route->t6;
 	} else {
@@ -2438,6 +2452,52 @@ static int ftmod_ss7_fill_in_mtp3_route(sng_route_t *mtp3_route)
 	} else {
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].t26	   = 100;
 	}
+
+	return 0;
+}
+
+/******************************************************************************/
+static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, int ssf)
+{
+	int i = 1;
+
+	while (g_ftdm_sngss7_data.cfg.mtpRoute[i].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc == spc) {
+			/* we have a match so break out of this loop */
+			break;
+		}
+		/* move on to the next one */
+		i++;
+	}
+
+	if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].id = i;
+		SS7_DEBUG("found new mtp3 self route\n");
+	} else {
+		g_ftdm_sngss7_data.cfg.mtpRoute[i].id = i;
+		SS7_DEBUG("found existing mtp3 self route\n");
+	}
+
+	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[i].name, "self-route", MAX_NAME_LEN-1);
+
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].id			= i;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc			= spc;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].linkType		= linkType;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].switchType	= switchType;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].cmbLinkSetId	= i;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].isSTP		= 0;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].ssf			= ssf;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].dir			= SNG_RTE_UP;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t6			= 8;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t8			= 12;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t10			= 300;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t11			= 300;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t15			= 30;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t16			= 20;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t18			= 200;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t19			= 690;
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t21			= 650; 
+	g_ftdm_sngss7_data.cfg.mtpRoute[i].t25			= 100;
 
 	return 0;
 }
@@ -2755,45 +2815,6 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 }
 
 /******************************************************************************/
-static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, int ssf)
-{
-
-	if (g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc == 0){
-		SS7_DEBUG("found new mtp3 self route\n");
-	} else if (g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc == spc) {
-		SS7_DEBUG("found existing mtp3 self route\n");
-		return FTDM_SUCCESS;
-	} else {
-		SS7_ERROR("found new mtp3 self route but it does not match the route already configured (dpc=%d:spc=%d)\n",
-					g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc,
-					spc);
-		return FTDM_FAIL;
-	}
-
-	strncpy((char *)g_ftdm_sngss7_data.cfg.mtpRoute[0].name, "self-route", MAX_NAME_LEN-1);
-
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].id			= 0;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].dpc			= spc;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].linkType		= linkType;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].switchType	= switchType;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].cmbLinkSetId	= 0;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].isSTP		= 0;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].ssf			= ssf;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t6			= 8;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t8			= 12;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t10			= 300;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t11			= 300;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t15			= 30;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t16			= 20;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t18			= 200;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t19			= 690;
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t21			= 650; 
-	g_ftdm_sngss7_data.cfg.mtpRoute[0].t25			= 100;
-
-	return 0;
-}
-
-/******************************************************************************/
 static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 {
 	sng_timeslot_t		timeslot;
@@ -2812,7 +2833,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		}
 
 		/* find a spot for this circuit in the global structure */
-		x = (ccSpan->procId * 1000);
+		x = (ccSpan->procId * 1000) + 1;
 		flag = 0;
 		while (flag == 0) {
 		/**********************************************************************/
