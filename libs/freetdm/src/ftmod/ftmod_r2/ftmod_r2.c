@@ -676,12 +676,6 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = %d, ANI restricted = %s\n", 
 			ani, dnis, category, ani_restricted ? "Yes" : "No");
 
-	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
-	if (r2data->mf_dump_size) {
-		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
-		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
-	}
-
 	/* check if this is a collect call and if we should accept it */
 	if (!r2data->allow_collect_calls && category == OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Rejecting collect call\n");
@@ -725,9 +719,10 @@ static void dump_mf(openr2_chan_t *r2chan)
 	if (r2data->mf_dump_size) {
 		char *logname = R2CALL(ftdmchan)->logname;
 		
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", logname);
-		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
-				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in prefix %s\n", !ftdm_strlen_zero(logname)
+				? logname : r2data->logdir);
+		snprintf(dfile, sizeof(dfile), !ftdm_strlen_zero(logname) ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
+				!ftdm_strlen_zero(logname) ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
 		f = fopen(dfile, "wb");
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
@@ -737,8 +732,8 @@ static void dump_mf(openr2_chan_t *r2chan)
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO input in file %s, error: %s", dfile, strerror(errno));
 		}
 
-		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
-				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
+		snprintf(dfile, sizeof(dfile), !ftdm_strlen_zero(logname) ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
+				!ftdm_strlen_zero(logname) ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
 		f = fopen(dfile, "wb");
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
@@ -769,6 +764,12 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 	
 	R2CALL(ftdmchan)->accepted = 1;
 
+	/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
+	if (r2data->mf_dump_size) {
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+	}
+
 	if (OR2_DIR_BACKWARD == openr2_chan_get_direction(r2chan)) {
 		if (R2CALL(ftdmchan)->answer_pending) {
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Answer was pending, answering now.\n");
@@ -777,11 +778,6 @@ static void ftdm_r2_on_call_accepted(openr2_chan_t *r2chan, openr2_call_mode_t m
 			return;
 		}
 	} else {
-		/* nothing went wrong during call setup, MF has ended, we can and must disable the MF dump */
-		if (r2data->mf_dump_size) {
-			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
-			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
-		}
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 	}
 }

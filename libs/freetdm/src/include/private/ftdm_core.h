@@ -705,6 +705,9 @@ FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data);
 			if (!ftdm_test_flag((fchan), FTDM_CHANNEL_MEDIA)) { \
 				ftdm_set_flag((fchan), FTDM_CHANNEL_MEDIA); \
 				ftdm_set_echocancel_call_begin((fchan)); \
+				if ((fchan)->dtmfdbg.requested) { \
+					ftdm_channel_command((fchan), FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL); \
+				} \
 			} \
 		} while (0);
 

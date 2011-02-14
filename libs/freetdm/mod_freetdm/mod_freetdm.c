@@ -4251,7 +4251,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	switch_console_set_complete("add ftdm gains");
 	switch_console_set_complete("add ftdm dtmf on");
 	switch_console_set_complete("add ftdm dtmf off");
-
+	switch_console_set_complete("add ftdm core state");
+	switch_console_set_complete("add ftdm core flag");
+	switch_console_set_complete("add ftdm core calls");
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);

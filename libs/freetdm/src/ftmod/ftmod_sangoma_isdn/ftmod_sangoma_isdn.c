@@ -912,9 +912,6 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 	sngisdn_chan_data_t  *sngisdn_info = ftdmchan->call_data;
 	ftdm_status_t status = FTDM_FAIL;	
 	
-	/* lock the channel while we check whether it is availble */
-	ftdm_channel_lock(ftdmchan);
-
 	switch (ftdmchan->state) {
 
 		case FTDM_CHANNEL_STATE_DOWN:
@@ -939,10 +936,9 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Outgoing call requested channel in already in use\n");
 			status = FTDM_BREAK;
 		}
-		break;		  
+		break;
 	}
 
-	ftdm_channel_unlock(ftdmchan);
 	return status;
 }
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_chan_sig_status)
