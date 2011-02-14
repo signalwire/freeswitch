@@ -24,7 +24,7 @@
     <!-- VAD choose one -->
     <!-- <param name="vad" value="in"/> -->
     <!-- <param name="vad" value="out"/> -->
-    <param name="vad" value="both"/>
+    <!--<param name="vad" value="both"/>-->
     <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
     <!--<param name="candidate-acl" value="wan.auto"/>-->
     <param name="local-network-acl" value="localnet.auto"/>
