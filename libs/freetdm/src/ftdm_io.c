@@ -65,7 +65,6 @@ ftdm_time_t time_current_throttle_log = 0;
 static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
 static ftdm_status_t ftdm_call_set_call_id(ftdm_channel_t *fchan, ftdm_caller_data_t *caller_data);
 static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data);
-static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan);
 static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan);
 
 static int time_is_init = 0;
@@ -2633,7 +2632,6 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
 	ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
-	ftdm_channel_clear_vars(ftdmchan);
 	if (ftdmchan->hangup_timer) {
 		ftdm_sched_cancel_timer(globals.timingsched, ftdmchan->hangup_timer);
 	}
@@ -4034,19 +4032,12 @@ done:
 
 FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data)
 {
-	ftdm_call_clear_vars(caller_data);
-	memset(&caller_data->raw_data, 0, sizeof(caller_data->raw_data));
-	caller_data->raw_data_len = 0;
-	return;
-}
-
-FT_DECLARE(ftdm_status_t) ftdm_call_clear_vars(ftdm_caller_data_t *caller_data)
-{
 	if (caller_data->variables) {
 		hashtable_destroy(caller_data->variables);
 	}
 	caller_data->variables = NULL;
-	return FTDM_SUCCESS;
+	memset(&caller_data->raw_data, 0, sizeof(caller_data->raw_data));
+	caller_data->raw_data_len = 0;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_call_remove_var(ftdm_caller_data_t *caller_data, const char *var_name)
@@ -4057,7 +4048,6 @@ FT_DECLARE(ftdm_status_t) ftdm_call_remove_var(ftdm_caller_data_t *caller_data, 
 	
 	return FTDM_SUCCESS;
 }
-
 
 FT_DECLARE(ftdm_status_t) ftdm_call_add_var(ftdm_caller_data_t *caller_data, const char *var_name, const char *value)
 {
@@ -4125,72 +4115,6 @@ FT_DECLARE(ftdm_status_t) ftdm_call_get_current_var(ftdm_iterator_t *iter, const
 	return FTDM_SUCCESS;
 }
 
-
-static ftdm_status_t ftdm_channel_clear_vars(ftdm_channel_t *ftdmchan)
-{
-	ftdm_channel_lock(ftdmchan);
-
-	if (ftdmchan->variable_hash) {
-		hashtable_destroy(ftdmchan->variable_hash);
-	}
-	ftdmchan->variable_hash = NULL;
-
-	ftdm_channel_unlock(ftdmchan);
-	return FTDM_SUCCESS;
-}
-
-FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const char *var_name, const char *value)
-{
-	char *t_name = 0, *t_val = 0;
-
-	ftdm_status_t status = FTDM_FAIL;
-
-	if (!var_name || !value) {
-		return FTDM_FAIL;
-	}
-
-	ftdm_channel_lock(ftdmchan);
-
-	if (!ftdmchan->variable_hash) {
-		/* initialize on first use */
-		ftdmchan->variable_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
-		if (!ftdmchan->variable_hash) {
-			goto done;
-		}
-	}
-
-	t_name = ftdm_strdup(var_name);
-	t_val = ftdm_strdup(value);
-
-	hashtable_insert(ftdmchan->variable_hash, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE);
-
-	status = FTDM_SUCCESS;
-
-done:
-	ftdm_channel_unlock(ftdmchan);
-
-	return status;
-}
-
-
-FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name)
-{
-	const char *var = NULL;
-
-	ftdm_channel_lock(ftdmchan);
-
-	if (!ftdmchan->variable_hash || !var_name) {
-		goto done;
-	}
-	
-	var = (const char *)hashtable_search(ftdmchan->variable_hash, (void *)var_name);
-
-done:
-	ftdm_channel_unlock(ftdmchan);
-
-	return var;
-}
-
 static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
 {
 	int allocated = 0;
@@ -4215,25 +4139,6 @@ static ftdm_iterator_t *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t 
 	return iter;
 }
 
-FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter)
-{
-	ftdm_hash_iterator_t *hashiter = NULL;
-	ftdm_channel_lock(ftdmchan);
-	hashiter = ftdmchan->variable_hash == NULL ? NULL : hashtable_first(ftdmchan->variable_hash);
-	ftdm_channel_unlock(ftdmchan);
-
-
-	if (hashiter == NULL) {
-		return NULL;
-	}
-	
-	if (!(iter = get_iterator(FTDM_ITERATOR_VARS, iter))) {
-		return NULL;
-	}
-	iter->pvt.hashiter = hashiter;
-	return iter;
-}
-
 FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
 {
 	if (!(iter = get_iterator(FTDM_ITERATOR_CHANS, iter))) {
@@ -4242,24 +4147,6 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *spa
 	iter->pvt.chaniter.index = 1;
 	iter->pvt.chaniter.span = span;
 	return iter;
-}
-
-FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val)
-{
-	const void *key = NULL;
-	void *val = NULL;
-
-	*var_name = NULL;
-	*var_val = NULL;
-
-	ftdm_assert_return(iter && (iter->type == FTDM_ITERATOR_VARS) && iter->pvt.hashiter, FTDM_FAIL, "Cannot get variable from invalid iterator!\n");
-
-	hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
-
-	*var_name = key;
-	*var_val = val;
-
-	return FTDM_SUCCESS;
 }
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter)

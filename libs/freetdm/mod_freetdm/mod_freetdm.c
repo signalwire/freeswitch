@@ -1552,6 +1552,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);	
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_layer1", "%d", channel_caller_data->bearer_layer1);
+	switch_channel_set_variable_printf(channel, "freetdm_screening_ind", ftdm_screening2str(channel_caller_data->screen));
+	switch_channel_set_variable_printf(channel, "freetdm_presentation_ind", ftdm_presentation2str(channel_caller_data->pres));
 	
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
@@ -1580,21 +1582,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	if (channel_caller_data->raw_data_len) {
 		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
 	}
-	/* Add any channel variable to the dial plan */
-	iter = ftdm_channel_get_var_iterator(sigmsg->channel, NULL);
-	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
-		ftdm_channel_get_current_var(curr, &var_name, &var_value);
-		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
-		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-	}	
-	
 	/* Add any call variable to the dial plan */
 	iter = ftdm_call_get_var_iterator(channel_caller_data, iter);
 	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
 		ftdm_call_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s=%s\n", name, var_value);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s = %s\n", name, var_value);
 	}
 	ftdm_iterator_free(iter);
 	
@@ -2149,8 +2143,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_START:
 		{
-			ftdm_call_add_var(caller_data, "screening_ind", ftdm_screening2str(caller_data->screen));
-			ftdm_call_add_var(caller_data, "presentation_ind", ftdm_presentation2str(caller_data->pres));
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
