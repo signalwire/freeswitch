@@ -1783,6 +1783,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		switch_mutex_lock(listener->filter_mutex);
 		if (!listener->filters) {
 			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CLONE);
+			switch_clear_flag(listener->filters, EF_UNIQ_HEADERS);
 		}
 
 		if (!strcasecmp(header_name, "delete") && header_val) {
