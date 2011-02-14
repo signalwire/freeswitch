@@ -1625,7 +1625,7 @@ static char create_nat_sql[] =
 
 static char create_registrations_sql[] =
 	"CREATE TABLE registrations (\n"
-	"   user      VARCHAR(256),\n"
+	"   reg_user      VARCHAR(256),\n"
 	"   realm     VARCHAR(256),\n"
 	"   token     VARCHAR(256),\n"
 	"   url      TEXT,\n"
@@ -1635,7 +1635,7 @@ static char create_registrations_sql[] =
 	"   network_proto VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
 	");\n"
-	"create index regindex1 on registrations (user,real,hostname);\n";
+	"create index regindex1 on registrations (user,realm,hostname);\n";
 	
 
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
@@ -1653,7 +1653,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, c
 	switch_cache_db_execute_sql(dbh, sql, NULL);
 	free(sql);
 
-	sql = switch_mprintf("insert into registrations (user,realm,token,url,expires,network_ip,network_port,network_proto,hostname) "
+	sql = switch_mprintf("insert into registrations (reg_user,realm,token,url,expires,network_ip,network_port,network_proto,hostname) "
 						 "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
 						 switch_str_nil(user),
 						 switch_str_nil(realm),
@@ -1685,7 +1685,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 		return SWITCH_STATUS_FALSE;
 	}
 
-	sql = switch_mprintf("delete from registrations where user='%q' and realm='%q' and hostname='%q'", user, realm, switch_core_get_hostname());
+	sql = switch_mprintf("delete from registrations where reg_user='%q' and realm='%q' and hostname='%q'", user, realm, switch_core_get_hostname());
 
 	switch_cache_db_execute_sql(dbh, sql, NULL);
 	switch_cache_db_release_db_handle(&dbh);
@@ -1798,7 +1798,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_test_reactive(dbh, "select hostname from complete", "DROP TABLE complete", create_complete_sql);
 	switch_cache_db_test_reactive(dbh, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 	switch_cache_db_test_reactive(dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
-	switch_cache_db_test_reactive(dbh, "delete from registrations where network_proto='tcp' or network_proto='tls'", 
+	switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
 								  "DROP TABLE registrations", create_registrations_sql);
 
 
@@ -1816,7 +1816,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			}
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
-			switch_cache_db_test_reactive(dbh, "delete from registrations where network_proto='tcp' or network_proto='tls'", 
+			switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
 										  "DROP TABLE registrations", create_registrations_sql);
 
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {

@@ -1543,6 +1543,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				}
 			}
 		} else {
+			switch_core_del_registration(to_user, reg_host, call_id);
+
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
