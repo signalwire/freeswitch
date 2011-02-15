@@ -1864,6 +1864,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 		goto end;
 	}
 
@@ -1878,6 +1879,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	if (zstr(bond) && switch_channel_down(peer_channel)) {
 		switch_core_session_rwunlock(peer_session);
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 		goto end;
 	}
 
@@ -2774,7 +2776,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *cid_name_override = NULL;
 	char *cid_num_override = NULL;
-	char *domain = NULL;
+	char *domain = NULL, *dup_domain = NULL;
 	switch_channel_t *new_channel = NULL;
 	unsigned int timelimit = 60;
 	const char *skip, *var;
@@ -2787,7 +2789,8 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if ((domain = strchr(group, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		dup_domain = domain;
 	}
 
 	if (!domain) {
@@ -2859,6 +2862,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 
 	switch_safe_free(template);
 	switch_safe_free(group);
+	switch_safe_free(dup_domain);
 
 	if (cause == SWITCH_CAUSE_NONE) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -2887,7 +2891,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
-	char *user = NULL, *domain = NULL;
+	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
 	static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
@@ -2908,7 +2912,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		domain = switch_core_get_variable_dup("domain");
+		dup_domain = domain;
 	}
 
 	if (!domain) {
@@ -3115,6 +3120,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	switch_safe_free(user);
+	switch_safe_free(dup_domain);
 
 	return cause;
 }
@@ -3193,10 +3199,11 @@ static switch_status_t event_chat_send(const char *proto, const char *from, cons
 		if (body)
 			switch_event_add_body(event, "%s", body);
 		if (to) {
-			const char *v;
+			char *v;
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "To", to);
-			if ((v = switch_core_get_variable(to))) {
+			if ((v = switch_core_get_variable_dup(to))) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
+				free(v);
 			}
 		}
 
@@ -3214,15 +3221,15 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 									 const char *body, const char *type, const char *hint)
 {
 	if (to) {
-		const char *v;
+		char *v = NULL;
 		switch_stream_handle_t stream = { 0 };
 		char *cmd = NULL, *arg;
 
-		if (!(v = switch_core_get_variable(to))) {
-			v = to;
+		if (!(v = switch_core_get_variable_dup(to))) {
+			v = strdup(to);
 		}
 
-		cmd = strdup(v);
+		cmd = v;
 		switch_assert(cmd);
 
 		switch_url_decode(cmd);

@@ -729,16 +729,24 @@ static void dump_mf(openr2_chan_t *r2chan)
 		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.input.alaw" : "%s/s%dc%d.input.alaw", 
 				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
 		f = fopen(dfile, "wb");
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
-		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
-		fclose(f);
+		if (f) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
+			fclose(f);
+		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO input in file %s, error: %s", dfile, strerror(errno));
+		}
 
 		snprintf(dfile, sizeof(dfile), logname ? "%s.s%dc%d.output.alaw" : "%s/s%dc%d.output.alaw", 
 				logname ? logname : r2data->logdir, ftdmchan->span_id, ftdmchan->chan_id);
 		f = fopen(dfile, "wb");
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
-		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
-		fclose(f);
+		if (f) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
+			fclose(f);
+		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO output in file %s, error: %s", dfile, strerror(errno));
+		}
 	}
 }
 

@@ -61,7 +61,7 @@ void handle_isup_t35(void *userdata)
     SS7_ERROR("[Call-Control] Timer 35 expired on CIC = %d\n", sngss7_info->circuit->cic);
 
     /* set the flag to indicate this hangup is started from the local side */
-    sngss7_set_flag(sngss7_info, FLAG_LOCAL_REL);
+    sngss7_set_ckt_flag(sngss7_info, FLAG_LOCAL_REL);
 
     /* hang up on timer expiry */
     ftdmchan->caller_data.hangup_cause = 28;

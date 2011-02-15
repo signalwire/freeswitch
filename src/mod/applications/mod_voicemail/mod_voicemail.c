@@ -1011,6 +1011,11 @@ typedef struct msg_cnt_callback msg_cnt_callback_t;
 static int message_count_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	msg_cnt_callback_t *cbt = (msg_cnt_callback_t *) pArg;
+
+	if (argc < 3 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2])) {
+		return -1;
+	}
+
 	if (atoi(argv[0]) == 1) {	/* UnRead */
 		if (!strcasecmp(argv[1], "A_URGENT")) {	/* Urgent */
 			cbt->total_new_urgent_messages = atoi(argv[2]);
@@ -1263,7 +1268,7 @@ static void message_count(vm_profile_t *profile, const char *id_in, const char *
 {
 	char msg_count[80] = "";
 	msg_cnt_callback_t cbt = { 0 };
-	char sql[256];
+	char *sql;
 	char *myid = NULL;
 
 
@@ -1277,11 +1282,20 @@ static void message_count(vm_profile_t *profile, const char *id_in, const char *
 
 	myid = resolve_id(id_in, domain_name, "message-count");
 
-	switch_snprintf(sql, sizeof(sql),
-					"select read_epoch=0, read_flags, count(read_epoch) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' group by read_epoch=0,read_flags;",
-					myid, domain_name, myfolder);
+	sql = switch_mprintf(
+						 "select 1, read_flags, count(read_epoch) from voicemail_msgs where "
+						 "username='%q' and domain='%q' and in_folder='%q' and read_epoch=0 "
+						 "group by read_flags "
+						 "union "
+						 "select 0, read_flags, count(read_epoch) from voicemail_msgs where "
+						 "username='%q' and domain='%q' and in_folder='%q' and read_epoch<>0 "
+						 "group by read_flags;",
+
+						 myid, domain_name, myfolder,
+						 myid, domain_name, myfolder);
 
 	vm_execute_sql_callback(profile, profile->mutex, sql, message_count_callback, &cbt);
+	free(sql);
 
 	*total_new_messages = cbt.total_new_messages + cbt.total_new_urgent_messages;
 	*total_new_urgent_messages = cbt.total_new_urgent_messages;
@@ -2734,6 +2748,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	switch_memory_pool_t *pool = NULL;
 	char *forwarded_by = NULL;
 	char *read_flags = NORMAL_FLAG_STRING;
+	char *dup_domain = NULL;
 	
 	if (zstr(data)) {
 		status = SWITCH_STATUS_FALSE;
@@ -2781,7 +2796,9 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	}
 
 	if (zstr(domain)) {
-		domain = switch_core_get_variable("domain");
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+			domain = dup_domain;
+		}
 		profile_name = domain;
 	}
 
@@ -2915,6 +2932,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
   end:
 
 	switch_safe_free(dup);
+	switch_safe_free(dup_domain);
 
 	return status;
 }

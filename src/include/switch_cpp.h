@@ -68,6 +68,10 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
 SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
+SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *body = NULL,
+    char *file = NULL, char *convert_cmd = NULL, char *convert_ext = NULL);
+
+
 	 class CoreSession;
 
 	 class IVRMenu {

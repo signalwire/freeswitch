@@ -1208,11 +1208,12 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 				var = rp;
 				*e++ = '\0';
 				rp = e;
-				if ((val = switch_core_get_variable(var))) {
+				if ((val = switch_core_get_variable_dup(var))) {
 					char *p;
 					for (p = val; p && *p && wp <= ep; p++) {
 						*wp++ = *p;
 					}
+					free(val);
 				}
 				continue;
 			} else if (err) {

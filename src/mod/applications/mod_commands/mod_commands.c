@@ -45,6 +45,149 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
 
+
+struct cb_helper {
+	uint32_t row_process;
+	switch_stream_handle_t *stream;
+};
+
+static int url_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct cb_helper *cb = (struct cb_helper *) pArg;
+
+	cb->row_process++;
+
+	if (!zstr(argv[0])) {
+		cb->stream->write_function(cb->stream, "%s,", argv[0]);
+	}
+
+	return 0;
+}
+
+static switch_status_t select_url(const char *user,
+					   const char *domain,
+					   const char *concat,
+					   const char *exclude_contact, 
+					   switch_stream_handle_t *stream)
+{
+	struct cb_helper cb;
+	char *sql, *errmsg = NULL;
+	switch_core_flag_t cflags = switch_core_flags();
+	switch_cache_db_handle_t *db = NULL;
+
+	if (!(cflags & SCF_USE_SQL)) {
+		stream->write_function(stream, "-ERR SQL DISABLED NO DATA AVAILABLE!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "%s", "-ERR Databse Error!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	cb.row_process = 0;
+	cb.stream = stream;
+
+	if (exclude_contact) {
+		sql = switch_mprintf("select url, '%q' "
+							 "from registrations where user='%q' and realm='%q' "
+							 "and url not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, exclude_contact);
+	} else {
+		sql = switch_mprintf("select url, '%q' "
+							 "from registrations where user='%q' and realm='%q'",
+							 (concat != NULL) ? concat : "", user, domain);
+	}
+
+	switch_assert(sql);
+	switch_cache_db_execute_sql_callback(db, sql, url_callback, &cb, &errmsg);
+
+	if (errmsg) {
+		stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
+		free(errmsg);
+		errmsg = NULL;
+	}	
+
+	switch_safe_free(sql);
+
+	if (db) {
+		switch_cache_db_release_db_handle(&db);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(reg_url_function)
+{
+	char *data;
+	char *user = NULL;
+	char *domain = NULL, *dup_domain = NULL;
+	char *concat = NULL;
+	const char *exclude_contact = NULL;
+	char *reply = "error/facility_not_subscribed";
+	switch_stream_handle_t mystream = { 0 };
+
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		exclude_contact = switch_channel_get_variable(channel, "sip_exclude_contact");
+	}
+
+	
+	data = strdup(cmd);
+	switch_assert(data);
+
+	user = data;
+	
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+		if ((concat = strchr(domain, '/'))) {
+			*concat++ = '\0';
+		}
+	} else {
+		if ((concat = strchr(user, '/'))) {
+			*concat++ = '\0';
+		}
+	}
+
+	if (zstr(domain)) {
+		dup_domain = switch_core_get_variable_dup("domain");
+		domain = dup_domain;
+	}
+
+	if (!user) goto end;
+
+	
+	SWITCH_STANDARD_STREAM(mystream);
+	switch_assert(mystream.data);
+
+	select_url(user, domain, concat, exclude_contact, &mystream);
+	reply = mystream.data;
+
+
+ end:
+	
+	if (zstr(reply)) {
+		reply = "error/user_not_registered";
+	} else if (end_of(reply) == ',') {
+		end_of(reply) = '\0';
+	}
+
+	stream->write_function(stream, "%s", reply);
+	reply = NULL;
+
+	switch_safe_free(mystream.data);					
+
+	switch_safe_free(data);
+	switch_safe_free(dup_domain);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(banner_function)
 {
 	stream->write_function(stream, "%s", switch_core_banner());
@@ -349,7 +492,7 @@ SWITCH_STANDARD_API(timer_test_function)
 
 SWITCH_STANDARD_API(group_call_function)
 {
-	char *domain;
+	char *domain, *dup_domain = NULL;
 	char *group_name = NULL;
 	char *flags;
 	int ok = 0;
@@ -392,7 +535,9 @@ SWITCH_STANDARD_API(group_call_function)
 	if (domain) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+			domain = dup_domain;
+		}
 	}
 
 	if (!zstr(domain)) {
@@ -544,13 +689,14 @@ SWITCH_STANDARD_API(group_call_function)
 	}
 
   end:
-
+	
 	switch_safe_free(group_name);
+	switch_safe_free(dup_domain);
 
 	if (!ok) {
 		stream->write_function(stream, "error/NO_ROUTE_DESTINATION");
 	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -559,7 +705,7 @@ SWITCH_STANDARD_API(in_group_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group;
 	int argc;
-	char *mydata = NULL, *argv[2], *user, *domain;
+	char *mydata = NULL, *argv[2], *user, *domain, *dup_domain = NULL;
 	char delim = ',';
 	switch_event_t *params = NULL;
 	const char *rval = "false";
@@ -579,7 +725,9 @@ SWITCH_STANDARD_API(in_group_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable("domain");
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+			domain = dup_domain;
+		}
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
@@ -601,6 +749,7 @@ SWITCH_STANDARD_API(in_group_function)
 
 	switch_xml_free(xml);
 	switch_safe_free(mydata);
+	switch_safe_free(dup_domain);
 	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -610,7 +759,7 @@ SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	int argc;
-	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain;
+	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain, *dup_domain = NULL;
 	char delim = ' ';
 	const char *container = "params", *elem = "param";
 	const char *result = NULL;
@@ -631,7 +780,9 @@ SWITCH_STANDARD_API(user_data_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		if (!(domain = switch_core_get_variable("domain"))) {
+		if ((dup_domain = switch_core_get_variable("domain"))) {
+			domain = dup_domain;
+		} else {
 			domain = "cluecon.com";
 		}
 	}
@@ -694,6 +845,7 @@ SWITCH_STANDARD_API(user_data_function)
 	}
 	switch_xml_free(xml);
 	switch_safe_free(mydata);
+	switch_safe_free(dup_domain);
 	switch_event_destroy(&params);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3729,6 +3881,14 @@ SWITCH_STANDARD_API(show_function)
 				as = argv[3];
 			}
 		}
+	} else if (!strcasecmp(command, "registrations")) {
+		sprintf(sql, "select * from registrations where hostname='%s'", hostname);
+		if (argv[1] && !strcasecmp(argv[1], "count")) {
+			holder.justcount = 1;
+			if (argv[3] && !strcasecmp(argv[2], "as")) {
+				as = argv[3];
+			}
+		}
 	} else if (!strcasecmp(command, "channels") && argv[1] && !strcasecmp(argv[1], "like")) {
 		if (argv[2]) {
 			char *p;
@@ -4375,7 +4535,9 @@ SWITCH_STANDARD_API(global_getvar_function)
 	if (zstr(cmd)) {
 		switch_core_dump_variables(stream);
 	} else {
-		stream->write_function(stream, "%s", switch_str_nil(switch_core_get_variable(cmd)));
+		char *var = switch_core_get_variable_dup(cmd);
+		stream->write_function(stream, "%s", switch_str_nil(var));
+		switch_safe_free(var);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -4428,19 +4590,23 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 
 		if ((format = strchr(mycmd, ' '))) {
 			*format++ = '\0';
-		}
 		
-		if ((p = strchr(format, '|'))) {
-			*p++ = '\0';
-			when = atol(format);
-			format = p;
+			if (format && (p = strchr(format, '|'))) {
+				*p++ = '\0';
+				when = atol(format);
+				format = p;
+			}
 		}
 	}
 
-	if (switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
+	if (zstr(format)) {
+		format = "%Y-%m-%d";
+	}
+	
+	if (format && switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
 		stream->write_function(stream, "%s", date);
 	} else {
-		stream->write_function(stream, "-ERR Invalid Timezone\n");
+		stream->write_function(stream, "-ERR Invalid Timezone/Format\n");
 	}
 
 	switch_safe_free(mycmd);
@@ -4875,6 +5041,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unsched_api", "Unschedule an api command", unsched_api_function, UNSCHED_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "reg_url", "", reg_url_function, "<user>@<realm>");
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
@@ -4985,6 +5152,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show management");
 	switch_console_set_complete("add show modules");
 	switch_console_set_complete("add show nat_map");
+	switch_console_set_complete("add show registrations");
 	switch_console_set_complete("add show say");
 	switch_console_set_complete("add show timer");
 	switch_console_set_complete("add shutdown");

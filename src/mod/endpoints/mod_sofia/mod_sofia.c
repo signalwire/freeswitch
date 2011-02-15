@@ -1366,7 +1366,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if (s && !strcmp(s, "off")) {
 							s = NULL;
 						}
-						switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
+						status = switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
 						goto end;
 					}
 
@@ -3314,6 +3314,7 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 
 	return 0;
 }
+
 static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct cb_helper_sql2str *cbt = (struct cb_helper_sql2str *) pArg;
@@ -3458,7 +3459,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 {
 	char *data;
 	char *user = NULL;
-	char *domain = NULL;
+	char *domain = NULL, *dup_domain = NULL;
 	char *concat = NULL;
 	char *profile_name = NULL;
 	char *p;
@@ -3501,7 +3502,8 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	}
 
 	if (zstr(domain)) {
-		domain = switch_core_get_variable("domain");
+		dup_domain = switch_core_get_variable_dup("domain");
+		domain = dup_domain;
 	}
 
 	if (!user) goto end;
@@ -3567,6 +3569,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	switch_safe_free(mystream.data);					
 
 	switch_safe_free(data);
+	switch_safe_free(dup_domain);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3708,7 +3711,7 @@ SWITCH_STANDARD_API(sofia_function)
 
 				if (argc > 2) {
 					if (strstr(argv[2], "presence")) {
-						mod_sofia_globals.debug_presence = 1;
+						mod_sofia_globals.debug_presence = 10;
 						stream->write_function(stream, "+OK Debugging presence\n");
 					}
 					
@@ -4776,7 +4779,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
-	mod_sofia_globals.auto_nat = (switch_core_get_variable("nat_type") ? 1 : 0);
+	mod_sofia_globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);

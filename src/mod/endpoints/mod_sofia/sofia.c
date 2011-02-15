@@ -1459,7 +1459,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "");
 
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_core_get_variable("nat_type")) {
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
@@ -1676,7 +1676,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		switch_event_fire(&s_event);
 	}
 
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_core_get_variable("nat_type")) {
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if (switch_nat_del_mapping(profile->sip_port, SWITCH_NAT_UDP) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
@@ -3741,9 +3741,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (!profile->rtpip[0]) {
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
-
-				if (switch_core_get_variable("nat_type")) {
-					const char *ip = switch_core_get_variable("nat_public_addr");
+				
+				if (switch_nat_get_type()) {
+					char *ip = switch_core_get_variable_dup("nat_public_addr");
 					if (ip && !strchr(profile->sipip, ':')) {
 						if (!profile->extrtpip) {
 							profile->extrtpip = switch_core_strdup(profile->pool, ip);
@@ -3754,6 +3754,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						sofia_set_pflag(profile, PFLAG_AUTO_NAT);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NAT detected setting external ip to %s\n", ip);
 					}
+					switch_safe_free(ip);
 				}
 
 				if (profile->nonce_ttl < 60) {

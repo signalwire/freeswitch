@@ -21,7 +21,7 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 		fi ; \
 	fi ; \
 	if test -z "$$target" ; then target="all" ; fi ; \
-	if ! test -f $$moddir/$$modname.c && ! test -f $$moddir/$$modname.cpp ;	\
+	if ! test -f $$moddir/$$modname.c && ! test -f $$moddir/$$modname.cpp && test $$modname != "mod_com_g729" ;	\
 	then echo ; echo "WARNING $$modname is not a valid FreeSWITCH module dir, skipping it..." ; else \
 		echo ;\
 		echo making $$target $$modname ;\
@@ -34,6 +34,9 @@ $(OUR_MODULES) $(OUR_CLEAN_MODULES) $(OUR_INSTALL_MODULES) $(OUR_UNINSTALL_MODUL
 		fi;) || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	fi; \
 	test -z "$$fail" ;
+
+mod_com_g729-activate:
+	cd $(switch_builddir)/src/mod/codecs/mod_com_g729 && $(MAKE) $(AM_MAKEFLAGS) activate
 
 .DEFAULT:
 	@if test -z "`echo $@ | grep all`"; then  $(MAKE) $(AM_MAKEFLAGS) $@-all ; else echo Unknown target `echo $@ | sed -e 's|-all||'`; exit 1; fi

@@ -84,6 +84,8 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 				signal_data->switchtype = SNGISDN_SWITCH_4ESS;
 			} else if (!strcasecmp(switch_name, "dms100")) {
 				signal_data->switchtype = SNGISDN_SWITCH_DMS100;
+			} else if (!strcasecmp(switch_name, "qsig")) {
+				signal_data->switchtype = SNGISDN_SWITCH_QSIG;
 			} else {
 				ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported switchtype %s for trunktype:%s\n", span->name, switch_name, ftdm_trunk_type2str(span->trunk_type));
 				return FTDM_FAIL;

@@ -1783,6 +1783,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		switch_mutex_lock(listener->filter_mutex);
 		if (!listener->filters) {
 			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CLONE);
+			switch_clear_flag(listener->filters, EF_UNIQ_HEADERS);
 		}
 
 		if (!strcasecmp(header_name, "delete") && header_val) {
@@ -2642,7 +2643,7 @@ static int config(void)
 				} else if (!strcmp(var, "debug")) {
 					globals.debug = atoi(val);
 				} else if (!strcmp(var, "nat-map")) {
-					if (switch_true(val) && switch_core_get_variable("nat_type")) {
+					if (switch_true(val) && switch_nat_get_type()) {
 						prefs.nat_map = 1;
 					}
 				} else if (!strcmp(var, "listen-port")) {
@@ -2795,7 +2796,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	close_socket(&listen_list.sock);
 
-	if (prefs.nat_map && switch_core_get_variable("nat_type")) {
+	if (prefs.nat_map && switch_nat_get_type()) {
 		switch_nat_del_mapping(prefs.port, SWITCH_NAT_TCP);
 	}
 
