@@ -506,6 +506,27 @@ typedef enum {
 	FLAG_RELAY_DOWN			= (1 << 30)
 } sng_ckt_flag_t;
 
+#define CKT_FLAGS_STRING \
+	"RX_RSC", \
+	"TX_RSC", \
+	"TX_RSC_REQ_SENT", \
+	"TX_RSC_RSP_RECIEVED", \
+	"RX_GRS", \
+	"RX_GRS_DONE", \
+	"RX_GRS_CMPLT", \
+	"GRS_BASE", \
+	"TX_GRS", \
+	"TX_GRS_REQ_SENT", \
+	"TX_GRS_RSP_RECIEVED", \
+	"REMOTE_REL", \
+	"LOCAL_REL", \
+	"GLARE", \
+	"INF_RESUME", \
+	"INF_PAUSED", \
+	"RELAY_DOWN", \
+	"CKT_RECONFIG"
+FTDM_STR2ENUM_P(ftmod_ss7_ckt_state2flag, ftmod_ss7_ckt_flag2str, sng_ckt_flag_t)
+
 /* ckt blocking flags */
 typedef enum {
 	FLAG_CKT_UCIC_BLOCK		= (1 << 0),
@@ -626,11 +647,16 @@ int ftmod_ss7_shutdown_isup(void);
 int ftmod_ss7_shutdown_mtp3(void);
 int ftmod_ss7_shutdown_mtp2(void);
 int ftmod_ss7_shutdown_relay(void);
+int ftmod_ss7_disable_relay_channel(uint32_t chanId);
 
 int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId);
 int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
+
+int ftmod_ss7_block_isup_ckt(uint32_t cktId);
+
+
 
 /* in ftmod_sangoma_ss7_sta.c */
 int ftmod_ss7_mtp1link_sta(uint32_t id, L1Mngmt *cfm);
@@ -756,6 +782,7 @@ int find_ssf_type_in_map(const char *ssfType);
 int find_cic_cntrl_in_map(const char *cntrlType);
 
 ftdm_status_t check_status_of_all_isup_intf(void);
+ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan);
 
 void sngss7_send_signal(sngss7_chan_data_t *sngss7_info, ftdm_signal_event_t event_id);
 void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_status_t status);

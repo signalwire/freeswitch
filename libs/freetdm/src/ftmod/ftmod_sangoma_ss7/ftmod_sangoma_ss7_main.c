@@ -365,6 +365,9 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		/* check each channel on the span to see if there is an un-procressed SUS/RES flag */
 		check_for_res_sus_flag(ftdmspan);
 
+		/* check each channel on the span to see if it needs to be reconfigured */
+		check_for_reconfig_flag(ftdmspan);
+
 		/* Poll for events, e.g HW DTMF */
 		switch (ftdm_span_poll_event(ftdmspan, 0, NULL)) {
 		/**********************************************************************/
@@ -926,33 +929,27 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			}
 		}
 
-		/* if we're not coming from HANGUP_COMPLETE we need to check for resets
-		 * we can also check if we are in a PAUSED state (no point in sending message
-		 */
-		if ((ftdmchan->last_state != FTDM_CHANNEL_STATE_HANGUP_COMPLETE) &&
-			(!sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED))) {
 
-			/* check if this is an outgoing RSC */
-			if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX)) &&
-				!(sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_SENT))) {
+		/* check if this is an outgoing RSC */
+		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX)) &&
+			!(sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_SENT))) {
 
-				/* send a reset request */
-				ft_to_sngss7_rsc (ftdmchan);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_SENT);
+			/* send a reset request */
+			ft_to_sngss7_rsc (ftdmchan);
+			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_SENT);
 
-			} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX)) */
-	
-			/* check if this is the first channel of a GRS (this flag is thrown when requesting reset) */
-			if ( (sngss7_test_ckt_flag (sngss7_info, FLAG_GRP_RESET_TX)) &&
-				!(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT)) &&
-				(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE))) {
+		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX)) */
 
-					/* send out the grs */
-					ft_to_sngss7_grs (ftdmchan);
-					sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT);
+		/* check if this is the first channel of a GRS (this flag is thrown when requesting reset) */
+		if ( (sngss7_test_ckt_flag (sngss7_info, FLAG_GRP_RESET_TX)) &&
+			!(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT)) &&
+			(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE))) {
 
-			}/* if ( sngss7_test_ckt_flag ( sngss7_info, FLAG_GRP_RESET_TX ) ) */
-		} /* if ( last_state != HANGUP && !PAUSED */
+				/* send out the grs */
+				ft_to_sngss7_grs (ftdmchan);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT);
+
+		}/* if ( sngss7_test_ckt_flag ( sngss7_info, FLAG_GRP_RESET_TX ) ) */
 	
 		/* if the sig_status is up...bring it down */
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
@@ -1598,6 +1595,8 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 {
 	/*this function is called by the FT-core to unload the signaling module */
 
+	int x;
+
 	ftdm_log (FTDM_LOG_INFO, "Starting ftmod_sangoma_ss7 unload...\n");
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) {
@@ -1625,6 +1624,26 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 	}
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) {
+		/* go through all the relays channels and configure it */
+		x = 1;
+		while (g_ftdm_sngss7_data.cfg.relay[x].id != 0) {
+			/* check if this relay channel has been configured already */
+			if ((g_ftdm_sngss7_data.cfg.relay[x].flags & SNGSS7_CONFIGURED)) {
+	
+				/* send the specific configuration */
+				if (ftmod_ss7_disable_relay_channel(x)) {
+					SS7_CRITICAL("Relay Channel %d disable failed!\n", x);
+					return 1;
+				} else {
+					SS7_INFO("Relay Channel %d disable DONE!\n", x);
+				}
+	
+				/* set the SNGSS7_CONFIGURED flag */
+				g_ftdm_sngss7_data.cfg.relay[x].flags &= !SNGSS7_CONFIGURED;
+			} /* if !SNGSS7_CONFIGURED */
+			x++;
+		} /* while (g_ftdm_sngss7_data.cfg.relay[x].id != 0) */
+		
 		ftmod_ss7_shutdown_relay();
 		sng_isup_free_relay();
 		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY);

@@ -766,7 +766,18 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 												DECODE_LRY_REASON(sta->t.usta.s.ryErrUsta.reason));
 
 		/* process the event */
-		handle_relay_disconnect_on_error(sta);
+		switch (sta->t.usta.s.ryErrUsta.reason) {
+		/**********************************************************************/
+		case (LRYRSNMGMTREQ):
+			/* do nothing since this is a shutdown */
+			break;
+		/**********************************************************************/
+		default:
+			/* handle the error */
+			handle_relay_disconnect_on_error(sta);
+			break;
+		/**********************************************************************/
+		} /* switch (sta->t.usta.s.ryErrUsta.reason) */
 
 		break;
 	/**************************************************************************/

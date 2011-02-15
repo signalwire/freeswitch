@@ -83,12 +83,16 @@ int find_ssf_type_in_map(const char *ssfType);
 int find_cic_cntrl_in_map(const char *cntrlType);
 
 ftdm_status_t check_status_of_all_isup_intf(void);
+ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan);
 
 void sngss7_send_signal(sngss7_chan_data_t *sngss7_info, ftdm_signal_event_t event_id);
 void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_status_t status);
 ftdm_status_t sngss7_add_var(sngss7_chan_data_t *ss7_info, const char* var, const char* val);
 ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data, ftdm_size_t data_len);
 /******************************************************************************/
+
+FTDM_ENUM_NAMES(CKT_FLAGS_NAMES, CKT_FLAGS_STRING)
+FTDM_STR2ENUM(ftmod_ss7_ckt_state2flag, ftmod_ss7_ckt_flag2str, sng_ckt_flag_t, CKT_FLAGS_NAMES, 31)
 
 /* FUNCTIONS ******************************************************************/
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
@@ -1475,6 +1479,46 @@ void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_statu
 	return;
 }
 
+/******************************************************************************/
+ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
+{
+	ftdm_channel_t		*ftdmchan = NULL;
+	sngss7_chan_data_t	*sngss7_info = NULL;
+	int 				x;
+	int					ret;
+
+	for (x = 1; x < (ftdmspan->chan_count + 1); x++) {
+	/**************************************************************************/
+		/* extract the channel structure and sngss7 channel data */
+		ftdmchan = ftdmspan->channels[x];
+		
+		/* if the call data is NULL move on */
+		if (ftdmchan->call_data == NULL) {
+			SS7_WARN_CHAN(ftdmchan, "Reconfiguring channel that has not call_data!%s\n", " ");
+			continue;
+		}
+
+		/* grab the private data */
+		sngss7_info = ftdmchan->call_data;
+
+		/* check the reconfig flag */
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG)) {
+			ret = ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id);
+
+			if (ret) {
+				SS7_CRITICAL("ISUP CKT %d re-configuration FAILED!\n", x);
+			} else {
+				SS7_INFO("ISUP CKT %d re-configuration DONE!\n", x);
+			}
+
+			/* clear the re-config flag ... no matter what */
+			sngss7_clear_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG);
+
+		} /* if ((sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG)) */
+	} /* for (x = 1; x < (span->chan_count + 1); x++) */
+
+	return FTDM_SUCCESS;
+}
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

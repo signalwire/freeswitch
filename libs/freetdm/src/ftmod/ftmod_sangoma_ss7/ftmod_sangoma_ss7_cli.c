@@ -967,12 +967,14 @@ static ftdm_status_t handle_show_inreset(ftdm_stream_handle_t *stream, int span,
 /******************************************************************************/
 static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
-	int				 x;
-	int				 bit;
-	sngss7_chan_data_t  *ss7_info;
-	ftdm_channel_t	  *ftdmchan;
-	int				 lspan;
-	int				 lchan;
+	sngss7_chan_data_t	*ss7_info;
+	ftdm_channel_t		*ftdmchan;
+	int					x;
+	int					bit;
+	int					lspan;
+	int					lchan;
+	const char			*text;
+	int					flag;
 
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
@@ -1001,11 +1003,11 @@ static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, i
 							ss7_info->circuit->cic);
 	
 				for (bit = 0; bit < 33; bit++) {
-					stream->write_function(stream, "|");
 					if (ss7_info->ckt_flags & ( 0x1 << bit)) {
-						stream->write_function(stream, "%2d=1", bit);
-					} else {
-						stream->write_function(stream, "%2d=0", bit);
+						stream->write_function(stream, "|");
+						flag = bit;
+						text = ftmod_ss7_ckt_flag2str(flag);
+						stream->write_function(stream, "%s",text);
 					}
 				}
 
