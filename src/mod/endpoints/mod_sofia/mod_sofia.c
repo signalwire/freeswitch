@@ -1366,7 +1366,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if (s && !strcmp(s, "off")) {
 							s = NULL;
 						}
-						switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
+						status = switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
 						goto end;
 					}
 
@@ -3314,6 +3314,7 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 
 	return 0;
 }
+
 static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct cb_helper_sql2str *cbt = (struct cb_helper_sql2str *) pArg;

@@ -184,7 +184,7 @@ struct switch_callstate_table {
 	const char *name;
 	switch_channel_callstate_t callstate;
 };
-static struct switch_callstate_table STATE_CHART[] = {
+static struct switch_callstate_table CALLSTATE_CHART[] = {
     {"DOWN", CCS_DOWN},
     {"DIALING", CCS_DIALING},
     {"RINGING", CCS_RINGING},
@@ -228,15 +228,16 @@ SWITCH_DECLARE(const char *) switch_channel_callstate2str(switch_channel_callsta
 	uint8_t x;
 	const char *str = "UNKNOWN";
 
-	for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct switch_cause_table)) - 1; x++) {
-		if (STATE_CHART[x].callstate == callstate) {
-			str = STATE_CHART[x].name;
+	for (x = 0; x < (sizeof(CALLSTATE_CHART) / sizeof(struct switch_cause_table)) - 1; x++) {
+		if (CALLSTATE_CHART[x].callstate == callstate) {
+			str = CALLSTATE_CHART[x].name;
 			break;
 		}
 	}
 
 	return str;
 }
+
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str)
 {
@@ -246,9 +247,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str
 	if (*str > 47 && *str < 58) {
 		callstate = atoi(str);
 	} else {
-		for (x = 0; x < (sizeof(STATE_CHART) / sizeof(struct switch_callstate_table)) - 1 && STATE_CHART[x].name; x++) {
-			if (!strcasecmp(STATE_CHART[x].name, str)) {
-				callstate = STATE_CHART[x].callstate;
+		for (x = 0; x < (sizeof(CALLSTATE_CHART) / sizeof(struct switch_callstate_table)) - 1 && CALLSTATE_CHART[x].name; x++) {
+			if (!strcasecmp(CALLSTATE_CHART[x].name, str)) {
+				callstate = CALLSTATE_CHART[x].callstate;
 				break;
 			}
 		}
@@ -1606,6 +1607,7 @@ static const char *state_names[] = {
 	"CS_HANGUP",
 	"CS_REPORTING",
 	"CS_DESTROY",
+	"CS_NONE",
 	NULL
 };
 

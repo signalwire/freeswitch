@@ -120,6 +120,11 @@ static switch_status_t tts_commandline_speech_close(switch_speech_handle_t *sh, 
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 	assert(info != NULL);
 
+	if (switch_test_flag(info->fh, SWITCH_FILE_OPEN)) {
+		switch_core_file_close(info->fh);
+		unlink(info->file);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -129,6 +134,11 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 
 	assert(info != NULL);
+
+	if (switch_test_flag(info->fh, SWITCH_FILE_OPEN)) {
+		switch_core_file_close(info->fh);
+		unlink(info->file);
+	}
 
 	message = switch_core_strdup(sh->memory_pool, globals.command);
 
@@ -152,7 +162,7 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	}
 
 	if (switch_core_file_open(info->fh, info->file, 0,	//number_of_channels,
-							  0,	//samples_per_second,
+							  info->rate,	//samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
 		return SWITCH_STATUS_FALSE;
@@ -171,11 +181,14 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 	assert(info != NULL);
 
 	if (switch_core_file_read(info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
-		*datalen = my_datalen * 2;
+		switch_core_file_close(info->fh);
+		unlink(info->file);
 		return SWITCH_STATUS_FALSE;
 	}
 	*datalen = my_datalen * 2;
 	if (datalen == 0) {
+		switch_core_file_close(info->fh);
+		unlink(info->file);
 		return SWITCH_STATUS_BREAK;
 	} else {
 		return SWITCH_STATUS_SUCCESS;
