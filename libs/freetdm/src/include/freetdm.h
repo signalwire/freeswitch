@@ -554,6 +554,7 @@ struct ftdm_sigmsg {
 	uint32_t chan_id; /*!< easy access to chan id */
 	uint32_t span_id; /*!< easy access to span_id */
 	uint32_t call_id; /*!< unique call id for this call */
+	void *call_priv; /*!< Private data for the FreeTDM user from ftdm_caller_data->priv */
 	union {
 		ftdm_event_sigstatus_t sigstatus; /*!< valid if event_id is FTDM_SIGEVENT_SIGSTATUS_CHANGED */
 		ftdm_event_trace_t trace;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
@@ -1368,33 +1369,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t datasize, ftdm_size_t *datalen);
 
-/*! \brief Add a custom variable to the channel
- *  \note This variables may be used by signaling modules to override signaling parameters
- *  \todo Document which signaling variables are available
- * */
-FT_DECLARE(ftdm_status_t) ftdm_channel_add_var(ftdm_channel_t *ftdmchan, const char *var_name, const char *value);
-
-/*! \brief Get a custom variable from the channel. 
- *  \note The variable pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. */
-FT_DECLARE(const char *) ftdm_channel_get_var(ftdm_channel_t *ftdmchan, const char *var_name);
-
-/*! \brief Get an iterator to iterate over the channel variables
- *  \param ftdmchan The channel structure containing the variables
- *  \param iter Optional iterator. You can reuse an old iterator (not previously freed) to avoid the extra allocation of a new iterator.
- *  \note The iterator pointer returned is only valid while the channel is open and it'll be destroyed when the channel is closed. 
- *        This iterator is completely non-thread safe, if you are adding variables or removing variables while iterating 
- *        results are unpredictable
- */
-FT_DECLARE(ftdm_iterator_t *) ftdm_channel_get_var_iterator(const ftdm_channel_t *ftdmchan, ftdm_iterator_t *iter);
-
 /*! \brief Get iterator current value (depends on the iterator type)
  *  \note Channel iterators return a pointer to ftdm_channel_t
  *        Variable iterators return a pointer to the variable name (not the variable value)
  */
 FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter);
-
-/*! \brief Get variable name and value for the current iterator position */
-FT_DECLARE(ftdm_status_t) ftdm_channel_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
 
 /*! \brief Advance iterator */
 FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
@@ -1426,23 +1405,6 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_call_get_var_iterator(const ftdm_caller_data_
 /*! \brief Get variable name and value for the current iterator position */
 FT_DECLARE(ftdm_status_t) ftdm_call_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val);
 
-/*! \brief Clear all variables  attached to the call
- *  \note Variables are cleared at the end of each call back, so it is not necessary for the user to call this function.
- *  \todo Document which signaling variables are available
- * */
-FT_DECLARE(ftdm_status_t) ftdm_call_clear_vars(ftdm_caller_data_t *caller_data);
-
-/*! \brief Remove a variable attached to the call
- *  \note Removes a variable that was attached to the call.
- *  \todo Document which call variables are available
- * */
-FT_DECLARE(ftdm_status_t) ftdm_call_remove_var(ftdm_caller_data_t *caller_data, const char *var_name);
-
-/*! \brief Clears all the temporary data attached to this call
- *  \note Clears caller_data->variables and caller_data->raw_data.
- * */
-FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data);
-		
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
 

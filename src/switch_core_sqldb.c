@@ -74,7 +74,11 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 
 		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
 	} else {
-		options.core_db_options.db_path = SWITCH_CORE_DB;
+		if (runtime.dbname) {
+			options.core_db_options.db_path = runtime.dbname;
+		} else {
+			options.core_db_options.db_path = SWITCH_CORE_DB;
+		}
 		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
 	}
 
@@ -1635,7 +1639,7 @@ static char create_registrations_sql[] =
 	"   network_proto VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
 	");\n"
-	"create index regindex1 on registrations (user,realm,hostname);\n";
+	"create index regindex1 on registrations (reg_user,realm,hostname);\n";
 	
 
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 

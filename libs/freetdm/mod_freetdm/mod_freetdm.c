@@ -1552,6 +1552,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);	
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_layer1", "%d", channel_caller_data->bearer_layer1);
+	switch_channel_set_variable_printf(channel, "freetdm_screening_ind", ftdm_screening2str(channel_caller_data->screen));
+	switch_channel_set_variable_printf(channel, "freetdm_presentation_ind", ftdm_presentation2str(channel_caller_data->pres));
 	
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
@@ -1580,21 +1582,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	if (channel_caller_data->raw_data_len) {
 		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
 	}
-	/* Add any channel variable to the dial plan */
-	iter = ftdm_channel_get_var_iterator(sigmsg->channel, NULL);
-	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
-		ftdm_channel_get_current_var(curr, &var_name, &var_value);
-		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
-		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-	}	
-	
 	/* Add any call variable to the dial plan */
 	iter = ftdm_call_get_var_iterator(channel_caller_data, iter);
 	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
 		ftdm_call_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s=%s\n", name, var_value);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s = %s\n", name, var_value);
 	}
 	ftdm_iterator_free(iter);
 	
@@ -2149,8 +2143,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_START:
 		{
-			ftdm_call_add_var(caller_data, "screening_ind", ftdm_screening2str(caller_data->screen));
-			ftdm_call_add_var(caller_data, "presentation_ind", ftdm_presentation2str(caller_data->pres));
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
@@ -2698,7 +2690,7 @@ static switch_status_t load_config(void)
 			ftdm_conf_parameter_t spanparameters[30];
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
-			char *configname = (char *) switch_xml_attr(myspan, "config");
+			char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
 			ftdm_span_t *span = NULL;
 			uint32_t span_id = 0;
 			unsigned paramindex = 0;
@@ -4259,7 +4251,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	switch_console_set_complete("add ftdm gains");
 	switch_console_set_complete("add ftdm dtmf on");
 	switch_console_set_complete("add ftdm dtmf off");
-
+	switch_console_set_complete("add ftdm core state");
+	switch_console_set_complete("add ftdm core flag");
+	switch_console_set_complete("add ftdm core calls");
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);

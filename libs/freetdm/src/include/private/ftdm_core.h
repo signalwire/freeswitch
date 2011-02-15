@@ -451,7 +451,6 @@ struct ftdm_channel {
 	struct ftdm_caller_data caller_data;
 	struct ftdm_span *span;
 	struct ftdm_io_interface *fio;
-	ftdm_hash_t *variable_hash;
 	unsigned char rx_cas_bits;
 	uint32_t pre_buffer_size;
 	uint8_t rxgain_table[FTDM_GAINS_TABLE_SIZE];
@@ -629,6 +628,24 @@ FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan);
 FT_DECLARE(void) ftdm_set_echocancel_call_end(ftdm_channel_t *chan);
 
+/*! \brief Clear all variables  attached to the call
+ *  \note Variables are cleared at the end of each call back, so it is not necessary for the user to call this function.
+ *  \todo Document which signaling variables are available
+ * */
+FT_DECLARE(ftdm_status_t) ftdm_call_clear_vars(ftdm_caller_data_t *caller_data);
+
+/*! \brief Remove a variable attached to the call
+ *  \note Removes a variable that was attached to the call.
+ *  \todo Document which call variables are available
+ * */
+FT_DECLARE(ftdm_status_t) ftdm_call_remove_var(ftdm_caller_data_t *caller_data, const char *var_name);
+
+/*! \brief Clears all the temporary data attached to this call
+ *  \note Clears caller_data->variables and caller_data->raw_data.
+ * */
+FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data);
+		
+
 /*!
   \brief Assert condition
 */
@@ -688,6 +705,9 @@ FT_DECLARE(void) ftdm_set_echocancel_call_end(ftdm_channel_t *chan);
 			if (!ftdm_test_flag((fchan), FTDM_CHANNEL_MEDIA)) { \
 				ftdm_set_flag((fchan), FTDM_CHANNEL_MEDIA); \
 				ftdm_set_echocancel_call_begin((fchan)); \
+				if ((fchan)->dtmfdbg.requested) { \
+					ftdm_channel_command((fchan), FTDM_COMMAND_ENABLE_DEBUG_DTMF, NULL); \
+				} \
 			} \
 		} while (0);
 
