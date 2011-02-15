@@ -714,6 +714,7 @@ static void dump_mf(openr2_chan_t *r2chan)
 {
 	char dfile[512];
 	FILE *f = NULL;
+	int rc = 0;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 	if (r2data->mf_dump_size) {
@@ -727,7 +728,10 @@ static void dump_mf(openr2_chan_t *r2chan)
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
-			fclose(f);
+			rc = fclose(f);
+			if (rc) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failure closing IO input file %s: %s\n", dfile, strerror(errno));
+			}
 		} else {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO input in file %s, error: %s", dfile, strerror(errno));
 		}
@@ -738,7 +742,10 @@ static void dump_mf(openr2_chan_t *r2chan)
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
-			fclose(f);
+			rc = fclose(f);
+			if (rc) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failure closing IO output file %s: %s\n", dfile, strerror(errno));
+			}
 		} else {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO output in file %s, error: %s", dfile, strerror(errno));
 		}
