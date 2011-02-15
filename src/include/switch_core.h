@@ -2227,6 +2227,11 @@ SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 
+SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
+															 const char *network_ip, const char *network_port, const char *network_proto);
+SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, const char *realm, const char *token);
+SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

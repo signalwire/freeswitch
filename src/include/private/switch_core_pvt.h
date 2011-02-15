@@ -236,6 +236,7 @@ struct switch_runtime {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
+	char *dbname;
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;

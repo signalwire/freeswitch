@@ -1301,6 +1301,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.default_dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
 	runtime.odbc_dbtype = DBTYPE_DEFAULT;
+	runtime.dbname = NULL;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -1647,6 +1648,8 @@ static void switch_load_core_config(const char *file)
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
+				} else if (!strcasecmp(var, "core-db-name") && !zstr(val)) {
+					runtime.dbname = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
 					if (switch_odbc_available()) {
 						runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
