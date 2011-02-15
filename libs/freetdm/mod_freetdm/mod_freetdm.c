@@ -2690,7 +2690,7 @@ static switch_status_t load_config(void)
 			ftdm_conf_parameter_t spanparameters[30];
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
-			char *configname = (char *) switch_xml_attr(myspan, "config");
+			char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
 			ftdm_span_t *span = NULL;
 			uint32_t span_id = 0;
 			unsigned paramindex = 0;
