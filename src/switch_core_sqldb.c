@@ -1639,7 +1639,7 @@ static char create_registrations_sql[] =
 	"   network_proto VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
 	");\n"
-	"create index regindex1 on registrations (user,realm,hostname);\n";
+	"create index regindex1 on registrations (reg_user,realm,hostname);\n";
 	
 
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
