@@ -2080,6 +2080,32 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 	return NULL; 
 }
 
+struct moh_dtmf_helper {
+        const char *queue_name;
+        char dtmf;
+};
+
+static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen) {
+	struct moh_dtmf_helper *h = (struct moh_dtmf_helper *) buf;
+
+	switch (itype) {
+		case SWITCH_INPUT_TYPE_DTMF:
+			{
+				/* Just laywork for people who want to get some DTMF actions */
+				switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+				if (strchr("#", dtmf->digit)) {
+					h->dtmf = dtmf->digit;
+					return SWITCH_STATUS_BREAK;
+				}
+			}
+			break;
+		default:
+			break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define CC_DESC "callcenter"
 #define CC_USAGE "queue_name"
 
@@ -2226,8 +2252,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_thread_create(&thread, thd_attr, cc_member_thread_run, h, h->pool);
 
 	/* Playback MOH */
-	/* TODO Add DTMF callback support */
-	/* TODO add MOH infitite loop */	
 	if (cc_moh_override) {
 		cur_moh = switch_core_session_strdup(member_session, cc_moh_override);
 	} else {
@@ -2237,6 +2261,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	while (switch_channel_ready(member_channel)) {
 		switch_input_args_t args = { 0 };
+		struct moh_dtmf_helper ht;
+
+		ht.dtmf = '\0';
+		args.input_callback = moh_on_dtmf;
+		args.buf = (void *) &ht;
+		args.buflen = sizeof(h);
 
 		/* An agent was found, time to exit and let the bridge do it job */
 		if ((agent_uuid = switch_channel_get_variable(member_channel, "cc_agent_uuid"))) {
@@ -2259,6 +2289,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		} else {
 			switch_ivr_collect_digits_callback(session, &args, 0, 0);
 		}
+
+		switch_yield(1000);
 
 	}
 
