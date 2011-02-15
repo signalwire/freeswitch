@@ -1384,6 +1384,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent", "%s", h->agent_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent_type", "%s", h->agent_type);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
+		/* Force loopback to remain live, if not, the loop will detect the actual channel to gone */
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout", "false");
 
 		t_agent_called = switch_epoch_time_now(NULL);
 		dialstr = switch_mprintf("%s", h->originate_string);
