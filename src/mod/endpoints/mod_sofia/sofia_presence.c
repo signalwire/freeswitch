@@ -80,6 +80,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
 	char *contact = NULL;
+	char *p;
 	char *dup = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
@@ -239,8 +240,12 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
+		if ((p = strstr(contact, ";fs_"))) {
+			*p = '\0';
+		}
 
+		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
+		
 		msg_nh = nua_handle(profile->nua, NULL,
 							TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
 							TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
