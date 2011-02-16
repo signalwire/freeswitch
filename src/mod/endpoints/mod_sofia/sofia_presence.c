@@ -80,7 +80,6 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
 	char *contact = NULL;
-	char *p;
 	char *dup = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
