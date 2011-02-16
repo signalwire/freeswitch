@@ -1578,7 +1578,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.cc = 0;
 
 	rtp_session->payload = payload;
-
+	rtp_session->rpayload = payload;
 
 	rtp_session->rtcp_send_msg.header.version = 2;
 	rtp_session->rtcp_send_msg.header.p = 0;
@@ -1772,6 +1772,12 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_sessi
 		rtp_session->recv_te = te;
 	}
 }
+
+SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
+{
+	rtp_session->rpayload = pt;
+}
+
 
 SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
 {
@@ -2813,7 +2819,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->payload) {
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
 			return_cng_frame();
 		}
@@ -3130,8 +3136,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
 			rtp_session->recv_msg.header.pt = 97;
 		}
-
-		rtp_session->rpayload = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
 		break;
 
