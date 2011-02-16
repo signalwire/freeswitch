@@ -52,6 +52,7 @@
     <load module="mod_hash"/>
     <load module="mod_voicemail"/>
     <!--<load module="mod_directory"/>-->
+    <!--<load module="mod_distributor"/>-->
     <!--<load module="mod_lcr"/>-->
     <load module="mod_esf"/>
     <load module="mod_fsv"/>
