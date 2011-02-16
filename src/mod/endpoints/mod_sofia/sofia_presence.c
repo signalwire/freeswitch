@@ -232,9 +232,11 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 		status = SWITCH_STATUS_SUCCESS;
 
+		/*
 		if ((p = strstr(contact, ";fs_"))) {
 			*p = '\0';
 		}
+		*/
 
 		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
 		
