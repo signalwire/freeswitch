@@ -14,7 +14,7 @@ _ESL.so: esl_wrap.o
 	$(CXX) $(SOLINK) esl_wrap.o $(MYLIB) $(LOCAL_LDFLAGS) -o _ESL.so -L. $(LIBS)
 
 install: _ESL.so
-	install -o root -g root -m 644 _ESL.so $(SITE_DIR)
+	install -m 755 _ESL.so $(SITE_DIR)
 
 clean:
 	rm -f *.o *.so *~
