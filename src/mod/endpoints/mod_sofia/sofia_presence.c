@@ -190,16 +190,8 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 		dup_dest = strdup(dst->contact);
 
-		if (switch_stristr("fs_path", dst->contact)) {
-			const char *s;
-
-			if ((s = switch_stristr("fs_path=", dst->contact))) {
-				s += 8;
-			}
-			if (s) {
-				remote_host = strdup(s);
-				switch_url_decode(remote_host);
-			}
+		if (dst->route_uri) {
+			remote_host = strdup(dst->route_uri);
 			if (!zstr(remote_host)) {
 				switch_split_user_domain(remote_host, NULL, &remote_ip);
 			}
