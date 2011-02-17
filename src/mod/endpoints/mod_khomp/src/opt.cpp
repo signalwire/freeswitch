@@ -75,10 +75,13 @@ void Opt::initialize(void)
 	Globals::options.add(Config::Option("recording",           &Options::_recording,           true));
 	Globals::options.add(Config::Option("has-ctbus",           &Options::_has_ctbus,           false));
 	Globals::options.add(Config::Option("fxs-bina",            &Options::_fxs_bina,            true));
-	Globals::options.add(Config::Option("fxo-send-pre-audio",  &Options::_fxo_send_pre_audio,  true));
+	Globals::options.add(Config::Option("fxs-sharp-dial",      &Options::_fxs_sharp_dial,      true));
 	Globals::options.add(Config::Option("drop-collect-call",   &Options::_drop_collect_call,   false));
 	Globals::options.add(Config::Option("ignore-letter-dtmfs", &Options::_ignore_letter_dtmfs, true));
 	Globals::options.add(Config::Option("optimize-audio-path", &Options::_optimize_audio_path, false));
+
+    Globals::options.add(Config::Option("fxo-send-pre-audio",     &Options::_fxo_send_pre_audio,  true));
+    Globals::options.add(Config::Option("fxo-busy-disconnection", &Options::_fxo_busy_disconnection, 1250u, 50u, 90000u));
 
     Globals::options.add(Config::Option("auto-fax-adjustment",    &Options::_auto_fax_adjustment,    true));
     Globals::options.add(Config::Option("fax-adjustment-timeout", &Options::_fax_adjustment_timeout, 30u, 3u, 9999u));

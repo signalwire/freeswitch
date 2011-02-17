@@ -691,6 +691,32 @@ namespace Config
         }
 
         template < typename Object >
+        Messages commit(Object * const object, const std::string & name)
+        {
+            Messages msgs;
+
+            OptionMap::iterator i = _map.find(name);
+
+            if (i != _map.end())
+            {
+                try
+                {
+                    i->second.commit(object);
+                }
+                catch (Failure & e)
+                {
+                    msgs.push_back(e.what());
+                }
+            }
+            else
+            {
+                msgs.push_back(STG(FMT("unable to find option: %s") % name));
+            };
+
+            return msgs;
+        }
+
+        template < typename Object >
         Messages commit(Object * const object)
         {
             Messages msgs;
@@ -718,7 +744,7 @@ namespace Config
         }
 
         template < typename Object >
-        bool loaded(Object * object, std::string name)
+        bool loaded(Object * object, const std::string & name)
         {
             OptionMap::iterator iter = find_option(name);
 

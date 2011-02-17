@@ -138,7 +138,7 @@ struct KhompPvtFXO: public KhompPvt
 
         TriState _var_fax_adjust;
 
-        //ChanTimer::Index _idx_disconnect;        
+        ChanTimer::Index _busy_disconnect;        
     };
 /******************************************************************************/
     KhompPvtFXO(K3LAPIBase::GenericTarget & target) : KhompPvt(target) 
@@ -240,6 +240,7 @@ struct KhompPvtFXO: public KhompPvt
     bool autoGainControl(bool enable);
     void setAnswerInfo(int answer_info);
     bool indicateBusyUnlocked(int cause, bool sent_signaling = false);
+    static void busyDisconnect(Board::KhompPvt * pvt);
     void reportFailToReceive(int fail_code);
     bool validContexts(MatchExtension::ContextListType & contexts, 
                        std::string extra_context = "");
@@ -266,13 +267,20 @@ struct KhompPvtFXO: public KhompPvt
 
     virtual bool cleanup(CleanupType type = CLN_HARD)
     {
-        //Board::board(_target.device)->_timers.del(callFXO()->_idx_disconnect);
-        //callFXO()->_idx_disconnect.reset();
-        
+        try
+        {
+            Board::board(_target.device)->_timers.del(callFXO()->_busy_disconnect);
+        }
+        catch (K3LAPITraits::invalid_device & err)
+        {
+            LOG(ERROR, PVT_FMT(target(), "Unable to get device: %d!") % err.device);
+        }
+
         call()->_flags.clear(Kflags::CALL_WAIT_SEIZE);
         call()->_flags.clear(Kflags::EARLY_RINGBACK);
 
         _transfer->clear();
+        callFXO()->_busy_disconnect.reset();
 
         switch (type)
         {
@@ -312,6 +320,16 @@ struct KhompPvtFXO: public KhompPvt
 
 //    static void delayedDisconnect(Board::KhompPvt * pvt);
 
+    void cleanupIndications(bool force)
+    {
+        if (call()->_indication == INDICA_BUSY && !force)
+        {
+            DBG(FUNC, PVT_FMT(_target, "skipping busy indication cleanup on FXO channel."));
+            return;
+        }
+
+        KhompPvt::cleanupIndications(force);
+    }
 };
 /******************************************************************************/
 /******************************************************************************/

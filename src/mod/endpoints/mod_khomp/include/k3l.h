@@ -231,6 +231,8 @@ struct KVoIPSeize
 
 #define CM_USER_INFORMATION         0x0F
 
+#define CM_USER_INFORMATION_EX      0x2B
+
 #define CM_VOIP_SEIZE				0x23
 
 
@@ -368,6 +370,8 @@ struct KVoIPSeize
 #define EV_NEW_CALL                 0x0E
 
 #define EV_USER_INFORMATION         0x0F
+
+#define EV_USER_INFORMATION_EX      0x1D 
 
 #define EV_DIALED_DIGIT             0x10
 
@@ -713,6 +717,8 @@ enum KH100CtbusFreq
 #define CM_START_CADENCE			0xA1
 
 #define CM_STOP_CADENCE				0xA2
+
+#define CM_SET_INPUT_MODE				0xA3
 #if !defined KR2D_H
 #define KR2D_H
 
@@ -925,6 +931,7 @@ enum KSignGroupII
 #ifndef _KISDN_H_
 #define _KISDN_H_
 #define KMAX_USER_USER_LEN              32
+#define KMAX_USER_USER_EX_LEN           254
 #define KMAX_SUBADRESS_INFORMATION_LEN  20 
 
 enum KQ931Cause
@@ -1844,6 +1851,12 @@ struct KUserInformation
     int32 ProtocolDescriptor;
     int32 UserInfoLength;
     byte  UserInfo[ KMAX_USER_USER_LEN ];
+};
+struct KUserInformationEx
+{
+    int32 ProtocolDescriptor;
+    int32 UserInfoLength;
+    byte  UserInfo[ KMAX_USER_USER_EX_LEN ];
 };
 struct KISDNSubaddressInformation
 {
