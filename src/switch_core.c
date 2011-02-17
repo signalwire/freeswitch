@@ -1549,6 +1549,8 @@ static void switch_load_core_config(const char *file)
 					if (tmp > -1 && tmp < 11) {
 						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
 					}
+				} else if (!strcasecmp(var, "multiple-registrations")) {
+					runtime.multiple_registrations = switch_true(val);
 				} else if (!strcasecmp(var, "sql-buffer-len")) {
 					int tmp = atoi(val);
 
