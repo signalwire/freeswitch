@@ -4866,7 +4866,7 @@ FT_DECLARE(int) ftdm_load_module(const char *name)
 {
 	ftdm_dso_lib_t lib;
 	int count = 0, x = 0;
-	char path[128] = "";
+	char path[512] = "";
 	char *err;
 	ftdm_module_t *mod;
 
