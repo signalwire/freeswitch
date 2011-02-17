@@ -1653,7 +1653,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, c
 		return SWITCH_STATUS_FALSE;
 	}
 
-	sql = switch_mprintf("delete from registrations where hostname='%q' and (url='%q' or token='%q')", switch_core_get_hostname(), url, switch_str_nil(token));
+	if (runtime.multiple_registrations) {
+		sql = switch_mprintf("delete from registrations where hostname='%q' and (url='%q' or token='%q')", 
+							 switch_core_get_hostname(), url, switch_str_nil(token));
+	} else {
+		sql = switch_mprintf("delete from registrations where reg_user='%q' and realm='%q' and hostname='%q'", 
+							 user, realm, switch_core_get_hostname());
+	}
+
 	switch_cache_db_execute_sql(dbh, sql, NULL);
 	free(sql);
 
