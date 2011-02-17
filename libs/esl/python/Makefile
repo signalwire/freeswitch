@@ -15,6 +15,7 @@ _ESL.so: esl_wrap.o
 
 install: _ESL.so
 	install -m 755 _ESL.so $(SITE_DIR)
+	install -m 755 ESL.py $(SITE_DIR)
 
 clean:
 	rm -f *.o *.so *~

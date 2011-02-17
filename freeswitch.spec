@@ -615,12 +615,12 @@ cd ../..
 %if %{build_sng_ss7}
 #do not delete a thing
 %else
-rm -f %{prefix}/mod/ftmod_sangoma_ss7*
+%{__rm} -f %{buildroot}/%{prefix}/mod/ftmod_sangoma_ss7*
 %endif
 %if %{build_sng_isdn}
 #do not delete a thing
 %else
-rm -f %{prefix}/mod/ftmod_sangoma_isdn*
+%{__rm} -f %{buildroot}/%{prefix}/mod/ftmod_sangoma_isdn*
 %endif
 
 
@@ -1019,7 +1019,8 @@ fi
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_python*.so*
 %attr(0644, root, bin) /usr/lib/python*/site-packages/freeswitch.py*
-%attr(0644, root, bin) /usr/lib/python*/site-packages/_ESL.so*
+%attr(0755, root, bin) /usr/lib/python*/site-packages/_ESL.so*
+%attr(0755, root, bin) /usr/lib/python*/site-packages/ESL.py*
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/python.conf.xml
 
