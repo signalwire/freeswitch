@@ -615,12 +615,12 @@ cd ../..
 %if %{build_sng_ss7}
 #do not delete a thing
 %else
-rm %{prefix}/mod/ftdm_sangoma_ss7*
+rm -f %{prefix}/mod/ftmod_sangoma_ss7*
 %endif
 %if %{build_sng_isdn}
 #do not delete a thing
 %else
-rm %{prefix}/mod/ftdm_sangoma_isdn*
+rm -f %{prefix}/mod/ftmod_sangoma_isdn*
 %endif
 
 
