@@ -126,6 +126,7 @@ struct switch_rtp_rfc2833_data {
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
 	uint32_t in_digit_ts;
+	uint32_t last_in_digit_ts;
 	uint32_t in_digit_sanity;
 	uint32_t in_interleaved;
 	uint32_t timestamp_dtmf;
@@ -306,6 +307,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF payload check.\n");
 			rtp_session->dtmf_data.last_digit = 0;
 			rtp_session->dtmf_data.in_digit_ts = 0;
+			rtp_session->dtmf_data.in_digit_sanity = 0;
 		}
 
 		end = packet[1] & 0x80 ? 1 : 0;
@@ -355,6 +357,15 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			}
 
 			if (end) {
+				if (!rtp_session->dtmf_data.in_digit_ts && rtp_session->dtmf_data.last_in_digit_ts != ts) {
+#ifdef DEBUG_2833
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start with end packet %d\n", ts);
+#endif
+					rtp_session->dtmf_data.last_in_digit_ts = ts;
+					rtp_session->dtmf_data.in_digit_ts = ts;
+					rtp_session->dtmf_data.first_digit = key;
+					rtp_session->dtmf_data.in_digit_sanity = 2000;
+				}
 				if (rtp_session->dtmf_data.in_digit_ts) {
 					switch_dtmf_t dtmf = { key, duration };
 
@@ -395,7 +406,11 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 				}
 
 			} else if (!rtp_session->dtmf_data.in_digit_ts) {
+#ifdef DEBUG_2833
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start %d\n", ts);
+#endif
 				rtp_session->dtmf_data.in_digit_ts = ts;
+				rtp_session->dtmf_data.last_in_digit_ts = ts;
 				rtp_session->dtmf_data.first_digit = key;
 				rtp_session->dtmf_data.in_digit_sanity = 2000;
 			}
@@ -2351,7 +2366,7 @@ static void do_flush(switch_rtp_t *rtp_session)
 					if (bytes > rtp_header_len && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 						handle_rfc2833(rtp_session, bytes, &do_cng);
 #ifdef DEBUG_2833
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop ***\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
 
@@ -2691,7 +2706,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0) {
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity) {
 				pt = 20000;
 			}
 			
@@ -2700,8 +2715,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
+			do_2833(rtp_session, session);
+
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
-				do_2833(rtp_session, session);
+				return_cng_frame();
 			}
 		}
 
