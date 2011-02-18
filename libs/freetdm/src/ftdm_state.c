@@ -40,13 +40,15 @@ FTDM_STR2ENUM(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channel_
 FTDM_ENUM_NAMES(CHANNEL_STATE_STATUS_NAMES, CHANNEL_STATE_STATUS_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_state_status, ftdm_state_status2str, ftdm_state_status_t, CHANNEL_STATE_STATUS_NAMES, FTDM_STATE_STATUS_INVALID)
 
+static ftdm_status_t ftdm_core_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq);
+
 /* This function is only needed for boost and we should get rid of it at the next refactoring */
 FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *fchan)
 {
 	ftdm_channel_lock(fchan);
 
 	if (fchan->init_state != FTDM_CHANNEL_STATE_DOWN) {
-		ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, fchan, fchan->init_state, 1);
+		ftdm_core_set_state(__FILE__, __FUNCTION__, __LINE__, fchan, fchan->init_state, 1);
 		fchan->init_state = FTDM_CHANNEL_STATE_DOWN;
 	}
 
@@ -121,7 +123,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_set_state(const char *file, const char *func, in
 		   the current state */
 		_ftdm_channel_complete_state(file, func, line, fchan);
 	}
-	return ftdm_channel_set_state(file, func, line, fchan, state, 0);
+	return ftdm_core_set_state(file, func, line, fchan, state, 0);
 }
 
 static int ftdm_parse_state_map(ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, ftdm_state_map_t *state_map)
@@ -223,9 +225,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_cancel_state(const char *file, const char
 	return FTDM_SUCCESS;
 }
 
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq)
+{
+	if (ftdm_channel_save_event_data(ftdmchan) == FTDM_SUCCESS) {
+		return ftdm_core_set_state(file, func, line, ftdmchan, state, waitrq);
+	}
+	return FTDM_FAIL;
+}
+
 /* this function MUST be called with the channel lock held. If waitrq == 1, the channel will be unlocked/locked (never call it with waitrq == 1 with an lock recursivity > 1) */
 #define DEFAULT_WAIT_TIME 1000
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq)
+static ftdm_status_t ftdm_core_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq)
 {
 	ftdm_status_t status;
 	int ok = 1;
@@ -514,6 +525,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan)
 			 * call to ftdm_set_state() */
 			fchan->state_status = FTDM_STATE_STATUS_PROCESSED;
 		}
+		ftdm_channel_clear_event_data(fchan);
 	}
 
 	return FTDM_SUCCESS;

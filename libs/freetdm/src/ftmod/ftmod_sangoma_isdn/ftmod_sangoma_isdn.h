@@ -179,6 +179,15 @@ typedef struct sngisdn_chan_data {
 	uint8_t                 globalFlg;
 	sngisdn_glare_data_t	glare;
 	ftdm_timer_id_t 		timers[SNGISDN_NUM_TIMERS];
+
+	/* variables saved here will be sent to the user application
+	on next SIGEVENT_XXX */
+	ftdm_hash_t*			variables;
+
+	/* raw_data saved here will be sent to the user application
+	on next SIGEVENT_XXX */
+	void					*raw_data;
+	ftdm_size_t				raw_data_len;
 } sngisdn_chan_data_t;
 
 /* Span specific data */
@@ -414,6 +423,12 @@ ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
 
+
+ftdm_status_t sngisdn_add_var(sngisdn_chan_data_t *sngisdn_info, const char* var, const char* val);
+ftdm_status_t sngisdn_add_raw_data(sngisdn_chan_data_t *sngisdn_info, uint8_t* data, ftdm_size_t data_len);
+ftdm_status_t sngisdn_clear_data(sngisdn_chan_data_t *sngisdn_info);
+void sngisdn_send_signal(sngisdn_chan_data_t *sngisdn_info, ftdm_signal_event_t event_id);
+				 
 uint8_t sngisdn_get_infoTranCap_from_user(ftdm_bearer_cap_t bearer_capability);
 uint8_t sngisdn_get_usrInfoLyr1Prot_from_user(ftdm_user_layer1_prot_t layer1_prot);
 ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_stack(uint8_t bearer_capability);

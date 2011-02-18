@@ -203,6 +203,7 @@
     <ClCompile Include="..\src\fsk.c" />
     <ClCompile Include="..\src\ftdm_buffer.c" />
     <ClCompile Include="..\src\ftdm_call_utils.c" />
+    <ClCompile Include="..\src\ftdm_variables.c" />
     <ClCompile Include="..\src\ftdm_callerid.c" />
     <ClCompile Include="..\src\ftdm_config.c" />
     <ClCompile Include="..\src\ftdm_cpu_monitor.c" />

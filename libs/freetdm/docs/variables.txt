@@ -1,0 +1,138 @@
+1. User application sending variables or raw buffer to FreeTDM
+==============================================================
+
+The User can attach a ftdm_sigmsg_t to ftdm_caller_data_t before sending an event to freetdm.
+
+example #1 - Adding a variable:
+-------------------------------
+
+When using ftmod_sangoma_isdn, user want to specify progress indicator inside PROCEED message.
+
+
+	ftdm_caller_data_t *caller_data;
+	ftdm_sigmsg_t sigmsg;
+
+	/* Attach variable to sigmsg */
+	ftdm_event_add_var(&sigmsg, "isdn.prog_ind.descr", "inband-info-available");
+	
+	
+	/* Attach sigmsg to channel's caller_data */
+	caller_data = ftdm_channel_get_caller_data(ftdmchan);
+	caller_data->sigmsg = &sigmsg;
+
+	/* Request FreeTDM to send a PROCEED msg */
+	ftdm_channel_call_indicate(ftdmchan, FTDM_CHANNEL_INDICATE_PROCEED);
+
+Note: 
+1.When ftdm_channel_call_indicate returns, caller_data->sigmsg will be NULL. 
+
+
+
+example #2a - Setting raw data without autofree feature:
+--------------------------------------------------------
+
+When using ftmod_sangoma_isdn, user wants to transmit a custom Facility IE, inside a FACILITY message.
+	
+	ftdm_caller_data_t *caller_data;
+	ftdm_sigmsg_t sigmsg;
+	uint8_t my_facility_ie [200];
+	unsigned my_facility_ie_len = 0;
+
+	/* Fill my_facility_ie with custom data here */
+	my_facility_ie[my_facility_ie_len++] = 0x1C; /* Q.931 Facility IE ID */
+	my_facility_ie[my_facility_ie_len++] = 0x03; /* Length of facility IE */
+	my_facility_ie[my_facility_ie_len++] = 0x01;
+	my_facility_ie[my_facility_ie_len++] = 0x02;
+	my_facility_ie[my_facility_ie_len++] = 0x03;
+	
+
+	sigmsg.raw.data = my_facility_ie;
+	sigmsg.raw.len = my_facility_ie_len;
+	sigmsg.raw.autofree = 0;
+
+	/* Attach sigmsg to channel's caller_data */
+	caller_data = ftdm_channel_get_caller_data(ftdmchan);
+	caller_data->sigmsg = &sigmsg;
+
+	sigmsg.event_id = FTDM_SIGEVENT_FACILITY;
+
+	ftdm_channel_call_send_msg(ftdmchan, sigmsg);
+
+
+
+example #2b - Setting raw data with autofree feature:
+-----------------------------------------------------
+
+	ftdm_caller_data_t *caller_data;
+	ftdm_sigmsg_t sigmsg;
+	uint8_t *my_facility_ie = ftdm_calloc(1, 200);
+	unsigned my_facility_ie_len = 0;
+
+	/* Fill my_facility_ie with custom data here */
+	my_facility_ie[my_facility_ie_len++] = 0x1C; /* Q.931 Facility IE ID */
+	my_facility_ie[my_facility_ie_len++] = 0x03; /* Length of facility IE */
+	my_facility_ie[my_facility_ie_len++] = 0x01;
+	my_facility_ie[my_facility_ie_len++] = 0x02;
+	my_facility_ie[my_facility_ie_len++] = 0x03;
+	
+
+	sigmsg.raw.data = my_facility_ie;
+	sigmsg.raw.len = my_facility_ie_len;
+	sigmsg.raw.autofree = 1;
+
+	/* Attach sigmsg to channel's caller_data */
+	caller_data = ftdm_channel_get_caller_data(ftdmchan);
+	caller_data->sigmsg = &sigmsg;
+
+	sigmsg.event_id = FTDM_SIGEVENT_FACILITY;
+
+	ftdm_channel_call_send_msg(ftdmchan, sigmsg);
+
+	/* FreeTDM will automatically free my_facility_ie */
+
+
+2. User application receiving variables and raw buffer from FreeTDM
+==================================================================
+
+example #1 - print all variables received from FreeTDM
+------------------------------------------------------
+
+	/* Inside event call-back function */
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	const char *var_name = NULL;
+	const char *var_value = NULL;
+
+	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
+
+	/* Read all variables attached to this event */
+	iter = ftdm_event_get_var_iterator(sigmsg, iter);
+	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_get_current_var(curr, &var_name, &var_value);
+		fprintf("Call Variable: %s=%s\n", var_name, var_value);
+	}
+	ftdm_iterator_free(iter);	
+
+
+example #2 - accessing a specific variable
+------------------------------------------
+
+	/* Inside event call-back function */
+	char *string = NULL;
+	string = ftdm_event_get_var(sigmsg, "isdn.prog_ind.descr");
+	if (string && *string) {
+		fprintf("Progress indicator:%s\n", string);
+	}
+
+
+example #3 - accessing raw data
+-------------------------------
+
+	/* Inside event call-back function */
+	ftdm_size_t len;
+	uint8_t *mydata;
+	if (ftdm_event_get_raw_data(ftdmchan->sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+		/* raw data is available, do something with mydata here */
+	}
+
+

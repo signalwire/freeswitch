@@ -468,6 +468,7 @@ struct ftdm_channel {
 	ftdm_interrupt_t *state_completed_interrupt; /*!< Notify when a state change is completed */
 	int32_t txdrops;
 	int32_t rxdrops;
+	ftdm_sigmsg_t *sigmsg;
 };
 
 struct ftdm_span {
@@ -588,6 +589,10 @@ FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void);
 FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);
 FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication, ftdm_status_t status);
 
+
+FT_DECLARE(ftdm_iterator_t) *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
+
+
 /*! 
  * \brief Retrieves an event from the span
  *
@@ -625,9 +630,20 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span);
 /*! \brief clear the tone detector state */
 FT_DECLARE(void) ftdm_channel_clear_detected_tones(ftdm_channel_t *ftdmchan);
 
-/* start/stop echo cancelling at the beginning/end of a call */
+/*! \brief adjust echocanceller for beginning of call */
 FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan);
+
+/*! \brief adjust echocanceller for end of call */
 FT_DECLARE(void) ftdm_set_echocancel_call_end(ftdm_channel_t *chan);
+
+/*! \brief clear variables hashtable inside sigmsg */
+FT_DECLARE(ftdm_status_t) ftdm_event_clear_vars(ftdm_sigmsg_t *sigmsg);
+
+/*! \brief save data from user(ftdmchan->caller_data.sigmsg) into internal copy (ftdmchan->sigmsg) */
+FT_DECLARE(ftdm_status_t) ftdm_channel_save_event_data(ftdm_channel_t *ftdmchan);
+
+/*! \brief free data from internal copy (ftdmchan->sigmsg) */
+FT_DECLARE(ftdm_status_t) ftdm_channel_clear_event_data(ftdm_channel_t *ftdmchan);
 
 /*!
   \brief Assert condition

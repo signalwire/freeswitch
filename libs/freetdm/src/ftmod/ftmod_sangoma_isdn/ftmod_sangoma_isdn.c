@@ -649,8 +649,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending incoming call from %s to %s to FTDM core\n", ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.dnis.digits);
 
 			/* we have enough information to inform FTDM of the call*/
-			sigev.event_id = FTDM_SIGEVENT_START;
-			ftdm_span_send_signal(ftdmchan->span, &sigev);
+			sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_START);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_DIALING: /* outgoing call request */
@@ -674,8 +673,8 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				/*OUTBOUND...so we were told by the line of this so noifiy the user*/
-				sigev.event_id = FTDM_SIGEVENT_PROCEED;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_PROCEED);
+				
 				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 				}
@@ -694,8 +693,8 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				/* OUTBOUND...so we were told by the line of this so notify the user */
-				sigev.event_id = FTDM_SIGEVENT_RINGING;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_RINGING);
+				
 				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 				}
@@ -710,8 +709,8 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 			/*check if the channel is inbound or outbound*/
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				/*OUTBOUND...so we were told by the line of this so noifiy the user*/
-				sigev.event_id = FTDM_SIGEVENT_PROGRESS;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				
+				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_PROGRESS);
 			} else {
 				/* Send a progress message, indicating: Call is not end-to-end ISDN, further call progress may be available */
 				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
@@ -722,8 +721,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 		{
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-				sigev.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_PROGRESS_MEDIA);
 			} else {
 				/* Send a progress message, indicating: In-band information/pattern available */
 				ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_IB_AVAIL};
@@ -736,8 +734,8 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 			/* check if the channel is inbound or outbound */
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				/* OUTBOUND ... so we were told by the line that the other side answered */
-				sigev.event_id = FTDM_SIGEVENT_UP;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				
+				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_UP);
 
 				if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP &&
 					((sngisdn_span_data_t*)ftdmchan->span->signal_data)->signalling == SNGISDN_SIGNALING_NET) {
@@ -763,8 +761,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 	case FTDM_CHANNEL_STATE_TERMINATING: /* call is hung up by the remote end */
 		{
 			/* this state is set when the line is hanging up */
-			sigev.event_id = FTDM_SIGEVENT_STOP;
-			ftdm_span_send_signal(ftdmchan->span, &sigev);
+			sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_STOP);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_HANGUP:	/* call is hung up locally */
@@ -878,7 +875,22 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 		}
 		break;
 	}
-	
+
+	/* If sngisdn_info->variables is not NULL, it means did not send any
+	* sigevent to the user, therefore we have to free that sigmsg */
+	if (sngisdn_info->variables) {
+		hashtable_destroy(sngisdn_info->variables);
+		sngisdn_info->variables = NULL;
+	}
+
+	/* If sngisdn_info->raw_data is not NULL, it means did not send any
+	* sigevent to the user, therefore we have to free that sigmsg */
+	if (sngisdn_info->raw_data) {
+		ftdm_safe_free(sngisdn_info->raw_data);
+		sngisdn_info->raw_data = NULL;
+		sngisdn_info->raw_data_len = 0;
+	}
+
 	if (ftdmchan->state == initial_state) {
 		ftdm_assert(!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE), "state change flag is still set, but we did not change state\n");
 	}
@@ -902,8 +914,7 @@ static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
 		default:
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unsupported signalling msg requested\n");
 			status = FTDM_BREAK;
-	}
-	ftdm_call_clear_data(&ftdmchan->caller_data);
+	}	
 	return status;
 }
 
@@ -911,34 +922,25 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_isdn_outgoing_call)
 {
 	sngisdn_chan_data_t  *sngisdn_info = ftdmchan->call_data;
 	ftdm_status_t status = FTDM_FAIL;	
-	
-	switch (ftdmchan->state) {
 
-		case FTDM_CHANNEL_STATE_DOWN:
-			{
-				if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE)) {
-					/* A call came in after we called ftdm_channel_open_chan for this call, but before we got here */
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Glare detected - aborting outgoing call\n");
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
+		if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE)) {
+			/* A call came in after we called ftdm_channel_open_chan for this call, but before we got here */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Glare detected - aborting outgoing call\n");
 
-					sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+			sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 
-					status = FTDM_BREAK;
-				} else {
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
-					status = FTDM_SUCCESS;
-				}
-			}
-			break;
-		default:
-		{
-			/* the channel is already used...this can't be, end the request */
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Outgoing call requested channel in already in use\n");
 			status = FTDM_BREAK;
+		} else {
+			status = FTDM_SUCCESS;
 		}
-		break;
+	} else {
+		/* the channel is already used...this can't be, end the request */
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Outgoing call requested channel in already in use (%s)\n", ftdm_channel_state2str(ftdmchan->state));
+		status = FTDM_BREAK;
 	}
-
+	
 	return status;
 }
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(ftdm_sangoma_isdn_get_chan_sig_status)

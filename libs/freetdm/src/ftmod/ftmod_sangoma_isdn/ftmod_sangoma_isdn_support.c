@@ -225,26 +225,26 @@ ftdm_status_t get_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	}
 
 	if (cgPtyNmb->screenInd.pres == PRSNT_NODEF) {
-		ftdm_call_add_var(caller_data, "isdn.cg_pty2.screen_ind", ftdm_screening2str(cgPtyNmb->screenInd.val));
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.cg_pty2.screen_ind", ftdm_screening2str(cgPtyNmb->screenInd.val));
 	}
 
 	if (cgPtyNmb->presInd0.pres == PRSNT_NODEF) {
-		ftdm_call_add_var(caller_data, "isdn.cg_pty2.presentation_ind", ftdm_presentation2str(cgPtyNmb->presInd0.val));
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.cg_pty2.presentation_ind", ftdm_presentation2str(cgPtyNmb->presInd0.val));
 	}
 
 	if (cgPtyNmb->nmbPlanId.pres == PRSNT_NODEF) {
-		ftdm_call_add_var(caller_data, "isdn.cg_pty2.npi", ftdm_npi2str(cgPtyNmb->nmbPlanId.val));
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.cg_pty2.npi", ftdm_npi2str(cgPtyNmb->nmbPlanId.val));
 	}
 		
 	if (cgPtyNmb->typeNmb1.pres == PRSNT_NODEF) {
-		ftdm_call_add_var(caller_data, "isdn.cg_pty2.ton", ftdm_ton2str(cgPtyNmb->typeNmb1.val));
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.cg_pty2.ton", ftdm_ton2str(cgPtyNmb->typeNmb1.val));
 	}
 	
 	if (cgPtyNmb->nmbDigits.pres == PRSNT_NODEF) {
 		char digits_string [32];
 		memcpy(digits_string, (const char*)cgPtyNmb->nmbDigits.val, cgPtyNmb->nmbDigits.len);
 		digits_string[cgPtyNmb->nmbDigits.len] = '\0';
-		ftdm_call_add_var(caller_data, "isdn.cg_pty2.digits", digits_string);
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.cg_pty2.digits", digits_string);
 	}
 	memcpy(&caller_data->ani, &caller_data->cid_num, sizeof(caller_data->ani));
 	return FTDM_SUCCESS;
@@ -343,7 +343,7 @@ ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 		
 	memcpy(subaddress, (char*)cgPtySad->sadInfo.val, cgPtySad->sadInfo.len);
 	subaddress[cgPtySad->sadInfo.len] = '\0';
-	ftdm_call_add_var(&ftdmchan->caller_data, "isdn.calling_subaddr", subaddress);
+	sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.calling_subaddr", subaddress);
 	return FTDM_SUCCESS;
 }
 
@@ -358,21 +358,20 @@ ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 
 ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t data_len)
 {
-	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	
 	if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
-		/* size of facilityStr->facilityStr.len is a uint8_t so no need to check
-		for overflow here as facilityStr->facilityStr.len will always be smaller
-		than sizeof(caller_data->raw_data) */
+		/* Max size of Facility IE is 255 */
+		uint8_t my_data [255];
 		
-		memset(caller_data->raw_data, 0, sizeof(caller_data->raw_data));
 		/* Always include Facility IE identifier + len so this can be used as a sanity check by the user */
-		caller_data->raw_data[0] = SNGISDN_Q931_FACILITY_IE_ID;
-		caller_data->raw_data[1] = data_len;
-	
-		memcpy(&caller_data->raw_data[2], data, data_len);
-		caller_data->raw_data_len = data_len+2;
+		my_data[0] = SNGISDN_Q931_FACILITY_IE_ID;
+		my_data[1] = data_len;
+		memcpy(&my_data[2], data, data_len);
+
+		
+		sngisdn_add_raw_data((sngisdn_chan_data_t*)ftdmchan->call_data, data, data_len+2);
+		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Raw Facility IE copied available\n");
 	} else {
 		/* Call libsng_isdn to process facility IE's here */
@@ -412,7 +411,7 @@ ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd)
 				val = SNGISDN_PROGIND_DESCR_INVALID;
 				break;
 		}
-		ftdm_call_add_var(&ftdmchan->caller_data, "isdn.prog_ind.descr", ftdm_sngisdn_progind_descr2str(val));
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.prog_ind.descr", ftdm_sngisdn_progind_descr2str(val));
 	}
 	
 	if (progInd->location.pres) {
@@ -443,7 +442,7 @@ ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd)
 				val = SNGISDN_PROGIND_LOC_INVALID;
 				break;
 		}
-		ftdm_call_add_var(&ftdmchan->caller_data, "isdn.prog_ind.loc", ftdm_sngisdn_progind_loc2str(val));
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.prog_ind.loc", ftdm_sngisdn_progind_loc2str(val));
 	}	
 	return FTDM_SUCCESS;
 }
@@ -493,7 +492,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	uint8_t len,val;
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	
-	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.digits");
+	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.digits");
 	if ((string == NULL) || !(*string)) {
 		return FTDM_FAIL;
 	}
@@ -510,7 +509,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->screenInd.pres	= PRSNT_NODEF;
 
 	val = FTDM_SCREENING_INVALID;
-	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.screening_ind");
+	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.screening_ind");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_screening(string);
 	}
@@ -527,7 +526,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->presInd0.pres = PRSNT_NODEF;
 	
 	val = FTDM_PRES_INVALID;
-	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.presentation_ind");
+	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.presentation_ind");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_presentation(string);
 	}
@@ -542,7 +541,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->nmbPlanId.pres	= PRSNT_NODEF;
 	
 	val = FTDM_NPI_INVALID;
-	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.npi");
+	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.npi");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_npi(string);
 	}
@@ -557,7 +556,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 
 	/* Type of Number */
 	val = FTDM_TON_INVALID;
-	string = ftdm_call_get_var(caller_data, "isdn.cg_pty2.ton");
+	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.ton");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_ton(string);
 	}
@@ -691,7 +690,7 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 {
 	const char* clg_subaddr = NULL;
-	clg_subaddr = ftdm_call_get_var(&ftdmchan->caller_data, "isdn.calling_subaddr");
+	clg_subaddr = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.calling_subaddr");
 	if ((clg_subaddr != NULL) && (*clg_subaddr)) {
 		unsigned len = strlen (clg_subaddr);
 		cgPtySad->eh.pres = PRSNT_NODEF;
@@ -721,14 +720,17 @@ ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len)
 {
-	int len;
-	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
-	if (caller_data->raw_data_len > 0 && caller_data->raw_data[0] == SNGISDN_Q931_FACILITY_IE_ID) {
-		len = caller_data->raw_data[1];
-		memcpy(data, &caller_data->raw_data[2], len);
-		*data_len = len;
-		return FTDM_SUCCESS;
-	}	
+	ftdm_size_t len;
+	uint8_t *mydata;
+
+	if (ftdm_event_get_raw_data(ftdmchan->sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+		if (len > 2 && mydata[0] == SNGISDN_Q931_FACILITY_IE_ID) {
+			len = mydata[1];
+			memcpy(data, &mydata[2], len);
+			*data_len = len;
+			return FTDM_SUCCESS;
+		}
+	}
 	return FTDM_FAIL;
 }
 
@@ -738,7 +740,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	int descr = prog_ind.descr;
 	int loc = prog_ind.loc;
 	
-	str = ftdm_call_get_var(&ftdmchan->caller_data, "isdn.prog_ind.descr");
+	str = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.prog_ind.descr");
 	if (str && *str) {
 		/* User wants to override progress indicator */
 		descr = ftdm_str2ftdm_sngisdn_progind_descr(str);
@@ -749,7 +751,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 		return FTDM_SUCCESS;
 	}
 
-	str = ftdm_call_get_var(&ftdmchan->caller_data, "isdn.prog_ind.loc");
+	str = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.prog_ind.loc");
 	if (str && *str) {
 		loc = ftdm_str2ftdm_sngisdn_progind_loc(str);
 	}
@@ -861,7 +863,7 @@ ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
 ftdm_status_t set_bear_cap_ie(ftdm_channel_t *ftdmchan, BearCap *bearCap)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
-	
+
 	bearCap->eh.pres = PRSNT_NODEF;
 	bearCap->infoTranCap.pres = PRSNT_NODEF;
 	bearCap->infoTranCap.val = sngisdn_get_infoTranCap_from_user(ftdmchan->caller_data.bearer_capability);
@@ -1193,6 +1195,75 @@ void sngisdn_print_spans(ftdm_stream_handle_t *stream)
 	}
 	return;
 }
+
+ftdm_status_t sngisdn_add_var(sngisdn_chan_data_t *sngisdn_info, const char* var, const char* val)
+{
+	char *t_name = 0, *t_val = 0;
+	if (!var || !val) {
+		return FTDM_FAIL;
+	}
+	if (!sngisdn_info->variables) {
+		/* initialize on first use */
+		sngisdn_info->variables = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+		ftdm_assert_return(sngisdn_info->variables, FTDM_FAIL, "Failed to create hash table\n");
+	}
+	t_name = ftdm_strdup(var);
+	t_val = ftdm_strdup(val);
+	hashtable_insert(sngisdn_info->variables, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE);
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t sngisdn_add_raw_data(sngisdn_chan_data_t *sngisdn_info, uint8_t* data, ftdm_size_t data_len)
+{
+	ftdm_assert_return(!sngisdn_info->raw_data, FTDM_FAIL, "Overwriting existing raw data\n");
+	
+	sngisdn_info->raw_data = ftdm_calloc(1, data_len);
+	ftdm_assert_return(sngisdn_info->raw_data, FTDM_FAIL, "Failed to allocate raw data\n");
+	
+	memcpy(sngisdn_info->raw_data, data, data_len);
+	sngisdn_info->raw_data_len = data_len;
+	return FTDM_SUCCESS;
+}
+
+void sngisdn_send_signal(sngisdn_chan_data_t *sngisdn_info, ftdm_signal_event_t event_id)
+{
+	ftdm_sigmsg_t sigev;
+	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
+
+	memset(&sigev, 0, sizeof(sigev));
+
+	sigev.chan_id = ftdmchan->chan_id;
+	sigev.span_id = ftdmchan->span_id;
+	sigev.channel = ftdmchan;
+	sigev.event_id = event_id;
+
+	if (sngisdn_info->variables) {
+		/*
+		* variables now belongs to the ftdm core, and
+		* will be cleared after sigev is processed by user. Set
+		* local pointer to NULL so we do not attempt to
+		* destroy it */
+		sigev.variables = sngisdn_info->variables;
+		sngisdn_info->variables = NULL;
+	}
+
+	if (sngisdn_info->raw_data) {
+		/*
+		* raw_data now belongs to the ftdm core, and
+		* will be cleared after sigev is processed by user. Set
+		* local pointer to NULL so we do not attempt to
+		* destroy it */
+		
+		sigev.raw.data = sngisdn_info->raw_data;
+		sigev.raw.len = sngisdn_info->raw_data_len;
+		sigev.raw.autofree = 1;
+		
+		sngisdn_info->raw_data = NULL;
+		sngisdn_info->raw_data_len = 0;
+	}
+	ftdm_span_send_signal(ftdmchan->span, &sigev);
+}
+
 
 /* For Emacs:
  * Local Variables:

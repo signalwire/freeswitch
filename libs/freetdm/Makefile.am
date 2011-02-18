@@ -76,6 +76,7 @@ libfreetdm_la_SOURCES = \
 	$(SRC)/ftdm_queue.c \
 	$(SRC)/ftdm_sched.c \
 	$(SRC)/ftdm_call_utils.c \
+	$(SRC)/ftdm_variables.c \
 	$(SRC)/ftdm_config.c \
 	$(SRC)/ftdm_callerid.c \
 	$(SRC)/fsk.c \
