@@ -471,12 +471,9 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 		return FTDM_FAIL;
 	}
 
-	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
-
 	ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_FLUSH_TX_BUFFERS, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_FLUSH_RX_BUFFERS, NULL);
-
 	return FTDM_SUCCESS;
 }
 

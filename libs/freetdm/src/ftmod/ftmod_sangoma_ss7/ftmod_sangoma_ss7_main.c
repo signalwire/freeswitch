@@ -1272,9 +1272,8 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 	switch (ftdmchan->state){
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_DOWN:
-		/* inform the monitor thread that we want to make a call */
-		ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_DIALING);
-
+		/* inform the monitor thread that we want to make a call by returning FTDM_SUCCESS */
+	
 		/* unlock the channel */
 		ftdm_mutex_unlock (ftdmchan->mutex);
 		
