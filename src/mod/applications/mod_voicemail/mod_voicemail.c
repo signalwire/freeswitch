@@ -3019,6 +3019,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						vm_email = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-mailto")) {
 						vm_notify_email = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-skip-instructions")) {
+						skip_instructions = switch_true(val);
 					} else if (!strcasecmp(var, "email-addr")) {
 						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
