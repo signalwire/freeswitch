@@ -1899,7 +1899,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					cbt.type = play_msg_type;
 					cbt.move = VM_MOVE_NEXT;
 					vm_execute_sql_callback(profile, profile->mutex, sql, listen_callback, &cbt);
-					if (strcmp(cbt.uuid, uuid_in)) {
+					if (!zstr(uuid_in) && strcmp(cbt.uuid, uuid_in)) {
 						continue;
 					}
 					status = listen_file(session, profile, &cbt);
