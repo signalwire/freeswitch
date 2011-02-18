@@ -4876,7 +4876,6 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	rdlock = 1;
 	peer_channel = switch_core_session_get_channel(peer_session);
-	switch_channel_set_state(peer_channel, CS_SOFT_EXECUTE);
 
 	/* make sure the conference still exists */
 	if (!switch_test_flag(conference, CFLAG_RUNNING)) {
