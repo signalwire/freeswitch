@@ -2661,13 +2661,25 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
+		int read_pretriggered = 0;
 		bytes = 0;
 
 		if (rtp_session->timer.interval) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					rtp_session->hot_hits += rtp_session->samples_per_interval;
+					status = read_rtp_packet(rtp_session, &bytes, flags);
+					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initial %d\n", bytes); */
+					read_pretriggered = 1;
+
+					if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
+						/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trigger %d\n", rtp_session->hot_hits); */
+						rtp_session->hot_hits += rtp_session->samples_per_interval;
+					} else {
+						rtp_session->hot_hits = 0;
+						switch_core_timer_sync(&rtp_session->timer);
+						goto recvfrom;
+					}
 					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
 						switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
@@ -2695,7 +2707,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 	recvfrom:
-		bytes = 0;
+		if (!read_pretriggered) {
+			bytes = 0;
+		}
 		read_loops++;
 		poll_loop = 0;
 
@@ -2723,7 +2737,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
-			status = read_rtp_packet(rtp_session, &bytes, flags);
+			if (!read_pretriggered) {
+				status = read_rtp_packet(rtp_session, &bytes, flags);
+				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read bytes %d\n", bytes); */
+			}
 		} else {
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
 				char tmp[128] = "";
