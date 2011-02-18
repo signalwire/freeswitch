@@ -4147,7 +4147,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 
 		if ((status == 180 || status == 183 || status == 200)) {
-			const char *x_freeswitch_support;
+			const char *x_freeswitch_support, *vval;
 
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
 
@@ -4162,6 +4162,20 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 
 			sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+
+			if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) {
+				switch_core_session_t *other_session;
+				
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					switch_ivr_transfer_variable(session, other_session, SOFIA_SIP_PROGRESS_HEADER_PREFIX_T);
+					if (status == 200) {
+						switch_ivr_transfer_variable(session, other_session, SOFIA_SIP_RESPONSE_HEADER_PREFIX_T);
+					}
+					switch_core_session_rwunlock(other_session);
+				}
+			}
+			
+
 
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 
