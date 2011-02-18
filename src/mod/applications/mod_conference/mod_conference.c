@@ -6390,16 +6390,30 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	if (!zstr(auto_gain_level)) {
 		int level = 0;
+		int energy_level = 100;
 
 		if (switch_true(auto_gain_level)) {
-			level = 2000;
+			level = 650;
 		} else {
+			char *p;
+			int tmp = 0;
+
 			level = atoi(auto_gain_level);
+			if ((p = strchr(auto_gain_level, ':'))) {
+				p++;
+				if (p) tmp = atoi(p);
+				if (tmp > 0) {
+					energy_level = tmp;
+				}
+			}
 		}
 
 		if (level > 0 && level > conference->energy_level) {
 			conference->agc_level = level;
 		}
+
+		conference->agc_energy_level = energy_level;
+		
 	}
 
 	if (!zstr(maxmember_sound)) {
