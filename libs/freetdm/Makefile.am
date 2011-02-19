@@ -62,7 +62,7 @@ LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(FTDM_CFLAGS) $(LDFLAGS) -o $
 #
 EXTRA_DIST = freetdm.pc.in
 
-pkgconfigdir   = $(libdir)/pkgconfig
+pkgconfigdir   = @pkgconfigdir@
 pkgconfig_DATA = freetdm.pc
 
 
