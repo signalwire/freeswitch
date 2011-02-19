@@ -305,8 +305,6 @@ struct KhompPvt
             {
                 try
                 {
-                    //std::string type((name == "input_volume")?"input":"output");
-
                     int i = Strings::tolong(value);
     
                     if (i < -10 || i > 10)
@@ -614,6 +612,7 @@ public:
 
     virtual bool indicateRinging();
     virtual bool sendDtmf(std::string digit);
+    virtual void cleanupIndications(bool force);
 
     /* Methods */
 
@@ -849,7 +848,31 @@ public:
         if(!name)
             return NULL;
 
-        return switch_core_get_variable(name);
+#if SWITCH_LESS_THAN(1,0,6)
+        const char * tmp = switch_core_get_variable(name);
+
+        if(!tmp) return NULL;
+
+        const char * val = strdup(tmp);
+
+        return val;
+#else
+        return switch_core_get_variable_dup(name);
+#endif
+    }
+
+    void freeFSGlobalVar(const char ** val)
+    {
+        if(!val || !*val) return;
+
+#if SWITCH_LESS_THAN(1,0,6)
+        free((void *)*val);
+        *val = NULL;
+#else
+        char * v = (char *)*val;
+        switch_safe_free(v);
+        *val=NULL;
+#endif
     }
 
     bool mixer(const char *file, const char *func, int line, 

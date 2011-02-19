@@ -75,6 +75,7 @@ void Cli::registerCommands(APIFunc func,switch_loadable_module_interface_t **mod
 " khomp channels unblock {all | <board> all | <board> <channel>}\n"            \
 " khomp clear links [<board> [<link>]]\n"                                      \
 " khomp clear statistics [<board> [<channel>]]\n"                              \
+" khomp dump config\n"                                                         \
 " khomp get <option>\n"                                                        \
 " khomp kommuter {on|off}\n"                                                   \
 " khomp kommuter count\n"                                                      \
@@ -128,6 +129,10 @@ void Cli::registerCommands(APIFunc func,switch_loadable_module_interface_t **mod
 /* is responsible for parse and execute all commands */
 bool Cli::parseCommands(int argc, char *argv[])
 {
+    /*
+     * DEBUG_CLI_CMD();
+     */
+
     /* khomp summary */
     if (ARG_CMP(0, "summary"))
         return EXEC_CLI_CMD(Cli::KhompSummary);
@@ -163,7 +168,15 @@ bool Cli::parseCommands(int argc, char *argv[])
         if(ARG_CMP(1, "statistics"))
             return EXEC_CLI_CMD(Cli::KhompClearStatistics);
     }
-    
+   
+    /* khomp dump */
+    else if(ARG_CMP(0, "dump"))
+    {
+        /* khomp dump config */
+        if(ARG_CMP(1, "config"))
+            return EXEC_CLI_CMD(Cli::KhompDumpConfig);
+    }
+ 
     /* khomp reset */
     else if(ARG_CMP(0, "reset"))
     {
@@ -285,6 +298,7 @@ Cli::_KhompShowChannels       Cli::KhompShowChannels;
 Cli::_KhompShowLinks          Cli::KhompShowLinks;
 Cli::_KhompShowStatistics     Cli::KhompShowStatistics;
 Cli::_KhompClearLinks         Cli::KhompClearLinks;
+Cli::_KhompDumpConfig         Cli::KhompDumpConfig;
 Cli::_KhompClearStatistics    Cli::KhompClearStatistics;
 Cli::_KhompResetLinks         Cli::KhompResetLinks;
 Cli::_KhompChannelsDisconnect Cli::KhompChannelsDisconnect;
@@ -337,7 +351,9 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
         K::Logger::Logg2(classe, stream, "|------------------------------------------------------------------|");
     }
 
-    if (k3lGetDeviceConfig(-1, ksoAPI, &apiCfg, sizeof(apiCfg)) == ksSuccess)
+    const bool running = (k3lGetDeviceConfig(-1, ksoAPI, &apiCfg, sizeof(apiCfg)) == ksSuccess);
+
+    if(running)
     {
         switch(output_type)
         {
@@ -374,6 +390,28 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
 
             default:
                 break;
+        }
+    }
+    else
+    {
+        switch(output_type)
+        {
+            case Cli::VERBOSE:
+            {
+                K::Logger::Logg2(classe, stream, "| Connection to KServer broken, please check system logs!          |");
+            } break;
+
+            case Cli::CONCISE:
+            {
+                K::Logger::Logg2(classe, stream, "CONNECTION BROKEN");
+            } break;
+
+            case Cli::XML:
+            {
+                 /* summary/k3lapi */
+                switch_xml_t xk3lapi = switch_xml_add_child_d(root, "k3lapi",0);
+                switch_xml_set_txt_d(xk3lapi, "CONNECTION BROKEN");
+            } break;
         }
     }
 
@@ -421,6 +459,20 @@ bool Cli::_KhompSummary::execute(int argc, char *argv[])
 
         default:
             break;
+    }
+
+    if(!running)
+    {
+        if (output_type == Cli::VERBOSE)
+            K::Logger::Logg2(classe,stream, " ------------------------------------------------------------------");
+      
+        if (output_type == Cli::XML)
+        {
+            printXMLOutput(stream);
+            clearRoot();
+        }
+
+        return false;
     }
 
     if (output_type == Cli::XML)
@@ -2154,6 +2206,38 @@ bool Cli::_KhompClearStatistics::execute(int argc, char *argv[])
     return true;
 }
 
+bool Cli::_KhompDumpConfig::execute(int argc, char *argv[])
+{
+    if (argc != 2) 
+    {
+        printUsage(stream);
+        return false;
+    }
+
+    const Config::StringSet opts = Globals::options.options();
+
+    K::Logger::Logg2(C_CLI, stream, " ------------------------------------------------------------------------");
+    K::Logger::Logg2(C_CLI, stream, "|--------------------------- Khomp Options Dump -------------------------|");
+    K::Logger::Logg2(C_CLI, stream, "|------------------------------------------------------------------------|");
+
+    for (Config::StringSet::const_iterator itr = opts.begin(); itr != opts.end(); ++itr)
+    {   try
+        {
+            if(removeUnavaible((*itr))) continue;                
+            K::Logger::Logg2(C_CLI, stream, FMT("| %-24s => %42s |")
+                    % (*itr) % Globals::options.get(&(Opt::_options), (*itr)));
+        }
+        catch(Config::EmptyValue &e)
+        {
+            K::Logger::Logg(C_ERROR, FMT("%s (%s)") % e.what() % (*itr));
+        }
+    }    
+
+    K::Logger::Logg2(C_CLI, stream, " ------------------------------------------------------------------------");
+
+    return true;
+}
+
 void Cli::_KhompResetLinks::resetLink(unsigned int device, unsigned int link)
 {
     try
@@ -2718,10 +2802,18 @@ bool Cli::_KhompSet::execute(int argc, char *argv[])
     try  
     {    
         Globals::options.process(&Opt::_options, (const char *) argv[1], (const char *) args.c_str());
+        const Config::Options::Messages msgs = Globals::options.commit(&Opt::_options, (const char *)argv[1]);
+
+        for (Config::Options::Messages::const_iterator i = msgs.begin(); i != msgs.end(); ++i) 
+        {
+            K::Logger::Logg2(C_ERROR, stream, FMT("%s.") % (*i));
+        }
+
+        K::Logger::Logg2(C_CLI, stream, FMT("Setting %s for value %s") % argv[1] % argv[2]);
     }    
     catch (Config::Failure &e)
     {    
-        K::Logger::Logg2(C_CLI,stream, FMT("config processing error: %s.") % e.what());
+        K::Logger::Logg2(C_ERROR,stream, FMT("config processing error: %s.") % e.what());
     }    
 
     return true;
@@ -2891,7 +2983,6 @@ bool Cli::_KhompSelectSim::execute(int argc, char *argv[])
             K::Logger::Logg2(C_CLI, stream, "ERROR: Unable to select sim card"); 
             return false;
         }
-
     }
     catch (Strings::invalid_value & e)
     {

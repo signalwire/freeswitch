@@ -2148,8 +2148,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (!zstr(from_domain)) {
 				gateway->from_domain = switch_core_strdup(gateway->pool, from_domain);
 			}
+			
+			if (!zstr(register_transport) && !switch_stristr("transport=", proxy)) {
+				gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", proxy, register_transport);
+			} else {
+				gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+			}
 
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>",
 														 from_user, !zstr(from_domain) ? from_domain : proxy, register_transport);
 
@@ -4142,7 +4147,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 
 		if ((status == 180 || status == 183 || status == 200)) {
-			const char *x_freeswitch_support;
+			const char *x_freeswitch_support, *vval;
 
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
 
@@ -4156,7 +4161,26 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
 			}
 
-			sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+			if (status == 200) {
+				sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+			} else {
+				sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+			}
+
+			if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) {
+				switch_core_session_t *other_session;
+				
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					if (status == 200) {
+						switch_ivr_transfer_variable(session, other_session, SOFIA_SIP_RESPONSE_HEADER_PREFIX_T);
+					} else {
+						switch_ivr_transfer_variable(session, other_session, SOFIA_SIP_PROGRESS_HEADER_PREFIX_T);
+					}
+					switch_core_session_rwunlock(other_session);
+				}
+			}
+			
+
 
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 

@@ -312,6 +312,9 @@ int BoardGSM::KhompPvtGSM::makeCall(std::string params)
         command(KHOMP_LOG, CM_DISABLE_CALL_ANSWER_INFO);
     }
 
+    if(!_call->_orig_addr.compare("restricted"))
+        params += " orig_addr=\"restricted\"";
+
     int ret = KhompPvt::makeCall(params);
 
     if(ret != ksSuccess)

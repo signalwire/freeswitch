@@ -248,6 +248,7 @@ struct switch_runtime {
 	int max_sql_buffer_len;
 	switch_dbtype_t odbc_dbtype;
 	char hostname[256];
+	int multiple_registrations;
 };
 
 extern struct switch_runtime runtime;

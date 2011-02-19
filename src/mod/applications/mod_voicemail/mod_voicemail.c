@@ -1725,8 +1725,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 
 #define FREE_DOMAIN_ROOT() if (x_user) switch_xml_free(x_user); x_user = NULL
 
-
-static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *profile, const char *domain_name, const char *id, int auth)
+static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *profile, const char *domain_name, const char *id, int auth, const char *uuid_in)
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1900,6 +1899,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					cbt.type = play_msg_type;
 					cbt.move = VM_MOVE_NEXT;
 					vm_execute_sql_callback(profile, profile->mutex, sql, listen_callback, &cbt);
+					if (!zstr(uuid_in) && strcmp(cbt.uuid, uuid_in)) {
+						continue;
+					}
 					status = listen_file(session, profile, &cbt);
 					if (cbt.move == VM_MOVE_PREV) {
 						if (cur_message <= 0) {
@@ -3017,6 +3019,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						vm_email = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-mailto")) {
 						vm_notify_email = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-skip-instructions")) {
+						skip_instructions = switch_true(val);
 					} else if (!strcasecmp(var, "email-addr")) {
 						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
@@ -3154,12 +3158,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		if (*buf != '\0') {
 		  greet_key_press:
 			if (switch_stristr(buf, profile->login_keys)) {
-				voicemail_check_main(session, profile, domain_name, id, 0);
+				voicemail_check_main(session, profile, domain_name, id, 0, NULL);
 			} else if ((!zstr(profile->operator_ext) || !zstr(operator_ext)) && !zstr(profile->operator_key) && !strcasecmp(buf, profile->operator_key) ) {
 				int argc;
 				char *argv[4];
 				char *mycmd;
-
+				
 				if ((!zstr(operator_ext) && (mycmd = switch_core_session_strdup(session, operator_ext))) ||
 				    (!zstr(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext)))) {
 					argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -3292,7 +3296,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 
 #define VM_DESC "voicemail"
-#define VM_USAGE "[check] [auth] <profile_name> <domain_name> [<id>]"
+#define VM_USAGE "[check] [auth] <profile_name> <domain_name> [<id>] [uuid]"
 
 SWITCH_STANDARD_APP(voicemail_function)
 {
@@ -3304,6 +3308,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 	const char *domain_name = NULL;
 	const char *id = NULL;
 	const char *auth_var = NULL;
+	const char *uuid = NULL;
 	int x = 0, check = 0, auth = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -3363,7 +3368,10 @@ SWITCH_STANDARD_APP(voicemail_function)
 	}
 
 	if (check) {
-		voicemail_check_main(session, profile, domain_name, id, auth);
+		if (argv[x]) {
+			uuid = argv[x++];
+		}
+		voicemail_check_main(session, profile, domain_name, id, auth, uuid);
 	} else {
 		voicemail_leave_main(session, profile, domain_name, id);
 	}

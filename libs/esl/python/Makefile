@@ -1,5 +1,6 @@
 LOCAL_CFLAGS=`python ./python-config --includes`
 LOCAL_LDFLAGS=`python ./python-config --ldflags`
+SITE_DIR=$(DESTDIR)/`python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()"`
 
 all: _ESL.so
 
@@ -11,6 +12,10 @@ esl_wrap.o: esl_wrap.cpp
 
 _ESL.so: esl_wrap.o
 	$(CXX) $(SOLINK) esl_wrap.o $(MYLIB) $(LOCAL_LDFLAGS) -o _ESL.so -L. $(LIBS)
+
+install: _ESL.so
+	install -m 755 _ESL.so $(SITE_DIR)
+	install -m 755 ESL.py $(SITE_DIR)
 
 clean:
 	rm -f *.o *.so *~

@@ -372,18 +372,37 @@ bool BoardE1::onLinkStatus(K3L_EVENT *e)
 
 bool BoardE1::KhompPvtISDN::onSyncUserInformation(K3L_EVENT *e)
 {
-    KUserInformation * info = (KUserInformation *) (((char*)e) + sizeof(K3L_EVENT));
+    DBG(FUNC,PVT_FMT(_target, "Synchronizing"));
 
-    callISDN()->_uui_descriptor = info->ProtocolDescriptor;
+    if(callISDN()->_uui_extended)
+    {
+        KUserInformationEx * info = (KUserInformationEx *) (((char*)e) + sizeof(K3L_EVENT));
+        callISDN()->_uui_descriptor = (long int) info->ProtocolDescriptor;
+        
+        /* clean string */
+        callISDN()->_uui_information.clear();
 
-    /* clean string */
-    callISDN()->_uui_information.clear();
+        if (info->UserInfoLength)
+        {    
+            /* append to a clean string */
+            for (unsigned int i = 0; i < info->UserInfoLength; ++i) 
+                callISDN()->_uui_information += STG(FMT("%02hhx") % ((unsigned char) info->UserInfo[i]));
+        }    
+    }
+    else
+    {
+        KUserInformation * info = (KUserInformation *) (((char*)e) + sizeof(K3L_EVENT));
+        callISDN()->_uui_descriptor = info->ProtocolDescriptor;
+        
+        /* clean string */
+        callISDN()->_uui_information.clear();
 
-    if (info->UserInfoLength)
-    {    
-        /* append to a clean string */
-        callISDN()->_uui_information.append((const char *)info->UserInfo, info->UserInfoLength);
-    }    
+        if (info->UserInfoLength)
+        {    
+            for (unsigned int i = 0; i < info->UserInfoLength; ++i) 
+                callISDN()->_uui_information += STG(FMT("%02hhx") % ((unsigned char) info->UserInfo[i]));
+        }    
+    }
 
     return true;
 }
@@ -440,15 +459,20 @@ bool BoardE1::KhompPvtISDN::onNewCall(K3L_EVENT *e)
     bool isdn_reverse_charge = false;
     std::string isdn_reverse_charge_str;
     bool ret;
-    
+   
     try
     {
+        callISDN()->_isdn_orig_type_of_number = Globals::k3lapi.get_param(e, "isdn_orig_type_of_number"); 
+        callISDN()->_isdn_orig_numbering_plan = Globals::k3lapi.get_param(e, "isdn_orig_numbering_plan"); 
+        callISDN()->_isdn_dest_type_of_number = Globals::k3lapi.get_param(e, "isdn_dest_type_of_number"); 
+        callISDN()->_isdn_dest_numbering_plan = Globals::k3lapi.get_param(e, "isdn_dest_numbering_plan"); 
+        callISDN()->_isdn_orig_presentation   = Globals::k3lapi.get_param(e, "isdn_orig_presentation"); 
         isdn_reverse_charge_str = Globals::k3lapi.get_param(e, "isdn_reverse_charge");
         isdn_reverse_charge = Strings::toboolean(isdn_reverse_charge_str);
     }
     catch(K3LAPI::get_param_failed & err)
     {
-        /* do nothing, maybe the parameter is not sent */
+        LOG(WARNING, PVT_FMT(_target, "maybe the parameter is not sent (%s)'") % err.name.c_str());
     }
     catch (Strings::invalid_value & err)
     {
@@ -866,23 +890,82 @@ int BoardE1::KhompPvtISDN::makeCall(std::string params)
         DBG(FUNC,PVT_FMT(_target, "got userinfo"));   
 
         /* grab this information first, avoiding latter side-effects */
-        const char * info_data = call->_uui_information.c_str();
-        size_t       info_size = std::min(call->_uui_information.size(), (size_t)KMAX_USER_USER_LEN);
+        const bool        info_extd = call->_uui_extended;
+        const long int    info_desc = call->_uui_descriptor;
+        const std::string info_data = call->_uui_information.c_str();
+        const size_t      info_size = std::min<size_t>(call->_uui_information.size(), (info_extd ? KMAX_USER_USER_EX_LEN : KMAX_USER_USER_LEN) << 1) >> 1;
 
-        KUserInformation info;
-
-        info.ProtocolDescriptor = call->_uui_descriptor;
-        info.UserInfoLength = info_size;
-
-        memcpy((void *) info.UserInfo, (const void *) info_data, info_size);
-
-        if (!command(KHOMP_LOG, CM_USER_INFORMATION, (const char *)&info))
+        bool res = true;
+    
+        if(info_extd)
         {
-            LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));   
+            KUserInformationEx info;
+
+            info.ProtocolDescriptor = info_desc;
+            info.UserInfoLength = info_size;
+
+            for (unsigned int pos = 0u, index = 0u; pos < info_size; index+=2, ++pos)
+                info.UserInfo[pos] = (unsigned char)Strings::toulong(info_data.substr(index,2), 16); 
+
+            if (!command(KHOMP_LOG, CM_USER_INFORMATION_EX, (const char *) &info))
+            {
+                LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));   
+            }
+        } 
+        else
+        {
+            KUserInformation info;
+
+            info.ProtocolDescriptor = info_desc;
+            info.UserInfoLength = info_size;
+
+            for (unsigned int pos = 0u, index = 0u; pos < info_size; index+=2, ++pos)
+                info.UserInfo[pos] = (unsigned char)Strings::toulong(info_data.substr(index,2), 16); 
+
+            if (!command(KHOMP_LOG, CM_USER_INFORMATION, (const char *) &info))
+            {
+                LOG(ERROR,PVT_FMT(_target, "UUI could not be sent before dialing!"));   
+            }
         }
 
+        call->_uui_extended = false; 
         call->_uui_descriptor = -1;
         call->_uui_information.clear();
+    }
+
+    if (!callISDN()->_isdn_orig_type_of_number.empty()) 
+    {
+        params += "isdn_orig_type_of_number=\""; 
+        params += callISDN()->_isdn_orig_type_of_number; 
+        params += "\" "; 
+    }
+
+    if (!callISDN()->_isdn_dest_type_of_number.empty()) 
+    { 
+        params += "isdn_dest_type_of_number=\""; 
+        params += callISDN()->_isdn_dest_type_of_number; 
+        params += "\" "; 
+    }
+
+    if (!callISDN()->_isdn_orig_numbering_plan.empty()) 
+    { 
+        params += "isdn_orig_numbering_plan=\""; 
+        params += callISDN()->_isdn_orig_numbering_plan; 
+        params += "\" "; 
+    }
+
+    if (!callISDN()->_isdn_dest_numbering_plan.empty()) 
+    { 
+        params += "isdn_dest_numbering_plan=\""; 
+        params += callISDN()->_isdn_dest_numbering_plan; 
+        params += "\" "; 
+    }
+
+    if (!callISDN()->_isdn_orig_presentation.empty())
+    { 
+        params += "isdn_orig_presentation=\"";   
+        params += callISDN()->_isdn_orig_presentation; 
+        params += "\" "; 
     }
 
     int ret = KhompPvtE1::makeCall(params);
@@ -995,12 +1078,6 @@ bool BoardE1::KhompPvtR2::doChannelAnswer(CommandRequest &cmd)
         // is this a collect call?
         bool has_recv_collect_call = _call->_collect_call;
 
-        if(has_recv_collect_call)
-            DBG(FUNC, PVT_FMT(target(), "receive a collect call"));
-
-        if(call()->_flags.check(Kflags::DROP_COLLECT))
-            DBG(FUNC, PVT_FMT(target(), "flag DROP_COLLECT == true"));
-        
         // do we have to drop collect calls?
         bool has_drop_collect_call = call()->_flags.check(Kflags::DROP_COLLECT);
 
@@ -1013,29 +1090,37 @@ bool BoardE1::KhompPvtR2::doChannelAnswer(CommandRequest &cmd)
         if(do_send_ring)
         {       
             call()->_flags.clear(Kflags::NEEDS_RINGBACK_CMD);
+
+            //TODO: callFailFromCause ??
             std::string cause = ( do_drop_call ? STG(FMT("r2_cond_b=\"%d\"") % kgbBusy) : "" );
             command(KHOMP_LOG,CM_RINGBACK,cause.c_str());
 
             usleep(75000);
         }
 
-        if(!(do_drop_call && do_send_ring))
+        if(!do_drop_call)
         {
             command(KHOMP_LOG, CM_CONNECT);
         }
 
-        if(has_drop_collect_call && !do_send_ring) 
+        if(!do_send_ring && has_drop_collect_call) 
         {
+            usleep(75000);
+
             if(has_recv_collect_call)
             {
-                usleep(75000);
-
-                DBG(FUNC, PVT_FMT(target(), "disconnecting collect call doChannelAnswer R2"));
-                command(KHOMP_LOG,CM_DISCONNECT);
-
                 // thou shalt not talk anymore!
                 stopListen();
                 stopStream();
+
+                if (call()->_indication == INDICA_NONE)
+                {    
+                    call()->_indication = INDICA_BUSY;
+                    mixer(KHOMP_LOG, 1, kmsGenerator, kmtBusy);
+                }    
+
+                DBG(FUNC, PVT_FMT(_target,"forcing disconnect for collect call"));
+                forceDisconnect();
             }
             else
             {
@@ -1797,6 +1882,8 @@ bool BoardE1::KhompPvtR2::onNewCall(K3L_EVENT *e)
                 DBG(FUNC,PVT_FMT(_target, "Setting DROP_COLLECT flag"));
             }
 
+            freeFSGlobalVar(&drop_str);            
+
             // keeping the hardcore mode
             if (do_drop_collect && call()->_collect_call)
             {
@@ -2388,6 +2475,7 @@ void BoardE1::KhompPvtFXS::dialTimer(KhompPvt * pvt)
 
 }
 
+/*
 void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
 {
     DBG(FUNC, PVT_FMT(pvt->target(), "c"));
@@ -2420,7 +2508,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
             return;
         }
 
-        /* begin context adjusting + processing */
+        // begin context adjusting + processing 
         MatchExtension::ContextListType contexts;
 
         pvt_fxs->validContexts(contexts);
@@ -2469,6 +2557,7 @@ void BoardE1::KhompPvtFXS::transferTimer(KhompPvt * pvt)
     DBG(FUNC, PVT_FMT(pvt->target(), "r"));
 
 }
+*/
 
 bool BoardE1::KhompPvtFXS::onChannelRelease(K3L_EVENT *e)
 {
@@ -2480,22 +2569,23 @@ bool BoardE1::KhompPvtFXS::onChannelRelease(K3L_EVENT *e)
     {
         ScopedPvtLock lock(this);
 
+        /*
         if(!callFXS()->_uuid_other_session.empty() && session())
         {
-            /*
-            switch_core_session_t *hold_session;
+            
+            //switch_core_session_t *hold_session;
 
-            if ((hold_session = switch_core_session_locate(callFXS()->_uuid_other_session.c_str()))) 
-            {
-                switch_channel_t * hold = switch_core_session_get_channel(hold_session);
-                switch_channel_stop_broadcast(hold);
-                switch_channel_wait_for_flag(hold, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
-                switch_core_session_rwunlock(hold_session);
-            }
-            */
+            //if ((hold_session = switch_core_session_locate(callFXS()->_uuid_other_session.c_str()))) 
+            //{
+            //    switch_channel_t * hold = switch_core_session_get_channel(hold_session);
+            //    switch_channel_stop_broadcast(hold);
+            //    switch_channel_wait_for_flag(hold, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
+            //    switch_core_session_rwunlock(hold_session);
+            //}
+            
             try
             {
-                /* get other side of the bridge */
+                // get other side of the bridge 
                 switch_core_session_t * peer_session = getFSLockedPartnerSession();
                 unlockPartner(peer_session);
                 DBG(FUNC, PVT_FMT(target(), "bridge with the new session"));
@@ -2509,6 +2599,7 @@ bool BoardE1::KhompPvtFXS::onChannelRelease(K3L_EVENT *e)
 
             callFXS()->_uuid_other_session.clear();
         }
+        */
 
         ret = KhompPvt::onChannelRelease(e);
 
@@ -2523,7 +2614,7 @@ bool BoardE1::KhompPvtFXS::onChannelRelease(K3L_EVENT *e)
     return ret;
  
 }
-
+/*
 bool BoardE1::KhompPvtFXS::startTransfer()
 {
     DBG(FUNC, PVT_FMT(target(), "c"));
@@ -2596,7 +2687,7 @@ bool BoardE1::KhompPvtFXS::stopTransfer()
 
     try
     {
-        /* get other side of the bridge */
+        // get other side of the bridge 
         switch_core_session_t * peer_session = getFSLockedPartnerSession();
         switch_channel_t * peer_channel = getFSChannel(peer_session);
 
@@ -2664,33 +2755,33 @@ static switch_status_t xferHook(switch_core_session_t *session)
     else if (state == CS_HANGUP) 
     {
         switch_core_event_hook_remove_state_change(session, xferHook);
-/*
-        BoardE1::KhompPvtFXS * pvt = static_cast<BoardE1::KhompPvtFXS*>(switch_core_session_get_private(session));
-        
-        if(!pvt)
-        {
-            DBG(FUNC, D("pvt is NULL"));
-            return SWITCH_STATUS_FALSE;
-        }
 
-        try
-        {
-            ScopedPvtLock lock(pvt);
+        //BoardE1::KhompPvtFXS * pvt = static_cast<BoardE1::KhompPvtFXS*>(switch_core_session_get_private(session));
+        //
+        //if(!pvt)
+        //{
+        //    DBG(FUNC, D("pvt is NULL"));
+        //    return SWITCH_STATUS_FALSE;
+        //}
 
-            if(!pvt->callFXS()->_uuid_other_session.empty())
-            {
-                DBG(FUNC, D("bridge after hangup"));
-                std::string number = pvt->callFXS()->_uuid_other_session;
-                pvt->callFXS()->_uuid_other_session.clear();
+        //try
+        //{
+        //    ScopedPvtLock lock(pvt);
 
-                switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), number.c_str());
-            }
-        }
-        catch(ScopedLockFailed & err)
-        {
-            LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock: %s!") %  err._msg.c_str());            
-        }
-*/
+        //    if(!pvt->callFXS()->_uuid_other_session.empty())
+        //    {
+        //        DBG(FUNC, D("bridge after hangup"));
+        //        std::string number = pvt->callFXS()->_uuid_other_session;
+        //        pvt->callFXS()->_uuid_other_session.clear();
+
+        //        switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), number.c_str());
+        //    }
+        //}
+        //catch(ScopedLockFailed & err)
+        //{
+        //   LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock: %s!") %  err._msg.c_str());            
+        //}
+
     }
 
     return SWITCH_STATUS_SUCCESS;
@@ -2716,7 +2807,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
 
     try
     {
-        /* get other side of the bridge */
+        // get other side of the bridge 
         switch_core_session_t * peer_session = getFSLockedPartnerSession();
         switch_channel_t * peer_channel = getFSChannel(peer_session);
 
@@ -2774,16 +2865,16 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
             call()->_flags.set(Kflags::GEN_CO_RING);
             startCadence(PLAY_RINGBACK);
 
-            /*
-            try
-            {
-                call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_co_delay(), &Board::KhompPvt::coRingGen,this);
-            }
-            catch (K3LAPITraits::invalid_device & err)
-            {
-                LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
-            }
-            */
+            
+            //try
+            //{
+            //    call()->_idx_co_ring = Board::board(_target.device)->_timers.add(Opt::_options._ringback_co_delay(), &Board::KhompPvt::coRingGen,this);
+            //}
+            //catch (K3LAPITraits::invalid_device & err)
+            //{
+             //   LOG(ERROR, PVT_FMT(_target, "unable to get device: %d!") % err.device);
+            //}
+            
         }
     }
     catch(Board::KhompPvt::InvalidSwitchChannel & err)
@@ -2796,6 +2887,7 @@ bool BoardE1::KhompPvtFXS::transfer(std::string & context, bool blind)
 
     return true;
 }
+*/
 
 bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
 {
@@ -2902,6 +2994,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                     break;
             }
         }
+        /*
         else if(callFXS()->_flags.check(Kflags::FXS_OFFHOOK) &&
                 callFXS()->_flags.check(Kflags::FXS_FLASH_TRANSFER))
         {
@@ -2922,7 +3015,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
 
             callFXS()->_flash_transfer += e->AddInfo;
     
-            /* begin context adjusting + processing */
+            // begin context adjusting + processing
             MatchExtension::ContextListType contexts;
 
             validContexts(contexts);
@@ -2949,7 +3042,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                 case MatchExtension::MATCH_MORE:
                     DBG(FUNC, PVT_FMT(target(), "match more..."));
 
-                    /* can match, will match more, and it's an external call? */
+                    // can match, will match more, and it's an external call?
                     for (DestVectorType::const_iterator i = Opt::_options._fxs_co_dialtone().begin(); i != Opt::_options._fxs_co_dialtone().end(); i++)
                     {
                         if (callFXS()->_flash_transfer == (*i))
@@ -2975,6 +3068,7 @@ bool BoardE1::KhompPvtFXS::onDtmfDetected(K3L_EVENT *e)
                 }
             }
         }
+        */
         else
         {
             ret = KhompPvt::onDtmfDetected(e);
@@ -3042,6 +3136,7 @@ bool BoardE1::KhompPvtFXS::onFlashDetected(K3L_EVENT *e)
 
 /******************************************************************************/
         //Old implementation, not used
+        /*
         if(callFXS()->_flags.check(Kflags::FXS_FLASH_TRANSFER))
         {
             DBG(FUNC, PVT_FMT(_target, "(FXS) transfer canceled"));
@@ -3078,6 +3173,7 @@ bool BoardE1::KhompPvtFXS::onFlashDetected(K3L_EVENT *e)
             DBG(FUNC, PVT_FMT(target(), "(FXS) r (unable to start transfer)"));
             return false;
         }
+        */
 /******************************************************************************/
 
     }
@@ -3207,7 +3303,8 @@ bool BoardE1::KhompPvtFXS::doChannelHangup(CommandRequest &cmd)
     try
     {
         ScopedPvtLock lock(this);
-        
+       
+        /*
         if(!callFXS()->_uuid_other_session.empty())
         {
             DBG(FUNC,PVT_FMT(_target, "unable to transfer"));
@@ -3225,6 +3322,7 @@ bool BoardE1::KhompPvtFXS::doChannelHangup(CommandRequest &cmd)
             }
             callFXS()->_uuid_other_session.clear();            
         }
+        */
 
         if (call()->_flags.check(Kflags::IS_INCOMING))
         {

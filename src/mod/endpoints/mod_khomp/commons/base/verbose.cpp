@@ -2505,9 +2505,11 @@ std::string Verbose::command(const int32 cmd_code, const int32 dev_idx, const in
         case VerboseTraits::K_CM_LOG_REQUEST:
         case VerboseTraits::K_CM_LOG_CREATE_DISPATCHER:
         case VerboseTraits::K_CM_LOG_DESTROY_DISPATCHER:
-
         case VerboseTraits::K_CM_PING:
 #endif
+//#if K3L_AT_LEAST(2,1,0)
+//        case VerboseTraits::K_CM_LOG_UPDATE:
+//#endif
             return show(buf, commandName(code), Target(NONE));
 #if K3L_AT_LEAST(2,1,0)
         case VerboseTraits::K_CM_START_FAX_TX:

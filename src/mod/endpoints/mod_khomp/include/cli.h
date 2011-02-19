@@ -733,17 +733,21 @@ struct Cli
             options.push_back("fxs-global-orig");
             options.push_back("fxs-co-dialtone");
             options.push_back("fxs-bina");
+            options.push_back("fxs-sharp-dial");
             options.push_back("disconnect-delay");
             options.push_back("delay-ringback-co");
             options.push_back("delay-ringback-pbx");
             options.push_back("ignore-letter-dtmfs");
             options.push_back("fxo-send-pre-audio");
+            options.push_back("fxo-busy-disconnection");
             options.push_back("fxs-digit-timeout");
             options.push_back("drop-collect-call");
             options.push_back("kommuter-activation");
             options.push_back("kommuter-timeout");
             options.push_back("user-transfer-digits");
             options.push_back("flash-to-digits");
+            options.push_back("accountcode");
+            options.push_back("audio-packet-length");
 
             brief = "Get configuration options in the Khomp channel.";
 
@@ -821,17 +825,21 @@ struct Cli
             options.push_back("fxs-global-orig");
             options.push_back("fxs-co-dialtone");
             options.push_back("fxs-bina");
+            options.push_back("fxs-sharp-dial");
             options.push_back("disconnect-delay");
             options.push_back("delay-ringback-co");
             options.push_back("delay-ringback-pbx");
             options.push_back("ignore-letter-dtmfs");
             options.push_back("fxo-send-pre-audio");
+            options.push_back("fxo-busy-disconnection");
             options.push_back("fxs-digit-timeout");
             options.push_back("drop-collect-call");
             options.push_back("kommuter-activation");
             options.push_back("kommuter-timeout");
             options.push_back("user-transfer-digits");
             options.push_back("flash-to-digits");
+            options.push_back("accountcode");
+            options.push_back("audio-packet-length");
 
             brief = "Ajust configuration options in the Khomp channel.";
 
@@ -932,6 +940,36 @@ struct Cli
 
         bool execute(int argc, char *argv[]);
     } KhompRevision;
+
+    /* khomp dump config */
+    static struct _KhompDumpConfig : public Command
+    {
+        _KhompDumpConfig()
+        {
+            complete_name = "dump config";
+            brief = "Dump configuration values on screen.";
+
+            usage =                                                            \
+"\nUsage: khomp dump config\n\n"                                               \
+"Dump configuration values loaded on memory.\n ";                              
+            
+            _commands.push_back(this);
+        }
+
+        /* just to hide unavaible options */
+        bool removeUnavaible(const std::string &s)
+        {
+            if(s == "atxfer" || s == "blindxfer" || s == "callgroup" ||
+               s == "mohclass" || s == "native-bridge" || s == "recording" ||
+               s == "record-prefix" || s == "transferdigittimeout" ||
+               s == "pickupgroup" || s == "has-ctbus" || 
+               s == "user-transfer-digits")
+                return true;
+            return false;
+        }
+        
+        bool execute(int argc, char *argv[]);
+    } KhompDumpConfig;
 
     /* khomp send command */
     static struct _KhompSendCommand : public Command

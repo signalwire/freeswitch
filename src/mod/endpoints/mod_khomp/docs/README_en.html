@@ -6,10 +6,9 @@
 <a name="Using_the_Khomp_Endpoint" id="Using_the_Khomp_Endpoint"></a><h1> <span class="mw-headline"> Using the Khomp Endpoint </span></h1>
 <p>After installation and startup services required by Khomp, FreeSWITCH can now be loaded or initialized.
 </p>
-<ul><li><b>WARNING</b>: It is imperative that the<b>FreeSWITCH</b> is not executed using the option that disables the escalation in real time (-nort), <b>especially</b> if this is running side-by server-side with web servers or database. Failure to do so may result in loss of audio quality, causing a serious commitment on the progress of system connections.
+<ul><li><b>WARNING</b>: Avoid using the <b>-nort</b>, as it disables real-time scheduling, it is essential that the <b>FreeSwitch</b> are using real-time scheduling, especially if it is running side-by-side with <i>web</i> servers or database . Use the <b>-nort</b> may result in loss of audio quality, causing a serious commitment on the progress of system connections.
 </li></ul>
 <p>After initialization of FreeSWITCH, you can verify that the module was loaded Khomp through the following command: <br />
-</p><p><br />
 </p>
 <pre> freeswitch@hostname&gt; module_exists mod_khomp
 </pre>

@@ -1398,8 +1398,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (!switch_channel_test_flag(originator_channel, CF_ANSWERED)) {
-				if (switch_channel_test_flag(originatee_channel, CF_ANSWERED)) {
+			//if (!switch_channel_test_flag(originator_channel, CF_ANSWERED)) {
+			if (!switch_channel_media_ready(originator_channel)) {
+				if (switch_channel_media_ready(originatee_channel)) {
+				//if (switch_channel_test_flag(originatee_channel, CF_ANSWERED)) {
 					swap_session = originator_session;
 					originator_session = originatee_session;
 					originatee_session = swap_session;

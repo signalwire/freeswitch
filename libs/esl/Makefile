@@ -95,4 +95,7 @@ managedmod: $(MYLIB)
 phpmod-install: phpmod
 	$(MAKE) -C php install
 
+pymod-install: pymod
+	$(MAKE) -C python install
+
 everymod: perlmod phpmod luamod pymod rubymod javamod managedmod

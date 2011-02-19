@@ -83,6 +83,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 		msg.channel = fchan;
 		msg.event_id = FTDM_SIGEVENT_DIALING;
 		ftdm_span_send_signal(fchan->span, &msg);
+	} else if (state == FTDM_CHANNEL_STATE_HANGUP) {
+		ftdm_set_echocancel_call_end(fchan);
 	}
 
 	/* MAINTENANCE WARNING

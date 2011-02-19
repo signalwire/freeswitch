@@ -317,7 +317,9 @@ struct K3LAPIBase
     /* pega valores em strings de eventos */
 
     KLibraryStatus get_param(K3L_EVENT *ev, const char *name, std::string &res) const;
+
     std::string get_param(K3L_EVENT *ev, const char *name) const;
+    std::string get_param_optional(K3L_EVENT *ev, const char *name) const;
 
     /* inicializa valores em cache */
 
