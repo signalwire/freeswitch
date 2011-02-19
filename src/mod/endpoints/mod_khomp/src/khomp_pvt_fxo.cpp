@@ -715,27 +715,39 @@ bool BoardFXO::KhompPvtFXO::indicateBusyUnlocked(int cause, bool sent_signaling)
 
     if(call()->_flags.check(Kflags::IS_INCOMING))
     {
+        /* already connected or sent signaling... */
+        mixer(KHOMP_LOG, 1, kmsGenerator, kmtBusy);
+        
         if(!call()->_flags.check(Kflags::CONNECTED) && !sent_signaling)
         {
-            //we are talking about branches, not trunks 
+            /* we are talking about branches, not trunks */ 
             command(KHOMP_LOG, CM_CONNECT);
-            command(KHOMP_LOG, CM_DISCONNECT);
-        }
-        else
-        {
-            //already connected or sent signaling... 
-            mixer(KHOMP_LOG, 1, kmsGenerator, kmtBusy);
+            callFXO()->_busy_disconnect = Board::board(_target.device)->_timers.add(Opt::_options._fxo_busy_disconnection(), &BoardFXO::KhompPvtFXO::busyDisconnect, this);
         }
     }
     else if(call()->_flags.check(Kflags::IS_OUTGOING))
     {
-        //already connected or sent signaling... 
+        /* already connected or sent signaling... */
         mixer(KHOMP_LOG, 1, kmsGenerator, kmtBusy);
     }
 
     DBG(FUNC,PVT_FMT(_target, "(FXO) r"));
-    
     return true; 
+}
+
+void BoardFXO::KhompPvtFXO::busyDisconnect(Board::KhompPvt * pvt)
+{
+    DBG(FUNC, PVT_FMT(pvt->target(), "Disconnecting FXO"));
+
+    try 
+    {   
+        ScopedPvtLock lock(pvt);
+        pvt->command(KHOMP_LOG, CM_DISCONNECT);
+    }   
+    catch (...)
+    {
+        LOG(ERROR, PVT_FMT(pvt->target(), "unable to lock the pvt !"));
+    }  
 }
 
 void BoardFXO::KhompPvtFXO::reportFailToReceive(int fail_code)
@@ -743,9 +755,7 @@ void BoardFXO::KhompPvtFXO::reportFailToReceive(int fail_code)
     KhompPvt::reportFailToReceive(fail_code);
 
     command(KHOMP_LOG, CM_CONNECT);
-
     command(KHOMP_LOG, CM_DISCONNECT);
-
 }
 
 bool BoardFXO::KhompPvtFXO::validContexts(

@@ -96,8 +96,10 @@ typedef struct private_object private_object_t;
 #define SOFIA_MULTIPART_PREFIX_T "~sip_mp_"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX "sip_rh_"
+#define SOFIA_SIP_RESPONSE_HEADER_PREFIX_T "~sip_rh_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
+#define SOFIA_SIP_PROGRESS_HEADER_PREFIX_T "~sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
@@ -587,6 +589,8 @@ struct private_object {
 	sofia_private_t *sofia_private;
 	uint8_t flags[TFLAG_MAX];
 	switch_payload_t agreed_pt;
+	switch_payload_t audio_recv_pt;
+	switch_payload_t video_recv_pt;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	switch_frame_t read_frame;

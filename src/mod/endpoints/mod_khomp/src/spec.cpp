@@ -78,8 +78,6 @@ static SpecRetType processSpecAtom(std::string & atom, SpecFlagsType & flags, Sp
 		return processSpecAtoms(allocstr, flags, fun);
     }
 
-    //Regex::Expression e("(((([bB])[ ]*([0-9]+))|(([sS])[ ]*([0-9]+)))[ ]*(([cClL])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)?)|(([rR])[ ]*([0-9]+)[ ]*([-][ ]*([0-9]+))?)", Regex::E_EXTENDED);
-
 	Regex::Match what(allocstr, Globals::regex_allocation);
 
 	if (!what.matched())

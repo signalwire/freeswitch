@@ -826,6 +826,8 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		tech_pvt->recv_te = tech_pvt->te = profile->te;
 	}
 
+	tech_pvt->dtmf_type = tech_pvt->profile->dtmf_type;
+
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 		if (tech_pvt->bcng_pt) {
 			tech_pvt->cng_pt = tech_pvt->bcng_pt;
@@ -836,6 +838,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	tech_pvt->session = session;
 	tech_pvt->channel = switch_core_session_get_channel(session);
+	sofia_glue_check_dtmf_type(tech_pvt);
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);
 	switch_channel_set_cap(tech_pvt->channel, CC_BYPASS_MEDIA);
 	switch_channel_set_cap(tech_pvt->channel, CC_PROXY_MEDIA);
@@ -3234,6 +3237,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->recv_te);
 		}
 
+		if (tech_pvt->audio_recv_pt != tech_pvt->agreed_pt) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "Set audio receive payload to %u\n", tech_pvt->audio_recv_pt);
+			switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->audio_recv_pt);
+		}
+
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
 			((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
 			((val = switch_channel_get_variable(tech_pvt->channel, "suppress_cng")) && switch_true(val))) {
@@ -3307,7 +3315,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_video_rtcp_port"))) {
 					remote_rtcp_port = (switch_port_t)atoi(rport);
 				}
-
+				
 				if (switch_rtp_set_remote_address
 					(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port, remote_rtcp_port, SWITCH_TRUE,
 					 &err) != SWITCH_STATUS_SUCCESS) {
@@ -3410,6 +3418,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				if ((ssrc = switch_channel_get_variable(tech_pvt->channel, "rtp_use_video_ssrc"))) {
 					uint32_t ssrc_ul = (uint32_t) strtoul(ssrc, NULL, 10);
 					switch_rtp_set_ssrc(tech_pvt->video_rtp_session, ssrc_ul);
+				}
+
+
+				if (tech_pvt->video_recv_pt != tech_pvt->video_agreed_pt) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+									  "Set video receive payload to %u\n", tech_pvt->video_recv_pt);
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->video_recv_pt);
 				}
 
 				switch_channel_set_variable_printf(tech_pvt->channel, "sip_use_video_pt", "%d", tech_pvt->video_agreed_pt);
@@ -4038,6 +4053,24 @@ switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *sess
 
 }
 
+switch_status_t sofia_glue_get_offered_pt(private_object_t *tech_pvt, const switch_codec_implementation_t *mimp, switch_payload_t *pt)
+{
+	int i = 0;
+
+	for (i = 0; i < tech_pvt->num_codecs; i++) {
+		const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+
+		if (!strcasecmp(imp->iananame, mimp->iananame)) {
+			*pt = tech_pvt->ianacodes[i];
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_sdp)
 {
 	uint8_t match = 0;
@@ -4554,9 +4587,17 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-
+					tech_pvt->audio_recv_pt = map->rm_pt;
+					
+					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+						sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->audio_recv_pt);
+					}
+					
+					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->audio_recv_pt);
+					switch_channel_set_variable(tech_pvt->channel, "sip_audio_recv_pt", tmp);
+					
 				}
-
+				
 				if (match) {
 					if (sofia_glue_tech_set_codec(tech_pvt, 1) == SWITCH_STATUS_SUCCESS) {
 						got_audio = 1;
@@ -4583,7 +4624,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 			}
 
-
+			
 			if (!match && greedy && mine < tech_pvt->num_codecs) {
 				mine++;
 				skip = 0;
@@ -4665,6 +4706,16 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_agreed_pt);
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_pt", tmp);
 						sofia_glue_check_video_codecs(tech_pvt);
+
+						tech_pvt->video_recv_pt = map->rm_pt;
+						
+						if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+							sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->video_recv_pt);
+						}
+
+						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_recv_pt);
+						switch_channel_set_variable(tech_pvt->channel, "sip_video_recv_pt", tmp);
+						
 						break;
 					} else {
 						vmatch = 0;
@@ -5164,7 +5215,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			if ((tmp = switch_channel_get_variable(channel, "sip_use_pt"))) {
 				tech_pvt->pt = tech_pvt->agreed_pt = (switch_payload_t)atoi(tmp);
 			}
-
+			
 			sofia_glue_tech_set_codec(tech_pvt, 1);
 
 			tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
@@ -5219,6 +5270,19 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 				switch_xml_free(xml);
 				return 0;
 			}
+			
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				if ((tmp = switch_channel_get_variable(channel, "sip_audio_recv_pt"))) {
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, atoi(tmp));
+				}
+			}
+
+			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				if ((tmp = switch_channel_get_variable(channel, "sip_video_recv_pt"))) {
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, atoi(tmp));
+				}
+			}
+
 		}
 
 		if (switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) {

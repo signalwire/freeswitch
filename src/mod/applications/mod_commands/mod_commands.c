@@ -780,7 +780,7 @@ SWITCH_STANDARD_API(user_data_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		if ((dup_domain = switch_core_get_variable("domain"))) {
+		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
 			domain = dup_domain;
 		} else {
 			domain = "cluecon.com";

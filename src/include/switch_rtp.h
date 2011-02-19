@@ -437,6 +437,8 @@ SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *pri
 */
 SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, switch_payload_t te);
 SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_session, switch_payload_t te);
+SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt);
+
 /*! 
   \brief Set the payload type for comfort noise
   \param rtp_session the RTP session to modify

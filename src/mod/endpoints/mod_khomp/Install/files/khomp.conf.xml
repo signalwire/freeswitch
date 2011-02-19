@@ -273,6 +273,15 @@ a FXS branch.
 -->
 
 <!--
+Enables/disables the use of sharp (#) as an end-of-number digit on FXS 
+channels for instant dialing. This does not affect special numbers which
+start on sharp, like #8 or #1. 
+(default = yes) 
+
+<param name="fxs-sharp-dial" value="yes" />
+-->
+
+<!--
 This is the delay time to really disconnect a channel after the disconnect
 event arrive. If a connect event comes up in this interval, then the 
 disconnection is ignored and the call keeps going on. Values in ms.
@@ -310,6 +319,21 @@ you may need to set this option to 'no'.
 (default = yes)
 
 <param name="ignore-letter-dtmfs" value="yes"/>
+-->
+
+<!--
+When there is a request to indicate busy for an incoming KFXO call, the 
+ringing channel is taken off hook and then placed on hook, so it now goes
+to answered state and we can send audio throught the line.
+
+If the off/on hook time interval is too short, the PSTN may ignore it, and 
+keep the line in a ringing state. If it is too long, the call may be charged.
+The option below defines the delay between the line being answered and being
+disconnected, in miliseconds (from 50ms to 90000ms).
+
+(default = 1250)
+
+<param name="fxo-busy-disconnection" value="1250"/>
 -->
 
 <!--

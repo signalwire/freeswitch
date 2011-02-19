@@ -29,7 +29,10 @@
 </p>
 <pre><b>Sintaxe:</b> &lt;param name="..." value="..."/&gt;
 </pre>
-<ul><li><b>dialplan</b>: Nome do módulo de <i>dialplan</i> em uso.
+<p><br />
+</p>
+<ul><li><b>accountcode</b>: Define o account code padrão para chamadas no Endpoint. Esta opção pode ser qualquer string alfanumérica; 
+</li><li><b>dialplan</b>: Nome do módulo de <i>dialplan</i> em uso.
 </li><li><b>auto-fax-adjustment</b>: Ativa ("yes") ou desativa ("no") o ajuste automático do canal (desabilitar o cancelador de eco e a supressão DTMF) ao detectar tom de FAX; 
 </li><li><b>auto-gain-control</b>: Ativa ("yes") ou desativa ("no") a ativação do controle automático de ganho (AGC) pelo Endpoint; 
 </li><li><b>context-digital</b>: Contexto de entrada para ligações em placas digitais (o padrão é "khomp-DD-LL", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "LL" pelo número do link, "CCC" pelo número do canal e "SSSS" pelo número serial do dispositivo); 
@@ -49,6 +52,7 @@
 </li><li><b>fxs-global-orig</b>: Número inicial para numeração seqüencial de ramais das placas <b>KFXS</b> que não estiverem listadas na seção <b>&lt;fxs-branches&gt;</b> (a numeração segue ordem crescente por número da placa e número do canal físico) (o padrão é "0"); 
 </li><li><b>fxs-co-dialtone</b>: Seqüências de números, separados por vírgula, que disparam um tom contínuo (de central pública) em ramais FXS (ex: "0,99" faz com que, ao discar "0" ou "99", o usuário receba o tom de linha contínuo) (o padrão é vazio);
 </li><li><b>fxs-bina</b>: Quando ativada ("yes"), ligações para ramais FXS enviarão os dígitos correspondentes ao telefone de origem em sinalização BINA DTMF (o valor padrão é "no");
+</li><li><b>language</b>: Define idioma para ligações nas placas Khomp; 
 </li><li><b>ignore-letter-dtmfs</b>: Define se o canal deve ignorar DTMFs incomuns detectados pela placa (A, B, C e D). Entretanto, se você necessita passar esses dígitos pela placa, você deve ajustar esta opção para "no" (o valor padrão é "yes");
 </li><li><b>input-volume</b>: Define o volume de entrada das ligações, varia de -10 a +10&nbsp;; 
 </li><li><b>kommuter-activation</b>: Define se a ativação de dispositivos kommuter encontrados no sistema será feita de forma automática ("auto"), ou de forma manual ("manual") pelo usuário, através do comando "khomp kommuter on/off"; 
@@ -119,6 +123,8 @@
 <ul><li>context; 
 </li><li>input-volume; 
 </li><li>output-volume; 
+</li><li>language; 
+</li><li>accountcode;
 </li><li>calleridnum; 
 </li><li>calleridname;
 </li><li>flash-to-digits.
@@ -1011,7 +1017,7 @@ install: **  for knowing how to proceed with the installation.  **
 <p>Este configurador, por sua vez, mostra todas as opções possíveis de configuração da placa. Os parâmetros que não forem configurados assumem os valores padrão automaticamente, e são compatíveis com a maior parte dos sistemas. Maiores detalhes sobre este programa podem ser obtidos na seção de número '2'. 
 </p><p><br />
 </p>
-<ul><li> <b>IMPORTANTE</b>: Para o FreeSWITCH iniciar, é preciso que a placa da khomp esteja configurada e todos módulos estejam rodando (conforme mostrado acima). <b>Caso a placa não esteja configurada, o FreeSWITCH não iniciará</b>.<br /><br />Se você deseja rodar o sistema sem a placa da Khomp, é preciso configurar o FreeSWITCH para ele não carregar o módulo da Khomp. Para isso, abra o arquivo "<i>/usr/local/freeswitch/conf/autoload_configs/modules.conf.xml</i>", e comente a linha que carrega o módulo:<br />
+<ul><li> <b>IMPORTANTE</b>: Para o FreeSWITCH iniciar, é preciso que a placa da khomp esteja configurada e todos módulos estejam rodando (conforme mostrado acima). <br /><br />Se você deseja rodar o sistema sem a placa da Khomp, é preciso configurar o FreeSWITCH para ele não carregar o módulo da Khomp. Para isso, abra o arquivo <b>/usr/local/freeswitch/conf/autoload_configs/modules.conf.xml</b>, e comente a linha que carrega o módulo:<br />
 </li></ul>
 <pre>
   &lt;!-- &lt;load module=&quot;mod_khomp&quot; /&gt; --&gt;
@@ -1079,5 +1085,7 @@ Por fim, para carregar o servidor de processos, basta executar o seguinte comand
 <p><br />
 O <i>script</i> <b>/etc/init.d/khompdrv</b> é responsável por carregar os módulos <i>kpci9030.ko</i> e <i>kpex8311.ko</i> no <i>kernel</i>, que deve ser realizada automaticamente na inicialização do sistema. Em caso de problemas, verifique a seção <a href="#Solu.C3.A7.C3.A3o_de_problemas" title="">Solução de problemas</a>.
 <br />
+</p><p><br />
+Para mais detalhes: <a href="http://www.khomp.com.br" class="external free" title="http://www.khomp.com.br" rel="nofollow">http://www.khomp.com.br</a>
 </p><p><br />
 </p></body></html>

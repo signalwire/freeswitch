@@ -73,7 +73,7 @@ struct SimpleLockBasic: public SimpleLockCommon < Implementor >
         /* do nothing */
     };
 
-    void unreference()
+    void unreference_data()
     {
         switch_mutex_destroy(_mutex);
 

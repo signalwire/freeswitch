@@ -2175,8 +2175,6 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(const char *file, const char *
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	
-	ftdm_set_echocancel_call_end(chan);
-	
 	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
 		if (chan->state == FTDM_CHANNEL_STATE_HANGUP) {
 			/* make user's life easier, and just ignore double hangup requests */
@@ -4866,7 +4864,7 @@ FT_DECLARE(int) ftdm_load_module(const char *name)
 {
 	ftdm_dso_lib_t lib;
 	int count = 0, x = 0;
-	char path[128] = "";
+	char path[512] = "";
 	char *err;
 	ftdm_module_t *mod;
 

@@ -52,21 +52,15 @@
 #include <refcounter.hpp>
 #include <flagger.hpp>
 
-#if defined(COMMONS_LIBRARY_USING_ASTERISK)
+#if defined(COMMONS_LIBRARY_USING_ASTERISK) || defined(COMMONS_LIBRARY_USING_FREESWITCH)
 extern "C"
 {
-    #include <asterisk.h>
-    #include <asterisk/localtime.h>
+    #include <time.h>
 }
 #elif defined(COMMONS_LIBRARY_USING_CALLWEAVER)
 extern "C"
 {
     #include <callweaver/localtime.h>
-}
-#elif defined(COMMONS_LIBRARY_USING_FREESWITCH)
-extern "C"
-{
-    #include <time.h>
 }
 #endif
 /*
@@ -424,77 +418,26 @@ struct Logger
 
                     if (opt._flags[Option::DATETIME])
                     {
-#if defined(COMMONS_LIBRARY_USING_ASTERISK)
-#if ASTERISK_AT_LEAST(1,6,0)
-                        struct timeval tv;
-                        struct ast_tm  lt;
-
-                        gettimeofday(&tv, NULL);
-
-#else
+#if defined(COMMONS_LIBRARY_USING_ASTERISK) || defined(COMMONS_LIBRARY_USING_CALLWEAVER) || defined(COMMONS_LIBRARY_USING_FREESWITCH)
                         time_t      tv;
                         struct tm   lt;
 
                         time (&tv);
-#endif
-
-#if ASTERISK_AT_LEAST(1,4,5)
-                        ast_localtime (&tv, &lt, NULL);
-#else
                         localtime_r (&tv, &lt);
-#endif
 
-#elif defined(COMMONS_LIBRARY_USING_CALLWEAVER) || defined(COMMONS_LIBRARY_USING_FREESWITCH)
-                        time_t      tv;
-                        struct tm   lt;
-
-                        time (&tv);
-
-                        localtime_r (&tv, &lt);
-#endif
                         out_msg += STG(FMT("[%02d-%02d-%02d %02d:%02d:%02d] ")
                             % (lt.tm_year % 100) % (lt.tm_mon + 1) % lt.tm_mday % lt.tm_hour
                             % lt.tm_min % lt.tm_sec);
+#endif
                     }
 
                     if (opt._flags[Option::DATETIMEMS])
                     {
-#if defined(COMMONS_LIBRARY_USING_ASTERISK)
-#if ASTERISK_AT_LEAST(1,6,0)
-                        struct timeval tv;
-                        struct ast_tm  lt;
-
-                        gettimeofday(&tv, NULL);
-
-#else
+#if defined(COMMONS_LIBRARY_USING_ASTERISK) || defined(COMMONS_LIBRARY_USING_CALLWEAVER) || defined(COMMONS_LIBRARY_USING_FREESWITCH)
                         time_t      tv;
                         struct tm   lt;
 
                         time (&tv);
-#endif
-
-#if ASTERISK_AT_LEAST(1,4,5)
-                        ast_localtime (&tv, &lt, NULL);
-#else
-                        localtime_r (&tv, &lt);
-#endif
-
-#if ASTERISK_AT_LEAST(1,6,0)
-                        out_msg += STG(FMT("[%02d-%02d-%02d %02d:%02d:%02d:%04d] ")
-                            % (lt.tm_year % 100) % (lt.tm_mon + 1) % lt.tm_mday % lt.tm_hour % lt.tm_min
-                            % lt.tm_sec % (tv.tv_usec / 1000));
-#else
-                        out_msg += STG(FMT("[%02d-%02d-%02d %02d:%02d:%02d:%04d] ")
-                            % (lt.tm_year % 100) % (lt.tm_mon + 1) % lt.tm_mday % lt.tm_hour % lt.tm_min
-                            % lt.tm_sec % (tv * 1000));
-#endif
-
-#elif defined(COMMONS_LIBRARY_USING_CALLWEAVER) || defined(COMMONS_LIBRARY_USING_FREESWITCH)
-                        time_t      tv;
-                        struct tm   lt;
-
-                        time (&tv);
-
                         localtime_r (&tv, &lt);
 
                         out_msg += STG(FMT("[%02d-%02d-%02d %02d:%02d:%02d:%04d] ")

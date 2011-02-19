@@ -189,16 +189,8 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 		dup_dest = strdup(dst->contact);
 
-		if (switch_stristr("fs_path", dst->contact)) {
-			const char *s;
-
-			if ((s = switch_stristr("fs_path=", dst->contact))) {
-				s += 8;
-			}
-			if (s) {
-				remote_host = strdup(s);
-				switch_url_decode(remote_host);
-			}
+		if (dst->route_uri) {
+			remote_host = strdup(dst->route_uri);
 			if (!zstr(remote_host)) {
 				switch_split_user_domain(remote_host, NULL, &remote_ip);
 			}
@@ -239,8 +231,14 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
+		/*
+		if ((p = strstr(contact, ";fs_"))) {
+			*p = '\0';
+		}
+		*/
 
+		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
+		
 		msg_nh = nua_handle(profile->nua, NULL,
 							TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
 							TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),

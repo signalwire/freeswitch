@@ -821,9 +821,17 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 
 ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
 {
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
 	if (!ftdmchan) {
 		return FTDM_SUCCESS;
 	}
+
+	if (ftdm_test_flag(sngisdn_info, FLAG_SENT_CHAN_ID)) {
+		/* Indicate channel ID only in first response */
+		return FTDM_SUCCESS;
+	}
+	ftdm_set_flag(sngisdn_info, FLAG_SENT_CHAN_ID);
+	
 	chanId->eh.pres = PRSNT_NODEF;
 	chanId->prefExc.pres = PRSNT_NODEF;
 	chanId->prefExc.val = IN_PE_EXCLSVE;

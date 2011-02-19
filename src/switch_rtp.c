@@ -126,6 +126,7 @@ struct switch_rtp_rfc2833_data {
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
 	uint32_t in_digit_ts;
+	uint32_t last_in_digit_ts;
 	uint32_t in_digit_sanity;
 	uint32_t in_interleaved;
 	uint32_t timestamp_dtmf;
@@ -306,6 +307,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF payload check.\n");
 			rtp_session->dtmf_data.last_digit = 0;
 			rtp_session->dtmf_data.in_digit_ts = 0;
+			rtp_session->dtmf_data.in_digit_sanity = 0;
 		}
 
 		end = packet[1] & 0x80 ? 1 : 0;
@@ -355,6 +357,15 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			}
 
 			if (end) {
+				if (!rtp_session->dtmf_data.in_digit_ts && rtp_session->dtmf_data.last_in_digit_ts != ts) {
+#ifdef DEBUG_2833
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start with end packet %d\n", ts);
+#endif
+					rtp_session->dtmf_data.last_in_digit_ts = ts;
+					rtp_session->dtmf_data.in_digit_ts = ts;
+					rtp_session->dtmf_data.first_digit = key;
+					rtp_session->dtmf_data.in_digit_sanity = 2000;
+				}
 				if (rtp_session->dtmf_data.in_digit_ts) {
 					switch_dtmf_t dtmf = { key, duration };
 
@@ -395,7 +406,11 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 				}
 
 			} else if (!rtp_session->dtmf_data.in_digit_ts) {
+#ifdef DEBUG_2833
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start %d\n", ts);
+#endif
 				rtp_session->dtmf_data.in_digit_ts = ts;
+				rtp_session->dtmf_data.last_in_digit_ts = ts;
 				rtp_session->dtmf_data.first_digit = key;
 				rtp_session->dtmf_data.in_digit_sanity = 2000;
 			}
@@ -1578,7 +1593,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.cc = 0;
 
 	rtp_session->payload = payload;
-
+	rtp_session->rpayload = payload;
 
 	rtp_session->rtcp_send_msg.header.version = 2;
 	rtp_session->rtcp_send_msg.header.p = 0;
@@ -1772,6 +1787,12 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_sessi
 		rtp_session->recv_te = te;
 	}
 }
+
+SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
+{
+	rtp_session->rpayload = pt;
+}
+
 
 SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
 {
@@ -2345,7 +2366,7 @@ static void do_flush(switch_rtp_t *rtp_session)
 					if (bytes > rtp_header_len && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 						handle_rfc2833(rtp_session, bytes, &do_cng);
 #ifdef DEBUG_2833
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop ***\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
 
@@ -2640,13 +2661,25 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
+		int read_pretriggered = 0;
 		bytes = 0;
 
 		if (rtp_session->timer.interval) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					rtp_session->hot_hits += rtp_session->samples_per_interval;
+					status = read_rtp_packet(rtp_session, &bytes, flags);
+					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initial %d\n", bytes); */
+					read_pretriggered = 1;
+
+					if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
+						/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trigger %d\n", rtp_session->hot_hits); */
+						rtp_session->hot_hits += rtp_session->samples_per_interval;
+					} else {
+						rtp_session->hot_hits = 0;
+						switch_core_timer_sync(&rtp_session->timer);
+						goto recvfrom;
+					}
 					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
 						switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
@@ -2674,7 +2707,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 	recvfrom:
-		bytes = 0;
+		if (!read_pretriggered) {
+			bytes = 0;
+		}
 		read_loops++;
 		poll_loop = 0;
 
@@ -2685,7 +2720,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0) {
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity) {
 				pt = 20000;
 			}
 			
@@ -2694,13 +2729,18 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
+			do_2833(rtp_session, session);
+
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
-				do_2833(rtp_session, session);
+				return_cng_frame();
 			}
 		}
 
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
-			status = read_rtp_packet(rtp_session, &bytes, flags);
+			if (!read_pretriggered) {
+				status = read_rtp_packet(rtp_session, &bytes, flags);
+				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read bytes %d\n", bytes); */
+			}
 		} else {
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
 				char tmp[128] = "";
@@ -2813,7 +2853,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->payload) {
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
 			return_cng_frame();
 		}
@@ -3130,8 +3170,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
 			rtp_session->recv_msg.header.pt = 97;
 		}
-
-		rtp_session->rpayload = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
 		break;
 

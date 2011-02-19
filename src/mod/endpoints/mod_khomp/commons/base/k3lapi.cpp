@@ -205,6 +205,15 @@ std::string K3LAPIBase::get_param(K3L_EVENT *ev, const char *name) const
     return res;
 }
 
+std::string K3LAPIBase::get_param_optional(K3L_EVENT *ev, const char *name) const
+{
+    std::string res;
+
+    (void)get_param(ev, name, res);
+
+    return res;
+}
+
 void K3LAPIBase::init(void)
 {
     if (_device_count != 0) return;

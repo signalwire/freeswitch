@@ -27,6 +27,14 @@
 # Maintainer(s): Michal Bielicki <michal.bielicki (at) ++nospam_please++ seventhsignal.de
 #
 ######################################################################################################################
+# Module build settings
+%define build_sng_isdn 0
+%define build_sng_ss7 0
+%define build_sng_tc 0
+%{?with_sang_tc:%define build_sng_tc 1 }
+%{?with_sang_isdn:%define build_sng_isdn 1 }
+%{?with_sang_ss7:%define build_sng_ss7 1 }
+
 ######################################################################################################################
 #
 # disable rpath checking
@@ -54,7 +62,7 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:    http://files.freeswitch.org/%{name}-%{version}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/celt-0.7.1.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
 Source2:	http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
@@ -65,6 +73,8 @@ Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source11:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+Source12:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
+Source13:       http://files.freeswitch.org/downloads/libs/opus-0.9.0.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -109,6 +119,8 @@ BuildRequires: which
 BuildRequires: zlib-devel
 BuildRequires: e2fsprogs-devel
 BuildRequires: libtheora-devel
+BuildRequires: libxml2-devel
+BuildRequires: bison
 Requires: alsa-lib
 Requires: libogg
 Requires: libvorbis
@@ -124,6 +136,7 @@ Requires: zlib
 Requires: libtiff
 Requires: python
 Requires: libtheora
+Requires: libxml2
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -282,13 +295,71 @@ German language phrases module and directory structure for say module and voicem
 Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
 Group:		System/Libraries
 Requires:        %{name} = %{version}-%{release}
-%{?with_sang_isdn: Requires: wanpipe }
-%{?with_sang_isdn: Requires: libsng_isdn }
-%{?with_sang_isdn: BuildRequires: wanpipe }
-%{?with_sang_isdn: BuildRequires: libang_isdn }
 
 %description freetdm
 FreeTDM
+
+%if %{build_sng_isdn}
+
+%package freetdm-sng-isdn
+Summary:	Sangoma ISDN Module for FreeTDM
+Group:		System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-freetdm = %{version}-%{release}
+Requires: wanpipe 
+Requires: libsng_isdn 
+BuildRequires: wanpipe 
+BuildRequires: libsng_isdn 
+
+%description freetdm-sng-isdn
+Sangoma ISDN Module for freetdm
+
+%endif
+
+%if %{build_sng_ss7}
+
+%package freetdm-sng-ss7
+Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH, Sangoma SS7 Module
+Group:		System/Libraries
+Requires:        %{name} = %{version}-%{release}
+Requires:       %{name}-freetdm = %{version}-%{release}
+Requires: wanpipe 
+Requires: libsng_ss7 
+BuildRequires: wanpipe 
+BuildRequires: libsng_ss7 
+
+%description freetdm-sng-ss7
+Sangoma SMG-SS7 drivers for FreeTDM
+
+%endif
+
+
+%if %{build_sng_tc}
+
+%package sangoma-codec
+Summary:	Sangoma D100 and D500 Codec Card Support
+Group:		System/Libraries
+Requires:        %{name} = %{version}-%{release}
+Requires: sng-tc-linux
+BuildRequires: sng-tc-linux
+
+%description sangoma-codec
+Sangoma D100 and D500 Codec Card Support
+
+%endif
+
+%package skypopen
+Summary:	Skype Endpoint
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:	libX11
+BuildRequires:	libX11-devel
+
+%description skypopen
+This software (Skypopen) uses the Skype API but is not endorsed, certified or otherwise approved in any way by Skype.
+Skypopen is an endpoint (channel driver) that uses the Skype client as an interface to the Skype network, and allows 
+incoming and outgoing Skype calls to/from FreeSWITCH (that can be bridged, originated, answered, etc. as in all other 
+endpoints, e.g. Sofia-SIP).
 
 ######################################################################################################################
 #
@@ -309,6 +380,8 @@ cp %{SOURCE8} libs/
 cp %{SOURCE9} libs/
 cp %{SOURCE10} libs/
 cp %{SOURCE11} libs/
+cp %{SOURCE12} libs/
+cp %{SOURCE13} libs/
 
 ######################################################################################################################
 #
@@ -358,7 +431,11 @@ ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc codecs/mod_mp4v \
-                codecs/mod_silk codecs/mod_siren codecs/mod_theora"
+                codecs/mod_opus codecs/mod_silk codecs/mod_siren codecs/mod_theora "
+#
+%if %{build_sng_tc}
+CODECS_MODULES+="codecs/mod_sangoma_codec"
+%endif
 ######################################################################################################################
 #
 #					Dialplan Modules
@@ -377,7 +454,7 @@ DIRECTORIES_MODULES=""
 #
 ######################################################################################################################
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/freetdm/mod_freetdm endpoints/mod_portaudio \
-                   endpoints/mod_sofia"
+                   endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen"
  
 ######################################################################################################################
 #
@@ -483,11 +560,13 @@ fi
 		%{?configure_options}
 
 #Create the version header file here
-cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
-touch .noversion
+#cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
+#touch .noversion
 
 %{__make}
 
+cd libs/esl
+%{__make} pymod
 
 ######################################################################################################################
 #
@@ -502,6 +581,11 @@ touch .noversion
 %{__mkdir} -p %{buildroot}%{prefix}/log
 %{__mkdir} -p %{buildroot}%{logfiledir}
 %{__mkdir} -p %{buildroot}%{runtimedir}
+
+#install the esl stuff
+cd libs/esl
+%{__make} DESTDIR=%{buildroot} pymod-install
+cd ../..
 
 %ifos linux
 # Install init files
@@ -522,6 +606,23 @@ touch .noversion
 # Add monit file
 %{__install} -D -m 644 build/freeswitch.monitrc %{buildroot}/etc/monit.d/freeswitch.monitrc
 %endif
+######################################################################################################################
+#
+#                               Remove files that are not wanted if they exist
+#
+######################################################################################################################
+
+%if %{build_sng_ss7}
+#do not delete a thing
+%else
+%{__rm} -f %{buildroot}/%{prefix}/mod/ftmod_sangoma_ss7*
+%endif
+%if %{build_sng_isdn}
+#do not delete a thing
+%else
+%{__rm} -f %{buildroot}/%{prefix}/mod/ftmod_sangoma_isdn*
+%endif
+
 
 
 ######################################################################################################################
@@ -544,8 +645,6 @@ fi
 %{__ln_s} -f %{prefix}/conf /etc%{prefix}
 
 chkconfig --add freeswitch
-
-
 
 %postun
 ######################################################################################################################
@@ -790,6 +889,7 @@ fi
 %{prefix}/mod/mod_mp4v.so*
 %{prefix}/mod/mod_native_file.so*
 %{prefix}/mod/mod_nibblebill.so*
+%{prefix}/mod/mod_opus.so*
 %{prefix}/mod/mod_pocketsphinx.so*
 %{prefix}/mod/mod_portaudio.so*
 %{prefix}/mod/mod_portaudio_stream.so*
@@ -798,6 +898,7 @@ fi
 %{prefix}/mod/mod_shout.so*
 %{prefix}/mod/mod_silk.so*
 %{prefix}/mod/mod_siren.so*
+%{prefix}/mod/mod_skinny.so*
 %{prefix}/mod/mod_sndfile.so*
 %{prefix}/mod/mod_snom.so*
 %{prefix}/mod/mod_sofia.so*
@@ -831,7 +932,7 @@ fi
 %{prefix}/include/*.h
 ######################################################################################################################
 #
-#						OpenZAP Module for TDM Interaction
+#						FreeTDM Module for TDM Interaction
 #
 ######################################################################################################################
 %files freetdm
@@ -844,7 +945,26 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/zt.conf
 %{prefix}/lib/libfreetdm.so*
 %{prefix}/mod/mod_freetdm.so*
-%{prefix}/mod/ftm*.so*
+%{prefix}/mod/ftmod_skel*.so*
+%{prefix}/mod/ftmod_[a-r,t-z]*.so*
+
+%if %{build_sng_tc}
+%files sangoma-codec
+%defattr(-, freeswitch, daemon)
+%{prefix}/mod/mod_sangoma_codec.so*
+%endif
+
+%if %{build_sng_ss7}
+%files freetdm-sng-ss7
+%defattr(-, freeswitch, daemon)
+%{prefix}/mod/ftmod_sangoma_ss7.so*
+%endif
+
+%if %{build_sng_isdn}
+%files freetdm-sng-isdn
+%defattr(-, freeswitch, daemon)
+%{prefix}/mod/ftmod_sangoma_isdn.so*
+%endif
 
 ######################################################################################################################
 #
@@ -899,9 +1019,14 @@ fi
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_python*.so*
 %attr(0644, root, bin) /usr/lib/python*/site-packages/freeswitch.py*
+%attr(0755, root, bin) /usr/lib/python*/site-packages/_ESL.so*
+%attr(0755, root, bin) /usr/lib/python*/site-packages/ESL.py*
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/python.conf.xml
 
+%files skypopen
+%defattr(-,freeswitch,daemon)
+%{prefix}/mod/mod_skypopen.so*
 ######################################################################################################################
 #
 #						Language Modules
@@ -956,6 +1081,17 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Wed Feb 16 2011 - michal.bielicki@seventhsignal.de
+- added mod_skinny
+- added sangoma libraries
+- added sangoma codec module for D100 and D150 and D500
+- added skypopen module
+- fixes for ss7 freetdm modules
+- added mod_opus
+- added selector for sangoma modules
+- addded python esl module to rpm
+- some minor cleanups
+- cut sangoma modules into separate rpms as addons for freetdm
 * Tue Jan 18 2011 - michal.bielicki@seventhsignal.de
 - Fedora adjustments
 * Fri Oct 15 2010 - michal.bielicki@seventhsignal.de
@@ -1090,3 +1226,4 @@ fi
 - Added devel package
 * Thu Mar 15 2007 - peter+rpmspam@suntel.com.tr
 - Initial RPM release
+

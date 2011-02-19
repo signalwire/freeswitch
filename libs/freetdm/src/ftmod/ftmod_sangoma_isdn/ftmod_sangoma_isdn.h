@@ -80,6 +80,8 @@ typedef enum {
 	FLAG_ACTIVATING			= (1 << 10),
 	/* Used when we receive an ALERT msg + inband tones ready */
 	FLAG_MEDIA_READY		= (1 << 11),
+	/* Set when we already sent a Channel ID IE */
+	FLAG_SENT_CHAN_ID		= (1 << 12),
 } sngisdn_flag_t;
 
 
