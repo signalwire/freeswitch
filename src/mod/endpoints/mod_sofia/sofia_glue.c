@@ -826,7 +826,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		tech_pvt->recv_te = tech_pvt->te = profile->te;
 	}
 
-	sofia_glue_check_dtmf_type(tech_pvt);
+	tech_pvt->dtmf_type = tech_pvt->profile->dtmf_type;
 
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 		if (tech_pvt->bcng_pt) {
