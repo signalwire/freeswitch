@@ -39,6 +39,7 @@
 	
 */
 #define switch_normalize_volume(x) if (x > 4) x = 4; if (x < -4) x = -4;
+#define switch_normalize_volume_granular(x) if (x > 12) x = 12; if (x < -12) x = -12;
 
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H
@@ -158,6 +159,14 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
   \param vol the volume factor -4 -> 4
  */
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol);
+
+/*!
+  \brief Change the volume of a signed linear audio frame with more granularity
+  \param data the audio data
+  \param samples the number of 2 byte samples
+  \param vol the volume factor -12 -> 12
+ */
+SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t samples, int32_t vol);
 ///\}
 
 SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples);

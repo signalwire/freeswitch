@@ -318,6 +318,7 @@ struct conference_member {
 	switch_mutex_t *audio_in_mutex;
 	switch_mutex_t *audio_out_mutex;
 	switch_mutex_t *read_mutex;
+	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t orig_read_impl;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
@@ -1942,14 +1943,37 @@ static void conference_loop_fn_hangup(conference_member_t *member, caller_contro
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 }
 
+static void check_agc_levels(conference_member_t *member)
+{
+	if (!member->avg_score) return;
+
+	if (member->avg_score < member->conference->agc_level - 200) {
+		member->agc_volume_in_level++;
+		switch_normalize_volume_granular(member->agc_volume_in_level);
+	} else if (member->avg_score > member->conference->agc_level + 200) {
+		member->agc_volume_in_level--;
+		switch_normalize_volume_granular(member->agc_volume_in_level);
+	}
+		//} else {
+		//member->vol_period = (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 5;
+		//}
+}
+
 static void clear_avg(conference_member_t *member)
 {
 
-	member->agc_volume_in_level = 0;
+	if (member->agc_volume_in_level < -5) {
+		member->agc_volume_in_level = 0;
+	}
+
+	if (member->conference->agc_level) {
+		check_agc_levels(member);
+	}
+
 	member->avg_score = 0;
 	member->avg_itt = 0;
 	member->avg_tally = 0;
-	member->nt_tally = 0;
+	member->agc_concur = 0;
 }
 
 
@@ -1962,7 +1986,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, energy_level = 0, diff_level = 400;
-	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_t *session = member->session;
 	int check_floor_change;
 
@@ -1972,7 +1995,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 	channel = switch_core_session_get_channel(session);
 
-	switch_core_session_get_read_impl(session, &read_impl);
+	switch_core_session_get_read_impl(session, &member->read_impl);
 
 	/* As long as we have a valid read, feed that data into an input buffer where the conference thread will take it 
 	   and mux it with any audio from other channels. */
@@ -1997,6 +2020,10 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
+			if (member->conference->agc_level) {
+				member->nt_tally++;
+			}
+
 			if (hangunder_hits) {
 				hangunder_hits--;
 			}
@@ -2017,6 +2044,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 			goto do_continue;
 		}
+
+		if (member->nt_tally > (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 3) {
+			member->agc_volume_in_level = 0;
+			clear_avg(member);
+		}
 		
 		/* Check for input volume adjustments */
 		if (!member->conference->agc_level) {
@@ -2031,30 +2063,29 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
 			int divisor = 0;
-			int agc_period = (read_impl.actual_samples_per_second / read_impl.samples_per_packet) / 2;
-			int combined_vol = 0;
+			int agc_period = (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) / 4;
+			
 
 			data = read_frame->data;
 
-			if (!(divisor = read_impl.actual_samples_per_second / 8000)) {
+			if (!(divisor = member->read_impl.actual_samples_per_second / 8000)) {
 				divisor = 1;
 			}
 
 			member->score = 0;
 
-			combined_vol = member->agc_volume_in_level;
-			if (member->conference->agc_level) {
-				combined_vol += member->agc_volume_in_level;
+			if (member->volume_in_level) {
+				switch_change_sln_volume(read_frame->data, read_frame->datalen / 2, member->volume_in_level);
 			}
 
-			if (combined_vol) {
-				switch_change_sln_volume(read_frame->data, read_frame->datalen / 2, combined_vol);
+			if (member->agc_volume_in_level) {
+				switch_change_sln_volume_granular(read_frame->data, read_frame->datalen / 2, member->agc_volume_in_level);
 			}
 			
 			if ((samples = read_frame->datalen / sizeof(*data))) {
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
-					j += read_impl.number_of_channels;
+					j += member->read_impl.number_of_channels;
 				}
 				member->score = energy / (samples / divisor);
 			}
@@ -2082,22 +2113,14 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 
 				
-				if (++member->nt_tally >= agc_period) {
+				if (++member->agc_concur >= agc_period) {
 					if (!member->vol_period) {
-						if (member->avg_score < member->conference->agc_level) {
-							member->agc_volume_in_level++;
-							switch_normalize_volume(member->agc_volume_in_level);
-							member->vol_period = (read_impl.actual_samples_per_second / read_impl.samples_per_packet) * 2;
-						}
-					
-						if (member->avg_score > member->conference->agc_level) {
-							member->agc_volume_in_level--;
-							switch_normalize_volume(member->agc_volume_in_level);
-							member->vol_period = (read_impl.actual_samples_per_second / read_impl.samples_per_packet) * 2;
-						}
+						check_agc_levels(member);
 					}
-					member->nt_tally = 0;
+					member->agc_concur = 0;
 				}
+			} else {
+				member->nt_tally++;
 			}
 
 			member->score_iir = (int) (((1.0 - SCORE_DECAY) * (float) member->score) + (SCORE_DECAY * (float) member->score_iir));
@@ -2110,6 +2133,10 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				uint32_t diff = member->score - energy_level;
 				if (hangover_hits) {
 					hangover_hits--;
+				}
+
+				if (member->conference->agc_level) {
+					member->nt_tally = 0;
 				}
 
 				if (diff >= diff_level || ++hangunder_hits >= hangunder) { 
@@ -2147,6 +2174,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				if (hangunder_hits) {
 					hangunder_hits--;
 				}
+
+				if (member->conference->agc_level) {
+					member->nt_tally++;
+				}
+
 				if (switch_test_flag(member, MFLAG_TALKING) && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 					switch_event_t *event;
 					if (++hangover_hits >= hangover) {
