@@ -299,7 +299,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 		int16_t *fp = data;
 
 		for (x = 0; x < samples; x++) {
-			tmp = (int32_t) fp[x] * newrate;
+			tmp = (int32_t) (fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
 			fp[x] = (int16_t) tmp;
 		}
