@@ -311,6 +311,7 @@ struct conference_member {
 	switch_buffer_t *resample_buffer;
 	uint32_t flags;
 	uint32_t score;
+	uint32_t last_score;
 	uint32_t score_iir;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *write_mutex;
@@ -2126,20 +2127,26 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 				noise_gate_check(member)
 				) {
+				int last_shift = abs(member->last_score - member->score);
 				
-				member->avg_tally += member->score;
-				member->avg_itt++;
-				if (!member->avg_itt) member->avg_itt++;
-				member->avg_score = member->avg_tally / member->avg_itt;
-				
+				if (member->score && member->last_score && last_shift > 900) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
+									  "AGC %s:%d drop anomalous shift of %d\n", 
+									  member->conference->name,
+									  member->id, last_shift);
+
+				} else {
+					member->avg_tally += member->score;
+					member->avg_itt++;
+					if (!member->avg_itt) member->avg_itt++;
+					member->avg_score = member->avg_tally / member->avg_itt;
+				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
-								  "conf %s AGC %d %d %d %d %d %d\n", 
+								  "AGC %s:%d diff:%d level:%d cur:%d avg:%d vol:%d\n", 
 								  member->conference->name,
 								  member->id, member->conference->agc_level - member->avg_score, member->conference->agc_level, 
 								  member->score, member->avg_score, member->agc_volume_in_level);
-
-
 				
 				if (++member->agc_concur >= agc_period) {
 					if (!member->vol_period) {
@@ -2223,6 +2230,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					}
 				}
 			}
+
+
+			member->last_score = member->score;
 		}
 
 		/* skip frames that are not actual media or when we are muted or silent */
@@ -3490,7 +3500,7 @@ static switch_status_t conf_api_sub_agc(conference_obj_t *conference, switch_str
 	if (argc > 3) {
 		level = atoi(argv[3]);
 	} else {
-		level = 1200;
+		level = 1400;
 	}
 
 	if (level > conference->energy_level) {
@@ -6444,7 +6454,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		int level = 0;
 
 		if (switch_true(auto_gain_level)) {
-			level = 1200;
+			level = 1400;
 		} else {
 			level = atoi(auto_gain_level);
 		}
