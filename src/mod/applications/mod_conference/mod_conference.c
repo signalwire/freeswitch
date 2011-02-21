@@ -266,7 +266,6 @@ typedef struct conference_obj {
 	switch_thread_rwlock_t *rwlock;
 	uint32_t count;
 	int32_t energy_level;
-	int32_t agc_energy_level;
 	uint8_t min;
 	switch_speech_handle_t lsh;
 	switch_speech_handle_t *sh;
@@ -1943,6 +1942,28 @@ static void conference_loop_fn_hangup(conference_member_t *member, caller_contro
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 }
 
+
+static int noise_gate_check(conference_member_t *member)
+{
+	int r = 0;
+
+
+	if (member->conference->agc_level && member->agc_volume_in_level != 0) {
+		int target_score = 0;
+
+		target_score = (member->energy_level + (25 * member->agc_volume_in_level));
+
+		if (target_score < 0) target_score = 0;
+
+		r = member->score > target_score;
+		
+	} else {
+		r = member->score > member->energy_level;
+	}
+
+	return r;
+}
+
 static void check_agc_levels(conference_member_t *member)
 {
 	if (!member->avg_score) return;
@@ -1954,6 +1975,9 @@ static void check_agc_levels(conference_member_t *member)
 		member->agc_volume_in_level--;
 		switch_normalize_volume_granular(member->agc_volume_in_level);
 	}
+
+
+
 		//} else {
 		//member->vol_period = (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 5;
 		//}
@@ -1962,9 +1986,9 @@ static void check_agc_levels(conference_member_t *member)
 static void clear_avg(conference_member_t *member)
 {
 
-	if (member->agc_volume_in_level < -5) {
-		member->agc_volume_in_level = 0;
-	}
+	//if (member->agc_volume_in_level < -5) {
+		//member->agc_volume_in_level = 0;
+	//}
 
 	if (member->conference->agc_level) {
 		check_agc_levels(member);
@@ -1985,7 +2009,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	switch_channel_t *channel;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
-	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, energy_level = 0, diff_level = 400;
+	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, diff_level = 400;
 	switch_core_session_t *session = member->session;
 	int check_floor_change;
 
@@ -2049,13 +2073,17 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			member->agc_volume_in_level = 0;
 			clear_avg(member);
 		}
+
+		if (member->avg_itt > (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 3) {
+			clear_avg(member);
+		}
+
 		
 		/* Check for input volume adjustments */
 		if (!member->conference->agc_level) {
 			clear_avg(member);
 		}
 		
-		energy_level = member->energy_level;
 
 		/* if the member can speak, compute the audio energy level and */
 		/* generate events when the level crosses the threshold        */
@@ -2096,9 +2124,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			
 			if (member->conference->agc_level && member->score && 
 				switch_test_flag(member, MFLAG_CAN_SPEAK) &&
-				member->score > member->conference->agc_energy_level
+				noise_gate_check(member)
 				) {
-
+				
 				member->avg_tally += member->score;
 				member->avg_itt++;
 				if (!member->avg_itt) member->avg_itt++;
@@ -2129,8 +2157,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				member->score_iir = SCORE_MAX_IIR;
 			}
 
-			if (member->score > energy_level) {
-				uint32_t diff = member->score - energy_level;
+			if (noise_gate_check(member)) {
+				uint32_t diff = member->score - member->energy_level;
 				if (hangover_hits) {
 					hangover_hits--;
 				}
@@ -2198,7 +2226,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		}
 
 		/* skip frames that are not actual media or when we are muted or silent */
-		if ((switch_test_flag(member, MFLAG_TALKING) || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
+		if ((switch_test_flag(member, MFLAG_TALKING) || member->energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 			!switch_test_flag(member->conference, CFLAG_WAIT_MOD)) {
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
@@ -3444,7 +3472,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 
 static switch_status_t conf_api_sub_agc(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
-	int level, energy_level;
+	int level;
 	int on = 0;
 
 	if (argc == 2) {
@@ -3462,13 +3490,7 @@ static switch_status_t conf_api_sub_agc(conference_obj_t *conference, switch_str
 	if (argc > 3) {
 		level = atoi(argv[3]);
 	} else {
-		level = 650;
-	}
-
-	if (argc > 4) {
-		energy_level = atoi(argv[4]);
-	} else {
-		energy_level = 100;
+		level = 1200;
 	}
 
 	if (level > conference->energy_level) {
@@ -3476,10 +3498,9 @@ static switch_status_t conf_api_sub_agc(conference_obj_t *conference, switch_str
 		conference->avg_itt = 0;
 		conference->avg_tally = 0;
 		conference->agc_level = level;
-		conference->agc_energy_level = energy_level;
 
 		if (stream) {
-			stream->write_function(stream, "OK AGC ENABLED %d %d\n", conference->agc_level, conference->agc_energy_level);
+			stream->write_function(stream, "OK AGC ENABLED %d\n", conference->agc_level);
 		}
 		
 	} else {
@@ -3853,7 +3874,7 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 
 	if (conference->agc_level) {
 		char tmp[30] = "";
-		switch_snprintf(tmp, sizeof(tmp), "%d:%d", conference->agc_level, conference->agc_energy_level);
+		switch_snprintf(tmp, sizeof(tmp), "%d", conference->agc_level);
 		switch_xml_set_attr_d_buf(x_conference, "agc", tmp);
 	}
 
@@ -6421,30 +6442,16 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	if (!zstr(auto_gain_level)) {
 		int level = 0;
-		int energy_level = 100;
 
 		if (switch_true(auto_gain_level)) {
-			level = 650;
+			level = 1200;
 		} else {
-			char *p;
-			int tmp = 0;
-
 			level = atoi(auto_gain_level);
-			if ((p = strchr(auto_gain_level, ':'))) {
-				p++;
-				if (p) tmp = atoi(p);
-				if (tmp > 0) {
-					energy_level = tmp;
-				}
-			}
 		}
 
 		if (level > 0 && level > conference->energy_level) {
 			conference->agc_level = level;
 		}
-
-		conference->agc_energy_level = energy_level;
-		
 	}
 
 	if (!zstr(maxmember_sound)) {
