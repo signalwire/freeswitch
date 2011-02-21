@@ -36,7 +36,8 @@
  *
  */
 #include <switch.h>
-//#define INTENSE_DEBUG
+#define DEFAULT_AGC_LEVEL 1000
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
 SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
@@ -1965,41 +1966,43 @@ static int noise_gate_check(conference_member_t *member)
 	return r;
 }
 
-static void check_agc_levels(conference_member_t *member)
-{
-	if (!member->avg_score) return;
-
-	if (member->avg_score < member->conference->agc_level - 200) {
-		member->agc_volume_in_level++;
-		switch_normalize_volume_granular(member->agc_volume_in_level);
-	} else if (member->avg_score > member->conference->agc_level + 200) {
-		member->agc_volume_in_level--;
-		switch_normalize_volume_granular(member->agc_volume_in_level);
-	}
-
-
-
-		//} else {
-		//member->vol_period = (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 5;
-		//}
-}
-
 static void clear_avg(conference_member_t *member)
 {
-
-	//if (member->agc_volume_in_level < -5) {
-		//member->agc_volume_in_level = 0;
-	//}
-
-	if (member->conference->agc_level) {
-		check_agc_levels(member);
-	}
 
 	member->avg_score = 0;
 	member->avg_itt = 0;
 	member->avg_tally = 0;
 	member->agc_concur = 0;
 }
+
+static void check_agc_levels(conference_member_t *member)
+{
+	int x = 0;
+
+	if (!member->avg_score) return;
+	
+	if (member->avg_score < member->conference->agc_level - 100) {
+		member->agc_volume_in_level++;
+		switch_normalize_volume_granular(member->agc_volume_in_level);
+		x = 1;
+	} else if (member->avg_score > member->conference->agc_level + 100) {
+		member->agc_volume_in_level--;
+		switch_normalize_volume_granular(member->agc_volume_in_level);
+		x = -1;
+	}
+
+	if (x) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
+						  "AGC %s:%d diff:%d level:%d cur:%d avg:%d vol:%d %s\n", 
+						  member->conference->name,
+						  member->id, member->conference->agc_level - member->avg_score, member->conference->agc_level, 
+						  member->score, member->avg_score, member->agc_volume_in_level, x > 0 ? "+++" : "---");
+		
+		clear_avg(member);
+	}
+}
+
+
 
 
 /* marshall frames from the call leg to the conference thread for muxing to other call legs */
@@ -2056,6 +2059,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				if (++hangover_hits >= hangover) {
 					hangover_hits = hangunder_hits = 0;
 					switch_clear_flag_locked(member, MFLAG_TALKING);
+					check_agc_levels(member);
 					clear_avg(member);
 
 					if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
@@ -2075,13 +2079,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			clear_avg(member);
 		}
 
-		if (member->avg_itt > (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 3) {
-			clear_avg(member);
-		}
-
-		
 		/* Check for input volume adjustments */
 		if (!member->conference->agc_level) {
+			member->conference->agc_level = 0;
 			clear_avg(member);
 		}
 		
@@ -2091,16 +2091,10 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		if ((switch_test_flag(member, MFLAG_CAN_SPEAK) || switch_test_flag(member, MFLAG_MUTE_DETECT))) {
 			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
-			int divisor = 0;
 			int agc_period = (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) / 4;
 			
 
 			data = read_frame->data;
-
-			if (!(divisor = member->read_impl.actual_samples_per_second / 8000)) {
-				divisor = 1;
-			}
-
 			member->score = 0;
 
 			if (member->volume_in_level) {
@@ -2116,7 +2110,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					energy += abs(data[j]);
 					j += member->read_impl.number_of_channels;
 				}
-				member->score = energy / (samples / divisor);
+				
+				member->score = energy / samples;
 			}
 
 			if (member->vol_period) {
@@ -2219,8 +2214,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					if (++hangover_hits >= hangover) {
 						hangover_hits = hangunder_hits = 0;
 						switch_clear_flag_locked(member, MFLAG_TALKING);
+						check_agc_levels(member);
 						clear_avg(member);
-
+						
 						if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_add_event_member_data(member, event);
@@ -3500,7 +3496,7 @@ static switch_status_t conf_api_sub_agc(conference_obj_t *conference, switch_str
 	if (argc > 3) {
 		level = atoi(argv[3]);
 	} else {
-		level = 1400;
+		level = DEFAULT_AGC_LEVEL;
 	}
 
 	if (level > conference->energy_level) {
@@ -6454,7 +6450,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		int level = 0;
 
 		if (switch_true(auto_gain_level)) {
-			level = 1400;
+			level = DEFAULT_AGC_LEVEL;
 		} else {
 			level = atoi(auto_gain_level);
 		}
