@@ -2396,7 +2396,7 @@ static void do_flush(switch_rtp_t *rtp_session)
 
 #define return_cng_frame() do_cng = 1; goto timer_check
 
-static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags)
+static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags, switch_bool_t return_jb_packet)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	stfu_frame_t *jb_frame;
@@ -2493,8 +2493,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
 				   rtp_session->recv_msg.header.pt,
 				   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount);
-		*bytes = 0;
 		status = SWITCH_STATUS_FALSE;
+		if (!return_jb_packet) {
+			return status;
+		}
+		*bytes = 0;
 	}
 
 	if (rtp_session->jb && !rtp_session->pause_jb && !rtp_session->checked_jb) {
@@ -2668,17 +2671,19 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					status = read_rtp_packet(rtp_session, &bytes, flags);
-					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initial %d\n", bytes); */
-					read_pretriggered = 1;
+					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
+					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initial (%i) %d\n", status, bytes); */
+					if (status != SWITCH_STATUS_FALSE) {
+						read_pretriggered = 1;
+					}
 
-					if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-						/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trigger %d\n", rtp_session->hot_hits); */
-						rtp_session->hot_hits += rtp_session->samples_per_interval;
-					} else {
-						rtp_session->hot_hits = 0;
-						switch_core_timer_sync(&rtp_session->timer);
-						goto recvfrom;
+					if (bytes) {
+						if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
+							/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trigger %d\n", rtp_session->hot_hits); */
+							rtp_session->hot_hits += rtp_session->samples_per_interval;
+						} else {
+							rtp_session->hot_hits = 0;
+						}
 					}
 					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
@@ -2737,9 +2742,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
-			if (!read_pretriggered) {
-				status = read_rtp_packet(rtp_session, &bytes, flags);
-				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read bytes %d\n", bytes); */
+			if (read_pretriggered) {
+				read_pretriggered = 0;
+			} else {
+				status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_TRUE);
+				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read bytes (%i) %d\n", status, bytes); */
 			}
 		} else {
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
