@@ -36,7 +36,7 @@
  *
  */
 #include <switch.h>
-#define DEFAULT_AGC_LEVEL 1000
+#define DEFAULT_AGC_LEVEL 1100
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
