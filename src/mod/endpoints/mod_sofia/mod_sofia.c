@@ -3513,7 +3513,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			profile = sofia_glue_find_profile(profile_name);
 		}
 	
-		if (!profile) {
+		if (!profile && !zstr(domain)) {
 			profile = sofia_glue_find_profile(domain);
 		}
 	}
