@@ -1830,7 +1830,7 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 
 	stfu_n_report(i, &r);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG8, 
 					  "%s JB REPORT:\nlen: %u\nin: %u\nclean: %u\ngood: %u\nbad: %u\n",
 					  switch_core_session_get_name(session),
 					  r.qlen,
