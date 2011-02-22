@@ -4601,16 +4601,16 @@ static void general_event_handler(switch_event_t *event)
 				const char *new_ip4 = switch_event_get_header_nil(event, "network-external-address-change-v4");
 				
 				switch_mutex_lock(mod_sofia_globals.hash_mutex);
-				if (mod_sofia_globals.profile_hash) {
+				if (mod_sofia_globals.profile_hash && !zstr(old_ip4) && !zstr(new_ip4)) {
 					for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 						switch_hash_this(hi, &var, NULL, &val);
 
 						if ((profile = (sofia_profile_t *) val)) {
-							if (!strcmp(profile->extsipip, old_ip4)) {
+							if (!zstr(profile->extsipip) && !strcmp(profile->extsipip, old_ip4)) {
 								profile->extsipip = switch_core_strdup(profile->pool, new_ip4);
 							}
 
-							if (!strcmp(profile->extrtpip, old_ip4)) {
+							if (!zstr(profile->extrtpip) && !strcmp(profile->extrtpip, old_ip4)) {
 								profile->extrtpip = switch_core_strdup(profile->pool, new_ip4);
 							}
 						}
