@@ -1243,12 +1243,39 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	switch_mutex_unlock(globals.mutex);
 }
 
+static int flush_listener_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *profile_name = argv[0];
+	char *value = argv[1];
+	char *domain_name = argv[2];
+	char *device_name = argv[3];
+	char *device_instance = argv[4];
+
+	char *token = switch_mprintf("skinny/%q/%q/%q:%q", profile_name, value, device_name, device_instance);
+	switch_core_del_registration(value, domain_name, token);
+	switch_safe_free(token);
+
+	return 0;
+}
+
 static void flush_listener(listener_t *listener)
 {
 
 	if(!zstr(listener->device_name)) {
 		skinny_profile_t *profile = listener->profile;
 		char *sql;
+
+		if ((sql = switch_mprintf(
+				"SELECT '%q', value, '%q', '%q', '%d' "
+					"FROM skinny_lines "
+					"WHERE device_name='%s' AND device_instance=%d "
+					"ORDER BY position",
+				profile->name, profile->domain, listener->device_name, listener->device_instance,
+				listener->device_name, listener->device_instance
+				))) {
+			skinny_execute_sql_callback(profile, profile->sql_mutex, sql, flush_listener_callback, NULL);
+			switch_safe_free(sql);
+		}
 
 		if ((sql = switch_mprintf(
 				"DELETE FROM skinny_devices "

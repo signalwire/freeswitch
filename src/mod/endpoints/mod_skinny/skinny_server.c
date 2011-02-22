@@ -1006,6 +1006,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		}
 		if ((xbuttons = switch_xml_child(xskinny, "buttons"))) {
 			uint32_t line_instance = 1;
+			char *network_ip = inet_ntoa(request->data.reg.ip);
+			int network_port = 0;
+			char network_port_c[6];
+			snprintf(network_port_c, sizeof(network_port_c), "%d", network_port);
 			for (xbutton = switch_xml_child(xbuttons, "button"); xbutton; xbutton = xbutton->next) {
 				uint32_t position = atoi(switch_xml_attr_soft(xbutton, "position"));
 				uint32_t type = skinny_str2button(switch_xml_attr_soft(xbutton, "type"));
@@ -1031,8 +1035,14 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 							label, value, caller_name,
 							ring_on_idle, ring_on_active, busy_trigger,
 	  						forward_all, forward_busy, forward_noanswer, noanswer_duration))) {
+						char *token, *url;
 						skinny_execute_sql(profile, sql, profile->sql_mutex);
 						switch_safe_free(sql);
+						token = switch_mprintf("skinny/%q/%q/%q:%d", profile->name, value, request->data.reg.device_name, request->data.reg.instance);
+						url = switch_mprintf("skinny/%q/%q", profile->name, value);
+						switch_core_add_registration(value, profile->domain, token, url, 0, network_ip, network_port_c, "tcp");
+						switch_safe_free(token);
+						switch_safe_free(url);
 					}
 					if (line_instance == 1) {
 						switch_event_t *message_query_event = NULL;
