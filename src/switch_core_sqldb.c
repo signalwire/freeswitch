@@ -1696,7 +1696,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 		return SWITCH_STATUS_FALSE;
 	}
 
-	sql = switch_mprintf("delete from registrations where reg_user='%q' and realm='%q' and hostname='%q'", user, realm, switch_core_get_hostname());
+	if (!zstr(token) && runtime.multiple_registrations) {
+		sql = switch_mprintf("delete from registrations where reg_user='%q' and realm='%q' and hostname='%q' and token='%q'", user, realm, switch_core_get_hostname(), token);
+	} else {
+		sql = switch_mprintf("delete from registrations where reg_user='%q' and realm='%q' and hostname='%q'", user, realm, switch_core_get_hostname());
+	}
 
 	switch_cache_db_execute_sql(dbh, sql, NULL);
 	switch_cache_db_release_db_handle(&dbh);
@@ -1723,7 +1727,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
 	if (force) {
 		sql = switch_mprintf("delete from registrations where hostname='%q'", switch_core_get_hostname());
 	} else {
-		sql = switch_mprintf("delete from registrations where expires <= %ld and hostname='%q'", now, switch_core_get_hostname());
+		sql = switch_mprintf("delete from registrations where expires > 0 and expires <= %ld and hostname='%q'", now, switch_core_get_hostname());
 	}
 
 	switch_cache_db_execute_sql(dbh, sql, NULL);
