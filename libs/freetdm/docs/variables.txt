@@ -103,8 +103,6 @@ example #1 - print all variables received from FreeTDM
 	const char *var_name = NULL;
 	const char *var_value = NULL;
 
-	ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
-
 	/* Read all variables attached to this event */
 	iter = ftdm_event_get_var_iterator(sigmsg, iter);
 	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
@@ -131,7 +129,7 @@ example #3 - accessing raw data
 	/* Inside event call-back function */
 	ftdm_size_t len;
 	uint8_t *mydata;
-	if (ftdm_event_get_raw_data(ftdmchan->sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+	if (ftdm_event_get_raw_data(sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
 		/* raw data is available, do something with mydata here */
 	}
 
