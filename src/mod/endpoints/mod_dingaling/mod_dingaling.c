@@ -596,9 +596,9 @@ static void ipchanged_event_handler(switch_event_t *event)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
 
-	if (cond && !strcmp(cond, "network-address-change")) {
-		const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
-		const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
+	if (cond && !strcmp(cond, "network-external-address-change")) {
+		const char *old_ip4 = switch_event_get_header_nil(event, "network-external-address-previous-v4");
+		const char *new_ip4 = switch_event_get_header_nil(event, "network-external-address-change-v4");
 		switch_hash_index_t *hi;
 		void *val;
 		char *tmp;

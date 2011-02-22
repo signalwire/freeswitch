@@ -4587,17 +4587,42 @@ static void general_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_TRAP:
 		{
 			const char *cond = switch_event_get_header(event, "condition");
+			switch_hash_index_t *hi;
+			const void *var;
+			void *val;
+			sofia_profile_t *profile;
 
+			if (zstr(cond)) {
+				cond = "";
+			}
 
-			if (cond && !strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
+			if (!strcmp(cond, "network-external-address-change") && mod_sofia_globals.auto_restart) {
+				const char *old_ip4 = switch_event_get_header_nil(event, "network-external-address-previous-v4");
+				const char *new_ip4 = switch_event_get_header_nil(event, "network-external-address-change-v4");
+				
+				switch_mutex_lock(mod_sofia_globals.hash_mutex);
+				if (mod_sofia_globals.profile_hash) {
+					for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+						switch_hash_this(hi, &var, NULL, &val);
+
+						if ((profile = (sofia_profile_t *) val)) {
+							if (!strcmp(profile->extsipip, old_ip4)) {
+								profile->extsipip = switch_core_strdup(profile->pool, new_ip4);
+							}
+
+							if (!strcmp(profile->extrtpip, old_ip4)) {
+								profile->extrtpip = switch_core_strdup(profile->pool, new_ip4);
+							}
+						}
+					}
+				}
+				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+				sofia_glue_restart_all_profiles();				
+			} else if (!strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
 				const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
 				const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
 				const char *old_ip6 = switch_event_get_header_nil(event, "network-address-previous-v6");
 				const char *new_ip6 = switch_event_get_header_nil(event, "network-address-change-v6");
-				switch_hash_index_t *hi;
-				const void *var;
-				void *val;
-				sofia_profile_t *profile;
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s] [%s]->[%s]\n", old_ip4, new_ip4, old_ip6, new_ip6);
