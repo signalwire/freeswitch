@@ -833,8 +833,9 @@ static ftdm_status_t sngisdn_get_frame_info(uint8_t *data, uint32_t data_len, ft
 			//ftdm_log(FTDM_LOG_DEBUG, "Decoded IE:%s\n", get_code_2_str(ie_id, dcodQ931IEIDTable));
 		}
 		if (!bchan_no) {
+			uint32_t tmp_len = 0;
 			char tmp[1000];
-			print_hex_dump(tmp, 0, data, 0, data_len);			
+			print_hex_dump(tmp, &tmp_len, data, 0, data_len);			
 			ftdm_log(FTDM_LOG_WARNING, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
 		}
 	}
