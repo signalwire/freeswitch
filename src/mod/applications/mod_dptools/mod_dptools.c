@@ -2893,7 +2893,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
-	static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
 	switch_event_t *params = NULL, *var_event_orig = var_event;
