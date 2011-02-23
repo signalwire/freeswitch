@@ -836,7 +836,7 @@ static ftdm_status_t sngisdn_get_frame_info(uint8_t *data, uint32_t data_len, ft
 			uint32_t tmp_len = 0;
 			char tmp[1000];
 			print_hex_dump(tmp, &tmp_len, data, 0, data_len);			
-			ftdm_log(FTDM_LOG_WARNING, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
+			ftdm_log(FTDM_LOG_DEBUG, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
 		}
 	}
 
