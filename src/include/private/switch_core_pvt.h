@@ -236,6 +236,7 @@ struct switch_runtime {
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
+	char *dbname;
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;
@@ -246,6 +247,8 @@ struct switch_runtime {
 	int sql_buffer_len;
 	int max_sql_buffer_len;
 	switch_dbtype_t odbc_dbtype;
+	char hostname[256];
+	int multiple_registrations;
 };
 
 extern struct switch_runtime runtime;

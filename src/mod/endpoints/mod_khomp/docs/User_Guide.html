@@ -30,7 +30,8 @@ If you need to set advanced parameters of the board and/or signaling, the progra
 </p>
 <pre><b>Sintaxe:</b> &lt;param name="..." value="..."/&gt;
 </pre>
-<ul><li><b>dialplan</b>: Name of the dialplan module in use.
+<ul><li><b>accountcode</b>: Sets the default account code to calls in the Endpoint. This option can be any alphanumeric string;
+</li><li><b>dialplan</b>: Name of the dialplan module in use.
 </li><li><b>auto-fax-adjustment</b>: Enable ("yes") or disables ("no") the automatic adjustment of the channel (disable the echo canceller and the suppression DTMF) tone to detect FAX (local option)&nbsp;;
 </li><li><b>auto-gain-control</b>:Enable ("yes") or disables ("no") the activation of the automatic gain control (AGC) by the Endpoint (local option);
 </li><li><b>context-digital</b>: Context for incoming connections on digital boards (the default is "khomp-DD-LL", where "DD" will be replaced at the time of connection by the device number, "LL" by the number of the link, "CCC" by channel number and "SSSS" for the device serial number);
@@ -54,6 +55,7 @@ If you need to set advanced parameters of the board and/or signaling, the progra
 </li><li><b>input-volume</b>: Sets the volume gain for incoming audio (entering the board), from -10 to +10 (local option);
 </li><li><b>kommuter-activation</b>: Sets whether to activate devices kommuter found in the system will be done automatically ("auto") by the channel, or manually ("manual") by the user through the command "khomp kommuter on/off" 
 </li><li><b>kommuter-timeout</b>: Sets the timeout (in seconds) for initializing the kommuter devices. If this timeout is reached without receiving notification of the channel, the devices will switch back to "off" condition. The minimum value is "0", where the links will always remain switched "on", and the maximum is "255";
+</li><li><b>language</b>: Set language to Khomp board calls;
 </li><li><b>log-to-console</b>: Set log messages to be printed on the console;
 </li><li><b>log-to-disk</b> (old "log"): Set log messages to be saved to disk;
 </li><li><b>out-of-band-DTMF</b> (former <b>dtmfsuppression</b>): Activate ("yes") or disables ("no") the removal and DTMF sending these out-of-band (local option);
@@ -125,6 +127,8 @@ For details, please refer to the configuration file for examples.
 </li><li>output-volume; 
 </li><li>calleridnum; 
 </li><li>calleridname;
+</li><li>language;
+</li><li>accountcode;
 </li><li>flash-to-digits.
 </li></ul>
 <p>Each option is separated from each other by a pipe "|" or a slash "/" and defined after the colon ":". Example:
@@ -1018,7 +1022,7 @@ install: **  for knowing how to proceed with the installation.  **
 </pre>
 <p>This configurator, in turn, shows all possible options for card configuration. The parameters that are not configured automatically assume the default values, and are compatible with most systems. More details about this program can be obtained from the section number '2 '.
 </p>
-<ul><li> <b>ATTENTION'<i>: To start FreeSWITCH&reg;, it is necessary that the board is configured Khomp and all modules are running (as shown above). </i></b><i>If the card is not configured, FreeSWITCH will not start<b>.<br /> <br /> If you want to run the system without the board Khomp, you need to configure FreeSWITCH for it does not load the module Khomp. To do this, open the "</b></i><b>/usr/local/freeswitch/conf/autoload_configs/modules.conf.xml</b> and comment the line:<br />
+<ul><li> <b>ATTENTION</b>: To start FreeSWITCH&reg;, it is necessary that the Khomp board is configured and all modules are running (as shown above). <br /> <br /> If you want to run the system without the Khomp board, you need to configure FreeSWITCH for it does not load the module Khomp. To do this, open the <b>/usr/local/freeswitch/conf/autoload_configs/modules.conf.xml</b> and comment the line:<br />
 </li></ul>
 <pre> 
 &lt;!-- &lt;load module=&quot;mod_khomp&quot; /&gt; --&gt;
@@ -1060,7 +1064,7 @@ install: **  for knowing how to proceed with the installation.  **
 <br />
 </p>
 <a name="Ap.C3.AAndice" id="Ap.C3.AAndice"></a><h1> <span class="mw-headline"> Apêndice </span></h1>
-<p>Nesta seção, encontram-se informações úteis sobre o Endpoint e componentes relacionados.
+<p>This section presents useful informations about Endpoint and related components.
 </p>
 <a name="Arrangement_of_installed_files" id="Arrangement_of_installed_files"></a><h2> <span class="mw-headline"> Arrangement of installed files </span></h2>
 <p>The directories created/modified in this facility are:
@@ -1084,5 +1088,6 @@ install: **  for knowing how to proceed with the installation.  **
 </pre>
 <p>The script <b>/etc/init.d/khompdrv</b> is responsible for loading modules <b>kpci9030.ko</b> and <b>kpex8311.ko</b> in the kernel, which should be carried out automatically at system startup. In case of problems, check the <a href="#Troubleshooting" title="">Troubleshooting</a> section. 
 </p><p><br />
+</p><p>For more details: <a href="http://www.khomp.com.br" class="external free" title="http://www.khomp.com.br" rel="nofollow">http://www.khomp.com.br</a>
 </p><p><br />
 </p></body></html>

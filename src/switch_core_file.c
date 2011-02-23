@@ -102,7 +102,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 			}
 
 			if (!spool_path) {
-				spool_path = switch_core_get_variable(SWITCH_AUDIO_SPOOL_PATH_VARIABLE);
+				spool_path = switch_core_get_variable_pdup(SWITCH_AUDIO_SPOOL_PATH_VARIABLE, fh->memory_pool);
 			}
 
 			file_path = fh->file_path;
@@ -391,10 +391,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 				if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
 					*len = 0;
 				}
-				fh->samples_out += blen;
 			}
 		}
 
+		fh->samples_out += orig_len;
 		return status;
 	} else {
 		switch_status_t status;

@@ -151,10 +151,18 @@ static void check_ip(void)
 SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 {
 	send_heartbeat();
-	check_ip();
 
 	/* reschedule this task */
 	task->runtime = switch_epoch_time_now(NULL) + 20;
+}
+
+
+SWITCH_STANDARD_SCHED_FUNC(check_ip_callback)
+{
+	check_ip();
+
+	/* reschedule this task */
+	task->runtime = switch_epoch_time_now(NULL) + 60;
 }
 
 
@@ -253,12 +261,43 @@ SWITCH_DECLARE(void) switch_core_dump_variables(switch_stream_handle_t *stream)
 	switch_mutex_unlock(runtime.global_mutex);
 }
 
+SWITCH_DECLARE(const char *) switch_core_get_hostname(void)
+{
+	return runtime.hostname;
+}
+
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
 	switch_mutex_lock(runtime.global_var_mutex);
 	val = (char *) switch_event_get_header(runtime.global_vars, varname);
 	switch_mutex_unlock(runtime.global_var_mutex);
+	return val;
+}
+
+SWITCH_DECLARE(char *) switch_core_get_variable_dup(const char *varname)
+{
+	char *val = NULL, *v;
+
+	switch_mutex_lock(runtime.global_var_mutex);
+	if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
+		val = strdup(v);
+	}
+	switch_mutex_unlock(runtime.global_var_mutex);
+
+	return val;
+}
+
+SWITCH_DECLARE(char *) switch_core_get_variable_pdup(const char *varname, switch_memory_pool_t *pool)
+{
+	char *val = NULL, *v;
+
+	switch_mutex_lock(runtime.global_var_mutex);
+	if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
+		val = switch_core_strdup(pool, v);
+	}
+	switch_mutex_unlock(runtime.global_var_mutex);
+
 	return val;
 }
 
@@ -1194,12 +1233,18 @@ static void switch_core_set_serial(void)
 
 
 	if ((fd = open(path, O_RDONLY, 0)) < 0) {
-		char *ip = switch_core_get_variable("local_ip_v4");
+		char *ip = switch_core_get_variable_dup("local_ip_v4");
 		uint32_t ipi = 0;
 		switch_byte_t *byte;
 		int i = 0;
 
-		switch_inet_pton(AF_INET, ip, &ipi);
+		if (ip) {
+			switch_inet_pton(AF_INET, ip, &ipi);
+			free(ip);
+			ip = NULL;
+		}
+
+
 		byte = (switch_byte_t *) & ipi;
 
 		for (i = 0; i < 8; i += 2) {
@@ -1229,7 +1274,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	char guess_ip[256];
 	int mask = 0;
 	struct in_addr in;
-	char hostname[256] = "";
+
 
 	if (runtime.runlevel > 0) {
 		/* one per customer */
@@ -1253,6 +1298,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.default_dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
 	runtime.odbc_dbtype = DBTYPE_DEFAULT;
+	runtime.dbname = NULL;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -1302,8 +1348,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
-	gethostname(hostname, sizeof(hostname));
-	switch_core_set_variable("hostname", hostname);
+	gethostname(runtime.hostname, sizeof(runtime.hostname));
+	switch_core_set_variable("hostname", runtime.hostname);
 
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
@@ -1356,6 +1402,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.initiated = switch_time_now();
 	
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
+
+	switch_scheduler_add_task(switch_epoch_time_now(NULL), check_ip_callback, "check_ip", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL | SSHF_OWN_THREAD);
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
@@ -1439,7 +1487,7 @@ static void switch_load_core_config(const char *file)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 
-	//switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
+	switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
 	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
 
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
@@ -1501,6 +1549,8 @@ static void switch_load_core_config(const char *file)
 					if (tmp > -1 && tmp < 11) {
 						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
 					}
+				} else if (!strcasecmp(var, "multiple-registrations")) {
+					runtime.multiple_registrations = switch_true(val);
 				} else if (!strcasecmp(var, "sql-buffer-len")) {
 					int tmp = atoi(val);
 
@@ -1594,6 +1644,8 @@ static void switch_load_core_config(const char *file)
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
+				} else if (!strcasecmp(var, "core-db-name") && !zstr(val)) {
+					runtime.dbname = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
 					if (switch_odbc_available()) {
 						runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);

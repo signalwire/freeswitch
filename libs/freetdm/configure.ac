@@ -121,8 +121,7 @@ AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([m], [cos])
 
-AC_CHECK_HEADERS([netinet/sctp.h netdb.h sys/select.h])
-AM_CONDITIONAL([HAVE_SCTP],[test "${ac_cv_header_netinet_sctp_h}" = "yes"])
+AC_CHECK_HEADERS([netdb.h sys/select.h])
 
 AC_CHECK_FUNC([gethostbyname_r],
 	[], [AC_CHECK_LIB([nsl], [gethostbyname_r])]
@@ -267,7 +266,7 @@ fi
 #
 HAVE_SNG_SS7="no"
 AC_MSG_RESULT([${as_nl}<<>> Sangoma SS7 stack])
-AC_CHECK_LIB([sng_ss7], [sng_isup_init], [HAVE_SNG_SS7="yes"])
+AC_CHECK_LIB([sng_ss7], [sng_isup_init_gen], [HAVE_SNG_SS7="yes"])
 AC_MSG_RESULT([checking whether to build ftmod_sangoma_ss7... ${HAVE_SNG_SS7}])
 AM_CONDITIONAL([HAVE_SNG_SS7], [test "${HAVE_SNG_SS7}" = "yes"])
 

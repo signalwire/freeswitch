@@ -192,7 +192,7 @@ static inline char switch_itodtmf(char i)
 		r = i + 55;
 	}
 
-	return r;
+	return r + 48;
 }
 
 static inline int switch_dtmftoi(char *s)

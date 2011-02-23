@@ -83,10 +83,17 @@ AC_ARG_ENABLE(64,
 
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     if test "${enable_64}" = "yes"; then
-        CFLAGS="$CFLAGS -m64"
-        CXXFLAGS="$CXXFLAGS -m64 -lgpg-error"
+        CFLAGS="$CFLAGS -mt -m64 -lgpg-error"
+        CXXFLAGS="$CXXFLAGS -mt -m64 -lgpg-error"
+	SUNFLAGS="-xc99=all -mt -m64 -lgpg-error"
+    else 
+	CFLAGS="$CFLAGS  -mt -lgpg-error"
+	CXXFLAGS="$CXXFLAGS -mt -lgpg-error"
+	SUNFLAGS="-xc99=all -mt -lgpg-error"
     fi
 fi
+
+AC_SUBST(SUNCFLAGS)
 
 dnl Generating makefiles
 AC_CONFIG_FILES([

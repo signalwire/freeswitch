@@ -244,21 +244,26 @@ bool MatchExtension::canMatch(std::string & context, std::string & exten,
         return true;
     }
 
-    size_t finished = exten.find('#');
-
-    if(finished != std::string::npos)
+    if (Opt::_options._fxs_sharp_dial())
     {
-        if(exten.size() <= 1)
+        char key_digit  = '#';
+        size_t finished = exten.find_last_of(key_digit);
+        char last_char  = exten.at(exten.size() - 1);
+    
+        if(finished != std::string::npos && last_char == key_digit)
         {
-            DBG(FUNC, FMT("exten=%s size=%d") % exten % exten.size());
-            return true;
+            if(exten.size() <= 1)
+            {
+                DBG(FUNC, FMT("exten=%s size=%d") % exten % exten.size());
+                return true;
+            }
+
+            exten.erase(finished);
+            DBG(FUNC, FMT("match exact!!! exten=%s") % exten);
+            return false;
         }
-
-        exten.erase(finished);
-        DBG(FUNC, FMT("match exact!!! exten=%s") % exten);
-        return false;
     }
-
+    
     return true;
 
 /*

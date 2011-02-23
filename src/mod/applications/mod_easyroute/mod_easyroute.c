@@ -65,6 +65,7 @@ static struct {
 	switch_mutex_t *mutex;
 	char *custom_query;
 	switch_odbc_handle_t *master_odbc;
+	int odbc_num_retries;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load);
@@ -120,6 +121,8 @@ static switch_status_t load_config(void)
 				set_global_default_gateway(val);
 			} else if (!strcasecmp(var, "custom-query")) {
 				set_global_custom_query(val);
+			} else if (!strcasecmp(var, "odbc-retries")) {
+				globals.odbc_num_retries = atoi(val);
 			}
 		}
 	}
@@ -142,6 +145,9 @@ static switch_status_t load_config(void)
 			goto reallydone;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened ODBC Database!\n");
+		}
+		if (globals.odbc_num_retries) {
+			switch_odbc_set_num_retries(globals.master_odbc, globals.odbc_num_retries);
 		}
 		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
@@ -205,7 +211,7 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		switch_mutex_lock(globals.mutex);
 	}
 	/* Do the Query */
-	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, route_callback, &pdata, NULL) == SWITCH_ODBC_SUCCESS) {
+	if (globals.master_odbc && switch_odbc_handle_callback_exec(globals.master_odbc, sql, route_callback, &pdata, NULL) == SWITCH_ODBC_SUCCESS) {
 		char tmp_profile[129];
 		char tmp_gateway[129];
 
@@ -418,7 +424,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_easyroute_shutdown)
 {
-	switch_odbc_handle_disconnect(globals.master_odbc);
+	if (globals.master_odbc) {
+		switch_odbc_handle_disconnect(globals.master_odbc);
+		switch_odbc_handle_destroy(&globals.master_odbc);
+	}
 	switch_safe_free(globals.db_username);
 	switch_safe_free(globals.db_password);
 	switch_safe_free(globals.db_dsn);

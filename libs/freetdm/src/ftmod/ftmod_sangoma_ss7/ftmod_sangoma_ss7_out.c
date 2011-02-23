@@ -125,9 +125,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	iam.txMedReq.trMedReq.pres 			= PRSNT_NODEF;
 	iam.txMedReq.trMedReq.val 			= ftdmchan->caller_data.bearer_capability;
 
-	if ((g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS88) ||
-		(g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS92) ||
-		(g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].switchType == LSI_SW_ANS95)) {
+	if ((g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS88) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS92) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS95)) {
 
 		/* include only if we're running ANSI */
 		iam.fwdCallInd.transCallNInd.pres   = PRSNT_NODEF;
@@ -178,7 +178,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		iam.usrServInfoA.rateMultiplier.pres	= PRSNT_NODEF;
 		iam.usrServInfoA.rateMultiplier.val		= 0x1;				/* 1x rate multipler */
 	} /* if ANSI */
-	
+
 	/* copy down the called number information */
 	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
 	
@@ -192,7 +192,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
 		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
 	} else {
-		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].clg_nadi;
+		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
 		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
 	}
 
@@ -201,7 +201,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
 		iam.cdPtyNum.natAddrInd.val	= atoi(cld_nadi);
 	} else {
-		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].cld_nadi;
+		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
 		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", iam.cdPtyNum.natAddrInd.val);
 	}
 
@@ -299,7 +299,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 							ftdmchan->caller_data.dnis.digits,
 							iam.cdPtyNum.natAddrInd.val);
 
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -310,7 +310,6 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
-	sng_isup_inf_t		*isup_intf =  &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
 	SiCnStEvnt acm;
 	
 	memset (&acm, 0x0, sizeof (acm));
@@ -360,8 +359,8 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.sccpMethInd.val		= SCCPMTH_NOIND;
 
 	/* fill in any optional parameters */
-	if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) {
-		SS7_DEBUG_CHAN(ftdmchan, "Found ACM_OBCI_BITA flag:0x%X\n", isup_intf->options);
+	if (sngss7_test_options(&g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id], SNGSS7_ACM_OBCI_BITA)) {
+		SS7_DEBUG_CHAN(ftdmchan, "Found ACM_OBCI_BITA flag:0x%X\n", g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].options);
 		acm.optBckCalInd.eh.pres				= PRSNT_NODEF;
 		acm.optBckCalInd.inbndInfoInd.pres		= PRSNT_NODEF;
 		acm.optBckCalInd.inbndInfoInd.val		= 0x1;
@@ -380,7 +379,7 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 						ADDRCMPLT);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx ACM\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -404,7 +403,7 @@ void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 						5);
 
   SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx ANM\n", sngss7_info->circuit->cic);
-  ftdm_call_clear_vars(&ftdmchan->caller_data);
+  ftdm_call_clear_data(&ftdmchan->caller_data);
   SS7_FUNC_TRACE_EXIT (__FUNCTION__);
   return;
 }
@@ -439,7 +438,7 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx REL cause=%d \n",
 							sngss7_info->circuit->cic,
 							ftdmchan->caller_data.hangup_cause );
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -462,7 +461,7 @@ void ft_to_sngss7_rlc (ftdm_channel_t * ftdmchan)
 						&rlc);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx RLC\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -483,7 +482,7 @@ void ft_to_sngss7_rsc (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx RSC\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -504,7 +503,7 @@ void ft_to_sngss7_rsca (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx RSC-RLC\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
   return;
 }
@@ -525,7 +524,7 @@ void ft_to_sngss7_blo (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx BLO\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -546,7 +545,7 @@ void ft_to_sngss7_bla (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx BLA\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -568,7 +567,7 @@ ft_to_sngss7_ubl (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx UBL\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -589,7 +588,7 @@ void ft_to_sngss7_uba (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx UBA\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -610,7 +609,7 @@ void ft_to_sngss7_lpa (ftdm_channel_t * ftdmchan)
 						NULL);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx LPA\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 return;
 }
@@ -655,7 +654,7 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->rx_grs.range));
 	
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -689,7 +688,7 @@ void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan)
 							sngss7_info->circuit->cic,
 							(sngss7_info->circuit->cic + sngss7_span->tx_grs.range));
 
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 return;
 }
@@ -738,7 +737,7 @@ void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan)
 
 	/* clean out the saved data */
 	memset(&sngss7_span->rx_cgb, 0x0, sizeof(sngss7_group_data_t));
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -788,7 +787,7 @@ void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan)
 	/* clean out the saved data */
 	memset(&sngss7_span->rx_cgu, 0x0, sizeof(sngss7_group_data_t));
 
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -839,7 +838,7 @@ void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan)
 	/* clean out the saved data */
 	memset(&sngss7_span->tx_cgb, 0x0, sizeof(sngss7_group_data_t));
 
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
@@ -890,7 +889,7 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
 	/* clean out the saved data */
 	memset(&sngss7_span->tx_cgu, 0x0, sizeof(sngss7_group_data_t));
 
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	ftdm_call_clear_data(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }

@@ -23,6 +23,10 @@
   <settings>
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
+
+    <!-- minimum idle CPU before refusing calls -->
+    <!--<param name="min-idle-cpu" value="25"/>-->
+
     <!--
 	Max number of sessions to allow at any given time.
 	
@@ -90,9 +94,13 @@
     <!--<param name="rtp-end-port" value="32768"/>-->
     <param name="rtp-enable-zrtp" value="true"/>
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
+    <!-- Allow to specify the sqlite db at a different location (In this example, move it to ramdrive for better performance on most linux distro (note, you loose the data if you reboot)) -->
+    <!-- <param name="core-db-name" value="/dev/shm/core.db" /> -->
     <!-- The system will create all the db schemas automatically, set this to false to avoid this behaviour-->
     <!--<param name="auto-create-schemas" value="true"/>-->
-	 <!-- <param name="core-dbtype" value="MSSQL"/> -->
+    <!-- <param name="core-dbtype" value="MSSQL"/> -->
+    <!-- Allow multiple registrations to the same account in the central registration table -->
+    <!-- <param name="multiple-registrations" value="true"/> -->
   </settings>
 
 </configuration>

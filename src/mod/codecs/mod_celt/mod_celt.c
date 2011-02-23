@@ -53,8 +53,8 @@ static switch_status_t switch_celt_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	}
 
-	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, codec->implementation->samples_per_packet, NULL);
-
+	context->frame_size = codec->implementation->samples_per_packet;
+	context->mode_object = celt_mode_create(codec->implementation->actual_samples_per_second, context->frame_size, NULL);
 	context->bytes_per_packet = (codec->implementation->bits_per_second * context->frame_size / codec->implementation->actual_samples_per_second + 4) / 8;
 
 	/*
@@ -106,15 +106,22 @@ static switch_status_t switch_celt_encode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct celt_context *context = codec->private_info;
+	int bytes = 0;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = (uint32_t) celt_encode(context->encoder_object, (void *) decoded_data, codec->implementation->samples_per_packet,
-											   (unsigned char *) encoded_data, context->bytes_per_packet);
+	bytes = (uint32_t) celt_encode(context->encoder_object, (void *) decoded_data, codec->implementation->samples_per_packet,
+								   (unsigned char *) encoded_data, context->bytes_per_packet);
 
-	return SWITCH_STATUS_SUCCESS;
+	if (bytes > 0) {
+		*encoded_data_len = (uint32_t) bytes;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Error!\n");
+	return SWITCH_STATUS_GENERR;
 }
 
 static switch_status_t switch_celt_decode(switch_codec_t *codec,
@@ -152,23 +159,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_celt_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "CELT ultra-low delay");
 
-	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-										 114,	/* the IANA code number */
-										 "CELT",	/* the IANA code name */
-										 NULL,	/* default fmtp to send (can be overridden by the init function) */
-										 32000,	/* samples transferred per second */
-										 32000,	/* actual samples transferred per second */
-										 32000,	/* bits transferred per second */
-										 10000,	/* number of microseconds per frame */
-										 320,	/* number of samples per frame */
-										 640,	/* number of bytes per frame decompressed */
-										 0,	/* number of bytes per frame compressed */
-										 1,	/* number of channels represented */
-										 1,	/* number of frames per network packet */
-										 switch_celt_init,	/* function to initialize a codec handle using this implementation */
-										 switch_celt_encode,	/* function to encode raw data into encoded data */
-										 switch_celt_decode,	/* function to decode encoded data into raw data */
-										 switch_celt_destroy);	/* deinitalize a codec handle using this implementation */
 	ms_per_frame = 2000;
 	samples_per_frame = 96;
 	bytes_per_frame = 192;

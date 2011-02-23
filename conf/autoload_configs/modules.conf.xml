@@ -24,6 +24,7 @@
     <load module="mod_event_socket"/>
     <!-- <load module="mod_zeroconf"/> -->
     <!-- <load module="mod_erlang_event"/> -->
+    <!-- <load module="mod_snmp"/> -->
 
     <!-- Directory Interfaces -->
     <!-- <load module="mod_ldap"/> -->
@@ -51,6 +52,7 @@
     <load module="mod_hash"/>
     <load module="mod_voicemail"/>
     <!--<load module="mod_directory"/>-->
+    <!--<load module="mod_distributor"/>-->
     <!--<load module="mod_lcr"/>-->
     <load module="mod_esf"/>
     <load module="mod_fsv"/>
@@ -77,6 +79,7 @@
     <load module="mod_h26x"/>
     <load module="mod_siren"/>
     <!--<load module="mod_celt"/>-->
+    <!--<load module="mod_opus"/>-->
 
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>

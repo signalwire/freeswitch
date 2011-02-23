@@ -6,7 +6,7 @@
 <a name="Utilizando_o_Endpoint_da_Khomp" id="Utilizando_o_Endpoint_da_Khomp"></a><h1> <span class="mw-headline"> Utilizando o <i>Endpoint</i> da Khomp </span></h1>
 <p>Após a instalação e inicialização dos serviços necessários pela Khomp, o FreeSWITCH já pode ser carregado ou inicializado.
 </p>
-<ul><li> <b>AVISO</b>: É imprescindível que o <b>FreeSWITCH</b> não seja executado utilizando a opção que desabilita o escalonamento em tempo real (-nort), <b>especialmente</b> se este estiver sendo executado lado-a-lado com servidores <i>web</i> ou servidores de banco de dados. Não realizar este procedimento pode resultar em perda de qualidade do áudio, gerando um sério comprometimento no andamento das ligações do sistema.
+<ul><li> <b>AVISO</b>: Evite usar a opção <b>-nort</b>, pois ela desabilita escalonamento em tempo real, é imprescindível que o <b>FreeSWITCH</b> esteja utilizando o escalonamento em tempo real, especialmente se este estiver sendo executado lado-a-lado com servidores <i>web</i> ou servidores de banco de dados. Utilizar a opção <b>-nort</b> pode resultar em perda de qualidade do áudio, gerando um sério comprometimento nas ligações do sistema.
 </li></ul>
 <p>Após a inicialização do FreeSWITCH, pode-se verificar se o módulo da Khomp foi carregado através do seguinte comando:<br /> 
 </p>

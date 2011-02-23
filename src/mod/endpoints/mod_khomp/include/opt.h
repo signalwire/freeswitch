@@ -108,10 +108,13 @@ struct Options
     Config::Value< bool > _recording;
     Config::Value< bool > _has_ctbus;
     Config::Value< bool > _fxs_bina;
-    Config::Value< bool > _fxo_send_pre_audio;
+    Config::Value< bool > _fxs_sharp_dial;
     Config::Value< bool > _drop_collect_call;
     Config::Value< bool > _ignore_letter_dtmfs;
     Config::Value< bool > _optimize_audio_path;
+    
+    Config::Value< bool > _fxo_send_pre_audio;
+    Config::Value< unsigned int > _fxo_busy_disconnection;
 
     Config::Value< bool         > _auto_fax_adjustment;
     Config::Value< unsigned int > _fax_adjustment_timeout;

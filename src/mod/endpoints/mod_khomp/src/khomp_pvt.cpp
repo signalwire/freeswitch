@@ -1119,12 +1119,7 @@ bool Board::KhompPvt::cleanup(CleanupType type)
         /* pára cadências e limpa estado das flags */
         stopCadence();
 
-        if (call()->_indication != INDICA_NONE)
-        {
-            call()->_indication = INDICA_NONE;
-
-            mixer(KHOMP_LOG, 1, kmsGenerator, kmtSilence);
-        }
+        cleanupIndications(true);
 
         if(call()->_input_volume >= -10 && call()->_input_volume <= 10)
             setVolume("input" , Opt::_options._input_volume());
@@ -1152,6 +1147,15 @@ bool Board::KhompPvt::cleanup(CleanupType type)
     return true;
 }
 
+void Board::KhompPvt::cleanupIndications(bool force)
+{
+    if (call()->_indication != INDICA_NONE)
+    {
+        call()->_indication = INDICA_NONE;
+        mixer(KHOMP_LOG, 1, kmsGenerator, kmtSilence);
+    }
+}
+
 bool Board::KhompPvt::isFree(bool just_phy)
 {
     //DBG(FUNC, DP(this, "c"));
@@ -1167,28 +1171,6 @@ bool Board::KhompPvt::isFree(bool just_phy)
 
         if(session())
             return false;
-
-        /*
-		if (!is_gsm())
-		{
-			if (calls.at(0).owner != NULL)
-			{
-				DBG(FUNC, DP(this, "we have owner, not free!"));
-				return false;
-			}
-		}
-		else
-		{
-			for (int i = 0; i < 6; i++)
-			{
-
-				call_data_type & data = calls.at(i);
-
-				if (data.owner != NULL)
-					return false;
-			}
-		}
-        */
 
 		bool free_state = !(_call->_flags.check(Kflags::IS_INCOMING) || _call->_flags.check(Kflags::IS_OUTGOING));
 
@@ -1559,7 +1541,7 @@ bool Board::KhompPvt::echoCancellation(bool enable)
 
 bool Board::KhompPvt::autoGainControl(bool enable)
 {
-    bool ret = command(KHOMP_LOG,(enable ? CM_ENABLE_AGC : CM_DISABLE_AGC));//, SCE_SHOW_DEBUG);
+    bool ret = command(KHOMP_LOG,(enable ? CM_ENABLE_AGC : CM_DISABLE_AGC));
     return ret;
 }
 
@@ -1625,9 +1607,11 @@ bool Board::KhompPvt::setCollectCall()
     DBG(FUNC, PVT_FMT(_target, "option drop collect call is '%s'") % (Opt::_options._drop_collect_call() ? "yes" : "no"));
 
     // get global filter configuration value
-    tmp_var = switch_core_get_variable("KDropCollectCall");
+    tmp_var = getFSGlobalVar("KDropCollectCall");
     confvalues.push_back(getTriStateValue(tmp_var));
     DBG(FUNC, PVT_FMT(_target, "global KDropCollectCall was '%s'") % (tmp_var ? tmp_var : "(empty)"));
+
+    freeFSGlobalVar(&tmp_var);
 
     try 
     {
@@ -2051,6 +2035,7 @@ bool Board::KhompPvt::onNoAnswer(K3L_EVENT *e)
     DBG(FUNC, PVT_FMT(_target, "Detected: \"%s\"") %  Verbose::callStartInfo((KCallStartInfo)e->AddInfo).c_str());   
 
     // Fire a custom event about this 
+    /* MUST USE THE NEW EVENT SYSTEM
     switch_event_t * event;
     if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, KHOMP_EVENT_MAINT) == SWITCH_STATUS_SUCCESS)
     {
@@ -2061,6 +2046,8 @@ bool Board::KhompPvt::onNoAnswer(K3L_EVENT *e)
 
         switch_event_fire(&event);
     }
+    */
+
     return true;
 }
 

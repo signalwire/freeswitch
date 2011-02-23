@@ -808,6 +808,18 @@ void sofia_event_callback(nua_event_t event,
 		}
 	}
 	
+	if ((event == nua_i_invite) && (!session)) {
+		uint32_t sess_count = switch_core_session_count();
+		uint32_t sess_max = switch_core_session_limit(0);
+		
+		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready()) {
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No more sessions allowed at this time.\n");
+
+			goto done;
+		}
+	}
 	
 	if (sofia_test_pflag(profile, PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
 		sip_authorization_t const *authorization = NULL;
@@ -1447,7 +1459,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "");
 
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_core_get_variable("nat_type")) {
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
@@ -1664,7 +1676,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		switch_event_fire(&s_event);
 	}
 
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_core_get_variable("nat_type")) {
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if (switch_nat_del_mapping(profile->sip_port, SWITCH_NAT_UDP) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
@@ -2136,8 +2148,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (!zstr(from_domain)) {
 				gateway->from_domain = switch_core_strdup(gateway->pool, from_domain);
 			}
+			
+			if (!zstr(register_transport) && !switch_stristr("transport=", proxy)) {
+				gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", proxy, register_transport);
+			} else {
+				gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+			}
 
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>",
 														 from_user, !zstr(from_domain) ? from_domain : proxy, register_transport);
 
@@ -3729,9 +3746,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (!profile->rtpip[0]) {
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
-
-				if (switch_core_get_variable("nat_type")) {
-					const char *ip = switch_core_get_variable("nat_public_addr");
+				
+				if (switch_nat_get_type()) {
+					char *ip = switch_core_get_variable_dup("nat_public_addr");
 					if (ip && !strchr(profile->sipip, ':')) {
 						if (!profile->extrtpip) {
 							profile->extrtpip = switch_core_strdup(profile->pool, ip);
@@ -3742,6 +3759,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						sofia_set_pflag(profile, PFLAG_AUTO_NAT);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "NAT detected setting external ip to %s\n", ip);
 					}
+					switch_safe_free(ip);
 				}
 
 				if (profile->nonce_ttl < 60) {
@@ -4129,7 +4147,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 
 		if ((status == 180 || status == 183 || status == 200)) {
-			const char *x_freeswitch_support;
+			const char *x_freeswitch_support, *vval;
 
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
 
@@ -4143,7 +4161,26 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_server->g_string);
 			}
 
-			sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+			if (status == 200) {
+				sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+			} else {
+				sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_PROGRESS_HEADER_PREFIX);
+			}
+
+			if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) {
+				switch_core_session_t *other_session;
+				
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					if (status == 200) {
+						switch_ivr_transfer_variable(session, other_session, SOFIA_SIP_RESPONSE_HEADER_PREFIX_T);
+					} else {
+						switch_ivr_transfer_variable(session, other_session, SOFIA_SIP_PROGRESS_HEADER_PREFIX_T);
+					}
+					switch_core_session_rwunlock(other_session);
+				}
+			}
+			
+
 
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 

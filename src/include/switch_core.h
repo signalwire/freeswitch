@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  *
  * switch_core.h -- Core Library
@@ -758,6 +759,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(_In_z_ 
   \return the value of the desired variable
 */
 SWITCH_DECLARE(char *) switch_core_get_variable(_In_z_ const char *varname);
+SWITCH_DECLARE(char *) switch_core_get_variable_dup(_In_z_ const char *varname);
+SWITCH_DECLARE(char *) switch_core_get_variable_pdup(_In_z_ const char *varname, switch_memory_pool_t *pool);
+SWITCH_DECLARE(const char *) switch_core_get_hostname(void);
 
 /*! 
   \brief Add a global variable to the core
@@ -1735,6 +1739,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
 
 /*!
+  \brief Feed DTMF to an asr handle
+  \param ah the handle to feed data to
+  \param dtmf a string of DTMF digits
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags);
+
+/*!
   \brief Check an asr handle for results
   \param ah the handle to check
   \param flags flags to influence behaviour
@@ -1767,6 +1780,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
   \return SWITCH_STATUS_SUCCESS
 */
 SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *name);
+
+/*!
+  \brief Enable a grammar from an asr handle
+  \param ah the handle to enable the grammar from
+  \param name the name of the grammar to enable
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_enable_grammar(switch_asr_handle_t *ah, const char *name);
+
+/*!
+  \brief Disable a grammar from an asr handle
+  \param ah the handle to disable the grammar from
+  \param name the name of the grammar to disable
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_grammar(switch_asr_handle_t *ah, const char *name);
+
+/*!
+  \brief Disable all grammars from an asr handle
+  \param ah the handle to disable the grammars from
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_disable_all_grammars(switch_asr_handle_t *ah);
 
 /*!
   \brief Pause detection on an asr handle
@@ -2190,6 +2226,11 @@ SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
+
+SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
+															 const char *network_ip, const char *network_port, const char *network_proto);
+SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, const char *realm, const char *token);
+SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
 
 SWITCH_END_EXTERN_C
 #endif

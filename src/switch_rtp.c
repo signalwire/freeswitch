@@ -32,6 +32,7 @@
  */
 //#define DEBUG_2833
 //#define RTP_DEBUG_WRITE_DELTA
+//#define DEBUG_MISSED_SEQ
 #include <switch.h>
 #include <switch_stun.h>
 #undef PACKAGE_NAME
@@ -125,6 +126,7 @@ struct switch_rtp_rfc2833_data {
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
 	uint32_t in_digit_ts;
+	uint32_t last_in_digit_ts;
 	uint32_t in_digit_sanity;
 	uint32_t in_interleaved;
 	uint32_t timestamp_dtmf;
@@ -245,6 +247,9 @@ struct switch_rtp {
 	switch_time_t send_time;
 	switch_byte_t auto_adj_used;
 	uint8_t pause_jb;
+	uint16_t last_seq;
+	switch_time_t last_read_time;
+	switch_size_t last_flush_packet_count;
 };
 
 struct switch_rtcp_senderinfo {
@@ -255,6 +260,194 @@ struct switch_rtcp_senderinfo {
 	unsigned pc:32;
 	unsigned oc:32;
 };
+
+typedef enum {
+	RESULT_CONTINUE,
+	RESULT_GOTO_END,
+	RESULT_GOTO_RECVFROM,
+	RESULT_GOTO_TIMERCHECK
+} handle_rfc2833_result_t;
+
+static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_size_t bytes, int *do_cng)
+{
+#ifdef DEBUG_2833
+	if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
+	}
+#endif
+
+	if (rtp_session->dtmf_data.in_digit_sanity && !--rtp_session->dtmf_data.in_digit_sanity) {
+		rtp_session->dtmf_data.last_digit = 0;
+		rtp_session->dtmf_data.in_digit_ts = 0;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF sanity check.\n");
+	}
+
+	/* RFC2833 ... like all RFC RE: VoIP, guaranteed to drive you to insanity! 
+	   We know the real rules here, but if we enforce them, it's an interop nightmare so,
+	   we put up with as much as we can so we don't have to deal with being punished for
+	   doing it right. Nice guys finish last!
+	*/
+	if (bytes > rtp_header_len && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
+		!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+		switch_size_t len = bytes - rtp_header_len;
+		unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
+		int end;
+		uint16_t duration;
+		char key;
+		uint16_t in_digit_seq;
+		uint32_t ts;
+
+		if (!(packet[0] || packet[1] || packet[2] || packet[3]) && len >= 8) {
+			packet += 4;
+			len -= 4;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "DTMF payload offset by 4 bytes.\n");
+		}
+
+		if (!(packet[0] || packet[1] || packet[2] || packet[3])) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF payload check.\n");
+			rtp_session->dtmf_data.last_digit = 0;
+			rtp_session->dtmf_data.in_digit_ts = 0;
+			rtp_session->dtmf_data.in_digit_sanity = 0;
+		}
+
+		end = packet[1] & 0x80 ? 1 : 0;
+		duration = (packet[2] << 8) + packet[3];
+		key = switch_rfc2833_to_char(packet[0]);
+		in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+		ts = htonl(rtp_session->recv_msg.header.ts);
+
+		if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
+			if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
+				rtp_session->dtmf_data.in_digit_seq = 0;
+			}
+		}
+#ifdef DEBUG_2833
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "packet[%d]: %02x %02x %02x %02x\n", (int) len, (unsigned) packet[0], (unsigned)
+			   packet[1], (unsigned) packet[2], (unsigned) packet[3]);
+#endif
+
+		if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
+
+			rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
+#ifdef DEBUG_2833
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read: %c %u %u %u %u %d %d %s\n",
+				   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq,
+				   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
+#endif
+
+			if (!rtp_session->dtmf_data.in_digit_queued && (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) &&
+				rtp_session->dtmf_data.in_digit_ts) {
+				switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0) };
+#ifdef DEBUG_2833
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
+#endif
+				switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
+				rtp_session->dtmf_data.in_digit_queued = 1;
+			}
+
+			/* only set sanity if we do NOT ignore the packet */
+			if (rtp_session->dtmf_data.in_digit_ts) {
+				rtp_session->dtmf_data.in_digit_sanity = 2000;
+			}
+
+			if (rtp_session->dtmf_data.last_duration > duration && 
+				rtp_session->dtmf_data.last_duration > 0xFC17 && ts == rtp_session->dtmf_data.in_digit_ts) {
+				rtp_session->dtmf_data.flip++;
+			}
+
+			if (end) {
+				if (!rtp_session->dtmf_data.in_digit_ts && rtp_session->dtmf_data.last_in_digit_ts != ts) {
+#ifdef DEBUG_2833
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start with end packet %d\n", ts);
+#endif
+					rtp_session->dtmf_data.last_in_digit_ts = ts;
+					rtp_session->dtmf_data.in_digit_ts = ts;
+					rtp_session->dtmf_data.first_digit = key;
+					rtp_session->dtmf_data.in_digit_sanity = 2000;
+				}
+				if (rtp_session->dtmf_data.in_digit_ts) {
+					switch_dtmf_t dtmf = { key, duration };
+
+					if (ts > rtp_session->dtmf_data.in_digit_ts) {
+						dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
+					}
+					if (rtp_session->dtmf_data.flip) {
+						dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
+						rtp_session->dtmf_data.flip = 0;
+#ifdef DEBUG_2833
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "you're welcome!\n");
+#endif
+					}
+#ifdef DEBUG_2833
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n",
+						   dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
+#endif
+						
+					if (!(rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) && !rtp_session->dtmf_data.in_digit_queued) {
+#ifdef DEBUG_2833
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
+#endif
+						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
+					}
+
+					rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
+
+					rtp_session->dtmf_data.in_digit_ts = 0;
+					rtp_session->dtmf_data.in_digit_sanity = 0;
+					rtp_session->dtmf_data.in_digit_queued = 0;
+					*do_cng = 1;
+				} else {
+					if (!switch_rtp_ready(rtp_session)) {
+						return RESULT_GOTO_END;
+					}
+					switch_cond_next();
+					return RESULT_GOTO_RECVFROM;
+				}
+
+			} else if (!rtp_session->dtmf_data.in_digit_ts) {
+#ifdef DEBUG_2833
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start %d\n", ts);
+#endif
+				rtp_session->dtmf_data.in_digit_ts = ts;
+				rtp_session->dtmf_data.last_in_digit_ts = ts;
+				rtp_session->dtmf_data.first_digit = key;
+				rtp_session->dtmf_data.in_digit_sanity = 2000;
+			}
+
+			rtp_session->dtmf_data.last_duration = duration;
+		} else {
+#ifdef DEBUG_2833
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "drop: %c %u %u %u %u %d %d\n",
+				   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
+#endif
+			switch_cond_next();
+			return RESULT_GOTO_RECVFROM;
+		}
+	}
+
+	if (bytes && rtp_session->dtmf_data.in_digit_ts) {
+		if (!switch_rtp_ready(rtp_session)) {
+			return RESULT_GOTO_END;
+		}
+
+		if (!rtp_session->dtmf_data.in_interleaved && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
+			/* Drat, they are sending audio still as well as DTMF ok fine..... *sigh* */
+			rtp_session->dtmf_data.in_interleaved = 1;
+		}
+			
+		if (rtp_session->dtmf_data.in_interleaved || (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION)) {
+			if (rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+				return RESULT_GOTO_RECVFROM;
+			}
+		} else {
+			*do_cng = 1;
+			return RESULT_GOTO_TIMERCHECK;
+		}
+	}
+
+	return RESULT_CONTINUE;
+}
 
 static int global_init = 0;
 static int rtp_common_write(switch_rtp_t *rtp_session,
@@ -613,8 +806,8 @@ static void zrtp_logger(int level, const char *data, int len, int offset)
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 #ifdef ENABLE_ZRTP
-	const char *zid_string = switch_core_get_variable("switch_serial");
-	const char *zrtp_enabled = switch_core_get_variable("zrtp_enabled");
+	const char *zid_string = switch_core_get_variable_pdup("switch_serial", pool);
+	const char *zrtp_enabled = switch_core_get_variable_pdup("zrtp_enabled", pool);
 	zrtp_config_t zrtp_config;
 	char zrtp_cache_path[256] = "";
 	zrtp_on = zrtp_enabled ? switch_true(zrtp_enabled) : 0;
@@ -1400,7 +1593,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.cc = 0;
 
 	rtp_session->payload = payload;
-
+	rtp_session->rpayload = payload;
 
 	rtp_session->rtcp_send_msg.header.version = 2;
 	rtp_session->rtcp_send_msg.header.p = 0;
@@ -1595,6 +1788,12 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_sessi
 	}
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
+{
+	rtp_session->rpayload = pt;
+}
+
+
 SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
 {
 	rtp_session->cng_pt = pt;
@@ -1697,6 +1896,10 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name)
 {
 
+	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	stfu_n_debug(rtp_session->jb, name);
 	stfu_global_set_logger(jb_logger);
 
@@ -2157,6 +2360,15 @@ static void do_flush(switch_rtp_t *rtp_session)
 				bytes = sizeof(rtp_msg_t);
 				status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
 				if (bytes) {
+					int do_cng = 0;
+
+					/* Make sure to handle RFC2833 packets, even if we're flushing the packets */
+					if (bytes > rtp_header_len && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+						handle_rfc2833(rtp_session, bytes, &do_cng);
+#ifdef DEBUG_2833
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
+#endif
+					}
 
 					flushed++;
 
@@ -2195,7 +2407,52 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	*bytes = sizeof(rtp_msg_t);
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 	ts = ntohl(rtp_session->recv_msg.header.ts);
-	
+
+	if (*bytes ) {
+		uint16_t seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+
+		if (rtp_session->last_seq && rtp_session->last_seq+1 != seq) {
+#ifdef DEBUG_MISSED_SEQ
+			switch_size_t flushed_packets_diff = rtp_session->stats.inbound.flush_packet_count - rtp_session->last_flush_packet_count;
+			switch_size_t num_missed = (switch_size_t)seq - (rtp_session->last_seq+1);
+
+			if (num_missed == 1) { /* We missed one packet */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missed one RTP frame with sequence [%d]%s. Time since last read [%d]\n",
+								  rtp_session->last_seq+1, (flushed_packets_diff == 1) ? " (flushed by FS)" : " (missed)",
+								  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
+			} else { /* We missed multiple packets */
+				if (flushed_packets_diff == 0) { 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %d RTP frames from sequence [%d] to [%d] (missed). Time since last read [%d]\n",
+									  num_missed, rtp_session->last_seq+1, seq-1,
+									  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
+				} else if (flushed_packets_diff == num_missed) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %d RTP frames from sequence [%d] to [%d] (flushed by FS). Time since last read [%d]\n",
+									  num_missed, rtp_session->last_seq+1, seq-1,
+									  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
+				} else if (num_missed > flushed_packets_diff) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %d RTP frames from sequence [%d] to [%d] (%d packets flushed by FS, %d packets missed)."
+									  " Time since last read [%d]\n",
+									  num_missed, rtp_session->last_seq+1, seq-1,
+									  flushed_packets_diff, num_missed-flushed_packets_diff,
+									  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %d RTP frames from sequence [%d] to [%d] (%d packets flushed by FS). Time since last read [%d]\n",
+									  num_missed, rtp_session->last_seq+1, seq-1,
+									  flushed_packets_diff, rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
+				}
+			}
+#endif
+		}
+		rtp_session->last_seq = seq;
+	}
+
+	rtp_session->last_flush_packet_count = rtp_session->stats.inbound.flush_packet_count;
+	rtp_session->last_read_time = switch_micro_time_now();
+
 	if (*bytes && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) && 
 		ts && !rtp_session->jb && !rtp_session->pause_jb && ts == rtp_session->last_cng_ts) {
 		/* we already sent this frame..... */
@@ -2404,13 +2661,25 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
+		int read_pretriggered = 0;
 		bytes = 0;
 
 		if (rtp_session->timer.interval) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-					rtp_session->hot_hits += rtp_session->samples_per_interval;
+					status = read_rtp_packet(rtp_session, &bytes, flags);
+					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initial %d\n", bytes); */
+					read_pretriggered = 1;
+
+					if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
+						/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trigger %d\n", rtp_session->hot_hits); */
+						rtp_session->hot_hits += rtp_session->samples_per_interval;
+					} else {
+						rtp_session->hot_hits = 0;
+						switch_core_timer_sync(&rtp_session->timer);
+						goto recvfrom;
+					}
 					
 					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
 						switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
@@ -2438,7 +2707,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 	recvfrom:
-		bytes = 0;
+		if (!read_pretriggered) {
+			bytes = 0;
+		}
 		read_loops++;
 		poll_loop = 0;
 
@@ -2449,7 +2720,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0) {
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity) {
 				pt = 20000;
 			}
 			
@@ -2458,13 +2729,18 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
+			do_2833(rtp_session, session);
+
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
-				do_2833(rtp_session, session);
+				return_cng_frame();
 			}
 		}
 
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
-			status = read_rtp_packet(rtp_session, &bytes, flags);
+			if (!read_pretriggered) {
+				status = read_rtp_packet(rtp_session, &bytes, flags);
+				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read bytes %d\n", bytes); */
+			}
 		} else {
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
 				char tmp[128] = "";
@@ -2494,13 +2770,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
-		if (rtp_session->recv_msg.header.pt != 13 && 
-			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
-			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->payload) {
-			/* drop frames of incorrect payload number and return CNG frame instead */
-			return_cng_frame();
-		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && rtp_session->rtcp_read_pollfd) {
 			rtcp_poll_status = switch_poll(rtp_session->rtcp_read_pollfd, 1, &rtcp_fdr, 0);
@@ -2577,6 +2846,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes < 0) {
 			ret = (int) bytes;
 			goto end;
+		}
+
+		if (bytes && rtp_session->recv_msg.header.version == 2 && 
+			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) &&
+			rtp_session->recv_msg.header.pt != 13 && 
+			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
+			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload) {
+			/* drop frames of incorrect payload number and return CNG frame instead */
+			return_cng_frame();
 		}
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
@@ -2835,173 +3114,20 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			bytes = sbytes;
 		}
-#ifdef DEBUG_2833
-		if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
-		}
-#endif
 
-		if (rtp_session->dtmf_data.in_digit_sanity && !--rtp_session->dtmf_data.in_digit_sanity) {
-			rtp_session->dtmf_data.last_digit = 0;
-			rtp_session->dtmf_data.in_digit_ts = 0;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF sanity check.\n");
-		}
-
-		/* RFC2833 ... like all RFC RE: VoIP, guaranteed to drive you to insanity! 
-		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
-		   we put up with as much as we can so we don't have to deal with being punished for
-		   doing it right. Nice guys finish last!
-		*/
-		if (bytes > rtp_header_len && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) &&
-			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
-			switch_size_t len = bytes - rtp_header_len;
-			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
-			int end;
-			uint16_t duration;
-			char key;
-			uint16_t in_digit_seq;
-			uint32_t ts;
-
-
-			if (!(packet[0] || packet[1] || packet[2] || packet[3]) && len >= 8) {
-				packet += 4;
-				len -= 4;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "DTMF payload offset by 4 bytes.\n");
-			}
-
-			if (!(packet[0] || packet[1] || packet[2] || packet[3])) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF payload check.\n");
-				rtp_session->dtmf_data.last_digit = 0;
-				rtp_session->dtmf_data.in_digit_ts = 0;
-			}
-
-			end = packet[1] & 0x80 ? 1 : 0;
-			duration = (packet[2] << 8) + packet[3];
-			key = switch_rfc2833_to_char(packet[0]);
-			in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
-			ts = htonl(rtp_session->recv_msg.header.ts);
-
-			if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
-				if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
-					rtp_session->dtmf_data.in_digit_seq = 0;
-				}
-			}
-#ifdef DEBUG_2833
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "packet[%d]: %02x %02x %02x %02x\n", (int) len, (unsigned) packet[0], (unsigned)
-				   packet[1], (unsigned) packet[2], (unsigned) packet[3]);
-#endif
-
-			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
-
-				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-#ifdef DEBUG_2833
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read: %c %u %u %u %u %d %d %s\n",
-					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq,
-					   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
-#endif
-
-				if (!rtp_session->dtmf_data.in_digit_queued && (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) &&
-					rtp_session->dtmf_data.in_digit_ts) {
-					switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0) };
-#ifdef DEBUG_2833
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
-#endif
-					switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
-					rtp_session->dtmf_data.in_digit_queued = 1;
-				}
-
-				/* only set sanity if we do NOT ignore the packet */
-				if (rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.in_digit_sanity = 2000;
-				}
-
-				if (rtp_session->dtmf_data.last_duration > duration && 
-					rtp_session->dtmf_data.last_duration > 0xFC17 && ts == rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.flip++;
-				}
-
-				if (end) {
-					if (rtp_session->dtmf_data.in_digit_ts) {
-						switch_dtmf_t dtmf = { key, duration };
-
-						if (ts > rtp_session->dtmf_data.in_digit_ts) {
-							dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
-						}
-						if (rtp_session->dtmf_data.flip) {
-							dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
-							rtp_session->dtmf_data.flip = 0;
-#ifdef DEBUG_2833
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "you're welcome!\n");
-#endif
-						}
-#ifdef DEBUG_2833
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n",
-							   dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
-#endif
-						
-						if (!(rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) && !rtp_session->dtmf_data.in_digit_queued) {
-#ifdef DEBUG_2833
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
-#endif
-							switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
-						}
-
-						rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
-
-						rtp_session->dtmf_data.in_digit_ts = 0;
-						rtp_session->dtmf_data.in_digit_sanity = 0;
-						rtp_session->dtmf_data.in_digit_queued = 0;
-						do_cng = 1;
-					} else {
-						if (!switch_rtp_ready(rtp_session)) {
-							goto end;
-						}
-						switch_cond_next();
-						goto recvfrom;
-					}
-
-				} else if (!rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.in_digit_ts = ts;
-					rtp_session->dtmf_data.first_digit = key;
-					rtp_session->dtmf_data.in_digit_sanity = 2000;
-				}
-
-				rtp_session->dtmf_data.last_duration = duration;
-			} else {
-#ifdef DEBUG_2833
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "drop: %c %u %u %u %u %d %d\n",
-					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
-#endif
-				switch_cond_next();
-				goto recvfrom;
-			}
+		/* Handle incoming RFC2833 packets */
+		switch (handle_rfc2833(rtp_session, bytes, &do_cng)) {
+		case RESULT_GOTO_END:
+			goto end;
+		case RESULT_GOTO_RECVFROM:
+			goto recvfrom;
+		case RESULT_GOTO_TIMERCHECK:
+			goto timer_check;
+		case RESULT_CONTINUE:
+			goto result_continue;
 		}
 
-		if (rtp_session->dtmf_data.in_digit_ts) {
-
-		}
-
-
-		if (bytes && rtp_session->dtmf_data.in_digit_ts) {
-			if (!switch_rtp_ready(rtp_session)) {
-				goto end;
-			}
-
-			if (!rtp_session->dtmf_data.in_interleaved && rtp_session->recv_msg.header.pt != rtp_session->recv_te) {
-				/* Drat, they are sending audio still as well as DTMF ok fine..... *sigh* */
-				rtp_session->dtmf_data.in_interleaved = 1;
-			}
-			
-			if (rtp_session->dtmf_data.in_interleaved || (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION)) {
-				if (rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
-					goto recvfrom;
-				}
-			} else {
-				return_cng_frame();
-			}
-		}
-
+	result_continue:
 	timer_check:
 
 		if (do_cng) {
@@ -3044,8 +3170,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
 			rtp_session->recv_msg.header.pt = 97;
 		}
-
-		rtp_session->rpayload = (switch_payload_t) rtp_session->recv_msg.header.pt;
 
 		break;
 

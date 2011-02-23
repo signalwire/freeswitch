@@ -89,7 +89,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	}
 	
 	/* Get the keys for redis server */
-	uuid_rediskey = switch_core_session_sprintf(session,"%s_%s_%s", switch_core_get_variable("hostname"), realm, resource);
+	uuid_rediskey = switch_core_session_sprintf(session,"%s_%s_%s", switch_core_get_hostname(), realm, resource);
 	rediskey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
 
 	if ((pvt = switch_channel_get_private(channel, "limit_redis"))) {
@@ -179,7 +179,7 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", (char *)p_key);
 				switch_goto_status(SWITCH_STATUS_FALSE, end);
 			}
-	   		p_uuid_key = switch_core_session_sprintf(session, "%s_%s", switch_core_get_variable("hostname"), (char *)p_key);
+	   		p_uuid_key = switch_core_session_sprintf(session, "%s_%s", switch_core_get_hostname(), (char *)p_key);
 			if (credis_decr(redis,p_uuid_key,&uuid_val) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", p_uuid_key);
 				switch_goto_status(SWITCH_STATUS_FALSE, end);
@@ -193,7 +193,7 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 	
 	} else {	
 	   	rediskey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
-		uuid_rediskey = switch_core_session_sprintf(session, "%s_%s_%s", switch_core_get_variable("hostname"), realm, resource);
+		uuid_rediskey = switch_core_session_sprintf(session, "%s_%s_%s", switch_core_get_hostname(), realm, resource);
 		switch_core_hash_delete(pvt->hash, (const char *) rediskey);
 
 		if (credis_decr(redis, rediskey, &val) != 0) {
@@ -249,13 +249,13 @@ SWITCH_LIMIT_RESET(limit_reset_redis)
 {
 	REDIS redis;
 	if (redis_factory(&redis) == SWITCH_STATUS_SUCCESS) {
-		char *rediskey = switch_mprintf("%s_*", switch_core_get_variable("hostname"));
+		char *rediskey = switch_mprintf("%s_*", switch_core_get_hostname());
 		int dec = 0, val = 0, keyc;
 		char *uuids[2000];
 	
 		if ((keyc = credis_keys(redis, rediskey, uuids, switch_arraylen(uuids))) > 0) {
 			int i = 0;
-			int hostnamelen = strlen(switch_core_get_variable("hostname"))+1;
+			int hostnamelen = strlen(switch_core_get_hostname())+1;
 			
 			for (i = 0; i < keyc && uuids[i]; i++){
 				const char *key = uuids[i] + hostnamelen;

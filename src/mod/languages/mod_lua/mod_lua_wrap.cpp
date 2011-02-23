@@ -1582,6 +1582,55 @@ fail:
 }
 
 
+static int _wrap_email(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  char *arg6 = (char *) NULL ;
+  char *arg7 = (char *) NULL ;
+  bool result;
+  
+  SWIG_check_num_args("email",2,7)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("email",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("email",2,"char *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("email",3,"char *");
+  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("email",4,"char *");
+  if(lua_gettop(L)>=5 && !lua_isstring(L,5)) SWIG_fail_arg("email",5,"char *");
+  if(lua_gettop(L)>=6 && !lua_isstring(L,6)) SWIG_fail_arg("email",6,"char *");
+  if(lua_gettop(L)>=7 && !lua_isstring(L,7)) SWIG_fail_arg("email",7,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
+  if(lua_gettop(L)>=5){
+    arg5 = (char *)lua_tostring(L, 5);
+  }
+  if(lua_gettop(L)>=6){
+    arg6 = (char *)lua_tostring(L, 6);
+  }
+  if(lua_gettop(L)>=7){
+    arg7 = (char *)lua_tostring(L, 7);
+  }
+  result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_new_IVRMenu(lua_State* L) {
   int SWIG_arg = -1;
   IVRMenu *arg1 = (IVRMenu *) 0 ;
@@ -7254,6 +7303,184 @@ fail:
 }
 
 
+static int _wrap_Dbh_test_reactive__SWIG_0(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("test_reactive",4,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("test_reactive",1,"LUA::Dbh *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("test_reactive",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("test_reactive",3,"char *");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("test_reactive",4,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_test_reactive",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  result = (bool)(arg1)->test_reactive(arg2,arg3,arg4);
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Dbh_test_reactive__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("test_reactive",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("test_reactive",1,"LUA::Dbh *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("test_reactive",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("test_reactive",3,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_test_reactive",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  result = (bool)(arg1)->test_reactive(arg2,arg3);
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Dbh_test_reactive__SWIG_2(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("test_reactive",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("test_reactive",1,"LUA::Dbh *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("test_reactive",2,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_test_reactive",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (bool)(arg1)->test_reactive(arg2);
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Dbh_test_reactive(lua_State* L) {
+  int argc;
+  int argv[5]={
+    1,2,3,4,5
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 2) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__Dbh, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_Dbh_test_reactive__SWIG_2(L);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__Dbh, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_Dbh_test_reactive__SWIG_1(L);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_LUA__Dbh, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isstring(L,argv[3]);
+          }
+          if (_v) {
+            return _wrap_Dbh_test_reactive__SWIG_0(L);
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'Dbh_test_reactive'");
+  lua_error(L);return 0;
+}
+
+
 static int _wrap_Dbh_query(lua_State* L) {
   int SWIG_arg = -1;
   LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
@@ -7328,6 +7555,7 @@ delete arg1;
 static swig_lua_method swig_LUA_Dbh_methods[] = {
     {"release", _wrap_Dbh_release}, 
     {"connected", _wrap_Dbh_connected}, 
+    {"test_reactive", _wrap_Dbh_test_reactive}, 
     {"query", _wrap_Dbh_query}, 
     {"affected_rows", _wrap_Dbh_affected_rows}, 
     {0,0}
@@ -7346,6 +7574,7 @@ static swig_lua_class _wrap_class_LUA_Dbh = { "Dbh", &SWIGTYPE_p_LUA__Dbh,_wrap_
 static const struct luaL_reg swig_commands[] = {
     { "consoleLog", _wrap_consoleLog},
     { "consoleCleanLog", _wrap_consoleCleanLog},
+    { "email", _wrap_email},
     { "console_log", _wrap_console_log},
     { "console_clean_log", _wrap_console_clean_log},
     { "msleep", _wrap_msleep},

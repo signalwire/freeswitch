@@ -52,7 +52,7 @@
 /* This struct uses static polymorphism, and derived classes should implement  *
  * the "lock/trylock/unlock()" methods for correct code compilation.           *
  * The base class also features reference counting, so derived classes should  *
- * implement the "unreference()" method for releasing resources.               */
+ * implement the "unreference_data()" method for releasing resources.               */
 
 template < typename Implementor >
 struct SimpleLockCommon: COUNTER_SUPER( SimpleLockCommon < Implementor > )
@@ -95,7 +95,7 @@ struct SimpleLockCommon: COUNTER_SUPER( SimpleLockCommon < Implementor > )
   protected:
     void unreference(void)
     {
-        static_cast<Implementor*>(this)->unreference();
+        static_cast<Implementor*>(this)->unreference_data();
     }
 };
 

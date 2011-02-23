@@ -144,9 +144,8 @@ bool Configfile::deserialize(std::ifstream & fd)
             if (adjust(section, opt, val))
                 continue;
 
-            _errors.push_back(STG(FMT("option '%s' does "
-                "not exist or '%s' is not a valid value (at section '%s')")
-                % opt % val % section->name()));
+            _errors.push_back(STG(FMT("option '%s' does not exist or '%s' is not "
+                "a valid value (at section '%s')") % opt % val % section->name()));
         }
     }
 

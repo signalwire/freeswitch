@@ -664,6 +664,8 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 			}
 		}
 		break;
+	case FTDM_COMMAND_DISABLE_ECHOTRAIN: { err = 0; }
+		break;
 	case FTDM_COMMAND_ENABLE_DTMF_DETECT:
 		{
 #ifdef WP_API_FEATURE_DTMF_EVENTS
@@ -1242,7 +1244,7 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 			/* there is a bug in wanpipe where alarms were not properly set when they should be
 			 * on at application startup, until that is fixed we check the link status here too */
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_LINK_STATUS, &sangoma_status);
-			ftdmchan->alarm_flags = sangoma_status == FTDM_HW_LINK_DISCONNECTED ? 1 : 0;
+			ftdmchan->alarm_flags = sangoma_status == FTDM_HW_LINK_DISCONNECTED ? FTDM_ALARM_RED : FTDM_ALARM_NONE;
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Link status is %d\n", sangoma_status);
 		}
 	}

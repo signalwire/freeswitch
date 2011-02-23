@@ -80,6 +80,8 @@ typedef enum {
 	FLAG_ACTIVATING			= (1 << 10),
 	/* Used when we receive an ALERT msg + inband tones ready */
 	FLAG_MEDIA_READY		= (1 << 11),
+	/* Set when we already sent a Channel ID IE */
+	FLAG_SENT_CHAN_ID		= (1 << 12),
 } sngisdn_flag_t;
 
 
@@ -112,6 +114,11 @@ typedef enum {
 	SNGISDN_OPT_FALSE = 2,
 } sngisdn_opt_t;
 
+typedef enum {
+	SNGISDN_EARLY_MEDIA_ON_PROCEED = (1 << 0),
+	SNGISDN_EARLY_MEDIA_ON_PROGRESS = (1 << 1),
+	SNGISDN_EARLY_MEDIA_ON_ALERT= (1 << 2),
+} sngisdn_early_media_opt_t;
 
 typedef enum {
 	SNGISDN_AVAIL_DOWN = 1,
@@ -188,7 +195,8 @@ typedef struct sngisdn_span_data {
 	uint8_t 		span_id;
 	uint8_t			tei;
 	uint8_t			min_digits;
-	uint8_t			trace_flags;		/* TODO: change to flags, so we can use ftdm_test_flag etc.. */
+	uint8_t			trace_flags;		/* TODO change to bit map of sngisdn_tracetype_t */
+	uint8_t			early_media_flags;	/* bit map of ftdm_sngisdn_early_media_opt_t */
 	uint8_t			overlap_dial;
 	uint8_t			setup_arb;
 	uint8_t			facility_ie_decode;
@@ -196,10 +204,10 @@ typedef struct sngisdn_span_data {
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
 	uint8_t 		ignore_cause_value;
-	uint8_t			raw_trace_q931;
-	uint8_t			raw_trace_q921;
+	uint8_t			raw_trace_q931; /* TODO: combine with trace_flags */
+	uint8_t			raw_trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			timer_t3;
-	uint8_t			restart_opt;
+	uint8_t			restart_opt;	
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;

@@ -1036,13 +1036,15 @@ int soa_sdp_mode_set(sdp_session_t const *user,
 
     assert(s2u);
 
-    for (j = 0, um = user->sdp_media; j != s2u[i]; um = um->m_next, j++)
-      assert(um);
+    for (j = 0, um = user->sdp_media; j != s2u[i]; um = um->m_next, j++) {
+		if (!um) break;
+	}
+
     if (um == NULL) {
       if (dryrun)
-	return 1;
+		  return 1;
       else
-	retval = 1;
+		  retval = 1;
       sm->m_rejected = 1;
       sm->m_mode = sdp_inactive;
       sm->m_port = 0;

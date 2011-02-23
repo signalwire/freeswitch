@@ -8665,10 +8665,6 @@ void outgoing_destroy(nta_outgoing_t *orq)
   orq->orq_destroyed = 1;
   orq->orq_callback = outgoing_default_cb;
   orq->orq_magic = NULL;
-
-  if (orq->orq_method != sip_method_invite &&
-      orq->orq_method != sip_method_ack)
-    outgoing_terminate(orq);
 }
 
 /** @internal Outgoing transaction timer routine.

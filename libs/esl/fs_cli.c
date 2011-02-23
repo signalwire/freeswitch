@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #define CMD_BUFLEN 1024
+static int WARN_STOP = 0;
 
 #ifdef WIN32
 #define strdup(src) _strdup(src)
@@ -535,6 +536,13 @@ static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int
 static void handle_SIGINT(int sig)
 {
 	if (sig);
+
+	WARN_STOP = 1;
+
+	signal(SIGINT, handle_SIGINT);
+#ifdef SIGTSTP
+	signal(SIGTSTP, handle_SIGINT);
+#endif
 	return;
 }
 
@@ -581,16 +589,36 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 	while(thread_running && handle->connected) {
 		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
+		int aok = 1;		
+
 		if (status == ESL_FAIL) {
-			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
+			if (aok) esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
+#ifndef WIN32
+			fd_set can_write;
+			int fd;
+			struct timeval to;
+
+			fd = fileno(stdout);
+			memset(&to, 0, sizeof(to));
+			FD_ZERO(&can_write);
+			FD_SET(fd, &can_write);
+			to.tv_sec = 0;
+			to.tv_usec = 100000;
+			if (select(fd + 1, NULL, &can_write, NULL, &to) > 0) {
+				aok = FD_ISSET(fd, &can_write);
+			} else {
+				aok = 0;
+			}
+#endif
+			
 			if (handle->last_event) {
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
 				int known = 0;
 
 				if (!esl_strlen_zero(type)) {
-					if (!strcasecmp(type, "log/data")) {
+					if (aok && !strcasecmp(type, "log/data")) {
 						const char *userdata = esl_event_get_header(handle->last_event, "user-data");
 						
 						if (esl_strlen_zero(userdata) || esl_strlen_zero(filter_uuid) || !strcasecmp(filter_uuid, userdata)) {
@@ -617,7 +645,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = -1; thread_running = 0;
 						known++;
-					} else if (!strcasecmp(type, "text/event-plain")) {
+					} else if (aok && !strcasecmp(type, "text/event-plain")) {
 						char *foo;
 						esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
 						printf("RECV EVENT\n%s\n", foo);
@@ -627,7 +655,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					}
 				}
 				
-				if (!known) {
+				if (aok && !known) {
 					char *foo;
 					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
 					esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
@@ -635,6 +663,11 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					free(foo);
 				}
 			}
+		}
+
+		if (WARN_STOP) {
+			if (aok) printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
+			WARN_STOP = 0;
 		}
 
 		usleep(1000);
@@ -1023,6 +1056,9 @@ int main(int argc, char *argv[])
 	}
 	
 	signal(SIGINT, handle_SIGINT);
+#ifdef SIGTSTP
+	signal(SIGTSTP, handle_SIGINT);
+#endif
 #ifdef SIGQUIT
 	signal(SIGQUIT, handle_SIGQUIT);
 #endif

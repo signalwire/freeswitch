@@ -272,24 +272,39 @@ struct KhompPvtISDN: public KhompPvtE1
 
         bool process(std::string name, std::string value = "")
         {
-            if (name == "uui")
+            if ((name == "uui" ) || (name == "uui_ex"))
             {
-                Strings::vector_type values;
-                Strings::tokenize(value, values, "#", 2);
-
-                try
+                if(value.find("#") != std::string::npos)
                 {
-                    std::string uui_proto_s = values[0];
-                    std::string uui_data_s = values[1];
+                    Strings::vector_type values;
+                    Strings::tokenize(value, values, "#", 2);
 
-                    _uui_descriptor = Strings::toulong(uui_proto_s);
-                    _uui_information.append(uui_data_s);
+                    try
+                    {
+                        std::string uui_proto_s = values[0];
+                        _uui_extended = (name == "uui_ex");
+                        _uui_descriptor = Strings::toulong(uui_proto_s);
+                        _uui_information.clear();
 
-                    DBG(FUNC, FMT("uui adjusted (%s, '%s')!") % uui_proto_s.c_str() % uui_data_s.c_str());
-                }
-                catch (...)
+                        for (unsigned int i = 0; i < values[1].size(); ++i) 
+                            _uui_information += STG(FMT("%02hhx") % ((unsigned char)values[1][i]));
+
+                        DBG(FUNC, FMT("uui adjusted (ex=%s, proto=%s, data='%s')!") 
+                                % (_uui_extended ? "true" : "false")
+                                % uui_proto_s.c_str()
+                                % _uui_information.c_str());
+                    }
+                    catch (...)
+                    {
+                        LOG(ERROR, FMT("invalid %s protocol descriptor: '%s' is not a number.") 
+                                % (_uui_extended ? "uui_ex" : "uui")
+                                % value.c_str());
+                    }
+                } 
+                else
                 {
-                    LOG(ERROR, FMT("invalid uui protocol descriptor: '%s' is not a number.") % value.c_str());
+                    LOG(ERROR, FMT("invalid %s protocol descriptor, need a '#'.") 
+                            % (_uui_extended ? "uui_ex" : "uui"))
                 }
             }
             else if (name == "usr_xfer")
@@ -306,6 +321,7 @@ struct KhompPvtISDN: public KhompPvtE1
     
         bool clear()
         {
+            _uui_extended = false;
             _uui_descriptor = -1;
             _uui_information.clear();
             _isdn_cause = -1;
@@ -322,6 +338,7 @@ struct KhompPvtISDN: public KhompPvtE1
         long int     _uui_descriptor;
         std::string  _uui_information;
         long int     _isdn_cause;
+        bool         _uui_extended;
 
         /* what should we dial to trigger an user-signaled transfer? */
         /* used for xfer on user signaling */
@@ -329,6 +346,13 @@ struct KhompPvtISDN: public KhompPvtE1
         std::string _user_xfer_buffer;
         std::string _digits_buffer;
         std::string _qsig_number;
+        
+        /* isdn information  */
+        std::string _isdn_orig_type_of_number;
+        std::string _isdn_orig_numbering_plan;
+        std::string _isdn_dest_type_of_number;
+        std::string _isdn_dest_numbering_plan;
+        std::string _isdn_orig_presentation;
 
     };
 /******************************************************************************/
@@ -429,12 +453,29 @@ struct KhompPvtISDN: public KhompPvtE1
 
                 std::string descriptor = STG(FMT("%d") % callISDN()->_uui_descriptor);
 
+                setFSChannelVar("KUserInfoExtended", (callISDN()->_uui_extended ? "true" : "false"));
                 setFSChannelVar("KUserInfoDescriptor", descriptor.c_str());
                 setFSChannelVar("KUserInfoData", callISDN()->_uui_information.c_str());
 
+                callISDN()->_uui_extended = false; 
                 callISDN()->_uui_descriptor = -1;
                 callISDN()->_uui_information.clear();
             }
+
+            if (!callISDN()->_isdn_orig_type_of_number.empty())
+                setFSChannelVar("KISDNOrigTypeOfNumber", callISDN()->_isdn_orig_type_of_number.c_str());
+
+            if (!callISDN()->_isdn_dest_type_of_number.empty())
+                setFSChannelVar("KISDNDestTypeOfNumber", callISDN()->_isdn_dest_type_of_number.c_str());
+
+            if (!callISDN()->_isdn_orig_numbering_plan.empty())
+                setFSChannelVar("KISDNOrigNumberingPlan", callISDN()->_isdn_orig_numbering_plan.c_str());
+
+            if (!callISDN()->_isdn_dest_numbering_plan.empty())
+                setFSChannelVar("KISDNDestNumberingPlan", callISDN()->_isdn_dest_numbering_plan.c_str());
+
+            if (!callISDN()->_isdn_orig_presentation.empty())
+                setFSChannelVar("KISDNOrigPresentation", callISDN()->_isdn_orig_presentation.c_str());
         }
         catch(Board::KhompPvt::InvalidSwitchChannel & err)
         {
@@ -444,8 +485,33 @@ struct KhompPvtISDN: public KhompPvtE1
         KhompPvtE1::setSpecialVariables();
     }
 
-    Transfer<CallISDN, false> * _transfer;
+    virtual void getSpecialVariables()
+    {
+        try
+        {
+            const char * isdn_orig_type = getFSChannelVar("KISDNOrigTypeOfNumber");
+            const char * isdn_dest_type = getFSChannelVar("KISDNDestTypeOfNumber");
+            const char * isdn_orig_numbering = getFSChannelVar("KISDNOrigNumberingPlan");
+            const char * isdn_dest_numbering = getFSChannelVar("KISDNDestNumberingPlan");
+            const char * isdn_orig_presentation = getFSChannelVar("KISDNOrigPresentation");
 
+            LOG(ERROR, PVT_FMT(_target,"ISDNORIG: %s") % (isdn_orig_type ? isdn_orig_type : ""));
+
+            callISDN()->_isdn_orig_type_of_number = (isdn_orig_type ? isdn_orig_type : "");
+            callISDN()->_isdn_dest_type_of_number = (isdn_dest_type ? isdn_dest_type : "");
+            callISDN()->_isdn_orig_numbering_plan = (isdn_orig_numbering ? isdn_orig_numbering : "");
+            callISDN()->_isdn_dest_numbering_plan = (isdn_dest_numbering ? isdn_dest_numbering : "");
+            callISDN()->_isdn_orig_presentation   = (isdn_orig_presentation ? isdn_orig_presentation : "");
+        }
+        catch(Board::KhompPvt::InvalidSwitchChannel & err)
+        {
+            LOG(ERROR, PVT_FMT(_target, "(ISDN) %s") % err._msg.c_str());
+        }
+
+        KhompPvt::getSpecialVariables();
+    }
+       
+    Transfer<CallISDN, false> * _transfer;
 };
 /******************************************************************************/
 /********************************* R2 Channel *********************************/
@@ -472,7 +538,6 @@ struct KhompPvtR2: public KhompPvtE1
                 {
                    LOG(ERROR, FMT("invalid r2 category: '%s' is not a number.") % value.c_str());
                 }
-
             }
             else
             {
@@ -554,7 +619,23 @@ struct KhompPvtR2: public KhompPvtE1
     {
         return (CallR2 *)call();
     }
-    
+
+    bool forceDisconnect(void)
+    {
+        char cmd[] = { 0x07, (char)(_target.object + 1) };
+        
+        try
+        {
+            Globals::k3lapi.raw_command(_target.device, 0, cmd, sizeof(cmd));
+        }
+        catch(K3LAPI::failed_raw_command &e)
+        {
+            return false;
+        }
+
+        return true;
+    };
+
     int makeCall(std::string params = "");
     bool doChannelAnswer(CommandRequest &); 
     bool doChannelHangup(CommandRequest &);
@@ -609,9 +690,9 @@ struct KhompPvtR2: public KhompPvtE1
             /* r2 caller category */
             if (callR2()->_r2_category != -1)
             {
-                setFSChannelVar("KR2GotCategory",Verbose::signGroupII((KSignGroupII)callR2()->_r2_category).c_str());
+                setFSChannelVar("KR2GotCategory",STG(FMT("%d") % callR2()->_r2_category).c_str());
+                setFSChannelVar("KR2StrCategory",Verbose::signGroupII((KSignGroupII)callR2()->_r2_category).c_str());
             }
-
         }
         catch(Board::KhompPvt::InvalidSwitchChannel & err)
         {
@@ -834,9 +915,9 @@ struct KhompPvtFXS: public KhompPvt
             _ring_off_ext = -1;
 
             _incoming_exten.clear();
-            _flash_transfer.clear();
+            //_flash_transfer.clear();
 
-            _uuid_other_session.clear();
+            //_uuid_other_session.clear();
  
             return Call::clear();
         }
@@ -850,10 +931,10 @@ struct KhompPvtFXS: public KhompPvt
 
         std::string _incoming_exten;
         
-        ChanTimer::Index _idx_transfer;
+        //ChanTimer::Index _idx_transfer;
 
-        std::string _flash_transfer;
-        std::string _uuid_other_session;
+        //std::string _flash_transfer;
+        //std::string _uuid_other_session;
         
 
     };
@@ -936,9 +1017,9 @@ struct KhompPvtFXS: public KhompPvt
                        std::string extra_context = "");
     bool isOK(void);
 
-    bool startTransfer();
-    bool stopTransfer();
-    bool transfer(std::string & context, bool blind = false);
+    //bool startTransfer();
+    //bool stopTransfer();
+    //bool transfer(std::string & context, bool blind = false);
 
     bool hasNumberDial() { return false; }
     
@@ -996,7 +1077,7 @@ struct KhompPvtFXS: public KhompPvt
 
     static OrigToNseqMapType generateNseqMap();
     static void dialTimer(KhompPvt * pvt);
-    static void transferTimer(KhompPvt * pvt);
+    //static void transferTimer(KhompPvt * pvt);
 
     static std::string padOrig(std::string orig_base, unsigned int padding)
     {
@@ -1015,21 +1096,16 @@ struct KhompPvtFXS: public KhompPvt
         return STG(FMT(STG(FMT("%%0%dd") % orig_size)) % (orig_numb + padding));
     }
 
-    /*
-    virtual void getSpecialVariables()
+    void cleanupIndications(bool force)
     {
-        try
+        if (call()->_indication == INDICA_BUSY && !force)
         {
-        }
-        catch(Board::KhompPvt::InvalidSwitchChannel & err)
-        {
-            LOG(ERROR, PVT_FMT(_target, "(FXS) %s") % err._msg.c_str());
+            DBG(FUNC, PVT_FMT(_target, "skipping busy indication cleanup on FXS channel."));
+            return;
         }
 
-        KhompPvt::getSpecialVariables();
+        KhompPvt::cleanupIndications(force);
     }
-    */
-
 };
 /******************************************************************************/
 /******************************************************************************/

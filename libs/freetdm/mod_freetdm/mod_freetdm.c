@@ -1055,20 +1055,17 @@ switch_io_routines_t freetdm_io_routines = {
 static const char* channel_get_variable(switch_core_session_t *session, switch_event_t *var_event, const char *variable_name)
 {
        const char *variable = NULL;
-
        if (var_event) {
                if ((variable = switch_event_get_header(var_event, variable_name))) {
                        return variable;
                }
        }
+
        if (session) {
                switch_channel_t *channel = switch_core_session_get_channel(session);
                if ((variable = switch_channel_get_variable(channel, variable_name))) {
                        return variable;
                }
-       }
-       if ((variable = switch_core_get_variable(variable_name))) {
-               return variable;
        }
        return NULL;
 }
@@ -1555,6 +1552,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);	
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_layer1", "%d", channel_caller_data->bearer_layer1);
+	switch_channel_set_variable_printf(channel, "freetdm_screening_ind", ftdm_screening2str(channel_caller_data->screen));
+	switch_channel_set_variable_printf(channel, "freetdm_presentation_ind", ftdm_presentation2str(channel_caller_data->pres));
 	
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
@@ -1570,8 +1569,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI2", "%s", channel_caller_data->aniII);
 		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS", "%s", channel_caller_data->dnis.digits);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%s", channel_caller_data->dnis.type);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%s", channel_caller_data->dnis.plan);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%d", channel_caller_data->dnis.type);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
@@ -1583,21 +1582,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	if (channel_caller_data->raw_data_len) {
 		switch_channel_set_variable_printf(channel, "freetdm_custom_call_data", "%s", channel_caller_data->raw_data);
 	}
-	/* Add any channel variable to the dial plan */
-	iter = ftdm_channel_get_var_iterator(sigmsg->channel, NULL);
-	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
-		ftdm_channel_get_current_var(curr, &var_name, &var_value);
-		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
-		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-	}	
-	
 	/* Add any call variable to the dial plan */
 	iter = ftdm_call_get_var_iterator(channel_caller_data, iter);
 	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
 		ftdm_call_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s=%s\n", name, var_value);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s = %s\n", name, var_value);
 	}
 	ftdm_iterator_free(iter);
 	
@@ -2152,8 +2143,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
     switch(sigmsg->event_id) {
     case FTDM_SIGEVENT_START:
 		{
-			ftdm_call_add_var(caller_data, "screening_ind", ftdm_screening2str(caller_data->screen));
-			ftdm_call_add_var(caller_data, "presentation_ind", ftdm_presentation2str(caller_data->pres));
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
@@ -2360,8 +2349,9 @@ static int add_config_list_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode
 
 static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confname)
 {
-	switch_xml_t signode, ss7configs, isup;
-	ftdm_conf_node_t *rootnode;
+	switch_xml_t signode, ss7configs, isup, gen, param;
+	ftdm_conf_node_t *rootnode, *list;
+	char *var, *val;
 
 	/* try to find the conf in the hash first */
 	rootnode = switch_core_hash_find(globals.ss7_configs, confname);
@@ -2405,15 +2395,63 @@ static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confn
 		return NULL;
 	}
 
+	/* add sng_gen */
+	gen = switch_xml_child(isup, "sng_gen");
+	if (gen == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_gen for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	if ((FTDM_SUCCESS != ftdm_conf_node_create("sng_gen", &list, rootnode))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create %s node for %s\n", "sng_gen", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	for (param = switch_xml_child(gen, "param"); param; param = param->next) {
+		var = (char *) switch_xml_attr_soft(param, "name");
+		val = (char *) switch_xml_attr_soft(param, "value");
+		ftdm_conf_node_add_param(list, var, val);
+	}
+
+	/* add relay channels */
+	if (add_config_list_nodes(isup, rootnode, "sng_relay", "relay_channel", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_relay for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp1 links */
+	if (add_config_list_nodes(isup, rootnode, "mtp1_links", "mtp1_link", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp1_links for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp2 links */
+	if (add_config_list_nodes(isup, rootnode, "mtp2_links", "mtp2_link", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp2_links for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add mtp3 links */
+	if (add_config_list_nodes(isup, rootnode, "mtp3_links", "mtp3_link", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp3_links for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
 	/* add mtp linksets */
-	if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", "mtp_links", "mtp_link")) {
+	if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", NULL, NULL)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_linksets for sng_isup config %s\n", confname);
 		ftdm_conf_node_destroy(rootnode);
 		return NULL;
 	}
 
 	/* add mtp routes */
-	if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", NULL, NULL)) {
+	if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", "linksets", "linkset")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_routes for sng_isup config %s\n", confname);
 		ftdm_conf_node_destroy(rootnode);
 		return NULL;
@@ -2422,6 +2460,13 @@ static ftdm_conf_node_t *get_ss7_config_node(switch_xml_t cfg, const char *confn
 	/* add isup interfaces */
 	if (add_config_list_nodes(isup, rootnode, "isup_interfaces", "isup_interface", NULL, NULL)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process isup_interfaces for sng_isup config %s\n", confname);
+		ftdm_conf_node_destroy(rootnode);
+		return NULL;
+	}
+
+	/* add cc spans */
+	if (add_config_list_nodes(isup, rootnode, "cc_spans", "cc_span", NULL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process cc_spans for sng_isup config %s\n", confname);
 		ftdm_conf_node_destroy(rootnode);
 		return NULL;
 	}
@@ -2645,7 +2690,7 @@ static switch_status_t load_config(void)
 			ftdm_conf_parameter_t spanparameters[30];
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
-			char *configname = (char *) switch_xml_attr(myspan, "config");
+			char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
 			ftdm_span_t *span = NULL;
 			uint32_t span_id = 0;
 			unsigned paramindex = 0;
@@ -4206,7 +4251,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	switch_console_set_complete("add ftdm gains");
 	switch_console_set_complete("add ftdm dtmf on");
 	switch_console_set_complete("add ftdm dtmf off");
-
+	switch_console_set_complete("add ftdm core state");
+	switch_console_set_complete("add ftdm core flag");
+	switch_console_set_complete("add ftdm core calls");
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);

@@ -58,12 +58,7 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
-#if defined(HAVE_CLOCK_NANOSLEEP)
-static int NANO = 1;
-#else
 static int NANO = 0;
-#endif
-
 
 static int OFFSET = 0;
 
