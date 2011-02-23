@@ -241,6 +241,11 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 			sigev.span_id = ftdmchan->physical_span_id;
 			sigev.chan_id = ftdmchan->physical_chan_id;
 			sigev.channel = ftdmchan;
+		} else {
+			/* We could not map the channel, but at least set the span */
+			if (signal_data->ftdm_span->channels[1]) {
+				sigev.span_id = signal_data->ftdm_span->channels[1]->physical_span_id;
+			}
 		}
 		sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
 
