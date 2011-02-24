@@ -210,8 +210,9 @@ enum skinny_key_set {
     SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE = 7,
     SKINNY_KEY_SET_RING_OUT = 8,
     SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES = 9,
+    SKINNY_KEY_SET_IN_USE_HINT = 10,
 };
-extern struct skinny_table SKINNY_KEY_SETS[11];
+extern struct skinny_table SKINNY_KEY_SETS[12];
 const char *skinny_soft_key_set2str(uint32_t id);
 uint32_t skinny_str2soft_key_set(const char *str);
 #define SKINNY_PUSH_SOFT_KEY_SETS SKINNY_DECLARE_PUSH_MATCH(SKINNY_KEY_SETS)

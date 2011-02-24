@@ -651,7 +651,7 @@ int channel_on_routing_callback(void *pArg, int argc, char **argv, char **column
 	    } else {
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
-			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
+			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_IN_USE_HINT, 0xffff);
 			send_display_prompt_status(listener, 0, SKINNY_DISP_IN_USE_REMOTE,
 				line_instance, helper->tech_pvt->call_id);
 			skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);

@@ -216,6 +216,7 @@ struct skinny_table SKINNY_KEY_SETS[] = {
     {"KeySetConnectedWithConference", SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE},
     {"KeySetRingOut", SKINNY_KEY_SET_RING_OUT},
     {"KeySetOffHookWithFeatures", SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES},
+    {"KeySetInUseHint", SKINNY_KEY_SET_IN_USE_HINT},
     {NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_soft_key_set2str, SKINNY_KEY_SETS, "UNKNOWN_SOFT_KEY_SET")
