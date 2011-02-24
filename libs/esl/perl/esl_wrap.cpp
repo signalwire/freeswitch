@@ -3072,6 +3072,7 @@ XS(_wrap_ESLconnection_bgapi) {
     ESLconnection *arg1 = (ESLconnection *) 0 ;
     char *arg2 = (char *) 0 ;
     char *arg3 = (char *) NULL ;
+    char *arg4 = (char *) NULL ;
     ESLevent *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -3081,11 +3082,14 @@ XS(_wrap_ESLconnection_bgapi) {
     int res3 ;
     char *buf3 = 0 ;
     int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 2) || (items > 3)) {
-      SWIG_croak("Usage: ESLconnection_bgapi(self,cmd,arg);");
+    if ((items < 2) || (items > 4)) {
+      SWIG_croak("Usage: ESLconnection_bgapi(self,cmd,arg,job_uuid);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -3104,16 +3108,25 @@ XS(_wrap_ESLconnection_bgapi) {
       }
       arg3 = reinterpret_cast< char * >(buf3);
     }
-    result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+    if (items > 3) {
+      res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_bgapi" "', argument " "4"" of type '" "char const *""'");
+      }
+      arg4 = reinterpret_cast< char * >(buf4);
+    }
+    result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     XSRETURN(argvi);
   fail:
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     SWIG_croak_null();
   }
 }
