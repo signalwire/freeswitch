@@ -1811,6 +1811,9 @@ static switch_status_t load_skinny_config(void)
 									size_t string_len = strlen(val);
 									size_t string_pos, start = 0;
 									int field_no = 0;
+									if (zstr(val)) {
+										continue;
+									}
 									if (soft_key_set_id > 15) {
 										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 											"soft-key-set name '%s' is greater than 15 in soft-key-set-set '%s' in profile %s.\n",
