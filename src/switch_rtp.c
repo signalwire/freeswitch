@@ -235,7 +235,6 @@ struct switch_rtp {
 	uint32_t sync_packets;
 	int rtcp_interval;
 	switch_bool_t rtcp_fresh_frame;
-	uint8_t checked_jb;
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -2500,7 +2499,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		*bytes = 0;
 	}
 
-	if (rtp_session->jb && !rtp_session->pause_jb && !rtp_session->checked_jb) {
+	if (rtp_session->jb && !rtp_session->pause_jb) {
 		if ((jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
 			memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
 
@@ -2514,8 +2513,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->recv_msg.header.pt = jb_frame->pt;
 			status = SWITCH_STATUS_SUCCESS;
 		}
-
-		rtp_session->checked_jb++;
 	}
 
 	return status;
@@ -2660,8 +2657,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	READ_INC(rtp_session);
 
-	rtp_session->checked_jb = 0;
-	
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
 		int read_pretriggered = 0;
