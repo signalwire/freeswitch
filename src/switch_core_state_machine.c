@@ -468,7 +468,7 @@ static void api_hook(switch_core_session_t *session, const char *hook_var, int u
 {
 	if (!zstr(hook_var)) {
 		switch_stream_handle_t stream = { 0 };
-		char *cmd = switch_core_session_strdup(session, hook_var);
+		char *cmd = strdup(hook_var);
 		char *arg = NULL;
 		char *expanded = NULL;
 
@@ -485,7 +485,7 @@ static void api_hook(switch_core_session_t *session, const char *hook_var, int u
 
 		switch_channel_get_variables(session->channel, &stream.param_event);
 		switch_channel_event_set_data(session->channel, stream.param_event);
-		expanded = switch_channel_expand_variables(session->channel, arg);
+		expanded = switch_event_expand_headers(stream.param_event, arg);
 
 		switch_api_execute(cmd, expanded, use_session ? session : NULL, &stream);
 
@@ -496,6 +496,9 @@ static void api_hook(switch_core_session_t *session, const char *hook_var, int u
 		if (expanded != arg) {
 			switch_safe_free(expanded);
 		}
+
+		switch_safe_free(cmd);
+		
 		switch_safe_free(stream.data);
 	}
 }
