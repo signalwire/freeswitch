@@ -1566,6 +1566,19 @@ SWIG_AsCharPtrAndSize(SV *obj, char** cptr, size_t* psize, int *alloc)
 
 
 
+SWIGINTERNINLINE SV *
+SWIG_From_bool  SWIG_PERL_DECL_ARGS_1(bool value)
+{    
+  SV *obj = sv_newmortal();
+  if (value) {
+    sv_setsv(obj, &PL_sv_yes);
+  } else {
+    sv_setsv(obj, &PL_sv_no); 
+  }
+  return obj;
+}
+
+
 #include <limits.h>
 #if !defined(SWIG_NO_LLONG_MAX)
 # if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
@@ -1780,19 +1793,6 @@ SWIG_From_char  SWIG_PERL_DECL_ARGS_1(char c)
 }
 
 
-SWIGINTERNINLINE SV *
-SWIG_From_bool  SWIG_PERL_DECL_ARGS_1(bool value)
-{    
-  SV *obj = sv_newmortal();
-  if (value) {
-    sv_setsv(obj, &PL_sv_yes);
-  } else {
-    sv_setsv(obj, &PL_sv_no); 
-  }
-  return obj;
-}
-
-
 SWIGINTERN int
 SWIG_AsVal_unsigned_SS_long SWIG_PERL_DECL_ARGS_2(SV *obj, unsigned long *val) 
 {
@@ -1977,6 +1977,111 @@ XS(_wrap_consoleCleanLog) {
     XSRETURN(argvi);
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_email) {
+  {
+    char *arg1 = (char *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) NULL ;
+    char *arg4 = (char *) NULL ;
+    char *arg5 = (char *) NULL ;
+    char *arg6 = (char *) NULL ;
+    char *arg7 = (char *) NULL ;
+    bool result;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int res5 ;
+    char *buf5 = 0 ;
+    int alloc5 = 0 ;
+    int res6 ;
+    char *buf6 = 0 ;
+    int alloc6 = 0 ;
+    int res7 ;
+    char *buf7 = 0 ;
+    int alloc7 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 7)) {
+      SWIG_croak("Usage: email(to,from,headers,body,file,convert_cmd,convert_ext);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "email" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "email" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (items > 2) {
+      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "email" "', argument " "3"" of type '" "char *""'");
+      }
+      arg3 = reinterpret_cast< char * >(buf3);
+    }
+    if (items > 3) {
+      res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "email" "', argument " "4"" of type '" "char *""'");
+      }
+      arg4 = reinterpret_cast< char * >(buf4);
+    }
+    if (items > 4) {
+      res5 = SWIG_AsCharPtrAndSize(ST(4), &buf5, NULL, &alloc5);
+      if (!SWIG_IsOK(res5)) {
+        SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "email" "', argument " "5"" of type '" "char *""'");
+      }
+      arg5 = reinterpret_cast< char * >(buf5);
+    }
+    if (items > 5) {
+      res6 = SWIG_AsCharPtrAndSize(ST(5), &buf6, NULL, &alloc6);
+      if (!SWIG_IsOK(res6)) {
+        SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "email" "', argument " "6"" of type '" "char *""'");
+      }
+      arg6 = reinterpret_cast< char * >(buf6);
+    }
+    if (items > 6) {
+      res7 = SWIG_AsCharPtrAndSize(ST(6), &buf7, NULL, &alloc7);
+      if (!SWIG_IsOK(res7)) {
+        SWIG_exception_fail(SWIG_ArgError(res7), "in method '" "email" "', argument " "7"" of type '" "char *""'");
+      }
+      arg7 = reinterpret_cast< char * >(buf7);
+    }
+    result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     SWIG_croak_null();
   }
 }
@@ -9336,6 +9441,7 @@ static swig_variable_info swig_variables[] = {
 static swig_command_info swig_commands[] = {
 {"freeswitchc::consoleLog", _wrap_consoleLog},
 {"freeswitchc::consoleCleanLog", _wrap_consoleCleanLog},
+{"freeswitchc::email", _wrap_email},
 {"freeswitchc::new_IVRMenu", _wrap_new_IVRMenu},
 {"freeswitchc::delete_IVRMenu", _wrap_delete_IVRMenu},
 {"freeswitchc::IVRMenu_bindAction", _wrap_IVRMenu_bindAction},
@@ -9793,17 +9899,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);
