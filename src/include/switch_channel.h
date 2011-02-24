@@ -79,6 +79,7 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 
 #define switch_channel_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE, SWITCH_FALSE)
 #define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE, SWITCH_TRUE)
+#define switch_channel_media_up(_channel) (switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA))
 
 #define switch_channel_up(_channel) (switch_channel_get_state(_channel) < CS_HANGUP)
 #define switch_channel_down(_channel) (switch_channel_get_state(_channel) >= CS_HANGUP)
