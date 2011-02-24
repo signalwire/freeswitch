@@ -673,6 +673,9 @@ typedef enum {
 	FTDM_COMMAND_SET_RX_QUEUE_SIZE = 54,
 	FTDM_COMMAND_SET_TX_QUEUE_SIZE = 55,
 	FTDM_COMMAND_SET_POLARITY = 56,
+	FTDM_COMMAND_START_MF_PLAYBACK = 57,
+	FTDM_COMMAND_STOP_MF_PLAYBACK = 58,
+
 	FTDM_COMMAND_COUNT,
 } ftdm_command_t;
 
@@ -846,6 +849,16 @@ typedef enum {
 	FTDM_ALARM_AIS     = (1 << 4),
 	FTDM_ALARM_GENERAL = (1 << 30)
 } ftdm_alarm_flag_t;
+
+/*! \brief MF generation direction flags 
+ *  \note Used in bitwise OR with channel ID as argument to MF_PLAYBACK I/O command, so value must be higher that 255
+ *  \see FTDM_COMMAND_START_MF_PLAYBACK
+ * */
+
+typedef enum {
+	FTDM_MF_DIRECTION_FORWARD =  (1 << 8),
+	FTDM_MF_DIRECTION_BACKWARD = (1 << 9)
+} ftdm_mf_direction_flag_t;
 
 /*! \brief Override the default queue handler */
 FT_DECLARE(ftdm_status_t) ftdm_global_set_queue_handler(ftdm_queue_handler_t *handler);

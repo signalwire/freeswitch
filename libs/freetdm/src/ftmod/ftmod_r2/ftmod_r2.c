@@ -47,8 +47,10 @@
 #endif
 #include <stdio.h>
 #include <openr2.h>
-#include "freetdm.h"
-#include "private/ftdm_core.h"
+#include <freetdm.h>
+#include <private/ftdm_core.h>
+
+#include "ftmod_r2_io_mf_lib.h" // ftdm_r2_get_native_channel_mf_generation_iface
 
 /* when the user stops a span, we clear FTDM_R2_SPAN_STARTED, so that the signaling thread
  * knows it must stop, and we wait for FTDM_R2_RUNNING to be clear, which tells us the
@@ -105,6 +107,7 @@ typedef struct ft_r2_conf_s {
 	int charge_calls;
 	int forced_release;
 	int allow_collect_calls;
+	int use_channel_native_mf_generation;
 } ft_r2_conf_t;
 
 /* r2 configuration stored in span->signal_data */
@@ -1447,7 +1450,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		/* .double_answer */ -1,
 		/* .charge_calls */ -1,
 		/* .forced_release */ -1,
-		/* .allow_collect_calls */ -1
+		/* .allow_collect_calls */ -1,
+		/* .use_channel_native_mf_generation */ 0
 	};
 
 	ftdm_assert_return(sig_cb != NULL, FTDM_FAIL, "No signaling cb provided\n");
@@ -1566,6 +1570,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		} else if (!strcasecmp(var, "max_dnis")) {
 			r2conf.max_dnis = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with max dnis = %d\n", span->name, r2conf.max_dnis);
+		} else if (!strcasecmp(var, "use_channel_native_mf_generation")) {
+			r2conf.use_channel_native_mf_generation = ftdm_true(val);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with \"use native channel MF generation\" = %d\n", span->name, r2conf.use_channel_native_mf_generation);
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown R2 parameter [%s]", var);
 			return FTDM_FAIL;
@@ -1617,6 +1624,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		openr2_context_configure_from_advanced_file(r2data->r2context, r2conf.advanced_protocol_file);
 	}
 
+	if(r2conf.use_channel_native_mf_generation) {
+		openr2_context_set_mflib_interface(r2data->r2context, ftdm_r2_get_native_channel_mf_generation_iface());
+	}
+
 	spanpvt->r2calls = create_hashtable(FTDM_MAX_CHANNELS_SPAN, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 	if (!spanpvt->r2calls) {
 		snprintf(span->last_error, sizeof(span->last_error), "Cannot create channel calls hash for span.");
@@ -1634,13 +1645,29 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 			openr2_chan_enable_call_files(r2chan);
 		}
 
-		r2call = ftdm_malloc(sizeof(*r2call));
+		if (r2conf.use_channel_native_mf_generation) {
+			/* Allocate a new write handle per r2chan */
+			ftdm_r2_mf_write_handle_t *mf_write_handle = ftdm_calloc(1, sizeof(*mf_write_handle));
+			/* Associate to the FreeTDM channel */
+			mf_write_handle->ftdmchan = span->channels[i];
+			/* Make sure the FreeTDM channel supports MF the generation feature */
+			if (!ftdm_channel_test_feature(mf_write_handle->ftdmchan, FTDM_CHANNEL_FEATURE_MF_GENERATE)) {
+				ftdm_log_chan_msg(mf_write_handle->ftdmchan, FTDM_LOG_ERROR, 
+				"FreeTDM channel does not support native MF generation: "
+				"\"use_channel_native_mf_generation\" configuration parameter cannot"
+				" be used\n");
+				goto fail;
+			}
+			/* Associate the mf_write_handle to the openR2 channel */
+			openr2_chan_set_mflib_handles(r2chan, mf_write_handle, NULL);
+		}
+
+		r2call = ftdm_calloc(1, sizeof(*r2call));
 		if (!r2call) {
 			snprintf(span->last_error, sizeof(span->last_error), "Cannot create all R2 call data structures for the span.");
 			ftdm_safe_free(r2chan);
 			goto fail;
 		}
-		memset(r2call, 0, sizeof(*r2call));
 		openr2_chan_set_logging_func(r2chan, ftdm_r2_on_chan_log);
 		openr2_chan_set_client_data(r2chan, span->channels[i]);
 		r2call->r2chan = r2chan;
@@ -2370,5 +2397,5 @@ EX_DECLARE_DATA ftdm_module_t ftdm_module = {
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

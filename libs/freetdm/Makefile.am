@@ -248,7 +248,7 @@ endif
 
 if HAVE_OPENR2
 mod_LTLIBRARIES += ftmod_r2.la
-ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c 
+ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c  $(SRC)/ftmod/ftmod_r2/ftmod_r2_io_mf_lib.c
 ftmod_r2_la_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
 ftmod_r2_la_LDFLAGS = -shared -module -avoid-version -lopenr2
 ftmod_r2_la_LIBADD  = libfreetdm.la
