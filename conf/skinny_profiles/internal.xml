@@ -20,12 +20,12 @@
       <soft-key-set name="KeySetOnHold" value="SoftkeyNewcall,SoftkeyResume,SoftkeyEndcall"/>
       <soft-key-set name="KeySetRingIn" value="SoftkeyAnswer,SoftkeyEndcall,SoftkeyNewcall"/>
       <soft-key-set name="KeySetOffHook" value=",SoftkeyRedial,SoftkeyEndcall"/>
-      <soft-key-set name="KeySetConnectedWithTransfer" value=""/>
+      <soft-key-set name="KeySetConnectedWithTransfer" value="SoftkeyEndcall,SoftkeyHold,SoftkeyNewcall,SoftkeyTransfer"/>
       <soft-key-set name="KeySetDigitsAfterDialingFirstDigit" value="SoftkeyBackspace,,SoftkeyEndcall"/>
-      <soft-key-set name="KeySetConnectedWithConference" value=""/>
-      <soft-key-set name="KeySetRingOut" value=""/>
+      <!-- <soft-key-set name="KeySetConnectedWithConference" value=""/> -->
+      <soft-key-set name="KeySetRingOut" value=",,SoftkeyEndcall,SoftkeyTransfer"/>
       <soft-key-set name="KeySetOffHookWithFeatures" value=",SoftkeyRedial,SoftkeyEndcall"/>
-      <soft-key-set name="KeySetInUseHint" value=""/>
+      <soft-key-set name="KeySetInUseHint" value="SoftkeyNewcall,SoftkeyRedial"/>
     </soft-key-set-set>
   </soft-key-set-sets>
   <device-types>
