@@ -2430,11 +2430,6 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 		goto done;
 	}
 
-	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in channel in state %s!\n", ftdm_channel_state2str(ftdmchan->state));
-		goto done;
-	}
-
 	status = ftdmchan->span->outgoing_call(ftdmchan);
 	if (status == FTDM_BREAK) {
 		/* the signaling module detected glare on time */
