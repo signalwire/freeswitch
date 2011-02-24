@@ -1396,6 +1396,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 	if (switch_test_flag(conference, CFLAG_OUTCALL)) {
 		conference->cancel_cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+		switch_yield(2000000);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Ending pending outcall channels for Conference: '%s'\n", conference->name);
 		while(conference->originating) {
 			switch_yield(200000);
