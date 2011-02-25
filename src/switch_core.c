@@ -98,10 +98,9 @@ static void check_ip(void)
 	char old_ip6[256] = "";
 	int ok4 = 1, ok6 = 1;
 	int mask = 0;
-	static char hostname[256] = "";
 
-	gethostname(hostname, sizeof(hostname));
-	switch_core_set_variable("hostname", hostname);
+	gethostname(runtime.hostname, sizeof(runtime.hostname));
+	switch_core_set_variable("hostname", runtime.hostname);
 
 	switch_find_local_ip(guess_ip4, sizeof(guess_ip4), &mask, AF_INET);
 	switch_find_local_ip(guess_ip6, sizeof(guess_ip6), NULL, AF_INET6);
@@ -1280,6 +1279,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		/* one per customer */
 		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	memset(&runtime, 0, sizeof(runtime));
+	gethostname(runtime.hostname, sizeof(runtime.hostname));
+
 
 	runtime.runlevel++;
 	runtime.sql_buffer_len = 1024 * 32;
@@ -1348,9 +1351,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
-	gethostname(runtime.hostname, sizeof(runtime.hostname));
 	switch_core_set_variable("hostname", runtime.hostname);
-
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
 	in.s_addr = mask;
