@@ -289,9 +289,6 @@ static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, open
 	case OR2_CAUSE_UNSPECIFIED:
 		return FTDM_CAUSE_NORMAL_UNSPECIFIED;
 
-	case OR2_CAUSE_COLLECT_CALL_REJECTED:
-		return FTDM_CAUSE_CALL_REJECTED;
-
 	case OR2_CAUSE_FORCED_RELEASE:
 		return FTDM_CAUSE_NORMAL_CLEARING;
 
@@ -682,7 +679,7 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	/* check if this is a collect call and if we should accept it */
 	if (!r2data->allow_collect_calls && category == OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Rejecting collect call\n");
-		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_COLLECT_CALL_REJECTED);
+		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_UNALLOCATED_NUMBER);
 	} else {
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 	}
