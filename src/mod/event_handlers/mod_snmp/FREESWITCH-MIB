@@ -3,11 +3,14 @@ FREESWITCH-MIB DEFINITIONS ::= BEGIN
 IMPORTS
     OBJECT-TYPE, MODULE-IDENTITY,
     Integer32, Gauge32, Counter32, Counter64, TimeTicks,
-    enterprises,
+    enterprises
         FROM SNMPv2-SMI
 
-    DisplayString
+    DisplayString, DateAndTime
         FROM SNMPv2-TC
+
+    InetAddressType, InetAddress
+        FROM INET-ADDRESS-MIB
 ;
 
 
@@ -106,5 +109,215 @@ maxSessionsPerSecond OBJECT-TYPE
     DESCRIPTION
         "Maximum permissible sessions per second"
     ::= { systemStats 7 }
+
+
+ChannelEntry ::= SEQUENCE {
+    chanIndex           Integer32,
+    chanUUID            DisplayString,
+    chanDirection       DisplayString,
+    chanCreated         DateAndTime,
+    chanName            DisplayString,
+    chanState           DisplayString,
+    chanCIDName         DisplayString,
+    chanCIDNum          DisplayString,
+    chanInetAddressType InetAddressType,
+    chanInetAddress     InetAddress,
+    chanDest            DisplayString,
+    chanApplication     DisplayString,
+    chanAppData         DisplayString,
+    chanDialplan        DisplayString,
+    chanContext         DisplayString,
+    chanReadCodec       DisplayString,
+    chanReadRate        Gauge32,
+    chanReadBitRate     Gauge32,
+    chanWriteCodec      DisplayString,
+    chanWriteRate       Gauge32,
+    chanWriteBitRate    Gauge32
+}
+
+channelList OBJECT-TYPE
+    SYNTAX      SEQUENCE OF ChannelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A table containing a list of active channels"
+    ::= { core 9 }
+
+channelEntry OBJECT-TYPE
+    SYNTAX      ChannelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A channel entry"
+    INDEX { chanIndex }
+    ::= { channelList 1 }
+
+chanIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel SNMP index."
+    ::= { channelEntry 1 }
+
+chanUUID OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel UUID."
+    ::= { channelEntry 2 }
+
+chanDirection OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel direction."
+    ::= { channelEntry 3 }
+
+chanCreated OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel creation timestamp."
+    ::= { channelEntry 4 }
+
+chanName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel name."
+    ::= { channelEntry 5 }
+
+chanState OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel state."
+    ::= { channelEntry 6 }
+
+chanCIDName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel caller ID name."
+    ::= { channelEntry 7 }
+
+chanCIDNum OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel caller ID number."
+    ::= { channelEntry 8 }
+
+chanInetAddressType OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel originator's IP address type (IPv4 or IPv6)."
+    ::= { channelEntry 9 }
+
+chanInetAddress OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel originator's IP address."
+    ::= { channelEntry 10 }
+
+chanDest OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel destination."
+    ::= { channelEntry 11 }
+
+chanApplication OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel application."
+    ::= { channelEntry 12 }
+
+chanAppData OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel application data."
+    ::= { channelEntry 13 }
+
+chanDialplan OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel dialplan."
+    ::= { channelEntry 14 }
+
+chanContext OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel dialplan context."
+    ::= { channelEntry 15 }
+
+chanReadCodec OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel read codec."
+    ::= { channelEntry 16 }
+
+chanReadRate OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel read samples per second."
+    ::= { channelEntry 17 }
+
+chanReadBitRate OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel read bits per second."
+    ::= { channelEntry 18 }
+
+chanWriteCodec OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel write codec."
+    ::= { channelEntry 19 }
+
+chanWriteRate OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel write samples per second."
+    ::= { channelEntry 20 }
+
+chanWriteBitRate OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Channel write bits per second."
+    ::= { channelEntry 21 }
 
 END

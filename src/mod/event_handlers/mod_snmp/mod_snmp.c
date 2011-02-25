@@ -109,7 +109,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snmp_load)
 	 */
 	netsnmp_ds_set_int(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_AGENTX_PING_INTERVAL, 2);
 
-	init_subagent();  
+	init_subagent(pool);
 	init_snmp("mod_snmp");
 
 	return status;

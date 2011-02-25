@@ -48,6 +48,7 @@ codecs/mod_ilbc
 codecs/mod_speex
 codecs/mod_siren
 #codecs/mod_celt
+#codecs/mod_opus
 #codecs/mod_sangoma_codec
 #codecs/mod_dahdi_codec
 #dialplans/mod_dialplan_directory

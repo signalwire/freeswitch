@@ -322,6 +322,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 	int at = 0;
 	char *dp;
 	abyss_bool rval = FALSE;
+	char *dup_domain = NULL;
 
 	p = RequestHeaderValue(r, "authorization");
 
@@ -354,7 +355,9 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 						if (globals.default_domain) {
 							domain_name = globals.default_domain;
 						} else {
-							domain_name = switch_core_get_variable("domain");
+							if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+								domain_name = dup_domain;
+							}
 						}
 					}
 				}
@@ -465,6 +468,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 	switch_safe_free(mypass1);
 	switch_safe_free(mypass2);
 	switch_safe_free(box);
+	switch_safe_free(dup_domain);
 
 	return rval;
 }

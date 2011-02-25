@@ -45,6 +45,7 @@
 
 typedef struct {
 	switch_nat_type_t nat_type;
+	char nat_type_str[5];
 	struct UPNPUrls urls;
 	struct IGDdatas data;
 	char *descURL;
@@ -420,6 +421,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		switch_core_set_variable("nat_public_addr", nat_globals.pub_addr);
 		switch_core_set_variable("nat_private_addr", nat_globals.pvt_addr);
 		switch_core_set_variable("nat_type", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
+		strncpy(nat_globals.nat_type_str, nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp", sizeof(nat_globals.nat_type_str) - 1);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "NAT detected type: %s, ExtIP: '%s'\n",
 						  nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp", nat_globals.pub_addr);
 
@@ -562,6 +564,11 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	return status;
+}
+
+SWITCH_DECLARE(const char *) switch_nat_get_type(void)
+{
+	return nat_globals.nat_type_str;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t * external_port,

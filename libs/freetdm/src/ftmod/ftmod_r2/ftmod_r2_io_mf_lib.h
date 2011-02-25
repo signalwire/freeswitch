@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2011 Sebastien Trottier
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,38 +29,37 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
-#ifndef FTDM_SANGOMA_BOOST_H
-#define FTDM_SANGOMA_BOOST_H
-#include "sangoma_boost_client.h"
-#include "freetdm.h"
+#ifndef _FTMOD_R2_IO_MFLIB_H_
+#define _FTMOD_R2_IO_MFLIB_H_ 
 
-#define MAX_CHANS_PER_TRUNKGROUP 1024
+#include <ftdm_declare.h>
 
-typedef enum {
-	FTDM_SANGOMA_BOOST_RUNNING = (1 << 0),
-	FTDM_SANGOMA_BOOST_RESTARTING = (1 << 1),
-	FTDM_SANGOMA_BOOST_EVENTS_RUNNING = (1 << 2),
-} ftdm_sangoma_boost_flag_t;
+#include <openr2.h>
 
-typedef struct ftdm_sangoma_boost_data {
-	sangomabc_connection_t mcon;
-	sangomabc_connection_t pcon;
-	int iteration;
-	uint32_t flags;
-	boost_sigmod_interface_t *sigmod;
-	ftdm_queue_t *boost_queue;	
-} ftdm_sangoma_boost_data_t;
-
-typedef struct ftdm_sangoma_boost_trunkgroup {
-	ftdm_mutex_t *mutex;
-	ftdm_size_t size;			/* Number of b-channels in group */	
-	unsigned int last_used_index; /* index of last b-channel used */
-	ftdm_channel_t* ftdmchans[MAX_CHANS_PER_TRUNKGROUP];
-	//TODO need to merge congestion timeouts to this struct
-} ftdm_sangoma_boost_trunkgroup_t;
+#if defined(__cplusplus)
+extern "C" {
 #endif
+
+/* MFC/R2 tone generator handle (mf_write_handle) */
+typedef struct {
+	/*! FTDM channel performing the MF generation */
+	ftdm_channel_t *ftdmchan;
+	/*! 1 if generating forward tones, otherwise generating reverse tones. */
+	int fwd;
+} ftdm_r2_mf_write_handle_t;
+
+/* MF lib interface that generate MF tones via FreeTDM channel IO commands
+   MF detection using the default openr2 provider (r2engine) */   
+openr2_mflib_interface_t *ftdm_r2_get_native_channel_mf_generation_iface(void);
+
+#if defined(__cplusplus)
+} /* endif extern "C" */
+#endif
+
+#endif /* endif defined _FTMOD_R2_IO_MFLIB_H_ */
 
 /* For Emacs:
  * Local Variables:
@@ -72,4 +71,3 @@ typedef struct ftdm_sangoma_boost_trunkgroup {
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
-

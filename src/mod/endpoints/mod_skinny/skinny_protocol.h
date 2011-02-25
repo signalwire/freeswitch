@@ -68,6 +68,13 @@ struct PACKED keypad_button_message {
     uint32_t call_id;
 };
 
+/* EnblocCallMessage */
+#define ENBLOC_CALL_MESSAGE 0x0004
+struct PACKED enbloc_call_message {
+    char called_party[24];
+    uint32_t line_instance;
+};
+
 /* StimulusMessage */
 #define STIMULUS_MESSAGE 0x0005
 struct PACKED stimulus_message {
@@ -562,6 +569,7 @@ union skinny_data {
     struct register_message reg;
     struct port_message port;
     struct keypad_button_message keypad_button;
+    struct enbloc_call_message enbloc_call;
     struct stimulus_message stimulus;
     struct off_hook_message off_hook;
     struct on_hook_message on_hook;

@@ -1625,9 +1625,10 @@ bool Board::KhompPvt::setCollectCall()
     DBG(FUNC, PVT_FMT(_target, "option drop collect call is '%s'") % (Opt::_options._drop_collect_call() ? "yes" : "no"));
 
     // get global filter configuration value
-    tmp_var = switch_core_get_variable("KDropCollectCall");
+    tmp_var = switch_core_get_variable_dup("KDropCollectCall");
     confvalues.push_back(getTriStateValue(tmp_var));
     DBG(FUNC, PVT_FMT(_target, "global KDropCollectCall was '%s'") % (tmp_var ? tmp_var : "(empty)"));
+	switch_safe_free(tmp_var);
 
     try 
     {

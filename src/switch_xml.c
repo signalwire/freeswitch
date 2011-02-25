@@ -1208,11 +1208,12 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 				var = rp;
 				*e++ = '\0';
 				rp = e;
-				if ((val = switch_core_get_variable(var))) {
+				if ((val = switch_core_get_variable_dup(var))) {
 					char *p;
 					for (p = val; p && *p && wp <= ep; p++) {
 						*wp++ = *p;
 					}
+					free(val);
 				}
 				continue;
 			} else if (err) {
@@ -1286,9 +1287,7 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 	}
 
 	if (glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
-		if (stderr) {
-			fprintf(stderr, "Error including %s\n", pattern);
-		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error including %s\n", pattern);
 		goto end;
 	}
 
@@ -1299,11 +1298,9 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 			*e = '\0';
 		}
 		if (preprocess(dir_path, glob_data.gl_pathv[n], write_fd, rlevel) < 0) {
-			const char *reason = strerror(errno);
 			if (rlevel > 100) {
-				reason = "Maximum recursion limit reached";
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error including %s (Maximum recursion limit reached)\n", pattern);
 			}
-			fprintf(stderr, "Error including %s (%s)\n", pattern, reason);
 		}
 		free(dir_path);
 	}

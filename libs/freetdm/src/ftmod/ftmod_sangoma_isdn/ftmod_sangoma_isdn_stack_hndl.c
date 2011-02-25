@@ -385,8 +385,12 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 				case FTDM_CHANNEL_STATE_DIALING:
 				case FTDM_CHANNEL_STATE_PROCEED:
 				case FTDM_CHANNEL_STATE_PROGRESS:
-				case FTDM_CHANNEL_STATE_RINGING:					
-					if (cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) {
+				case FTDM_CHANNEL_STATE_RINGING:
+					if ((cnStEvnt->progInd.eh.pres && cnStEvnt->progInd.progDesc.val == IN_PD_IBAVAIL) ||
+						(cnStEvnt->progInd1.eh.pres && cnStEvnt->progInd1.progDesc.val == IN_PD_IBAVAIL) ||
+						(cnStEvnt->progInd2.eh.pres && cnStEvnt->progInd2.progDesc.val == IN_PD_IBAVAIL) ||
+						(cnStEvnt->progInd3.eh.pres && cnStEvnt->progInd3.progDesc.val == IN_PD_IBAVAIL)) {
+						
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Early media available\n");
 						sngisdn_set_flag(sngisdn_info, FLAG_MEDIA_READY);
 					} else {
