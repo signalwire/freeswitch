@@ -2856,17 +2856,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-#if 0
+
 		if (bytes && rtp_session->recv_msg.header.version == 2 && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) &&
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->rpayload && 0) {
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
 			return_cng_frame();
 		}
-#endif
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
 			rtp_session->missed_count = 0;
