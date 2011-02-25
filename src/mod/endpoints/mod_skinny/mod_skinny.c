@@ -1524,7 +1524,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 new_socket:
 	while(globals.running) {
 		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
-		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, tmp_pool);
+		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_UNSPEC, profile->port, 0, tmp_pool);
 		if (rv)
 			goto fail;
 		rv = switch_socket_create(&profile->sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, tmp_pool);
@@ -1663,7 +1663,7 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->domain = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "ip")) {
 		if (!profile->ip || strcmp(val, profile->ip)) {
-			profile->ip = switch_core_strdup(profile->pool, val);
+			profile->ip = switch_core_strdup(profile->pool, zstr(val) ? NULL : val);
 			switch_set_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
 		}
 	} else if (!strcasecmp(var, "port")) {
