@@ -39,7 +39,7 @@
 
 #include "private/ftdm_core.h"
 
-FT_DECLARE(ftdm_status_t) ftdm_event_add_var(ftdm_sigmsg_t *sigmsg, const char *var_name, const char *value)
+FT_DECLARE(ftdm_status_t) ftdm_sigmsg_add_var(ftdm_sigmsg_t *sigmsg, const char *var_name, const char *value)
 {
 	char *t_name = 0, *t_val = 0;
 
@@ -59,7 +59,7 @@ FT_DECLARE(ftdm_status_t) ftdm_event_add_var(ftdm_sigmsg_t *sigmsg, const char *
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_event_remove_var(ftdm_sigmsg_t *sigmsg, const char *var_name)
+FT_DECLARE(ftdm_status_t) ftdm_sigmsg_remove_var(ftdm_sigmsg_t *sigmsg, const char *var_name)
 {
 	if (sigmsg && sigmsg->variables) {
 		hashtable_remove(sigmsg->variables, (void *)var_name);
@@ -67,7 +67,7 @@ FT_DECLARE(ftdm_status_t) ftdm_event_remove_var(ftdm_sigmsg_t *sigmsg, const cha
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(const char *) ftdm_event_get_var(ftdm_sigmsg_t *sigmsg, const char *var_name)
+FT_DECLARE(const char *) ftdm_sigmsg_get_var(ftdm_sigmsg_t *sigmsg, const char *var_name)
 {
 	const char *var = NULL;
 	
@@ -79,7 +79,7 @@ FT_DECLARE(const char *) ftdm_event_get_var(ftdm_sigmsg_t *sigmsg, const char *v
 	return var;
 }
 
-FT_DECLARE(ftdm_iterator_t *) ftdm_event_get_var_iterator(const ftdm_sigmsg_t *sigmsg, ftdm_iterator_t *iter)
+FT_DECLARE(ftdm_iterator_t *) ftdm_sigmsg_get_var_iterator(const ftdm_sigmsg_t *sigmsg, ftdm_iterator_t *iter)
 {
 	ftdm_hash_iterator_t *hashiter = NULL;
 	if (!sigmsg) {
@@ -99,7 +99,7 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_event_get_var_iterator(const ftdm_sigmsg_t *s
 	return iter;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_event_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val)
+FT_DECLARE(ftdm_status_t) ftdm_get_current_var(ftdm_iterator_t *iter, const char **var_name, const char **var_val)
 {
 	const void *key = NULL;
 	void *val = NULL;
@@ -117,11 +117,35 @@ FT_DECLARE(ftdm_status_t) ftdm_event_get_current_var(ftdm_iterator_t *iter, cons
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_event_clear_vars(ftdm_sigmsg_t *sigmsg)
+
+FT_DECLARE(ftdm_status_t) ftdm_usrmsg_add_var(ftdm_usrmsg_t *usrmsg, const char *var_name, const char *value)
 {
-	if (sigmsg->variables) {
-		hashtable_destroy(sigmsg->variables);
-		sigmsg->variables = NULL;
+	char *t_name = 0, *t_val = 0;
+
+	if (!usrmsg || !var_name || !value) {
+		return FTDM_FAIL;
 	}
+	
+	if (!usrmsg->variables) {
+		/* initialize on first use */
+		usrmsg->variables = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+		ftdm_assert_return(usrmsg->variables, FTDM_FAIL, "Failed to create hash table\n");
+	}
+	
+	t_name = ftdm_strdup(var_name);
+	t_val = ftdm_strdup(value);
+	hashtable_insert(usrmsg->variables, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE);
 	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(const char *) ftdm_usrmsg_get_var(ftdm_usrmsg_t *usrmsg, const char *var_name)
+{
+	const char *var = NULL;
+	
+	if (!usrmsg || !usrmsg->variables || !var_name) {
+		return NULL;
+	}
+
+	var = (const char *)hashtable_search(((struct hashtable*)usrmsg->variables), (void *)var_name);
+	return var;
 }

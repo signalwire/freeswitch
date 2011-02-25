@@ -93,9 +93,7 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(isdn_get_span_sig_status)
  */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
-	ftdm_status_t status = FTDM_SUCCESS;
-	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);	
-	return status;
+	return FTDM_SUCCESS;
 }
 
 /**

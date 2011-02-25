@@ -253,6 +253,7 @@ ftdm_status_t get_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 ftdm_status_t get_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	
 	if (cdPtyNmb->eh.pres != PRSNT_NODEF) {
 		return FTDM_FAIL;
 	}
@@ -369,7 +370,6 @@ ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8
 		my_data[1] = data_len;
 		memcpy(&my_data[2], data, data_len);
 
-		
 		sngisdn_add_raw_data((sngisdn_chan_data_t*)ftdmchan->call_data, data, data_len+2);
 		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Raw Facility IE copied available\n");
@@ -381,7 +381,7 @@ ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8
 
 ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd)
 {
-	uint8_t val;	
+	uint8_t val;
 	if (!progInd->eh.pres) {
 		return FTDM_FAIL;
 	}
@@ -492,7 +492,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	uint8_t len,val;
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	
-	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.digits");
+	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.cg_pty2.digits");
 	if ((string == NULL) || !(*string)) {
 		return FTDM_FAIL;
 	}
@@ -509,7 +509,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->screenInd.pres	= PRSNT_NODEF;
 
 	val = FTDM_SCREENING_INVALID;
-	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.screening_ind");
+	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.cg_pty2.screening_ind");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_screening(string);
 	}
@@ -526,7 +526,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->presInd0.pres = PRSNT_NODEF;
 	
 	val = FTDM_PRES_INVALID;
-	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.presentation_ind");
+	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.cg_pty2.presentation_ind");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_presentation(string);
 	}
@@ -541,7 +541,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	cgPtyNmb->nmbPlanId.pres	= PRSNT_NODEF;
 	
 	val = FTDM_NPI_INVALID;
-	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.npi");
+	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.cg_pty2.npi");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_npi(string);
 	}
@@ -556,7 +556,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 
 	/* Type of Number */
 	val = FTDM_TON_INVALID;
-	string = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.cg_pty2.ton");
+	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.cg_pty2.ton");
 	if ((string != NULL) && (*string)) {
 		val = ftdm_str2ftdm_ton(string);
 	}
@@ -690,7 +690,7 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 {
 	const char* clg_subaddr = NULL;
-	clg_subaddr = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.calling_subaddr");
+	clg_subaddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.calling_subaddr");
 	if ((clg_subaddr != NULL) && (*clg_subaddr)) {
 		unsigned len = strlen (clg_subaddr);
 		cgPtySad->eh.pres = PRSNT_NODEF;
@@ -723,7 +723,7 @@ ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8
 	ftdm_size_t len;
 	uint8_t *mydata;
 
-	if (ftdm_event_get_raw_data(ftdmchan->sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+	if (ftdm_usrmsg_get_raw_data(ftdmchan->usrmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
 		if (len > 2 && mydata[0] == SNGISDN_Q931_FACILITY_IE_ID) {
 			len = mydata[1];
 			memcpy(data, &mydata[2], len);
@@ -740,7 +740,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	int descr = prog_ind.descr;
 	int loc = prog_ind.loc;
 	
-	str = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.prog_ind.descr");
+	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.prog_ind.descr");
 	if (str && *str) {
 		/* User wants to override progress indicator */
 		descr = ftdm_str2ftdm_sngisdn_progind_descr(str);
@@ -751,7 +751,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 		return FTDM_SUCCESS;
 	}
 
-	str = ftdm_event_get_var(ftdmchan->sigmsg, "isdn.prog_ind.loc");
+	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.prog_ind.loc");
 	if (str && *str) {
 		loc = ftdm_str2ftdm_sngisdn_progind_loc(str);
 	}
@@ -1219,7 +1219,7 @@ ftdm_status_t sngisdn_add_raw_data(sngisdn_chan_data_t *sngisdn_info, uint8_t* d
 	
 	sngisdn_info->raw_data = ftdm_calloc(1, data_len);
 	ftdm_assert_return(sngisdn_info->raw_data, FTDM_FAIL, "Failed to allocate raw data\n");
-	
+
 	memcpy(sngisdn_info->raw_data, data, data_len);
 	sngisdn_info->raw_data_len = data_len;
 	return FTDM_SUCCESS;
@@ -1256,7 +1256,6 @@ void sngisdn_send_signal(sngisdn_chan_data_t *sngisdn_info, ftdm_signal_event_t 
 		
 		sigev.raw.data = sngisdn_info->raw_data;
 		sigev.raw.len = sngisdn_info->raw_data_len;
-		sigev.raw.autofree = 1;
 		
 		sngisdn_info->raw_data = NULL;
 		sngisdn_info->raw_data_len = 0;

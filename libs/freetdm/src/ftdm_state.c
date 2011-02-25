@@ -68,6 +68,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 		return FTDM_SUCCESS;
 	}
 
+	ftdm_usrmsg_free(&fchan->usrmsg);
+	
 	ftdm_clear_flag(fchan, FTDM_CHANNEL_STATE_CHANGE);
 
 	if (state == FTDM_CHANNEL_STATE_PROGRESS) {
@@ -226,12 +228,14 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_cancel_state(const char *file, const char
 }
 
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq)
+FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int waitrq, ftdm_usrmsg_t *usrmsg)
 {
-	if (ftdm_channel_save_event_data(ftdmchan) == FTDM_SUCCESS) {
-		return ftdm_core_set_state(file, func, line, ftdmchan, state, waitrq);
+	ftdm_channel_save_usrmsg(ftdmchan, usrmsg);
+	
+	if (ftdm_core_set_state(file, func, line, ftdmchan, state, waitrq) != FTDM_SUCCESS) {
+		ftdm_usrmsg_free(&ftdmchan->usrmsg);
 	}
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
 }
 
 /* this function MUST be called with the channel lock held. If waitrq == 1, the channel will be unlocked/locked (never call it with waitrq == 1 with an lock recursivity > 1) */
@@ -524,8 +528,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_advance_states(ftdm_channel_t *fchan)
 			 * already completed implicitly by the state_processor() function via some internal
 			 * call to ftdm_set_state() */
 			fchan->state_status = FTDM_STATE_STATUS_PROCESSED;
-		}
-		ftdm_channel_clear_event_data(fchan);
+		}		
 	}
 
 	return FTDM_SUCCESS;

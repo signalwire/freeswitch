@@ -1152,10 +1152,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int argc = 0;
 	const char *var;
 	const char *dest_num = NULL, *callerid_num = NULL;
-	ftdm_hunting_scheme_t hunting;	
-	ftdm_sigmsg_t sigmsg;
+	ftdm_hunting_scheme_t hunting;
+	ftdm_usrmsg_t usrmsg;
 
-	memset(&sigmsg, 0, sizeof(ftdm_sigmsg_t));
+	memset(&usrmsg, 0, sizeof(ftdm_usrmsg_t));
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1384,7 +1384,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			char *v = h->name + FREETDM_VAR_PREFIX_LEN;
 			if (!zstr(v)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s=%s to channel %d:%d\n", v, h->value, span_id, chan_id);
-				ftdm_event_add_var(&sigmsg, v, h->value);
+				ftdm_usrmsg_add_var(&usrmsg, v, h->value);
 			}
 		}
 	}
@@ -1411,9 +1411,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		hunt_data.caller_profile = caller_profile;
 		hunt_data.tech_pvt = tech_pvt;
 		caller_data.priv = &hunt_data;
-		caller_data.sigmsg = &sigmsg;
 
-		if ((status = ftdm_call_place(&caller_data, &hunting)) != FTDM_SUCCESS) {
+		if ((status = ftdm_call_place_ex(&caller_data, &hunting, &usrmsg)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);
 			}
@@ -1579,9 +1578,9 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	}
 	
 	/* Add any call variable to the dial plan */
-	iter = ftdm_event_get_var_iterator(sigmsg, iter);
+	iter = ftdm_sigmsg_get_var_iterator(sigmsg, iter);
 	for (curr = iter ; curr; curr = ftdm_iterator_next(curr)) {
-		ftdm_event_get_current_var(curr, &var_name, &var_value);
+		ftdm_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s=%s\n", name, var_value);

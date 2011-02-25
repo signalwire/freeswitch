@@ -468,7 +468,7 @@ struct ftdm_channel {
 	ftdm_interrupt_t *state_completed_interrupt; /*!< Notify when a state change is completed */
 	int32_t txdrops;
 	int32_t rxdrops;
-	ftdm_sigmsg_t *sigmsg;
+	ftdm_usrmsg_t *usrmsg;
 };
 
 struct ftdm_span {
@@ -494,7 +494,7 @@ struct ftdm_span {
 	teletone_multi_tone_t tone_finder[FTDM_TONEMAP_INVALID+1];
 	ftdm_channel_t *channels[FTDM_MAX_CHANNELS_SPAN+1];
 	fio_channel_outgoing_call_t outgoing_call;
-	fio_channel_send_msg_t send_msg;
+	fio_channel_indicate_t indicate;
 	fio_channel_set_sig_status_t set_channel_sig_status;
 	fio_channel_get_sig_status_t get_channel_sig_status;
 	fio_span_set_sig_status_t set_span_sig_status;
@@ -636,14 +636,50 @@ FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan);
 /*! \brief adjust echocanceller for end of call */
 FT_DECLARE(void) ftdm_set_echocancel_call_end(ftdm_channel_t *chan);
 
-/*! \brief clear variables hashtable inside sigmsg */
-FT_DECLARE(ftdm_status_t) ftdm_event_clear_vars(ftdm_sigmsg_t *sigmsg);
 
-/*! \brief save data from user(ftdmchan->caller_data.sigmsg) into internal copy (ftdmchan->sigmsg) */
-FT_DECLARE(ftdm_status_t) ftdm_channel_save_event_data(ftdm_channel_t *ftdmchan);
+/*! \brief save data from user */
+FT_DECLARE(ftdm_status_t) ftdm_channel_save_usrmsg(ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
 
-/*! \brief free data from internal copy (ftdmchan->sigmsg) */
-FT_DECLARE(ftdm_status_t) ftdm_channel_clear_event_data(ftdm_channel_t *ftdmchan);
+/*! \brief free usrmsg and variables/raw data attached to it */
+FT_DECLARE(ftdm_status_t) ftdm_usrmsg_free(ftdm_usrmsg_t **usrmsg);
+
+/*! \brief Get a custom variable from the user message
+ *  \note The variable pointer returned is only valid while the before the event is processed and it'll be destroyed once the event is processed. */
+FT_DECLARE(const char *) ftdm_usrmsg_get_var(ftdm_usrmsg_t *usrmsg, const char *var_name);
+
+/*! \brief Get raw data from user message
+ *  \param usrmsg The message structure containing the variables
+ *  \param data	data will point to available data pointer if available
+ *  \param datalen datalen will be set to length of data available
+ *  \retval FTDM_SUCCESS data is available
+ *  \retval FTDM_FAIL no data available
+ *  \note data is only valid within the duration of the callback, to receive a data pointer that does not get
+ *  \note destroyed when callback returns, see ftdm_sigmsg_get_raw_data_detached
+ */
+FT_DECLARE(ftdm_status_t) ftdm_usrmsg_get_raw_data(ftdm_usrmsg_t *usrmsg, void **data, ftdm_size_t *datalen);
+
+/*! \brief free sigmsg and variables/raw data attached to it */
+FT_DECLARE(ftdm_status_t) ftdm_sigmsg_free(ftdm_sigmsg_t **sigmsg);
+
+/*! \brief Add a custom variable to the event
+ *  \note This variables may be used by signaling modules to override signaling parameters
+ *  \todo Document which signaling variables are available
+ * */
+FT_DECLARE(ftdm_status_t) ftdm_sigmsg_add_var(ftdm_sigmsg_t *sigmsg, const char *var_name, const char *value);
+
+/*! \brief Remove a custom variable from the event
+ *  \note The variable pointer returned is only valid while the before the event is processed and it'll be destroyed once the event is processed. */
+FT_DECLARE(ftdm_status_t) ftdm_sigmsg_remove_var(ftdm_sigmsg_t *sigmsg, const char *var_name);
+
+/*! \brief Attach raw data to sigmsg
+ *  \param sigmsg The message structure containing the variables
+ *  \param data pointer to data
+ *  \param datalen datalen length of data
+ *  \retval FTDM_SUCCESS success, data was successfully saved
+ *  \retval FTDM_FAIL failed, event already had data attached to it.
+ *  \note data must have been allocated using ftdm_calloc, FreeTDM will free data once the usrmsg is processed.
+ */
+FT_DECLARE(ftdm_status_t) ftdm_sigmsg_set_raw_data(ftdm_sigmsg_t *sigmsg, void *data, ftdm_size_t datalen);
 
 /*!
   \brief Assert condition

@@ -610,9 +610,6 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 	sigev.span_id = ftdmchan->span_id;
 	sigev.channel = ftdmchan;
 
-	/* Acknowledge the state change */
-	ftdm_channel_complete_state(ftdmchan);
-
 #ifdef FTDM_DEBUG_CHAN_MEMORY
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
 		ftdm_assert(mprotect(ftdmchan, sizeof(*ftdmchan), PROT_READ) == 0, "Failed to mprotect");
@@ -876,15 +873,18 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 		break;
 	}
 
+	/* Acknowledge the state change */
+	ftdm_channel_complete_state(ftdmchan);
+	
 	/* If sngisdn_info->variables is not NULL, it means did not send any
-	* sigevent to the user, therefore we have to free that sigmsg */
+	* sigevent to the user, therefore we have to free that hashtable */
 	if (sngisdn_info->variables) {
 		hashtable_destroy(sngisdn_info->variables);
 		sngisdn_info->variables = NULL;
 	}
 
 	/* If sngisdn_info->raw_data is not NULL, it means did not send any
-	* sigevent to the user, therefore we have to free that sigmsg */
+	* sigevent to the user, therefore we have to free that raw data */
 	if (sngisdn_info->raw_data) {
 		ftdm_safe_free(sngisdn_info->raw_data);
 		sngisdn_info->raw_data = NULL;
@@ -902,18 +902,17 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 	return FTDM_SUCCESS;
 }
 
-static FIO_CHANNEL_SEND_MSG_FUNCTION(ftdm_sangoma_isdn_send_msg)
+static FIO_CHANNEL_INDICATE_FUNCTION(ftdm_sangoma_isdn_indicate)
 {
 	ftdm_status_t status = FTDM_FAIL;
 
-	switch (sigmsg->event_id) {
-		case FTDM_SIGEVENT_FACILITY:
+	switch (indication) {
+		case FTDM_CHANNEL_INDICATE_FACILITY:
 			sngisdn_snd_fac_req(ftdmchan);
 			status = FTDM_SUCCESS;
 			break;
 		default:
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unsupported signalling msg requested\n");
-			status = FTDM_BREAK;
+			status = FTDM_NOTIMPL;
 	}	
 	return status;
 }
@@ -1092,7 +1091,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->stop = ftdm_sangoma_isdn_stop;
 	span->signal_type = FTDM_SIGTYPE_ISDN;
 	span->outgoing_call = ftdm_sangoma_isdn_outgoing_call;
-	span->send_msg = ftdm_sangoma_isdn_send_msg;
+	span->indicate = ftdm_sangoma_isdn_indicate;
 	span->channel_request = NULL;
 	span->signal_cb	= sig_cb;
 	span->get_channel_sig_status = ftdm_sangoma_isdn_get_chan_sig_status;
