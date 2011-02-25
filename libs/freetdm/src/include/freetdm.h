@@ -550,6 +550,11 @@ typedef struct {
 
 typedef void * ftdm_variable_container_t;
 
+typedef struct {
+	ftdm_size_t len;
+	void *data;
+} ftdm_raw_data_t;
+
 /*! \brief Generic signaling message received from the stack */
 struct ftdm_sigmsg {
 	ftdm_signal_event_t event_id; /*!< The type of message */
@@ -565,20 +570,13 @@ struct ftdm_sigmsg {
 		ftdm_event_collected_t collected; /*!< valid if event_id is FTDM_SIGEVENT_COLLECTED_DIGIT */
 		ftdm_event_indication_completed_t indication_completed; /*!< valid if the event_id is FTDM_SIGEVENT_INDICATION_COMPLETED */
 	} ev_data;
-	struct {
-		ftdm_size_t len; /*!< Data len */
-		void *data; /*!< Signaling module specific data */
-	} raw;
+	ftdm_raw_data_t raw;
 };
 
 /*! \brief Generic user message sent to the stack */
 struct ftdm_usrmsg {
-	uint32_t call_id; /*!< unique call id for this call */
 	ftdm_variable_container_t variables;
-	struct {
-		ftdm_size_t len; /*!< Data len */
-		void *data; /*!< Signaling module specific data */
-	} raw;
+	ftdm_raw_data_t raw;
 };
 
 /*! \brief Crash policy 

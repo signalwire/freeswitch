@@ -4049,7 +4049,7 @@ done:
 	return status;
 }
 
-FT_DECLARE(ftdm_iterator_t) *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
+FT_DECLARE(ftdm_iterator_t) *ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
 {
 	int allocated = 0;
 	if (iter) {
@@ -4075,7 +4075,7 @@ FT_DECLARE(ftdm_iterator_t) *get_iterator(ftdm_iterator_type_t type, ftdm_iterat
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
 {
-	if (!(iter = get_iterator(FTDM_ITERATOR_CHANS, iter))) {
+	if (!(iter = ftdm_get_iterator(FTDM_ITERATOR_CHANS, iter))) {
 		return NULL;
 	}
 	iter->pvt.chaniter.index = 1;
@@ -6100,9 +6100,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_save_usrmsg(ftdm_channel_t *ftdmchan, ftd
 		memcpy(ftdmchan->usrmsg, usrmsg, sizeof(ftdm_usrmsg_t));
 		
 		if (usrmsg->raw.data) {
-			ftdmchan->usrmsg->raw.data = usrmsg->raw.data;
-			ftdmchan->usrmsg->raw.len = usrmsg->raw.len;
-
 			usrmsg->raw.data = NULL;
 			usrmsg->raw.len = 0;
 		}

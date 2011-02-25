@@ -92,7 +92,7 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_sigmsg_get_var_iterator(const ftdm_sigmsg_t *
 		return NULL;
 	}
 	
-	if (!(iter = get_iterator(FTDM_ITERATOR_VARS, iter))) {
+	if (!(iter = ftdm_get_iterator(FTDM_ITERATOR_VARS, iter))) {
 		return NULL;
 	}
 	iter->pvt.hashiter = hashiter;

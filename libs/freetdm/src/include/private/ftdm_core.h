@@ -590,7 +590,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan);
 FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication, ftdm_status_t status);
 
 
-FT_DECLARE(ftdm_iterator_t) *get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
+FT_DECLARE(ftdm_iterator_t) *ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
 
 
 /*! 
