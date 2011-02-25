@@ -53,6 +53,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 #endif
 
 static char prompt_str[512] = "";
+static int CONNECTED = 0;
 
 typedef struct {
 	char name[128];
@@ -536,6 +537,11 @@ static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int
 static void handle_SIGINT(int sig)
 {
 	if (sig);
+
+	if (!CONNECTED) {
+		fprintf(stdout, "Interrupted.\n");
+		exit(1);
+	}
 
 	WARN_STOP = 1;
 
@@ -1235,6 +1241,8 @@ int main(int argc, char *argv[])
 
  connect:
 
+	CONNECTED = 0;
+
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
 		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
@@ -1252,6 +1260,8 @@ int main(int argc, char *argv[])
 				esl_log(ESL_LOG_INFO, "Retrying\n");
 			}
 		} else {
+			CONNECTED = 1;
+
 			if (temp_log < 0 ) {
 				esl_global_set_default_logger(profile->debug);
 			} else {
