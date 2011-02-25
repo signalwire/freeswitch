@@ -1394,6 +1394,21 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_core_get_variable_dup(string varname) {
+    string ret = freeswitchPINVOKE.switch_core_get_variable_dup(varname);
+    return ret;
+  }
+
+  public static string switch_core_get_variable_pdup(string varname, SWIGTYPE_p_apr_pool_t pool) {
+    string ret = freeswitchPINVOKE.switch_core_get_variable_pdup(varname, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+    return ret;
+  }
+
+  public static string switch_core_get_hostname() {
+    string ret = freeswitchPINVOKE.switch_core_get_hostname();
+    return ret;
+  }
+
   public static void switch_core_set_variable(string varname, string value) {
     freeswitchPINVOKE.switch_core_set_variable(varname, value);
   }
@@ -2422,6 +2437,21 @@ public class freeswitch {
 
   public static uint switch_default_ptime(string name, uint number) {
     uint ret = freeswitchPINVOKE.switch_default_ptime(name, number);
+    return ret;
+  }
+
+  public static switch_status_t switch_core_add_registration(string user, string realm, string token, string url, uint expires, string network_ip, string network_port, string network_proto) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_add_registration(user, realm, token, url, expires, network_ip, network_port, network_proto);
+    return ret;
+  }
+
+  public static switch_status_t switch_core_del_registration(string user, string realm, string token) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_del_registration(user, realm, token);
+    return ret;
+  }
+
+  public static switch_status_t switch_core_expire_registration(int force) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_expire_registration(force);
     return ret;
   }
 
@@ -3984,6 +4014,10 @@ public class freeswitch {
     freeswitchPINVOKE.switch_change_sln_volume(SWIGTYPE_p_short.getCPtr(data), samples, vol);
   }
 
+  public static void switch_change_sln_volume_granular(SWIGTYPE_p_short data, uint samples, int vol) {
+    freeswitchPINVOKE.switch_change_sln_volume_granular(SWIGTYPE_p_short.getCPtr(data), samples, vol);
+  }
+
   public static uint switch_merge_sln(SWIGTYPE_p_short data, uint samples, SWIGTYPE_p_short other_data, uint other_samples) {
     uint ret = freeswitchPINVOKE.switch_merge_sln(SWIGTYPE_p_short.getCPtr(data), samples, SWIGTYPE_p_short.getCPtr(other_data), other_samples);
     return ret;
@@ -4729,8 +4763,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp rtp_session, uint queue_frames, uint max_queue_frames, uint samples_per_packet, uint samples_per_second) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), queue_frames, max_queue_frames, samples_per_packet, samples_per_second);
+  public static switch_status_t switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp rtp_session, uint queue_frames, uint max_queue_frames, uint samples_per_packet, uint samples_per_second, uint max_drift) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), queue_frames, max_queue_frames, samples_per_packet, samples_per_second, max_drift);
     return ret;
   }
 
@@ -4865,6 +4899,10 @@ public class freeswitch {
 
   public static void switch_rtp_set_telephony_recv_event(SWIGTYPE_p_switch_rtp rtp_session, byte te) {
     freeswitchPINVOKE.switch_rtp_set_telephony_recv_event(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), te);
+  }
+
+  public static void switch_rtp_set_recv_pt(SWIGTYPE_p_switch_rtp rtp_session, byte pt) {
+    freeswitchPINVOKE.switch_rtp_set_recv_pt(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), pt);
   }
 
   public static void switch_rtp_set_cng_pt(SWIGTYPE_p_switch_rtp rtp_session, byte pt) {
@@ -5372,6 +5410,11 @@ public class freeswitch {
 
   public static void consoleCleanLog(string msg) {
     freeswitchPINVOKE.consoleCleanLog(msg);
+  }
+
+  public static bool email(string to, string from, string headers, string body, string file, string convert_cmd, string convert_ext) {
+    bool ret = freeswitchPINVOKE.email(to, from, headers, body, file, convert_cmd, convert_ext);
+    return ret;
   }
 
   public static void console_log(string level_str, string msg) {
@@ -7578,6 +7621,15 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_variable")]
   public static extern string switch_core_get_variable(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_variable_dup")]
+  public static extern string switch_core_get_variable_dup(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_variable_pdup")]
+  public static extern string switch_core_get_variable_pdup(string jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_hostname")]
+  public static extern string switch_core_get_hostname();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_set_variable")]
   public static extern void switch_core_set_variable(string jarg1, string jarg2);
 
@@ -8357,6 +8409,15 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_default_ptime")]
   public static extern uint switch_default_ptime(string jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_add_registration")]
+  public static extern int switch_core_add_registration(string jarg1, string jarg2, string jarg3, string jarg4, uint jarg5, string jarg6, string jarg7, string jarg8);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_del_registration")]
+  public static extern int switch_core_del_registration(string jarg1, string jarg2, string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_expire_registration")]
+  public static extern int switch_core_expire_registration(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
@@ -12051,6 +12112,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_change_sln_volume")]
   public static extern void switch_change_sln_volume(HandleRef jarg1, uint jarg2, int jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_change_sln_volume_granular")]
+  public static extern void switch_change_sln_volume_granular(HandleRef jarg1, uint jarg2, int jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_merge_sln")]
   public static extern uint switch_merge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4);
 
@@ -12661,7 +12725,7 @@ class freeswitchPINVOKE {
   public static extern int switch_rtp_activate_rtcp(HandleRef jarg1, int jarg2, ushort jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_jitter_buffer")]
-  public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5);
+  public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, uint jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_debug_jitter_buffer")]
   public static extern int switch_rtp_debug_jitter_buffer(HandleRef jarg1, string jarg2);
@@ -12746,6 +12810,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_telephony_recv_event")]
   public static extern void switch_rtp_set_telephony_recv_event(HandleRef jarg1, byte jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_recv_pt")]
+  public static extern void switch_rtp_set_recv_pt(HandleRef jarg1, byte jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_cng_pt")]
   public static extern void switch_rtp_set_cng_pt(HandleRef jarg1, byte jarg2);
@@ -13601,6 +13668,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_consoleCleanLog")]
   public static extern void consoleCleanLog(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_email")]
+  public static extern bool email(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_IvrMenu")]
   public static extern IntPtr new_IvrMenu(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16);
@@ -24977,6 +25047,8 @@ public enum switch_event_types_t {
   SWITCH_EVENT_NAT,
   SWITCH_EVENT_RECORD_START,
   SWITCH_EVENT_RECORD_STOP,
+  SWITCH_EVENT_PLAYBACK_START,
+  SWITCH_EVENT_PLAYBACK_STOP,
   SWITCH_EVENT_CALL_UPDATE,
   SWITCH_EVENT_FAILURE,
   SWITCH_EVENT_SOCKET_DATA,

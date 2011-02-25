@@ -7182,6 +7182,42 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_variable(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_variable_dup(char * jarg1) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (char *)switch_core_get_variable_dup((char const *)arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_variable_pdup(char * jarg1, void * jarg2) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_memory_pool_t *arg2 = (switch_memory_pool_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_memory_pool_t *)jarg2; 
+  result = (char *)switch_core_get_variable_pdup((char const *)arg1,arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_hostname() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_core_get_hostname();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_set_variable(char * jarg1, char * jarg2) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -10612,6 +10648,60 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_default_ptime(char * jarg1, u
   arg2 = (uint32_t)jarg2; 
   result = (uint32_t)switch_default_ptime((char const *)arg1,arg2);
   jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_add_registration(char * jarg1, char * jarg2, char * jarg3, char * jarg4, unsigned long jarg5, char * jarg6, char * jarg7, char * jarg8) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  uint32_t arg5 ;
+  char *arg6 = (char *) 0 ;
+  char *arg7 = (char *) 0 ;
+  char *arg8 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (uint32_t)jarg5; 
+  arg6 = (char *)jarg6; 
+  arg7 = (char *)jarg7; 
+  arg8 = (char *)jarg8; 
+  result = (switch_status_t)switch_core_add_registration((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_del_registration(char * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_core_del_registration((char const *)arg1,(char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_expire_registration(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  switch_status_t result;
+  
+  arg1 = (int)jarg1; 
+  result = (switch_status_t)switch_core_expire_registration(arg1);
+  jresult = result; 
   return jresult;
 }
 
@@ -25728,6 +25818,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_change_sln_volume(void * jarg1, unsign
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_change_sln_volume_granular(void * jarg1, unsigned long jarg2, int jarg3) {
+  int16_t *arg1 = (int16_t *) 0 ;
+  uint32_t arg2 ;
+  int32_t arg3 ;
+  
+  arg1 = (int16_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  arg3 = (int32_t)jarg3; 
+  switch_change_sln_volume_granular(arg1,arg2,arg3);
+}
+
+
 SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_merge_sln(void * jarg1, unsigned long jarg2, void * jarg3, unsigned long jarg4) {
   unsigned long jresult ;
   int16_t *arg1 = (int16_t *) 0 ;
@@ -28723,13 +28825,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_rtcp(void * jarg1, int jar
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_jitter_buffer(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, unsigned long jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_jitter_buffer(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, unsigned long jarg5, unsigned long jarg6) {
   int jresult ;
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   uint32_t arg2 ;
   uint32_t arg3 ;
   uint32_t arg4 ;
   uint32_t arg5 ;
+  uint32_t arg6 ;
   switch_status_t result;
   
   arg1 = (switch_rtp_t *)jarg1; 
@@ -28737,7 +28840,8 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_jitter_buffer(void * jarg1
   arg3 = (uint32_t)jarg3; 
   arg4 = (uint32_t)jarg4; 
   arg5 = (uint32_t)jarg5; 
-  result = (switch_status_t)switch_rtp_activate_jitter_buffer(arg1,arg2,arg3,arg4,arg5);
+  arg6 = (uint32_t)jarg6; 
+  result = (switch_status_t)switch_rtp_activate_jitter_buffer(arg1,arg2,arg3,arg4,arg5,arg6);
   jresult = result; 
   return jresult;
 }
@@ -29118,6 +29222,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_telephony_recv_event(void * ja
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (switch_payload_t)jarg2; 
   switch_rtp_set_telephony_recv_event(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_recv_pt(void * jarg1, unsigned char jarg2) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_payload_t arg2 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (switch_payload_t)jarg2; 
+  switch_rtp_set_recv_pt(arg1,arg2);
 }
 
 
@@ -32584,6 +32698,30 @@ SWIGEXPORT void SWIGSTDCALL CSharp_consoleCleanLog(char * jarg1) {
   
   arg1 = (char *)jarg1; 
   consoleCleanLog(arg1);
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_email(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7) {
+  unsigned int jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  char *arg6 = (char *) NULL ;
+  char *arg7 = (char *) NULL ;
+  bool result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (char *)jarg5; 
+  arg6 = (char *)jarg6; 
+  arg7 = (char *)jarg7; 
+  result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  jresult = result; 
+  return jresult;
 }
 
 
