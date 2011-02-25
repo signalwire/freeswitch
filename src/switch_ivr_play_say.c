@@ -746,12 +746,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
-		switch_event_fire(&event);
-	}
-
 	if (fill_cng || waste_resources) {
 		switch_core_codec_destroy(&write_codec);
 	}
@@ -765,6 +759,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	switch_channel_set_variable_printf(channel, "record_samples", "%d", fh->samples_out);
+
+	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
+		switch_event_fire(&event);
+	}
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	return status;
@@ -951,6 +951,38 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_release_file_handle(switch_core_sessi
 #define FILE_BLOCKSIZE 1024 * 8
 #define FILE_BUFSIZE 1024 * 64
 
+static void add_playback_vars_to_event(switch_core_session_t *session, switch_event_t *event, char *vars)
+{
+	char *tmp;
+
+	if (!session || !event || !vars)
+		return;
+
+	if ((tmp = switch_core_session_strdup(session, vars))) {
+		char *argv[128] = { 0 };
+		int argc, i;
+
+		if (!(argc = switch_separate_string(tmp, ',', argv, (sizeof(argv) / sizeof(argv[0])))))
+			return;
+
+		for (i = 0; i < argc; i++) {
+			char *var, *val;
+
+			if ((var = strchr(argv[i], '='))) {
+				*var = '\0';
+				val = var+1;
+				var = argv[i];
+
+				if (var && *var && val && *val) {
+					if ((var = switch_core_session_sprintf(session, "playback_variable_%s", var))) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
+					}
+				}
+			}
+		}
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -990,6 +1022,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int timeout_samples = 0;
 	const char *var;
 	int more_data = 0;
+	char *playback_vars, *tmp;
+	switch_event_t *event;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1138,6 +1172,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 		}
 
+		/* Try to parse extra parameters for this playback (parameters within {} at the end of the filename */
+		playback_vars = NULL;
+		if ((tmp = strchr(file, '{'))) {
+			char *tfile, *e;
+			
+			if ((tfile = switch_core_session_strdup(session, tmp))) {
+				if ((e = switch_find_end_paren(tfile, '{', '}')) && *(e + 1) == '\0') {
+					*tmp = '\0';
+					*e = '\0';
+					playback_vars = tfile+1;
+				}
+			}
+		}
 
 		if (!fh) {
 			fh = &lfh;
@@ -1292,6 +1339,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		ilen = samples;
+
+		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_START) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
+			add_playback_vars_to_event(session, event, playback_vars); 
+			switch_event_fire(&event);
+		}
 
 		for (;;) {
 			int do_speed = 1;
@@ -1585,6 +1639,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / (read_impl.samples_per_second / 1000));
 		}
 		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_in);
+
+		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_STOP) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
+			if (status == SWITCH_STATUS_BREAK) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "break");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "done");
+			}
+			add_playback_vars_to_event(session, event, playback_vars); 
+			switch_event_fire(&event);
+		}
 
 		switch_core_session_io_write_lock(session);
 		switch_channel_set_private(channel, "__fh", NULL);
