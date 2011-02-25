@@ -2856,7 +2856,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-#ifdef 0
+#if 0
 		if (bytes && rtp_session->recv_msg.header.version == 2 && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) &&
 			rtp_session->recv_msg.header.pt != 13 && 
