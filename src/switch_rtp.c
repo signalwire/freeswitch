@@ -2304,7 +2304,8 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp_flush_t flush)
 {
-	if (switch_rtp_ready(rtp_session) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+	if (switch_rtp_ready(rtp_session) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
+		!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 		switch (flush) {
 		case SWITCH_RTP_FLUSH_STICK:
@@ -2860,7 +2861,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->rpayload) {
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload && 0) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
 			return_cng_frame();
 		}
@@ -2890,9 +2891,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH)) {
+			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 			do_flush(rtp_session);
-			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			bytes = 0;
+		}
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 		}
 
 		if (bytes && bytes < 5) {
