@@ -722,8 +722,10 @@ ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8
 {
 	ftdm_size_t len;
 	uint8_t *mydata;
+	void *vdata;
 
-	if (ftdm_usrmsg_get_raw_data(ftdmchan->usrmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+	if (ftdm_usrmsg_get_raw_data(ftdmchan->usrmsg, &vdata, &len) == FTDM_SUCCESS) {
+		mydata = vdata;
 		if (len > 2 && mydata[0] == SNGISDN_Q931_FACILITY_IE_ID) {
 			len = mydata[1];
 			memcpy(data, &mydata[2], len);

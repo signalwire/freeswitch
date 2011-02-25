@@ -5296,7 +5296,6 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	ftdm_status_t status = span->signal_cb(sigmsg);
-	ftdm_sigmsg_free(&sigmsg);
 	return status;
 }
 
@@ -5319,6 +5318,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_trigger_signals(const ftdm_span_t *span)
 	ftdm_sigmsg_t *sigmsg = NULL;
 	while ((sigmsg = ftdm_queue_dequeue(span->pendingsignals))) {
 		ftdm_span_trigger_signal(span, sigmsg);
+		ftdm_sigmsg_free(&sigmsg);
 	}
 	return FTDM_SUCCESS;
 }
