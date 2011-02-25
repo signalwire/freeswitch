@@ -1523,6 +1523,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 
 new_socket:
 	while(globals.running) {
+		char *listening_ip = NULL;
 		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
 		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_UNSPEC, profile->port, 0, tmp_pool);
 		if (rv)
@@ -1539,6 +1540,10 @@ new_socket:
 		rv = switch_socket_listen(profile->sock, 5);
 		if (rv)
 			goto sock_fail;
+		switch_sockaddr_ip_get(&listening_ip, sa);
+		if (!profile->ip || strcmp(listening_ip, profile->ip)) {
+			profile->ip = switch_core_strdup(profile->pool, listening_ip);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket up listening on %s:%u\n", profile->ip, profile->port);
 
 		break;
