@@ -14,7 +14,6 @@ To make an outbound call:
 	/* Attach variable to usrmsg */
 	ftdm_usrmsg_add_var(&usrmsg, "isdn.prog_ind.descr", "inband-info-available");
 	
-	/* Request FreeTDM to send a PROCEED msg */
 	ftdm_channel_call_place_ex(ftdmchan, &usrmsg);
 
 example #1b - Adding a variable:
@@ -37,7 +36,6 @@ example #2 - Setting raw data:
 When using ftmod_sangoma_isdn, user wants to transmit a custom Facility IE, inside a FACILITY message.
 	
 	ftdm_usrmsg_t usrmsg;
-	ftdm_sigmsg_t sigmsg;
 
 	uint8_t *my_facility_ie = ftdm_calloc(1, 200); /*memory has to be allocated using ftdm_calloc !! */
 	unsigned my_facility_ie_len = 0;
@@ -51,9 +49,7 @@ When using ftmod_sangoma_isdn, user wants to transmit a custom Facility IE, insi
 
 	ftdm_usrmsg_set_raw_data(&usrmsg, my_facility_ie, my_facility_ie_len);
 	
-	sigmsg.event_id = FTDM_SIGEVENT_FACILITY;
-
-	ftdm_channel_call_send_msg(ftdmchan, sigmsg, usrmsg);
+	ftdm_channel_call_indicate(ftdmchan, FTDM_CHANNEL_INDICATE_ANSWER, &usrmsg);
 
 	/* FreeTDM will automatically free my_facility_ie */
 
@@ -96,7 +92,7 @@ example #3a - accessing raw data
 	/* Inside event call-back function */
 	ftdm_size_t len;
 	uint8_t *mydata;
-	if (ftdm_sig_get_raw_data(sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+	if (ftdm_sigmsg_get_raw_data(sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
 		/* raw data is available, do something with mydata here */
 	}
 	/* Once this function returns, raw data will be free'd inside FreeTDM */
@@ -108,7 +104,7 @@ example #3b - accessing raw data
 	/* Inside event call-back function */
 	ftdm_size_t len;
 	uint8_t *mydata;
-	if (ftdm_sig_get_raw_data_detached(sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
+	if (ftdm_sigmsg_get_raw_data_detached(sigmsg, (void**)&mydata, &len) == FTDM_SUCCESS) {
 		/* raw data is available, do something with mydata here */
 
 	}
