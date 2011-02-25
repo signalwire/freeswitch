@@ -1660,12 +1660,12 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 			goto end;
 		}
 
+		tech_pvt->local_sdp_audio_ip = listener->local_ip;
 		/* Request a local port from the core's allocator */
-		if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(listener->profile->ip))) {
+		if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->local_sdp_audio_ip))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
 			return SWITCH_STATUS_FALSE;
 		}
-		tech_pvt->local_sdp_audio_ip = switch_core_strdup(switch_core_session_get_pool(session), listener->profile->ip);
 
 		tech_pvt->remote_sdp_audio_ip = inet_ntoa(request->data.open_receive_channel_ack.ip);
 		tech_pvt->remote_sdp_audio_port = request->data.open_receive_channel_ack.port;

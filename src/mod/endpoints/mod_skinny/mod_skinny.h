@@ -143,11 +143,14 @@ struct listener {
     switch_socket_t *sock;
     switch_memory_pool_t *pool;
     switch_thread_rwlock_t *rwlock;
-    switch_sockaddr_t *sa;
+    switch_sockaddr_t *remote_sa;
     char remote_ip[50];
+    switch_port_t remote_port;
+    switch_sockaddr_t *local_sa;
+    char local_ip[50];
+    switch_port_t local_port;
     switch_mutex_t *flag_mutex;
     uint32_t flags;
-    switch_port_t remote_port;
     uint32_t id;
     time_t expire_time;
     struct listener *next;

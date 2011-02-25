@@ -1598,9 +1598,14 @@ new_socket:
 
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
-		switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock);
-		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
-		listener->remote_port = switch_sockaddr_get_port(listener->sa);
+		switch_socket_addr_get(&listener->remote_sa, SWITCH_TRUE, listener->sock);
+		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->remote_sa);
+		listener->remote_port = switch_sockaddr_get_port(listener->remote_sa);
+
+		switch_socket_addr_get(&listener->local_sa, SWITCH_FALSE, listener->sock);
+		switch_get_addr(listener->local_ip, sizeof(listener->local_ip), listener->local_sa);
+		listener->local_port = switch_sockaddr_get_port(listener->local_sa);
+
 		launch_listener_thread(listener);
 
 	}
