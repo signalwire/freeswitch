@@ -1909,7 +1909,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 																  uint32_t queue_frames, 
 																  uint32_t max_queue_frames, 
 																  uint32_t samples_per_packet, 
-																  uint32_t samples_per_second)
+																  uint32_t samples_per_second,
+																  uint32_t max_drift)
 {
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -1920,7 +1921,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	if (rtp_session->jb) {
 		stfu_n_resize(rtp_session->jb, queue_frames);
 	} else {
-		rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second);
+		rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second, max_drift);
 	}
 	READ_DEC(rtp_session);
 	
@@ -2402,7 +2403,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	uint32_t ts;
 
 	switch_assert(bytes);
-
+ more:
 	*bytes = sizeof(rtp_msg_t);
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 	ts = ntohl(rtp_session->recv_msg.header.ts);
@@ -2489,9 +2490,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			stfu_n_reset(rtp_session->jb);
 		}
 
-		stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
-				   rtp_session->recv_msg.header.pt,
-				   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount);
+		if (stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
+					   rtp_session->recv_msg.header.pt,
+					   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount) == STFU_ITS_TOO_LATE) {
+			printf("doh\n");
+			goto more;
+		}
+
 		status = SWITCH_STATUS_FALSE;
 		if (!return_jb_packet) {
 			return status;

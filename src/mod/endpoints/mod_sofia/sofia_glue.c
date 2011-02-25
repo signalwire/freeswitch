@@ -3166,12 +3166,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec")) || (val = tech_pvt->profile->jb_msec)) {
 			int jb_msec = atoi(val);
-			int maxlen = 0;
-			char *p;
-
+			int maxlen = 0, max_drift = 0;
+			char *p, *q;
+			
 			if ((p = strchr(val, ':'))) {
 				p++;
 				maxlen = atoi(p);
+				if ((q = strchr(p, ':'))) {
+					q++;
+					max_drift = abs(atoi(q));
+				}
 			}
 
 			if (jb_msec < 20 || jb_msec > 10000) {
@@ -3188,7 +3192,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 				if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 													  tech_pvt->read_impl.samples_per_packet, 
-													  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+													  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
 									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
 					switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);

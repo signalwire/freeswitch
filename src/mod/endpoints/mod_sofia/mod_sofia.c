@@ -1349,10 +1349,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				int len, maxlen = 0, qlen = 0, maxqlen = 50;
+				int len, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
 
 				if (msg->string_arg) {
-					char *p;
+					char *p, *q;
 					const char *s;
 
 					if (!strcasecmp(msg->string_arg, "pause")) {
@@ -1379,6 +1379,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if ((p = strchr(msg->string_arg, ':'))) {
 							p++;
 							maxlen = atol(p);
+							if ((q = strchr(p, ':'))) {
+								q++;
+								max_drift = abs(atol(q));
+							}
 						}
 					}
 
@@ -1391,9 +1395,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (qlen) {
 					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 														  tech_pvt->read_impl.samples_per_packet, 
-														  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+														  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
-										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", len, qlen, maxqlen);
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
+										  len, qlen, maxqlen, max_drift);
 						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
