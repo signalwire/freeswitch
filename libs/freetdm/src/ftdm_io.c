@@ -2388,6 +2388,8 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func
 	return FTDM_SUCCESS;
 }
 
+/* this function MUST be called with the channel lock held with lock recursivity of 1 exactly, 
+ * and the caller must be aware we might unlock the channel for a brief period of time and then lock it again */
 static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -2430,10 +2432,22 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED);
 	ftdm_call_set_call_id(ftdmchan, &ftdmchan->caller_data);
-	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
-		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALING, 1, usrmsg);
-	} else {
-		ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALING, 0, usrmsg);
+
+	/* if the signaling stack left the channel in state down on success, is expecting us to move to DIALING */
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
+		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
+			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALING, 1, usrmsg);	
+		} else {
+			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALING, 0, usrmsg);	
+		}
+	} else if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE) &&
+		   !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
+		
+		ftdm_channel_unlock(ftdmchan);
+
+		ftdm_interrupt_wait(ftdmchan->state_completed_interrupt, 500);
+
+		ftdm_channel_lock(ftdmchan);
 	}
 
 done:
@@ -2450,6 +2464,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char 
 	ftdm_status_t status;
 	ftdm_channel_lock(ftdmchan);
 
+	/* be aware that _ftdm_channl_call_place_nl can unlock/lock the channel quickly if working in blocking mode  */
 	status = _ftdm_channel_call_place_nl(file, func, line, ftdmchan, usrmsg);
 
 	ftdm_channel_unlock(ftdmchan);
@@ -2493,6 +2508,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 
 	ftdm_channel_set_caller_data(fchan, caller_data);
 
+	/* be aware that _ftdm_channl_call_place_nl can unlock/lock the channel quickly if working in blocking mode  */
 	status = _ftdm_channel_call_place_nl(file, func, line, fchan, usrmsg);
 	if (status != FTDM_SUCCESS) {
 		_ftdm_channel_call_hangup_nl(file, func, line, fchan, usrmsg);
