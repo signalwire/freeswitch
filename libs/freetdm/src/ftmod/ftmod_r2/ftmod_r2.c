@@ -676,8 +676,8 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = %d, ANI restricted = %s\n", 
-			ani, dnis, category, ani_restricted ? "Yes" : "No");
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = %s, ANI restricted = %s\n", 
+			ani, dnis, openr2_proto_get_category_string(category), ani_restricted ? "Yes" : "No");
 
 	/* check if this is a collect call and if we should accept it */
 	if (!r2data->allow_collect_calls && category == OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL) {
@@ -1678,6 +1678,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	}
 	r2data->mf_dump_size = r2conf.mf_dump_size;
 	r2data->category = r2conf.category;
+	r2data->allow_collect_calls = r2conf.allow_collect_calls;
 	r2data->flags = 0;
 	spanpvt->r2context = r2data->r2context;
 
