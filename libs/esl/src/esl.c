@@ -1066,7 +1066,10 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		hval = esl_event_get_header(revent, "content-type");
 
 		if (!esl_safe_strcasecmp(hval, "text/disconnect-notice") && revent->body) {
-			goto fail;
+			const char *dval = esl_event_get_header(revent, "content-disposition");
+			if (esl_strlen_zero(dval) || strcasecmp(dval, "linger")) {
+				goto fail;
+			}
 		}
 		
 		if (revent->body) {
