@@ -1674,7 +1674,7 @@ static void conference_loop_fn_energy_dn(conference_member_t *member, caller_con
 		return;
 
 	lock_member(member);
-	member->energy_level -= 100;
+	member->energy_level -= 200;
 	if (member->energy_level < 0) {
 		member->energy_level = 0;
 	}
