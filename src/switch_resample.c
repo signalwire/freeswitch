@@ -309,22 +309,26 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {
 	double newrate = 0;
-	int div = 0;
+	double pos[4] = {1.3, 2.3, 3.3, 4.3};
+	double neg[4] = {.80, .60, .40, .20};
+	double *chart;
+	uint32_t i;
+
+	if (vol == 0) return;
 
 	switch_normalize_volume(vol);
 
 	if (vol > 0) {
-		vol++;
-	} else if (vol < 0) {
-		vol--;
+		chart = pos;
+	} else {
+		chart = neg;
 	}
+	
+	i = abs(vol) - 1;
+	
+	switch_assert(i < 4);
 
-	newrate = vol * 1.3;
-
-	if (vol < 0) {
-		newrate *= -1;
-		div++;
-	}
+	newrate = chart[i];
 
 	if (newrate) {
 		int32_t tmp;
@@ -332,7 +336,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 		int16_t *fp = data;
 
 		for (x = 0; x < samples; x++) {
-			tmp = (int32_t) (div ? fp[x] / newrate : fp[x] * newrate);
+			tmp = (int32_t) (fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
 			fp[x] = (int16_t) tmp;
 		}

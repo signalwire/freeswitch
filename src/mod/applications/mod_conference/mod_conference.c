@@ -1598,16 +1598,17 @@ static void conference_loop_fn_deafmute_toggle(conference_member_t *member, call
 
 static void conference_loop_fn_energy_up(conference_member_t *member, caller_control_action_t *action)
 {
-	char msg[512];
+	char msg[512], str[30] = "";
 	switch_event_t *event;
+	char *p;
 
 	if (member == NULL)
 		return;
 
 	lock_member(member);
 	member->energy_level += 200;
-	if (member->energy_level > 3000) {
-		member->energy_level = 3000;
+	if (member->energy_level > 1800) {
+		member->energy_level = 1800;
 	}
 
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
@@ -1619,13 +1620,23 @@ static void conference_loop_fn_energy_up(conference_member_t *member, caller_con
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+	//conference_member_say(member, msg, 0);
+
+	switch_snprintf(str, sizeof(str), "%d", abs(member->energy_level) / 200);
+	for (p = str; p && *p; p++) {
+		switch_snprintf(msg, sizeof(msg), "digits/%c.wav", *p);
+		conference_member_play_file(member, msg, 0);
+	}
+
+
+	
+
 }
 
 static void conference_loop_fn_energy_equ_conf(conference_member_t *member, caller_control_action_t *action)
 {
-	char msg[512];
+	char msg[512], str[30] = "", *p;
 	switch_event_t *event;
 
 	if (member == NULL)
@@ -1643,13 +1654,20 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t *member, call
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+	//conference_member_say(member, msg, 0);
+
+	switch_snprintf(str, sizeof(str), "%d", abs(member->energy_level) / 200);
+	for (p = str; p && *p; p++) {
+		switch_snprintf(msg, sizeof(msg), "digits/%c.wav", *p);
+		conference_member_play_file(member, msg, 0);
+	}
+	
 }
 
 static void conference_loop_fn_energy_dn(conference_member_t *member, caller_control_action_t *action)
 {
-	char msg[512];
+	char msg[512], str[30] = "", *p;
 	switch_event_t *event;
 
 	if (member == NULL)
@@ -1670,8 +1688,15 @@ static void conference_loop_fn_energy_dn(conference_member_t *member, caller_con
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+	//conference_member_say(member, msg, 0);
+
+	switch_snprintf(str, sizeof(str), "%d", abs(member->energy_level) / 200);
+	for (p = str; p && *p; p++) {
+		switch_snprintf(msg, sizeof(msg), "digits/%c.wav", *p);
+		conference_member_play_file(member, msg, 0);
+	}
+	
 }
 
 static void conference_loop_fn_volume_talk_up(conference_member_t *member, caller_control_action_t *action)
@@ -1695,8 +1720,12 @@ static void conference_loop_fn_volume_talk_up(conference_member_t *member, calle
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+	//conference_member_say(member, msg, 0);
+
+	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", member->volume_out_level);
+	conference_member_play_file(member, msg, 0);
+
 }
 
 static void conference_loop_fn_volume_talk_zero(conference_member_t *member, caller_control_action_t *action)
@@ -1719,9 +1748,17 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t *member, cal
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+	//conference_member_say(member, msg, 0);
 
+
+	if (member->volume_out_level < 0) {
+		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_out_level);
+		conference_member_play_file(member, msg, 0);
+	}
+
+	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_out_level));
+	conference_member_play_file(member, msg, 0);
 }
 
 static void conference_loop_fn_volume_talk_dn(conference_member_t *member, caller_control_action_t *action)
@@ -1745,8 +1782,16 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t *member, calle
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+	//conference_member_say(member, msg, 0);
+
+	if (member->volume_out_level < 0) {
+		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_out_level);
+		conference_member_play_file(member, msg, 0);
+	}
+
+	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_out_level));
+	conference_member_play_file(member, msg, 0);
 }
 
 static void conference_loop_fn_volume_listen_up(conference_member_t *member, caller_control_action_t *action)
@@ -1770,8 +1815,17 @@ static void conference_loop_fn_volume_listen_up(conference_member_t *member, cal
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+	//conference_member_say(member, msg, 0);
+
+	if (member->volume_in_level < 0) {
+		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_in_level);
+		conference_member_play_file(member, msg, 0);
+	}
+
+	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_in_level));
+	conference_member_play_file(member, msg, 0);
+
 }
 
 static void conference_loop_fn_volume_listen_zero(conference_member_t *member, caller_control_action_t *action)
@@ -1794,8 +1848,17 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t *member, c
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+	//conference_member_say(member, msg, 0);
+
+	if (member->volume_in_level < 0) {
+		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_in_level);
+		conference_member_play_file(member, msg, 0);
+	}
+
+	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_in_level));
+	conference_member_play_file(member, msg, 0);
+	
 }
 
 static void conference_loop_fn_volume_listen_dn(conference_member_t *member, caller_control_action_t *action)
@@ -1819,8 +1882,16 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t *member, cal
 	}
 	unlock_member(member);
 
-	switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-	conference_member_say(member, msg, 0);
+	//switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+	//conference_member_say(member, msg, 0);
+
+	if (member->volume_in_level < 0) {
+		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_in_level);
+		conference_member_play_file(member, msg, 0);
+	}
+
+    switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_in_level));
+    conference_member_play_file(member, msg, 0);
 }
 
 static void conference_loop_fn_event(conference_member_t *member, caller_control_action_t *action)
@@ -3441,8 +3512,11 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 			count++;
 		}
 
-		stream->write_function(stream, "%s%d%s%d%s%d\n", delim, member->agc_volume_in_level ? 
-							   member->agc_volume_in_level : member->volume_in_level, delim, member->volume_out_level, delim, member->energy_level);
+		stream->write_function(stream, "%s%d%s%d%s%d%s%d\n", delim,
+							   member->volume_in_level, 
+							   delim,
+							   member->agc_volume_in_level,
+							   delim, member->volume_out_level, delim, member->energy_level);
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
@@ -3969,9 +4043,8 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_snprintf(tmp, sizeof(tmp), "%d", member->agc_volume_in_level ? member->agc_volume_in_level : member->volume_in_level);
 		x_tag = add_x_tag(x_member, "input-volume", tmp, toff++);
 
-		if (member->agc_volume_in_level) {
-			switch_xml_set_attr_d(x_tag, "auto", "true");
-		}
+		switch_snprintf(tmp, sizeof(tmp), "%d", member->agc_volume_in_level);
+		x_tag = add_x_tag(x_member, "auto-adjusted-input-volume", tmp, toff++);
 
 	}
 
