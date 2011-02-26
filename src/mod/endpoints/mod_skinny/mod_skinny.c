@@ -1515,6 +1515,8 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 	listener_t *listener;
 	switch_memory_pool_t *tmp_pool = NULL, *listener_pool = NULL;
 	uint32_t errs = 0;
+	switch_sockaddr_t *local_sa = NULL;
+	switch_sockaddr_t *remote_sa =NULL;
 
 	if (switch_core_new_memory_pool(&tmp_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
@@ -1598,13 +1600,13 @@ new_socket:
 
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
-		switch_socket_addr_get(&listener->remote_sa, SWITCH_TRUE, listener->sock);
-		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->remote_sa);
-		listener->remote_port = switch_sockaddr_get_port(listener->remote_sa);
+		switch_socket_addr_get(&remote_sa, SWITCH_TRUE, listener->sock);
+		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), remote_sa);
+		listener->remote_port = switch_sockaddr_get_port(remote_sa);
 
-		switch_socket_addr_get(&listener->local_sa, SWITCH_FALSE, listener->sock);
-		switch_get_addr(listener->local_ip, sizeof(listener->local_ip), listener->local_sa);
-		listener->local_port = switch_sockaddr_get_port(listener->local_sa);
+		switch_socket_addr_get(&local_sa, SWITCH_FALSE, listener->sock);
+		switch_get_addr(listener->local_ip, sizeof(listener->local_ip), local_sa);
+		listener->local_port = switch_sockaddr_get_port(local_sa);
 
 		launch_listener_thread(listener);
 
