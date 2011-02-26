@@ -1329,6 +1329,22 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 
 	return status;
 }
+switch_status_t skinny_handle_forward_stat_req_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+
+	skinny_check_data_length(request, sizeof(request->data.forward_stat_req));
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.forward_stat));
+	message->type = FORWARD_STAT_MESSAGE;
+	message->length = 4 + sizeof(message->data.forward_stat);
+
+	message->data.forward_stat.line_instance = request->data.forward_stat_req.line_instance;
+
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skinny_message_t *request)
 {
@@ -2046,6 +2062,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_off_hook_message(listener, request);
 		case ON_HOOK_MESSAGE:
 			return skinny_handle_on_hook_message(listener, request);
+		case FORWARD_STAT_REQ_MESSAGE:
+			return skinny_handle_forward_stat_req_message(listener, request);
 		case SPEED_DIAL_STAT_REQ_MESSAGE:
 			return skinny_handle_speed_dial_stat_request(listener, request);
 		case LINE_STAT_REQ_MESSAGE:

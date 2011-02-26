@@ -97,6 +97,12 @@ struct PACKED on_hook_message {
     uint32_t call_id;
 };
 
+/* ForwardStatReqMessage */
+#define FORWARD_STAT_REQ_MESSAGE 0x0009
+struct PACKED forward_stat_req_message {
+    uint32_t line_instance;
+};
+
 /* SpeedDialStatReqMessage */
 #define SPEED_DIAL_STAT_REQ_MESSAGE 0x000A
 struct PACKED speed_dial_stat_req_message {
@@ -326,6 +332,19 @@ struct PACKED call_info_message {
     uint32_t call_instance;
     uint32_t call_security_status;
     uint32_t party_pi_restriction_bits;
+};
+
+/* ForwardStatMessage */
+#define FORWARD_STAT_MESSAGE 0x0090
+struct PACKED forward_stat_message {
+    uint32_t active_forward;
+    uint32_t line_instance;
+    uint32_t forward_all_active;
+    char forward_all_number[24];
+    uint32_t forward_busy_active;
+    char forward_busy_number[24];
+    uint32_t forward_noanswer_active;
+    char forward_noanswer_number[24];
 };
 
 /* SpeedDialStatMessage */
@@ -566,76 +585,78 @@ struct PACKED service_url_stat_res_message {
 
 union skinny_data {
 	/* no data for KEEP_ALIVE_MESSAGE */
-    struct register_message reg;
-    struct port_message port;
-    struct keypad_button_message keypad_button;
-    struct enbloc_call_message enbloc_call;
-    struct stimulus_message stimulus;
-    struct off_hook_message off_hook;
-    struct on_hook_message on_hook;
-    struct speed_dial_stat_req_message speed_dial_req;
-    struct line_stat_req_message line_req;
-    /* no data for CONFIG_STAT_REQ_MESSAGE */
-    /* no data for TIME_DATE_REQ_MESSAGE */
-    /* no data for BUTTON_TEMPLATE_REQ_MESSAGE */
-    /* no data for VERSION_REQ_MESSAGE */
-    struct capabilities_res_message cap_res;
-    struct alarm_message alarm;
-    struct open_receive_channel_ack_message open_receive_channel_ack;
-    /* no data for SOFT_KEY_SET_REQ_MESSAGE */
-    struct soft_key_event_message soft_key_event;
-    /* no data for UNREGISTER_MESSAGE */
-    /* no data for SOFT_KEY_TEMPLATE_REQ_MESSAGE */
-    struct headset_status_message headset_status;
-    struct register_available_lines_message reg_lines;
-    /* see field "data" for DEVICE_TO_USER_DATA_MESSAGE */
-    /* see field "data" for DEVICE_TO_USER_DATA_RESPONSE_MESSAGE */
-    struct service_url_stat_req_message service_url_req;
-    struct feature_stat_req_message feature_req;
-    /* see field "extended_data" for DEVICE_TO_USER_DATA_VERSION1_MESSAGE */
-    /* see field "extended_data" for DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE */
-    struct register_ack_message reg_ack;
-    struct start_tone_message start_tone;
-    struct stop_tone_message stop_tone;
-    struct set_ringer_message ringer;
-    struct set_lamp_message lamp;
-    struct set_speaker_mode_message speaker_mode;
-    struct start_media_transmission_message start_media;
-    struct stop_media_transmission_message stop_media;
-    struct call_info_message call_info;
-    struct speed_dial_stat_res_message speed_dial_res;
-    struct line_stat_res_message line_res;
-    struct config_stat_res_message config_res;
-    struct define_time_date_message define_time_date;
-    struct button_template_message button_template;
-    struct version_message version;
-    /* no data for CAPABILITIES_REQ_MESSAGE */
-    struct register_reject_message reg_rej;
-    struct reset_message reset;
-    /* no data for KEEP_ALIVE_ACK_MESSAGE */
-    struct open_receive_channel_message open_receive_channel;
-    struct close_receive_channel_message close_receive_channel;
-    struct soft_key_template_res_message soft_key_template;
-    struct soft_key_set_res_message soft_key_set;
-    struct select_soft_keys_message select_soft_keys;
-    struct call_state_message call_state;
-    struct display_prompt_status_message display_prompt_status;
-    struct clear_prompt_status_message clear_prompt_status;
-    struct activate_call_plane_message activate_call_plane;
-    struct unregister_ack_message unregister_ack;
-    struct back_space_req_message back_space_req;
-    struct dialed_number_message dialed_number;
-    /* see field "data" for USER_TO_DEVICE_DATA_MESSAGE */
-    struct feature_stat_res_message feature_res;
-    struct display_pri_notify_message display_pri_notify;
-    struct service_url_stat_res_message service_url_res;
-    /* see field "extended_data" for USER_TO_DEVICE_DATA_VERSION1_MESSAGE */
+	struct register_message reg;
+	struct port_message port;
+	struct keypad_button_message keypad_button;
+	struct enbloc_call_message enbloc_call;
+	struct stimulus_message stimulus;
+	struct off_hook_message off_hook;
+	struct on_hook_message on_hook;
+	struct forward_stat_req_message forward_stat_req;
+	struct speed_dial_stat_req_message speed_dial_req;
+	struct line_stat_req_message line_req;
+	/* no data for CONFIG_STAT_REQ_MESSAGE */
+	/* no data for TIME_DATE_REQ_MESSAGE */
+	/* no data for BUTTON_TEMPLATE_REQ_MESSAGE */
+	/* no data for VERSION_REQ_MESSAGE */
+	struct capabilities_res_message cap_res;
+	struct alarm_message alarm;
+	struct open_receive_channel_ack_message open_receive_channel_ack;
+	/* no data for SOFT_KEY_SET_REQ_MESSAGE */
+	struct soft_key_event_message soft_key_event;
+	/* no data for UNREGISTER_MESSAGE */
+	/* no data for SOFT_KEY_TEMPLATE_REQ_MESSAGE */
+	struct headset_status_message headset_status;
+	struct register_available_lines_message reg_lines;
+	/* see field "data" for DEVICE_TO_USER_DATA_MESSAGE */
+	/* see field "data" for DEVICE_TO_USER_DATA_RESPONSE_MESSAGE */
+	struct service_url_stat_req_message service_url_req;
+	struct feature_stat_req_message feature_req;
+	/* see field "extended_data" for DEVICE_TO_USER_DATA_VERSION1_MESSAGE */
+	/* see field "extended_data" for DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE */
+	struct register_ack_message reg_ack;
+	struct start_tone_message start_tone;
+	struct stop_tone_message stop_tone;
+	struct set_ringer_message ringer;
+	struct set_lamp_message lamp;
+	struct set_speaker_mode_message speaker_mode;
+	struct start_media_transmission_message start_media;
+	struct stop_media_transmission_message stop_media;
+	struct call_info_message call_info;
+	struct forward_stat_message forward_stat;
+	struct speed_dial_stat_res_message speed_dial_res;
+	struct line_stat_res_message line_res;
+	struct config_stat_res_message config_res;
+	struct define_time_date_message define_time_date;
+	struct button_template_message button_template;
+	struct version_message version;
+	/* no data for CAPABILITIES_REQ_MESSAGE */
+	struct register_reject_message reg_rej;
+	struct reset_message reset;
+	/* no data for KEEP_ALIVE_ACK_MESSAGE */
+	struct open_receive_channel_message open_receive_channel;
+	struct close_receive_channel_message close_receive_channel;
+	struct soft_key_template_res_message soft_key_template;
+	struct soft_key_set_res_message soft_key_set;
+	struct select_soft_keys_message select_soft_keys;
+	struct call_state_message call_state;
+	struct display_prompt_status_message display_prompt_status;
+	struct clear_prompt_status_message clear_prompt_status;
+	struct activate_call_plane_message activate_call_plane;
+	struct unregister_ack_message unregister_ack;
+	struct back_space_req_message back_space_req;
+	struct dialed_number_message dialed_number;
+	/* see field "data" for USER_TO_DEVICE_DATA_MESSAGE */
+	struct feature_stat_res_message feature_res;
+	struct display_pri_notify_message display_pri_notify;
+	struct service_url_stat_res_message service_url_res;
+	/* see field "extended_data" for USER_TO_DEVICE_DATA_VERSION1_MESSAGE */
 
 	struct data_message data;
 	struct extended_data_message extended_data;
 
-    uint16_t as_uint16;
-    char as_char[1];
+	uint16_t as_uint16;
+	char as_char[1];
 };
 
 /*
