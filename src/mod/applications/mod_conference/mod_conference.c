@@ -1724,7 +1724,12 @@ static void conference_loop_fn_volume_talk_up(conference_member_t *member, calle
 	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 	//conference_member_say(member, msg, 0);
 
-	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", member->volume_out_level);
+	if (member->volume_out_level < 0) {
+		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_out_level);
+		conference_member_play_file(member, msg, 0);
+	}
+
+	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_out_level));
 	conference_member_play_file(member, msg, 0);
 
 }
