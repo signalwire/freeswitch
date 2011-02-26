@@ -922,7 +922,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *threa
 			sec = 0;
 		}
 
-		if (++reg_sec == SQL_REG_TIMEOUT) {
+		if (switch_test_flag((&runtime), SCF_USE_SQL) && ++reg_sec == SQL_REG_TIMEOUT) {
 			switch_core_expire_registration(0);
 			reg_sec = 0;
 		}
@@ -1648,6 +1648,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, c
 	switch_cache_db_handle_t *dbh;
 	char *sql;
 
+	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 		return SWITCH_STATUS_FALSE;
@@ -1691,6 +1695,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 	switch_cache_db_handle_t *dbh;
 	char *sql;
 
+	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 		return SWITCH_STATUS_FALSE;
@@ -1716,6 +1724,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
 	switch_cache_db_handle_t *dbh;
 	char *sql;
 	switch_time_t now;
+
+	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");

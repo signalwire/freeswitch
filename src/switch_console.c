@@ -1765,6 +1765,11 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 	char *mydata = NULL, *argv[11] = { 0 };
 	int argc, x;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_core_flag_t cflags = switch_core_flags();
+
+	if (!(cflags & SCF_USE_SQL)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (string && (mydata = strdup(string))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
