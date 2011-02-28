@@ -5188,7 +5188,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
-	if ((tmp = switch_channel_get_variable(channel, "switch_r_sdp"))) {
+	if ((tmp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
 		tech_pvt->remote_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
