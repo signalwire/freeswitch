@@ -1223,7 +1223,7 @@ static switch_status_t load_agent(const char *agent_name)
 					cc_agent_update("reject_delay_time", reject_delay_time, agent_name);
 				}
 				if (busy_delay_time) {
-					cc_agent_update("busy_delay_time", reject_delay_time, agent_name);
+					cc_agent_update("busy_delay_time", busy_delay_time, agent_name);
 				}
 
 				if (type && res == CC_STATUS_AGENT_ALREADY_EXIST) {
