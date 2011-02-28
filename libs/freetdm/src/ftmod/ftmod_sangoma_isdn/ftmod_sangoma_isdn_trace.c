@@ -139,7 +139,6 @@ void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 	memcpy(raw_data, data, data_len);
 	sigev.raw.data = raw_data;
 	sigev.raw.len = data_len;
-	sigev.raw.autofree = 1;
 	ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
 }
 
@@ -258,7 +257,6 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 		memcpy(raw_data, data, data_len);
 		sigev.raw.data = raw_data;
 		sigev.raw.len = data_len;
-		sigev.raw.autofree = 1;
 		ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
 	}
 }
@@ -841,7 +839,7 @@ static ftdm_status_t sngisdn_get_frame_info(uint8_t *data, uint32_t data_len, ft
 			uint32_t tmp_len = 0;
 			char tmp[1000];
 			print_hex_dump(tmp, &tmp_len, data, 0, data_len);			
-			ftdm_log(FTDM_LOG_WARNING, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
+			ftdm_log(FTDM_LOG_DEBUG, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
 		}
 	}
 

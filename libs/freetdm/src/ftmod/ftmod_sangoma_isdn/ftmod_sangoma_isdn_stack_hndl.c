@@ -160,7 +160,8 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				}
 			}
 
-			/* this should be in get_facility_ie function, fix this later */
+#if 1
+			/* this section will not be needed once asn decoding function with key-value pairs is implemented */
 			if (signal_data->facility == SNGISDN_OPT_TRUE && conEvnt->facilityStr.eh.pres) {
 				/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 				uint16_t ret_val;
@@ -187,6 +188,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 				}
 			}
+#endif
 			
 			if (signal_data->overlap_dial == SNGISDN_OPT_TRUE && !conEvnt->sndCmplt.eh.pres) {
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);

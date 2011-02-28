@@ -223,6 +223,7 @@ typedef struct ftdm_conf_node ftdm_conf_node_t;
 typedef struct ftdm_group ftdm_group_t;
 typedef size_t ftdm_size_t;
 typedef struct ftdm_sigmsg ftdm_sigmsg_t;
+typedef struct ftdm_usrmsg ftdm_usrmsg_t;
 typedef struct ftdm_io_interface ftdm_io_interface_t;
 typedef struct ftdm_stream_handle ftdm_stream_handle_t;
 typedef struct ftdm_queue ftdm_queue_t;
