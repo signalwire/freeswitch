@@ -1947,7 +1947,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 
 			do {
 				sanity--;
-				ready = switch_channel_media_ready(session->channel);
+				ready = switch_channel_media_up(session->channel);
 				switch_cond_next();
 			} while(!ready && sanity);
 
