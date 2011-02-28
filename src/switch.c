@@ -780,7 +780,7 @@ int main(int argc, char *argv[])
 			int i = 0;
 
 			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d from your shell before starting the application.\nauto-adjusting stack size for optimal performance...\n",
-					(int) (rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, local_argv[0]);
+					(int) (rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024);
 			
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
