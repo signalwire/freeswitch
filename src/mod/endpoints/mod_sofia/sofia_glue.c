@@ -3820,6 +3820,7 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 {
 	switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 	sdp_attribute_t *attr;
+	const char *var;
 
 	if (!t38_options) {
 		t38_options = switch_core_session_alloc(tech_pvt->session, sizeof(switch_t38_options_t));
@@ -3898,6 +3899,21 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 	switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
 	switch_channel_set_private(tech_pvt->channel, "t38_options", t38_options);
 	switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+
+	if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_execute_on_image"))) {
+		char *app, *arg = NULL;
+		app = switch_core_session_strdup(tech_pvt->session, var);
+		
+		if (strstr(app, "::")) {
+			switch_core_session_execute_application_async(tech_pvt->session, app, arg);
+		} else {
+			if ((arg = strchr(app, ' '))) {
+				*arg++ = '\0';
+			}
+			
+			switch_core_session_execute_application(tech_pvt->session, app, arg);
+		}		
+	}
 
 	return t38_options;
 }
