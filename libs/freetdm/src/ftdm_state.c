@@ -40,20 +40,6 @@ FTDM_STR2ENUM(ftdm_str2ftdm_channel_state, ftdm_channel_state2str, ftdm_channel_
 FTDM_ENUM_NAMES(CHANNEL_STATE_STATUS_NAMES, CHANNEL_STATE_STATUS_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_state_status, ftdm_state_status2str, ftdm_state_status_t, CHANNEL_STATE_STATUS_NAMES, FTDM_STATE_STATUS_INVALID)
 
-/* This function is only needed for boost and we should get rid of it at the next refactoring */
-FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *fchan)
-{
-	ftdm_channel_lock(fchan);
-
-	if (fchan->init_state != FTDM_CHANNEL_STATE_DOWN) {
-		ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, fchan, fchan->init_state, 1);
-		fchan->init_state = FTDM_CHANNEL_STATE_DOWN;
-	}
-
-	ftdm_channel_unlock(fchan);
-	return FTDM_SUCCESS;
-}
-
 FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const char *func, int line, ftdm_channel_t *fchan)
 {
 	uint8_t hindex = 0;

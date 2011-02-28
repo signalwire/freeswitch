@@ -1684,11 +1684,6 @@ FT_DECLARE(const char *) ftdm_channel_get_last_state_str(const ftdm_channel_t *c
  */
 FT_DECLARE(char *) ftdm_channel_get_history_str(const ftdm_channel_t *channel);
 
-/*! \brief Initialize channel state for an outgoing call
- *  \deprecated This API is only used for boost signaling
- */
-FT_DECLARE(ftdm_status_t) ftdm_channel_init(ftdm_channel_t *ftdmchan);
-
 /*! \brief Enable/disable blocking mode in the channels for this span */
 FT_DECLARE(ftdm_status_t) ftdm_span_set_blocking_mode(const ftdm_span_t *span, ftdm_bool_t enabled);
 

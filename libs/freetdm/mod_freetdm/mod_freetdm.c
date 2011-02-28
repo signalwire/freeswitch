@@ -408,8 +408,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	globals.calls++;
 	switch_mutex_unlock(globals.mutex);
 
-	ftdm_channel_init(tech_pvt->ftdmchan);
-
 	//switch_channel_set_flag(channel, CF_ACCEPT_CNG);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1431,8 +1429,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
             		goto fail;
 		}
 
-		ftdm_channel_init(caller_data.fchan);
-		
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
