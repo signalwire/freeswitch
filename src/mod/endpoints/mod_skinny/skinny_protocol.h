@@ -131,7 +131,7 @@ struct PACKED line_stat_req_message {
 #define CAPABILITIES_RES_MESSAGE 0x0010
 struct PACKED station_capabilities {
     uint32_t codec;
-    uint16_t frames;
+    uint16_t max_frames_per_packet;
     char reserved[10];
 };
 
