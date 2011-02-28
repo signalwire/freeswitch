@@ -162,7 +162,10 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 
 #if 1
 			/* this section will not be needed once asn decoding function with key-value pairs is implemented */
-			if (signal_data->facility == SNGISDN_OPT_TRUE && conEvnt->facilityStr.eh.pres) {
+			if (signal_data->facility == SNGISDN_OPT_TRUE &&
+				signal_data->facility_ie_decode != SNGISDN_OPT_FALSE &&
+				conEvnt->facilityStr.eh.pres) {
+				
 				/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 				uint16_t ret_val;
 				char retrieved_str[255];
@@ -832,7 +835,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				If there will be no information following, but current FACILITY IE contains a caller name, returns 0
 				If there will be information following, returns 1
 				*/
-
+				
 				if (sng_isdn_retrieve_facility_caller_name(&facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len, retrieved_str) == 0) {
 					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 				} else {
