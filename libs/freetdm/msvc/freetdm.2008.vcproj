@@ -429,6 +429,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\ftdm_variables.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\ftdm_callerid.c"
 				>
 			</File>

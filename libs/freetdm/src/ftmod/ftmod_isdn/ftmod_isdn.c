@@ -285,10 +285,7 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(isdn_get_span_sig_status)
  */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
-	ftdm_status_t status = FTDM_SUCCESS;
-	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND);
-	ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
-	return status;
+	return FTDM_SUCCESS;
 }
 
 /**
@@ -300,7 +297,14 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 #ifdef __TODO__
 static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 {
+#if 1 /* FIXME caller_data.raw_data does not exist anymore, see docs/variables.txt for more info */
+	Q931mes_Generic empty_gen;
+	Q931mes_Generic *gen = &empty_gen;
+	
+	memset(&empty_gen, 0, sizeof(empty_gen)) ;
+#else
 	Q931mes_Generic *gen = (Q931mes_Generic *) caller_data->raw_data;
+#endif
 	Q931ie_BearerCap BearerCap;
 	Q931ie_ChanID ChanID = { 0 };
 	Q931ie_CallingNum CallingNum;
@@ -1095,12 +1099,16 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 #ifdef __TODO_OR_REMOVE__
 						ftdmchan->caller_data.CRV = gen->CRV;
 #endif
+#if 0 /* FIXME */
 						if (cplen > sizeof(caller_data->raw_data)) {
 							cplen = sizeof(caller_data->raw_data);
 						}
+#endif
 						gen->CRVFlag = !(gen->CRVFlag);
+#if 0 /* FIXME */						
 						memcpy(caller_data->raw_data, msg, cplen);
 						caller_data->raw_data_len = cplen;
+#endif
 						fail = 0;
 					}
 				}
@@ -1298,11 +1306,19 @@ static int ftdm_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 {
-	Q931mes_Generic *gen = (Q931mes_Generic *) ftdmchan->caller_data.raw_data;
 	ftdm_isdn_data_t *isdn_data = ftdmchan->span->signal_data;
 	ftdm_span_t *span = ftdm_channel_get_span(ftdmchan);
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
+
+#if 1 /* FIXME caller_data.raw_data does not exist anymore, see docs/variables.txt for more info */
+	Q931mes_Generic empty_gen;
+	Q931mes_Generic *gen = &empty_gen;
+	
+	memset(&empty_gen, 0, sizeof(empty_gen)) ;
+#else
+	Q931mes_Generic *gen = (Q931mes_Generic *) ftdmchan->caller_data.raw_data;
+#endif
 
 	ftdm_log(FTDM_LOG_DEBUG, "%d:%d STATE [%s]\n",
 			ftdm_channel_get_span_id(ftdmchan),
@@ -1431,7 +1447,9 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				gen->MesType = Q931mes_CONNECT;
 				gen->BearerCap = 0;
 				gen->CRVFlag = 1;	/* inbound call */
+#if 0 /* FIXME */
 				Q931Rx43(&isdn_data->q931, gen, ftdmchan->caller_data.raw_data_len);
+#endif
 			}
 		}
 		break;
