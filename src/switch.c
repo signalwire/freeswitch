@@ -404,7 +404,8 @@ int main(int argc, char *argv[])
 #endif
 		"\t-help                  -- this message\n" "\t-version               -- print the version and exit\n"
 #ifdef HAVE_SETRLIMIT
-		"\t-waste                 -- allow memory waste\n" "\t-core                  -- dump cores\n"
+		"\t-waste                 -- allow memory waste\n" 
+		"\t-core                  -- dump cores\n"
 #endif
 		"\t-hp                    -- enable high priority settings\n"
 		"\t-vg                    -- run under valgrind\n"
@@ -552,6 +553,13 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-waste")) {
+			fprintf(stderr, "WARNING: Wasting up to 8 megs of memory per thread.\n");
+			sleep(2);
+			waste++;
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-no-auto-stack")) {
 			waste++;
 			known_opt++;
 		}
@@ -771,7 +779,7 @@ int main(int argc, char *argv[])
 			char buf[1024] = "";
 			int i = 0;
 
-			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance...\n",
+			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d from your shell before starting the application.\nauto-adjusting stack size for optimal performance...\n",
 					(int) (rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024, local_argv[0]);
 			
 			memset(&rlp, 0, sizeof(rlp));
