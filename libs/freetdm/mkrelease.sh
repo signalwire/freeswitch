@@ -101,7 +101,7 @@ release="freetdm-$VERSION"
 
 # ABI compatibility check
 if [ -x /usr/local/bin/ftdm_abi_check.py ]; then
-	/usr/local/bin/ftdm_abi_check.py $major
+	/usr/local/bin/ftdm_abi_check.py $(pwd) $major
 	if [ $? -ne 0 ]; then
 		echo "ABI compabitility test failed, not creating release. Either increment the major version number or fix the interface."
 		exit 1
