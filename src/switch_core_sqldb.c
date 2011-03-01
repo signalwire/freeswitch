@@ -431,13 +431,13 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
 	char *tmp = NULL;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
+	
+	if (io_mutex) switch_mutex_lock(io_mutex);
 
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
-	}
-
-	if (err)
+	if (err) {
 		*err = NULL;
+	}
 
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
@@ -469,9 +469,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	}
 
 
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
 }
@@ -556,10 +554,9 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	switch (dbh->type) {
 	default:
@@ -569,9 +566,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 		break;
 	}
 
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
 
@@ -599,11 +594,9 @@ SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
 SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t *dbh, char *sql, char *str, size_t len, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
-
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	switch (dbh->type) {
 	case SCDB_TYPE_CORE_DB:
@@ -612,7 +605,7 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 
 			if (switch_core_db_prepare(dbh->native_handle.core_db_dbh, sql, -1, &stmt, 0)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error [%s]!\n", sql);
-				return NULL;
+				goto end;
 			} else {
 				int running = 1;
 				int colcount;
@@ -652,9 +645,7 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 
  end:
 
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status == SWITCH_STATUS_SUCCESS ? str : NULL;
 
@@ -665,18 +656,20 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 	char *errmsg = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint8_t forever = 0;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (!retries) {
 		forever = 1;
 		retries = 1000;
 	}
 
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
-	}
-
 	while (retries > 0) {
+
+		if (io_mutex) switch_mutex_lock(io_mutex);
 		switch_cache_db_execute_sql_real(dbh, sql, &errmsg);
+		if (io_mutex) switch_mutex_unlock(io_mutex);
+
+		
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
 			switch_safe_free(errmsg);
@@ -691,11 +684,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 			break;
 		}
 	}
-
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
-
+	
 	return status;
 }
 
@@ -707,15 +696,14 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 	uint8_t forever = 0;
 	unsigned begin_retries = 100;
 	uint8_t again = 0;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (!retries) {
 		forever = 1;
 		retries = 1000;
 	}
 
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_lock(io_mutex);
 
  again:
 
@@ -726,6 +714,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 			switch_cache_db_execute_sql_real(dbh, "BEGIN", &errmsg);
 		} else {
 			switch_odbc_status_t result;
+
 			if ((result = switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
 				char tmp[100];
 				switch_snprintf(tmp, sizeof(tmp), "%s-%i", "Unable to Set AutoCommit Off", result);
@@ -753,22 +742,22 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 
 				goto again;
 			}
-
+			
 			switch_yield(100000);
 
 			if (begin_retries == 0) {
 				goto done;
 			}
-		} else {
-			break;
+
+			continue;
 		}
 
+		break;
 	}
 
 	while (retries > 0) {
 
 		switch_cache_db_execute_sql(dbh, sql, &errmsg);
-
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
@@ -795,10 +784,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 		switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 1);
 	}
 
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
-
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
 }
@@ -808,13 +794,13 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
-	if (err)
+	if (err) {
 		*err = NULL;
-
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
 	}
+
+	if (io_mutex) switch_mutex_lock(io_mutex);
 
 
 	switch (dbh->type) {
@@ -836,9 +822,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 		break;
 	}
 
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
 }
@@ -848,15 +832,14 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 {
 	char *errmsg;
 	switch_bool_t r = SWITCH_TRUE;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
 		switch_cache_db_execute_sql(dbh, (char *)test_sql, NULL);
 		return SWITCH_TRUE;
 	}
 
-	if (dbh->io_mutex) {
-		switch_mutex_lock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
@@ -901,9 +884,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	}
 
 
-	if (dbh->io_mutex) {
-		switch_mutex_unlock(dbh->io_mutex);
-	}
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return r;
 }
