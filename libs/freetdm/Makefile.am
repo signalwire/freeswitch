@@ -76,6 +76,7 @@ libfreetdm_la_SOURCES = \
 	$(SRC)/ftdm_queue.c \
 	$(SRC)/ftdm_sched.c \
 	$(SRC)/ftdm_call_utils.c \
+	$(SRC)/ftdm_variables.c \
 	$(SRC)/ftdm_config.c \
 	$(SRC)/ftdm_callerid.c \
 	$(SRC)/fsk.c \
@@ -248,7 +249,7 @@ endif
 
 if HAVE_OPENR2
 mod_LTLIBRARIES += ftmod_r2.la
-ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c 
+ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c  $(SRC)/ftmod/ftmod_r2/ftmod_r2_io_mf_lib.c
 ftmod_r2_la_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
 ftmod_r2_la_LDFLAGS = -shared -module -avoid-version -lopenr2
 ftmod_r2_la_LIBADD  = libfreetdm.la
