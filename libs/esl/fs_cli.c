@@ -1040,7 +1040,7 @@ int main(int argc, char *argv[])
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
 	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
-	internal_profile.port = 8021;
+	internal_profile.port = 8821;
 	set_fn_keys(&internal_profile);
 
 
@@ -1139,7 +1139,7 @@ int main(int argc, char *argv[])
 				esl_set_string(profiles[pcount].name, cur_cat);
 				esl_set_string(profiles[pcount].host, "localhost");
 				esl_set_string(profiles[pcount].pass, "ClueCon");
-				profiles[pcount].port = 8021;
+				profiles[pcount].port = 8821;
 				set_fn_keys(&profiles[pcount]);
 				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
 				pcount++;
@@ -1218,7 +1218,7 @@ int main(int argc, char *argv[])
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	
 	if (argv_host) {
-		if (argv_port && profile->port != 8021) {
+		if (argv_port && profile->port != 8821) {
 			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s:%u@%s> ", profile->host, profile->port, profile->name);
 		} else {
 			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s@%s> ", profile->host, profile->name);
