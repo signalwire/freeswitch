@@ -4753,8 +4753,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp rtp_session, uint queue_frames, uint max_queue_frames, uint samples_per_packet, uint samples_per_second) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), queue_frames, max_queue_frames, samples_per_packet, samples_per_second);
+  public static switch_status_t switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp rtp_session, uint queue_frames, uint max_queue_frames, uint samples_per_packet, uint samples_per_second, uint max_drift) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_jitter_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), queue_frames, max_queue_frames, samples_per_packet, samples_per_second, max_drift);
     return ret;
   }
 
@@ -12711,7 +12711,7 @@ class freeswitchPINVOKE {
   public static extern int switch_rtp_activate_rtcp(HandleRef jarg1, int jarg2, ushort jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_jitter_buffer")]
-  public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5);
+  public static extern int switch_rtp_activate_jitter_buffer(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, uint jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_debug_jitter_buffer")]
   public static extern int switch_rtp_debug_jitter_buffer(HandleRef jarg1, string jarg2);
@@ -24951,6 +24951,8 @@ public enum switch_event_types_t {
   SWITCH_EVENT_NAT,
   SWITCH_EVENT_RECORD_START,
   SWITCH_EVENT_RECORD_STOP,
+  SWITCH_EVENT_PLAYBACK_START,
+  SWITCH_EVENT_PLAYBACK_STOP,
   SWITCH_EVENT_CALL_UPDATE,
   SWITCH_EVENT_FAILURE,
   SWITCH_EVENT_SOCKET_DATA,
