@@ -477,7 +477,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (SWITCH_READ_ACCEPTABLE(status)) {
 			read_frame_count++;
 			if (switch_test_flag(read_frame, SFF_CNG)) {
-				printf("FUCK YOU %s\n", switch_channel_get_name(chan_a));
 				if (silence_val) {
 					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, silence_val);
 					read_frame = &silence_frame;

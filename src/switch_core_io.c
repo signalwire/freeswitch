@@ -360,12 +360,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 				
 					if (session->plc) {
-						if (switch_test_flag(read_frame, SFF_PLC) || 1) {
+						if (switch_test_flag(read_frame, SFF_PLC)) {
 							plc_fillin(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
 							switch_clear_flag(read_frame, SFF_PLC);
-							printf("SHIT %d %s\n", switch_test_flag(read_frame, SFF_CNG), switch_core_session_get_name(session));
 						} else {
-							printf("ASS\n");
 							plc_rx(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
 						}
 					}
