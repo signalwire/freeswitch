@@ -307,6 +307,7 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 		return OR2_CAUSE_NORMAL_CLEARING;
 
 	case FTDM_CAUSE_USER_BUSY:
+	case FTDM_CAUSE_CALL_REJECTED:
 		return OR2_CAUSE_BUSY_NUMBER;
 
 	case FTDM_CAUSE_SWITCH_CONGESTION:
@@ -334,7 +335,7 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 		return OR2_CAUSE_GLARE;
 
 	}
-	ftdm_log_chan(fchan, FTDM_LOG_WARNING, "freetdm hangup cause %d mapped to openr2 cause %s\n",
+	ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "freetdm hangup cause %d mapped to openr2 cause %s\n",
 			fchan->caller_data.hangup_cause, openr2_proto_get_disconnect_string(OR2_CAUSE_UNSPECIFIED));
 	return OR2_CAUSE_UNSPECIFIED;
 }

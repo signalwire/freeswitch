@@ -493,7 +493,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch (chantype) {
 	case FTDM_CHAN_TYPE_FXO:
 	case FTDM_CHAN_TYPE_EM:
-	case FTDM_CHAN_TYPE_CAS:
 		{
 			ftdm_channel_call_hangup(tech_pvt->ftdmchan);
 		}
@@ -510,6 +509,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 			}
 		}
 		break;
+	case FTDM_CHAN_TYPE_CAS:
 	case FTDM_CHAN_TYPE_B:
 		{
 			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
@@ -521,8 +521,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	default: 
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled channel type %d for channel %s\n", chantype,
-                    switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled channel type %d for channel %s\n", chantype, switch_channel_get_name(channel));
 		}
 		break;
 	}
