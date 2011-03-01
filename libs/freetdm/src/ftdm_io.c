@@ -4047,7 +4047,7 @@ done:
 	return status;
 }
 
-FT_DECLARE(ftdm_iterator_t) *ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
+FT_DECLARE(ftdm_iterator_t *) ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter)
 {
 	int allocated = 0;
 	if (iter) {
