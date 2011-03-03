@@ -366,7 +366,7 @@ int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 		break;
 	default:
 		/* we should never get here, so this is a really bad error */
-		snmp_log(LOG_ERR, "Unknown mode (%d) in handle_foo\n", reqinfo->mode );
+		snmp_log(LOG_ERR, "Unknown mode (%d) in handle_channelList\n", reqinfo->mode );
 		return SNMP_ERR_GENERR;
 	}
 
