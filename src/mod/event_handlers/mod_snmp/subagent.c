@@ -67,42 +67,42 @@ static int channelList_callback(void *pArg, int argc, char **argv, char **column
 	netsnmp_tdata_row *row;
 
 	switch_zmalloc(entry, sizeof(chan_entry_t));
-	if (!entry)
-		return 0;
 
 	row = netsnmp_tdata_create_row();
+
 	if (!row) {
 		switch_safe_free(entry);
 		return 0;
 	}
+
 	row->data = entry;
 
 	entry->idx = idx++;
-	strncpy(entry->uuid, argv[0], sizeof(entry->uuid));
-	strncpy(entry->direction, argv[1], sizeof(entry->direction));
+	strncpy(entry->uuid, switch_str_nil(argv[0]), sizeof(entry->uuid));
+	strncpy(entry->direction, switch_str_nil(argv[1]), sizeof(entry->direction));
 	entry->created_epoch = atoi(argv[3]);
-	strncpy(entry->name, argv[4], sizeof(entry->name));
-	strncpy(entry->state, argv[5], sizeof(entry->state));
-	strncpy(entry->cid_name, argv[6], sizeof(entry->cid_name));
-	strncpy(entry->cid_num, argv[7], sizeof(entry->cid_num));
-	strncpy(entry->dest, argv[9], sizeof(entry->dest));
-	strncpy(entry->application, argv[10], sizeof(entry->application));
-	strncpy(entry->application_data, argv[11], sizeof(entry->application_data));
-	strncpy(entry->dialplan, argv[12], sizeof(entry->dialplan));
-	strncpy(entry->context, argv[13], sizeof(entry->context));
-	strncpy(entry->read_codec, argv[14], sizeof(entry->read_codec));
+	strncpy(entry->name, switch_str_nil(argv[4]), sizeof(entry->name));
+	strncpy(entry->state, switch_str_nil(argv[5]), sizeof(entry->state));
+	strncpy(entry->cid_name, switch_str_nil(argv[6]), sizeof(entry->cid_name));
+	strncpy(entry->cid_num, switch_str_nil(argv[7]), sizeof(entry->cid_num));
+	strncpy(entry->dest, switch_str_nil(argv[9]), sizeof(entry->dest));
+	strncpy(entry->application, switch_str_nil(argv[10]), sizeof(entry->application));
+	strncpy(entry->application_data, switch_str_nil(argv[11]), sizeof(entry->application_data));
+	strncpy(entry->dialplan, switch_str_nil(argv[12]), sizeof(entry->dialplan));
+	strncpy(entry->context, switch_str_nil(argv[13]), sizeof(entry->context));
+	strncpy(entry->read_codec, switch_str_nil(argv[14]), sizeof(entry->read_codec));
 	entry->read_rate = atoi(argv[15]);
 	entry->read_bitrate = atoi(argv[16]);
-	strncpy(entry->write_codec, argv[17], sizeof(entry->write_codec));
+	strncpy(entry->write_codec, switch_str_nil(argv[17]), sizeof(entry->write_codec));
 	entry->write_rate = atoi(argv[18]);
 	entry->write_bitrate = atoi(argv[19]);
 
 	memset(&entry->ip_addr, 0, sizeof(entry->ip_addr));
-	if (strchr(argv[8], ':')) {
-		switch_inet_pton(AF_INET6, argv[8], &entry->ip_addr);
+	if (strchr(switch_str_nil(argv[8]), ':')) {
+		switch_inet_pton(AF_INET6, switch_str_nil(argv[8]), &entry->ip_addr);
 		entry->addr_family = AF_INET6;
 	} else {
-		switch_inet_pton(AF_INET, argv[8], &entry->ip_addr);
+		switch_inet_pton(AF_INET, switch_str_nil(argv[8]), &entry->ip_addr);
 		entry->addr_family = AF_INET;
 	}
 
@@ -128,7 +128,7 @@ void channelList_free(netsnmp_cache *cache, void *magic)
 int channelList_load(netsnmp_cache *cache, void *vmagic)
 {
 	switch_cache_db_handle_t *dbh;
-	char sql[1024] = "", hostname[256] = "";
+	char sql[1024] = "";
 
 	channelList_free(cache, NULL);
 
@@ -137,8 +137,8 @@ int channelList_load(netsnmp_cache *cache, void *vmagic)
 	}
 
 	idx = 1;
-	gethostname(hostname, sizeof(hostname));
-	sprintf(sql, "SELECT * FROM channels WHERE hostname='%s' ORDER BY created_epoch", hostname);
+
+	sprintf(sql, "SELECT * FROM channels WHERE hostname='%s' ORDER BY created_epoch", switch_core_get_hostname());
 	switch_cache_db_execute_sql_callback(dbh, sql, channelList_callback, NULL, NULL);
 
 	switch_cache_db_release_db_handle(&dbh);
