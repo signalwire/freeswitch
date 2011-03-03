@@ -2,7 +2,7 @@
 
 bz="false"
 
-BUNZUP=/usr/bin/bunzip2
+BUNZIP=/usr/bin/bunzip2
 TAR=@TAR@
 ZCAT=@ZCAT@
 WGET=@WGET@
