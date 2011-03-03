@@ -91,11 +91,11 @@ static int channelList_callback(void *pArg, int argc, char **argv, char **column
 	strncpy(entry->dialplan, switch_str_nil(argv[12]), sizeof(entry->dialplan));
 	strncpy(entry->context, switch_str_nil(argv[13]), sizeof(entry->context));
 	strncpy(entry->read_codec, switch_str_nil(argv[14]), sizeof(entry->read_codec));
-	entry->read_rate = atoi(argv[15]);
-	entry->read_bitrate = atoi(argv[16]);
+	entry->read_rate = atoi(switch_str_nil(argv[15]));
+	entry->read_bitrate = atoi(switch_str_nil(argv[16]));
 	strncpy(entry->write_codec, switch_str_nil(argv[17]), sizeof(entry->write_codec));
-	entry->write_rate = atoi(argv[18]);
-	entry->write_bitrate = atoi(argv[19]);
+	entry->write_rate = atoi(switch_str_nil(argv[18]));
+	entry->write_bitrate = atoi(switch_str_nil(argv[19]));
 
 	memset(&entry->ip_addr, 0, sizeof(entry->ip_addr));
 	if (strchr(switch_str_nil(argv[8]), ':')) {
@@ -282,6 +282,9 @@ int handle_channelList(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 	switch (reqinfo->mode) {
 	case MODE_GET:
 		for (request = requests; request; request = request->next) {
+			if (request->processed)
+				continue;
+
 			table_info = netsnmp_extract_table_info(request);
 			entry = (chan_entry_t *) netsnmp_tdata_extract_entry(request);
 
