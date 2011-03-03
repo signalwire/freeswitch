@@ -516,6 +516,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_
 			switch_set_flag(this, S_HUP);
 			uuid = strdup(switch_core_session_get_uuid(session));
 			switch_channel_set_state(switch_core_session_get_channel(session), CS_SOFT_EXECUTE);
+			switch_channel_wait_for_state(switch_core_session_get_channel(session), switch_core_session_get_channel(a_leg->session), CS_SOFT_EXECUTE);
 		}
 	}
 }

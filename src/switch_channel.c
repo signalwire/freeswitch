@@ -1206,18 +1206,20 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 }
 
 
-SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *other_channel, switch_channel_state_t want_state, uint32_t timeout)
+SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *channel, switch_channel_state_t want_state, uint32_t timeout)
 {
 	switch_channel_state_t state;
 	uint32_t count = 0;
 
 	for (;;) {
-		state = switch_channel_get_running_state(other_channel);
+		state = switch_channel_get_running_state(channel);
 
-		if (state >= want_state) {
+		if ((channel->state == channel->running_state && channel->running_state == want_state) || channel->state >= CS_HANGUP) {
 			break;
 		}
+
 		switch_cond_next();
+
 		if (++count >= timeout) {
 			break;
 		}
