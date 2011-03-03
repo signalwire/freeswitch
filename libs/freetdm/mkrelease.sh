@@ -89,6 +89,11 @@ then
 	mkdir -p $INSTALLPREFIX || exit 1
 fi
 
+if [ ! -d $INSTALLPREFIX/bin-releases ]
+then
+	mkdir -p $INSTALLPREFIX/bin-releases || exit 1
+fi
+
 # attempt to compile freetdm
 echo "Build freetdm and mod_freetdm now..."
 make all mod_freetdm || exit 1
@@ -101,19 +106,16 @@ release="freetdm-$VERSION"
 
 # ABI compatibility check
 if [ -x /usr/local/bin/ftdm_abi_check.py ]; then
-	/usr/local/bin/ftdm_abi_check.py --release_path=$(pwd) --archive_path=/usr/local/freetdm_releases --major_version=$major
+	/usr/local/bin/ftdm_abi_check.py --release_path=$(pwd) --archive_path=$INSTALLPREFIX/bin-releases --version=$VERSION
+
 	if [ $? -ne 0 ]; then
 		echo "ABI compabitility test failed, not creating release. Either increment the major version number or fix the interface."
 		exit 1
 	fi
 else
-	echo -ne "\n\nWARNING: /usr/local/bin/abi_check.py not found, skipping ABI compatibility test\n\n"
+	echo -ne "\n\nWARNING: /usr/local/bin/ftdm_abi_check.py not found, skipping ABI compatibility test\n\n"
 fi
 
-# clean the source tree
-rm -rf $LIBSNG_ISDN_DIR $LIBSNG_SS7_DIR
-make clean
-make mod_freetdm-clean
 if [ $NODOCS = "NO" ]
 then
 	make dox || exit 1
@@ -121,15 +123,28 @@ fi
 
 echo "Creating $release ($major.$minor.$micro) at $INSTALLPREFIX/$release (directory will be removed if exists already) ... "
 
-mkdir -p $INSTALLPREFIX/$release
+mkdir -p $INSTALLPREFIX/$release $INSTALLPREFIX/bin-releases/$major/$release
 
 cp -r ./* $INSTALLPREFIX/$release
+
+# copy ABI compatibility reports to release
+if [ -d compat_reports ]; then
+	cp -r ./compat_reports $INSTALLPREFIX/$release
+	rm -rf ./compat_reports
+fi
 
 find $INSTALLPREFIX/ -name .libs -exec rm -rf {} \;
 find $INSTALLPREFIX/ -name .deps -exec rm -rf {} \;
 find $INSTALLPREFIX/ -name *.so -exec rm -rf {} \;
 find $INSTALLPREFIX/ -name *.lo -exec rm -rf {} \;
 
+cp -r ./* $INSTALLPREFIX/bin-releases/$major/$release
+cp -r ./.libs $INSTALLPREFIX/bin-releases/$major/$release
+
+# clean the source tree
+rm -rf $LIBSNG_ISDN_DIR $LIBSNG_SS7_DIR
+make clean
+make mod_freetdm-clean
 
 tar -C $INSTALLPREFIX -czf $INSTALLPREFIX/$release.tar.gz $release/
 
