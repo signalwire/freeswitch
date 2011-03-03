@@ -3549,6 +3549,9 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 		return SWITCH_STATUS_GENERR;
 
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
+	switch_clear_flag_locked(member, MFLAG_TALKING);
+
+
 	if (!zstr(member->conference->muted_sound)) {
 		conference_member_play_file(member, member->conference->muted_sound, 0);
 	} else {
@@ -4344,6 +4347,7 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 				switch_set_flag(rel, RFLAG_CAN_SPEAK | RFLAG_CAN_HEAR);
 				if (nospeak) {
 					switch_clear_flag(rel, RFLAG_CAN_SPEAK);
+					switch_clear_flag_locked(member, MFLAG_TALKING);
 				}
 				if (nohear) {
 					switch_clear_flag(rel, RFLAG_CAN_HEAR);
@@ -5279,6 +5283,7 @@ static void set_mflags(const char *flags, member_flag_t *f)
 		for (i = 0; i < argc && argv[i]; i++) {
 			if (!strcasecmp(argv[i], "mute")) {
 				*f &= ~MFLAG_CAN_SPEAK;
+				*f &= ~MFLAG_TALKING;
 			} else if (!strcasecmp(argv[i], "deaf")) {
 				*f &= ~MFLAG_CAN_HEAR;
 			} else if (!strcasecmp(argv[i], "waste")) {
