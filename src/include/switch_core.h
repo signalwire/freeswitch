@@ -2075,52 +2075,53 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 */
 
 #define CACHE_DB_LEN 256
-	 typedef enum {
-		 CDF_INUSE = (1 << 0),
-		 CDF_PRUNE = (1 << 1)
-	 } cache_db_flag_t;
+typedef enum {
+	CDF_INUSE = (1 << 0),
+	CDF_PRUNE = (1 << 1),
+	CDF_RELEASED = (1 << 2)
+} cache_db_flag_t;
 
-	 typedef enum {
-		 SCDB_TYPE_CORE_DB,
-		 SCDB_TYPE_ODBC
-	 } switch_cache_db_handle_type_t;
+typedef enum {
+	SCDB_TYPE_CORE_DB,
+	SCDB_TYPE_ODBC
+} switch_cache_db_handle_type_t;
 
-	 typedef union {
-		 switch_core_db_t *core_db_dbh;
-		 switch_odbc_handle_t *odbc_dbh;
-	 } switch_cache_db_native_handle_t;
+typedef union {
+	switch_core_db_t *core_db_dbh;
+	switch_odbc_handle_t *odbc_dbh;
+} switch_cache_db_native_handle_t;
 
-	 typedef struct {
-		 char *db_path;
-	 } switch_cache_db_core_db_options_t;
+typedef struct {
+	char *db_path;
+} switch_cache_db_core_db_options_t;
 
-	 typedef struct {
-		 char *dsn;
-		 char *user;
-		 char *pass;
-	 } switch_cache_db_odbc_options_t;
+typedef struct {
+	char *dsn;
+	char *user;
+	char *pass;
+} switch_cache_db_odbc_options_t;
 
-	 typedef union {
-		 switch_cache_db_core_db_options_t core_db_options;
-		 switch_cache_db_odbc_options_t odbc_options;
-	 } switch_cache_db_connection_options_t;
+typedef union {
+	switch_cache_db_core_db_options_t core_db_options;
+	switch_cache_db_odbc_options_t odbc_options;
+} switch_cache_db_connection_options_t;
 
-	 typedef struct {
-		 char name[CACHE_DB_LEN];
-		 switch_cache_db_handle_type_t type;
-		 switch_cache_db_native_handle_t native_handle;
-		 time_t last_used;
-		 switch_mutex_t *mutex;
-		 switch_mutex_t *io_mutex;
-		 switch_memory_pool_t *pool;
-		 int32_t flags;
-		 unsigned long hash;
-		 char creator[CACHE_DB_LEN];
-		 char last_user[CACHE_DB_LEN];
-	 } switch_cache_db_handle_t;
+typedef struct {
+	char name[CACHE_DB_LEN];
+	switch_cache_db_handle_type_t type;
+	switch_cache_db_native_handle_t native_handle;
+	time_t last_used;
+	switch_mutex_t *mutex;
+	switch_mutex_t *io_mutex;
+	switch_memory_pool_t *pool;
+	int32_t flags;
+	unsigned long hash;
+	char creator[CACHE_DB_LEN];
+	char last_user[CACHE_DB_LEN];
+} switch_cache_db_handle_t;
 
 
-	 static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
+static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
 {
 	const char *type_str = "INVALID";
 

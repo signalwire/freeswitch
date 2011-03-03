@@ -51,6 +51,7 @@ static struct {
 	switch_hash_t *dbh_hash;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *cond_mutex;
+	int total_handles;
 } sql_manager;
 
 
@@ -91,7 +92,36 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 
 
 #define SQL_CACHE_TIMEOUT 120
+#define SQL_RELEASE_TIMEOUT 5
 #define SQL_REG_TIMEOUT 15
+
+
+static void sql_release(void)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	switch_cache_db_handle_t *dbh = NULL;
+
+	switch_mutex_lock(sql_manager.dbh_mutex);
+
+	for (hi = switch_hash_first(NULL, sql_manager.dbh_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		
+		if ((dbh = (switch_cache_db_handle_t *) val)) {
+			time_t diff = 0;
+
+			diff = (time_t) switch_epoch_time_now(NULL) - dbh->last_used;
+
+			if (switch_test_flag(dbh, CDF_RELEASED) && diff > SQL_RELEASE_TIMEOUT) {
+				switch_clear_flag(dbh, CDF_INUSE);
+				switch_clear_flag(dbh, CDF_RELEASED);
+			}
+		}
+	}
+
+	switch_mutex_unlock(sql_manager.dbh_mutex);
+}
 
 static void sql_close(time_t prune)
 {
@@ -117,7 +147,12 @@ static void sql_close(time_t prune)
 				diff = (time_t) prune - dbh->last_used;
 			}
 
-			if (prune > 0 && diff < SQL_CACHE_TIMEOUT && !switch_test_flag(dbh, CDF_PRUNE)) {
+			if (switch_test_flag(dbh, CDF_RELEASED) && diff > SQL_RELEASE_TIMEOUT) {
+				switch_clear_flag(dbh, CDF_INUSE);
+				switch_clear_flag(dbh, CDF_RELEASED);
+			}
+			
+			if (prune > 0 && (switch_test_flag(dbh, CDF_INUSE) || (diff < SQL_CACHE_TIMEOUT && !switch_test_flag(dbh, CDF_PRUNE)))) {
 				continue;
 			}
 
@@ -139,6 +174,7 @@ static void sql_close(time_t prune)
 				}
 
 				switch_core_hash_delete(sql_manager.dbh_hash, key);
+				sql_manager.total_handles--;
 				switch_mutex_unlock(dbh->mutex);
 				switch_core_destroy_memory_pool(&dbh->pool);
 				goto top;
@@ -165,21 +201,11 @@ SWITCH_DECLARE(void) switch_cache_db_flush_handles(void)
 }
 
 
-
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh)
 {
 	if (dbh && *dbh) {
-
-		switch ((*dbh)->type) {
-		case SCDB_TYPE_ODBC:
-			{
-				switch_clear_flag((*dbh), CDF_INUSE);
-			}
-			break;
-		default:
-			break;
-		}
-
+		switch_set_flag((*dbh), CDF_RELEASED);
+		(*dbh)->last_used = switch_epoch_time_now(NULL);
 		switch_mutex_unlock((*dbh)->mutex);
 		*dbh = NULL;
 	}
@@ -188,17 +214,7 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 
 SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t **dbh)
 {
-	if (dbh && *dbh) {
-
-		if ((*dbh)->type == SCDB_TYPE_CORE_DB) {
-			switch_set_flag((*dbh), CDF_PRUNE);
-		} else {
-			switch_clear_flag((*dbh), CDF_INUSE);
-		}
-
-		switch_mutex_unlock((*dbh)->mutex);
-		*dbh = NULL;
-	}
+	switch_cache_db_release_db_handle(dbh);
 }
 
 
@@ -224,6 +240,7 @@ SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t 
 
 
 		switch_core_hash_delete(sql_manager.dbh_hash, (*dbh)->name);
+		sql_manager.total_handles--;
 		switch_mutex_unlock((*dbh)->mutex);
 		switch_core_destroy_memory_pool(&(*dbh)->pool);
 		*dbh = NULL;
@@ -239,8 +256,10 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 	void *val;
 	char *key;
 	switch_cache_db_handle_t *dbh = NULL;
-	int prune = 0;
 
+	if (!sql_manager.dbh_hash) {
+		return;
+	}
 	snprintf(thread_str, sizeof(thread_str) - 1, "%lu", (unsigned long) (intptr_t) switch_thread_self());
 	switch_mutex_lock(sql_manager.dbh_mutex);
 
@@ -250,14 +269,11 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 		if ((dbh = (switch_cache_db_handle_t *) val)) {
 			if (switch_mutex_trylock(dbh->mutex) == SWITCH_STATUS_SUCCESS) {
 				if (strstr(dbh->name, thread_str)) {
-					if (dbh->type == SCDB_TYPE_CORE_DB) {
-						switch_set_flag(dbh, CDF_PRUNE);
-						prune++;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,
-										  "Detach cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(dbh->type));
-						switch_clear_flag(dbh, CDF_INUSE);
-					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10,
+									  "Detach cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(dbh->type));
+					switch_set_flag(dbh, CDF_RELEASED);
+					
 				}
 				switch_mutex_unlock(dbh->mutex);
 			}
@@ -265,11 +281,6 @@ SWITCH_DECLARE(void) switch_cache_db_detach(void)
 	}
 
 	switch_mutex_unlock(sql_manager.dbh_mutex);
-
-	if (prune) {
-		sql_close(switch_epoch_time_now(NULL));
-	}
-
 }
 
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t **dbh,
@@ -283,6 +294,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	char db_callsite_str[CACHE_DB_LEN] = "";
 	switch_cache_db_handle_t *new_dbh = NULL;
 	switch_ssize_t hlen = -1;
+	int locked = 0;
 
 	const char *db_name = NULL;
 	const char *db_user = NULL;
@@ -314,11 +326,23 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	snprintf(db_callsite_str, sizeof(db_callsite_str) - 1, "%s:%d", file, line);
 
 	switch_mutex_lock(sql_manager.dbh_mutex);
+
 	if ((new_dbh = switch_core_hash_find(sql_manager.dbh_hash, thread_str))) {
-		switch_set_string(new_dbh->last_user, db_callsite_str);
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
-						  "Reuse Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
-	} else {
+		if ((switch_test_flag(new_dbh, CDF_INUSE) && !switch_test_flag(new_dbh, CDF_RELEASED)) || 
+			switch_test_flag(new_dbh, CDF_PRUNE) || switch_mutex_trylock(new_dbh->mutex) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
+							  "Cached DB handle %s already in use. [%s]\n", new_dbh->name, switch_cache_db_type_name(new_dbh->type));
+			new_dbh = NULL;
+		} else {
+			switch_set_string(new_dbh->last_user, db_callsite_str);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
+							  "Reuse Cached DB handle %s [%s]\n", new_dbh->name, switch_cache_db_type_name(new_dbh->type));
+			locked = 1;
+			switch_clear_flag(new_dbh, CDF_RELEASED);
+		}
+	}
+
+	if (!new_dbh) {
 		switch_hash_index_t *hi;
 		const void *var;
 		void *val;
@@ -340,7 +364,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 					new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
 					switch_set_string(new_dbh->last_user, db_callsite_str);
 					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
-									  "Reuse Unused Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(new_dbh->type));
+									  "Reuse Unused Cached DB handle %s [%s]\n", new_dbh->name, switch_cache_db_type_name(new_dbh->type));
 					break;
 				}
 			}
@@ -388,12 +412,14 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
-						  "Create Cached DB handle %s [%s]\n", thread_str, switch_cache_db_type_name(type));
+						  "Create Cached DB handle %s [%s] %s:%d\n", thread_str, switch_cache_db_type_name(type), file, line);
 
 		switch_core_new_memory_pool(&pool);
 		new_dbh = switch_core_alloc(pool, sizeof(*new_dbh));
 		new_dbh->pool = pool;
 		new_dbh->type = type;
+
+		
 		switch_set_string(new_dbh->name, thread_str);
 		switch_set_flag(new_dbh, CDF_INUSE);
 		new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
@@ -407,9 +433,10 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 
 		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
 		switch_set_string(new_dbh->creator, db_callsite_str);
-		switch_mutex_lock(new_dbh->mutex);
+		if (!locked) switch_mutex_lock(new_dbh->mutex);
 
 		switch_core_hash_insert(sql_manager.dbh_hash, new_dbh->name, new_dbh);
+		sql_manager.total_handles++;
 	}
 
  end:
@@ -815,7 +842,9 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 
 			if (errmsg) {
 				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+				if (!strstr(errmsg, "query abort")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+				}
 				switch_core_db_free(errmsg);
 			}
 		}
@@ -897,7 +926,14 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_db_thread(switch_thread_t *threa
 	sql_manager.db_thread_running = 1;
 
 	while (sql_manager.db_thread_running == 1) {
-		if (++sec == SQL_CACHE_TIMEOUT) {
+		sec++;
+
+		if ((sec % SQL_RELEASE_TIMEOUT) == 0 || sec == 1) {
+			sql_release();
+			wake_thread(0);
+		}
+
+		if (sec == SQL_CACHE_TIMEOUT) {
 			sql_close(switch_epoch_time_now(NULL));		
 			wake_thread(0);
 			sec = 0;
@@ -1914,7 +1950,7 @@ void switch_core_sqldb_stop(void)
 		if (sql_manager.manage) {
 			switch_queue_push(sql_manager.sql_queue[0], NULL);
 			switch_queue_push(sql_manager.sql_queue[1], NULL);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Waiting for unfinished SQL transactions\n");
 			wake_thread(0);
 		}
 
@@ -1948,6 +1984,7 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 	char cleankey_str[CACHE_DB_LEN];
 	char *pos1 = NULL;
 	char *pos2 = NULL;
+	int count = 0;
 
 	switch_mutex_lock(sql_manager.dbh_mutex);
 
@@ -1975,16 +2012,20 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 			strncpy(cleankey_str, key, pos1 - key);
 			strcpy(&cleankey_str[pos1 - key], pos2);
 
-
+			count++;
 			stream->write_function(stream, "%s\n\tType: %s\n\tLast used: %d\n\tFlags: %s, %s\n"
 								   "\tCreator: %s\n\tLast User: %s\n",
 								   cleankey_str,
 								   switch_cache_db_type_name(dbh->type),
 								   diff,
 								   locked ? "Locked" : "Unlocked",
-								   switch_test_flag(dbh, CDF_INUSE) ? "Attached" : "Detached", dbh->creator, dbh->last_user);
+								   switch_test_flag(dbh, CDF_INUSE) ? switch_test_flag(dbh, CDF_RELEASED) ? "Released" : 
+								   "Attached" : "Detached", dbh->creator, dbh->last_user);
 		}
 	}
+
+	stream->write_function(stream, "%d total\n", count);
+
 	switch_mutex_unlock(sql_manager.dbh_mutex);
 }
 
