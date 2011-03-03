@@ -644,7 +644,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 			break;
 		case FTDM_CHANNEL_STATE_TERMINATING:
 			if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE) &&
-								sngisdn_info->glare.suInstId != suInstId) {
+				sngisdn_info->glare.suInstId != suInstId) {
 				/* This release if for the outbound call that we already started clearing */
 
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Received RELEASE for local glared call\n");
@@ -662,7 +662,6 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received RELEASE in an invalid state (%s)\n",
 							ftdm_channel_state2str(ftdmchan->state));
-
 			break;
 	}
 
