@@ -1444,10 +1444,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
+			const char *var = switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_during_bridge");			
 
 			sofia_glue_tech_simplify(tech_pvt);
 			
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (switch_false(var) && switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;
 				int ok = 0;
 				
