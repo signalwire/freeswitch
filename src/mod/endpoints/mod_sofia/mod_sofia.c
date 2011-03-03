@@ -1446,6 +1446,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			const char *var = switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_during_bridge");			
 
+			sofia_glue_tech_track(tech_pvt->profile, session);
+			
 			sofia_glue_tech_simplify(tech_pvt);
 			
 			if (switch_false(var) && switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -1483,6 +1485,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *val;
 			int ok = 0;
 			
+			sofia_glue_tech_track(tech_pvt->profile, session);
+
 			if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "%s RESUME Jitterbuffer\n", switch_channel_get_name(channel));					
