@@ -72,7 +72,8 @@ namespace FreeSWITCH.Native {
 
 public enum cache_db_flag_t {
   CDF_INUSE = (1 << 0),
-  CDF_PRUNE = (1 << 1)
+  CDF_PRUNE = (1 << 1),
+  CDF_RELEASED = (1 << 2)
 }
 
 }
