@@ -133,13 +133,14 @@ if [ -d compat_reports ]; then
 	rm -rf ./compat_reports
 fi
 
-find $INSTALLPREFIX/ -name .libs -exec rm -rf {} \;
-find $INSTALLPREFIX/ -name .deps -exec rm -rf {} \;
-find $INSTALLPREFIX/ -name *.so -exec rm -rf {} \;
-find $INSTALLPREFIX/ -name *.lo -exec rm -rf {} \;
-
 cp -r ./* $INSTALLPREFIX/bin-releases/$major/$release
 cp -r ./.libs $INSTALLPREFIX/bin-releases/$major/$release
+
+find $INSTALLPREFIX/$release -name .libs -exec rm -rf {} \;
+find $INSTALLPREFIX/$release -name .deps -exec rm -rf {} \;
+find $INSTALLPREFIX/$release -name *.so -exec rm -rf {} \;
+find $INSTALLPREFIX/$release -name *.lo -exec rm -rf {} \;
+rm -rf $INSTALLPREFIX/$release/{$LIBSNG_ISDN_DIR,$LIBSNG_SS7_DIR,*.tgz}
 
 # clean the source tree
 rm -rf $LIBSNG_ISDN_DIR $LIBSNG_SS7_DIR
