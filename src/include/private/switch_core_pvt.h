@@ -249,6 +249,8 @@ struct switch_runtime {
 	switch_dbtype_t odbc_dbtype;
 	char hostname[256];
 	int multiple_registrations;
+	uint32_t max_db_handles;
+	uint32_t db_handle_timeout;
 };
 
 extern struct switch_runtime runtime;

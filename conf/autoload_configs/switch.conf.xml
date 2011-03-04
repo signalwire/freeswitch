@@ -24,6 +24,11 @@
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
 
+    <!-- maximum number of simo db handles open -->
+    <param name="max-db-handles" value="50"/>
+    <!-- maximum number of seconds to wait for a new db handle before failing -->
+    <param name="db-handle-timeout" value="10"/>
+
     <!-- minimum idle CPU before refusing calls -->
     <!--<param name="min-idle-cpu" value="25"/>-->
 

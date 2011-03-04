@@ -66,8 +66,8 @@ static struct {
 	switch_cache_db_handle_t *handle_pool;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *cond_mutex;
-	int total_handles;
-	int total_used_handles;
+	uint32_t total_handles;
+	uint32_t total_used_handles;
 } sql_manager;
 
 
@@ -273,10 +273,28 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	char db_callsite_str[CACHE_DB_LEN] = "";
 	switch_cache_db_handle_t *new_dbh = NULL;
 	switch_ssize_t hlen = -1;
+	int waiting = 0;
+	uint32_t yield_len = 100000, total_yield = 0;
 
 	const char *db_name = NULL;
 	const char *db_user = NULL;
 	const char *db_pass = NULL;
+
+	while(runtime.max_db_handles && sql_manager.total_handles >= runtime.max_db_handles && sql_manager.total_used_handles >= sql_manager.total_handles) {
+		if (!waiting++) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING, "Max handles %u exceeded, blocking....\n", 
+							  runtime.max_db_handles);
+		}
+
+		switch_yield(yield_len);
+		total_yield += yield_len;
+		
+		if (runtime.db_handle_timeout && total_yield > runtime.db_handle_timeout) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Error connecting\n");
+			*dbh = NULL;
+			return SWITCH_STATUS_FALSE;
+		}
+	}
 
 	switch (type) {
 	case SCDB_TYPE_ODBC:
