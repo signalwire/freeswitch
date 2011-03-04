@@ -320,6 +320,7 @@ struct conference_member {
 	switch_mutex_t *audio_in_mutex;
 	switch_mutex_t *audio_out_mutex;
 	switch_mutex_t *read_mutex;
+	switch_thread_rwlock_t *rwlock;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t orig_read_impl;
 	switch_codec_t read_codec;
@@ -375,6 +376,7 @@ typedef struct api_command {
 	char *pname;
 	void_fn_t pfnapicmd;
 	conference_fntype_t fntype;
+	char *pcommand;
 	char *psyntax;
 } api_command_t;
 
@@ -562,6 +564,7 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
 		member = NULL;
 	}
 
+	switch_thread_rwlock_rdlock(member->rwlock);
 	switch_mutex_unlock(conference->member_mutex);
 
 	return member;
@@ -806,6 +809,8 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
 
+	switch_thread_rwlock_wrlock(member->rwlock);
+
 	lock_member(member);
 	member_fnode = member->fnode;
 	member_sh = member->sh;
@@ -834,6 +839,8 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		last = imember;
 	}
 
+	switch_thread_rwlock_unlock(member->rwlock);
+	
 	/* Close Unused Handles */
 	if (member_fnode) {
 		conference_file_node_t *fnode, *cur;
@@ -2846,6 +2853,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_mutex_init(&member->audio_in_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->audio_out_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->read_mutex, SWITCH_MUTEX_NESTED, rec->pool);
+	switch_thread_rwlock_create(&member->rwlock, rec->pool);
 
 	/* Setup an audio buffer for the incoming audio */
 	if (switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
@@ -3450,6 +3458,30 @@ static void conference_member_itterator(conference_obj_t *conference, switch_str
 		}
 	}
 	switch_mutex_unlock(conference->member_mutex);
+}
+
+
+static switch_status_t list_conferences(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+
+	switch_mutex_lock(globals.hash_mutex);
+	for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		switch_console_push_match(&my_matches, (const char *) vvar);		
+	}
+	switch_mutex_unlock(globals.hash_mutex);
+	
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
 }
 
 static void conference_list_pretty(conference_obj_t *conference, switch_stream_handle_t *stream)
@@ -4162,6 +4194,7 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 			} else {
 				stream->write_function(stream, "(play) File: %s not found.\n", argv[2] ? argv[2] : "(unspecified)");
 			}
+			switch_thread_rwlock_unlock(member->rwlock);
 			ret_status = SWITCH_STATUS_SUCCESS;
 		} else {
 			stream->write_function(stream, "Member: %u not found.\n", id);
@@ -4202,7 +4235,7 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 	char *start_text = NULL;
 	char *workspace = NULL;
 	uint32_t id = 0;
-	conference_member_t *member;
+	conference_member_t *member = NULL;
 	switch_event_t *event;
 
 	if (zstr(text)) {
@@ -4254,6 +4287,11 @@ static switch_status_t conf_api_sub_saymember(conference_obj_t *conference, swit
 	ret_status = SWITCH_STATUS_SUCCESS;
 
   done:
+
+	if (member) {
+		switch_thread_rwlock_unlock(member->rwlock);
+	}
+
 	switch_safe_free(workspace);
 	switch_safe_free(expanded);
 	return ret_status;
@@ -4284,6 +4322,7 @@ static switch_status_t conf_api_sub_stop(conference_obj_t *conference, switch_st
 		if ((member = conference_member_get(conference, id))) {
 			uint32_t stopped = conference_member_stop_file(member, async ? FILE_STOP_ASYNC : current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
 			stream->write_function(stream, "Stopped %u files.\n", stopped);
+			switch_thread_rwlock_unlock(member->rwlock);
 		} else {
 			stream->write_function(stream, "Member: %u not found.\n", id);
 		}
@@ -4323,6 +4362,7 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 		if ((member = conference_member_get(conference, id))) {
 			member_del_relationship(member, oid);
 			stream->write_function(stream, "relationship %u->%u cleared.\n", id, oid);
+			switch_thread_rwlock_unlock(member->rwlock);
 		} else {
 			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
 		}
@@ -4334,9 +4374,13 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 		uint32_t id = atoi(argv[2]);
 		uint32_t oid = atoi(argv[3]);
 
-		if ((member = conference_member_get(conference, id))
-			&& (other_member = conference_member_get(conference, oid))) {
+		if ((member = conference_member_get(conference, id))) {
+			other_member = conference_member_get(conference, oid);
+		}
+
+		if (member && other_member) {
 			conference_relationship_t *rel = NULL;
+
 			if ((rel = member_get_relationship(member, other_member))) {
 				rel->flags = 0;
 			} else {
@@ -4358,6 +4402,14 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 			}
 		} else {
 			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
+		}
+
+		if (member) {
+			switch_thread_rwlock_unlock(member->rwlock);
+		}
+
+		if (other_member) {
+			switch_thread_rwlock_unlock(other_member->rwlock);
 		}
 	}
 
@@ -4513,6 +4565,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 					/* Setup a memory pool to use. */
 					if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+						switch_thread_rwlock_unlock(member->rwlock);
 						goto done;
 					}
 
@@ -4525,6 +4578,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 					/* Open the config from the xml registry  */
 					if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
+						switch_thread_rwlock_unlock(member->rwlock);
 						goto done;
 					}
 
@@ -4546,6 +4600,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 						if (pool != NULL) {
 							switch_core_destroy_memory_pool(&pool);
 						}
+						switch_thread_rwlock_unlock(member->rwlock);
 						goto done;
 					}
 
@@ -4605,6 +4660,10 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
 				switch_event_fire(&event);
+			}
+
+			if (member) {
+				switch_thread_rwlock_unlock(member->rwlock);
 			}
 		}
 
@@ -4725,41 +4784,32 @@ typedef enum {
 /* API Interface Function sub-commands */
 /* Entries in this list should be kept in sync with the enum above */
 static api_command_t conf_api_sub_commands[] = {
-	{"list", (void_fn_t) & conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"},
-	{"xml_list", (void_fn_t) & conf_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "<confname> xml_list"},
-	{"energy", (void_fn_t) & conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET,
-	 "<confname> energy <member_id|all|last> [<newval>]"},
-	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET,
-	 "<confname> volume_in <member_id|all|last> [<newval>]"},
-	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET,
-	 "<confname> volume_out <member_id|all|last> [<newval>]"},
-	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [async|<member_id>]"},
-	{"say", (void_fn_t) & conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"},
-	{"saymember", (void_fn_t) & conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE,
-	 "<confname> saymember <member_id> <text>"},
-	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT,
-	 "<confname> stop <[current|all|async|last]> [<member_id>]"},
-	{"dtmf", (void_fn_t) & conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET,
-	 "<confname> dtmf <[member_id|all|last]> <digits>"},
-	{"kick", (void_fn_t) & conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"},
-	{"mute", (void_fn_t) & conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "<confname> mute <[member_id|all]|last>"},
-	{"unmute", (void_fn_t) & conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "<confname> unmute <[member_id|all]|last>"},
-	{"deaf", (void_fn_t) & conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "<confname> deaf <[member_id|all]|last>"},
-	{"undeaf", (void_fn_t) & conf_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "<confname> undeaf <[member_id|all]|last>"},
-	{"relate", (void_fn_t) & conf_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "<confname> relate <member_id> <other_member_id> [nospeak|nohear|clear]"},
-	{"lock", (void_fn_t) & conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "<confname> lock"},
-	{"unlock", (void_fn_t) & conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "<confname> unlock"},
-	{"agc", (void_fn_t) & conf_api_sub_agc, CONF_API_SUB_ARGS_SPLIT, "<confname> agc"},
-	{"dial", (void_fn_t) & conf_api_sub_dial, CONF_API_SUB_ARGS_SPLIT,
-	 "<confname> dial <endpoint_module_name>/<destination> <callerid number> <callerid name>"},
-	{"bgdial", (void_fn_t) & conf_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT,
-	 "<confname> bgdial <endpoint_module_name>/<destination> <callerid number> <callerid name>"},
-	{"transfer", (void_fn_t) & conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT,
-	 "<confname> transfer <conference_name> <member id> [...<member id>]"},
-	{"record", (void_fn_t) & conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "<confname> record <filename>"},
-	{"norecord", (void_fn_t) & conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "<confname> norecord <[filename|all]>"},
-	{"pin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "<confname> pin <pin#>"},
-	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "<confname> nopin"},
+	{"list", (void_fn_t) & conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "list", "[delim <string>]"},
+	{"xml_list", (void_fn_t) & conf_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "xml_list", ""},
+	{"energy", (void_fn_t) & conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last> [<newval>]"},
+	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last> [<newval>]"},
+	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last> [<newval>]"},
+	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id>]"},
+	{"say", (void_fn_t) & conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "say", "<text>"},
+	{"saymember", (void_fn_t) & conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "saymember", "<member_id> <text>"},
+	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
+	{"dtmf", (void_fn_t) & conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "dtmf", "<[member_id|all|last]> <digits>"},
+	{"kick", (void_fn_t) & conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last]>"},
+	{"mute", (void_fn_t) & conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "mute", "<[member_id|all]|last>"},
+	{"unmute", (void_fn_t) & conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "unmute", "<[member_id|all]|last>"},
+	{"deaf", (void_fn_t) & conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "deaf", "<[member_id|all]|last>"},
+	{"undeaf", (void_fn_t) & conf_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "undeaf", "<[member_id|all]|last>"},
+	{"relate", (void_fn_t) & conf_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "relate", "<member_id> <other_member_id> [nospeak|nohear|clear]"},
+	{"lock", (void_fn_t) & conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "lock", ""},
+	{"unlock", (void_fn_t) & conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "unlock", ""},
+	{"agc", (void_fn_t) & conf_api_sub_agc, CONF_API_SUB_ARGS_SPLIT, "agc", ""},
+	{"dial", (void_fn_t) & conf_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "dial", "<endpoint_module_name>/<destination> <callerid number> <callerid name>"},
+	{"bgdial", (void_fn_t) & conf_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT, "bgdial", "<endpoint_module_name>/<destination> <callerid number> <callerid name>"},
+	{"transfer", (void_fn_t) & conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "transfer", "<conference_name> <member id> [...<member id>]"},
+	{"record", (void_fn_t) & conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "record", "<filename>"},
+	{"norecord", (void_fn_t) & conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "norecord", "<[filename|all]>"},
+	{"pin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "pin", "<pin#>"},
+	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
@@ -4784,7 +4834,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
 
 					if (pfn(conference, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
 						/* command returned error, so show syntax usage */
-						stream->write_function(stream, conf_api_sub_commands[i].psyntax);
+						stream->write_function(stream, "%s %s", conf_api_sub_commands[i].pcommand, conf_api_sub_commands[i].psyntax);
 					}
 				}
 				break;
@@ -4833,11 +4883,12 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
 
 						if (member != NULL) {
 							pfn(member, stream, argv[argn + 2]);
+							switch_thread_rwlock_unlock(member->rwlock);
 						} else {
 							stream->write_function(stream, "Non-Existant ID %u\n", id);
 						}
 					} else {
-						stream->write_function(stream, conf_api_sub_commands[i].psyntax);
+						stream->write_function(stream, "%s %s", conf_api_sub_commands[i].pcommand, conf_api_sub_commands[i].psyntax);
 					}
 				}
 				break;
@@ -4860,7 +4911,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
 					/* call the command handler */
 					if (pfn(conference, stream, modified_cmdline) != SWITCH_STATUS_SUCCESS) {
 						/* command returned error, so show syntax usage */
-						stream->write_function(stream, conf_api_sub_commands[i].psyntax);
+						stream->write_function(stream, "%s %s", conf_api_sub_commands[i].pcommand, conf_api_sub_commands[i].psyntax);
 					}
 				}
 				break;
@@ -4935,12 +4986,14 @@ SWITCH_STANDARD_API(conf_api_main)
 			} else if (argv[1] && strcasecmp(argv[1], "dial") == 0) {
 				if (conf_api_sub_dial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
 					/* command returned error, so show syntax usage */
-					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_DIAL].psyntax);
+					stream->write_function(stream, "%s %s", conf_api_sub_commands[CONF_API_COMMAND_DIAL].pcommand, 
+										   conf_api_sub_commands[CONF_API_COMMAND_DIAL].psyntax);
 				}
 			} else if (argv[1] && strcasecmp(argv[1], "bgdial") == 0) {
 				if (conf_api_sub_bgdial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
 					/* command returned error, so show syntax usage */
-					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_BGDIAL].psyntax);
+					stream->write_function(stream, "%s %s", conf_api_sub_commands[CONF_API_COMMAND_BGDIAL].pcommand,
+										   conf_api_sub_commands[CONF_API_COMMAND_BGDIAL].psyntax);
 				}
 			} else {
 				stream->write_function(stream, "Conference %s not found\n", argv[0]);
@@ -4948,7 +5001,11 @@ SWITCH_STANDARD_API(conf_api_main)
 		}
 
 	} else {
-		stream->write_function(stream, "No parameters specified.\nTry 'help conference'\n");
+		int i;
+
+		for (i = 0; i < CONFFUNCAPISIZE; i++) {
+			stream->write_function(stream, "<conf name> %s %s\n", conf_api_sub_commands[i].pcommand, conf_api_sub_commands[i].psyntax);
+		}
 	}
 
   done:
@@ -5942,6 +5999,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_mutex_init(&member.read_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_thread_rwlock_create(&member.rwlock, member.pool);
 
 	/* Install our Signed Linear codec so we get the audio in that format */
 	switch_core_session_set_read_codec(member.session, &member.read_codec);
@@ -6860,16 +6918,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char cmd_str[256];
 
 	memset(&globals, 0, sizeof(globals));
 
 	/* Connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	switch_console_add_complete_func("::conference::list_conferences", list_conferences);
+	
+
 	/* build api interface help ".syntax" field string */
 	p = strdup("");
 	for (i = 0; i < CONFFUNCAPISIZE; i++) {
-		nl = strlen(conf_api_sub_commands[i].psyntax) + 4;
+		nl = strlen(conf_api_sub_commands[i].pcommand) + strlen(conf_api_sub_commands[i].psyntax) + 5;
+
+		switch_snprintf(cmd_str, sizeof(cmd_str), "add conference ::conference::list_conferences %s", conf_api_sub_commands[i].pcommand);
+
+		switch_console_set_complete(cmd_str);
+
 		if (p != NULL) {
 			ol = strlen(p);
 		}
@@ -6877,7 +6944,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 		if (tmp != NULL) {
 			p = tmp;
 			strcat(p, "\t\t");
-			strcat(p, conf_api_sub_commands[i].psyntax);
+			strcat(p, conf_api_sub_commands[i].pcommand);
+			if (!zstr(conf_api_sub_commands[i].psyntax)) {
+				strcat(p, " ");
+				strcat(p, conf_api_sub_commands[i].psyntax);
+			}
 			if (i < CONFFUNCAPISIZE - 1) {
 				strcat(p, "\n");
 			}
@@ -6916,6 +6987,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	SWITCH_ADD_APP(app_interface, global_app_name, global_app_name, NULL, conference_function, NULL, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
 	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
+	
 
 	send_presence(SWITCH_EVENT_PRESENCE_IN);
 
@@ -6930,6 +7002,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 
 		/* signal all threads to shutdown */
 		globals.running = 0;
+
+		switch_console_del_complete_func("::conference::list_conferences");
 
 		/* wait for all threads */
 		while (globals.threads) {
