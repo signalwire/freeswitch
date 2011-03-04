@@ -74,9 +74,12 @@ static struct {
 static void add_handle(switch_cache_db_handle_t *dbh)
 {
 	switch_mutex_lock(sql_manager.dbh_mutex);
+	switch_set_flag(dbh, CDF_INUSE);
+	sql_manager.total_used_handles++;
 	dbh->next = sql_manager.handle_pool;
 	sql_manager.handle_pool = dbh;
 	sql_manager.total_handles++;
+	switch_mutex_lock(dbh->mutex);
 	switch_mutex_unlock(sql_manager.dbh_mutex);
 }
 
@@ -299,8 +302,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\";user=\"%s\";pass=\"%s\"", db_name, db_user, db_pass);
 	snprintf(db_callsite_str, sizeof(db_callsite_str) - 1, "%s:%d", file, line);
 
-	switch_mutex_lock(sql_manager.dbh_mutex);
-
+	
 	if ((new_dbh = get_handle(db_str, db_callsite_str))) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
 						  "Reuse Unused Cached DB handle %s [%s]\n", new_dbh->name, switch_cache_db_type_name(new_dbh->type));
@@ -350,13 +352,8 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 		new_dbh = switch_core_alloc(pool, sizeof(*new_dbh));
 		new_dbh->pool = pool;
 		new_dbh->type = type;
-
-		
 		switch_set_string(new_dbh->name, db_str);
-		switch_set_flag(new_dbh, CDF_INUSE);
-		sql_manager.total_used_handles++;
 		new_dbh->hash = switch_ci_hashfunc_default(db_str, &hlen);
-
 
 		if (db) {
 			new_dbh->native_handle.core_db_dbh = db;
@@ -366,7 +363,6 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 
 		switch_mutex_init(&new_dbh->mutex, SWITCH_MUTEX_UNNESTED, new_dbh->pool);
 		switch_set_string(new_dbh->creator, db_callsite_str);
-		switch_mutex_lock(new_dbh->mutex);
 		add_handle(new_dbh);
 	}
 
@@ -375,9 +371,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	if (new_dbh) {
 		new_dbh->last_used = switch_epoch_time_now(NULL);
 	}
-
-	switch_mutex_unlock(sql_manager.dbh_mutex);
-
+	
 	*dbh = new_dbh;
 
 	return *dbh ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
