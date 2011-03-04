@@ -85,6 +85,9 @@
     <ClCompile Include="..\src\ftdm_call_utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\ftdm_variables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\ftdm_callerid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
