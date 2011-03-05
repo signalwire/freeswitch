@@ -6423,6 +6423,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 					comfort_noise_level = 1400;
 				}
 			} else if (!strcasecmp(var, "sound-prefix") && !zstr(val)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "override sound-prefix with: %s\n", val);
 				sound_prefix = val;
 			} else if (!strcasecmp(var, "max-members") && !zstr(val)) {
 				errno = 0;		/* sanity first */
@@ -6527,8 +6528,15 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		set_cflags(conference_flags, &conference->flags);
 	}
 
-	if (sound_prefix) {
+	if (!zstr(sound_prefix)) {
 		conference->sound_prefix = switch_core_strdup(conference->pool, sound_prefix);
+	} else {
+		const char *val;
+		if ((val = switch_channel_get_variable(channel, "sound_prefix")) && !zstr(val)) {
+			/* if no sound_prefix was set, use the channel sound_prefix */
+			conference->sound_prefix = switch_core_strdup(conference->pool, val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "using channel sound prefix: %s\n", conference->sound_prefix);
+		}
 	}
 
 	if (!zstr(enter_sound)) {
