@@ -864,13 +864,19 @@ void sofia_event_callback(nua_event_t event,
 	case nua_r_unsubscribe:
 	case nua_r_publish:
 	case nua_i_cancel:
-	case nua_r_cancel:
 	case nua_i_error:
 	case nua_i_active:
 	case nua_i_terminated:
 	case nua_r_set_params:
 	case nua_i_prack:
 	case nua_r_prack:
+		break;
+	case nua_r_cancel:
+		{
+			if (status > 299 && nh) {
+				nua_handle_destroy(nh);
+			}
+		}
 		break;
 	case nua_i_ack:
 		{
