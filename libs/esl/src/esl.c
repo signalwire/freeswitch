@@ -949,15 +949,18 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	while(!revent && handle->connected) {
 		esl_size_t len1;
 		
-		if ((len1 = esl_buffer_read_packet(handle->packet_buf, handle->socket_buf, sizeof(handle->socket_buf)))) {
+		if ((len1 = esl_buffer_read_packet(handle->packet_buf, handle->socket_buf, sizeof(handle->socket_buf) - 1))) {
 			char *data = (char *) handle->socket_buf;
 			char *p, *e;
+
+			*(data + len1) = '\0';
 			
 			esl_event_create(&revent, ESL_EVENT_CLONE);
 			revent->event_id = ESL_EVENT_SOCKET_DATA;
 			esl_event_add_header_string(revent, ESL_STACK_BOTTOM, "Event-Name", "SOCKET_DATA");
 			
 			hname = p = data;
+
 			while(p) {
 				hname = p;
 				p = NULL;
@@ -984,7 +987,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 			break;
 		}
 
-		rrval = handle_recv(handle, handle->socket_buf, sizeof(handle->socket_buf));
+		rrval = handle_recv(handle, handle->socket_buf, sizeof(handle->socket_buf) - 1);
+		*((char *)handle->socket_buf + rrval) = '\0';
 		
 		if (rrval == 0) {
 			if (++zc >= 100) {
@@ -1020,7 +1024,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 			if (s >= len) {
 				sofar = esl_buffer_read(handle->packet_buf, body, len);
 			} else {
-				r = handle_recv(handle, handle->socket_buf, sizeof(handle->socket_buf));
+				r = handle_recv(handle, handle->socket_buf, sizeof(handle->socket_buf) - 1);
+				*((char *)handle->socket_buf + r) = '\0';
 
 				if (r < 0) {
 					strerror_r(handle->errnum, handle->err, sizeof(handle->err));
@@ -1061,7 +1066,10 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		hval = esl_event_get_header(revent, "content-type");
 
 		if (!esl_safe_strcasecmp(hval, "text/disconnect-notice") && revent->body) {
-			goto fail;
+			const char *dval = esl_event_get_header(revent, "content-disposition");
+			if (esl_strlen_zero(dval) || strcasecmp(dval, "linger")) {
+				goto fail;
+			}
 		}
 		
 		if (revent->body) {

@@ -182,7 +182,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	const char *tonemap = "us";
 	const char *hotline = "";
 	uint32_t digit_timeout = 10;
-	uint32_t wait_dialtone_timeout = 30000;
+	uint32_t wait_dialtone_timeout = 5000;
 	uint32_t max_dialstr = MAX_DTMF;
 	uint32_t polarity_delay = 600;
 	const char *var, *val;

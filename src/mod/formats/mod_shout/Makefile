@@ -1,6 +1,6 @@
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
-MPG123=mpg123
+MPG123=mpg123-1.13.2
 BASE=../../../..
 
 WANT_CURL=yes

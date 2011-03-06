@@ -189,10 +189,12 @@ static inline char switch_itodtmf(char i)
 	char r = i;
 
 	if (i > 9 && i < 14) {
-		r = i + 55;
+		r += 55;
+	} else {
+		r += 48;
 	}
 
-	return r + 48;
+	return r;
 }
 
 static inline int switch_dtmftoi(char *s)

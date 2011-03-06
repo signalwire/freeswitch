@@ -653,7 +653,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 						"and profile_name='%s' and expires <= %ld", mod_sofia_globals.hostname, profile->name, (long) now);
 
 		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sla_dialog_del_callback, profile);
-		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%s' and expires <= %ld",
+		switch_snprintf(sql, sizeof(sql), "delete from sip_shared_appearance_dialogs where expires > 0 and hostname='%s' and expires <= %ld",
 						mod_sofia_globals.hostname, (long) now);
 
 

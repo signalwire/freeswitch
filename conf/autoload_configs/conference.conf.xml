@@ -52,8 +52,9 @@
 
       <!-- If TTS is enabled all audio-file params beginning with -->
       <!-- 'say:' will be considered text to say with TTS -->
-      <!-- Set a default path here so you can use relative paths in the other sound params-->
-      <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>
+      <!-- Override the default path here, after which you use relative paths in the other sound params -->
+      <!-- Note: The default path is the conference's first caller's sound_prefix -->
+      <!--<param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>-->
       <!-- File to play to acknowledge succees -->
       <!--<param name="ack-sound" value="beep.wav"/>-->
       <!-- File to play to acknowledge failure -->
@@ -106,7 +107,7 @@
       <param name="rate" value="16000"/>
       <param name="interval" value="20"/>
       <param name="energy-level" value="300"/>
-      <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>
+      <!--<param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>-->
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
@@ -131,7 +132,7 @@
       <param name="rate" value="32000"/>
       <param name="interval" value="20"/>
       <param name="energy-level" value="300"/>
-      <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>
+      <!--<param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>-->
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
@@ -156,7 +157,7 @@
       <param name="rate" value="48000"/>
       <param name="interval" value="10"/>
       <param name="energy-level" value="300"/>
-      <param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>
+      <!--<param name="sound-prefix" value="$${sounds_dir}/en/us/callie"/>-->
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>

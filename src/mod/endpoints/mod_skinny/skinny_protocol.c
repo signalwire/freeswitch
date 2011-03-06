@@ -43,10 +43,10 @@ char* skinny_codec2string(enum skinny_codecs skinnycodec)
 	switch (skinnycodec) {
 		case SKINNY_CODEC_ALAW_64K:
 		case SKINNY_CODEC_ALAW_56K:
-			return "ALAW";
+			return "PCMA";
 		case SKINNY_CODEC_ULAW_64K:
 		case SKINNY_CODEC_ULAW_56K:
-			return "ULAW";
+			return "PCMU";
 		case SKINNY_CODEC_G722_64K:
 		case SKINNY_CODEC_G722_56K:
 		case SKINNY_CODEC_G722_48K:

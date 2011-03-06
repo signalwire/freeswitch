@@ -651,7 +651,7 @@ int channel_on_routing_callback(void *pArg, int argc, char **argv, char **column
 	    } else {
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
-			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, 10, 0xffff);
+			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_IN_USE_HINT, 0xffff);
 			send_display_prompt_status(listener, 0, SKINNY_DISP_IN_USE_REMOTE,
 				line_instance, helper->tech_pvt->call_id);
 			skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
@@ -1243,12 +1243,39 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 	switch_mutex_unlock(globals.mutex);
 }
 
+static int flush_listener_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	char *profile_name = argv[0];
+	char *value = argv[1];
+	char *domain_name = argv[2];
+	char *device_name = argv[3];
+	char *device_instance = argv[4];
+
+	char *token = switch_mprintf("skinny/%q/%q/%q:%q", profile_name, value, device_name, device_instance);
+	switch_core_del_registration(value, domain_name, token);
+	switch_safe_free(token);
+
+	return 0;
+}
+
 static void flush_listener(listener_t *listener)
 {
 
 	if(!zstr(listener->device_name)) {
 		skinny_profile_t *profile = listener->profile;
 		char *sql;
+
+		if ((sql = switch_mprintf(
+				"SELECT '%q', value, '%q', '%q', '%d' "
+					"FROM skinny_lines "
+					"WHERE device_name='%s' AND device_instance=%d "
+					"ORDER BY position",
+				profile->name, profile->domain, listener->device_name, listener->device_instance,
+				listener->device_name, listener->device_instance
+				))) {
+			skinny_execute_sql_callback(profile, profile->sql_mutex, sql, flush_listener_callback, NULL);
+			switch_safe_free(sql);
+		}
 
 		if ((sql = switch_mprintf(
 				"DELETE FROM skinny_devices "
@@ -1488,6 +1515,8 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 	listener_t *listener;
 	switch_memory_pool_t *tmp_pool = NULL, *listener_pool = NULL;
 	uint32_t errs = 0;
+	switch_sockaddr_t *local_sa = NULL;
+	switch_sockaddr_t *remote_sa =NULL;
 
 	if (switch_core_new_memory_pool(&tmp_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
@@ -1496,8 +1525,9 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 
 new_socket:
 	while(globals.running) {
+		char *listening_ip = NULL;
 		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
-		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_INET, profile->port, 0, tmp_pool);
+		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_UNSPEC, profile->port, 0, tmp_pool);
 		if (rv)
 			goto fail;
 		rv = switch_socket_create(&profile->sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, tmp_pool);
@@ -1512,6 +1542,10 @@ new_socket:
 		rv = switch_socket_listen(profile->sock, 5);
 		if (rv)
 			goto sock_fail;
+		switch_sockaddr_ip_get(&listening_ip, sa);
+		if (!profile->ip || strcmp(listening_ip, profile->ip)) {
+			profile->ip = switch_core_strdup(profile->pool, listening_ip);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket up listening on %s:%u\n", profile->ip, profile->port);
 
 		break;
@@ -1566,9 +1600,14 @@ new_socket:
 
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
-		switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock);
-		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
-		listener->remote_port = switch_sockaddr_get_port(listener->sa);
+		switch_socket_addr_get(&remote_sa, SWITCH_TRUE, listener->sock);
+		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), remote_sa);
+		listener->remote_port = switch_sockaddr_get_port(remote_sa);
+
+		switch_socket_addr_get(&local_sa, SWITCH_FALSE, listener->sock);
+		switch_get_addr(listener->local_ip, sizeof(listener->local_ip), local_sa);
+		listener->local_port = switch_sockaddr_get_port(local_sa);
+
 		launch_listener_thread(listener);
 
 	}
@@ -1636,7 +1675,7 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->domain = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "ip")) {
 		if (!profile->ip || strcmp(val, profile->ip)) {
-			profile->ip = switch_core_strdup(profile->pool, val);
+			profile->ip = switch_core_strdup(profile->pool, zstr(val) ? NULL : val);
 			switch_set_flag_locked(profile, PFLAG_SHOULD_RESPAWN);
 		}
 	} else if (!strcasecmp(var, "port")) {
@@ -1784,6 +1823,9 @@ static switch_status_t load_skinny_config(void)
 									size_t string_len = strlen(val);
 									size_t string_pos, start = 0;
 									int field_no = 0;
+									if (zstr(val)) {
+										continue;
+									}
 									if (soft_key_set_id > 15) {
 										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 											"soft-key-set name '%s' is greater than 15 in soft-key-set-set '%s' in profile %s.\n",

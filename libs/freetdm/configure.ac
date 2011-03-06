@@ -65,6 +65,18 @@ AC_ARG_WITH([modinstdir],
 )
 AC_SUBST([modinstdir])
 
+# freetdm.pc pkgconfig file
+AC_ARG_WITH([pkgconfigdir],
+	[AS_HELP_STRING([--with-pkgconfigdir=DIR], [Installation directory for pkgconfig file (default: ${libdir}/pkgconfig)])],
+	[case "${withval}" in
+	 yes|no) AC_MSG_ERROR([Invalid value ${withval} for option --with-pkgconfigdir]) ;;
+	 *) pkgconfigdir="${withval}" ;;
+	 esac
+	],
+	[pkgconfigdir="${libdir}/pkgconfig"]
+)
+AC_SUBST([pkgconfigdir])
+
 AC_ARG_ENABLE([enable_64],
 	[AS_HELP_STRING([--enable-64], [Enable 64bit compilation])],
 	[enable_64="${enableval}"],

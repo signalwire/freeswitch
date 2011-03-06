@@ -356,7 +356,7 @@ scripts/fsxs: scripts/fsxs.in
 ## misc
 ##
 
-pkgconfigdir = $(libdir)/pkgconfig
+pkgconfigdir   = @pkgconfigdir@
 pkgconfig_DATA = build/freeswitch.pc
 
 $(switch_builddir)/modules.conf:

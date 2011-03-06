@@ -3055,6 +3055,7 @@ _wrap_ESLconnection_bgapi(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3064,9 +3065,12 @@ _wrap_ESLconnection_bgapi(int argc, VALUE *argv, VALUE self) {
   int res3 ;
   char *buf3 = 0 ;
   int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 1) || (argc > 2)) {
+  if ((argc < 1) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
@@ -3086,14 +3090,23 @@ _wrap_ESLconnection_bgapi(int argc, VALUE *argv, VALUE self) {
     }
     arg3 = reinterpret_cast< char * >(buf3);
   }
-  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+  if (argc > 2) {
+    res4 = SWIG_AsCharPtrAndSize(argv[2], &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), Ruby_Format_TypeError( "", "char const *","bgapi", 4, argv[2] ));
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+  }
+  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
   vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   return vresult;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   return Qnil;
 }
 

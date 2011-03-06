@@ -203,16 +203,12 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
-			const char *this_val;
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-				if (switch_channel_up(session->channel) &&
-					(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
-					np = switch_core_alloc(pool, sizeof(*np));
-					np->str = switch_core_strdup(pool, session->uuid_str);
-					np->next = head;
-					head = np;
-				}
+				np = switch_core_alloc(pool, sizeof(*np));
+				np->str = switch_core_strdup(pool, session->uuid_str);
+				np->next = head;
+				head = np;
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -221,7 +217,11 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 
 	for(np = head; np; np = np->next) {
 		if ((session = switch_core_session_locate(np->str))) {
-			switch_channel_hangup(session->channel, cause);
+			const char *this_val;
+			if (switch_channel_up(session->channel) &&
+				(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {			
+				switch_channel_hangup(session->channel, cause);
+			}
 			switch_core_session_rwunlock(session);
 		}
 	}
@@ -1947,7 +1947,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 
 			do {
 				sanity--;
-				ready = switch_channel_media_ready(session->channel);
+				ready = switch_channel_media_up(session->channel);
 				switch_cond_next();
 			} while(!ready && sanity);
 

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+bz="false"
+
+BUNZIP=/usr/bin/bunzip2
 TAR=@TAR@
 ZCAT=@ZCAT@
 WGET=@WGET@
@@ -17,14 +20,26 @@ base=http://files.freeswitch.org/downloads/libs/
 tarfile=$1
 url=`echo $tarfile | grep "://"`
 
+if [ `echo $tarfile | grep bz2`  ] ; then
+    bz="true"
+    UNZIPPER=$BUNZIP
+else
+    UNZIPPER=$ZCAT
+fi
+
 if [ ! -z $url ] ; then
     base=$tarfile/
     tarfile=$2
 fi
 
 if [ ! -d $tarfile ] ; then
-    uncompressed=`echo $tarfile | sed "s/\.tar\.gz//g"`
-    uncompressed=`echo $uncompressed | sed "s/\.tgz//g"`
+
+    if [ $bz = "true" ] ; then
+	uncompressed=`echo $tarfile | sed "s/\.tar\.bz2//g"`
+    else 
+	uncompressed=`echo $tarfile | sed "s/\.tar\.gz//g"`
+	uncompressed=`echo $uncompressed | sed "s/\.tgz//g"`
+    fi
 
     if [ ! -f $tarfile ] ; then
 	rm -fr $uncompressed
@@ -35,7 +50,7 @@ if [ ! -d $tarfile ] ; then
 	fi
     fi
     if [ ! -d $uncompressed ] ; then
-	$ZCAT -c -d $tarfile | $TAR xf -
+	$UNZIPPER -c -d $tarfile | $TAR xf -
     fi
 fi
 

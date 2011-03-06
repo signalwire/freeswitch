@@ -2335,7 +2335,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		break;
 	case FTDM_CHANNEL_INDICATE_PROCEED:
 		if (!ftdm_test_flag(ftdmchan->span, FTDM_SPAN_USE_PROCEED_STATE) ||
-		   	ftdmchan->state == FTDM_CHANNEL_STATE_PROCEED) {
+		   	ftdmchan->state >= FTDM_CHANNEL_STATE_PROCEED) {
 			ftdm_ack_indication(ftdmchan, indication, status);
 			goto done;
 		}
@@ -2408,11 +2408,6 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in non outbound channel in state %s!\n", ftdm_channel_state2str(ftdmchan->state));
-		goto done;
-	}
-
-	if (ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Cannot place call in channel in state %s!\n", ftdm_channel_state2str(ftdmchan->state));
 		goto done;
 	}
 
@@ -5542,17 +5537,30 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 	ftdm_mutex_create(&globals.call_id_mutex);
 	
 	ftdm_sched_global_init();
+	globals.running = 1;
 	if (ftdm_sched_create(&globals.timingsched, "freetdm-master") != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to create master timing schedule context\n");
-		return FTDM_FAIL;
+		goto global_init_fail;
 	}
 	if (ftdm_sched_free_run(globals.timingsched) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to run master timing schedule context\n");
-		return FTDM_FAIL;
+		goto global_init_fail;
 	}
-
-	globals.running = 1;
+	
 	return FTDM_SUCCESS;
+	
+global_init_fail:
+	globals.running = 0;
+	ftdm_mutex_destroy(&globals.mutex);
+	ftdm_mutex_destroy(&globals.span_mutex);
+	ftdm_mutex_destroy(&globals.group_mutex);
+	ftdm_mutex_destroy(&globals.call_id_mutex);	
+	hashtable_destroy(globals.interface_hash);
+	hashtable_destroy(globals.module_hash);
+	hashtable_destroy(globals.span_hash);
+	hashtable_destroy(globals.group_hash);
+	
+	return FTDM_FAIL;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
