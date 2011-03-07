@@ -3759,8 +3759,10 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 	return SWITCH_STATUS_FALSE;
 }
 
-void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
+int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 {
+	int changed = 0;
+
 	if (sendonly && switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
 		if (!sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			const char *stream;
@@ -3779,6 +3781,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			switch_channel_set_flag(tech_pvt->channel, CF_LEG_HOLDING);
 			switch_channel_mark_hold(tech_pvt->channel, SWITCH_TRUE);
 			switch_channel_presence(tech_pvt->channel, "unknown", msg, NULL);
+			changed = 1;
 
 			if (tech_pvt->max_missed_hold_packets) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_hold_packets);
@@ -3805,6 +3808,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			sofia_set_flag(tech_pvt, TFLAG_SIP_HOLD);
 			switch_channel_set_flag(tech_pvt->channel, CF_LEG_HOLDING);
 			switch_channel_mark_hold(tech_pvt->channel, SWITCH_TRUE);
+			changed = 1;
 		}
 
 		sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
@@ -3838,8 +3842,11 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			switch_channel_clear_flag(tech_pvt->channel, CF_LEG_HOLDING);
 			switch_channel_mark_hold(tech_pvt->channel, SWITCH_FALSE);
 			switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
+			changed = 1;
 		}
 	}
+
+	return changed;
 }
 
 void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session)
@@ -4264,7 +4271,19 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 		if (!tech_pvt->hold_laps) {
 			tech_pvt->hold_laps++;
-			sofia_glue_toggle_hold(tech_pvt, sendonly);
+			if (sofia_glue_toggle_hold(tech_pvt, sendonly)) {
+				int reneg = sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_HOLD);
+				
+				if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_renegotiate_codec_on_hold"))) {
+					reneg = switch_true(val);
+				}
+
+				if (!reneg) {
+					match = 1;
+					goto done;
+				}
+			}
+			
 		}
 	}
 

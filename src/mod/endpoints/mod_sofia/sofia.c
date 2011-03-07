@@ -2436,6 +2436,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						}
+					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						}
 					} else if (!strcasecmp(var, "presence-probe-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
@@ -3118,6 +3124,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
+						}
+					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RENEG_ON_HOLD);
 						}
 					} else if (!strcasecmp(var, "presence-probe-on-register")) {
 						if (switch_true(val)) {

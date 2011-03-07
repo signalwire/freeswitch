@@ -230,6 +230,7 @@ typedef enum {
 	PFLAG_PRESENCE_ON_REGISTER,
 	PFLAG_PRESENCE_ON_FIRST_REGISTER,
 	PFLAG_NO_CONNECTION_REUSE,
+	PFLAG_RENEG_ON_HOLD,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -984,7 +985,7 @@ void sofia_glue_del_every_gateway(sofia_profile_t *profile);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip);
 void sofia_glue_restart_all_profiles(void);
-void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
+int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
 const char *sofia_state_string(int state);
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);

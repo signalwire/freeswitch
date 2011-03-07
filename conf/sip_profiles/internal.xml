@@ -342,6 +342,13 @@
 
 	<!-- Turn on a jitterbuffer for every call -->
 	<!-- <param name="auto-jitterbuffer-msec" value="60"/> -->
+
+
+	<!-- By default mod_sofia will ignore the codecs in the sdp for hold/unhold operations 
+	     Set this to true if you want to actually parse the sdp and re-negotiate the codec during hold/unhold.
+	     It's probably not what you want so stick with the default unless you really need to change this.
+	-->
+	<!--<param name="renegotiate-codec-on-hold" value="true"/>-->
     
   </settings>
 </profile>
