@@ -884,6 +884,12 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
 
+	/* confirm that the circuit is active on our side otherwise move to the next circuit */
+	if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[circuit], SNGSS7_ACTIVE)) {
+		SS7_ERROR("[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
+		return FTDM_FAIL;
+	}
+
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
 		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
@@ -1189,6 +1195,13 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 		/* check that the infId matches and that this is not a siglink */
 		if ((g_ftdm_sngss7_data.cfg.isupCkt[i].infId == infId) && 
 			(g_ftdm_sngss7_data.cfg.isupCkt[i].type == VOICE)) {
+
+			/* confirm that the circuit is active on our side otherwise move to the next circuit */
+			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[i], SNGSS7_ACTIVE)) {
+				SS7_ERROR("[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[i].cic);
+				i++;
+				continue;
+			}
 	
 			/* get the ftdmchan and ss7_chan_data from the circuit */
 			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -1247,6 +1260,13 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 		/* check that the infId matches and that this is not a siglink */
 		if ((g_ftdm_sngss7_data.cfg.isupCkt[i].infId == infId) && 
 			(g_ftdm_sngss7_data.cfg.isupCkt[i].type == VOICE)) {
+
+			/* confirm that the circuit is active on our side otherwise move to the next circuit */
+			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[i], SNGSS7_ACTIVE)) {
+				SS7_ERROR("[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[i].cic);
+				i++;
+				continue;
+			}
 
 			/* get the ftdmchan and ss7_chan_data from the circuit */
 			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {

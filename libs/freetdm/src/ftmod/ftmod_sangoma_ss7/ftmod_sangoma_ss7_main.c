@@ -1397,6 +1397,9 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 		/* lock the channel */
 		ftdm_mutex_lock(ftdmchan->mutex);
 
+		/* flag the circuit as active */
+		sngss7_set_flag(sngss7_info->circuit, SNGSS7_ACTIVE);
+
 		/* check if the interface is paused or resumed */
 		if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
 			SS7_DEBUG_CHAN(ftdmchan, "ISUP intf %d is PAUSED\n", sngss7_intf->id);
