@@ -67,7 +67,7 @@ void handle_isup_t35(void *userdata)
     ftdmchan->caller_data.hangup_cause = 28;
 
     /* end the call */
-    ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+    ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 
     /*unlock*/
     ftdm_mutex_unlock(ftdmchan->mutex);

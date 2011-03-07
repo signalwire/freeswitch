@@ -207,7 +207,7 @@ ftdm_status_t enable_all_ckts_for_relay(void)
 				SS7_DEBUG_CHAN(ftdmchan, "ISUP interface (%d) set to resume, resuming channel\n", sngIntf->id);
 				/* throw the channel infId status flags to PAUSED ... they will be executed next process cycle */
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			}
 		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
 

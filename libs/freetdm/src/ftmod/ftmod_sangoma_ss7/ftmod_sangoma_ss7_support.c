@@ -83,6 +83,11 @@ int find_ssf_type_in_map(const char *ssfType);
 int find_cic_cntrl_in_map(const char *cntrlType);
 
 ftdm_status_t check_status_of_all_isup_intf(void);
+
+void sngss7_send_signal(sngss7_chan_data_t *sngss7_info, ftdm_signal_event_t event_id);
+void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_status_t status);
+ftdm_status_t sngss7_add_var(sngss7_chan_data_t *ss7_info, const char* var, const char* val);
+ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data, ftdm_size_t data_len);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -560,14 +565,14 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 		case FTDM_CHANNEL_STATE_RESTART:
 
 			/* go to idle so that we can redo the restart state*/
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
 
 			break;
 		/**************************************************************************/
 		default:
 
 			/* set the state of the channel to restart...the rest is done by the chan monitor */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 			break;
 		/**************************************************************************/
 		} /* switch (ftdmchan->state) */
@@ -638,13 +643,13 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
 
 		/* move the channel to the down state */
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 		/* update the status map if the ckt is in blocked state */
-		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
-			(sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
-			(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
-			(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+		if ((sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+			(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
+			(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
+			(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 		
 			sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
 		} /* if blocked */
@@ -714,7 +719,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
 
 			/* go to DOWN */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 
 			break;
 		/**********************************************************************/
@@ -743,7 +748,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 			}
 
 			/* go to terminating to hang up the call */
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 			break;
 		/**********************************************************************/
 		}
@@ -795,7 +800,7 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 			
 			/* throw the channel into SUSPENDED to process the flag */
 			/* after doing this once the sig status will be down */
-			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+			ftdm_set_state (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 		}
 
 		/* if the RESUME flag is up go to SUSPENDED to process the flag */
@@ -808,7 +813,7 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 			}
 
 			/* got SUSPENDED state to clear the flag */
-			ftdm_set_state_locked (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+			ftdm_set_state (ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 		}
 
 		/* unlock the channel */
@@ -849,10 +854,10 @@ ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 		}
 
 		/* throw the ckt block flag */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+		sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
 
 		/* set the channel to suspended state */
-		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 
 		/* unlock the channel again before we exit */
 		ftdm_mutex_unlock(ftdmchan->mutex);
@@ -1346,6 +1351,107 @@ ftdm_status_t check_status_of_all_isup_intf(void)
 	} /* for (x = 1; x < MAX_ISUP_INFS + 1); i++) */
 
 	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t sngss7_add_var(sngss7_chan_data_t *sngss7_info, const char* var, const char* val)
+{
+	char	*t_name = 0;
+	char	*t_val = 0;
+
+	/* confirm the user has sent us a value */
+	if (!var || !val) {
+		return FTDM_FAIL;
+	}
+
+	if (!sngss7_info->variables) {
+		/* initialize on first use */
+		sngss7_info->variables = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+		ftdm_assert_return(sngss7_info->variables, FTDM_FAIL, "Failed to create hash table\n");
+	}
+
+	t_name = ftdm_strdup(var);
+	t_val = ftdm_strdup(val);
+
+	hashtable_insert(sngss7_info->variables, t_name, t_val, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE);
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data, ftdm_size_t data_len)
+{
+	ftdm_assert_return(!sngss7_info->raw_data, FTDM_FAIL, "Overwriting existing raw data\n");
+	
+	sngss7_info->raw_data = ftdm_calloc(1, data_len);
+	ftdm_assert_return(sngss7_info->raw_data, FTDM_FAIL, "Failed to allocate raw data\n");
+
+	memcpy(sngss7_info->raw_data, data, data_len);
+	sngss7_info->raw_data_len = data_len;
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+void sngss7_send_signal(sngss7_chan_data_t *sngss7_info, ftdm_signal_event_t event_id)
+{
+	ftdm_sigmsg_t	sigev;
+	ftdm_channel_t	*ftdmchan = sngss7_info->ftdmchan;
+
+	memset(&sigev, 0, sizeof(sigev));
+
+	sigev.chan_id = ftdmchan->chan_id;
+	sigev.span_id = ftdmchan->span_id;
+	sigev.channel = ftdmchan;
+	sigev.event_id = event_id;
+
+	if (sngss7_info->variables) {
+		/*
+		* variables now belongs to the ftdm core, and
+		* will be cleared after sigev is processed by user. Set
+		* local pointer to NULL so we do not attempt to
+		* destroy it */
+		sigev.variables = sngss7_info->variables;
+		sngss7_info->variables = NULL;
+	}
+
+	if (sngss7_info->raw_data) {
+		/*
+		* raw_data now belongs to the ftdm core, and
+		* will be cleared after sigev is processed by user. Set
+		* local pointer to NULL so we do not attempt to
+		* destroy it */
+		
+		sigev.raw.data = sngss7_info->raw_data;
+		sigev.raw.len = sngss7_info->raw_data_len;
+		
+		sngss7_info->raw_data = NULL;
+		sngss7_info->raw_data_len = 0;
+	}
+	ftdm_span_send_signal(ftdmchan->span, &sigev);
+}
+
+/******************************************************************************/
+void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_status_t status)
+{
+	ftdm_sigmsg_t	sig;
+	ftdm_channel_t	*ftdmchan = sngss7_info->ftdmchan;
+
+	SS7_DEBUG_CHAN(ftdmchan, "Signalling link status changed to %s\n", 
+								ftdm_signaling_status2str(status));
+	
+	memset(&sig, 0, sizeof(sig));
+
+	sig.chan_id = ftdmchan->chan_id;
+	sig.span_id = ftdmchan->span_id;
+	sig.channel = ftdmchan;
+	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+	sig.ev_data.sigstatus.status = status;
+
+	if (ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS) {
+		SS7_ERROR_CHAN(ftdmchan, "Failed to change channel status to %s\n", 
+									ftdm_signaling_status2str(status));
+	}
+	return;
 }
 
 /******************************************************************************/

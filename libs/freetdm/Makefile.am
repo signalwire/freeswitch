@@ -39,7 +39,6 @@ libdir = @libdir@
 library_includedir = $(prefix)/include
 
 INCS  = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/include/private
-INCS += -I$(FT_SRCDIR)/$(SRC)/ftmod/ftmod_sangoma_boost
 
 if HAVE_SNG_SS7
 INCS += -I/usr/include/sng_ss7
@@ -77,6 +76,7 @@ libfreetdm_la_SOURCES = \
 	$(SRC)/ftdm_queue.c \
 	$(SRC)/ftdm_sched.c \
 	$(SRC)/ftdm_call_utils.c \
+	$(SRC)/ftdm_variables.c \
 	$(SRC)/ftdm_config.c \
 	$(SRC)/ftdm_callerid.c \
 	$(SRC)/fsk.c \
@@ -109,7 +109,6 @@ core-install: install-libLTLIBRARIES
 # tools & test programs
 #
 noinst_PROGRAMS  = testtones detect_tones detect_dtmf testpri testr2 testanalog testapp testcid
-noinst_PROGRAMS += testsangomaboost
 
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD   = libfreetdm.la
@@ -142,17 +141,6 @@ testpri_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
 testr2_SOURCES = $(SRC)/testr2.c
 testr2_LDADD   = libfreetdm.la
 testr2_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
-
-if HAVE_SCTP
-noinst_PROGRAMS  += testboost
-testboost_SOURCES = $(SRC)/testboost.c
-testboost_LDADD   = libfreetdm.la
-testboost_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
-endif
-
-testsangomaboost_SOURCES = $(SRC)/testsangomaboost.c
-testsangomaboost_LDADD   = libfreetdm.la
-testsangomaboost_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
 
 testanalog_SOURCES = $(SRC)/testanalog.c
 testanalog_LDADD   = libfreetdm.la
@@ -199,14 +187,6 @@ ftmod_isdn_la_SOURCES  = $(SRC)/ftmod/ftmod_isdn/ftmod_isdn.c
 ftmod_isdn_la_CFLAGS   = $(AM_CFLAGS) $(FTDM_CFLAGS) -D_GNU_SOURCE $(LIBISDN_CPPFLAGS) $(PCAP_CPPFLAGS)
 ftmod_isdn_la_LDFLAGS  = -shared -module -avoid-version $(LIBISDN_LDFLAGS) $(PCAP_LDFLAGS)
 ftmod_isdn_la_LIBADD   = libfreetdm.la $(LIBISDN_LIBS) $(PCAP_LIBS)
-endif
-
-if HAVE_SCTP
-mod_LTLIBRARIES += ftmod_sangoma_boost.la
-ftmod_sangoma_boost_la_SOURCES = $(SRC)/ftmod/ftmod_sangoma_boost/sangoma_boost_client.c $(SRC)/ftmod/ftmod_sangoma_boost/ftmod_sangoma_boost.c
-ftmod_sangoma_boost_la_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
-ftmod_sangoma_boost_la_LDFLAGS = -shared -module -avoid-version
-ftmod_sangoma_boost_la_LIBADD  = libfreetdm.la
 endif
 
 if HAVE_LIBPRI
@@ -269,7 +249,7 @@ endif
 
 if HAVE_OPENR2
 mod_LTLIBRARIES += ftmod_r2.la
-ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c 
+ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c  $(SRC)/ftmod/ftmod_r2/ftmod_r2_io_mf_lib.c
 ftmod_r2_la_CFLAGS  = $(AM_CFLAGS) $(FTDM_CFLAGS)
 ftmod_r2_la_LDFLAGS = -shared -module -avoid-version -lopenr2
 ftmod_r2_la_LIBADD  = libfreetdm.la

@@ -47,8 +47,10 @@
 #endif
 #include <stdio.h>
 #include <openr2.h>
-#include "freetdm.h"
-#include "private/ftdm_core.h"
+#include <freetdm.h>
+#include <private/ftdm_core.h>
+
+#include "ftmod_r2_io_mf_lib.h" // ftdm_r2_get_native_channel_mf_generation_iface
 
 /* when the user stops a span, we clear FTDM_R2_SPAN_STARTED, so that the signaling thread
  * knows it must stop, and we wait for FTDM_R2_RUNNING to be clear, which tells us the
@@ -105,6 +107,7 @@ typedef struct ft_r2_conf_s {
 	int charge_calls;
 	int forced_release;
 	int allow_collect_calls;
+	int use_channel_native_mf_generation;
 } ft_r2_conf_t;
 
 /* r2 configuration stored in span->signal_data */
@@ -286,9 +289,6 @@ static ftdm_call_cause_t ftdm_r2_cause_to_ftdm_cause(ftdm_channel_t *fchan, open
 	case OR2_CAUSE_UNSPECIFIED:
 		return FTDM_CAUSE_NORMAL_UNSPECIFIED;
 
-	case OR2_CAUSE_COLLECT_CALL_REJECTED:
-		return FTDM_CAUSE_CALL_REJECTED;
-
 	case OR2_CAUSE_FORCED_RELEASE:
 		return FTDM_CAUSE_NORMAL_CLEARING;
 
@@ -307,6 +307,7 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 		return OR2_CAUSE_NORMAL_CLEARING;
 
 	case FTDM_CAUSE_USER_BUSY:
+	case FTDM_CAUSE_CALL_REJECTED:
 		return OR2_CAUSE_BUSY_NUMBER;
 
 	case FTDM_CAUSE_SWITCH_CONGESTION:
@@ -334,7 +335,7 @@ static openr2_call_disconnect_cause_t ftdm_r2_ftdm_cause_to_openr2_cause(ftdm_ch
 		return OR2_CAUSE_GLARE;
 
 	}
-	ftdm_log_chan(fchan, FTDM_LOG_WARNING, "freetdm hangup cause %d mapped to openr2 cause %s\n",
+	ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "freetdm hangup cause %d mapped to openr2 cause %s\n",
 			fchan->caller_data.hangup_cause, openr2_proto_get_disconnect_string(OR2_CAUSE_UNSPECIFIED));
 	return OR2_CAUSE_UNSPECIFIED;
 }
@@ -471,12 +472,9 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(r2_outgoing_call)
 		return FTDM_FAIL;
 	}
 
-	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DIALING);
-
 	ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_FLUSH_TX_BUFFERS, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_FLUSH_RX_BUFFERS, NULL);
-
 	return FTDM_SUCCESS;
 }
 
@@ -673,13 +671,13 @@ static void ftdm_r2_on_call_offered(openr2_chan_t *r2chan, const char *ani, cons
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = %d, ANI restricted = %s\n", 
-			ani, dnis, category, ani_restricted ? "Yes" : "No");
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Call offered with ANI = %s, DNIS = %s, Category = %s, ANI restricted = %s\n", 
+			ani, dnis, openr2_proto_get_category_string(category), ani_restricted ? "Yes" : "No");
 
 	/* check if this is a collect call and if we should accept it */
 	if (!r2data->allow_collect_calls && category == OR2_CALLING_PARTY_CATEGORY_COLLECT_CALL) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "Rejecting collect call\n");
-		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_COLLECT_CALL_REJECTED);
+		openr2_chan_disconnect_call(r2chan, OR2_CAUSE_UNALLOCATED_NUMBER);
 	} else {
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 	}
@@ -714,6 +712,7 @@ static void dump_mf(openr2_chan_t *r2chan)
 {
 	char dfile[512];
 	FILE *f = NULL;
+	int rc = 0;
 	ftdm_channel_t *ftdmchan = openr2_chan_get_client_data(r2chan);
 	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
 	if (r2data->mf_dump_size) {
@@ -727,7 +726,10 @@ static void dump_mf(openr2_chan_t *r2chan)
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO input in file %s\n", dfile);
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_INPUT, f);
-			fclose(f);
+			rc = fclose(f);
+			if (rc) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failure closing IO input file %s: %s\n", dfile, strerror(errno));
+			}
 		} else {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO input in file %s, error: %s", dfile, strerror(errno));
 		}
@@ -738,7 +740,10 @@ static void dump_mf(openr2_chan_t *r2chan)
 		if (f) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dumping IO output in file %s\n", dfile);
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_DUMP_OUTPUT, f);
-			fclose(f);
+			rc = fclose(f);
+			if (rc) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failure closing IO output file %s: %s\n", dfile, strerror(errno));
+			}
 		} else {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Could not dump IO output in file %s, error: %s", dfile, strerror(errno));
 		}
@@ -1440,7 +1445,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		/* .double_answer */ -1,
 		/* .charge_calls */ -1,
 		/* .forced_release */ -1,
-		/* .allow_collect_calls */ -1
+		/* .allow_collect_calls */ -1,
+		/* .use_channel_native_mf_generation */ 0
 	};
 
 	ftdm_assert_return(sig_cb != NULL, FTDM_FAIL, "No signaling cb provided\n");
@@ -1559,6 +1565,9 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		} else if (!strcasecmp(var, "max_dnis")) {
 			r2conf.max_dnis = atoi(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with max dnis = %d\n", span->name, r2conf.max_dnis);
+		} else if (!strcasecmp(var, "use_channel_native_mf_generation")) {
+			r2conf.use_channel_native_mf_generation = ftdm_true(val);
+			ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with \"use native channel MF generation\" = %d\n", span->name, r2conf.use_channel_native_mf_generation);
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown R2 parameter [%s]", var);
 			return FTDM_FAIL;
@@ -1610,6 +1619,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 		openr2_context_configure_from_advanced_file(r2data->r2context, r2conf.advanced_protocol_file);
 	}
 
+	if(r2conf.use_channel_native_mf_generation) {
+		openr2_context_set_mflib_interface(r2data->r2context, ftdm_r2_get_native_channel_mf_generation_iface());
+	}
+
 	spanpvt->r2calls = create_hashtable(FTDM_MAX_CHANNELS_SPAN, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 	if (!spanpvt->r2calls) {
 		snprintf(span->last_error, sizeof(span->last_error), "Cannot create channel calls hash for span.");
@@ -1627,13 +1640,29 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 			openr2_chan_enable_call_files(r2chan);
 		}
 
-		r2call = ftdm_malloc(sizeof(*r2call));
+		if (r2conf.use_channel_native_mf_generation) {
+			/* Allocate a new write handle per r2chan */
+			ftdm_r2_mf_write_handle_t *mf_write_handle = ftdm_calloc(1, sizeof(*mf_write_handle));
+			/* Associate to the FreeTDM channel */
+			mf_write_handle->ftdmchan = span->channels[i];
+			/* Make sure the FreeTDM channel supports MF the generation feature */
+			if (!ftdm_channel_test_feature(mf_write_handle->ftdmchan, FTDM_CHANNEL_FEATURE_MF_GENERATE)) {
+				ftdm_log_chan_msg(mf_write_handle->ftdmchan, FTDM_LOG_ERROR, 
+				"FreeTDM channel does not support native MF generation: "
+				"\"use_channel_native_mf_generation\" configuration parameter cannot"
+				" be used\n");
+				goto fail;
+			}
+			/* Associate the mf_write_handle to the openR2 channel */
+			openr2_chan_set_mflib_handles(r2chan, mf_write_handle, NULL);
+		}
+
+		r2call = ftdm_calloc(1, sizeof(*r2call));
 		if (!r2call) {
 			snprintf(span->last_error, sizeof(span->last_error), "Cannot create all R2 call data structures for the span.");
 			ftdm_safe_free(r2chan);
 			goto fail;
 		}
-		memset(r2call, 0, sizeof(*r2call));
 		openr2_chan_set_logging_func(r2chan, ftdm_r2_on_chan_log);
 		openr2_chan_set_client_data(r2chan, span->channels[i]);
 		r2call->r2chan = r2chan;
@@ -1644,6 +1673,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	}
 	r2data->mf_dump_size = r2conf.mf_dump_size;
 	r2data->category = r2conf.category;
+	r2data->allow_collect_calls = r2conf.allow_collect_calls;
 	r2data->flags = 0;
 	spanpvt->r2context = r2data->r2context;
 
@@ -2363,5 +2393,5 @@ EX_DECLARE_DATA ftdm_module_t ftdm_module = {
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
