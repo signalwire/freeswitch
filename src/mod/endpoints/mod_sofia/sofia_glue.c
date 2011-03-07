@@ -2996,6 +2996,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+
+			if (tech_pvt->audio_recv_pt != tech_pvt->agreed_pt) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Set audio receive payload to %u\n", switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+				
+				switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->audio_recv_pt);
+			} else {
+				switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+			}
+
 		}
 	}
 
@@ -4654,7 +4664,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 					tech_pvt->audio_recv_pt = map->rm_pt;
 					
-					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 						sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->audio_recv_pt);
 					}
 					
