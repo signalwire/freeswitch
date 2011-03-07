@@ -603,6 +603,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 	ftdm_sigmsg_t		sigev;
 	ftdm_channel_state_t initial_state;
 	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
+	uint8_t 		state_change = 0;
 
 	memset(&sigev, 0, sizeof(sigev));
 
@@ -673,6 +674,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_PROCEED);
 				
 				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
+					state_change++;
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 				}
 			} else {
@@ -693,6 +695,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_RINGING);
 				
 				if (sngisdn_test_flag(sngisdn_info, FLAG_MEDIA_READY)) {
+					state_change++;
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
 				}
 			} else {
@@ -752,6 +755,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 			/* Send a release complete */
 			sngisdn_snd_release(ftdmchan, 0);
 			/*now go to the HANGUP complete state*/				
+			state_change++;
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
@@ -811,6 +815,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 				}
 			}
 			/* now go to the HANGUP complete state */
+			state_change++;
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
@@ -819,6 +824,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 			if (sngisdn_test_flag(sngisdn_info, FLAG_REMOTE_ABORT) ||
 				sngisdn_test_flag(sngisdn_info, FLAG_LOCAL_ABORT)) {
 				/* If the remote side aborted, we will not get anymore message for this call */
+				state_change++;
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 			} else {
 				/* waiting on remote confirmation before moving to down */
@@ -873,8 +879,10 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 		break;
 	}
 
-	/* Acknowledge the state change */
-	ftdm_channel_complete_state(ftdmchan);
+	if (!state_change) {
+		/* Acknowledge the state change */
+		ftdm_channel_complete_state(ftdmchan);
+	}
 	
 	/* If sngisdn_info->variables is not NULL, it means did not send any
 	* sigevent to the user, therefore we have to free that hashtable */
