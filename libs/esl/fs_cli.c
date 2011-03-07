@@ -577,6 +577,7 @@ static int usage(char *name){
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
 	printf("  -u, --user=user@domain          user@domain\n");
 	printf("  -p, --password=password         Password\n");
+	printf("  -i, --interrupt                 Allow Control-c to interrupt");
 	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -l, --loglevel=command          Log Level\n");
 	printf("  -q, --quiet                     Disable logging\n");
@@ -1029,6 +1030,7 @@ int main(int argc, char *argv[])
 		{"loglevel", 1, 0, 'l'},
 		{"quiet", 0, 0, 'q'},
 		{"retry", 0, 0, 'r'},
+		{"interrupt", 0, 0, 'i'},
 		{"reconnect", 0, 0, 'R'},
 		{0, 0, 0, 0}
 	};
@@ -1044,6 +1046,7 @@ int main(int argc, char *argv[])
 	int temp_log = -1;
 	int argv_error = 0;
 	int argv_exec = 0;
+	int ctl_c = 0;
 	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
@@ -1072,7 +1075,7 @@ int main(int argc, char *argv[])
 	
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qrRh?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qrRhi?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt)
 		{
@@ -1115,6 +1118,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'q':
 				argv_quiet = 1;
+				break;
+			case 'i':
+				ctl_c = 1;
 				break;
 		    case 'r':
 				loops += 120;
@@ -1260,7 +1266,9 @@ int main(int argc, char *argv[])
 				esl_log(ESL_LOG_INFO, "Retrying\n");
 			}
 		} else {
-			CONNECTED = 1;
+			if (!ctl_c) {
+				CONNECTED = 1;
+			}
 
 			if (temp_log < 0 ) {
 				esl_global_set_default_logger(profile->debug);
