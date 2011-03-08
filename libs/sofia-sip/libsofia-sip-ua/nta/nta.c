@@ -7781,7 +7781,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   if (tpn) {
     /* CANCEL or ACK to [3456]XX */
     invalid = tport_name_dup(home, orq->orq_tpn, tpn);
-#if HAVE_SOFIA_SRESOLV
+#if 0 //HAVE_SOFIA_SRESOLV
     /* We send ACK or CANCEL only if original request was really sent */
     assert(tport_name_is_resolved(orq->orq_tpn));
 #endif
