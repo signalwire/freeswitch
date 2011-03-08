@@ -4171,6 +4171,14 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
+	int reneg = 1;
+	const switch_codec_implementation_t **codec_array;
+	int total_codecs;
+
+
+	codec_array = tech_pvt->codecs;
+	total_codecs = tech_pvt->num_codecs;
+
 
 	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 		return 0;
@@ -4272,19 +4280,19 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		if (!tech_pvt->hold_laps) {
 			tech_pvt->hold_laps++;
 			if (sofia_glue_toggle_hold(tech_pvt, sendonly)) {
-				int reneg = sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_HOLD);
+				reneg = sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_HOLD);
 				
 				if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_renegotiate_codec_on_hold"))) {
 					reneg = switch_true(val);
 				}
-
-				if (!reneg) {
-					match = 1;
-					goto done;
-				}
 			}
 			
 		}
+	}
+
+	if (!reneg) {
+		codec_array = tech_pvt->negotiated_codecs;
+		total_codecs = tech_pvt->num_negotiated_codecs;
 	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
@@ -4380,6 +4388,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			goto done;
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
+
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
@@ -4590,8 +4599,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 
-				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
-					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+				
+				for (i = first; i < last && i < total_codecs; i++) {
+					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
@@ -4678,6 +4688,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
 					tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
+					tech_pvt->negotiated_codecs[tech_pvt->num_negotiated_codecs++] = mimp;
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
@@ -4719,7 +4730,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			}
 
 			
-			if (!match && greedy && mine < tech_pvt->num_codecs) {
+			if (!match && greedy && mine < total_codecs) {
 				mine++;
 				skip = 0;
 				goto greed;
@@ -4758,8 +4769,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					rm_encoding = "";
 				}
 
-				for (i = 0; i < tech_pvt->num_codecs; i++) {
-					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+				for (i = 0; i < total_codecs; i++) {
+					const switch_codec_implementation_t *imp = codec_array[i];
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
@@ -4821,8 +4832,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
  done:
 
-	if (parser)
+	if (parser) {
 		sdp_parser_free(parser);
+	}
 
 	tech_pvt->cng_pt = cng_pt;
 	sofia_set_flag_locked(tech_pvt, TFLAG_SDP);

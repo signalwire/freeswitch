@@ -599,6 +599,8 @@ struct private_object {
 	int codec_order_last;
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs;
+	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
+	int num_negotiated_codecs;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
