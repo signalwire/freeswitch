@@ -881,238 +881,187 @@ ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 /******************************************************************************/
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
-	sngss7_chan_data_t  *sngss7_info ;
-	ftdm_channel_t	  *ftdmchan;
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	/* confirm that the circuit is active on our side otherwise move to the next circuit */
 	if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[circuit], SNGSS7_ACTIVE)) {
-		SS7_ERROR("[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
+		SS7_ERROR("[CIC:%d]Rx %s but circuit is not active yet, skipping!\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
 		return FTDM_FAIL;
 	}
-
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-		return FTDM_FAIL;
-	}
-
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	switch (evntType) {
 	/**************************************************************************/
 	case SIT_STA_REATTEMPT:		 /* reattempt indication */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Reattempt indication\n", sngss7_info->circuit->cic);
 		handle_reattempt(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_ERRORIND:		  /* error indication */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Error indication\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONTCHK:		   /* continuity check */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CCR start\n", sngss7_info->circuit->cic);
 		handle_cot_start(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONTREP:		   /* continuity report */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx COT report\n", sngss7_info->circuit->cic);
 		handle_cot(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_STPCONTIN:		 /* stop continuity */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CCR stop\n", sngss7_info->circuit->cic);
 		handle_cot_stop(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGQRYRSP:		  /* circuit grp query response from far end forwarded to upper layer by ISUP */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CQM\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CONFUSION:		 /* confusion */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CFN\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LOOPBACKACK:	   /* loop-back acknowledge */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LPA\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRSRVREQ:		/* circuit reservation request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Ckt Resveration req\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRSRVACK:		/* circuit reservation acknowledgement */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Ckt Res ack\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRBLOREQ:		 /* circuit blocking request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx BLO\n", sngss7_info->circuit->cic);
 		handle_blo_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRBLORSP:		 /* circuit blocking response   */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx BLA\n", sngss7_info->circuit->cic);
 		handle_blo_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRUBLREQ:		 /* circuit unblocking request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UBL\n", sngss7_info->circuit->cic);
 		handle_ubl_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRUBLRSP:		 /* circuit unblocking response */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UBA\n", sngss7_info->circuit->cic);
 		handle_ubl_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRESREQ:		 /* circuit reset request - RSC */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RSC\n", sngss7_info->circuit->cic);
 		handle_rsc_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCRES:		 /* reset initiated locally by the software */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local RSC\n", sngss7_info->circuit->cic);
 		handle_local_rsc_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRRESRSP:		 /* circuit reset response */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RSC-RLC\n", sngss7_info->circuit->cic);
 		handle_rsc_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBREQ:			/* CGB request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CGB\n", sngss7_info->circuit->cic);
 		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGUREQ:			/* CGU request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CGU\n", sngss7_info->circuit->cic);
 		handle_cgu_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGQRYREQ:		  /* circuit group query request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CQM\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBRSP:			/* mntc. oriented CGB response */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx mntc CGB\n", sngss7_info->circuit->cic);
 		/*handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGURSP:			/* mntc. oriented CGU response */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx mntc CGU\n", sngss7_info->circuit->cic);
 		/*SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSREQ:			/* circuit group reset request */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx GRS\n", sngss7_info->circuit->cic);
 		handle_grs_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRUNEQPD:		 /* circuit unequipped indication */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
 		handle_ucic(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSRSP:			/* circuit group reset response */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx GRA\n", sngss7_info->circuit->cic);
 		handle_grs_rsp(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_PAUSEIND:		  /* pause indication */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SUS\n", sngss7_info->circuit->cic);
 		handle_pause(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_RESUMEIND:		 /* resume indication */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx RES\n", sngss7_info->circuit->cic);
 		handle_resume(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_USRPARTA:		  /* user part available */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UPA\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_RMTUSRUNAV:		/* remote user not available */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Remote User not Available\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG0:		  /* congestion indication level 0 */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L0\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG1:		  /* congestion indication level 1 */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L1\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG2:		  /* congestion indication level 2 */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L2\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPCONG3:		  /* congestion indication level 3 */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Congestion L3\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_MTPSTPCONG:		/* stop congestion indication level 0 */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Stop Congestion\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break; 
 	/**************************************************************************/
 	case SIT_STA_CIRLOCALBLOIND:	/* Mngmt local blocking */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local BLO\n", sngss7_info->circuit->cic);
 		handle_local_blk(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCALUBLIND:	/* Mngmt local unblocking */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local UBL\n", sngss7_info->circuit->cic);
 		handle_local_ubl(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_OVERLOAD:		  /* Overload */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Overload\n", sngss7_info->circuit->cic);
 		handle_olm_msg(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCGBREQ:		  /* when LM requests ckt grp blocking */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM CGB\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCGUREQ:		  /* when LM requests ckt grp unblocking */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM CGU\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMGRSREQ:		  /* when LM requests ckt grp reset */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM RSC\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBINFOIND:		/* circuit grp blking ind , no resp req */
-		/*SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx CGB no resp req\n", sngss7_info->circuit->cic);*/
 /*		handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
 		break;
 	/**************************************************************************/
 	case SIT_STA_LMCQMINFOREQ:	  /* when LM requests ckt grp query */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx LM CQM\n", sngss7_info->circuit->cic);
 // 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
 	case SIT_STA_CIRLOCGRS:		 /* group reset initiated locally by the software */
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Local GRS\n", sngss7_info->circuit->cic);
 		SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));
 		break;
 	/**************************************************************************/
@@ -1134,11 +1083,25 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1311,11 +1274,25 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1352,11 +1329,25 @@ ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1383,11 +1374,25 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1437,11 +1442,25 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1473,11 +1492,25 @@ ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1500,11 +1533,25 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1539,11 +1586,25 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1566,11 +1627,25 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1611,13 +1686,26 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
-	}
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
 
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
+	}
 	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
@@ -1656,11 +1744,25 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1733,10 +1835,25 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	int					range;
 
 
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* extract the range value from the event structure */
@@ -1769,10 +1886,25 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_span_data_t	*sngss7_span = NULL; 
 	int					range;
 
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* extract the range value from the event structure */
@@ -1811,11 +1943,25 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1847,11 +1993,25 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* lock the channel */
@@ -1885,11 +2045,25 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	ftdm_channel_t		*ftdmchan = NULL;
 
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* check if we just sent a GRS request...*/
@@ -1934,13 +2108,26 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	memset(&status[0], '\0', sizeof(status));
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
-	}
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
 
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
+	}
 	/* grab the span info */
 	sngss7_span = ftdmchan->span->signal_data;
 
@@ -2069,11 +2256,25 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	memset(&sigev, 0, sizeof (sigev));
 	memset(&status[0], '\0', sizeof(status));
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* grab the span info */
@@ -2187,11 +2388,25 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
 
-	/* get the ftdmchan and ss7_chan_data from the circuit */
-	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-		SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+	/* confirm that the circuit is voice channel */
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return FTDM_FAIL;
+	} else {
+		/* get the ftdmchan and ss7_chan_data from the circuit */
+		if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+			SS7_ERROR("Failed to extract channel data for ISUP circuit = %d!\n", circuit);
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return FTDM_FAIL;
+		}
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx %s\n",
+			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+			DECODE_LCC_EVENT(evntType));
 	}
 
 	/* handle overload */

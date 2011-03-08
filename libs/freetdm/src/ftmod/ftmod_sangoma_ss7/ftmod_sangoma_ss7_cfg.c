@@ -396,16 +396,13 @@ int  ft_to_sngss7_cfg_all(void)
 
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
-		if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
 
-			if (ftmod_ss7_isup_ckt_config(x)) {
-				SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", x);
-				return 1;
-			} else {
-				SS7_INFO("ISUP CKT %d configuration DONE!\n", x);
-			}
-
-		} /* if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+		if (ftmod_ss7_isup_ckt_config(x)) {
+			SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", x);
+			return 1;
+		} else {
+			SS7_INFO("ISUP CKT %d configuration DONE!\n", x);
+		}
 
 		/* set the SNGSS7_CONFIGURED flag */
 		g_ftdm_sngss7_data.cfg.isupCkt[x].flags |= SNGSS7_CONFIGURED;

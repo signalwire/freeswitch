@@ -531,7 +531,17 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 	int 				i;
 
+
+	SS7_INFO("Rx GRS (%d:%d)\n", 
+				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic, 
+				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic + sngss7_span->rx_grs.range));
+
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+		/* confirm this is a voice channel, otherwise we do nothing */ 
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+			continue;
+		} 
 
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -552,10 +562,6 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
 			ftdm_sangoma_ss7_process_state_change (ftdmchan);
 		}
-
-		SS7_INFO_CHAN(ftdmchan, "Rx GRS (%d:%d)\n", 
-				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic, 
-				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic + sngss7_span->rx_grs.range));
 
 		/* flag the channel as having received a reset */
 		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX);
@@ -595,11 +601,13 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 	int					byte = 0;
 	int					bit = 0;
 
-
-	ftdm_log(FTDM_LOG_DEBUG, "Found Rx GRS on span %s...checking circuits\n", ftdmspan->name);
-
 	/* check all the circuits in the range to see if they are done resetting */
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+		/* confirm this is a voice channel, otherwise we do nothing */ 
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+			continue;
+		}
 
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -629,6 +637,11 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 
 	/* check all the circuits in the range to see if they are done resetting */
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+		/* confirm this is a voice channel, otherwise we do nothing */ 
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+			continue;
+		}
 
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
@@ -664,6 +677,12 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 
 GRS_UNLOCK_ALL:
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+
+		/* confirm this is a voice channel, otherwise we do nothing */ 
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+			continue;
+		}
+
 		/* extract the channel in question */
 		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
@@ -684,6 +703,10 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 	int 				i;
+
+	SS7_INFO("Rx GRA (%d:%d)\n", 
+				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic, 
+				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic + sngss7_span->rx_gra.range));
 
 	for (i = sngss7_span->rx_gra.circuit; i < (sngss7_span->rx_gra.circuit + sngss7_span->rx_gra.range + 1); i++) {
 
@@ -707,9 +730,7 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 			ftdm_sangoma_ss7_process_state_change (ftdmchan);
 		}
 
-		SS7_INFO_CHAN(ftdmchan, "Rx GRA (%d:%d)\n", 
-				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic, 
-				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic + sngss7_span->rx_gra.range));
+
 
 		switch (ftdmchan->state) {
 		/**********************************************************************/
