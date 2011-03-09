@@ -2182,7 +2182,10 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 		rtp_session->autoadj_window = 20;
 		rtp_session->autoadj_tally = 0;
 		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
+	} else if (flags & SWITCH_RTP_FLAG_NOBLOCK) {
+		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
 	}
+
 }
 
 SWITCH_DECLARE(uint32_t) switch_rtp_test_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags)
@@ -2193,6 +2196,10 @@ SWITCH_DECLARE(uint32_t) switch_rtp_test_flag(switch_rtp_t *rtp_session, switch_
 SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags)
 {
 	switch_clear_flag_locked(rtp_session, flags);
+
+	if (flags & SWITCH_RTP_FLAG_NOBLOCK) {
+		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
+	}
 }
 
 static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
@@ -2240,7 +2247,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 		if (loops != 1) {
 			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf + rtp_session->dtmf_data.out_digit_sub_sofar;
 			rtp_session->sending_dtmf = 0;
-			if (rtp_session->timer.interval) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
@@ -2251,7 +2258,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
 		void *pop;
 
-		if (rtp_session->timer.interval) {
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if (rtp_session->timer.samplecount < rtp_session->next_write_samplecount) {
 				return;
 			}
@@ -2275,7 +2282,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
-			if (rtp_session->timer.interval) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				offset = rtp_session->timer.samplecount - rtp_session->last_write_samplecount;
 				if (offset > 0) {
 					rtp_session->dtmf_data.timestamp_dtmf = (uint32_t) (rtp_session->dtmf_data.timestamp_dtmf + offset);
@@ -2491,10 +2498,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			stfu_n_reset(rtp_session->jb);
 		}
 
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && rtp_session->timer.interval) {
+			switch_core_timer_sync(&rtp_session->timer);
+		}
+
 		if (stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
 					   rtp_session->recv_msg.header.pt,
 					   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount) == STFU_ITS_TOO_LATE) {
-			printf("doh\n");
+			
 			goto more;
 		}
 
@@ -2657,7 +2668,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		return -1;
 	}
 
-	if (rtp_session->timer.interval) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 		sleep_mss = rtp_session->timer.interval * 1000;
 	}
 
@@ -2668,7 +2679,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		int read_pretriggered = 0;
 		bytes = 0;
 
-		if (rtp_session->timer.interval) {
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
@@ -2722,8 +2733,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!switch_rtp_ready(rtp_session)) {
 			break;
 		}
-
-		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
+		
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
 
 			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity) {
@@ -3160,7 +3171,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-		if (check || (bytes && !rtp_session->timer.interval)) {
+
+		if (check || (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER))) {
 			if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {	/* We're late! We're Late! */
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
 					switch_cond_next();
@@ -3186,7 +3198,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	do_continue:
 
-		if (!bytes && !rtp_session->timer.interval) {
+		if (!bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			switch_yield(sleep_mss);
 		}
 
@@ -3522,7 +3534,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 				m++;
 			}
-		} else if (rtp_session->timer.timer_interface) {
+		} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			rtp_session->ts = rtp_session->timer.samplecount;
 
 			if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
@@ -3540,11 +3552,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			m++;
 		}
 
-		if (rtp_session->timer.interval && (rtp_session->timer.samplecount - rtp_session->last_write_samplecount) > rtp_session->samples_per_interval * 10) {
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && 
+			(rtp_session->timer.samplecount - rtp_session->last_write_samplecount) > rtp_session->samples_per_interval * 10) {
 			m++;
 		}
 
-		if (!rtp_session->timer.interval &&
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) &&
 			((unsigned) ((switch_micro_time_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet * 10)) {
 			m++;
 		}
@@ -3785,7 +3798,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->stats.outbound.media_bytes += bytes;
 		}
 
-		if (rtp_session->timer.interval) {
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		} else {
 			rtp_session->last_write_timestamp = (uint32_t) switch_micro_time_now();

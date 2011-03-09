@@ -2525,6 +2525,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						}
+					} else if (!strcasecmp(var, "rtp-notimer-during-bridge")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
+						}
 					} else if (!strcasecmp(var, "manual-redirect")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MANUAL_REDIRECT);
@@ -3201,6 +3207,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						}
+					} else if (!strcasecmp(var, "rtp-notimer-during-bridge")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
 						}
 					} else if (!strcasecmp(var, "manual-redirect")) {
 						if (switch_true(val)) {
