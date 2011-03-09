@@ -428,6 +428,12 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 
         i->ts_drift = ts + (i->ts_offset - timer_ts);
 
+        if (i->ts_offset && i->ts_drift > 0) {
+            i->ts_offset = timer_ts - ts;
+            i->ts_drift = ts + (i->ts_offset - timer_ts);
+        }
+
+
         if (i->max_drift) {
             if (i->ts_drift < i->max_drift) {
                 if (++i->drift_dropped_packets < i->drift_max_dropped) {
@@ -518,8 +524,8 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
     
 
     if (stfu_log != null_logger && i->debug) {
-        stfu_log(STFU_LOG_EMERG, "I: %s %u i=%u/%u - g:%u/%u c:%u/%u b:%u - %u:%u - %u %d %u %u %d %d %d/%d\n", i->name,
-                 i->qlen, i->period_packet_in_count, i->period_time, i->consecutive_good_count, 
+        stfu_log(STFU_LOG_EMERG, "I: %s %u/%u i=%u/%u - g:%u/%u c:%u/%u b:%u - %u:%u - %u %d %u %u %d %d %d/%d\n", i->name,
+                 i->qlen, i->max_qlen, i->period_packet_in_count, i->period_time, i->consecutive_good_count, 
                  i->decrement_time, i->period_clean_count, i->decrement_time, i->consecutive_bad_count,
                  ts, ts / i->samples_per_packet, 
                  i->period_missing_count, i->period_need_range_avg,
