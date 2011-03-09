@@ -4625,6 +4625,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
 			/* move the member from the old conference to the new one */
 			lock_member(member);
+			switch_thread_rwlock_unlock(member->rwlock);
 
 			if (conference != new_conference) {
 				conference_del_member(conference, member);
@@ -4659,10 +4660,6 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
 				switch_event_fire(&event);
-			}
-
-			if (member) {
-				switch_thread_rwlock_unlock(member->rwlock);
 			}
 		}
 
