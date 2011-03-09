@@ -6053,9 +6053,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_get_raw_data_detached(ftdm_sigmsg_t *sigms
 	if (!sigmsg || !sigmsg->raw.len) {
 		return FTDM_FAIL;
 	}
-	
+
 	*data = sigmsg->raw.data;
-	*datalen = sigmsg->raw.len;		
+	*datalen = sigmsg->raw.len;
+
+	sigmsg->raw.data = NULL;
+	sigmsg->raw.len = 0;
 	return FTDM_SUCCESS;
 }
 

@@ -808,17 +808,10 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 
 	if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
 		/* If Facility decoding is disabled, we do not care about current call state, just pass event up to user */
-		ftdm_sigmsg_t sigev;
 		if (facEvnt->facElmt.facStr.pres) {
 			get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len-2);
+			sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_FACILITY);
 		}
-		memset(&sigev, 0, sizeof(sigev));
-		sigev.chan_id = ftdmchan->chan_id;
-		sigev.span_id = ftdmchan->span_id;
-		sigev.channel = ftdmchan;
-		
-		sigev.event_id = FTDM_SIGEVENT_FACILITY;
-		ftdm_span_send_signal(ftdmchan->span, &sigev);
 		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
 	}
