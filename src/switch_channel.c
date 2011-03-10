@@ -751,7 +751,7 @@ SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_cha
 
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->profile_mutex);
-	if ((hi = channel->variables->headers)) {
+	if (channel->variables && (hi = channel->variables->headers)) {
 		channel->vi = 1;
 	} else {
 		switch_mutex_unlock(channel->profile_mutex);
