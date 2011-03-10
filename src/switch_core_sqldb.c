@@ -1714,7 +1714,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
 	
 	switch_cache_db_handle_t *dbh;
 	char *sql;
-	switch_time_t now;
+	time_t now;
 
 	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
 		return SWITCH_STATUS_FALSE;
