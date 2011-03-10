@@ -45,10 +45,11 @@
 ftdm_status_t handle_relay_connect(RyMngmt *sta);
 ftdm_status_t handle_relay_disconnect(RyMngmt *sta);
 
-static ftdm_status_t enable_all_ckts_for_relay(void);
+/*static ftdm_status_t enable_all_ckts_for_relay(void);*/
 static ftdm_status_t reconfig_all_ckts_for_relay(void);
 static ftdm_status_t disable_all_ckts_for_relay(void);
 static ftdm_status_t block_all_ckts_for_relay(uint32_t procId);
+static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId);
 static ftdm_status_t disable_all_sigs_for_relay(uint32_t procId);
 static ftdm_status_t disble_all_mtp2_sigs_for_relay(void);
 /******************************************************************************/
@@ -72,26 +73,20 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 		switch (sng_relay->type) {
 		/******************************************************************/
 		case (LRY_CT_TCP_CLIENT):
-			/* check the status of all isup intfs in case we weren't connected when
-			 * the interface became active
-			 */
-			check_status_of_all_isup_intf();
-
 			/* reconfigure all ISUP ckts, since the main system would have lost all configs */
 			if (reconfig_all_ckts_for_relay()) {
 				SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
 				/* we're done....this is very bad! */
-			} else {
-				/* if the circuits reconfiged then bring then back up */	
-				enable_all_ckts_for_relay();
 			}
-
 			break;
 		/******************************************************************/
 		case (LRY_CT_TCP_SERVER):
-			/*unblock_all_ckts_for_relay(sta->t.usta.s.ryErrUsta.errPid);*/
+			/* bring the sig links on the client system back up */
 			ftmod_ss7_enable_grp_mtp3Link(sta->t.usta.s.ryUpUsta.id);
-
+			
+			/* unbloock the ckts on the client system */
+			unblock_all_ckts_for_relay(sta->t.usta.s.ryUpUsta.id);
+			
 			break;
 		/******************************************************************/
 		default:
@@ -179,7 +174,7 @@ ftdm_status_t disable_all_ckts_for_relay(void)
 
 	return FTDM_SUCCESS;
 }
-
+#if 0
 /******************************************************************************/
 ftdm_status_t enable_all_ckts_for_relay(void)
 {
@@ -227,7 +222,7 @@ ftdm_status_t enable_all_ckts_for_relay(void)
 
 	return FTDM_SUCCESS;
 }
-
+#endif
 /******************************************************************************/
 ftdm_status_t reconfig_all_ckts_for_relay(void)
 {
@@ -244,6 +239,9 @@ ftdm_status_t reconfig_all_ckts_for_relay(void)
 			
 			/* mark the circuit for re-configuration */
 			sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG);
+
+			/* clear the relay flag */
+			sngss7_clear_ckt_flag(sngss7_info, FLAG_RELAY_DOWN);
 		}
 
 		/* move to the next circuit */
@@ -310,6 +308,42 @@ ftdm_status_t disble_all_mtp2_sigs_for_relay(void)
 
 	return FTDM_SUCCESS;
 
+}
+
+/******************************************************************************/
+static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
+{
+	int x;
+	int ret;
+
+	/* we just got connection to this procId, send out a unblock for all these circuits
+	 * since we blocked them when we lost the connection	
+ 	 */
+	x = (procId * 1000) + 1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+	/**************************************************************************/
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			/* send a block request via stack manager */
+			ret = ftmod_ss7_unblock_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			if (ret) {
+				SS7_INFO("Successfully unblocked CIC:%d(ckt:%d) due to Relay connection\n", 
+							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
+							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			} else {
+				SS7_ERROR("Failed to unblock CIC:%d(ckt:%d) due to Relay connection\n",
+							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
+							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			}
+	
+		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+
+		/* move along */
+		x++;
+	/**************************************************************************/
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) */
+
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/

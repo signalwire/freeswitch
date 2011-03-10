@@ -909,8 +909,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	case FTDM_CHANNEL_STATE_RESTART:	/* CICs needs a Reset */
 
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK)) {
-			if ((sngss7_test_ckt_blk_flag(sngss7_info, FLAG_RESET_RX)) ||
-				(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_RESET_RX))) {
+			if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_RX)) ||
+				(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX))) {
 
 				SS7_DEBUG_CHAN(ftdmchan,"Incoming Reset request on CIC in UCIC block, removing UCIC block%s\n", "");
 
@@ -1020,10 +1020,13 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_SUSPENDED:	/* circuit has been blocked */
 
-		  SS7_DEBUG_CHAN(ftdmchan,"Current flags: 0x%X\n", sngss7_info->ckt_flags);
+		  SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X\n", 
+									sngss7_info->ckt_flags,
+									sngss7_info->blk_flags);
 
 		/**********************************************************************/
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME)) {
+
 			SS7_DEBUG_CHAN(ftdmchan, "Processing RESUME%s\n", "");
 
 			/* clear the RESUME flag */
@@ -1038,27 +1041,23 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				(sngss7_test_ckt_flag (sngss7_info, FLAG_GRP_RESET_TX)) ||
 				(sngss7_test_ckt_flag (sngss7_info, FLAG_GRP_RESET_RX))) {
 
-				/* go back to the reset state */
+				/* don't bring up the sig status but also move to reset */
 				goto suspend_goto_restart;
 			} else {
-
 				/* bring the sig status back up */
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
 			}
-
-			/* go back to the last state */
-			goto suspend_goto_last;
 		} /* if (sngss7_test_flag(sngss7_info, FLAG_INFID_RESUME)) */
 
-		if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) && 
+			(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP))) {
+
 			SS7_DEBUG_CHAN(ftdmchan, "Processing PAUSE%s\n", "");
 
 			/* bring the sig status down */
 			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
-
-			/* go back to the last state */
-			goto suspend_goto_last;
 		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) { */
+
 		/**********************************************************************/
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX) && 
 			!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN)) {
@@ -1081,6 +1080,10 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			!sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_UNBLK_RX_DN)){
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_UNBLK_RX flag %s\n", "");
 
+			/* clear the block flags */
+			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
+
 			/* clear the unblock flag */
 			sngss7_clear_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_UNBLK_RX);
 
@@ -1089,9 +1092,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* send a uba */
 			ft_to_sngss7_uba (ftdmchan);
-
-			/* throw the done flag */
-			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX_DN);
 
 			/* check the last state and return to it to allow the call to finish */
 			goto suspend_goto_last;
@@ -1119,17 +1119,18 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			!sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_UNBLK_TX_DN)){
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_UNBLK_TX flag %s\n", "");
 
+			/* clear the block flags */
+			sngss7_clear_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_BLOCK_TX);
+			sngss7_clear_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_BLOCK_TX_DN);
+
 			/* clear the unblock flag */
-			sngss7_clear_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
 
 			/* bring the sig status up */
 			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
 
 			/* send a ubl */
 			ft_to_sngss7_ubl (ftdmchan);
-
-			/* throw the done flag */
-			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX_DN);
 
 			/* check the last state and return to it to allow the call to finish */
 			goto suspend_goto_last;
@@ -1153,15 +1154,17 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX) &&
 			!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX_DN)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_LC_UNBLK_RX flag %s\n", "");
+
+			/* clear the block flags */
+			sngss7_clear_ckt_blk_flag (sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+			sngss7_clear_ckt_blk_flag (sngss7_info, FLAG_CKT_LC_BLOCK_RX_DN);
 			
 			/* clear the unblock flag */
-			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX);
+			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX);
 
 			/* send a uba */
 			/*ft_to_sngss7_uba(ftdmchan);*/
 
-			/* throw the done flag */
-			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX_DN);
 
 			/* check the last state and return to it to allow the call to finish */
 			goto suspend_goto_last;
@@ -1191,10 +1194,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 		if (sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_UCIC_UNBLK) &&
 			!sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_UCIC_UNBLK_DN)) {
-			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_UCIC_UNBLK flag %s\n", "");;
+			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_UCIC_UNBLK flag %s\n", "");
 
 			/* remove the UCIC block flag */
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK_DN);
 
 			/* remove the UCIC unblock flag */
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK);
@@ -1202,12 +1206,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/* throw the channel into reset to sync states */
 			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
-			/* throw the done flag */
-			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK_DN);
-
 			/* bring the channel into restart again */
 			goto suspend_goto_restart;
 		}
+
+		SS7_ERROR_CHAN(ftdmchan,"No block flag processed!%s\n", "");
 
 suspend_goto_last:
 		state_flag = 0;

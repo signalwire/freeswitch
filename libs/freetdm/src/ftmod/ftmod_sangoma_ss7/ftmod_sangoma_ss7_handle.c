@@ -1183,7 +1183,7 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 
 				/* clear the resume flag on the channel */
-				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 			}
 	
 			/* unlock the channel again before we exit */
@@ -1564,9 +1564,6 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* throw the unblock flag */
 	sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX);
-
-	/* clear the block flag */
-	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
 
 	/* set the channel to suspended state */
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -2017,12 +2014,12 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	/* lock the channel */
 	ftdm_mutex_lock(ftdmchan->mutex);
 
-	/* check if the circuit is already blocked or not */
-	if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX)) {
-		SS7_WARN("Received local UBL on circuit that is already unblocked!\n");
+	/* check if the circuit is blocked or not */
+	if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX)) {
+		SS7_WARN("Received local UBL on circuit that is not blocked!\n");
 	}
 
-	/* throw the ckt block flag */
+	/* throw the ckt unblock flag */
 	sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX);
 
 	/* set the channel to suspended state */

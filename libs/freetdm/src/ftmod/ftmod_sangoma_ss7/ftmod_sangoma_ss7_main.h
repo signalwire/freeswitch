@@ -560,6 +560,41 @@ typedef enum {
 	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27)
 } sng_ckt_block_flag_t;
 
+#define BLK_FLAGS_STRING \
+	"UCIC BLK", \
+	"UCIC BLK DN", \
+	"UCIC UNBLK", \
+	"UCIC UNBLK DN", \
+	"RX LC BLK", \
+	"RX LC BLK DN", \
+	"RX LC UNBLK", \
+	"RX LC UNBLK DN", \
+	"RX CKT BLK", \
+	"RX CKT BLK DN", \
+	"RX CKT UNBLK", \
+	"RX CKT UNBLK DN", \
+	"TX CKT BLK", \
+	"TX CKT BLK DN", \
+	"TX CKT UNBLK", \
+	"TX CKT UNBLK DN", \
+	"RX GRP MN BLK", \
+	"RX GRP MN BLK DN", \
+	"RX GRP MN UNBLK", \
+	"RX GRP MN UNBLK DN", \
+	"TX GRP MN BLK", \
+	"TX GRP MN BLK DN", \
+	"TX GRP MN UNBLK", \
+	"TX GRP MN UNBLK DN", \
+	"RX GRP HW BLK", \
+	"RX GRP HW BLK DN", \
+	"RX GRP HW UNBLK", \
+	"RX GRP HW UNBLK DN", \
+	"TX GRP HW BLK", \
+	"TX GRP HW BLK DN", \
+	"TX GRP HW UNBLK", \
+	"TX GRP HW UNBLK DN"
+FTDM_STR2ENUM_P(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t)
+
 /* valid for every cfg array except circuits */
 typedef enum {
 	SNGSS7_CONFIGURED		= (1 << 0),
@@ -656,7 +691,7 @@ int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
 
 int ftmod_ss7_block_isup_ckt(uint32_t cktId);
-
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 
 
 /* in ftmod_sangoma_ss7_sta.c */
@@ -795,6 +830,13 @@ void handle_isup_t35(void *userdata);
 /******************************************************************************/
 
 /* MACROS *********************************************************************/
+#define SS7_STATE_CHANGE(ftdmchan, new_state) \
+if (ftdmchan->state == new_state) { \
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE); \
+} else { \
+	ftdm_set_state(ftdmchan, new_state); \
+}
+
 #define SS7_DEBUG(a,...)	ftdm_log(FTDM_LOG_DEBUG,a , ##__VA_ARGS__ );
 #define SS7_INFO(a,...)	 ftdm_log(FTDM_LOG_INFO,a , ##__VA_ARGS__ );
 #define SS7_WARN(a,...)	 ftdm_log(FTDM_LOG_WARNING,a , ##__VA_ARGS__ );

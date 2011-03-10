@@ -94,6 +94,9 @@ ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data
 FTDM_ENUM_NAMES(CKT_FLAGS_NAMES, CKT_FLAGS_STRING)
 FTDM_STR2ENUM(ftmod_ss7_ckt_state2flag, ftmod_ss7_ckt_flag2str, sng_ckt_flag_t, CKT_FLAGS_NAMES, 31)
 
+FTDM_ENUM_NAMES(BLK_FLAGS_NAMES, BLK_FLAGS_STRING)
+FTDM_STR2ENUM(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t, BLK_FLAGS_NAMES, 31)
+
 /* FUNCTIONS ******************************************************************/
 uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 {
@@ -1484,6 +1487,11 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 {
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_chan_data_t	*sngss7_info = NULL;
+	sng_isup_inf_t		*sngss7_intf = NULL;
+	uint8_t				state;
+	uint8_t				bits_ab = 0;
+	uint8_t				bits_cd = 0;	
+	uint8_t				bits_ef = 0;
 	int 				x;
 	int					ret;
 
@@ -1494,7 +1502,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 		
 		/* if the call data is NULL move on */
 		if (ftdmchan->call_data == NULL) {
-			SS7_WARN_CHAN(ftdmchan, "Reconfiguring channel that has not call_data!%s\n", " ");
+			SS7_WARN_CHAN(ftdmchan, "Found ftdmchan with no sig module data!%s\n", " ");
 			continue;
 		}
 
@@ -1503,12 +1511,136 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 		/* check the reconfig flag */
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG)) {
-			ret = ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id);
+			/* confirm the state of all isup interfaces*/
+			check_status_of_all_isup_intf();
 
-			if (ret) {
-				SS7_CRITICAL("ISUP CKT %d re-configuration FAILED!\n", x);
+			sngss7_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
+
+			/* check if the interface is paused or resumed */
+			if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
+				SS7_DEBUG_CHAN(ftdmchan, "ISUP intf %d is PAUSED\n", sngss7_intf->id);
+				/* throw the pause flag */
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			} else {
-				SS7_INFO("ISUP CKT %d re-configuration DONE!\n", x);
+				SS7_DEBUG_CHAN(ftdmchan, "ISUP intf %d is RESUMED\n", sngss7_intf->id);
+				/* throw the resume flag */
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
+			}
+
+			/* query for the status of the ckt */
+			if (ftmod_ss7_isup_ckt_sta(sngss7_info->circuit->id, &state)) {
+				SS7_ERROR("Failed to read isup ckt = %d status\n", sngss7_info->circuit->id);
+				continue;
+			}
+
+			/* extract the bit sections */
+			bits_ab = (state & (SNG_BIT_A + SNG_BIT_B)) >> 0;
+			bits_cd = (state & (SNG_BIT_C + SNG_BIT_D)) >> 2;
+			bits_ef = (state & (SNG_BIT_E + SNG_BIT_F)) >> 4;
+
+			if (bits_cd == 0x0) {
+				/* check if circuit is UCIC or transient */
+				if (bits_ab == 0x3) {
+					/* bit a and bit b are set, unequipped */
+					ret = ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id);
+					if (ret) {
+						SS7_CRITICAL("ISUP CKT %d re-configuration FAILED!\n",x);
+					} else {
+						SS7_INFO("ISUP CKT %d re-configuration DONE!\n", x);
+					}
+
+					/* reset the circuit to sync states */
+					ftdm_mutex_lock(ftdmchan->mutex);
+			
+					/* flag the circuit as active */
+					sngss7_set_flag(sngss7_info->circuit, SNGSS7_ACTIVE);
+
+					/* throw the channel into reset */
+					sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
+
+					/* throw the channel to suspend */
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+			
+					/* unlock the channel */
+					ftdm_mutex_unlock(ftdmchan->mutex);
+
+				} /* if (bits_ab == 0x3) */
+			} else {
+				/* check the maintenance block status in bits A and B */
+				switch (bits_ab) {
+				/**************************************************************************/
+				case (0):
+					/* no maintenace block...do nothing */
+					break;
+				/**************************************************************************/
+				case (1):
+					/* locally blocked */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+
+					/* set the channel to suspended state */
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					break;
+				/**************************************************************************/
+				case (2):
+					/* remotely blocked */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+
+					/* set the channel to suspended state */
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					break;
+				/**************************************************************************/
+				case (3):
+					/* both locally and remotely blocked */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+
+					/* set the channel to suspended state */
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					break;
+				/**************************************************************************/
+				default:
+					break;
+				/**************************************************************************/
+				} /* switch (bits_ab) */
+			
+				/* check the hardware block status in bits e and f */
+				switch (bits_ef) {
+				/**************************************************************************/
+				case (0):
+					/* no maintenace block...do nothing */
+					break;
+				/**************************************************************************/
+				case (1):
+					/* locally blocked */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX);
+
+					/* set the channel to suspended state */
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					break;
+				/**************************************************************************/
+				case (2):
+					/* remotely blocked */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+
+					/* set the channel to suspended state */
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					break;
+				/**************************************************************************/
+				case (3):
+					/* both locally and remotely blocked */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+
+					/* set the channel to suspended state */
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					break;
+				/**************************************************************************/
+				default:
+					break;
+				/**************************************************************************/
+				} /* switch (bits_ef) */
 			}
 
 			/* clear the re-config flag ... no matter what */

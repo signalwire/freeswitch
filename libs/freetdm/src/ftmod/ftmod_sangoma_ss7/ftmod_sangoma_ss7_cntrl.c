@@ -76,6 +76,7 @@ int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
 
 int ftmod_ss7_block_isup_ckt(uint32_t cktId);
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -875,6 +876,37 @@ int ftmod_ss7_block_isup_ckt(uint32_t cktId)
 	return (sng_cntrl_isup(&pst, &cntrl));
 }
 
+/******************************************************************************/
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId)
+{
+	SiMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSI;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SiMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType						= TCNTRL;		/* this is a control request */
+	cntrl.hdr.entId.ent						= ENTSI;
+	cntrl.hdr.entId.inst					= S_INST;
+	cntrl.hdr.elmId.elmnt					= STICIR;
+
+	cntrl.t.cntrl.s.siElmnt.elmntId.circuit		= cktId;
+	cntrl.t.cntrl.s.siElmnt.elmntParam.cir.flag = LSI_CNTRL_CIR_FORCE;
+
+	cntrl.t.cntrl.action					= AENA;			/* unblock via UBL */
+	cntrl.t.cntrl.subAction					= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_isup(&pst, &cntrl));
+}
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

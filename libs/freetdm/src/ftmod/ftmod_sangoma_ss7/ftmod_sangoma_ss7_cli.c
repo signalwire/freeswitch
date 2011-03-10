@@ -1011,6 +1011,15 @@ static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, i
 					}
 				}
 
+				for (bit = 0; bit < 33; bit++) {
+					if (ss7_info->blk_flags & ( 0x1 << bit)) {
+						stream->write_function(stream, "|");
+						flag = bit;
+						text = ftmod_ss7_blk_flag2str(flag);
+						stream->write_function(stream, "%s",text);
+					}
+				}
+
 				stream->write_function(stream, "\n");
 			} /* if ( span and chan) */
 
@@ -1172,7 +1181,8 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 														ftdm_channel_state2str(ftdmchan->state));
 		
 						if ((sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || 
-							(sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+							(sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX)) ||
+							(sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX))) {
 							stream->write_function(stream, "l_mn=Y|");
 						}else {
 							stream->write_function(stream, "l_mn=N|");
