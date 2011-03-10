@@ -325,9 +325,9 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t * t
 			do_repub = SWITCH_TRUE;
 
 			switch_event_create(&event, SWITCH_EVENT_TRAP);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "network-address-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-previous-v4", nat_globals.pub_addr);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", newip);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "network-external-address-change");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-external-address-previous-v4", nat_globals.pub_addr);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-external-address-change-v4", newip);
 			switch_event_fire(&event);
 
 			switch_set_string(nat_globals.pub_addr, newip);

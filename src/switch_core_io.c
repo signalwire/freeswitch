@@ -310,6 +310,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				} else {
 					memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
 				}
+
+				session->raw_read_frame.timestamp = 0;
 				session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				read_frame = &session->raw_read_frame;

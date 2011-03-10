@@ -182,7 +182,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 	const char *tonemap = "us";
 	const char *hotline = "";
 	uint32_t digit_timeout = 10;
-	uint32_t wait_dialtone_timeout = 30000;
+	uint32_t wait_dialtone_timeout = 5000;
 	uint32_t max_dialstr = MAX_DTMF;
 	uint32_t polarity_delay = 600;
 	const char *var, *val;
@@ -226,7 +226,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 			if (wait_dialtone_timeout < 0) {
 				wait_dialtone_timeout = 0;
 			}
-			ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Wait dial tone ms = %d\n", wait_dialtone_timeout);
+			ftdm_log(FTDM_LOG_DEBUG, "Wait dial tone ms = %d\n", wait_dialtone_timeout);
 		} else if (!strcasecmp(var, "enable_callerid")) {
 			if (!(val = va_arg(ap, char *))) {
                 		break;

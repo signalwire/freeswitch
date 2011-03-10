@@ -409,9 +409,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
 	switch_assert(pool != NULL);
-	if (switch_core_memory_pool_get_data(*pool, "_in_thread")) {
-		switch_cache_db_detach();
-	}
+
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool\n");
 #endif

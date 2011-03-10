@@ -50,6 +50,7 @@ del types
 
 consoleLog = _freeswitch.consoleLog
 consoleCleanLog = _freeswitch.consoleCleanLog
+email = _freeswitch.email
 class IVRMenu(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, IVRMenu, name, value)

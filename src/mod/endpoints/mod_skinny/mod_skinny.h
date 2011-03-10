@@ -132,25 +132,25 @@ typedef enum {
 
 #define SKINNY_MAX_LINES 42
 struct listener {
-    skinny_profile_t *profile;
-    char device_name[16];
-    uint32_t device_instance;
-    uint32_t device_type;
-    
+	skinny_profile_t *profile;
+	char device_name[16];
+	uint32_t device_instance;
+	uint32_t device_type;
+
 	char firmware_version[16];
 	char *soft_key_set_set;
 
-    switch_socket_t *sock;
-    switch_memory_pool_t *pool;
-    switch_thread_rwlock_t *rwlock;
-    switch_sockaddr_t *sa;
-    char remote_ip[50];
-    switch_mutex_t *flag_mutex;
-    uint32_t flags;
-    switch_port_t remote_port;
-    uint32_t id;
-    time_t expire_time;
-    struct listener *next;
+	switch_socket_t *sock;
+	switch_memory_pool_t *pool;
+	switch_thread_rwlock_t *rwlock;
+	char remote_ip[50];
+	switch_port_t remote_port;
+	char local_ip[50];
+	switch_port_t local_port;
+	switch_mutex_t *flag_mutex;
+	uint32_t flags;
+	time_t expire_time;
+	struct listener *next;
 };
 
 typedef struct listener listener_t;

@@ -54,6 +54,9 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 			<!-- whether you want to wait for caller id -->
 			<param name="enable-callerid" value="true"/>
 
+			<!-- How much to wait for dial tone (0 if you just want to dial out immediately without waiting for dial tone) -->
+			<!--<param name="wait-dialtone-timeout" value="5000"/>-->
+
 			<!-- whether you want to enable callwaiting feature -->
 			<!--<param name="callwaiting" value="true"/>-->
 

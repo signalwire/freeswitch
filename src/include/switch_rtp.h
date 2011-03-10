@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, 
 																  uint32_t queue_frames,
 																  uint32_t max_queue_frames,
-																  uint32_t samples_per_packet, uint32_t samples_per_second);
+																  uint32_t samples_per_packet, uint32_t samples_per_second, uint32_t max_drift);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp_session, const char *name);
 

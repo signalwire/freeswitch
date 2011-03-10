@@ -98,10 +98,9 @@ static void check_ip(void)
 	char old_ip6[256] = "";
 	int ok4 = 1, ok6 = 1;
 	int mask = 0;
-	static char hostname[256] = "";
 
-	gethostname(hostname, sizeof(hostname));
-	switch_core_set_variable("hostname", hostname);
+	gethostname(runtime.hostname, sizeof(runtime.hostname));
+	switch_core_set_variable("hostname", runtime.hostname);
 
 	switch_find_local_ip(guess_ip4, sizeof(guess_ip4), &mask, AF_INET);
 	switch_find_local_ip(guess_ip6, sizeof(guess_ip6), NULL, AF_INET6);
@@ -1280,7 +1279,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		/* one per customer */
 		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	memset(&runtime, 0, sizeof(runtime));
+	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
+	runtime.max_db_handles = 50;
+	runtime.db_handle_timeout = 5000000;;
+	
 	runtime.runlevel++;
 	runtime.sql_buffer_len = 1024 * 32;
 	runtime.max_sql_buffer_len = 1024 * 1024;
@@ -1348,9 +1353,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
-	gethostname(runtime.hostname, sizeof(runtime.hostname));
 	switch_core_set_variable("hostname", runtime.hostname);
-
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
 	in.s_addr = mask;
@@ -1549,6 +1552,23 @@ static void switch_load_core_config(const char *file)
 					if (tmp > -1 && tmp < 11) {
 						switch_core_session_ctl(SCSC_DEBUG_LEVEL, &tmp);
 					}
+				} else if (!strcasecmp(var, "max-db-handles")) {
+					long tmp = atol(val);
+
+					if (tmp > 4 && tmp < 5001) {
+						runtime.max_db_handles = (uint32_t) tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-db-handles must be between 5 and 5000\n");
+					}
+				} else if (!strcasecmp(var, "db-handle-timeout")) {
+					long tmp = atol(val);
+					
+					if (tmp > 0 && tmp < 5001) {
+						runtime.db_handle_timeout = (uint32_t) tmp * 1000000;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "db-handle-timeout must be between 1 and 5000\n");
+					}
+					
 				} else if (!strcasecmp(var, "multiple-registrations")) {
 					runtime.multiple_registrations = switch_true(val);
 				} else if (!strcasecmp(var, "sql-buffer-len")) {

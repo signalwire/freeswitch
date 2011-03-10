@@ -22,8 +22,10 @@
  */
 
 #ifdef WIN32
-/* required for TryEnterCriticalSection definition.  Must be defined before windows.h include */
-#define _WIN32_WINNT 0x0400
+#   if (_WIN32_WINNT < 0x0400)
+#       error "Need to target at least Windows 95/WINNT 4.0 because TryEnterCriticalSection is needed"
+#   endif
+#   include <windows.h>
 #endif
 
 #include "private/ftdm_core.h"

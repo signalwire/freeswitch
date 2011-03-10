@@ -105,7 +105,7 @@ ESLevent *ESLconnection::api(const char *cmd, const char *arg)
 	return event;
 }
 
-ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
+ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg, const char *job_uuid)
 {
 	size_t len;
 	char *cmd_buf;
@@ -115,12 +115,17 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
 		return NULL;
 	}
 
-	len = strlen(cmd) + (arg ? strlen(arg) : 0) + 10;
+	len = strlen(cmd) + (arg ? strlen(arg) : 0) + (job_uuid ? strlen(job_uuid) + 12 : 0) + 10;
 
 	cmd_buf = (char *) malloc(len + 1);
 	assert(cmd_buf);
+	
+	if (job_uuid) {
+		snprintf(cmd_buf, len, "bgapi %s%s%s\nJob-UUID: %s", cmd, arg ? " " : "", arg ? arg : "", job_uuid);
+	} else {
+		snprintf(cmd_buf, len, "bgapi %s%s%s", cmd, arg ? " " : "", arg ? arg : "");
+	}
 
-	snprintf(cmd_buf, len, "bgapi %s %s", cmd, arg ? arg : "");
 	*(cmd_buf + (len)) = '\0';
 
 	event = sendRecv(cmd_buf);

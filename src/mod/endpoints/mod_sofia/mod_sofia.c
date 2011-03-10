@@ -1349,10 +1349,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				int len, maxlen = 0, qlen = 0, maxqlen = 50;
+				int len, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
 
 				if (msg->string_arg) {
-					char *p;
+					char *p, *q;
 					const char *s;
 
 					if (!strcasecmp(msg->string_arg, "pause")) {
@@ -1379,6 +1379,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if ((p = strchr(msg->string_arg, ':'))) {
 							p++;
 							maxlen = atol(p);
+							if ((q = strchr(p, ':'))) {
+								q++;
+								max_drift = abs(atol(q));
+							}
 						}
 					}
 
@@ -1391,9 +1395,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (qlen) {
 					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 														  tech_pvt->read_impl.samples_per_packet, 
-														  tech_pvt->read_impl.samples_per_second) == SWITCH_STATUS_SUCCESS) {
+														  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
-										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n", len, qlen, maxqlen);
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
+										  len, qlen, maxqlen, max_drift);
 						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
@@ -1439,10 +1444,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
+			const char *var = switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_during_bridge");			
 
+			sofia_glue_tech_track(tech_pvt->profile, session);
+			
 			sofia_glue_tech_simplify(tech_pvt);
 			
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (switch_false(var) && switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;
 				int ok = 0;
 				
@@ -1477,6 +1485,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *val;
 			int ok = 0;
 			
+			sofia_glue_tech_track(tech_pvt->profile, session);
+
 			if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "%s RESUME Jitterbuffer\n", switch_channel_get_name(channel));					
@@ -3513,7 +3523,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			profile = sofia_glue_find_profile(profile_name);
 		}
 	
-		if (!profile) {
+		if (!profile && !zstr(domain)) {
 			profile = sofia_glue_find_profile(domain);
 		}
 	}
@@ -4587,17 +4597,42 @@ static void general_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_TRAP:
 		{
 			const char *cond = switch_event_get_header(event, "condition");
+			switch_hash_index_t *hi;
+			const void *var;
+			void *val;
+			sofia_profile_t *profile;
 
+			if (zstr(cond)) {
+				cond = "";
+			}
 
-			if (cond && !strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
+			if (!strcmp(cond, "network-external-address-change") && mod_sofia_globals.auto_restart) {
+				const char *old_ip4 = switch_event_get_header_nil(event, "network-external-address-previous-v4");
+				const char *new_ip4 = switch_event_get_header_nil(event, "network-external-address-change-v4");
+				
+				switch_mutex_lock(mod_sofia_globals.hash_mutex);
+				if (mod_sofia_globals.profile_hash && !zstr(old_ip4) && !zstr(new_ip4)) {
+					for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+						switch_hash_this(hi, &var, NULL, &val);
+
+						if ((profile = (sofia_profile_t *) val)) {
+							if (!zstr(profile->extsipip) && !strcmp(profile->extsipip, old_ip4)) {
+								profile->extsipip = switch_core_strdup(profile->pool, new_ip4);
+							}
+
+							if (!zstr(profile->extrtpip) && !strcmp(profile->extrtpip, old_ip4)) {
+								profile->extrtpip = switch_core_strdup(profile->pool, new_ip4);
+							}
+						}
+					}
+				}
+				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+				sofia_glue_restart_all_profiles();				
+			} else if (!strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
 				const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
 				const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
 				const char *old_ip6 = switch_event_get_header_nil(event, "network-address-previous-v6");
 				const char *new_ip6 = switch_event_get_header_nil(event, "network-address-change-v6");
-				switch_hash_index_t *hi;
-				const void *var;
-				void *val;
-				sofia_profile_t *profile;
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s] [%s]->[%s]\n", old_ip4, new_ip4, old_ip6, new_ip6);

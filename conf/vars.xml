@@ -207,6 +207,7 @@
   <X-PRE-PROCESS cmd="set" data="de-ring=%(1000,4000,425,0)"/>
   <X-PRE-PROCESS cmd="set" data="dz-ring=%(1500,3500,425.0,0.0)"/>
   <X-PRE-PROCESS cmd="set" data="pl-ring=%(1000,4000,425,0)"/>
+  <X-PRE-PROCESS cmd="set" data="il-ring=%(1000,2000,425.0,0)"/>
   <X-PRE-PROCESS cmd="set" data="bong-ring=v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
   <X-PRE-PROCESS cmd="set" data="sit=%(274,0,913.8);%(274,0,1370.6);%(380,0,1776.7)"/>
   <!--

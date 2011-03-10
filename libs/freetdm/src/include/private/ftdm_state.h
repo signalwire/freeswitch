@@ -188,7 +188,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_cancel_state(const char *file, const char
  * \note If this function is called with the wait parameter set to a non-zero value, the recursivity
  *       of the channel lock must be == 1 because the channel will be unlocked/locked when waiting */
 FT_DECLARE(ftdm_status_t) ftdm_channel_set_state(const char *file, const char *func, int line,
-		ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int wait);
+		ftdm_channel_t *ftdmchan, ftdm_channel_state_t state, int wait, ftdm_usrmsg_t *usrmsg);
 
 /*!\brief Set the state of a channel immediately and implicitly complete the previous state if needed 
  * \note FTDM_SIGEVENT_INDICATION_COMPLETED will be sent if the state change 
@@ -207,7 +207,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_set_state(const char *file, const char *func, in
 #define ftdm_set_state_locked(obj, s) \
 	do { \
 		ftdm_channel_lock(obj); \
-		ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0);									\
+		ftdm_channel_set_state(__FILE__, __FUNCTION__, __LINE__, obj, s, 0, NULL);									\
 		ftdm_channel_unlock(obj); \
 	} while(0);
 

@@ -3216,8 +3216,10 @@ static switch_status_t speech_on_dtmf(switch_core_session_t *session, const swit
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 
-	if (switch_core_asr_feed_dtmf(sth->ah, dtmf, &flags) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Feeding DTMF\n");
+	if (sth) {
+		if (switch_core_asr_feed_dtmf(sth->ah, dtmf, &flags) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error Feeding DTMF\n");
+		}
 	}
 
 	return status;
@@ -3231,6 +3233,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_detect_speech(switch_core_sessio
 	switch_assert(channel != NULL);
 	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
 		switch_channel_set_private(channel, SWITCH_SPEECH_KEY, NULL);
+		switch_core_event_hook_remove_recv_dtmf(session, speech_on_dtmf);
 		switch_core_media_bug_remove(session, &sth->bug);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3265,14 +3268,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *name)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_status_t status;
 
 	if (sth) {
 		if ((status = switch_core_asr_load_grammar(sth->ah, grammar, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error loading Grammar\n");
-			switch_core_asr_close(sth->ah, &flags);
+			switch_ivr_stop_detect_speech(session);
 		}
 		return status;
 	}
@@ -3307,14 +3309,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(swit
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *name)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_status_t status;
 
 	if (sth) {
 		if ((status = switch_core_asr_unload_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error unloading Grammar\n");
-			switch_core_asr_close(sth->ah, &flags);
+			switch_ivr_stop_detect_speech(session);
 		}
 		return status;
 	}
@@ -3324,14 +3325,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_enable_grammar(switch_core_session_t *session, const char *name)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_status_t status;
 
 	if (sth) {
 		if ((status = switch_core_asr_enable_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error enabling Grammar\n");
-			switch_core_asr_close(sth->ah, &flags);
+			switch_ivr_stop_detect_speech(session);
 		}
 		return status;
 	}
@@ -3341,14 +3341,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_enable_grammar(switch_c
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_grammar(switch_core_session_t *session, const char *name)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_status_t status;
 
 	if (sth) {
 		if ((status = switch_core_asr_disable_grammar(sth->ah, name)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error disabling Grammar\n");
-			switch_core_asr_close(sth->ah, &flags);
+			switch_ivr_stop_detect_speech(session);
 		}
 		return status;
 	}
@@ -3358,14 +3357,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_grammar(switch_
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_all_grammars(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_status_t status;
 
 	if (sth) {
 		if ((status = switch_core_asr_disable_all_grammars(sth->ah)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error disabling all Grammars\n");
-			switch_core_asr_close(sth->ah, &flags);
+			switch_ivr_stop_detect_speech(session);
 		}
 		return status;
 	}
@@ -3397,7 +3395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	if (sth) {
 		if (switch_core_asr_load_grammar(sth->ah, grammar, name) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error loading Grammar\n");
-			switch_core_asr_close(sth->ah, &flags);
+			switch_ivr_stop_detect_speech(session);
 			return SWITCH_STATUS_FALSE;
 		}
 

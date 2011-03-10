@@ -83,8 +83,8 @@ static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_status_mtp3link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_status_mtp2link(ftdm_stream_handle_t *stream, char *name);
 static ftdm_status_t handle_status_linkset(ftdm_stream_handle_t *stream, char *name);
-
 static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t handle_status_isup_ckt(ftdm_stream_handle_t *stream, char *id_name);
 
 static ftdm_status_t extract_span_chan(char *argv[10], int pos, int *span, int *chan);
 static ftdm_status_t check_arg_count(int args, int min);
@@ -148,6 +148,25 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 				if (extract_span_chan(argv, c, &span, &chan)) goto handle_cli_error_span_chan;
 
 				handle_show_status(stream, span, chan, verbose);
+			/******************************************************************/
+			} else if (!strcasecmp(argv[c], "isup")) {
+			/******************************************************************/
+				if (check_arg_count(argc, 4)) goto handle_cli_error_argc;
+				c++;
+
+				if (!strcasecmp(argv[c], "ckt")) {
+				/**************************************************************/
+					if (check_arg_count(argc, 5)) goto handle_cli_error_argc;
+					c++;
+
+					handle_status_isup_ckt(stream, argv[c]);
+				/**************************************************************/
+				} else {
+				/**************************************************************/
+					stream->write_function(stream, "Unknown \"status isup\" command\n");
+					goto handle_cli_error;
+				/**************************************************************/
+				}
 			/******************************************************************/
 			} else {
 			/******************************************************************/
@@ -948,12 +967,14 @@ static ftdm_status_t handle_show_inreset(ftdm_stream_handle_t *stream, int span,
 /******************************************************************************/
 static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
-	int				 x;
-	int				 bit;
-	sngss7_chan_data_t  *ss7_info;
-	ftdm_channel_t	  *ftdmchan;
-	int				 lspan;
-	int				 lchan;
+	sngss7_chan_data_t	*ss7_info;
+	ftdm_channel_t		*ftdmchan;
+	int					x;
+	int					bit;
+	int					lspan;
+	int					lchan;
+	const char			*text;
+	int					flag;
 
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
@@ -982,11 +1003,11 @@ static ftdm_status_t handle_show_flags(ftdm_stream_handle_t *stream, int span, i
 							ss7_info->circuit->cic);
 	
 				for (bit = 0; bit < 33; bit++) {
-					stream->write_function(stream, "|");
 					if (ss7_info->ckt_flags & ( 0x1 << bit)) {
-						stream->write_function(stream, "%2d=1", bit);
-					} else {
-						stream->write_function(stream, "%2d=0", bit);
+						stream->write_function(stream, "|");
+						flag = bit;
+						text = ftmod_ss7_ckt_flag2str(flag);
+						stream->write_function(stream, "%s",text);
 					}
 				}
 
@@ -1037,37 +1058,37 @@ static ftdm_status_t handle_show_blocks(ftdm_stream_handle_t *stream, int span, 
 							ftdmchan->physical_chan_id,
 							ss7_info->circuit->cic);
 
-				if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+				if((sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
 					stream->write_function(stream, "l_mn=Y|");
 				}else {
 					stream->write_function(stream, "l_mn=N|");
 				}
 
-				if((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+				if((sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 					stream->write_function(stream, "r_mn=Y|");
 				}else {
 					stream->write_function(stream, "r_mn=N|");
 				}
 
-				if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+				if(sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
 					stream->write_function(stream, "l_hw=Y|");
 				}else {
 					stream->write_function(stream, "l_hw=N|");
 				}
 
-				if(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
+				if(sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
 					stream->write_function(stream, "r_hw=Y|");
 				}else {
 					stream->write_function(stream, "r_hw=N|");
 				}
 
-				if(sngss7_test_ckt_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
+				if(sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_LC_BLOCK_RX)) {
 					stream->write_function(stream, "l_mngmt=Y|");
 				}else {
 					stream->write_function(stream, "l_mngmt=N|");
 				}
 
-				if(sngss7_test_ckt_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
+				if(sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_UCIC_BLOCK)) {
 					stream->write_function(stream, "l_ucic=Y|");
 				}else {
 					stream->write_function(stream, "l_ucic=N|");
@@ -1142,48 +1163,47 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 						/* grab the signaling_status */
 						ftdm_channel_get_sig_status(ftdmchan, &sigstatus);
 		
-						stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|sig_status=%4s|state=%s|",
+						stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|ckt=%4d|sig_status=%4s|state=%s|",
 														ckt->span,
 														ckt->chan,
 														ckt->cic,
+														ckt->id,
 														ftdm_signaling_status2str(sigstatus),
 														ftdm_channel_state2str(ftdmchan->state));
 		
-						if ((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || 
-							(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
+						if ((sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX)) || 
+							(sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX))) {
 							stream->write_function(stream, "l_mn=Y|");
 						}else {
 							stream->write_function(stream, "l_mn=N|");
 						}
 		
-						if ((sngss7_test_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || 
-							(sngss7_test_ckt_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+						if ((sngss7_test_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_RX)) || 
+							(sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_RX))) {
 							stream->write_function(stream, "r_mn=Y|");
 						}else {
 							stream->write_function(stream, "r_mn=N|");
 						}
 		
-						if (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+						if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
 							stream->write_function(stream, "l_hw=Y|");
 						}else {
 							stream->write_function(stream, "l_hw=N|");
 						}
 		
-						if (sngss7_test_ckt_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
+						if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_RX)) {
 							stream->write_function(stream, "r_hw=Y|");
 						}else {
 							stream->write_function(stream, "r_hw=N|");
 						}
 	
 						if (sngss7_test_ckt_flag(ss7_info, FLAG_RELAY_DOWN)) {
-							stream->write_function(stream, "relay=Y|");
+							stream->write_function(stream, "relay=Y");
 						}else {
-							stream->write_function(stream, "relay=N|");
+							stream->write_function(stream, "relay=N");
 						}
 					}
-	
-					stream->write_function(stream, "flags=0x%X",ss7_info->ckt_flags);
-	
+		
 					stream->write_function(stream, "\n");
 				} /* if ( hole, sig, voice) */
 			} /* if ( span and chan) */
@@ -1237,10 +1257,10 @@ static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int c
 					continue;
 				} else {
 					/* throw the ckt block flag */
-					sngss7_set_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
+					sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
 
 					/* set the channel to suspended state */
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 				}
 
 				/* unlock the channel again before we exit */
@@ -1303,13 +1323,13 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 					continue;
 				} else {
 					/* throw the ckt block flag */
-					sngss7_set_ckt_flag(ss7_info, FLAG_CKT_MN_UNBLK_TX);
+					sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_UNBLK_TX);
 
 					/* clear the block flag */
-					sngss7_clear_ckt_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
+					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
 
 					/* set the channel to suspended state */
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 				}
 
 				/* unlock the channel again before we exit */
@@ -1554,12 +1574,12 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 				/**************************************************************************/
 				case FTDM_CHANNEL_STATE_RESTART:
 					/* go to idle so that we can redo the restart state*/
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
 					break;
 				/**************************************************************************/
 				default:
 					/* set the state of the channel to restart...the rest is done by the chan monitor */
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 					break;
 				/**************************************************************************/
 				}
@@ -1627,7 +1647,7 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 					}
 
 					/* set the channel to suspended state */
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 
 				}
 
@@ -1701,15 +1721,10 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* throw the grp maint. block flag */
-				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+				sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
 
 				/* bring the sig status down */
-				sigev.chan_id = ftdmchan->chan_id;
-				sigev.span_id = ftdmchan->span_id;
-				sigev.channel = ftdmchan;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
-				ftdm_span_send_signal(ftdmchan->span, &sigev); 
+				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
 
 				/* if this is the first channel in the range */
 				if (ftdmchan->physical_chan_id == chan) {
@@ -1801,15 +1816,10 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* throw the grp maint. block flag */
-				sngss7_clear_ckt_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
 
 				/* bring the sig status up */
-				sigev.chan_id = ftdmchan->chan_id;
-				sigev.span_id = ftdmchan->span_id;
-				sigev.channel = ftdmchan;
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_UP;
-				ftdm_span_send_signal(ftdmchan->span, &sigev); 
+				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
 
 				/* if this is the first channel in the range */
 				if (ftdmchan->physical_chan_id == chan) {
@@ -2151,6 +2161,184 @@ static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *nam
 	} /* g_ftdm_sngss7_data.cfg.relay[x].id */
 
 success:
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_status_isup_ckt(ftdm_stream_handle_t *stream, char *id_name)
+{
+	sng_isup_ckt_t				*ckt;
+	sngss7_chan_data_t  		*ss7_info;
+	ftdm_channel_t	  			*ftdmchan;
+	uint32_t					id;
+	uint8_t						state = 0;
+	uint8_t						bits_ab = 0;
+	uint8_t						bits_cd = 0;	
+	uint8_t						bits_ef = 0;
+
+	/* extract the integer version of the id (ckt) */
+	id = atoi(id_name);
+
+	/* extract the global config circuit structure */
+	ckt = &g_ftdm_sngss7_data.cfg.isupCkt[id];
+
+	/* confirm the ckt exists */
+	if (ckt->id == 0) {
+		stream->write_function(stream, "Requested ckt does not exist (%d)\n", id);
+		return FTDM_FAIL;
+	}
+
+	/* confirm the ckt is a voice channel */
+	if (ckt->type != VOICE) {
+		stream->write_function(stream, "Requested ckt is a sig link/hole and can not be queried (%d)\n", id);
+		return FTDM_FAIL;
+	}
+
+	/* extract the global structure */
+	ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[id].obj;
+	ftdmchan = ss7_info->ftdmchan;
+
+	/* query the isup stack for the state of the ckt */
+	if (ftmod_ss7_isup_ckt_sta(ckt->id, &state)) {
+		stream->write_function(stream, "Failed to read isup ckt =%d status\n", id);
+		return FTDM_FAIL;
+	}
+
+
+	stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|ckt=%4d|state=0x%02X|",
+									ckt->span,
+									ckt->chan,
+									ckt->cic,
+									ckt->id,
+									state);
+
+	/* extract the bit sections */
+	bits_ab = (state & (SNG_BIT_A + SNG_BIT_B)) >> 0;
+
+	bits_cd = (state & (SNG_BIT_C + SNG_BIT_D)) >> 2;
+
+	bits_ef = (state & (SNG_BIT_E + SNG_BIT_F)) >> 4;
+
+	/* check bits C and D */
+	switch (bits_cd) {
+	/**************************************************************************/
+	case (0):
+		/* ckt is either un-equipped or transient, check bits A and B */
+		switch (bits_ab) {
+		/**********************************************************************/
+		case (0):
+			/* bit a and bit are cleared, transient */
+			stream->write_function(stream, "transient\n");
+			goto success;
+			break;
+		/**********************************************************************/
+		case (1):
+		case (2):
+			/* bit a or bit b are set, spare ... shouldn't happen */
+			stream->write_function(stream, "spare\n");
+			goto success;
+			break;
+		/**********************************************************************/
+		case (3):
+			/* bit a and bit b are set, unequipped */
+			stream->write_function(stream, "unequipped\n");
+			goto success;
+			break;
+		/**********************************************************************/
+		default:
+			stream->write_function(stream, "invalid values for bits A and B (%d)\n",
+											bits_ab);
+			goto success;
+			break;
+		/**********************************************************************/
+		} /* switch (bits_ab) */
+
+		/* shouldn't get here but have a break for properness */
+		break;
+	/**************************************************************************/
+	case (1):
+		/* circuit incoming busy */
+		stream->write_function(stream, "incoming busy");
+		break;
+	/**************************************************************************/
+	case (2):
+		/* circuit outgoing busy */
+		stream->write_function(stream, "outgoing busy");
+		break;
+	/**************************************************************************/
+	case (3):
+		/* circuit idle */
+		stream->write_function(stream, "idle");
+		break;
+	/**************************************************************************/
+	default:
+		/* invalid */
+		stream->write_function(stream, "bits C and D are invalid (%d)!\n",
+										bits_cd);
+		goto success;
+	/**************************************************************************/
+	} /* switch (bits_cd) */
+
+	/* check the maintenance block status in bits A and B */
+	switch (bits_ab) {
+	/**************************************************************************/
+	case (0):
+		/* no maintenace block...do nothing */
+		break;
+	/**************************************************************************/
+	case (1):
+		/* locally blocked */
+		stream->write_function(stream, "|l_mn");
+		break;
+	/**************************************************************************/
+	case (2):
+		/* remotely blocked */
+		stream->write_function(stream, "|r_mn");
+		break;
+	/**************************************************************************/
+	case (3):
+		/* both locally and remotely blocked */
+		stream->write_function(stream, "|l_mn|r_mn");
+		break;
+	/**************************************************************************/
+	default:
+		stream->write_function(stream, "bits A and B are invlaid (%d)!\n",
+										bits_ab);
+		goto success;
+	/**************************************************************************/
+	} /* switch (bits_ab) */
+
+	/* check the hardware block status in bits e and f */
+	switch (bits_ef) {
+	/**************************************************************************/
+	case (0):
+		/* no maintenace block...do nothing */
+		break;
+	/**************************************************************************/
+	case (1):
+		/* locally blocked */
+		stream->write_function(stream, "|l_hw");
+		break;
+	/**************************************************************************/
+	case (2):
+		/* remotely blocked */
+		stream->write_function(stream, "|r_hw");
+		break;
+	/**************************************************************************/
+	case (3):
+		/* both locally and remotely blocked */
+		stream->write_function(stream, "|l_hw|r_hw");
+		break;
+	/**************************************************************************/
+	default:
+		stream->write_function(stream, "bits E and F are invlaid (%d)!\n",
+										bits_ef);
+		goto success;
+	/**************************************************************************/
+	} /* switch (bits_ef) */
+
+success:
+	stream->write_function(stream, "\n");
 	return FTDM_SUCCESS;
 }
 

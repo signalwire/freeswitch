@@ -17,6 +17,10 @@ public class freeswitch {
     freeswitchJNI.consoleCleanLog(msg);
   }
 
+  public static boolean email(String to, String from, String headers, String body, String file, String convert_cmd, String convert_ext) {
+    return freeswitchJNI.email(to, from, headers, body, file, convert_cmd, convert_ext);
+  }
+
   public static void console_log(String level_str, String msg) {
     freeswitchJNI.console_log(level_str, msg);
   }

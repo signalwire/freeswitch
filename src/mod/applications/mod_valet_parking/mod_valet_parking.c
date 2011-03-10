@@ -114,7 +114,13 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_t *event;
 	char dtmf_buf[128] = "";
-	int is_auto = 0;
+	int is_auto = 0, play_announce = 1;
+	const char *var;
+
+
+	if ((var = switch_channel_get_variable(channel, "valet_announce_slot"))) {
+		play_announce = switch_true(var);
+	}
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
@@ -254,7 +260,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				switch_core_session_t *b_session;
 
 				if ((b_session = switch_core_session_locate(uuid))) {
-					switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
+					if (play_announce) {
+						switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
+					}
 					switch_ivr_session_transfer(b_session, dest, "inline", NULL);
 					switch_mutex_unlock(lot->mutex);
 					switch_core_session_rwunlock(b_session);
@@ -263,7 +271,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				}
 			}
 
-			switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
+			if (play_announce) {
+				switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
+			}
 		}
 
 

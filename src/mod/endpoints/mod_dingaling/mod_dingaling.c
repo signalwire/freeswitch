@@ -77,6 +77,7 @@ typedef enum {
 	TFLAG_TERM = (1 << 20),
 	TFLAG_TRANSPORT_ACCEPT = (1 << 21),
 	TFLAG_READY = (1 << 22),
+	TFLAG_NAT_MAP = (1 << 22)
 } TFLAGS;
 
 typedef enum {
@@ -158,6 +159,7 @@ struct private_object {
 	ldl_session_t *dlsession;
 	char *remote_ip;
 	switch_port_t local_port;
+	switch_port_t adv_local_port;
 	switch_port_t remote_port;
 	char local_user[17];
 	char local_pass[17];
@@ -596,9 +598,9 @@ static void ipchanged_event_handler(switch_event_t *event)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EVENT_TRAP: IP change detected\n");
 
-	if (cond && !strcmp(cond, "network-address-change")) {
-		const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
-		const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
+	if (cond && !strcmp(cond, "network-external-address-change")) {
+		const char *old_ip4 = switch_event_get_header_nil(event, "network-external-address-previous-v4");
+		const char *new_ip4 = switch_event_get_header_nil(event, "network-external-address-change-v4");
 		switch_hash_index_t *hi;
 		void *val;
 		char *tmp;
@@ -886,11 +888,22 @@ static int activate_rtp(struct private_object *tech_pvt)
 	if (globals.auto_nat && tech_pvt->profile->local_network && !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
 		switch_port_t external_port = 0;
 		switch_nat_add_mapping((switch_port_t) tech_pvt->local_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
-		tech_pvt->local_port = external_port;
+
+		if (external_port) {
+			tech_pvt->adv_local_port = external_port;
+			switch_set_flag(tech_pvt, TFLAG_NAT_MAP);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "NAT mapping returned 0. Run freeswitch with -nonat since it's not working right.\n");
+		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
-					  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+	if (tech_pvt->adv_local_port != tech_pvt->local_port) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP RTP %s:%d(%d) -> %s:%d\n", tech_pvt->profile->ip,
+						  tech_pvt->local_port, tech_pvt->adv_local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
+						  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+	}
 
 	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
 
@@ -964,7 +977,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 		}
 
 
-		cand[0].port = tech_pvt->local_port;
+		cand[0].port = tech_pvt->adv_local_port;
 		cand[0].address = advip;
 
 		if (!strncasecmp(advip, "stun:", 5)) {
@@ -1253,9 +1266,9 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			tech_pvt->rtp_session = NULL;
 		}
 
-		if (globals.auto_nat && tech_pvt->profile->local_network && tech_pvt->remote_ip && tech_pvt->profile->local_network &&
-			!switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
-			switch_nat_del_mapping((switch_port_t) tech_pvt->local_port, SWITCH_NAT_UDP);
+		if (switch_test_flag(tech_pvt, TFLAG_NAT_MAP)) {
+			switch_nat_del_mapping((switch_port_t) tech_pvt->adv_local_port, SWITCH_NAT_UDP);
+			switch_clear_flag(tech_pvt, TFLAG_NAT_MAP);
 		}
 
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
@@ -1751,6 +1764,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
+			tech_pvt->adv_local_port = tech_pvt->local_port;
 			tech_pvt->recip = switch_core_session_strdup(*new_session, full_id);
 			if (dnis) {
 				tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
@@ -2992,6 +3006,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					status = LDL_STATUS_FALSE;
 					goto done;
 				}
+				tech_pvt->adv_local_port = tech_pvt->local_port;
 				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
 				if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {

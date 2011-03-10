@@ -182,9 +182,27 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 {
 	switch_core_db_t *db;
 	char path[1024];
+	int db_ret;
 
 	db_pick_path(filename, path, sizeof(path));
-	if (switch_core_db_open(path, &db)) {
+	if ((db_ret = switch_core_db_open(path, &db)) != SQLITE_OK) {
+		goto end;
+	}
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL) != SQLITE_OK)) {
+		goto end;
+	}
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA count_changes=OFF;", NULL, NULL, NULL) != SQLITE_OK)) {
+		goto end;
+	}
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA cache_size=8000;", NULL, NULL, NULL) != SQLITE_OK)) {
+		goto end;
+	}
+	if ((db_ret = switch_core_db_exec(db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL) != SQLITE_OK)) {
+		goto end;
+	}
+
+end:
+	if (db_ret != SQLITE_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
 		switch_core_db_close(db);
 		db = NULL;
