@@ -4290,7 +4290,15 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		}
 	}
 
-	if (!reneg) {
+	if (reneg) {
+		reneg = sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE);
+		
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_renegotiate_codec_on_reinvite"))) {
+			reneg = switch_true(val);
+		}
+	}
+
+	if (!reneg && tech_pvt->num_negotiated_codecs) {
 		codec_array = tech_pvt->negotiated_codecs;
 		total_codecs = tech_pvt->num_negotiated_codecs;
 	}
@@ -4688,6 +4696,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
 					tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
+					tech_pvt->num_negotiated_codecs = 0;
 					tech_pvt->negotiated_codecs[tech_pvt->num_negotiated_codecs++] = mimp;
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
