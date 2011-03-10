@@ -267,6 +267,8 @@ typedef enum {
 	RESULT_GOTO_TIMERCHECK
 } handle_rfc2833_result_t;
 
+static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session);
+
 static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_size_t bytes, int *do_cng)
 {
 #ifdef DEBUG_2833
@@ -2209,6 +2211,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1;
+
 		rtp_session->dtmf_data.out_digit_sofar += samples;
 		rtp_session->dtmf_data.out_digit_sub_sofar += samples;
 
@@ -2737,7 +2740,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity) {
+			do_2833(rtp_session, session);
+
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf || 
+				switch_queue_size(rtp_session->dtmf_data.dtmf_queue) || switch_queue_size(rtp_session->dtmf_data.dtmf_inqueue)) {
 				pt = 20000;
 			}
 			
@@ -2746,7 +2752,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
-			do_2833(rtp_session, session);
 
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();

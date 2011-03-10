@@ -386,6 +386,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 				if (send_dtmf) {
 					switch_core_session_send_dtmf(session_b, &dtmf);
+					switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 				}
 			}
 		}

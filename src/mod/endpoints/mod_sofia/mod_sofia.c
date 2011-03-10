@@ -1480,7 +1480,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				if (ok) {
 					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 					sofia_set_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 				}
 
@@ -1528,7 +1528,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			
 			if (sofia_test_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE)) {
 				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-				switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 				sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 			}
 
