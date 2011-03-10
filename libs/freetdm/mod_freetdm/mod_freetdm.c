@@ -4059,7 +4059,7 @@ SWITCH_STANDARD_API(ft_function)
 		ftdm_channel_t *chan;
 		ftdm_span_t *span = NULL;
 		if (argc < 4) {
-			stream->write_function(stream, "-ERR Usage: ft gains <txgain> <rxgain> <span_id> [<chan_id>]\n");
+			stream->write_function(stream, "-ERR Usage: ft gains <rxgain> <txgain> <span_id> [<chan_id>]\n");
 			goto end;
 		} 
 		ftdm_span_find_by_name(argv[3], &span);
