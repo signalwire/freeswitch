@@ -3176,7 +3176,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec")) || (val = tech_pvt->profile->jb_msec)) {
 			int jb_msec = atoi(val);
-			int maxlen = 0, max_drift = 1000;
+			int maxlen = 0, max_drift = 0;
 			char *p, *q;
 			
 			if ((p = strchr(val, ':'))) {
