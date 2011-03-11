@@ -315,6 +315,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
 */
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 
+SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_bool_t in);
 
 /*!
