@@ -2302,7 +2302,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	}
 
 	/* Hangup any agents been callback */
-	if (!switch_channel_up(member_channel)) { /* If channel is still up, it mean that the member didn't hangup, so we should leave the agent alone */
+	if (!switch_channel_up(member_channel) || !switch_channel_get_variable(member_channel, "cc_agent_uuid")) { /* If channel is still up, it mean that the member didn't hangup, so we should leave the agent alone */
 		switch_core_session_hupall_matching_var("cc_member_uuid", member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		sql = switch_mprintf("UPDATE members SET state = '%q', uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), member_uuid);
