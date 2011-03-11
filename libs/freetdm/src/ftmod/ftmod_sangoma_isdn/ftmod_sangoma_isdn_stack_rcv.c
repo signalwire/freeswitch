@@ -662,7 +662,6 @@ void sngisdn_rcv_phy_ind(SuId suId, Reason reason)
 void sngisdn_rcv_q921_ind(BdMngmt *status)
 {	
 	ftdm_span_t *ftdmspan;
-	unsigned loglevel = FTDM_LOG_LEVEL_INFO;
 
 	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[status->t.usta.lnkNmb].spans[1];
 	
@@ -679,11 +678,19 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 
 	switch (status->t.usta.alarm.category) {
 		case (LCM_CATEGORY_PROTOCOL):
-			loglevel = FTDM_LOG_LEVEL_DEBUG;
+			ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q921] %s: %s: %s(%d): %s(%d)\n",
+						ftdmspan->name,
+						DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+						DECODE_LLD_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+						DECODE_LLD_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 			break;
 		default:
-			loglevel = FTDM_LOG_LEVEL_INFO;
-
+			ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q921] %s: %s: %s(%d): %s(%d)\n",
+						ftdmspan->name,
+						DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+						DECODE_LLD_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+						DECODE_LLD_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
+			
 			switch (status->t.usta.alarm.event) {
 				case ENTR_CONG: /* Entering Congestion */
 					ftdm_log(FTDM_LOG_WARNING, "s%d: Entering Congestion\n", ftdmspan->span_id);
@@ -696,12 +703,6 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 			}
 			break;
 	}
-	ftdm_log(FTDM_PRE, loglevel, "[SNGISDN Q921] %s: %s: %s(%d): %s(%d)\n",
-					ftdmspan->name,
-					DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
-					DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
-					DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
-
     return;
 }
 void sngisdn_rcv_q931_ind(InMngmt *status)
