@@ -129,8 +129,7 @@ cp -r ./* $INSTALLPREFIX/$release
 
 # copy ABI compatibility reports to release
 if [ -d compat_reports ]; then
-	cp -r ./compat_reports $INSTALLPREFIX/$release
-	rm -rf ./compat_reports
+	mv ./compat_reports $INSTALLPREFIX/$release
 fi
 
 cp -r ./* $INSTALLPREFIX/bin-releases/$major/$release
@@ -141,9 +140,9 @@ find $INSTALLPREFIX/$release -name .deps -exec rm -rf {} \;
 find $INSTALLPREFIX/$release -name *.so -exec rm -rf {} \;
 find $INSTALLPREFIX/$release -name *.lo -exec rm -rf {} \;
 rm -rf $INSTALLPREFIX/$release/{$LIBSNG_ISDN_DIR,$LIBSNG_SS7_DIR,*.tgz}
+rm -rf $INSTALLPREFIX/bin-releases/$major/$release/{$LIBSNG_ISDN_DIR,$LIBSNG_SS7_DIR,*.tgz}
 
 # clean the source tree
-rm -rf $LIBSNG_ISDN_DIR $LIBSNG_SS7_DIR
 make clean
 make mod_freetdm-clean
 
