@@ -2539,6 +2539,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 
 		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
+			switch_channel_presence(channel, "unknown", "cancelled", NULL);
 			switch_channel_set_variable(channel, "presence_call_info", NULL);
 		}
 
