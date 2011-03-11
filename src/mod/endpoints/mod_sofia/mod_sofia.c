@@ -1878,6 +1878,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
 							snprintf(message, sizeof(message), "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", name, number);
 
+							if (switch_channel_test_flag(tech_pvt->channel, CF_LAZY_ATTENDED_TRANSFER)) {
+								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-FS-Lazy-Attended-Transfer: true\n");
+								switch_channel_clear_flag(tech_pvt->channel, CF_LAZY_ATTENDED_TRANSFER);
+								switch_channel_clear_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER);
+							}
+
+							if (switch_channel_test_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER)) {
+								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-FS-Attended-Transfer: true\n");
+								switch_channel_clear_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER);
+							}
+
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/update_display"),
 									 TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
