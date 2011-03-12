@@ -216,6 +216,7 @@ static char agents_sql[] =
 "   wrap_up_time INTEGER NOT NULL DEFAULT 0,\n"
 "   reject_delay_time INTEGER NOT NULL DEFAULT 0,\n"
 "   busy_delay_time INTEGER NOT NULL DEFAULT 0,\n"
+"   no_answer_delay_time INTEGER NOT NULL DEFAULT 0,\n"
 "   last_bridge_start INTEGER NOT NULL DEFAULT 0,\n"
 "   last_bridge_end INTEGER NOT NULL DEFAULT 0,\n"
 "   last_offered_call INTEGER NOT NULL DEFAULT 0,\n" 
@@ -705,6 +706,7 @@ static cc_queue_t *load_queue(const char *queue_name)
 		switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", NULL, "alter table agents add ready_time integer not null default 0;"
 											"alter table agents add reject_delay_time integer not null default 0;"
 											"alter table agents add busy_delay_time  integer not null default 0;");
+		switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
 		switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
 		switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
 		switch_mutex_init(&queue->mutex, SWITCH_MUTEX_NESTED, queue->pool);
@@ -768,6 +770,7 @@ struct call_helper {
 	int max_no_answer;
 	int reject_delay_time;
 	int busy_delay_time;
+	int no_answer_delay_time;
 
 	switch_memory_pool_t *pool;
 };
@@ -1008,6 +1011,12 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
+	} else if (!strcasecmp(key, "no_answer_delay_time")) {
+		sql = switch_mprintf("UPDATE agents SET no_answer_delay_time = '%ld', system = 'single_box' WHERE name = '%q'", atol(value), agent);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+
+		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "type")) {
 		if (strcasecmp(value, CC_AGENT_TYPE_CALLBACK) && strcasecmp(value, CC_AGENT_TYPE_UUID_STANDBY)) {
 			result = CC_STATUS_AGENT_INVALID_TYPE;
@@ -1203,6 +1212,7 @@ static switch_status_t load_agent(const char *agent_name)
 		const char *wrap_up_time = switch_xml_attr(x_agent, "wrap-up-time");
 		const char *reject_delay_time = switch_xml_attr(x_agent, "reject-delay-time");
 		const char *busy_delay_time = switch_xml_attr(x_agent, "busy-delay-time");
+		const char *no_answer_delay_time = switch_xml_attr(x_agent, "no-answer-delay-time");
 
 		if (type) {
 			cc_status_t res = cc_agent_add(agent_name, type);
@@ -1224,6 +1234,9 @@ static switch_status_t load_agent(const char *agent_name)
 				}
 				if (busy_delay_time) {
 					cc_agent_update("busy_delay_time", busy_delay_time, agent_name);
+				}
+				if (no_answer_delay_time) {
+					cc_agent_update("no_answer_delay_time", no_answer_delay_time, agent_name);
 				}
 
 				if (type && res == CC_STATUS_AGENT_ALREADY_EXIST) {
@@ -1565,8 +1578,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 
 	} else {
-		int delay_next_agent_call = 0;
 		/* Agent didn't answer or originate failed */
+		int delay_next_agent_call = 0;
 		sql = switch_mprintf("UPDATE members SET state = '%q', serving_agent = '', serving_system = ''"
 				" WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND system = 'single_box'",
 				cc_member_state2str(CC_MEMBER_STATE_WAITING),
@@ -1577,30 +1590,22 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s Origination Canceled : %s\n", h->agent_name, switch_channel_cause2str(cause));
 
 		switch (cause) {
-			case SWITCH_CAUSE_USER_NOT_REGISTERED: /* When we are calling a unregistred device */
-			case SWITCH_CAUSE_USER_BUSY: /* Could be the phone is in Do Not Disturb */
-				delay_next_agent_call = (h->busy_delay_time > delay_next_agent_call?h->busy_delay_time:delay_next_agent_call);
-				break;
-			case SWITCH_CAUSE_CALL_REJECTED: /* User could have press the reject call on their phone */
-				delay_next_agent_call = (h->reject_delay_time > delay_next_agent_call?h->reject_delay_time:delay_next_agent_call);
-				break;
-			default:
-				break;
-		}
-
-		switch (cause) {
-			case SWITCH_CAUSE_USER_NOT_REGISTERED: /* When we are calling a unregistred device */
-			case SWITCH_CAUSE_USER_BUSY: /* Could be the phone is in Do Not Disturb */
-			case SWITCH_CAUSE_CALL_REJECTED: /* User could have press the reject call on their phone */
+			/* When we hang-up agents that did not answer in ring-all strategy */
 			case SWITCH_CAUSE_ORIGINATOR_CANCEL:
-				if (delay_next_agent_call > 0) {
-					char ready_epoch[64];
-					switch_snprintf(ready_epoch, sizeof(ready_epoch), "%" SWITCH_TIME_T_FMT, switch_epoch_time_now(NULL) + delay_next_agent_call); /* Make the time configurable */
-					cc_agent_update("ready_time", ready_epoch , h->agent_name);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s Sleeping for %d secondes\n", h->agent_name, delay_next_agent_call);
-				}
 				break;
+			/* Busy: Do Not Disturb, Circuit congestion */
+			case SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION:
+			case SWITCH_CAUSE_USER_BUSY:
+				delay_next_agent_call = (h->busy_delay_time > delay_next_agent_call? h->busy_delay_time : delay_next_agent_call);
+				break;
+			/* Reject: User rejected the call */
+			case SWITCH_CAUSE_CALL_REJECTED:
+				delay_next_agent_call = (h->reject_delay_time > delay_next_agent_call? h->reject_delay_time : delay_next_agent_call);
+				break;
+			/* No answer: Destination does not answer for some other reason */
 			default:
+				delay_next_agent_call = (h->no_answer_delay_time > delay_next_agent_call? h->no_answer_delay_time : delay_next_agent_call);
+
 				tiers_state = CC_TIER_STATE_NO_ANSWER;
 
 				/* Update Agent NO Answer count */
@@ -1615,6 +1620,15 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 							h->agent_name, h->max_no_answer);
 					cc_agent_update("status", cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), h->agent_name);
 				}
+				break;
+		}
+
+		/* Put agent to sleep for some time if necessary */
+		if (delay_next_agent_call > 0) {
+			char ready_epoch[64];
+			switch_snprintf(ready_epoch, sizeof(ready_epoch), "%" SWITCH_TIME_T_FMT, switch_epoch_time_now(NULL) + delay_next_agent_call);
+			cc_agent_update("ready_time", ready_epoch , h->agent_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s sleeping for %d seconds\n", h->agent_name, delay_next_agent_call);
 		}
 
 		/* Fire up event when contact agent fails */
@@ -1691,14 +1705,14 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *sql = NULL;
 	char res[256];
 	char *agent_status = argv[2];
-	char *agent_tier_state = argv[8];
-	char *agent_last_bridge_end = argv[9];
-	char *agent_wrap_up_time = argv[10];
-	char *agent_state = argv[11];
-	char *agent_ready_time = argv[12];
-	char *agent_tier_level = argv[13];
-	char *agent_type = argv[14];
-	char *agent_uuid = argv[15];
+	char *agent_tier_state = argv[9];
+	char *agent_last_bridge_end = argv[10];
+	char *agent_wrap_up_time = argv[11];
+	char *agent_state = argv[12];
+	char *agent_ready_time = argv[13];
+	char *agent_tier_level = argv[14];
+	char *agent_type = argv[15];
+	char *agent_uuid = argv[16];
 
 	switch_bool_t contact_agent = SWITCH_TRUE;
 
@@ -1808,6 +1822,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->max_no_answer = atoi(argv[5]);
 				h->reject_delay_time = atoi(argv[6]);
 				h->busy_delay_time = atoi(argv[7]);
+				h->no_answer_delay_time = atoi(argv[8]);
 			
 
 				cc_agent_update("state", cc_agent_state2str(CC_AGENT_STATE_RECEIVING), h->agent_name);
@@ -1922,7 +1937,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		sql_order_by = switch_mprintf("level, position");
 	}
 
-	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time,tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 			" WHERE tiers.queue = '%q'"
 			" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 			" ORDER BY %q",
@@ -2066,7 +2081,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
 
-		/* Will drop the caller if no agent was found for more than X secondes */
+		/* Will drop the caller if no agent was found for more than X seconds */
 		if (queue->max_wait_time_with_no_agent > 0 && m->t_member_called < queue->last_agent_exist_check - queue->max_wait_time_with_no_agent_time_reached &&
 				queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
@@ -2416,6 +2431,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "callcenter_config agent set ready_time [agent_name] [wait till epoch] | "\
 "callcenter_config agent set reject_delay_time [agent_name] [wait second] | "\
 "callcenter_config agent set busy_delay_time [agent_name] [wait second] | "\
+"callcenter_config agent set no_answer_delay_time [agent_name] [wait second] | "\
 "callcenter_config agent get status [agent_name] | " \
 "callcenter_config agent list | " \
 "callcenter_config tier add [queue_name] [agent_name] [level] [position] | " \
@@ -2865,6 +2881,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config agent set ready_time");
 	switch_console_set_complete("add callcenter_config agent set reject_delay_time");
 	switch_console_set_complete("add callcenter_config agent set busy_delay_time");
+	switch_console_set_complete("add callcenter_config agent set no_answer_delay_time");
 	switch_console_set_complete("add callcenter_config agent get status");
 	switch_console_set_complete("add callcenter_config agent list");
 
