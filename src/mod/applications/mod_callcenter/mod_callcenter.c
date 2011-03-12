@@ -2335,7 +2335,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 			switch_channel_event_set_data(member_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) switch_epoch_time_now(NULL));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Leaving-Time", "%ld",  (long) switch_epoch_time_now(NULL));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
 					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
