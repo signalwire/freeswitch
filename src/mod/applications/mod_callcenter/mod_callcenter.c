@@ -2395,17 +2395,24 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "callcenter_config agent set reject_delay_time [agent_name] [wait second] | "\
 "callcenter_config agent set busy_delay_time [agent_name] [wait second] | "\
 "callcenter_config agent get status [agent_name] | " \
+"callcenter_config agent list | " \
 "callcenter_config tier add [queue_name] [agent_name] [level] [position] | " \
 "callcenter_config tier set state [queue_name] [agent_name] [state] | " \
 "callcenter_config tier set level [queue_name] [agent_name] [level] | " \
 "callcenter_config tier set position [queue_name] [agent_name] [position] | " \
 "callcenter_config tier del [queue_name] [agent_name] | " \
+"callcenter_config tier list | " \
 "callcenter_config queue load [queue_name] | " \
 "callcenter_config queue unload [queue_name] | " \
 "callcenter_config queue reload [queue_name] | " \
-"callcenter_config tier list [queue_name] | " \
-"callcenter_config queue list [queue_name] | " \
-"callcenter_config queue count [queue_name]"
+"callcenter_config queue list | " \
+"callcenter_config queue list agents [queue_name] [status] | " \
+"callcenter_config queue list members [queue_name] | " \
+"callcenter_config queue list tiers [queue_name] | " \
+"callcenter_config queue count | " \
+"callcenter_config queue count agents [queue_name] [status] | " \
+"callcenter_config queue count members [queue_name] | " \
+"callcenter_config queue count tiers [queue_name]"
 
 SWITCH_STANDARD_API(cc_config_api_function)
 {
@@ -2513,6 +2520,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				}
 
 			}
+
 		} else if (action && !strcasecmp(action, "get")) {
 			if (argc-initial_argc < 2) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
@@ -2538,6 +2546,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 
 				}
 			}
+
 		} else if (action && !strcasecmp(action, "list")) {
 			struct list_result cbt;
 			cbt.row_process = 0;
@@ -2616,6 +2625,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 						goto done;
 				}
 			}
+
 		} else if (action && !strcasecmp(action, "del")) {
 			if (argc-initial_argc < 2) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
@@ -2635,19 +2645,13 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			}
 
 		} else if (action && !strcasecmp(action, "list")) {
-			if (argc-initial_argc < 1) {
-				stream->write_function(stream, "%s", "-ERR Invalid!\n");
-				goto done;
-			} else {
-				const char *queue = argv[0 + initial_argc];
-				struct list_result cbt;
-				cbt.row_process = 0;
-				cbt.stream = stream;
-				sql = switch_mprintf("SELECT * FROM tiers WHERE queue = '%q' ORDER BY level, position", queue);
-				cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_callback, &cbt /* Call back variables */);
-				switch_safe_free(sql);
-				stream->write_function(stream, "%s", "+OK\n");
-			}
+			struct list_result cbt;
+			cbt.row_process = 0;
+			cbt.stream = stream;
+			sql = switch_mprintf("SELECT * FROM tiers ORDER BY level, position");
+			cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_callback, &cbt /* Call back variables */);
+			switch_safe_free(sql);
+			stream->write_function(stream, "%s", "+OK\n");
 		}
 	} else if (section && !strcasecmp(section, "queue")) {
 		if (action && !strcasecmp(action, "load")) {
@@ -2664,6 +2668,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
 				}
 			}
+
 		} else if (action && !strcasecmp(action, "unload")) {
 			if (argc-initial_argc < 1) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
@@ -2674,6 +2679,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				stream->write_function(stream, "%s", "+OK\n");
 
 			}
+
 		} else if (action && !strcasecmp(action, "reload")) {
 			if (argc-initial_argc < 1) {
 				stream->write_function(stream, "%s", "-ERR Invalid!\n");
@@ -2689,7 +2695,9 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
 				}
 			}
+
 		} else if (action && !strcasecmp(action, "list")) {
+			/* queue list */
 			if (argc-initial_argc < 1) {
 				switch_hash_index_t *hi;
 				stream->write_function(stream, "%s", "name|strategy|moh_sound|time_base_score|tier_rules_apply|tier_rule_wait_second|tier_rule_wait_multiply_level|tier_rule_no_agent_no_wait|discard_abandoned_after|abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|max_wait_time_with_no_agent_time_reached|record_template\n");
@@ -2708,35 +2716,81 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				stream->write_function(stream, "%s", "+OK\n");
 				goto done;
 			} else {
-				const char *queue_name = argv[0 + initial_argc];
+				const char *sub_action = argv[0 + initial_argc];
+				const char *queue_name = argv[1 + initial_argc];
+				const char *status = NULL;
 				struct list_result cbt;
+
+				/* queue list agents */
+				if (sub_action && !strcasecmp(sub_action, "agents")) {
+					if (argc-initial_argc > 2) {
+						status = argv[2 + initial_argc];
+					}
+					if (status)	{
+						sql = switch_mprintf("SELECT agents.* FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q' AND agents.status = '%q'", queue_name, status);
+					} else {
+						sql = switch_mprintf("SELECT agents.* FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q'", queue_name);
+					}
+				/* queue list members */
+				} else if (sub_action && !strcasecmp(sub_action, "members")) {
+					sql = switch_mprintf("SELECT * FROM members WHERE queue = '%q';", queue_name);
+				/* queue list tiers */
+				} else if (sub_action && !strcasecmp(sub_action, "tiers")) {
+					sql = switch_mprintf("SELECT * FROM tiers WHERE queue = '%q';", queue_name);
+				} else {
+					stream->write_function(stream, "%s", "-ERR Invalid!\n");
+					goto done;
+				}
+
 				cbt.row_process = 0;
 				cbt.stream = stream;
-				sql = switch_mprintf("SELECT * FROM members WHERE queue = '%q'", queue_name);
 				cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, list_result_callback, &cbt /* Call back variables */);
 				switch_safe_free(sql);
 				stream->write_function(stream, "%s", "+OK\n");
 			}
+
 		} else if (action && !strcasecmp(action, "count")) {
+			/* queue count */
 			if (argc-initial_argc < 1) {
-				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				switch_hash_index_t *hi;
+				int queue_count = 0;
+				switch_mutex_lock(globals.mutex);
+				for (hi = switch_hash_first(NULL, globals.queue_hash); hi; hi = switch_hash_next(hi)) {
+					queue_count++;
+				}
+				switch_mutex_unlock(globals.mutex);
+				stream->write_function(stream, "%d\n", queue_count);
 				goto done;
 			} else {
-				const char *queue_name = argv[0 + initial_argc];
+				const char *sub_action = argv[0 + initial_argc];
+				const char *queue_name = argv[1 + initial_argc];
+				const char *status = NULL;
 				char res[256] = "";
-				switch_event_t *event;
-				/* Check to see if agent already exist */
-				sql = switch_mprintf("SELECT count(*) FROM members WHERE queue = '%q'", queue_name);
+
+				/* queue count agents */
+				if (sub_action && !strcasecmp(sub_action, "agents")) {
+					if (argc-initial_argc > 2) {
+						status = argv[2 + initial_argc];
+					}
+					if (status)	{
+						sql = switch_mprintf("SELECT count(*) FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q' AND agents.status = '%q'", queue_name, status);
+					} else {
+						sql = switch_mprintf("SELECT count(*) FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q'", queue_name);
+					}
+				/* queue count members */
+				} else if (sub_action && !strcasecmp(sub_action, "members")) {
+					sql = switch_mprintf("SELECT count(*) FROM members WHERE queue = '%q';", queue_name);
+				/* queue count tiers */
+				} else if (sub_action && !strcasecmp(sub_action, "tiers")) {
+					sql = switch_mprintf("SELECT count(*) FROM tiers WHERE queue = '%q';", queue_name);
+				} else {
+					stream->write_function(stream, "%s", "-ERR Invalid!\n");
+					goto done;
+				}
+
 				cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 				switch_safe_free(sql);
 				stream->write_function(stream, "%d\n", atoi(res));
-
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "members-count");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Count", res);
-					switch_event_fire(&event);
-				}
 			}
 		}
 	}
@@ -2792,7 +2846,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config agent get status");
 	switch_console_set_complete("add callcenter_config agent list");
 
-
 	switch_console_set_complete("add callcenter_config tier add");
 	switch_console_set_complete("add callcenter_config tier del");
 	switch_console_set_complete("add callcenter_config tier set state");
@@ -2804,7 +2857,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config queue unload");
 	switch_console_set_complete("add callcenter_config queue reload");
 	switch_console_set_complete("add callcenter_config queue list");
+	switch_console_set_complete("add callcenter_config queue list agents");
+	switch_console_set_complete("add callcenter_config queue list members");
+	switch_console_set_complete("add callcenter_config queue list tiers");
 	switch_console_set_complete("add callcenter_config queue count");
+	switch_console_set_complete("add callcenter_config queue count agents");
+	switch_console_set_complete("add callcenter_config queue count members");
+	switch_console_set_complete("add callcenter_config queue count tiers");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
