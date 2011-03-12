@@ -1466,6 +1466,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", h->member_caller_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", h->member_caller_number);
@@ -1514,9 +1517,14 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_event_set_data(agent_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-end");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Bridge-Terminated-Time", "%ld",  (long) switch_epoch_time_now(NULL));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", h->member_caller_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", h->member_caller_number);
@@ -1543,10 +1551,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answer-Time", "%ld",  (long) (t_agent_answered - t_agent_called));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Wait-Time", "%ld",  (long) (t_agent_answered - t_member_called));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Talk-Time", "%ld",  (long) (switch_epoch_time_now(NULL) - t_agent_answered));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Total-Time", "%ld",  (long) (switch_epoch_time_now(NULL) - t_member_called));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Leaving-Time", "%ld",  (long) switch_epoch_time_now(NULL));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name",
 					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
@@ -1566,7 +1574,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s Origination Canceled : %s\n",h->agent_name, switch_channel_cause2str(cause));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s Origination Canceled : %s\n", h->agent_name, switch_channel_cause2str(cause));
 
 		switch (cause) {
 			case SWITCH_CAUSE_USER_NOT_REGISTERED: /* When we are calling a unregistred device */
@@ -1607,6 +1615,19 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 							h->agent_name, h->max_no_answer);
 					cc_agent_update("status", cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), h->agent_name);
 				}
+		}
+
+		/* Fire up event when contact agent fails */
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-fail");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", h->member_caller_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", h->member_caller_number);
+			switch_event_fire(&event);
 		}
 
 	}
@@ -2314,7 +2335,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 			switch_channel_event_set_data(member_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Wait-Time", "%ld", (long) (switch_epoch_time_now(NULL) - t_member_called));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) switch_epoch_time_now(NULL));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
 					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
 					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
