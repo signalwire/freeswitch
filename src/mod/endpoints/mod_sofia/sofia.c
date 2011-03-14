@@ -4422,10 +4422,15 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
-					
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
-						if (sip->sip_payload && sip->sip_payload->pl_data) {
-							switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
+
+					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
+						switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
+
+						if (!t38_options) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_WARNING, "%s Error parsing SDP:\n%s\n",
+											  switch_channel_get_name(tech_pvt->channel), sip->sip_payload->pl_data);
+							goto end;
+						} else {
 							char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 							switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
 							char tmp[32] = "";
