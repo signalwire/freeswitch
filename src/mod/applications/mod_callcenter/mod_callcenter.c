@@ -160,13 +160,15 @@ struct cc_member_cancel_reason_table {
 typedef enum {
 	CC_MEMBER_CANCEL_REASON_NONE,
 	CC_MEMBER_CANCEL_REASON_TIMEOUT,
-	CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT
+	CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT,
+	CC_MEMBER_CANCEL_REASON_BREAK_OUT
 } cc_member_cancel_reason_t;
 
 static struct cc_member_cancel_reason_table MEMBER_CANCEL_REASON_CHART[] = {
 	{"NONE", CC_MEMBER_CANCEL_REASON_NONE},
 	{"TIMEOUT", CC_MEMBER_CANCEL_REASON_TIMEOUT},
 	{"NO_AGENT_TIMEOUT", CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT},
+	{"BREAK_OUT", CC_MEMBER_CANCEL_REASON_BREAK_OUT},
 	{NULL, 0}
 };
 
@@ -1524,7 +1526,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		while(switch_channel_up(member_channel) && switch_channel_up(agent_channel) && globals.running) {
 			switch_yield(100000);
 		}
-		tiers_state = CC_TIER_STATE_READY;		
+		tiers_state = CC_TIER_STATE_READY;
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(agent_channel, event);
@@ -1563,16 +1565,18 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_event_set_data(member_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Leaving-Time", "%ld",  (long) switch_epoch_time_now(NULL));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", h->member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name",
-					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number",
-					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", h->member_caller_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", h->member_caller_number);
 			switch_event_fire(&event);
 		}
 
@@ -2337,52 +2341,62 @@ SWITCH_STANDARD_APP(callcenter_function)
 		h->running = 0;
 	}
 
-	/* Hangup any agents been callback */
-	if (!switch_channel_up(member_channel) || !switch_channel_get_variable(member_channel, "cc_agent_uuid")) { /* If channel is still up, it mean that the member didn't hangup, so we should leave the agent alone */
-		switch_core_session_hupall_matching_var("cc_member_uuid", member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+	/* Check if we were removed be cause FS Core(BREAK) asked us too */
+	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !switch_channel_get_variable(member_channel, "cc_agent_uuid")) {
+		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
+	}
+
+	/* Canceled for some reason */
+	if (!switch_channel_up(member_channel) || h->member_cancel_reason != CC_MEMBER_CANCEL_REASON_NONE) {
+		/* Update member state */
 		sql = switch_mprintf("UPDATE members SET state = '%q', uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), member_uuid);
 				cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
-		/* Generate an Event and update some channel variable */
+		/* Hangup any callback agents  */
+		switch_core_session_hupall_matching_var("cc_member_uuid", member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+
+		/* Generate an event */
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(member_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Leaving-Time", "%ld",  (long) switch_epoch_time_now(NULL));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Caller-Joined-Time", "%ld",  (long) t_member_called);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
-					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
-					switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
-					queue_name, cc_member_cancel_reason2str(h->member_cancel_reason));
-
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", cc_member_cancel_reason2str(h->member_cancel_reason));
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Cancel");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cancel-Reason", cc_member_cancel_reason2str(h->member_cancel_reason));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-UUID", member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Caller-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 			switch_event_fire(&event);
 		}
 
-		/* for xml_cdr needs */
+		/* Update some channel variables for xml_cdr needs */
 		switch_channel_set_variable_printf(member_channel, "cc_queue_canceled_epoch", "%ld", (long) switch_epoch_time_now(NULL));
-		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", cc_member_cancel_reason2str(h->member_cancel_reason));
+		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "cancel");
+		switch_channel_set_variable_printf(member_channel, "cc_cancel_reason", "%s", cc_member_cancel_reason2str(h->member_cancel_reason));
 
-
-		/* Send Event with queue count */
-		cc_queue_count(queue_name);
+		/* Print some debug log information */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
+						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
+						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
+						  queue_name, cc_member_cancel_reason2str(h->member_cancel_reason));
 
 	} else {
-		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");
+		/* Update member state */
 		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), (long) switch_epoch_time_now(NULL), member_uuid);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
-		/* Send Event with queue count */
-		cc_queue_count(queue_name);
+		/* Update some channel variables for xml_cdr needs */
+		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");
 
 	}
+
+	/* Send Event with queue count */
+	cc_queue_count(queue_name);
 
 end:
 
