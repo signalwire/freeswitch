@@ -599,8 +599,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	}
 
 	if (globals.retries && globals.delay <= 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5000ms\n");
-		globals.delay = 5000;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5 seconds\n");
+		globals.delay = 5;
 	}
 
 	globals.retries++;
