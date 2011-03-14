@@ -1399,8 +1399,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent", "%s", h->agent_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent_type", "%s", h->agent_type);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
-		/* Force loopback to remain live, if not, the loop will detect the actual channel to gone */
-		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout", "false");
 
 		t_agent_called = switch_epoch_time_now(NULL);
 		dialstr = switch_mprintf("%s", h->originate_string);
@@ -1445,8 +1443,35 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		const char *agent_uuid = switch_core_session_get_uuid(agent_session);
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
+		const char *other_loopback_leg_uuid = switch_channel_get_variable(agent_channel, "other_loopback_leg_uuid");
 
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
+
+		/* Loopback special case */
+		if (other_loopback_leg_uuid) {
+			switch_core_session_t *other_loopback_session = switch_core_session_locate(other_loopback_leg_uuid);
+			if (other_loopback_session) {
+				switch_channel_t *other_loopback_channel = switch_core_session_get_channel(other_loopback_session);
+				const char *real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+
+				switch_channel_set_variable(other_loopback_channel, "cc_member_pre_answer_uuid", NULL);
+
+				/* Switch the agent session */
+				if (real_uuid) {
+					switch_core_session_rwunlock(agent_session);
+					agent_uuid = real_uuid;
+					agent_session = switch_core_session_locate(agent_uuid);
+					agent_channel = switch_core_session_get_channel(agent_session);
+
+					switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
+					switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
+					switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
+					switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
+				}
+				switch_core_session_rwunlock(other_loopback_session);
+			}
+		}
+
 
 		if (!strcasecmp(h->queue_strategy,"ring-all")) {
 			char res[256];
