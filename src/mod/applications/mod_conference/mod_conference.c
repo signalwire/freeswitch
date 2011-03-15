@@ -564,7 +564,10 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
 		member = NULL;
 	}
 
-	switch_thread_rwlock_rdlock(member->rwlock);
+	if (member) {
+		switch_thread_rwlock_rdlock(member->rwlock);
+	}
+
 	switch_mutex_unlock(conference->member_mutex);
 
 	return member;
