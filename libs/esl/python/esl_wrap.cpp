@@ -4151,6 +4151,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -4160,12 +4161,16 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
   int res3 ;
   char *buf3 = 0 ;
   int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
   
   SWIG_PYTHON_THREAD_BEGIN_BLOCK;
-  if (!PyArg_ParseTuple(args,(char *)"OO|O:ESLconnection_bgapi",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO|OO:ESLconnection_bgapi",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_bgapi" "', argument " "1"" of type '" "ESLconnection *""'"); 
@@ -4183,19 +4188,28 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
     }
     arg3 = reinterpret_cast< char * >(buf3);
   }
+  if (obj3) {
+    res4 = SWIG_AsCharPtrAndSize(obj3, &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_bgapi" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+  }
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+    result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_OWN |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   SWIG_PYTHON_THREAD_END_BLOCK;
   return resultobj;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   SWIG_PYTHON_THREAD_END_BLOCK;
   return NULL;
 }

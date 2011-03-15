@@ -269,25 +269,29 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 
 }
 
-SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
+SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t samples, int32_t vol)
 {
 	double newrate = 0;
-	int div = 0;
+	double pos[12] = {1.25, 1.50, 1.75, 2.0, 2.25, 2.50, 2.75, 3.0, 3.25, 3.50, 3.75, 4.0};
+	double neg[12] = {.917, .834, .751, .668, .585, .502, .419, .336, .253, .017, .087, .004};
+	double *chart;
+	uint32_t i;
 
-	switch_normalize_volume(vol);
+	if (vol == 0) return;
+
+	switch_normalize_volume_granular(vol);
 
 	if (vol > 0) {
-		vol++;
-	} else if (vol < 0) {
-		vol--;
+		chart = pos;
+	} else {
+		chart = neg;
 	}
+	
+	i = abs(vol) - 1;
+	
+	switch_assert(i < 12);
 
-	newrate = vol * 1.3;
-
-	if (vol < 0) {
-		newrate *= -1;
-		div++;
-	}
+	newrate = chart[i];
 
 	if (newrate) {
 		int32_t tmp;
@@ -295,7 +299,44 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 		int16_t *fp = data;
 
 		for (x = 0; x < samples; x++) {
-			tmp = (int32_t) (div ? fp[x] / newrate : fp[x] * newrate);
+			tmp = (int32_t) (fp[x] * newrate);
+			switch_normalize_to_16bit(tmp);
+			fp[x] = (int16_t) tmp;
+		}
+	}
+}
+
+SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
+{
+	double newrate = 0;
+	double pos[4] = {1.3, 2.3, 3.3, 4.3};
+	double neg[4] = {.80, .60, .40, .20};
+	double *chart;
+	uint32_t i;
+
+	if (vol == 0) return;
+
+	switch_normalize_volume(vol);
+
+	if (vol > 0) {
+		chart = pos;
+	} else {
+		chart = neg;
+	}
+	
+	i = abs(vol) - 1;
+	
+	switch_assert(i < 4);
+
+	newrate = chart[i];
+
+	if (newrate) {
+		int32_t tmp;
+		uint32_t x;
+		int16_t *fp = data;
+
+		for (x = 0; x < samples; x++) {
+			tmp = (int32_t) (fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
 			fp[x] = (int16_t) tmp;
 		}

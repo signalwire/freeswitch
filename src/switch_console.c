@@ -252,7 +252,7 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 	}
 
 
-	if (db->type == SCDB_TYPE_CORE_DB) {
+	if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 		sql = switch_mprintf("select command from aliases where alias='%q'", cmd);
 	} else {
 		sql = switch_mprintf("select command from aliases where alias='%w'", cmd);
@@ -268,7 +268,7 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 	switch_safe_free(sql);
 
 	if (!r) {
-		if (db->type == SCDB_TYPE_CORE_DB) {
+		if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 			sql = switch_mprintf("select command from aliases where alias='%q %q'", cmd, arg);
 		} else {
 			sql = switch_mprintf("select command from aliases where alias='%w %w'", cmd, arg);
@@ -794,7 +794,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%s') %s ",
 								  switch_core_get_hostname(), argc ? "and" : "");
 		} else {
-			if (db->type == SCDB_TYPE_CORE_DB) {
+			if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 				stream.write_function(&stream, "select distinct a%d,'%q','%q' from complete where ", h.words + 1, switch_str_nil(dup), switch_str_nil(lp));
 			} else {
 				stream.write_function(&stream, "select distinct a%d,'%q','%w' from complete where ", h.words + 1, switch_str_nil(dup), switch_str_nil(lp));
@@ -803,7 +803,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 		for (x = 0; x < argc && x < 11; x++) {
 			if (h.words + 1 > argc) {
-				if (db->type == SCDB_TYPE_CORE_DB) {
+				if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%q')%q",
 										  x + 1, x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 				} else {
@@ -811,7 +811,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 										  x + 1, x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 				}
 			} else {
-				if (db->type == SCDB_TYPE_CORE_DB) {
+				if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d like '%q%%')%q",
 										  x + 1, x + 1, x + 1, switch_str_nil(argv[x]), x == argc - 1 ? "" : " and ");
 				} else {
@@ -1765,6 +1765,11 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 	char *mydata = NULL, *argv[11] = { 0 };
 	int argc, x;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_core_flag_t cflags = switch_core_flags();
+
+	if (!(cflags & SCF_USE_SQL)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (string && (mydata = strdup(string))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
@@ -1787,7 +1792,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");
 					} else {
-						if (db->type == SCDB_TYPE_CORE_DB) {
+						if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 							mystream.write_function(&mystream, "'%q', ", switch_str_nil(argv[x + 1]));
 						} else {
 							mystream.write_function(&mystream, "'%w', ", switch_str_nil(argv[x + 1]));
@@ -1803,7 +1808,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");
 					} else {
-						if (db->type == SCDB_TYPE_CORE_DB) {
+						if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 							mystream.write_function(&mystream, "'%q', ", switch_str_nil(argv[x + 1]));
 						} else {
 							mystream.write_function(&mystream, "'%w', ", switch_str_nil(argv[x + 1]));
@@ -1821,7 +1826,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
 					for (x = 0; x < argc - 1; x++) {
-						if (db->type == SCDB_TYPE_CORE_DB) {
+						if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 							mystream.write_function(&mystream, "a%d = '%q'%q", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 						} else {
 							mystream.write_function(&mystream, "a%d = '%w'%w", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
@@ -1866,7 +1871,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_hostname());
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				if (db->type == SCDB_TYPE_CORE_DB) {
+				if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (1, '%q','%q','%q')",
 										 argv[1], argv[2], switch_core_get_hostname());
 				} else {
@@ -1879,7 +1884,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 				sql = switch_mprintf("delete from aliases where alias='%q' and hostname='%q'", argv[1], switch_core_get_hostname());
 				switch_cache_db_persistant_execute(db, sql, 5);
 				switch_safe_free(sql);
-				if (db->type == SCDB_TYPE_CORE_DB) {
+				if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 					sql = switch_mprintf("insert into aliases (sticky, alias, command, hostname) values (0, '%q','%q','%q')",
 										 argv[1], argv[2], switch_core_get_hostname());
 				} else {

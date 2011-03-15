@@ -555,6 +555,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+		switch_channel_mark_ring_ready(channel);
 	}
 	return 0;
 }
@@ -1006,6 +1007,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		}
 		if ((xbuttons = switch_xml_child(xskinny, "buttons"))) {
 			uint32_t line_instance = 1;
+			char *network_ip = inet_ntoa(request->data.reg.ip);
+			int network_port = 0;
+			char network_port_c[6];
+			snprintf(network_port_c, sizeof(network_port_c), "%d", network_port);
 			for (xbutton = switch_xml_child(xbuttons, "button"); xbutton; xbutton = xbutton->next) {
 				uint32_t position = atoi(switch_xml_attr_soft(xbutton, "position"));
 				uint32_t type = skinny_str2button(switch_xml_attr_soft(xbutton, "type"));
@@ -1031,8 +1036,14 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 							label, value, caller_name,
 							ring_on_idle, ring_on_active, busy_trigger,
 	  						forward_all, forward_busy, forward_noanswer, noanswer_duration))) {
+						char *token, *url;
 						skinny_execute_sql(profile, sql, profile->sql_mutex);
 						switch_safe_free(sql);
+						token = switch_mprintf("skinny/%q/%q/%q:%d", profile->name, value, request->data.reg.device_name, request->data.reg.instance);
+						url = switch_mprintf("skinny/%q/%q", profile->name, value);
+						switch_core_add_registration(value, profile->domain, token, url, 0, network_ip, network_port_c, "tcp");
+						switch_safe_free(token);
+						switch_safe_free(url);
 					}
 					if (line_instance == 1) {
 						switch_event_t *message_query_event = NULL;
@@ -1317,6 +1328,22 @@ switch_status_t skinny_handle_on_hook_message(listener_t *listener, skinny_messa
 	}
 
 	return status;
+}
+switch_status_t skinny_handle_forward_stat_req_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+
+	skinny_check_data_length(request, sizeof(request->data.forward_stat_req));
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.forward_stat));
+	message->type = FORWARD_STAT_MESSAGE;
+	message->length = 4 + sizeof(message->data.forward_stat);
+
+	message->data.forward_stat.line_instance = request->data.forward_stat_req.line_instance;
+
+	skinny_send_reply(listener, message);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skinny_message_t *request)
@@ -1649,12 +1676,12 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 			goto end;
 		}
 
+		tech_pvt->local_sdp_audio_ip = listener->local_ip;
 		/* Request a local port from the core's allocator */
-		if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(listener->profile->ip))) {
+		if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->local_sdp_audio_ip))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
 			return SWITCH_STATUS_FALSE;
 		}
-		tech_pvt->local_sdp_audio_ip = switch_core_strdup(switch_core_session_get_pool(session), listener->profile->ip);
 
 		tech_pvt->remote_sdp_audio_ip = inet_ntoa(request->data.open_receive_channel_ack.ip);
 		tech_pvt->remote_sdp_audio_port = request->data.open_receive_channel_ack.port;
@@ -2035,6 +2062,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_off_hook_message(listener, request);
 		case ON_HOOK_MESSAGE:
 			return skinny_handle_on_hook_message(listener, request);
+		case FORWARD_STAT_REQ_MESSAGE:
+			return skinny_handle_forward_stat_req_message(listener, request);
 		case SPEED_DIAL_STAT_REQ_MESSAGE:
 			return skinny_handle_speed_dial_stat_request(listener, request);
 		case LINE_STAT_REQ_MESSAGE:

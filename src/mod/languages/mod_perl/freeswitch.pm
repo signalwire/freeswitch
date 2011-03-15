@@ -50,6 +50,7 @@ package freeswitch;
 
 *consoleLog = *freeswitchc::consoleLog;
 *consoleCleanLog = *freeswitchc::consoleCleanLog;
+*email = *freeswitchc::email;
 *console_log = *freeswitchc::console_log;
 *console_clean_log = *freeswitchc::console_clean_log;
 *msleep = *freeswitchc::msleep;

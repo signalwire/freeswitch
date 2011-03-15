@@ -2075,13 +2075,14 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_bgapi) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   ESLevent *result = 0 ;
-  zval **args[3];
+  zval **args[4];
   int arg_count;
   
   SWIG_ResetError();
   arg_count = ZEND_NUM_ARGS();
-  if(arg_count<2 || arg_count>3 ||
+  if(arg_count<2 || arg_count>4 ||
     zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
   WRONG_PARAM_COUNT;
   
@@ -2104,7 +2105,14 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_bgapi) {
     /*@SWIG@*/;
     
   }
-  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+  if(arg_count > 3) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[3]);
+    arg4 = (char *) Z_STRVAL_PP(args[3]);
+    /*@SWIG@*/;
+    
+  }
+  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
   {
     SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 0);
   }

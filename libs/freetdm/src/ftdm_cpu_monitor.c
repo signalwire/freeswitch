@@ -37,8 +37,10 @@
  */
 
 #ifdef WIN32
-#define _WIN32_WINNT 0x0501 // To make GetSystemTimes visible in windows.h
-#include <windows.h>
+#   if (_WIN32_WINNT < 0x0501)
+#       error "Need to target at least Windows XP/Server 2003 because GetSystemTimes is needed"
+#   endif
+#   include <windows.h>
 #else /* LINUX */
 
 #include <stdio.h>

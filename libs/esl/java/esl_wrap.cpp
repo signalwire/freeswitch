@@ -790,11 +790,12 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1api(JNIEn
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1bgapi(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1bgapi(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4) {
   jlong jresult = 0 ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   ESLevent *result = 0 ;
   
   (void)jenv;
@@ -811,10 +812,16 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_esl_eslJNI_ESLconnection_1bgapi(JNI
     arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
     if (!arg3) return 0;
   }
-  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+  arg4 = 0;
+  if (jarg4) {
+    arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
+    if (!arg4) return 0;
+  }
+  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
   *(ESLevent **)&jresult = result; 
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
   return jresult;
 }
 

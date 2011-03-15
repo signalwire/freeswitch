@@ -227,6 +227,23 @@ static int sangoma_create_rtp_port(void *usr_priv, uint32_t host_ip, uint32_t *p
 	return 0;
 }
 
+static int sangoma_release_rtp_port(void *usr_priv, uint32_t host_ip, uint32_t p_rtp_port, void *rtp_fd)
+{
+	struct in_addr local_ip_addr = { 0 };
+	char local_ip[255];
+	switch_port_t rtp_port = p_rtp_port;
+
+	local_ip_addr.s_addr = htonl(host_ip);
+	
+	switch_inet_ntop(AF_INET, &local_ip_addr, local_ip, sizeof(local_ip));
+
+	/* release the port */
+	switch_rtp_release_port(local_ip, rtp_port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Released port %d for IP %s/%d.%d.%d.%d\n", rtp_port, local_ip,
+			SNGTC_NIPV4(host_ip));
+	return 0;
+}
+
 static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_req_leg, sngtc_codec_reply_leg_t* codec_reply_leg, void **rtp_fd)
 {
 	switch_status_t status;
@@ -1180,6 +1197,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 	g_init_cfg.create_rtp = sangoma_create_rtp;
 	g_init_cfg.create_rtp_port = sangoma_create_rtp_port;
 	g_init_cfg.destroy_rtp = sangoma_destroy_rtp;
+	g_init_cfg.release_rtp_port = sangoma_release_rtp_port;
 
 	if (sngtc_detect_init_modules(&g_init_cfg, &detected)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to detect vocallo modules\n");

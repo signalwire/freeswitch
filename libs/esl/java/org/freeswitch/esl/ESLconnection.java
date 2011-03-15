@@ -72,8 +72,8 @@ public class ESLconnection {
     return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
-  public ESLevent bgapi(String cmd, String arg) {
-    long cPtr = eslJNI.ESLconnection_bgapi(swigCPtr, this, cmd, arg);
+  public ESLevent bgapi(String cmd, String arg, String job_uuid) {
+    long cPtr = eslJNI.ESLconnection_bgapi(swigCPtr, this, cmd, arg, job_uuid);
     return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 

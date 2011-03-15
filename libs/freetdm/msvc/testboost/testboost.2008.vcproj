@@ -146,8 +146,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\debug\freetdm.lib"
+				AdditionalDependencies="freetdm.lib"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;C:\Program Files\Sangoma\api\lib\x64&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -300,7 +301,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="freetdm.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;C:\Program Files\Sangoma\api\lib\x64&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"

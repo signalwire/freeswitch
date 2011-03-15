@@ -677,17 +677,19 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_Api(void * jarg1, char * jarg
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_Bgapi(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_Bgapi(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   void * jresult ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   ESLevent *result = 0 ;
   
   arg1 = (ESLconnection *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+  arg4 = (char *)jarg4; 
+  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
   jresult = (void *)result; 
   return jresult;
 }

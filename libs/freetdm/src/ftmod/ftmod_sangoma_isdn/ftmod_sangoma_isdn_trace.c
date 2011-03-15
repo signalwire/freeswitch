@@ -139,7 +139,6 @@ void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 	memcpy(raw_data, data, data_len);
 	sigev.raw.data = raw_data;
 	sigev.raw.len = data_len;
-	sigev.raw.autofree = 1;
 	ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
 }
 
@@ -241,6 +240,11 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 			sigev.span_id = ftdmchan->physical_span_id;
 			sigev.chan_id = ftdmchan->physical_chan_id;
 			sigev.channel = ftdmchan;
+		} else {
+			/* We could not map the channel, but at least set the span */
+			if (signal_data->ftdm_span->channels[1]) {
+				sigev.span_id = signal_data->ftdm_span->channels[1]->physical_span_id;
+			}
 		}
 		sigev.event_id = FTDM_SIGEVENT_TRACE_RAW;
 
@@ -253,7 +257,6 @@ void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t d
 		memcpy(raw_data, data, data_len);
 		sigev.raw.data = raw_data;
 		sigev.raw.len = data_len;
-		sigev.raw.autofree = 1;
 		ftdm_span_send_signal(signal_data->ftdm_span, &sigev);
 	}
 }
@@ -833,9 +836,10 @@ static ftdm_status_t sngisdn_get_frame_info(uint8_t *data, uint32_t data_len, ft
 			//ftdm_log(FTDM_LOG_DEBUG, "Decoded IE:%s\n", get_code_2_str(ie_id, dcodQ931IEIDTable));
 		}
 		if (!bchan_no) {
+			uint32_t tmp_len = 0;
 			char tmp[1000];
-			print_hex_dump(tmp, 0, data, 0, data_len);			
-			ftdm_log(FTDM_LOG_WARNING, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
+			print_hex_dump(tmp, &tmp_len, data, 0, data_len);			
+			ftdm_log(FTDM_LOG_DEBUG, "Failed to determine b-channel on SETUP message\n%s\n", tmp);
 		}
 	}
 

@@ -595,11 +595,12 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	callback_t *cbt = (callback_t *) pArg;
 	char *key = NULL;
 	int i = 0;
+	int r = 0;
 
 	switch_memory_pool_t *pool = cbt->pool;
 	
 	additional = switch_core_alloc(pool, sizeof(lcr_obj_t));
-	additional->fields = switch_core_alloc(pool, sizeof(switch_event_t));
+	switch_event_create(&additional->fields, SWITCH_EVENT_REQUEST_PARAMS);
 
 	for (i = 0; i < argc ; i++) {
 		if (CF("lcr_digits")) {
@@ -652,9 +653,9 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s to head of list\n", additional->carrier_name);
 		if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
-			return SWITCH_STATUS_GENERR;
+			r = -1; goto end;
 		}
-		return SWITCH_STATUS_SUCCESS;
+		r = 0; goto end;
 	}
 
 	
@@ -676,7 +677,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 				additional->prev = current;
 				if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
-					return SWITCH_STATUS_GENERR;
+					r = -1; goto end;
 				}
 				break;
 			}
@@ -697,7 +698,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 				current->prev = additional;
 				if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
-					return SWITCH_STATUS_GENERR;
+					r = -1; goto end;
 				}
 				break;
 			} else if (current->next == NULL) {
@@ -707,13 +708,19 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 				additional->prev = current;
 				if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
-					return SWITCH_STATUS_GENERR;
+					r = -1; goto end;
 				}
 				break;
 			}
 		}
 	}
-	return SWITCH_STATUS_SUCCESS;
+
+ end:
+
+	switch_event_destroy(&additional->fields);
+
+	return r;
+
 }
 
 static int intrastatelata_callback(void *pArg, int argc, char **argv, char **columnNames)

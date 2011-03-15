@@ -91,6 +91,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *user_via = NULL;
 	char *contact_str = NULL;
 	char *dup_dest = NULL;
+	char *p = NULL;
 	char *remote_host = NULL;
 
 	if (!to) {
@@ -187,7 +188,12 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	
 		/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
 
-		dup_dest = strdup(dst->contact);
+		if (dst->route_uri) {
+			dup_dest = strdup(dst->route_uri);
+		} else  {
+			dup_dest = strdup(dst->to);
+		}
+
 
 		if (dst->route_uri) {
 			remote_host = strdup(dst->route_uri);
@@ -226,17 +232,12 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 			contact_str = profile->url;
 		}
 
-		switch_safe_free(dup_dest);
-		switch_safe_free(remote_host);
-
 		status = SWITCH_STATUS_SUCCESS;
 
-		/*
-		if ((p = strstr(contact, ";fs_"))) {
+		if (dup_dest && (p = strstr(dup_dest, ";fs_"))) {
 			*p = '\0';
 		}
-		*/
-
+		
 		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
 		
 		msg_nh = nua_handle(profile->nua, NULL,
@@ -244,7 +245,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 							TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 							SIPTAG_FROM_STR(from),
 							TAG_IF(contact, NUTAG_URL(contact)),
-							SIPTAG_TO_STR(dst->to),
+							SIPTAG_TO_STR(dup_dest),
 							SIPTAG_CONTACT_STR(contact_str),
 							TAG_END());
 
@@ -257,6 +258,8 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 					TAG_END());
 
 		sofia_glue_free_destination(dst);
+		switch_safe_free(dup_dest);
+		switch_safe_free(remote_host);
 	}		
 	
 	switch_console_free_matches(&list);

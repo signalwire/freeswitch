@@ -2075,52 +2075,40 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 */
 
 #define CACHE_DB_LEN 256
-	 typedef enum {
-		 CDF_INUSE = (1 << 0),
-		 CDF_PRUNE = (1 << 1)
-	 } cache_db_flag_t;
+typedef enum {
+	CDF_INUSE = (1 << 0),
+	CDF_PRUNE = (1 << 1)
+} cache_db_flag_t;
 
-	 typedef enum {
-		 SCDB_TYPE_CORE_DB,
-		 SCDB_TYPE_ODBC
-	 } switch_cache_db_handle_type_t;
+typedef enum {
+	SCDB_TYPE_CORE_DB,
+	SCDB_TYPE_ODBC
+} switch_cache_db_handle_type_t;
 
-	 typedef union {
-		 switch_core_db_t *core_db_dbh;
-		 switch_odbc_handle_t *odbc_dbh;
-	 } switch_cache_db_native_handle_t;
+typedef union {
+	switch_core_db_t *core_db_dbh;
+	switch_odbc_handle_t *odbc_dbh;
+} switch_cache_db_native_handle_t;
 
-	 typedef struct {
-		 char *db_path;
-	 } switch_cache_db_core_db_options_t;
+typedef struct {
+	char *db_path;
+} switch_cache_db_core_db_options_t;
 
-	 typedef struct {
-		 char *dsn;
-		 char *user;
-		 char *pass;
-	 } switch_cache_db_odbc_options_t;
+typedef struct {
+	char *dsn;
+	char *user;
+	char *pass;
+} switch_cache_db_odbc_options_t;
 
-	 typedef union {
-		 switch_cache_db_core_db_options_t core_db_options;
-		 switch_cache_db_odbc_options_t odbc_options;
-	 } switch_cache_db_connection_options_t;
+typedef union {
+	switch_cache_db_core_db_options_t core_db_options;
+	switch_cache_db_odbc_options_t odbc_options;
+} switch_cache_db_connection_options_t;
 
-	 typedef struct {
-		 char name[CACHE_DB_LEN];
-		 switch_cache_db_handle_type_t type;
-		 switch_cache_db_native_handle_t native_handle;
-		 time_t last_used;
-		 switch_mutex_t *mutex;
-		 switch_mutex_t *io_mutex;
-		 switch_memory_pool_t *pool;
-		 int32_t flags;
-		 unsigned long hash;
-		 char creator[CACHE_DB_LEN];
-		 char last_user[CACHE_DB_LEN];
-	 } switch_cache_db_handle_t;
+struct switch_cache_db_handle;
+typedef struct switch_cache_db_handle switch_cache_db_handle_t;
 
-
-	 static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
+static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
 {
 	const char *type_str = "INVALID";
 
@@ -2140,6 +2128,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_sessio
 	return type_str;
 }
 
+SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_cache_db_get_type(switch_cache_db_handle_t *dbh);
+
 /*! 
  \brief Returns the handle to the pool, immediately available for other
  		threads to use.
@@ -2152,11 +2142,6 @@ SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t 
  \param [in] The handle
 */
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t ** dbh);
-/*! 
- \brief Removes the handle from the pool and frees up the handle resources. 
- \param [in] The handle
-*/
-SWITCH_DECLARE(void) switch_cache_db_destroy_db_handle(switch_cache_db_handle_t ** dbh);
 /*! 
  \brief Gets a new cached handle from the pool, potentially creating a new connection.
  		The connection is bound to the thread until it (the thread) terminates unless
@@ -2217,19 +2202,40 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 															const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
-/*! 
- \brief Tries to detach all free connections from current thread.  
-*/
-SWITCH_DECLARE(void) switch_cache_db_detach(void);
+
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 
+/*!
+ \brief Add user registration
+ \param [in] user
+ \param [in] realm
+ \param [in] token
+ \param [in] url - a freeswitch dial string
+ \param [in] expires
+ \param [in] network_ip
+ \param [in] network_port
+ \param [in] network_proto - one of tls, tcp, udp
+ \param [out] err - Error if it exists
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
 															 const char *network_ip, const char *network_port, const char *network_proto);
+/*!
+ \brief Delete user registration
+ \param [in] user
+ \param [in] realm
+ \param [in] token
+ \param [out] err - Error if it exists
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, const char *realm, const char *token);
+/*!
+ \brief Expire user registrations
+ \param [in] force delete all registrations
+ \param [out] err - Error if it exists
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
 
 SWITCH_END_EXTERN_C

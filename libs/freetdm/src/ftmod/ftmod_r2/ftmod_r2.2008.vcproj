@@ -185,6 +185,10 @@
 				RelativePath=".\ftmod_r2.c"
 				>
 			</File>
+			<File
+				RelativePath=".\ftmod_r2_io_mf_lib.c"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

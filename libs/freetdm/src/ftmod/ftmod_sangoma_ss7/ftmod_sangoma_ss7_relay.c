@@ -45,10 +45,11 @@
 ftdm_status_t handle_relay_connect(RyMngmt *sta);
 ftdm_status_t handle_relay_disconnect(RyMngmt *sta);
 
-static ftdm_status_t enable_all_ckts_for_relay(void);
+/*static ftdm_status_t enable_all_ckts_for_relay(void);*/
 static ftdm_status_t reconfig_all_ckts_for_relay(void);
 static ftdm_status_t disable_all_ckts_for_relay(void);
 static ftdm_status_t block_all_ckts_for_relay(uint32_t procId);
+static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId);
 static ftdm_status_t disable_all_sigs_for_relay(uint32_t procId);
 static ftdm_status_t disble_all_mtp2_sigs_for_relay(void);
 /******************************************************************************/
@@ -61,12 +62,12 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 
 	/* test if this is the first time the channel comes up */
 	if (!sngss7_test_flag(sng_relay, SNGSS7_RELAY_INIT)) {
-		SS7_DEBUG("Relay Channel %d initial connection UP\n", sng_relay->id);
+		SS7_INFO("Relay Channel %d initial connection UP\n", sng_relay->id);
 
 		/* mark the channel as being up */
 		sngss7_set_flag(sng_relay, SNGSS7_RELAY_INIT);
 	} else {
-		SS7_DEBUG("Relay Channel %d connection UP\n", sng_relay->id);
+		SS7_INFO("Relay Channel %d connection UP\n", sng_relay->id);
 
 		/* react based on type of channel */
 		switch (sng_relay->type) {
@@ -75,18 +76,17 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 			/* reconfigure all ISUP ckts, since the main system would have lost all configs */
 			if (reconfig_all_ckts_for_relay()) {
 				SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
-
 				/* we're done....this is very bad! */
-			} else {				
-				enable_all_ckts_for_relay();
 			}
-
 			break;
 		/******************************************************************/
 		case (LRY_CT_TCP_SERVER):
-			/*unblock_all_ckts_for_relay(sta->t.usta.s.ryErrUsta.errPid);*/
+			/* bring the sig links on the client system back up */
 			ftmod_ss7_enable_grp_mtp3Link(sta->t.usta.s.ryUpUsta.id);
-
+			
+			/* unbloock the ckts on the client system */
+			unblock_all_ckts_for_relay(sta->t.usta.s.ryUpUsta.id);
+			
 			break;
 		/******************************************************************/
 		default:
@@ -104,16 +104,20 @@ ftdm_status_t handle_relay_disconnect_on_error(RyMngmt *sta)
 
 	/* check which procId is in error, if it is 1, disable the ckts */
 	if (sta->t.usta.s.ryErrUsta.errPid == 1 ) {
-		disable_all_ckts_for_relay();
-
+		/* we've lost the server, bring down the mtp2 links */
 		disble_all_mtp2_sigs_for_relay();
+
+		/* we've lost the server, bring the sig status down on all ckts */
+		disable_all_ckts_for_relay();
 	}
 
 	/* check if the channel is a server, means we just lost a MGW */
 	if (g_ftdm_sngss7_data.cfg.relay[sta->t.usta.s.ryErrUsta.errPid].type == LRY_CT_TCP_SERVER) {
-		block_all_ckts_for_relay(sta->t.usta.s.ryErrUsta.errPid);
-
+		/* we've lost the client, bring down all mtp3 links for this procId */
 		disable_all_sigs_for_relay(sta->t.usta.s.ryErrUsta.errPid);
+
+		/* we've lost the client, bring down all the ckts for this procId */
+		block_all_ckts_for_relay(sta->t.usta.s.ryErrUsta.errPid);
 	}
 
 	return FTDM_SUCCESS;
@@ -170,7 +174,7 @@ ftdm_status_t disable_all_ckts_for_relay(void)
 
 	return FTDM_SUCCESS;
 }
-
+#if 0
 /******************************************************************************/
 ftdm_status_t enable_all_ckts_for_relay(void)
 {
@@ -207,7 +211,7 @@ ftdm_status_t enable_all_ckts_for_relay(void)
 				SS7_DEBUG_CHAN(ftdmchan, "ISUP interface (%d) set to resume, resuming channel\n", sngIntf->id);
 				/* throw the channel infId status flags to PAUSED ... they will be executed next process cycle */
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
+				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			}
 		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
 
@@ -218,34 +222,33 @@ ftdm_status_t enable_all_ckts_for_relay(void)
 
 	return FTDM_SUCCESS;
 }
-
+#endif
 /******************************************************************************/
 ftdm_status_t reconfig_all_ckts_for_relay(void)
 {
-#if 1
 	int x;
-	int ret;
+	sngss7_chan_data_t	*sngss7_info = NULL;
 
+	/* go through all the circuits on our ProcId */
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+	/**************************************************************************/
 		if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
-	
-			ret = ftmod_ss7_isup_ckt_config(x);
-			if (ret) {
-				SS7_CRITICAL("ISUP CKT %d configuration FAILED (%d)!\n", x, ret);
-				return 1;
-			} else {
-				SS7_INFO("ISUP CKT %d configuration DONE!\n", x);
-			}
+			/* grab the private data structure */
+			sngss7_info = g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			
+			/* mark the circuit for re-configuration */
+			sngss7_set_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG);
 
-		} /* if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+			/* clear the relay flag */
+			sngss7_clear_ckt_flag(sngss7_info, FLAG_RELAY_DOWN);
+		}
 
-		/* set the SNGSS7_CONFIGURED flag */
-		g_ftdm_sngss7_data.cfg.isupCkt[x].flags |= SNGSS7_CONFIGURED;
-		
+		/* move to the next circuit */
 		x++;
+	/**************************************************************************/
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) */
-#endif
+
 	return FTDM_SUCCESS;
 }
 
@@ -253,23 +256,26 @@ ftdm_status_t reconfig_all_ckts_for_relay(void)
 ftdm_status_t block_all_ckts_for_relay(uint32_t procId)
 {
 	int x;
-
-	SS7_INFO("BLOcking all ckts on ProcID = %d\n", procId);
+	int ret;
 
 	/* we just lost connection to this procId, send out a block for all these circuits */
 	x = (procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 	/**************************************************************************/
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
-			/* send out a BLO */
-			sng_cc_sta_request (1,
-								0,
-								0,
-								g_ftdm_sngss7_data.cfg.isupCkt[x].id,
-								0, 
-								SIT_STA_CIRBLOREQ, 
-								NULL);
 
+			/* send a block request via stack manager */
+			ret = ftmod_ss7_block_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			if (ret) {
+				SS7_INFO("Successfully BLOcked CIC:%d(ckt:%d) due to Relay failure\n", 
+							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
+							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			} else {
+				SS7_ERROR("Failed to BLOck CIC:%d(ckt:%d) due to Relay failure\n",
+							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
+							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			}
+	
 		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
 
 		/* move along */
@@ -302,6 +308,42 @@ ftdm_status_t disble_all_mtp2_sigs_for_relay(void)
 
 	return FTDM_SUCCESS;
 
+}
+
+/******************************************************************************/
+static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
+{
+	int x;
+	int ret;
+
+	/* we just got connection to this procId, send out a unblock for all these circuits
+	 * since we blocked them when we lost the connection	
+ 	 */
+	x = (procId * 1000) + 1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+	/**************************************************************************/
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+
+			/* send a block request via stack manager */
+			ret = ftmod_ss7_unblock_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			if (ret) {
+				SS7_INFO("Successfully unblocked CIC:%d(ckt:%d) due to Relay connection\n", 
+							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
+							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			} else {
+				SS7_ERROR("Failed to unblock CIC:%d(ckt:%d) due to Relay connection\n",
+							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
+							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			}
+	
+		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+
+		/* move along */
+		x++;
+	/**************************************************************************/
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) */
+
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/

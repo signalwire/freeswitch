@@ -68,11 +68,15 @@ int ftmod_ss7_shutdown_isup(void);
 int ftmod_ss7_shutdown_mtp3(void);
 int ftmod_ss7_shutdown_mtp2(void);
 int ftmod_ss7_shutdown_relay(void);
+int ftmod_ss7_disable_relay_channel(uint32_t chanId);
 
 int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId);
 int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
+
+int ftmod_ss7_block_isup_ckt(uint32_t cktId);
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -713,6 +717,38 @@ int ftmod_ss7_shutdown_relay(void)
 }
 
 /******************************************************************************/
+int ftmod_ss7_disable_relay_channel(uint32_t chanId)
+{
+	RyMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTRY;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(RyMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTRY;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STGEN;
+
+	
+	cntrl.hdr.elmId.elmntInst1	= chanId;
+
+	cntrl.t.cntrl.action		= ADISIMM;			/* Deactivate */
+	cntrl.t.cntrl.subAction		= SAELMNT;			/* specificed element */
+
+	return (sng_cntrl_relay(&pst, &cntrl));
+}
+
+/******************************************************************************/
 int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId)
 {
 	SnMngmt cntrl;
@@ -808,6 +844,69 @@ int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId)
 
 }
 
+/******************************************************************************/
+int ftmod_ss7_block_isup_ckt(uint32_t cktId)
+{
+	SiMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSI;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SiMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType						= TCNTRL;		/* this is a control request */
+	cntrl.hdr.entId.ent						= ENTSI;
+	cntrl.hdr.entId.inst					= S_INST;
+	cntrl.hdr.elmId.elmnt					= STICIR;
+
+	cntrl.t.cntrl.s.siElmnt.elmntId.circuit	= cktId;
+	cntrl.t.cntrl.s.siElmnt.elmntParam.cir.flag = LSI_CNTRL_CIR_FORCE;
+
+	cntrl.t.cntrl.action					= ADISIMM;		/* block via BLO */
+	cntrl.t.cntrl.subAction					= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_isup(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId)
+{
+	SiMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSI;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SiMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType						= TCNTRL;		/* this is a control request */
+	cntrl.hdr.entId.ent						= ENTSI;
+	cntrl.hdr.entId.inst					= S_INST;
+	cntrl.hdr.elmId.elmnt					= STICIR;
+
+	cntrl.t.cntrl.s.siElmnt.elmntId.circuit		= cktId;
+	cntrl.t.cntrl.s.siElmnt.elmntParam.cir.flag = LSI_CNTRL_CIR_FORCE;
+
+	cntrl.t.cntrl.action					= AENA;			/* unblock via UBL */
+	cntrl.t.cntrl.subAction					= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_isup(&pst, &cntrl));
+}
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

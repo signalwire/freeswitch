@@ -19,12 +19,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_pika", "src\ftmod\ftm
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_wanpipe", "src\ftmod\ftmod_wanpipe\ftmod_wanpipe.2010.vcxproj", "{1A145EE9-BBD8-45E5-98CD-EB4BE99E1DCD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_sangoma_boost", "src\ftmod\ftmod_sangoma_boost\ftmod_sangoma_boost.2010.vcxproj", "{D021EF2A-460D-4827-A0F7-41FDECF46F1B}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testboost", "msvc\testboost\testboost.2010.vcxproj", "{2B1BAF36-0241-43E7-B865-A8338AD48E2E}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testsangomaboost", "msvc\testboost\testsangomaboost.2010.vcxproj", "{0DA69C18-4FA1-4E8C-89CE-12498637C5BE}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_sangoma_isdn", "src\ftmod\ftmod_sangoma_isdn\ftmod_sangoma_isdn.2010.vcxproj", "{B2AF4EA6-0CD7-4529-9EB5-5AF43DB90395}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftmod_r2", "src\ftmod\ftmod_r2\ftmod_r2.2010.vcxproj", "{08C3EA27-A51D-47F8-B47D-B189C649CF30}"

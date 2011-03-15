@@ -203,6 +203,7 @@ typedef enum {
 	FTDM_CHANNEL_FEATURE_HWEC = (1<<7), /*!< Channel has a hardware echo canceller */
 	FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE  = (1<<8), /*!< hardware echo canceller is disabled when there are no calls on this channel */
 	FTDM_CHANNEL_FEATURE_IO_STATS = (1<<9), /*!< Channel supports IO statistics (HDLC channels only) */
+	FTDM_CHANNEL_FEATURE_MF_GENERATE = (1<<10), /*!< Channel can generate R2 MF tones (read-only) */
 } ftdm_channel_feature_t;
 
 /*!< Channel flags. This used to be an enum but we reached the 32bit limit for enums, is safer this way */

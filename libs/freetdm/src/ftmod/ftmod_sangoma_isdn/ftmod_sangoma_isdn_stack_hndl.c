@@ -160,8 +160,12 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				}
 			}
 
-			/* this should be in get_facility_ie function, fix this later */
-			if (signal_data->facility == SNGISDN_OPT_TRUE && conEvnt->facilityStr.eh.pres) {
+#if 1
+			/* this section will not be needed once asn decoding function with key-value pairs is implemented */
+			if (signal_data->facility == SNGISDN_OPT_TRUE &&
+				signal_data->facility_ie_decode != SNGISDN_OPT_FALSE &&
+				conEvnt->facilityStr.eh.pres) {
+				
 				/* Verify whether the Caller Name will come in a subsequent FACILITY message */
 				uint16_t ret_val;
 				char retrieved_str[255];
@@ -187,6 +191,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 				}
 			}
+#endif
 			
 			if (signal_data->overlap_dial == SNGISDN_OPT_TRUE && !conEvnt->sndCmplt.eh.pres) {
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
@@ -644,7 +649,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 			break;
 		case FTDM_CHANNEL_STATE_TERMINATING:
 			if (sngisdn_test_flag(sngisdn_info, FLAG_GLARE) &&
-								sngisdn_info->glare.suInstId != suInstId) {
+				sngisdn_info->glare.suInstId != suInstId) {
 				/* This release if for the outbound call that we already started clearing */
 
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Received RELEASE for local glared call\n");
@@ -662,7 +667,6 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received RELEASE in an invalid state (%s)\n",
 							ftdm_channel_state2str(ftdmchan->state));
-
 			break;
 	}
 
@@ -830,7 +834,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				If there will be no information following, but current FACILITY IE contains a caller name, returns 0
 				If there will be information following, returns 1
 				*/
-
+				
 				if (sng_isdn_retrieve_facility_caller_name(&facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len, retrieved_str) == 0) {
 					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 				} else {

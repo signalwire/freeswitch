@@ -2668,7 +2668,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	if (sng_isup->tpause != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].tpause	= sng_isup->tpause;
 	} else {
-		g_ftdm_sngss7_data.cfg.isupIntf[i].tpause	= 150;
+		g_ftdm_sngss7_data.cfg.isupIntf[i].tpause	= 3000;
 	}
 	if (sng_isup->tstaenq != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].tstaenq	= sng_isup->tstaenq;

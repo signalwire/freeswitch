@@ -244,6 +244,67 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_consoleCleanLog(J
 }
 
 
+SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_email(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6, jstring jarg7) {
+  jboolean jresult = 0 ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  char *arg6 = (char *) NULL ;
+  char *arg7 = (char *) NULL ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = 0;
+  if (jarg1) {
+    arg1 = (char *)jenv->GetStringUTFChars(jarg1, 0);
+    if (!arg1) return 0;
+  }
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return 0;
+  }
+  arg4 = 0;
+  if (jarg4) {
+    arg4 = (char *)jenv->GetStringUTFChars(jarg4, 0);
+    if (!arg4) return 0;
+  }
+  arg5 = 0;
+  if (jarg5) {
+    arg5 = (char *)jenv->GetStringUTFChars(jarg5, 0);
+    if (!arg5) return 0;
+  }
+  arg6 = 0;
+  if (jarg6) {
+    arg6 = (char *)jenv->GetStringUTFChars(jarg6, 0);
+    if (!arg6) return 0;
+  }
+  arg7 = 0;
+  if (jarg7) {
+    arg7 = (char *)jenv->GetStringUTFChars(jarg7, 0);
+    if (!arg7) return 0;
+  }
+  result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  jresult = (jboolean)result; 
+  if (arg1) jenv->ReleaseStringUTFChars(jarg1, (const char *)arg1);
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  if (arg4) jenv->ReleaseStringUTFChars(jarg4, (const char *)arg4);
+  if (arg5) jenv->ReleaseStringUTFChars(jarg5, (const char *)arg5);
+  if (arg6) jenv->ReleaseStringUTFChars(jarg6, (const char *)arg6);
+  if (arg7) jenv->ReleaseStringUTFChars(jarg7, (const char *)arg7);
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1IVRMenu(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9, jstring jarg10, jint jarg11, jint jarg12, jint jarg13, jint jarg14, jint jarg15, jint jarg16) {
   jlong jresult = 0 ;
   IVRMenu *arg1 = (IVRMenu *) 0 ;

@@ -90,11 +90,11 @@ static switch_status_t select_url(const char *user,
 
 	if (exclude_contact) {
 		sql = switch_mprintf("select url, '%q' "
-							 "from registrations where user='%q' and realm='%q' "
+							 "from registrations where reg_user='%q' and realm='%q' "
 							 "and url not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, exclude_contact);
 	} else {
 		sql = switch_mprintf("select url, '%q' "
-							 "from registrations where user='%q' and realm='%q'",
+							 "from registrations where reg_user='%q' and realm='%q'",
 							 (concat != NULL) ? concat : "", user, domain);
 	}
 

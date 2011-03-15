@@ -152,10 +152,11 @@ class ESLconnection {
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function bgapi($cmd,$arg=null) {
+	function bgapi($cmd,$arg=null,$job_uuid=null) {
 		switch (func_num_args()) {
 		case 1: $r=ESLconnection_bgapi($this->_cPtr,$cmd); break;
-		default: $r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg);
+		case 2: $r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg); break;
+		default: $r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg,$job_uuid);
 		}
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}

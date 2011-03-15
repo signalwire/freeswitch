@@ -2687,6 +2687,13 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
 
 
 
+SWIGINTERNINLINE PyObject*
+  SWIG_From_bool  (bool value)
+{
+  return PyBool_FromLong(value ? 1 : 0);
+}
+
+
 #include <limits.h>
 #if !defined(SWIG_NO_LLONG_MAX)
 # if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
@@ -2916,13 +2923,6 @@ SWIG_From_char  (char c)
 }
 
 
-SWIGINTERNINLINE PyObject*
-  SWIG_From_bool  (bool value)
-{
-  return PyBool_FromLong(value ? 1 : 0);
-}
-
-
 SWIGINTERN int
 SWIG_AsVal_unsigned_SS_long (PyObject *obj, unsigned long *val) 
 {
@@ -3067,6 +3067,113 @@ SWIGINTERN PyObject *_wrap_consoleCleanLog(PyObject *SWIGUNUSEDPARM(self), PyObj
   return resultobj;
 fail:
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_email(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  char *arg5 = (char *) NULL ;
+  char *arg6 = (char *) NULL ;
+  char *arg7 = (char *) NULL ;
+  bool result;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
+  int res5 ;
+  char *buf5 = 0 ;
+  int alloc5 = 0 ;
+  int res6 ;
+  char *buf6 = 0 ;
+  int alloc6 = 0 ;
+  int res7 ;
+  char *buf7 = 0 ;
+  int alloc7 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO|OOOOO:email",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
+  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "email" "', argument " "1"" of type '" "char *""'");
+  }
+  arg1 = reinterpret_cast< char * >(buf1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "email" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (obj2) {
+    res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "email" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  if (obj3) {
+    res4 = SWIG_AsCharPtrAndSize(obj3, &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "email" "', argument " "4"" of type '" "char *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+  }
+  if (obj4) {
+    res5 = SWIG_AsCharPtrAndSize(obj4, &buf5, NULL, &alloc5);
+    if (!SWIG_IsOK(res5)) {
+      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "email" "', argument " "5"" of type '" "char *""'");
+    }
+    arg5 = reinterpret_cast< char * >(buf5);
+  }
+  if (obj5) {
+    res6 = SWIG_AsCharPtrAndSize(obj5, &buf6, NULL, &alloc6);
+    if (!SWIG_IsOK(res6)) {
+      SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "email" "', argument " "6"" of type '" "char *""'");
+    }
+    arg6 = reinterpret_cast< char * >(buf6);
+  }
+  if (obj6) {
+    res7 = SWIG_AsCharPtrAndSize(obj6, &buf7, NULL, &alloc7);
+    if (!SWIG_IsOK(res7)) {
+      SWIG_exception_fail(SWIG_ArgError(res7), "in method '" "email" "', argument " "7"" of type '" "char *""'");
+    }
+    arg7 = reinterpret_cast< char * >(buf7);
+  }
+  result = (bool)email(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+  if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
+  return resultobj;
+fail:
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+  if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
   return NULL;
 }
 
@@ -8878,6 +8985,7 @@ SWIGINTERN PyObject *Session_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObje
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"consoleLog", _wrap_consoleLog, METH_VARARGS, NULL},
 	 { (char *)"consoleCleanLog", _wrap_consoleCleanLog, METH_VARARGS, NULL},
+	 { (char *)"email", _wrap_email, METH_VARARGS, NULL},
 	 { (char *)"new_IVRMenu", _wrap_new_IVRMenu, METH_VARARGS, NULL},
 	 { (char *)"delete_IVRMenu", _wrap_delete_IVRMenu, METH_VARARGS, NULL},
 	 { (char *)"IVRMenu_bindAction", _wrap_IVRMenu_bindAction, METH_VARARGS, NULL},

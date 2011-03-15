@@ -80,8 +80,8 @@ public class ESLconnection : IDisposable {
     return ret;
   }
 
-  public ESLevent Bgapi(string cmd, string arg) {
-    IntPtr cPtr = ESLPINVOKE.ESLconnection_Bgapi(swigCPtr, cmd, arg);
+  public ESLevent Bgapi(string cmd, string arg, string job_uuid) {
+    IntPtr cPtr = ESLPINVOKE.ESLconnection_Bgapi(swigCPtr, cmd, arg, job_uuid);
     ESLevent ret = (cPtr == IntPtr.Zero) ? null : new ESLevent(cPtr, true);
     return ret;
   }
