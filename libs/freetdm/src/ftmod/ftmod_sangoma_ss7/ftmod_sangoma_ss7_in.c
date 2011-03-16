@@ -478,6 +478,12 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 		 */
 		intfId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
 
+		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+			SS7_DEBUG("Rx %s on circuit that is not a voice CIC (%d) finding a new circuit\n", 
+						DECODE_LCC_EVENT(evntType),
+						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
+		}
+
 		x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 		while ((g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) &&
 			   (g_ftdm_sngss7_data.cfg.isupCkt[x].id < ((g_ftdm_sngss7_data.cfg.procId +1) * 1000))) {
