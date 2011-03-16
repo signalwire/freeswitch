@@ -487,10 +487,6 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 
 			/* compare the intfIds */
 			if (g_ftdm_sngss7_data.cfg.isupCkt[x].infId == intfId) {
-				if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type == VOICE) {
-					
-				}
-
 				/* we have a match, setup the pointers to the correct values */
 				circuit = x;
 				
