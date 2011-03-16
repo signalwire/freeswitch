@@ -31,6 +31,7 @@
 /endpoints/mod_portaudio/Makefile.in
 /endpoints/mod_skinny/Makefile
 /endpoints/mod_skinny/Makefile.in
+/endpoints/mod_skinny/mod_skinny.log
 /endpoints/mod_skypopen/Makefile
 /endpoints/mod_skypopen/Makefile.in
 /endpoints/mod_sofia/Makefile
