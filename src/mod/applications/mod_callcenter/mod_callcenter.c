@@ -1960,10 +1960,10 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_safe_free(sql);
 		sql_order_by = switch_mprintf("level, position");
 	} else if(!strcasecmp(queue_strategy, "sequentially-by-agent-order")) {
-		sql_order_by = switch_mprintf("level, position");
+		sql_order_by = switch_mprintf("level, position, agents.last_offered_call"); /* Default to last_offered_call, let add new strategy if needing it differently */
 	} else {
 		/* If the strategy doesn't exist, just fallback to the following */
-		sql_order_by = switch_mprintf("level, position");
+		sql_order_by = switch_mprintf("level, position, agents.last_offered_call");
 	}
 
 	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
