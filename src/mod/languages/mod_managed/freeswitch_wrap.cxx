@@ -23791,6 +23791,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_caller_extension(void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_flip_cid(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_flip_cid(arg1);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_sort_cid(void * jarg1, int jarg2) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_bool_t arg2 ;
