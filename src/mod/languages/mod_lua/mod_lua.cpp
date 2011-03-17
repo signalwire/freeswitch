@@ -80,7 +80,7 @@ static int traceback(lua_State * L)
 	return 1;
 }
 
-static int docall(lua_State * L, int narg, int clear)
+int docall(lua_State * L, int narg, int clear, int perror)
 {
 	int status;
 	int base = lua_gettop(L) - narg;	/* function index */
@@ -92,11 +92,20 @@ static int docall(lua_State * L, int narg, int clear)
 
 	lua_remove(L, base);		/* remove traceback function */
 	/* force a complete garbage collection in case of errors */
-	if (status != 0)
+	if (status != 0) {
 		lua_gc(L, LUA_GCCOLLECT, 0);
+	}
+
+	if (status && perror) {
+		const char *err = lua_tostring(L, -1);
+		if (!zstr(err)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
+		}
+		lua_pop(L, 1); /* pop error message from the stack */
+	}
+
 	return status;
 }
-
 
 
 static lua_State *lua_init(void)
@@ -111,7 +120,7 @@ static lua_State *lua_init(void)
 		luaopen_freeswitch(L);
 		lua_gc(L, LUA_GCRESTART, 0);
 		lua_atpanic(L, panic);
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1);
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1, 0);
 	}
 	return L;
 }
@@ -128,7 +137,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1);	//lua_pcall(L, 0, 0, 0);
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1, 0);	//lua_pcall(L, 0, 0, 0);
 	} else {
 		char *args = strchr(input_code, ' ');
 		if (args) {
@@ -152,14 +161,14 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 			}
 
 			if (code) {
-				error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1);
+				error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1, 0);
 				switch_safe_free(code);
 			}
 		} else {
 			// Force empty argv table
 			char *code = NULL;
 			code = switch_mprintf("argv = {[0]='%s'};", input_code);
-			error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1);
+			error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1, 0);
 			switch_safe_free(code);
 		}
 
@@ -171,7 +180,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 				switch_assert(fdup);
 				file = fdup;
 			}
-			error = luaL_loadfile(L, file) || docall(L, 0, 1);
+			error = luaL_loadfile(L, file) || docall(L, 0, 1, 0);
 			switch_safe_free(fdup);
 		}
 	}
