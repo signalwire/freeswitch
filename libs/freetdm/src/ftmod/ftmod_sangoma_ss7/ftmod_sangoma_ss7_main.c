@@ -1389,10 +1389,16 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 	for (x = 1; x < (span->chan_count + 1); x++) {
 		/* extract the channel structure and sngss7 channel data */
 		ftdmchan = span->channels[x];
+
+		/* if there is no sig mod data move along */
 		if (ftdmchan->call_data == NULL) continue;
+
 		sngss7_info = ftdmchan->call_data;
 		sngss7_span = ftdmchan->span->signal_data;
 		sngss7_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
+
+		/* if this is a non-voice channel, move along */
+		if (sngss7_info->circuit->type != VOICE) continue;
 
 		/* lock the channel */
 		ftdm_mutex_lock(ftdmchan->mutex);

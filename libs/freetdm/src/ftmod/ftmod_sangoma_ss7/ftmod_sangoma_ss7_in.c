@@ -466,6 +466,14 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	uint32_t			intfId;
 	int 				x;
 
+	/* confirm that the circuit is active on our side otherwise move to the next circuit */
+	if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[circuit], SNGSS7_ACTIVE)) {
+		SS7_ERROR("[CIC:%d]Rx %s but circuit is not active yet, skipping!\n",
+					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+					DECODE_LCC_EVENT(evntType));
+		return;
+	}
+
 	/* check if the eventType is a pause/resume */
 	switch (evntType) {
 	/**************************************************************************/
@@ -478,6 +486,12 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 		 */
 		intfId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
 
+		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+			SS7_DEBUG("Rx %s on circuit that is not a voice CIC (%d) finding a new circuit\n", 
+						DECODE_LCC_EVENT(evntType),
+						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
+		}
+
 		x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 		while ((g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) &&
 			   (g_ftdm_sngss7_data.cfg.isupCkt[x].id < ((g_ftdm_sngss7_data.cfg.procId +1) * 1000))) {
@@ -487,10 +501,6 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 
 			/* compare the intfIds */
 			if (g_ftdm_sngss7_data.cfg.isupCkt[x].infId == intfId) {
-				if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type == VOICE) {
-					
-				}
-
 				/* we have a match, setup the pointers to the correct values */
 				circuit = x;
 				
