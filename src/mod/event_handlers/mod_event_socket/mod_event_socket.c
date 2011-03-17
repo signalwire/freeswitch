@@ -313,7 +313,7 @@ static void event_handler(switch_event_t *event)
 				const char *hval;
 
 				send = 0;
-
+				
 				for (hp = l->filters->headers; hp; hp = hp->next) {
 					if ((hval = switch_event_get_header(event, hp->name))) {
 						const char *comp_to = hp->value;
@@ -357,8 +357,9 @@ static void event_handler(switch_event_t *event)
 						}
 					}
 				}
-				switch_mutex_unlock(l->filter_mutex);
 			}
+
+			switch_mutex_unlock(l->filter_mutex);
 		}
 
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
