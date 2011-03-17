@@ -42,6 +42,12 @@ configure.lineno
 config.log
 config.status
 core.*
+*.2010.log
+*.Build.CppClean.log
+*.tlog
+*.unsuccessfulbuild
+*.cache
+*.lastbuildstate
 
 /w32/Library/lastversion
 /w32/Library/tmpVersion.Bat
@@ -155,3 +161,12 @@ BuildLog.htm
 /w32/Console/Release/
 /w32/Library/Debug/
 /w32/Library/Release/
+
+Freeswitch.2010.sdf
+
+/Win32/
+/x64/
+
+src/mod/codecs/mod_celt/*/*/mod_celt.log
+src/mod/endpoints/mod_skinny/*/*/mod_skinny_2010.log
+src/mod/formats/mod_shout/*/*/mod_shout.log
