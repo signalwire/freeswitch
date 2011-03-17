@@ -3161,12 +3161,12 @@ static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_
 	if (schannel != NULL && !switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED)) {
 		r = (recognizer_data_t *) schannel->data;
 		speech_channel_stop(schannel);
-		speech_channel_destroy(schannel);
 		switch_core_hash_destroy(&r->grammars);
 		switch_core_hash_destroy(&r->enabled_grammars);
 		if (r->dtmf_generator) {
 			mpf_dtmf_generator_destroy(r->dtmf_generator);
 		}
+		speech_channel_destroy(schannel);
 	}
 	/* this lets FreeSWITCH's speech_thread know the handle is closed */
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
