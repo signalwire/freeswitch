@@ -1919,6 +1919,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (queue_frames < 1) {
+		queue_frames = 3;
+	}
+
+	if (max_queue_frames < queue_frames) {
+		max_queue_frames = queue_frames * 3;
+	}
+
 	READ_INC(rtp_session);
 	if (rtp_session->jb) {
 		stfu_n_resize(rtp_session->jb, queue_frames);

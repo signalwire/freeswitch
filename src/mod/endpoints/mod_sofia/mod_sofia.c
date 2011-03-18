@@ -1373,6 +1373,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					
 					if ((len = atoi(msg->string_arg))) {
 						qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+						if (qlen < 1) {
+							qlen = 3;
+						}
 					}
 					
 					if (qlen) {
@@ -1393,6 +1396,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 
 				if (qlen) {
+					if (maxqlen < qlen) {
+						maxqlen = qlen * 5;
+					}
 					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 														  tech_pvt->read_impl.samples_per_packet, 
 														  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {

@@ -3196,10 +3196,17 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				
 				qlen = jb_msec / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
+				if (qlen < 1) {
+					qlen = 3;
+				}
+
 				if (maxlen) {
 					maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 				}
 
+				if (maxqlen < qlen) {
+					maxqlen = qlen * 5;
+				}
 				if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 													  tech_pvt->read_impl.samples_per_packet, 
 													  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
