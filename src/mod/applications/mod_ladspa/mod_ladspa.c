@@ -52,11 +52,16 @@ typedef struct {
 	const LADSPA_Descriptor *ldesc;
 	LADSPA_Handle handle;
 	LADSPA_Data config[MAX_INDEX];
+	int num_idx;
+	char *str_config[MAX_INDEX];
+	int str_idx;
 	uint8_t has_config[MAX_INDEX];
 	int skip;
 	LADSPA_Data in_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	LADSPA_Data file_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	LADSPA_Data out_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	LADSPA_Data out_ports[MAX_INDEX];
+	switch_file_handle_t fh;
 } switch_ladspa_t;
 
 
@@ -260,8 +265,8 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 		{
 			switch_codec_implementation_t read_impl = { 0 };
 			LADSPA_PortDescriptor port_desc;
-			int i = 0, j = 0, k = 0;
-
+			int i = 0, j = 0, k = 0, str_idx = 0;
+			
 			switch_core_session_get_read_impl(pvt->session, &read_impl);
 
 			if (!(pvt->library_handle = loadLADSPAPluginLibrary(pvt->plugin_name))) {
@@ -309,7 +314,47 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 				}
 
 				if (LADSPA_IS_PORT_INPUT(port_desc) && LADSPA_IS_PORT_AUDIO(port_desc)) {
-					pvt->ldesc->connect_port(pvt->handle, i, pvt->in_buf);
+					int mapped = 0;
+
+					if (pvt->str_idx && !zstr(pvt->str_config[str_idx])) {
+
+						if (!strcasecmp(pvt->str_config[str_idx], "none")) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT NOTHING to port: %s\n", 
+											  pvt->ldesc->PortNames[i]
+											  );
+							mapped = 1;
+						} else if (!strncasecmp(pvt->str_config[str_idx], "file:", 5)) {
+							char *file = pvt->str_config[str_idx] + 5;
+							
+							if (switch_core_file_open(&pvt->fh,
+													  file,
+													  read_impl.number_of_channels,
+													  read_impl.actual_samples_per_second, 
+													  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot open file: %s\n", file);
+								return SWITCH_FALSE;
+							}
+							
+							
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT FILE [%s] to port: %s\n", 
+											  file,
+											  pvt->ldesc->PortNames[i]
+											  );
+
+							pvt->ldesc->connect_port(pvt->handle, i, pvt->file_buf);
+							mapped = 1;
+						}
+
+						str_idx++;
+					}
+
+					if (!mapped) {
+						pvt->ldesc->connect_port(pvt->handle, i, pvt->in_buf);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT CHANNEL AUDIO to port: %s\n", 
+										  pvt->ldesc->PortNames[i]
+										  );
+					}
+
 				}
 
 				if (LADSPA_IS_PORT_OUTPUT(port_desc)) {
@@ -327,6 +372,10 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
 
+			if (switch_test_flag((&pvt->fh), SWITCH_FILE_OPEN)) {
+				switch_core_file_close(&pvt->fh);
+			}
+
 			if (pvt->handle && pvt->ldesc) {
 				pvt->ldesc->cleanup(pvt->handle);
 			}
@@ -341,7 +390,9 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		{
 			switch_frame_t *rframe;
-			int16_t *slin;
+			int16_t *slin, abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  { 0 };
+			switch_size_t olen = 0;
+
 
 			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
 				rframe = switch_core_media_bug_get_read_replace_frame(bug);
@@ -353,7 +404,37 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 			
 			if (switch_channel_media_ready(channel)) {
 				switch_short_to_float(slin, pvt->in_buf, rframe->samples);
+
+				if (switch_test_flag((&pvt->fh), SWITCH_FILE_OPEN)) {
+					olen = rframe->samples;
+					if (switch_core_file_read(&pvt->fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+						switch_codec_implementation_t read_impl = { 0 };
+						char *file = switch_core_session_strdup(pvt->session, pvt->fh.file_path);
+						switch_core_session_get_read_impl(pvt->session, &read_impl);
+
+						switch_core_file_close(&pvt->fh);
+						
+						if (switch_core_file_open(&pvt->fh,
+												  file,
+												  read_impl.number_of_channels,
+												  read_impl.actual_samples_per_second, 
+												  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot open file: %s\n", file);
+							return SWITCH_FALSE;
+						}						
+
+						olen = rframe->samples;
+						if (switch_core_file_read(&pvt->fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot READ file: %s\n", file);
+							return SWITCH_FALSE;
+						}
+					}
+					
+					switch_short_to_float(abuf, pvt->file_buf, olen);
+				}
+
 				pvt->ldesc->run(pvt->handle, rframe->samples);
+
 				switch_float_to_short(pvt->out_buf, slin, rframe->samples);
 			}
 
@@ -446,8 +527,17 @@ switch_status_t ladspa_session(switch_core_session_t *session, const char *flags
 	argc = switch_split(dparams, ' ', argv);
 
 	for (i = 0; i < argc; i++) {
-		pvt->config[i] = atof(argv[i]);
-		pvt->has_config[i] = 1;
+		if (switch_is_number(argv[i])) {
+			if (pvt->num_idx < MAX_INDEX) {
+				pvt->config[pvt->num_idx] = atof(argv[i]);
+				pvt->has_config[pvt->num_idx] = 1;
+				pvt->num_idx++;
+			}
+		} else {
+			if (pvt->str_idx < MAX_INDEX) {
+				pvt->str_config[pvt->str_idx++] = switch_core_session_strdup(session, argv[i]);
+			}
+		}
 	}
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
