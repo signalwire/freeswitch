@@ -3163,9 +3163,12 @@ static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_
 		speech_channel_stop(schannel);
 		switch_core_hash_destroy(&r->grammars);
 		switch_core_hash_destroy(&r->enabled_grammars);
+		switch_mutex_lock(schannel->mutex);
 		if (r->dtmf_generator) {
+			r->dtmf_generator_active = 0;
 			mpf_dtmf_generator_destroy(r->dtmf_generator);
 		}
+		switch_mutex_unlock(schannel->mutex);
 		speech_channel_destroy(schannel);
 	}
 	/* this lets FreeSWITCH's speech_thread know the handle is closed */
@@ -3502,13 +3505,15 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 		}
 		frame->type |= MEDIA_FRAME_TYPE_AUDIO;
 	}
-	
+
+	switch_mutex_lock(schannel->mutex);	
 	if (r->dtmf_generator_active) {
 		if (!mpf_dtmf_generator_put_frame(r->dtmf_generator, frame)) {
 			if (!mpf_dtmf_generator_sending(r->dtmf_generator))
 				r->dtmf_generator_active = 0;
 		}
 	}
+	switch_mutex_unlock(schannel->mutex);
 
 	return TRUE;
 }
