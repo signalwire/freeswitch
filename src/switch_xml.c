@@ -96,13 +96,6 @@ int glob(const char *, int, int (*)(const char *, int), glob_t *);
 void globfree(glob_t *);
 
 #endif
-#undef HAVE_MMAP
-#ifdef HAVE_MMAP
-#include <sys/mman.h>
-#ifdef __sun
-extern int madvise(caddr_t, size_t, int);
-#endif
-#endif
 
 #define SWITCH_XML_WS   "\t\r\n "	/* whitespace */
 #define SWITCH_XML_ERRL 128		/* maximum error string length */
@@ -114,7 +107,7 @@ struct switch_xml_root {		/* additional data for the root tag */
 	struct switch_xml xml;		/* is a super-struct built on top of switch_xml struct */
 	switch_xml_t cur;			/* current xml tree insertion point */
 	char *m;					/* original xml string */
-	switch_size_t len;			/* length of allocated memory for mmap */
+	switch_size_t len;			/* length of allocated memory */
 	uint8_t dynamic;			/* Free the original string when calling switch_xml_free */
 	char *u;					/* UTF-8 conversion of string if original was UTF-16 */
 	char *s;					/* start of work area */
@@ -1166,28 +1159,16 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 		return NULL;
 	}
 
-#ifdef HAVE_MMAP
-	l = (st.st_size + sysconf(_SC_PAGESIZE) - 1) & ~(sysconf(_SC_PAGESIZE) - 1);
-	if ((m = mmap(NULL, l, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
-		madvise(m, l, MADV_SEQUENTIAL);	/* optimize for sequential access */
-		if (!(root = (switch_xml_root_t) switch_xml_parse_str(m, st.st_size))) {
-			munmap(m, l);
-		}
-		madvise(m, root->len = l, MADV_NORMAL);	/* put it back to normal */
-	} else {					/* mmap failed, read file into memory */
-#endif /* HAVE_MMAP */
-		m = malloc(st.st_size);
-		if (!m)
-			return NULL;
-		l = read(fd, m, st.st_size);
-		if (!l || !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
-			free(m);
-			return NULL;
-		}
-		root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
-#ifdef HAVE_MMAP
+	m = malloc(st.st_size);
+	if (!m)
+		return NULL;
+	l = read(fd, m, st.st_size);
+	if (!l || !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
+		free(m);
+		return NULL;
 	}
-#endif /* HAVE_MMAP */
+	root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
+
 	return &root->xml;
 }
 
@@ -2461,10 +2442,6 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 
 		if (root->dynamic == 1)
 			free(root->m);		/* malloced xml data */
-#ifdef HAVE_MMAP
-		else if (root->len)
-			munmap(root->m, root->len);	/* mem mapped xml data */
-#endif /* HAVE_MMAP */
 		if (root->u)
 			free(root->u);		/* utf8 conversion */
 	}
