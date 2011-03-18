@@ -2503,6 +2503,74 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	rtp_session->last_read_ts = ts;
 
+	
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+		
+#ifdef ENABLE_ZRTP
+		/* ZRTP Recv */
+		if (*bytes) {
+			unsigned int sbytes = (int) *bytes;
+			zrtp_status_t stat = 0;
+
+			stat = zrtp_process_srtp(rtp_session->zrtp_stream, (void *) &rtp_session->recv_msg, &sbytes);
+		
+			switch (stat) {
+			case zrtp_status_ok:
+				*bytes = sbytes;
+				break;
+			case zrtp_status_drop:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+				*bytes = 0;
+				return SWITCH_STATUS_SUCCESS;
+			case zrtp_status_fail:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+				return SWITCH_STATUS_FALSE;
+			default:
+				break;
+			}
+		}
+#endif
+
+		if (*bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
+			int sbytes = (int) *bytes;
+			err_status_t stat = 0;
+
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET)) {
+				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
+				srtp_dealloc(rtp_session->recv_ctx);
+				rtp_session->recv_ctx = NULL;
+				if ((stat = srtp_create(&rtp_session->recv_ctx, &rtp_session->recv_policy))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
+					return SWITCH_STATUS_FALSE;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
+					rtp_session->srtp_errs = 0;
+				}
+			}
+
+			if (!(*flags & SFF_PLC)) {
+				stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
+			}
+
+			if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
+				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Error: SRTP unprotect failed with code %d%s\n", stat,
+									  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
+									  err_status_auth_fail ? " (auth check failed)" : "");
+					return SWITCH_STATUS_FALSE;
+				} else {
+					sbytes = 0;
+				}
+			} else {
+				rtp_session->srtp_errs = 0;
+			}
+
+			*bytes = sbytes;
+		}
+	}
+
+
 	if (rtp_session->jb && !rtp_session->pause_jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
@@ -3061,31 +3129,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (check || bytes) {
 			do_2833(rtp_session, session);
 		}
-#ifdef ENABLE_ZRTP
-		/* ZRTP Recv */
-		if (bytes) {
-			unsigned int sbytes = (int) bytes;
-			zrtp_status_t stat = 0;
-
-			stat = zrtp_process_srtp(rtp_session->zrtp_stream, (void *) &rtp_session->recv_msg, &sbytes);
-
-			switch (stat) {
-			case zrtp_status_ok:
-				bytes = sbytes;
-				break;
-			case zrtp_status_drop:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
-				bytes = 0;
-				goto do_continue;
-			case zrtp_status_fail:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
-				ret = -1;
-				goto end;
-			default:
-				break;
-			}
-		}
-#endif
 
 		if (bytes && rtp_session->recv_msg.header.version != 2) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
@@ -3112,43 +3155,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
-			int sbytes = (int) bytes;
-			err_status_t stat = 0;
-
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET)) {
-				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
-				srtp_dealloc(rtp_session->recv_ctx);
-				rtp_session->recv_ctx = NULL;
-				if ((stat = srtp_create(&rtp_session->recv_ctx, &rtp_session->recv_policy))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
-					ret = -1;
-					goto end;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
-					rtp_session->srtp_errs = 0;
-				}
-			}
-
-			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
-
-			if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
-				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "Error: SRTP unprotect failed with code %d%s\n", stat,
-									  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
-									  err_status_auth_fail ? " (auth check failed)" : "");
-					ret = -1;
-					goto end;
-				} else {
-					sbytes = 0;
-				}
-			} else {
-				rtp_session->srtp_errs = 0;
-			}
-
-			bytes = sbytes;
-		}
 
 		/* Handle incoming RFC2833 packets */
 		switch (handle_rfc2833(rtp_session, bytes, &do_cng)) {
