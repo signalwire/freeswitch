@@ -1,4 +1,5 @@
 PERL=$(shell which perl)
+PERL_SITEDIR=$(shell perl -MConfig -e 'print $$Config{sitelibexp}')
 PERL_LIBDIR=-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
 PERL_LIBS=$(shell perl -MConfig -e 'print $$Config{libs}')
 LOCAL_CFLAGS=-w -DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
@@ -30,3 +31,8 @@ swigclean:
 
 reswig:	swigclean esl_wrap.cpp perlxsi.c
 
+install: ESL.so
+	install -m 755 ESL.so $(PERL_SITEDIR)
+	install -m 755 ESL.pm $(PERL_SITEDIR)
+	install -d -m 755 ESL $(PERL_SITEDIR)/ESL
+	install -m 755 ESL/* $(PERL_SITEDIR)/ESL
