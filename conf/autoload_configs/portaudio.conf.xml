@@ -5,12 +5,14 @@
 	 or the device number prefixed with # eg "#1" (or blank for default) -->
 
     <!-- device to use for input -->
-    <param name="indev" value=""/>
+    <param name="indev" value="Built-in Input"/>
     <!-- device to use for output -->
-    <param name="outdev" value=""/>
+    <!--<param name="outdev" value="Built-in Output"/>-->
+    <param name="outdev" value="#2"/>
 
     <!--device to use for inbound ring -->
-    <!--<param name="ringdev" value=""/>-->
+    <param name="ringdev" value="Built-in Output"/>
+
     <!--File to play as the ring sound -->
     <!--<param name="ring-file" value="/sounds/ring.wav"/>-->
     <!--Number of seconds to pause between rings -->
@@ -29,7 +31,30 @@
     <param name="cid-num" value="$${outbound_caller_id}"/>
 
     <!--audio sample rate and interval -->
-    <param name="sample-rate" value="48000"/>
+    <!--<param name="sample-rate" value="48000"/>-->
+    <param name="sample-rate" value="8000"/>
     <param name="codec-ms" value="20"/>
   </settings>
+
+  <shared-devices>
+  	<device friendly-name="usb1" device="#2">
+		<param name="channels" value="2" />
+		<param name="sample-rate" value="8000" />
+		<param name="codec-ms" value="20" />
+  	</device>
+  </shared-devices>
+
+  <endpoints>
+
+  	<endpoint name="usbout-left">
+		<param name="outdev" value="usb1:0" />
+	</endpoint>
+
+  	<endpoint name="usbout-right">
+		<param name="outdev" value="usb1:1" />
+	</endpoint>
+
+  </endpoints>
+
 </configuration>
+

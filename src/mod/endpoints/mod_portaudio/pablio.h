@@ -56,17 +56,19 @@ extern "C" {
 
 #include <string.h>
 
-	typedef struct {
-		PaUtilRingBuffer inFIFO;
-		PaUtilRingBuffer outFIFO;
-		PaStream *istream;
-		PaStream *ostream;
-		PaStream *iostream;
-		int bytesPerFrame;
-		int do_dual;
-		int has_in;
-		int has_out;
-	} PABLIO_Stream;
+#define MAX_IO_CHANNELS 2
+typedef struct {
+	PaStream *istream;
+	PaStream *ostream;
+	PaStream *iostream;
+	int bytesPerFrame;
+	int do_dual;
+	int has_in;
+	int has_out;
+	PaUtilRingBuffer inFIFOs[2]
+	PaUtilRingBuffer outFIFOs[2]
+	int channelCount;
+} PABLIO_Stream;
 
 /* Values for flags for OpenAudioStream(). */
 #define PABLIO_READ     (1<<0)

@@ -106,6 +106,34 @@ struct audio_stream {
 };
 typedef struct audio_stream audio_stream_t;
 
+typedef struct _pa_shared_device {
+	/*! Sampling rate */
+	int sample_rate;
+	/*! */
+	int codec_ms;
+	/*! Device number */
+	int devno;
+	/*! Running stream (if a stream is already running for devno) */
+	audio_stream_t *stream;
+	/*! The actual portaudio device number */
+	/*! It's a shared device after all */
+	switch_mutex_t *mutex;
+} pa_shared_device_t;
+
+typedef struct _pa_endpoint {
+	/*! Input device for this endpoint */
+	pa_shared_device_t *indev;
+
+	/*! Output device for this endpoint */
+	pa_shared_device_t *outdev;
+
+	/*! Channel index within the input device stream */
+	int inchan;
+
+	/*! Channel index within the input device stream */
+	int outchan;
+} pa_endpoint_t;
+
 static struct {
 	int debug;
 	int port;
