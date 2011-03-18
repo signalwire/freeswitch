@@ -37,6 +37,7 @@
  */
 #include <switch.h>
 #define DEFAULT_AGC_LEVEL 1100
+#define CONFERENCE_UUID_VARIABLE "conference_uuid"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
@@ -705,6 +706,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		channel = switch_core_session_get_channel(member->session);
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
+		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
 		
 		if (conference->count > 1) {
 			if (conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
