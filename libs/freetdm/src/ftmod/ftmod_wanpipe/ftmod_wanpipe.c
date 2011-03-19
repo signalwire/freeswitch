@@ -1315,14 +1315,12 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 				status = FTDM_BREAK;
 			} else {
 				ftdm_status_t status;
-				wanpipe_tdm_api_t onhook_tdm_api;
-				memset(&onhook_tdm_api, 0, sizeof(onhook_tdm_api));
-				status = sangoma_tdm_txsig_onhook(fchan->sockfd, &onhook_tdm_api);
+				status = sangoma_tdm_txsig_onhook(fchan->sockfd, tdm_api);
 				if (status) {
 					snprintf(fchan->last_error, sizeof(fchan->last_error), "ONHOOK Failed");
 					return FTDM_FAIL;
 				}
-				*event_id = onhook_tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;	
+				*event_id = tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;
 			}
 		}
 		break;
