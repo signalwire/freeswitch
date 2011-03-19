@@ -137,8 +137,12 @@ typedef struct _audio_endpoint {
 	/*! Associated private information if involved in a call */
 	private_t *master;
 
-	/*! For timed writes */
+	/*! For timed read and writes */
+	switch_timer_t read_timer;
 	switch_timer_t write_timer;
+
+	/* We need our own read frame */
+	switch_frame_t read_frame;
 
 	/*! Let's be safe */
 	switch_mutex_t *mutex;
@@ -725,10 +729,20 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int release_stream_channel(shared_audio_stream_t *stream, int index, int input);
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (tech_pvt->audio_endpoint) {
+		audio_endpoint_t *endpoint = tech_pvt->audio_endpoint;
+		switch_mutex_lock(endpoint->mutex);
+		/* release the stream channels */	
+		release_stream_channel(endpoint->in_stream, endpoint->inchan, 1);
+		release_stream_channel(endpoint->out_stream, endpoint->outchan, 0);
+		switch_mutex_unlock(endpoint->mutex);
+	}
 
 	switch_mutex_lock(globals.pa_mutex);
 	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
@@ -789,12 +803,40 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_frame_t **frame)
+{
+	int samples = 0;
+
+	if (!endpoint->in_stream) {
+		*frame = &globals.cng_frame;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	samples = ReadAudioStream(endpoint->in_stream->stream, 
+			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), 
+			&endpoint->read_timer);
+
+	if (!samples) {
+		*frame = &globals.cng_frame;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	endpoint->read_frame.datalen = (samples * sizeof(int16_t));
+	endpoint->read_frame.samples = samples;
+	*frame = &endpoint->read_frame;
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	int samples = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_assert(tech_pvt != NULL);
+
+	if (tech_pvt->audio_endpoint) {
+		return channel_endpoint_read(tech_pvt->audio_endpoint, frame);
+	}
 	
 	if (!globals.main_stream) {
 		goto normal_return;
@@ -1462,6 +1504,21 @@ static switch_status_t load_endpoints(switch_xml_t endpoints)
 					"Incomatible input and output streams for endpoint '%s'\n", endpoint_name);
 			continue;
 		}
+
+		if (switch_core_timer_init(&endpoint->read_timer,
+				   globals.timer_name, endpoint->in_stream->codec_ms, 
+				   STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint_name);
+			continue;
+		}
+
+		if (switch_core_timer_init(&endpoint->write_timer,
+				   globals.timer_name, endpoint->out_stream->codec_ms, 
+				   STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint_name);
+			continue;
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
 				"Created endpoint '%s', instream = %s, outstream = %s\n", endpoint->name, 
 				endpoint->in_stream ? endpoint->in_stream->name : "(none)", 
