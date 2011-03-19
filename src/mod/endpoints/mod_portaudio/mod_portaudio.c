@@ -98,41 +98,36 @@ struct private_object {
 typedef struct private_object private_t;
 
 struct audio_stream {
+	/*! Sampling rate */
+	int sample_rate;
+	/*! Buffer packetization (and therefore timing) */
+	int codec_ms;
+	/*! The PA input device */
 	int indev;
+	/*! The PA output device */
 	int outdev;
+	/*! The io stream helper to buffer audio */
 	PABLIO_Stream *stream;
+	/*! How often to write */
 	switch_timer_t write_timer;
+	/*! Next stream */
 	struct audio_stream *next;
 };
 typedef struct audio_stream audio_stream_t;
 
-typedef struct _pa_shared_device {
-	/*! Sampling rate */
-	int sample_rate;
-	/*! */
-	int codec_ms;
-	/*! Device number */
-	int devno;
-	/*! Running stream (if a stream is already running for devno) */
-	audio_stream_t *stream;
-	/*! The actual portaudio device number */
-	/*! It's a shared device after all */
-	switch_mutex_t *mutex;
-} pa_shared_device_t;
+typedef struct audio_endpoint {
+	/*! Input stream for this endpoint */
+	audio_stream_t *in_stream;
 
-typedef struct _pa_endpoint {
-	/*! Input device for this endpoint */
-	pa_shared_device_t *indev;
+	/*! Output stream for this endpoint */
+	audio_stream_t *out_stream;
 
-	/*! Output device for this endpoint */
-	pa_shared_device_t *outdev;
-
-	/*! Channel index within the input device stream */
+	/*! Channel index within the input stream where we get the audio for this endpoint */
 	int inchan;
 
-	/*! Channel index within the input device stream */
+	/*! Channel index within the output stream where we get the audio for this endpoint */
 	int outchan;
-} pa_endpoint_t;
+} audio_endpoint_t;
 
 static struct {
 	int debug;
