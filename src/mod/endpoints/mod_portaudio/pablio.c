@@ -411,3 +411,4 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 
 	return paNoError;
 }
+
