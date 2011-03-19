@@ -45,6 +45,8 @@
 #define MY_EVENT_ERROR_AUDIO_DEV "portaudio::audio_dev_error"
 #define SWITCH_PA_CALL_ID_VARIABLE "pa_call_id"
 
+#define MIN_STREAM_SAMPLE_RATE 8000
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown);
 //SWITCH_MODULE_RUNTIME_FUNCTION(mod_portaudio_runtime);
@@ -98,6 +100,18 @@ struct private_object {
 typedef struct private_object private_t;
 
 struct audio_stream {
+	int indev;
+	int outdev;
+	PABLIO_Stream *stream;
+	switch_timer_t write_timer;
+	struct audio_stream *next;
+};
+typedef struct audio_stream audio_stream_t;
+
+/* Audio stream that can be shared across endpoints */
+typedef struct _shared_audio_stream_t {
+	/*! Friendly name for this stream */
+	char name[255];
 	/*! Sampling rate */
 	int sample_rate;
 	/*! Buffer packetization (and therefore timing) */
@@ -106,21 +120,24 @@ struct audio_stream {
 	int indev;
 	/*! The PA output device */
 	int outdev;
+	/*! How many channels to create (for both indev and outdev) */
+	int channels;
 	/*! The io stream helper to buffer audio */
 	PABLIO_Stream *stream;
 	/*! How often to write */
 	switch_timer_t write_timer;
-	/*! Next stream */
-	struct audio_stream *next;
-};
-typedef struct audio_stream audio_stream_t;
+} shared_audio_stream_t;
 
-typedef struct audio_endpoint {
+/* Endpoint that can be called via portaudio/endpoint/<endpoint-name> */
+typedef struct _audio_endpoint {
+	/*! Friendly name for this endpoint */
+	char name[255];
+
 	/*! Input stream for this endpoint */
-	audio_stream_t *in_stream;
+	shared_audio_stream_t *in_stream;
 
 	/*! Output stream for this endpoint */
-	audio_stream_t *out_stream;
+	shared_audio_stream_t *out_stream;
 
 	/*! Channel index within the input stream where we get the audio for this endpoint */
 	int inchan;
@@ -161,6 +178,10 @@ static struct {
 	unsigned char cngbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	private_t *call_list;
 	audio_stream_t *stream_list;
+	/*! Streams that can be used by multiple endpoints at the same time */
+	switch_hash_t *sh_streams;
+	/*! Endpoints configured */
+	switch_hash_t *endpoints;
 	int ring_interval;
 	GFLAGS flags;
 	switch_timer_t read_timer;
@@ -266,7 +287,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 	if (hold_file) {
 		tech_pvt->hold_file = switch_core_session_strdup(session, hold_file);
 	}
-		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		if (validate_main_audio_stream() != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_FALSE;
@@ -994,12 +1015,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	memset(&globals, 0, sizeof(globals));
 	switch_core_hash_init(&globals.call_hash, module_pool);
+	switch_core_hash_init(&globals.sh_streams, module_pool);
+	switch_core_hash_init(&globals.endpoints, module_pool);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.streams_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pa_mutex, SWITCH_MUTEX_NESTED, module_pool);
-	globals.codecs_inited=0;
+	globals.codecs_inited = 0;
 	globals.read_frame.data = globals.databuf;
 	globals.read_frame.buflen = sizeof(globals.databuf);
 	globals.cng_frame.data = globals.cngbuf;
@@ -1078,16 +1101,106 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	switch_console_set_complete("add pa play");
 	switch_console_set_complete("add pa playdev");
 	switch_console_set_complete("add pa looptest");
+	switch_console_set_complete("add pa shstreams");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int check_device(char *devstr, int check_input)
+{
+	int devval;
+	if (devstr[0] == '#') {
+		devval = get_dev_by_number(devstr + 1, check_input);
+	} else {
+		devval = get_dev_by_name(devstr, check_input);
+	}
+	return devval;
+}
+
+static switch_status_t load_streams(switch_xml_t streams)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_xml_t param, mystream;
+	for (mystream = switch_xml_child(streams, "stream"); mystream; mystream = mystream->next) {
+		shared_audio_stream_t *stream = NULL;
+		int devval = -1;
+		char *stream_name = (char *) switch_xml_attr_soft(mystream, "name");
+
+		/* check if that stream name is not already used */
+		stream = switch_core_hash_find(globals.sh_streams, stream_name);
+		if (stream) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "A stream with name '%s' already exists\n", stream_name);
+			continue;
+		}
+
+		stream = switch_core_alloc(module_pool, sizeof(*stream));
+		if (!stream) {
+			continue;
+		}
+		stream->indev = -1;
+		stream->outdev = -1;
+		switch_snprintf(stream->name, sizeof(stream->name), "%s", stream_name);
+		for (param = switch_xml_child(mystream, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing stream '%s' parameter %s = %s\n", stream_name, var, val);
+			if (!strcmp(var, "indev")) {
+				devval = check_device(val, 1);
+				if (devval < 0) {
+					stream->indev = -1;
+					continue;
+				}
+				stream->indev = devval;
+			} else if (!strcmp(var, "outdev")) {
+				devval = check_device(val, 0);
+				if (devval < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"Invalid outdev specified for stream '%s'\n", stream_name);
+					stream->outdev = -1;
+					continue;
+				}
+				stream->outdev = devval;
+			} else if (!strcmp(var, "sample-rate")) {
+				stream->sample_rate = atoi(val);
+				if (stream->sample_rate < MIN_STREAM_SAMPLE_RATE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"Invalid sample rate specified for stream '%s', forcing to 8000\n", stream_name);
+					stream->sample_rate = MIN_STREAM_SAMPLE_RATE;
+				}
+			} else if (!strcmp(var, "codec-ms")) {
+				int tmp = atoi(val);
+				if (switch_check_interval(stream->sample_rate, tmp)) {
+					stream->codec_ms = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "codec-ms must be multiple of 10 and less than %d, Using default of 20\n", SWITCH_MAX_INTERVAL);
+				}
+			} else if (!strcmp(var, "channels")) {
+				stream->channels = atoi(val);
+				if (stream->channels < 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"Invalid number of channels specified for stream '%s', forcing to 1\n", stream_name);
+					stream->channels = 1;
+				}
+			}
+		}
+		if (stream->indev < 0 && stream->outdev < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+					"You need at least one device for stream '%s'\n", stream_name);
+			continue;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
+				"Created stream '%s', sample-rate = %d, codec-ms = %d\n", stream->name, stream->sample_rate, stream->codec_ms);
+		switch_core_hash_insert(globals.sh_streams, stream->name, stream);
+	}
+	return status;
+}
 
 static switch_status_t load_config(void)
 {
 	char *cf = "portaudio.conf";
-	switch_xml_t cfg, xml, settings, param;
+	switch_xml_t cfg, xml, settings, streams, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -1182,6 +1295,10 @@ static switch_status_t load_config(void)
 		}
 	}
 
+	if ((streams = switch_xml_child(cfg, "streams"))) {
+		load_streams(streams);
+	}
+
 	if (!globals.dialplan) {
 		set_global_dialplan("XML");
 	}
@@ -1246,6 +1363,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 
 	Pa_Terminate();
 	switch_core_hash_destroy(&globals.call_hash);
+	switch_core_hash_destroy(&globals.sh_streams);
+	switch_core_hash_destroy(&globals.endpoints);
 
 	switch_event_free_subclass(MY_EVENT_RINGING);
 	switch_event_free_subclass(MY_EVENT_MAKE_CALL);
@@ -1744,12 +1863,12 @@ static audio_stream_t *create_audio_stream(int indev, int outdev)
 	switch_event_t *event;
 	audio_stream_t *stream;
 
-	stream = malloc(sizeof(audio_stream_t));
+	stream = malloc(sizeof(*stream));
 	if (stream == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to alloc memory\n");
 		return NULL;
 	}
-	memset(stream, 0, sizeof(audio_stream_t));
+	memset(stream, 0, sizeof(*stream));
 	stream->next = NULL;
 	stream->stream = NULL;
 	stream->indev = indev;
@@ -1837,6 +1956,24 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 		switch_mutex_unlock(globals.pvt_lock);
 	}
 
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t list_shared_streams(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	switch_hash_index_t *hi;
+	int cnt = 0;
+	for (hi = switch_hash_first(NULL, globals.sh_streams); hi; hi = switch_hash_next(hi)) {
+		const void *var;
+		void *val;
+		shared_audio_stream_t *s = NULL;
+		switch_hash_this(hi, &var, NULL, &val);
+		s = val;
+		stream->write_function(stream, "%s> outdev: %d, indev: %d, sample-rate: %d, codec-ms: %d, channels: %d\n",
+				s->name, s->indev, s->outdev, s->sample_rate, s->codec_ms, s->channels);
+		cnt++;
+	}
+	stream->write_function(stream, "Total streams: %d\n", cnt);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2409,6 +2546,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa playdev #<num> [ringtest|<filename>] [seconds] [no_close]\n"
 		"pa ringfile [filename]\n"
 		"pa looptest\n"
+		"pa shstreams\n"
 		"--------------------------------------------------------------------------------\n";
 
 
@@ -2533,6 +2671,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		func = looptest;
 	} else if (!strcasecmp(argv[0], "ringfile")) {
 		func = set_ringfile;
+	} else if (!strcasecmp(argv[0], "shstreams")) {
+		func = list_shared_streams;
 	} else {
 		stream->write_function(stream, "Unknown Command or not enough args [%s]\n", argv[0]);
 	}

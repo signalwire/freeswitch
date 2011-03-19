@@ -65,8 +65,8 @@ typedef struct {
 	int do_dual;
 	int has_in;
 	int has_out;
-	PaUtilRingBuffer inFIFOs[2];
-	PaUtilRingBuffer outFIFOs[2];
+	PaUtilRingBuffer inFIFOs[MAX_IO_CHANNELS];
+	PaUtilRingBuffer outFIFOs[MAX_IO_CHANNELS];
 	int channelCount;
 } PABLIO_Stream;
 
