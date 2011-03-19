@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Moises Silva <moises.silva@gmail.com> (Multiple endpoints work sponsored by Comrex Corporation)
  *
  *
  * mod_portaudio.c -- PortAudio Endpoint Module
@@ -1102,6 +1103,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	switch_console_set_complete("add pa playdev");
 	switch_console_set_complete("add pa looptest");
 	switch_console_set_complete("add pa shstreams");
+	switch_console_set_complete("add pa endpoints");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -1122,10 +1124,16 @@ static switch_status_t load_streams(switch_xml_t streams)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t param, mystream;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading streams ...\n");
 	for (mystream = switch_xml_child(streams, "stream"); mystream; mystream = mystream->next) {
 		shared_audio_stream_t *stream = NULL;
 		int devval = -1;
 		char *stream_name = (char *) switch_xml_attr_soft(mystream, "name");
+
+		if (!stream_name) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing stream name attribute, skipping ...\n");
+			continue;
+		}
 
 		/* check if that stream name is not already used */
 		stream = switch_core_hash_find(globals.sh_streams, stream_name);
@@ -1140,6 +1148,7 @@ static switch_status_t load_streams(switch_xml_t streams)
 		}
 		stream->indev = -1;
 		stream->outdev = -1;
+		stream->sample_rate = globals.sample_rate;
 		switch_snprintf(stream->name, sizeof(stream->name), "%s", stream_name);
 		for (param = switch_xml_child(mystream, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1148,6 +1157,8 @@ static switch_status_t load_streams(switch_xml_t streams)
 			if (!strcmp(var, "indev")) {
 				devval = check_device(val, 1);
 				if (devval < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"Invalid indev specified for stream '%s'\n", stream_name);
 					stream->indev = -1;
 					continue;
 				}
@@ -1178,7 +1189,7 @@ static switch_status_t load_streams(switch_xml_t streams)
 				}
 			} else if (!strcmp(var, "channels")) {
 				stream->channels = atoi(val);
-				if (stream->channels < 1) {
+				if (stream->channels < 1 || stream->channels > MAX_IO_CHANNELS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 							"Invalid number of channels specified for stream '%s', forcing to 1\n", stream_name);
 					stream->channels = 1;
@@ -1197,10 +1208,130 @@ static switch_status_t load_streams(switch_xml_t streams)
 	return status;
 }
 
+static int check_stream_compat(shared_audio_stream_t *in_stream, shared_audio_stream_t *out_stream)
+{
+	if (!in_stream || !out_stream) {
+		/* nothing to be compatible with */
+		return 0;
+	}
+	if (in_stream->sample_rate != out_stream->sample_rate) {
+		return -1;
+	}
+	if (in_stream->codec_ms != out_stream->codec_ms) {
+		return -1;
+	}
+	return 0;
+}
+
+static shared_audio_stream_t *check_stream(char *streamstr, int check_input, int *chanindex)
+{
+	shared_audio_stream_t *stream = NULL;
+	int cnum = 0;
+	char stream_name[255];
+	char *chan = NULL;
+
+	*chanindex = -1;
+
+	switch_snprintf(stream_name, sizeof(stream_name), "%s", streamstr);
+
+	chan = strchr(stream_name, ':');
+	if (!chan) {
+		return NULL;
+	}
+	*chan = 0;
+	chan++;
+	cnum = atoi(chan);
+
+	stream = switch_core_hash_find(globals.sh_streams, stream_name);
+	if (!stream) {
+		return NULL;
+	}
+
+	if (cnum < 0 || cnum > stream->channels) {
+		return NULL;
+	}
+	
+	*chanindex = cnum;
+
+	return stream;
+}
+
+static switch_status_t load_endpoints(switch_xml_t endpoints)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_xml_t param, myendpoint;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading endpoints ...\n");
+	for (myendpoint = switch_xml_child(endpoints, "endpoint"); myendpoint; myendpoint = myendpoint->next) {
+		audio_endpoint_t *endpoint = NULL;
+		shared_audio_stream_t *stream = NULL;
+		char *endpoint_name = (char *) switch_xml_attr_soft(myendpoint, "name");
+
+		if (!endpoint_name) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing endpoint name attribute, skipping ...\n");
+			continue;
+		}
+
+		/* check if that endpoint name is not already used */
+		endpoint = switch_core_hash_find(globals.endpoints, endpoint_name);
+		if (endpoint) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "An endpoint with name '%s' already exists\n", endpoint_name);
+			continue;
+		}
+
+		endpoint = switch_core_alloc(module_pool, sizeof(*endpoint));
+		if (!endpoint) {
+			continue;
+		}
+		endpoint->inchan = -1;
+		endpoint->outchan = -1;
+		switch_snprintf(endpoint->name, sizeof(endpoint->name), "%s", endpoint_name);
+		for (param = switch_xml_child(myendpoint, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing endpoint '%s' parameter %s = %s\n", endpoint_name, var, val);
+			if (!strcmp(var, "instream")) {
+				stream = check_stream(val, 1, &endpoint->inchan) ;
+				if (!stream) {
+					endpoint->in_stream = NULL;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"Invalid instream specified for endpoint '%s'\n", endpoint_name);
+					continue;
+				}
+				endpoint->in_stream = stream;
+			} else if (!strcmp(var, "outstream")) {
+				stream = check_stream(val, 0, &endpoint->outchan);
+				if (!stream) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+							"Invalid outstream specified for endpoint '%s'\n", endpoint_name);
+					endpoint->out_stream = NULL;
+					continue;
+				}
+				endpoint->out_stream = stream;
+			}
+		}
+		if (!endpoint->in_stream && !endpoint->out_stream) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+					"You need at least one stream for endpoint '%s'\n", endpoint_name);
+			continue;
+		}
+		if (check_stream_compat(endpoint->in_stream, endpoint->out_stream)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+					"Incomatible input and output streams for endpoint '%s'\n", endpoint_name);
+			continue;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
+				"Created endpoint '%s', instream = %s, outstream = %s\n", endpoint->name, 
+				endpoint->in_stream ? endpoint->in_stream->name : "(none)", 
+				endpoint->out_stream ? endpoint->out_stream->name : "(none)");
+		switch_core_hash_insert(globals.endpoints, endpoint->name, endpoint);
+	}
+	return status;
+}
+
 static switch_status_t load_config(void)
 {
 	char *cf = "portaudio.conf";
-	switch_xml_t cfg, xml, settings, streams, param;
+	switch_xml_t cfg, xml, settings, streams, endpoints, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -1297,6 +1428,10 @@ static switch_status_t load_config(void)
 
 	if ((streams = switch_xml_child(cfg, "streams"))) {
 		load_streams(streams);
+	}
+
+	if ((endpoints = switch_xml_child(cfg, "endpoints"))) {
+		load_endpoints(endpoints);
 	}
 
 	if (!globals.dialplan) {
@@ -1969,11 +2104,30 @@ static switch_status_t list_shared_streams(char **argv, int argc, switch_stream_
 		shared_audio_stream_t *s = NULL;
 		switch_hash_this(hi, &var, NULL, &val);
 		s = val;
-		stream->write_function(stream, "%s> outdev: %d, indev: %d, sample-rate: %d, codec-ms: %d, channels: %d\n",
+		stream->write_function(stream, "%s> indev: %d, outdev: %d, sample-rate: %d, codec-ms: %d, channels: %d\n",
 				s->name, s->indev, s->outdev, s->sample_rate, s->codec_ms, s->channels);
 		cnt++;
 	}
 	stream->write_function(stream, "Total streams: %d\n", cnt);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t list_endpoints(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	switch_hash_index_t *hi;
+	int cnt = 0;
+	for (hi = switch_hash_first(NULL, globals.endpoints); hi; hi = switch_hash_next(hi)) {
+		const void *var;
+		void *val;
+		audio_endpoint_t *e = NULL;
+		switch_hash_this(hi, &var, NULL, &val);
+		e = val;
+		stream->write_function(stream, "%s> instream: %s, outstream: %s\n",
+				e->name, e->in_stream ? e->in_stream->name : "(none)", 
+				e->out_stream ? e->out_stream->name : "(none)");
+		cnt++;
+	}
+	stream->write_function(stream, "Total endpoints: %d\n", cnt);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2547,6 +2701,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa ringfile [filename]\n"
 		"pa looptest\n"
 		"pa shstreams\n"
+		"pa endpoints\n"
 		"--------------------------------------------------------------------------------\n";
 
 
@@ -2673,6 +2828,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		func = set_ringfile;
 	} else if (!strcasecmp(argv[0], "shstreams")) {
 		func = list_shared_streams;
+	} else if (!strcasecmp(argv[0], "endpoints")) {
+		func = list_endpoints;
 	} else {
 		stream->write_function(stream, "Unknown Command or not enough args [%s]\n", argv[0]);
 	}
