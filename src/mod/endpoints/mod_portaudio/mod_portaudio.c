@@ -824,6 +824,7 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 	int samples = 0;
 
 	if (!endpoint->in_stream) {
+		switch_core_timer_next(&endpoint->read_timer);
 		*frame = &globals.cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -833,6 +834,7 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 			endpoint->inchan, &endpoint->read_timer);
 
 	if (!samples) {
+		switch_core_timer_next(&endpoint->read_timer);
 		*frame = &globals.cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 	}
