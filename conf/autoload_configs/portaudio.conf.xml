@@ -36,22 +36,45 @@
     <param name="codec-ms" value="20"/>
   </settings>
 
-  <shared-devices>
-  	<device friendly-name="usb1" device="#2">
+  <streams>
+  	<stream name="usb1">
+		<!-- How many channels to open for this stream -->
+		<param name="indev" value="#2" />
+		<param name="outdev" value="#2" />
+		<param name="sample-rate" value="48000" />
+		<param name="codec-ms" value="10" />
 		<param name="channels" value="2" />
-		<param name="sample-rate" value="8000" />
-		<param name="codec-ms" value="20" />
-  	</device>
-  </shared-devices>
+  	</stream>
+  	<stream name="default">
+		<!-- How many channels to open for this stream -->
+		<param name="indev" value="#0" />
+		<param name="outdev" value="#1" />
+		<param name="sample-rate" value="48000" />
+		<param name="codec-ms" value="10" />
+		<param name="channels" value="1" />
+  	</stream>
+  </streams>
 
   <endpoints>
 
-  	<endpoint name="usbout-left">
-		<param name="outdev" value="usb1:0" />
+	<!-- An endpoint is a handle name to represent a logical container to
+	     read media from and write media to.
+	     The endpoint can use any input/output stream combination for that purpose as 
+	     long as the streams match the sampling rate and codec-ms (see <streams> XML tag) -->
+  	<endpoint name="usb1out-left">
+		<!-- The instream, outstream parameters follow the syntax 
+		     <stream-name>:<channel index> You can omit either the outstream
+		     or the instream, but not both! -->
+		<param name="outstream" value="usb1:0" />
 	</endpoint>
 
-  	<endpoint name="usbout-right">
-		<param name="outdev" value="usb1:1" />
+  	<endpoint name="usb1out-right">
+		<param name="outstream" value="usb1:1" />
+	</endpoint>
+
+  	<endpoint name="default">
+		<param name="instream" value="default:0" />
+		<param name="outstream" value="default:0" />
 	</endpoint>
 
   </endpoints>
