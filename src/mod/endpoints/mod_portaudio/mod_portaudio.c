@@ -144,6 +144,10 @@ typedef struct _audio_endpoint {
 	/* We need our own read frame */
 	switch_frame_t read_frame;
 
+	/* Needed codecs for the core to read/write in the proper format */
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+
 	/*! Let's be safe */
 	switch_mutex_t *mutex;
 } audio_endpoint_t;
@@ -308,7 +312,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 		tech_pvt->hold_file = switch_core_session_strdup(session, hold_file);
 	}
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-		if (validate_main_audio_stream() != SWITCH_STATUS_SUCCESS) {
+		if (!tech_pvt->audio_endpoint && validate_main_audio_stream() != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -345,7 +349,9 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 			}
 		}
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Testing autoanswer\n");
 		if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "autoanswer\n");
 			switch_mutex_lock(globals.pvt_lock);
 			add_pvt(tech_pvt, PA_MASTER);
 			switch_channel_mark_answered(channel);
@@ -353,6 +359,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 			switch_mutex_unlock(globals.pvt_lock);
 			switch_yield(1000000);
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No autoanswer\n");
 			switch_channel_mark_ring_ready(channel);
 		}
 
@@ -639,6 +646,7 @@ static void add_pvt(private_t *tech_pvt, int master)
 
 	switch_mutex_lock(globals.pvt_lock);
 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "call is '%s'\n", tech_pvt->call_id);
 	if (*tech_pvt->call_id == '\0') {
 		switch_mutex_lock(globals.pa_mutex);
 		switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
@@ -647,6 +655,7 @@ static void add_pvt(private_t *tech_pvt, int master)
 		switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);
 		switch_core_session_set_write_codec(tech_pvt->session, &globals.write_codec);
 		switch_mutex_unlock(globals.pa_mutex);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Added call %s\n", tech_pvt->call_id);
 	}
 
 	for (tp = globals.call_list; tp; tp = tp->next) {
@@ -738,9 +747,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	if (tech_pvt->audio_endpoint) {
 		audio_endpoint_t *endpoint = tech_pvt->audio_endpoint;
 		switch_mutex_lock(endpoint->mutex);
-		/* release the stream channels */	
 		release_stream_channel(endpoint->in_stream, endpoint->inchan, 1);
 		release_stream_channel(endpoint->out_stream, endpoint->outchan, 0);
+		switch_core_timer_destroy(&endpoint->read_timer);
+		switch_core_timer_destroy(&endpoint->write_timer);
+		switch_core_codec_destroy(&endpoint->read_codec);
+		switch_core_codec_destroy(&endpoint->write_codec);
 		switch_mutex_unlock(endpoint->mutex);
 	}
 
@@ -823,6 +835,7 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 
 	endpoint->read_frame.datalen = (samples * sizeof(int16_t));
 	endpoint->read_frame.samples = samples;
+	endpoint->read_frame.codec = &endpoint->read_codec;
 	*frame = &endpoint->read_frame;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1072,17 +1085,9 @@ static int release_stream_channel(shared_audio_stream_t *stream, int index, int 
 	switch_mutex_lock(stream->mutex);
 
 	if (input) {
-	       	if (stream->inchan_used[index]) {
-			rc = -1;
-			goto done;
-		}
-		stream->inchan_used[index] = 1;
+		stream->inchan_used[index] = 0;
 	} else {
-		if (!input && stream->outchan_used[index]) {
-			rc = -1;
-			goto done;
-		}
-		stream->outchan_used[index] = 1;
+		stream->outchan_used[index] = 0;
 	}
 
 	for (i = 0; i < stream->channels; i++) {
@@ -1093,7 +1098,7 @@ static int release_stream_channel(shared_audio_stream_t *stream, int index, int 
 	if (destroy_stream) {
 		destroy_shared_audio_stream(stream);
 	}
-done:
+
 	switch_mutex_unlock(stream->mutex);
 	return rc;
 }
@@ -1112,6 +1117,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile = NULL;
 	switch_call_cause_t retcause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	int codec_ms = -1;
+	int samples_per_packet = -1;
+	int sample_rate = 0;
+	audio_endpoint_t *endpoint = NULL;
+	char *endpoint_name = NULL;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1135,65 +1145,75 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return retcause;
 	}
 
-	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint"))) {
-		int timer_ms = -1;
-		int samples_per_packet = -1;
-		audio_endpoint_t *endpoint = NULL;
-		char *endpoint_name = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "dest: %s\n", outbound_profile ? outbound_profile->destination_number : "");
+	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint")-1)) {
+		codec_ms = -1;
+		samples_per_packet = -1;
+		endpoint = NULL;
+		endpoint_name = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 		endpoint_name = strchr(endpoint_name, '/');
 		if (!endpoint_name) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "No portaudio endpoint specified\n");
 			goto error;
 		}
+		endpoint_name++;
 		endpoint = switch_core_hash_find(globals.endpoints, endpoint_name);
 		if (!endpoint) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "Invalid portaudio endpoint %s\n", endpoint_name);
 			goto error;
 		}
-		/* check that there is no call there yet */
+		
 		switch_mutex_lock(endpoint->mutex);
+
 		if (endpoint->master) {
-			switch_mutex_unlock(endpoint->mutex);
+			/* someone already has this endpoint */
 			retcause = SWITCH_CAUSE_USER_BUSY;
 			goto error;
 		}
 
-		timer_ms = endpoint->in_stream ? endpoint->in_stream->codec_ms : endpoint->out_stream->codec_ms;
+		codec_ms = endpoint->in_stream ? endpoint->in_stream->codec_ms : endpoint->out_stream->codec_ms;
 		samples_per_packet = endpoint->in_stream ? 
 			STREAM_SAMPLES_PER_PACKET(endpoint->in_stream) : STREAM_SAMPLES_PER_PACKET(endpoint->out_stream);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				"Setting up timer for endpoint '%s' with %dms and %d samples per packet\n", endpoint->name, timer_ms, samples_per_packet);
+		sample_rate = endpoint->in_stream ? endpoint->in_stream->sample_rate : endpoint->out_stream->sample_rate;
 
-		/* only setup read timer if we'll be reading */
-		if (endpoint->in_stream && switch_core_timer_init(&endpoint->read_timer,
-				   globals.timer_name, timer_ms, 
+		if (switch_core_timer_init(&endpoint->read_timer,
+				   globals.timer_name, codec_ms, 
 				   samples_per_packet, module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint->name);
-			switch_mutex_unlock(endpoint->mutex);
 			goto error;
 		}
 
 		/* The write timer must be setup regardless */
 		if (switch_core_timer_init(&endpoint->write_timer,
-				   globals.timer_name, timer_ms, 
+				   globals.timer_name, codec_ms, 
 				   samples_per_packet, module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint->name);
-			if (endpoint->in_stream) {
-				switch_core_timer_destroy(&endpoint->read_timer);
-			}
-			switch_mutex_unlock(endpoint->mutex);
 			goto error;
 		}
 
+		if (switch_core_codec_init(&endpoint->read_codec,
+					"L16", NULL, sample_rate, codec_ms, 1, 
+					SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+			goto error;
+		}
+
+		if (switch_core_codec_init(&endpoint->write_codec,
+					 "L16", NULL, sample_rate, codec_ms, 1, 
+					 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+			goto error;
+		}
+		switch_core_session_set_read_codec(tech_pvt->session, &endpoint->read_codec);
+		switch_core_session_set_write_codec(tech_pvt->session, &endpoint->write_codec);
+
 		/* try to acquire the stream */	
 		if (take_stream_channel(endpoint->in_stream, endpoint->inchan, 1)) {
-			switch_mutex_unlock(endpoint->mutex);
 			retcause = SWITCH_CAUSE_USER_BUSY;
 			goto error;
 		}
 		if (take_stream_channel(endpoint->out_stream, endpoint->outchan, 0)) {
 			release_stream_channel(endpoint->in_stream, endpoint->inchan, 1);
-			switch_mutex_unlock(endpoint->mutex);
 			retcause = SWITCH_CAUSE_USER_BUSY;
 			goto error;
 		}
@@ -1219,6 +1239,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	return SWITCH_CAUSE_SUCCESS;
 
 error:
+	if (endpoint) {
+		if (endpoint->read_timer.interval) {
+			switch_core_timer_destroy(&endpoint->read_timer);
+		}
+		if (endpoint->write_timer.interval) {
+			switch_core_timer_destroy(&endpoint->write_timer);
+		}
+		if (endpoint->read_codec.codec_interface) {
+			switch_core_codec_destroy(&endpoint->read_codec);
+		}
+		if (endpoint->write_codec.codec_interface) {
+			switch_core_codec_destroy(&endpoint->write_codec);
+		}
+		switch_mutex_unlock(endpoint->mutex);
+	}
 	if (new_session && *new_session) {
 		switch_core_session_destroy(new_session);
 	}
@@ -2275,13 +2310,14 @@ static int create_shared_audio_stream(shared_audio_stream_t *shstream)
 		}
 		return -1;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created audio stream: %d channels %d\n", 
-			shstream->sample_rate, shstream->channels);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created shared audio stream %s: %d channels %d\n", 
+			shstream->name, shstream->sample_rate, shstream->channels);
 	return 0;
 }
 
 static int destroy_shared_audio_stream(shared_audio_stream_t *shstream)
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying shared audio stream %s\n", shstream->name);
 	CloseAudioStream(shstream->stream);
 	shstream->stream = NULL;
 	return 0;
