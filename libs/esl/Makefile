@@ -16,7 +16,9 @@ SOLINK=-shared -Xlinker -x
 # comment the next line to disable c++ (no swig mods for you then)
 OBJS += src/esl_oop.o
 
-all: $(MYLIB) fs_cli testclient testserver ivrd
+all: $(MYLIB) fs_cli testclient testserver ivrd pymod
+
+install: pymod-install
 
 $(MYLIB): $(OBJS) $(HEADERS) $(SRC)
 	ar rcs $(MYLIB) $(OBJS)

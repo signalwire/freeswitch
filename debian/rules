@@ -208,6 +208,7 @@ install: build
 	dh_installdirs -A
 
 	VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	cd libs/esl && VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install && cd -
 
 
 # Build architecture-independent files here.
