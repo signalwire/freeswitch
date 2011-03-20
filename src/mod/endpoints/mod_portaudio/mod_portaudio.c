@@ -746,13 +746,19 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	if (tech_pvt->audio_endpoint) {
 		audio_endpoint_t *endpoint = tech_pvt->audio_endpoint;
+
+		tech_pvt->audio_endpoint = NULL;
+
 		switch_mutex_lock(endpoint->mutex);
+
 		release_stream_channel(endpoint->in_stream, endpoint->inchan, 1);
 		release_stream_channel(endpoint->out_stream, endpoint->outchan, 0);
 		switch_core_timer_destroy(&endpoint->read_timer);
 		switch_core_timer_destroy(&endpoint->write_timer);
 		switch_core_codec_destroy(&endpoint->read_codec);
 		switch_core_codec_destroy(&endpoint->write_codec);
+		endpoint->master = NULL;
+
 		switch_mutex_unlock(endpoint->mutex);
 	}
 
