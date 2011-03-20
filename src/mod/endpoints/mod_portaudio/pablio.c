@@ -143,7 +143,7 @@ static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf)
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch_timer_t *timer)
+long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int chan, switch_timer_t *timer)
 {
 	long bytesWritten;
 	char *p = (char *) data;
@@ -151,12 +151,12 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switc
 
 	switch_core_timer_next(timer);
 
-	bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFOs[0], p, numBytes);
+	bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFOs[chan], p, numBytes);
 	numBytes -= bytesWritten;
 	p += bytesWritten;
 
 	if (numBytes > 0) {
-		PaUtil_FlushRingBuffer(&aStream->outFIFOs[0]);
+		PaUtil_FlushRingBuffer(&aStream->outFIFOs[chan]);
 		return 0;
 	}
 	return numFrames;
@@ -166,7 +166,7 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switc
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch_timer_t *timer)
+long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int chan, switch_timer_t *timer)
 {
 	long bytesRead = 0;
 	char *p = (char *) data;
@@ -177,17 +177,17 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 
 	while (totalBytes < neededBytes && --max > 0) {
 
-		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFOs[0]);
+		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFOs[chan]);
 		//printf("AVAILABLE BYTES %ld pass %d\n", avail, 5000 - max);
 		if (avail >= neededBytes * 6) {
-			PaUtil_FlushRingBuffer(&aStream->inFIFOs[0]);
+			PaUtil_FlushRingBuffer(&aStream->inFIFOs[chan]);
 			avail = 0;
 		} else {
 
 			bytesRead = 0;
 
 			if (totalBytes < neededBytes && avail >= neededBytes) {
-				bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFOs[0], p, neededBytes);
+				bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFOs[chan], p, neededBytes);
 				totalBytes += bytesRead;
 			}
 
@@ -206,9 +206,9 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
  * Return the number of frames that could be written to the stream without
  * having to wait.
  */
-long GetAudioStreamWriteable(PABLIO_Stream * aStream)
+long GetAudioStreamWriteable(PABLIO_Stream * aStream, int chan)
 {
-	int bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFOs[0]);
+	int bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFOs[chan]);
 	return bytesEmpty / aStream->bytesPerFrame;
 }
 
@@ -216,9 +216,9 @@ long GetAudioStreamWriteable(PABLIO_Stream * aStream)
  * Return the number of frames that are available to be read from the
  * stream without having to wait.
  */
-long GetAudioStreamReadable(PABLIO_Stream * aStream)
+long GetAudioStreamReadable(PABLIO_Stream * aStream, int chan)
 {
-	int bytesFull = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFOs[0]);
+	int bytesFull = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFOs[chan]);
 	return bytesFull / aStream->bytesPerFrame;
 }
 

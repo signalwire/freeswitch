@@ -81,25 +81,25 @@ typedef struct {
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-	long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch_timer_t *timer);
+long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int chan, switch_timer_t *timer);
 
 /************************************************************
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-	long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch_timer_t *timer);
+long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int chan, switch_timer_t *timer);
 
 /************************************************************
  * Return the number of frames that could be written to the stream without
  * having to wait.
  */
-	long GetAudioStreamWriteable(PABLIO_Stream * aStream);
+long GetAudioStreamWriteable(PABLIO_Stream * aStream, int chan);
 
 /************************************************************
  * Return the number of frames that are available to be read from the
  * stream without having to wait.
  */
-	long GetAudioStreamReadable(PABLIO_Stream * aStream);
+long GetAudioStreamReadable(PABLIO_Stream * aStream, int chan);
 
 /************************************************************
  * Opens a PortAudio stream with default characteristics.
@@ -109,12 +109,12 @@ typedef struct {
  *    PABLIO_READ, PABLIO_WRITE, or PABLIO_READ_WRITE,
  *    and either PABLIO_MONO or PABLIO_STEREO
  */
-	PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
-							const PaStreamParameters * inputParameters,
-							const PaStreamParameters * outputParameters,
-							double sampleRate, PaStreamCallbackFlags statusFlags, long samples_per_packet, int do_dual);
+PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
+			const PaStreamParameters * inputParameters,
+			const PaStreamParameters * outputParameters,
+			double sampleRate, PaStreamCallbackFlags statusFlags, long samples_per_packet, int do_dual);
 
-	PaError CloseAudioStream(PABLIO_Stream * aStream);
+PaError CloseAudioStream(PABLIO_Stream * aStream);
 
 #ifdef __cplusplus
 }

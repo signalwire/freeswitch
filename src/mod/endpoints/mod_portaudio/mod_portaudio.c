@@ -389,7 +389,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 
 				if (globals.ring_stream && (! switch_test_flag(globals.call_list, TFLAG_MASTER) || 
 							( !globals.no_ring_during_call && globals.main_stream != globals.ring_stream)) ) { //if there is a ring stream and not an active call or if there is an active call and we are allowed to ring during it AND the ring stream is not the main stream						
-						WriteAudioStream(globals.ring_stream->stream, abuf, (long) olen, &globals.ring_stream->write_timer);
+						WriteAudioStream(globals.ring_stream->stream, abuf, (long) olen, 0, &globals.ring_stream->write_timer);
 				}
 			} else {
 				switch_yield(10000);
@@ -814,7 +814,7 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 
 	samples = ReadAudioStream(endpoint->in_stream->stream, 
 			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), 
-			&endpoint->read_timer);
+			endpoint->inchan, &endpoint->read_timer);
 
 	if (!samples) {
 		*frame = &globals.cng_frame;
@@ -900,7 +900,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	switch_mutex_lock(globals.device_lock);
-	samples = ReadAudioStream(globals.main_stream->stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_packet, &globals.read_timer);
+	samples = ReadAudioStream(globals.main_stream->stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_packet, 0, &globals.read_timer);
 	switch_mutex_unlock(globals.device_lock);
 
 	if (samples) {
@@ -931,11 +931,27 @@ normal_return:
 
 }
 
+static switch_status_t channel_endpoint_write(audio_endpoint_t *endpoint, switch_frame_t *frame)
+{
+	if (!endpoint->out_stream) {
+		switch_core_timer_next(&endpoint->write_timer);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	WriteAudioStream(endpoint->out_stream->stream, (short *)frame->data, 
+			(int)(frame->datalen / sizeof(SAMPLE)), 
+			endpoint->outchan, &(endpoint->write_timer));
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (tech_pvt->audio_endpoint) {
+		return channel_endpoint_write(tech_pvt->audio_endpoint, frame);
+	}
 
 	if (!globals.main_stream) {
 		return SWITCH_STATUS_FALSE;
@@ -951,7 +967,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	if (globals.main_stream) {
 		if (switch_test_flag((&globals), GFLAG_EAR)) {
-			WriteAudioStream(globals.main_stream->stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)), &(globals.main_stream->write_timer));
+			WriteAudioStream(globals.main_stream->stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)), 0, &(globals.main_stream->write_timer));
 		}
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -1876,7 +1892,7 @@ static switch_status_t play_dev(switch_stream_handle_t *stream, int outdev, char
 			break;
 		}
 		
-		WriteAudioStream(audio_stream->stream, abuf, (long) olen, &(audio_stream->write_timer));
+		WriteAudioStream(audio_stream->stream, abuf, (long) olen, 0, &(audio_stream->write_timer));
 		wrote += (int) olen;
 		if (samples) {
 			samples -= (int) olen;
@@ -2555,8 +2571,8 @@ static switch_status_t looptest(char **argv, int argc, switch_stream_handle_t *s
 		if (globals.destroying_streams ||  ! globals.main_stream->stream) {
 			break;
 		}
-		if ((samples = ReadAudioStream(globals.main_stream->stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_packet, &globals.read_timer))) {
-			WriteAudioStream(globals.main_stream->stream, globals.read_frame.data, (long) samples, &(globals.main_stream->write_timer));
+		if ((samples = ReadAudioStream(globals.main_stream->stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_packet, 0, &globals.read_timer))) {
+			WriteAudioStream(globals.main_stream->stream, globals.read_frame.data, (long) samples, 0, &(globals.main_stream->write_timer));
 			success = 1;
 		}
 		switch_yield(10000);
