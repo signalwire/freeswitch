@@ -143,6 +143,7 @@ typedef struct _audio_endpoint {
 
 	/* We need our own read frame */
 	switch_frame_t read_frame;
+	unsigned char read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
 	/* Needed codecs for the core to read/write in the proper format */
 	switch_codec_t read_codec;
@@ -829,6 +830,7 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	endpoint->read_frame.data = endpoint->read_buf;
 	samples = ReadAudioStream(endpoint->in_stream->stream, 
 			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), 
 			endpoint->inchan, &endpoint->read_timer);
