@@ -1245,17 +1245,19 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 error:
 	if (endpoint) {
-		if (endpoint->read_timer.interval) {
-			switch_core_timer_destroy(&endpoint->read_timer);
-		}
-		if (endpoint->write_timer.interval) {
-			switch_core_timer_destroy(&endpoint->write_timer);
-		}
-		if (endpoint->read_codec.codec_interface) {
-			switch_core_codec_destroy(&endpoint->read_codec);
-		}
-		if (endpoint->write_codec.codec_interface) {
-			switch_core_codec_destroy(&endpoint->write_codec);
+		if (!endpoint->master) {
+			if (endpoint->read_timer.interval) {
+				switch_core_timer_destroy(&endpoint->read_timer);
+			}
+			if (endpoint->write_timer.interval) {
+				switch_core_timer_destroy(&endpoint->write_timer);
+			}
+			if (endpoint->read_codec.codec_interface) {
+				switch_core_codec_destroy(&endpoint->read_codec);
+			}
+			if (endpoint->write_codec.codec_interface) {
+				switch_core_codec_destroy(&endpoint->write_codec);
+			}
 		}
 		switch_mutex_unlock(endpoint->mutex);
 	}
