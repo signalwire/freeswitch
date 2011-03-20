@@ -349,9 +349,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Testing autoanswer\n");
 		if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "autoanswer\n");
 			switch_mutex_lock(globals.pvt_lock);
 			add_pvt(tech_pvt, PA_MASTER);
 			switch_channel_mark_answered(channel);
@@ -359,7 +357,6 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 			switch_mutex_unlock(globals.pvt_lock);
 			switch_yield(1000000);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No autoanswer\n");
 			switch_channel_mark_ring_ready(channel);
 		}
 
@@ -646,16 +643,17 @@ static void add_pvt(private_t *tech_pvt, int master)
 
 	switch_mutex_lock(globals.pvt_lock);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "call is '%s'\n", tech_pvt->call_id);
 	if (*tech_pvt->call_id == '\0') {
 		switch_mutex_lock(globals.pa_mutex);
 		switch_snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", ++globals.call_id);
 		switch_channel_set_variable(switch_core_session_get_channel(tech_pvt->session), SWITCH_PA_CALL_ID_VARIABLE, tech_pvt->call_id);
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
-		switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);
-		switch_core_session_set_write_codec(tech_pvt->session, &globals.write_codec);
+		if (!tech_pvt->audio_endpoint) {
+			switch_core_session_set_read_codec(tech_pvt->session, &globals.read_codec);
+			switch_core_session_set_write_codec(tech_pvt->session, &globals.write_codec);
+		}
 		switch_mutex_unlock(globals.pa_mutex);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Added call %s\n", tech_pvt->call_id);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Added call %s\n", tech_pvt->call_id);
 	}
 
 	for (tp = globals.call_list; tp; tp = tp->next) {
@@ -664,7 +662,7 @@ static void add_pvt(private_t *tech_pvt, int master)
 		}
 		if (master && switch_test_flag(tp, TFLAG_MASTER) ) {
 			switch_clear_flag_locked(tp, TFLAG_MASTER);
-			create_hold_event(tp,0);
+			create_hold_event(tp, 0);
 		}
 	}
 
@@ -1151,7 +1149,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return retcause;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "dest: %s\n", outbound_profile ? outbound_profile->destination_number : "");
 	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint")-1)) {
 		codec_ms = -1;
 		samples_per_packet = -1;
