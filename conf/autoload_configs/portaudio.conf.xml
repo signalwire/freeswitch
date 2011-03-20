@@ -72,6 +72,24 @@
 		<param name="outstream" value="usb1:1" />
 	</endpoint>
 
+  	<endpoint name="usb1in-left">
+		<param name="instream" value="usb1:0" />
+	</endpoint>
+
+  	<endpoint name="usb1in-right">
+		<param name="instream" value="usb1:1" />
+	</endpoint>
+
+  	<endpoint name="usb1-left">
+		<param name="instream" value="usb1:0" />
+		<param name="outstream" value="usb1:0" />
+	</endpoint>
+
+  	<endpoint name="usb1-right">
+		<param name="instream" value="usb1:1" />
+		<param name="outstream" value="usb1:1" />
+	</endpoint>
+
   	<endpoint name="default">
 		<param name="instream" value="default:0" />
 		<param name="outstream" value="default:0" />
