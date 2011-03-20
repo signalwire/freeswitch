@@ -56,7 +56,17 @@ extern "C" {
 
 #include <string.h>
 
+/*! Maximum number of channels per stream */
 #define MAX_IO_CHANNELS 2
+
+/*! Maximum numer of milliseconds per packet */
+#define MAX_IO_MS 100
+
+/*! Maximum sampling rate (48Khz) */
+#define MAX_SAMPLING_RATE  48000
+
+/* Maximum size of a read */
+#define MAX_IO_BUFFER (((MAX_IO_MS * MAX_SAMPLING_RATE)/1000)*sizeof(int16_t))
 typedef struct {
 	PaStream *istream;
 	PaStream *ostream;
@@ -68,6 +78,7 @@ typedef struct {
 	PaUtilRingBuffer inFIFOs[MAX_IO_CHANNELS];
 	PaUtilRingBuffer outFIFOs[MAX_IO_CHANNELS];
 	int channelCount;
+	char iobuff[MAX_IO_BUFFER];
 } PABLIO_Stream;
 
 /* Values for flags for OpenAudioStream(). */

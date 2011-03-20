@@ -1136,6 +1136,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint"))) {
+		int timer_ms = -1;
+		int samples_per_packet = -1;
 		audio_endpoint_t *endpoint = NULL;
 		char *endpoint_name = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 		endpoint_name = strchr(endpoint_name, '/');
@@ -1155,6 +1157,34 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			retcause = SWITCH_CAUSE_USER_BUSY;
 			goto error;
 		}
+
+		timer_ms = endpoint->in_stream ? endpoint->in_stream->codec_ms : endpoint->out_stream->codec_ms;
+		samples_per_packet = endpoint->in_stream ? 
+			STREAM_SAMPLES_PER_PACKET(endpoint->in_stream) : STREAM_SAMPLES_PER_PACKET(endpoint->out_stream);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+				"Setting up timer for endpoint '%s' with %dms and %d samples per packet\n", endpoint->name, timer_ms, samples_per_packet);
+
+		/* only setup read timer if we'll be reading */
+		if (endpoint->in_stream && switch_core_timer_init(&endpoint->read_timer,
+				   globals.timer_name, timer_ms, 
+				   samples_per_packet, module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint->name);
+			switch_mutex_unlock(endpoint->mutex);
+			goto error;
+		}
+
+		/* The write timer must be setup regardless */
+		if (switch_core_timer_init(&endpoint->write_timer,
+				   globals.timer_name, timer_ms, 
+				   samples_per_packet, module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint->name);
+			if (endpoint->in_stream) {
+				switch_core_timer_destroy(&endpoint->read_timer);
+			}
+			switch_mutex_unlock(endpoint->mutex);
+			goto error;
+		}
+
 		/* try to acquire the stream */	
 		if (take_stream_channel(endpoint->in_stream, endpoint->inchan, 1)) {
 			switch_mutex_unlock(endpoint->mutex);
@@ -1520,21 +1550,6 @@ static switch_status_t load_endpoints(switch_xml_t endpoints)
 					"Incomatible input and output streams for endpoint '%s'\n", endpoint_name);
 			continue;
 		}
-
-		if (switch_core_timer_init(&endpoint->read_timer,
-				   globals.timer_name, endpoint->in_stream->codec_ms, 
-				   STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), module_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint_name);
-			continue;
-		}
-
-		if (switch_core_timer_init(&endpoint->write_timer,
-				   globals.timer_name, endpoint->out_stream->codec_ms, 
-				   STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), module_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to setup read timer for endpoint '%s'!\n", endpoint_name);
-			continue;
-		}
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
 				"Created endpoint '%s', instream = %s, outstream = %s\n", endpoint->name, 
 				endpoint->in_stream ? endpoint->in_stream->name : "(none)", 
@@ -1642,14 +1657,6 @@ static switch_status_t load_config(void)
 		}
 	}
 
-	if ((streams = switch_xml_child(cfg, "streams"))) {
-		load_streams(streams);
-	}
-
-	if ((endpoints = switch_xml_child(cfg, "endpoints"))) {
-		load_endpoints(endpoints);
-	}
-
 	if (!globals.dialplan) {
 		set_global_dialplan("XML");
 	}
@@ -1700,6 +1707,16 @@ static switch_status_t load_config(void)
 			globals.ringdev = globals.outdev;
 		}
 	}
+
+	/* streams and endpoints must be last, some initialization depend on globals defaults */
+	if ((streams = switch_xml_child(cfg, "streams"))) {
+		load_streams(streams);
+	}
+
+	if ((endpoints = switch_xml_child(cfg, "endpoints"))) {
+		load_endpoints(endpoints);
+	}
+
 
 	switch_xml_free(xml);
 
