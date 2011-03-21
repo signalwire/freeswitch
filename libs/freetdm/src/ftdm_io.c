@@ -2534,20 +2534,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *fchan, ftd
 
 	ftdm_channel_lock(fchan);
 
-	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status of an alarmed channel\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
-	if (sigstatus == FTDM_SIG_STATE_DOWN) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
 	res = fchan->span->set_channel_sig_status(fchan, sigstatus);
-done:
 
 	ftdm_channel_unlock(fchan);
 

@@ -519,6 +519,28 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
 	openr2_cas_signal_t rxcas, txcas;
 
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, 
+			"Received request to change sig status of alarmed channel to %s", ftdm_signaling_status2str(status));
+
+		switch (status) {
+		case FTDM_SIG_STATE_SUSPENDED:
+			openr2_chan_set_blocked(r2chan);
+			/* Need to send sig status change to SUSPENDED once out of alarm */
+			R2CALL(ftdmchan)->localsuspend_on_alarm = 1;
+			break;
+		case FTDM_SIG_STATE_UP:
+			openr2_chan_set_blocked(r2chan);
+			/* DO NOT send sig status change to SUSPENDED once out of alarm */
+			R2CALL(ftdmchan)->localsuspend_on_alarm = 0;
+			break;
+		default:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
+			return FTDM_FAIL;
+		}
+		return FTDM_SUCCESS;
+	}
+
 	/* get the current rx and tx cas bits */
 	openr2_chan_get_cas(r2chan, &rxcas, &txcas);
 
