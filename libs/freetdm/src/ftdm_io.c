@@ -2310,7 +2310,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING);
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+	if (indication != FTDM_CHANNEL_INDICATE_FACILITY &&
+	    ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_EINVAL;
@@ -2525,20 +2527,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *fchan, ftd
 
 	ftdm_channel_lock(fchan);
 
-	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status of an alarmed channel\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
-	if (sigstatus == FTDM_SIG_STATE_DOWN) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
 	res = fchan->span->set_channel_sig_status(fchan, sigstatus);
-done:
 
 	ftdm_channel_unlock(fchan);
 
@@ -6057,9 +6046,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_get_raw_data_detached(ftdm_sigmsg_t *sigms
 	if (!sigmsg || !sigmsg->raw.len) {
 		return FTDM_FAIL;
 	}
-	
+
 	*data = sigmsg->raw.data;
-	*datalen = sigmsg->raw.len;		
+	*datalen = sigmsg->raw.len;
+
+	sigmsg->raw.data = NULL;
+	sigmsg->raw.len = 0;
 	return FTDM_SUCCESS;
 }
 
