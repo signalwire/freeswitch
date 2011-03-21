@@ -1562,6 +1562,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 
 SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channel) 
 {
+	if (switch_channel_down(channel) || !switch_core_session_in_thread(channel->session)) {
+		return 0;
+	}
+
 	return channel->running_state != channel->state;
 }
 

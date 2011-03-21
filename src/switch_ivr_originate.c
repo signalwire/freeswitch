@@ -3625,7 +3625,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 		}
 		
-		while(switch_channel_get_state(bchan) != switch_channel_get_running_state(bchan) && switch_channel_up(bchan)) switch_cond_next();
+
+		while(switch_channel_state_change_pending(bchan)) {
+			switch_cond_next();
+		}
+
+
 		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
 	}
 
