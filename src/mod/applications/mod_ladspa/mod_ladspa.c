@@ -325,24 +325,29 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 							mapped = 1;
 						} else if (!strncasecmp(pvt->str_config[str_idx], "file:", 5)) {
 							char *file = pvt->str_config[str_idx] + 5;
-							
-							if (switch_core_file_open(&pvt->fh,
-													  file,
-													  read_impl.number_of_channels,
-													  read_impl.actual_samples_per_second, 
-													  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot open file: %s\n", file);
-								return SWITCH_FALSE;
-							}
-							
-							
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT FILE [%s] to port: %s\n", 
-											  file,
-											  pvt->ldesc->PortNames[i]
-											  );
 
-							pvt->ldesc->connect_port(pvt->handle, i, pvt->file_buf);
-							mapped = 1;
+							if (switch_test_flag((&pvt->fh), SWITCH_FILE_OPEN)) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), 
+												  SWITCH_LOG_ERROR, "CAN'T CONNECT FILE [%s] File already mapped\n", file);
+							} else {
+								if (switch_core_file_open(&pvt->fh,
+														  file,
+														  read_impl.number_of_channels,
+														  read_impl.actual_samples_per_second, 
+														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_ERROR, "Cannot open file: %s\n", file);
+									return SWITCH_FALSE;
+								}
+							
+							
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "CONNECT FILE [%s] to port: %s\n", 
+												  file,
+												  pvt->ldesc->PortNames[i]
+												  );
+
+								pvt->ldesc->connect_port(pvt->handle, i, pvt->file_buf);
+								mapped = 1;
+							}
 						}
 
 						str_idx++;
