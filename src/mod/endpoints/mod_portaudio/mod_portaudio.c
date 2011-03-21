@@ -1415,6 +1415,8 @@ static switch_status_t load_streams(switch_xml_t streams)
 		stream->indev = -1;
 		stream->outdev = -1;
 		stream->sample_rate = globals.sample_rate;
+		stream->codec_ms = globals.codec_ms;
+		stream->channels = 1;
 		switch_snprintf(stream->name, sizeof(stream->name), "%s", stream_name);
 		for (param = switch_xml_child(mystream, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
