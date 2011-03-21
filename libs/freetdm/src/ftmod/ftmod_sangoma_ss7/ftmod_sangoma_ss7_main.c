@@ -1370,21 +1370,6 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 	ftdm_clear_flag (span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag (span, FTDM_SPAN_IN_THREAD);
 
-	/* activate all the configured ss7 links */
-	if (ft_to_sngss7_activate_all()) {
-		SS7_CRITICAL ("Failed to activate LibSngSS7!\n");
-		return FTDM_FAIL;
-	}
-
-	/*start the span monitor thread */
-	if (ftdm_thread_create_detached (ftdm_sangoma_ss7_run, span) != FTDM_SUCCESS) {
-		SS7_CRITICAL ("Failed to start Span Monitor Thread!\n");
-		return FTDM_FAIL;
-	}
-
-	/* confirm the state of all isup interfaces*/
-	check_status_of_all_isup_intf();
-
 	/* throw the channels in pause */
 	for (x = 1; x < (span->chan_count + 1); x++) {
 		/* extract the channel structure and sngss7 channel data */
@@ -1435,6 +1420,18 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 
 		/* unlock the channel */
 		ftdm_mutex_unlock(ftdmchan->mutex);
+	}
+
+	/* activate all the configured ss7 links */
+	if (ft_to_sngss7_activate_all()) {
+		SS7_CRITICAL ("Failed to activate LibSngSS7!\n");
+		return FTDM_FAIL;
+	}
+
+	/*start the span monitor thread */
+	if (ftdm_thread_create_detached (ftdm_sangoma_ss7_run, span) != FTDM_SUCCESS) {
+		SS7_CRITICAL ("Failed to start Span Monitor Thread!\n");
+		return FTDM_FAIL;
 	}
 
 	SS7_DEBUG ("Finished starting span %s:%u.\n", span->name, span->span_id);
