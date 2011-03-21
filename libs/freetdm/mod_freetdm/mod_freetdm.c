@@ -4288,6 +4288,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	switch_console_set_complete("add ftdm notrace");
 	switch_console_set_complete("add ftdm q931_pcap");
 	switch_console_set_complete("add ftdm gains");
+	switch_console_set_complete("add ftdm queuesize");
 	switch_console_set_complete("add ftdm dtmf on");
 	switch_console_set_complete("add ftdm dtmf off");
 	switch_console_set_complete("add ftdm core state");
