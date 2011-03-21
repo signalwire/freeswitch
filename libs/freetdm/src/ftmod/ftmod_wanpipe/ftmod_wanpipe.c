@@ -91,6 +91,8 @@ typedef enum {
  */
 static struct {
 	uint32_t codec_ms;
+	uint32_t rxqueue_size;
+	uint32_t txqueue_size;
 	uint32_t wink_ms;
 	uint32_t flash_ms;
 	uint32_t ring_on_ms;
@@ -406,6 +408,20 @@ static FIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			} else {
 				wp_globals.codec_ms = num;
 			}
+		} else if (!strcasecmp(var, "rxqueue_size")) {
+			num = atoi(val);
+			if (num < 1 || num > 1000) {
+				ftdm_log(FTDM_LOG_WARNING, "invalid rx queue size at line %d\n", lineno);
+			} else {
+				wp_globals.rxqueue_size = num;
+			}
+		} else if (!strcasecmp(var, "txqueue_size")) {
+			num = atoi(val);
+			if (num < 1 || num > 1000) {
+				ftdm_log(FTDM_LOG_WARNING, "invalid tx queue size at line %d\n", lineno);
+			} else {
+				wp_globals.txqueue_size = num;
+			}
 		} else if (!strcasecmp(var, "wink_ms")) {
 			num = atoi(val);
 			if (num < 50 || num > 3000) {
@@ -544,6 +560,13 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 		ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
 		ftdmchan->effective_interval = ftdmchan->native_interval = wp_globals.codec_ms;
 		ftdmchan->packet_len = ftdmchan->native_interval * 8;
+
+		if (wp_globals.txqueue_size > 0) {
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &wp_globals.txqueue_size);
+		}
+		if (wp_globals.rxqueue_size > 0) {
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &wp_globals.rxqueue_size);
+		}
 	}
 
 	return FTDM_SUCCESS;
@@ -1573,6 +1596,9 @@ static FIO_IO_LOAD_FUNCTION(wanpipe_init)
 	wp_globals.flash_ms = 750;
 	wp_globals.ring_on_ms = 2000;
 	wp_globals.ring_off_ms = 4000;
+	/* 0 for queue size will leave driver defaults */
+	wp_globals.txqueue_size = 0;
+	wp_globals.rxqueue_size = 0;
 	wanpipe_interface.name = "wanpipe";
 	wanpipe_interface.configure_span = wanpipe_configure_span;
 	wanpipe_interface.configure = wanpipe_configure;
