@@ -2430,11 +2430,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (*bytes) {
 		uint16_t seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BYTESWAP) && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
-			switch_swap_linear((int16_t *)rtp_session->recv_msg.body, (int) *bytes - rtp_header_len);
-		}
-
-
 		if (rtp_session->last_seq && rtp_session->last_seq+1 != seq) {
 #ifdef DEBUG_MISSED_SEQ
 			switch_size_t flushed_packets_diff = rtp_session->stats.inbound.flush_packet_count - rtp_session->last_flush_packet_count;
@@ -2575,6 +2570,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
+	
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BYTESWAP) && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
+		switch_swap_linear((int16_t *)rtp_session->recv_msg.body, (int) *bytes - rtp_header_len);
+	}
 
 	if (rtp_session->jb && !rtp_session->pause_jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
