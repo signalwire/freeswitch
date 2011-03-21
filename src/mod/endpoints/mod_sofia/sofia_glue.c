@@ -2965,6 +2965,17 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
 	}
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	if (!strcasecmp(tech_pvt->read_impl.iananame, "L16")) {
+		flags |= SWITCH_RTP_FLAG_BYTESWAP;
+	}
+#endif
+	
+	if ((flags & SWITCH_RTP_FLAG_BYTESWAP) && (val = switch_channel_get_variable(tech_pvt->channel, "rtp_disable_byteswap")) && switch_true(val)) {
+		flags &= ~SWITCH_RTP_FLAG_BYTESWAP;
+	}
+
+
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);

@@ -2427,8 +2427,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 	ts = ntohl(rtp_session->recv_msg.header.ts);
 
-	if (*bytes ) {
+	if (*bytes) {
 		uint16_t seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+		
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BYTESWAP) && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
+			switch_swap_linear((int16_t *)rtp_session->recv_msg.body, (int) *bytes - rtp_header_len);
+		}
+
 
 		if (rtp_session->last_seq && rtp_session->last_seq+1 != seq) {
 #ifdef DEBUG_MISSED_SEQ
@@ -3707,6 +3712,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	if (send) {
 		send_msg->header.seq = htons(++rtp_session->seq);
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BYTESWAP) && send_msg->header.pt == rtp_session->payload) {
+			switch_swap_linear((int16_t *)send_msg->body, (int) datalen);
+		}
+
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 			int sbytes = (int) bytes;
