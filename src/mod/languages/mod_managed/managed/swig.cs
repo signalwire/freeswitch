@@ -3405,6 +3405,10 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_set_caller_extension(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_extension.getCPtr(caller_extension));
   }
 
+  public static void switch_channel_flip_cid(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_flip_cid(SWIGTYPE_p_switch_channel.getCPtr(channel));
+  }
+
   public static void switch_channel_sort_cid(SWIGTYPE_p_switch_channel channel, switch_bool_t arg1) {
     freeswitchPINVOKE.switch_channel_sort_cid(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)arg1);
   }
@@ -11485,6 +11489,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_caller_extension")]
   public static extern void switch_channel_set_caller_extension(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_flip_cid")]
+  public static extern void switch_channel_flip_cid(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_sort_cid")]
   public static extern void switch_channel_sort_cid(HandleRef jarg1, int jarg2);
@@ -21664,6 +21671,8 @@ public enum switch_channel_flag_t {
   CF_DIALPLAN,
   CF_BLOCK_BROADCAST_UNTIL_MEDIA,
   CF_CNG_PLC,
+  CF_ATTENDED_TRANSFER,
+  CF_LAZY_ATTENDED_TRANSFER,
   CF_FLAG_MAX
 }
 

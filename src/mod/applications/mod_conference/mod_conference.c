@@ -37,6 +37,7 @@
  */
 #include <switch.h>
 #define DEFAULT_AGC_LEVEL 1100
+#define CONFERENCE_UUID_VARIABLE "conference_uuid"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
@@ -564,7 +565,10 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
 		member = NULL;
 	}
 
-	switch_thread_rwlock_rdlock(member->rwlock);
+	if (member) {
+		switch_thread_rwlock_rdlock(member->rwlock);
+	}
+
 	switch_mutex_unlock(conference->member_mutex);
 
 	return member;
@@ -702,6 +706,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		channel = switch_core_session_get_channel(member->session);
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
+		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
 		
 		if (conference->count > 1) {
 			if (conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
@@ -4625,6 +4630,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
 			/* move the member from the old conference to the new one */
 			lock_member(member);
+			switch_thread_rwlock_unlock(member->rwlock);
 
 			if (conference != new_conference) {
 				conference_del_member(conference, member);
@@ -4659,10 +4665,6 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
 				switch_event_fire(&event);
-			}
-
-			if (member) {
-				switch_thread_rwlock_unlock(member->rwlock);
 			}
 		}
 

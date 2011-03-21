@@ -637,7 +637,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	char *dup = NULL;
 	switch_event_t *event;
 	const char *val;
-	int fs = 0;
+	int fs = 0, lazy = 0, att = 0;
 
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
 		return;
@@ -654,6 +654,16 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 
 	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Name"))) {
 		name = (char *) val;
+		fs++;
+	}
+	
+	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Lazy-Attended-Transfer"))) {
+		lazy = switch_true(val);
+		fs++;
+	}
+
+	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Attended-Transfer"))) {
+		att = switch_true(val);
 		fs++;
 	}
 
@@ -727,6 +737,10 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		caller_profile->callee_id_name = switch_sanitize_number(switch_core_strdup(caller_profile->pool, name));
 		caller_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Update Callee ID to \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
+
+		if (lazy || (att && !switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			switch_channel_flip_cid(channel);
+		}
 	}
 
 	if (send) {
@@ -2436,6 +2450,18 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						}
+					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						}
+					} else if (!strcasecmp(var, "renegotiate-codec-on-reinvite")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RENEG_ON_REINVITE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RENEG_ON_REINVITE);
+						}
 					} else if (!strcasecmp(var, "presence-probe-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
@@ -2518,6 +2544,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						}
+					} else if (!strcasecmp(var, "rtp-notimer-during-bridge")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
 						}
 					} else if (!strcasecmp(var, "manual-redirect")) {
 						if (switch_true(val)) {
@@ -3119,6 +3151,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
 						}
+					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RENEG_ON_HOLD);
+						}
+					} else if (!strcasecmp(var, "renegotiate-codec-on-reinvite")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RENEG_ON_REINVITE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RENEG_ON_REINVITE);
+						}
 					} else if (!strcasecmp(var, "presence-probe-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
@@ -3189,6 +3233,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						}
+					} else if (!strcasecmp(var, "rtp-notimer-during-bridge")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
 						}
 					} else if (!strcasecmp(var, "manual-redirect")) {
 						if (switch_true(val)) {
@@ -4372,10 +4422,15 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
-					
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
-						if (sip->sip_payload && sip->sip_payload->pl_data) {
-							switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
+
+					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
+						switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
+
+						if (!t38_options) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_WARNING, "%s Error parsing SDP:\n%s\n",
+											  switch_channel_get_name(tech_pvt->channel), sip->sip_payload->pl_data);
+							goto end;
+						} else {
 							char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 							switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
 							char tmp[32] = "";
@@ -5681,9 +5736,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n",
 											  switch_str_nil(br_a), switch_str_nil(br_b));
 
-							if ((profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) && (tmp = switch_core_session_locate(br_b))) {
+							if ((tmp = switch_core_session_locate(br_b))) {
 								switch_channel_t *tchannel = switch_core_session_get_channel(tmp);
-								switch_channel_set_flag(tchannel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+								
+								if ((profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER)) {
+									switch_channel_set_flag(tchannel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+								}
+
+								switch_channel_set_flag(tchannel, CF_ATTENDED_TRANSFER);
 								switch_core_session_rwunlock(tmp);
 							}
 

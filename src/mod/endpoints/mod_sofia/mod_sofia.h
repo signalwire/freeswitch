@@ -230,6 +230,9 @@ typedef enum {
 	PFLAG_PRESENCE_ON_REGISTER,
 	PFLAG_PRESENCE_ON_FIRST_REGISTER,
 	PFLAG_NO_CONNECTION_REUSE,
+	PFLAG_RENEG_ON_HOLD,
+	PFLAG_RENEG_ON_REINVITE,
+	PFLAG_RTP_NOTIMER_DURING_BRIDGE,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -288,6 +291,9 @@ typedef enum {
 	TFLAG_RECOVERING_BRIDGE,
 	TFLAG_T38_PASSTHRU,
 	TFLAG_RECOVERED,
+	TFLAG_AUTOFLUSH_DURING_BRIDGE,
+	TFLAG_NOTIMER_DURING_BRIDGE,
+	TFLAG_JB_PAUSED,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -598,6 +604,8 @@ struct private_object {
 	int codec_order_last;
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs;
+	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
+	int num_negotiated_codecs;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
@@ -984,7 +992,7 @@ void sofia_glue_del_every_gateway(sofia_profile_t *profile);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip);
 void sofia_glue_restart_all_profiles(void);
-void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
+int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
 const char *sofia_state_string(int state);
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);

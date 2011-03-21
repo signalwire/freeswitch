@@ -305,55 +305,60 @@ static void event_handler(switch_event_t *event)
 			}
 		}
 
-		if (send && l->filters && l->filters->headers) {
-			switch_event_header_t *hp;
-			const char *hval;
-
-			send = 0;
+		if (send) {
 			switch_mutex_lock(l->filter_mutex);
-			for (hp = l->filters->headers; hp; hp = hp->next) {
-				if ((hval = switch_event_get_header(event, hp->name))) {
-					const char *comp_to = hp->value;
-					int pos = 1, cmp = 0;
 
-					while (comp_to && *comp_to) {
-						if (*comp_to == '+') {
-							pos = 1;
-						} else if (*comp_to == '-') {
-							pos = 0;
-						} else if (*comp_to != ' ') {
-							break;
+			if (l->filters && l->filters->headers) {
+				switch_event_header_t *hp;
+				const char *hval;
+
+				send = 0;
+				
+				for (hp = l->filters->headers; hp; hp = hp->next) {
+					if ((hval = switch_event_get_header(event, hp->name))) {
+						const char *comp_to = hp->value;
+						int pos = 1, cmp = 0;
+
+						while (comp_to && *comp_to) {
+							if (*comp_to == '+') {
+								pos = 1;
+							} else if (*comp_to == '-') {
+								pos = 0;
+							} else if (*comp_to != ' ') {
+								break;
+							}
+							comp_to++;
 						}
-						comp_to++;
-					}
 
-					if (send && pos) {
-						continue;
-					}
+						if (send && pos) {
+							continue;
+						}
 
-					if (!comp_to) {
-						continue;
-					}
+						if (!comp_to) {
+							continue;
+						}
 
-					if (*hp->value == '/') {
-						switch_regex_t *re = NULL;
-						int ovector[30];
-						cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-						switch_regex_safe_free(re);
-					} else {
-						cmp = !strcasecmp(hval, comp_to);
-					}
-
-					if (cmp) {
-						if (pos) {
-							send = 1;
+						if (*hp->value == '/') {
+							switch_regex_t *re = NULL;
+							int ovector[30];
+							cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+							switch_regex_safe_free(re);
 						} else {
-							send = 0;
-							break;
+							cmp = !strcasecmp(hval, comp_to);
+						}
+
+						if (cmp) {
+							if (pos) {
+								send = 1;
+							} else {
+								send = 0;
+								break;
+							}
 						}
 					}
 				}
 			}
+
 			switch_mutex_unlock(l->filter_mutex);
 		}
 

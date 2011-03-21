@@ -29,3 +29,8 @@ testtones
 !/sample/boost/Makefile
 !/sample/dso/Makefile
 
+freetdm.2010.sdf
+/mod_freetdm/Win32/
+/msvc/Win32/
+/src/ftmod/*/Win32/
+/src/ftmod/*/x64/
