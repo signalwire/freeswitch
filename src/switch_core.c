@@ -1635,6 +1635,8 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "enable-monotonic-timing")) {
 					switch_time_set_monotonic(switch_true(var));
+				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
+					switch_time_set_timerfd(switch_true(var));
 				} else if (!strcasecmp(var, "enable-clock-nanosleep")) {
 					switch_time_set_nanosleep(switch_true(var));
 				} else if (!strcasecmp(var, "enable-cond-yield")) {
