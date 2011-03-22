@@ -96,9 +96,6 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 
 static switch_status_t timerfd_stop_interval(interval_timer_t *it)
 {
-	struct itimerspec val;
-	int fd;
-
 	it->users--;
 	if (it->users > 0)
 		return SWITCH_STATUS_SUCCESS;
