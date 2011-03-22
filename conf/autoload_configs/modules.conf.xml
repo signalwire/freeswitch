@@ -95,6 +95,7 @@
     <load module="mod_file_string"/>
 
     <!-- Timers -->
+    <!-- <load module="mod_timerfd"/> -->
 
     <!-- Languages -->
     <load module="mod_spidermonkey"/>
