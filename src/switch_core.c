@@ -609,7 +609,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 static int32_t set_priority(void)
 {
 #ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 #else
 #ifdef USE_SCHED_SETSCHEDULER
 	/*
