@@ -652,11 +652,10 @@ SWITCH_DECLARE(int32_t) set_normal_priority(void)
 
 SWITCH_DECLARE(int32_t) set_high_priority(void)
 {
-	int pri;
-
 #ifdef WIN32
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
+	int pri;
 
 #ifdef USE_SETRLIMIT
 	struct rlimit lim = { RLIM_INFINITY, RLIM_INFINITY };
