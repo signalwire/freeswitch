@@ -1940,6 +1940,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
   \return 0 on success
 */
 SWITCH_DECLARE(int32_t) set_high_priority(void);
+SWITCH_DECLARE(int32_t) set_normal_priority(void);
 
 /*! 
   \brief Change user and/or group of the running process

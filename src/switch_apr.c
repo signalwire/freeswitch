@@ -630,7 +630,7 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threa
 	struct apr_threadattr_t *myattr = attr;
 
 	pthread_attr_getschedparam(&myattr->attr, &param);
-	param.sched_priority = 50;
+	param.sched_priority = 1;
 	stat = pthread_attr_setschedparam(&myattr->attr, &param);
 
 	if (stat == 0) {
