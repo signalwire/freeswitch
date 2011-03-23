@@ -161,6 +161,7 @@ opt/freeswitch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_spy.so*
 opt/freeswitch/mod/mod_syslog.so*
 opt/freeswitch/mod/mod_theora.so*
+opt/freeswitch/mod/mod_timerfd.so*
 opt/freeswitch/mod/mod_tone_stream.so*
 opt/freeswitch/mod/mod_tts_commandline.so*
 opt/freeswitch/mod/mod_valet_parking.so*
