@@ -42,7 +42,7 @@ sub parse(\$\$$) {
 }
 
 for($i = 0; $i < $argc; $i++) {
-    if ($ARGV[$i] =~ /^\-help$|^\-\-help$/) {
+    if ($ARGV[$i] =~ /^\-h$|^\-\-help$/) {
 	print $USAGE;
 	exit;
     }
