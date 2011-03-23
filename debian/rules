@@ -187,7 +187,7 @@ build-stamp:  config.status
 	dh_testdir
 
 	$(MAKE)
-
+	cd libs/esl && $(MAKE) pymod && cd -
 	touch $@
 
 clean:  # .pc/applied-patches
@@ -208,7 +208,7 @@ install: build
 	dh_installdirs -A
 
 	VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
-	cd libs/esl && VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install && cd -
+	cd libs/esl && VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp pymod-install && cd -
 
 
 # Build architecture-independent files here.
