@@ -2124,6 +2124,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static int set_normal_priority() {
+    int ret = freeswitchPINVOKE.set_normal_priority();
+    return ret;
+  }
+
   public static int change_user_group(string user, string group) {
     int ret = freeswitchPINVOKE.change_user_group(user, group);
     return ret;
@@ -2263,6 +2268,10 @@ public class freeswitch {
 
   public static void switch_time_set_monotonic(switch_bool_t enable) {
     freeswitchPINVOKE.switch_time_set_monotonic((int)enable);
+  }
+
+  public static void switch_time_set_timerfd(switch_bool_t enable) {
+    freeswitchPINVOKE.switch_time_set_timerfd((int)enable);
   }
 
   public static void switch_time_set_nanosleep(switch_bool_t enable) {
@@ -8058,6 +8067,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_set_high_priority")]
   public static extern int set_high_priority();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_set_normal_priority")]
+  public static extern int set_normal_priority();
+
   [DllImport("mod_managed", EntryPoint="CSharp_change_user_group")]
   public static extern int change_user_group(string jarg1, string jarg2);
 
@@ -8144,6 +8156,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_monotonic")]
   public static extern void switch_time_set_monotonic(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_timerfd")]
+  public static extern void switch_time_set_timerfd(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_nanosleep")]
   public static extern void switch_time_set_nanosleep(int jarg1);
