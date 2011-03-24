@@ -384,9 +384,12 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	}
 
 	while(xml) {
-		char *type = xtype ? xtype : iks_find_attrib(xml, "type");
+		char *type = NULL;
 		iks *tag;
-		
+
+		if (iks_type(xml)!=IKS_CDATA)
+			type = xtype ? xtype : iks_find_attrib(xml, "type");
+
 		if (type) {
 			
 			if (!strcasecmp(type, "redirect")) {
@@ -994,9 +997,9 @@ static int on_commands(void *user_data, ikspak *pak)
 	uint8_t is_result = strcasecmp(type, "result") ? 0 : 1;
 	uint8_t is_error = strcasecmp(type, "error") ? 0 : 1;
 	iks *xml, *xsession, *xerror = NULL, *xredir = NULL;
-
+  struct iks_tag* tmp;
 	xml = iks_child (pak->x);
-
+  tmp = (struct iks_tag*) xml;
 	if (is_error) {
 		if ((xerror = working_find(xml, "error"))) {
 			char *code = iks_find_attrib(xerror, "code");

@@ -751,7 +751,7 @@ SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_cha
 
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->profile_mutex);
-	if ((hi = channel->variables->headers)) {
+	if (channel->variables && (hi = channel->variables->headers)) {
 		channel->vi = 1;
 	} else {
 		switch_mutex_unlock(channel->profile_mutex);
@@ -1562,6 +1562,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 
 SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channel) 
 {
+	if (switch_channel_down(channel) || !switch_core_session_in_thread(channel->session)) {
+		return 0;
+	}
+
 	return channel->running_state != channel->state;
 }
 
@@ -2434,26 +2438,39 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
+{
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->caller_profile->callee_id_name) {
+		switch_channel_set_variable(channel, "pre_transfer_caller_id_name", channel->caller_profile->caller_id_name);
+		channel->caller_profile->caller_id_name = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_name);
+	}
+	channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
+	
+	if (channel->caller_profile->callee_id_number) {
+		switch_channel_set_variable(channel, "pre_transfer_caller_id_number", channel->caller_profile->caller_id_number);
+		channel->caller_profile->caller_id_number = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_number);
+	}
+	channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, "%s Flipping CID from \"%s\" <%s> to \"%s\" <%s>\n", 
+					  switch_channel_get_name(channel),
+					  switch_channel_get_variable(channel, "pre_transfer_caller_id_name"),
+					  switch_channel_get_variable(channel, "pre_transfer_caller_id_number"),
+					  channel->caller_profile->caller_id_name,
+					  channel->caller_profile->caller_id_number
+					  );
+
+}
+
 SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_bool_t in)
 {
 
 	if (in) {
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(channel, CF_DIALPLAN)) {
 			switch_channel_set_flag(channel, CF_DIALPLAN);
-		
-			switch_mutex_lock(channel->profile_mutex);
-			if (channel->caller_profile->callee_id_name) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_name", channel->caller_profile->caller_id_name);
-				channel->caller_profile->caller_id_name = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_name);
-			}
-			channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
-
-			if (channel->caller_profile->callee_id_number) {
-				switch_channel_set_variable(channel, "pre_transfer_caller_id_number", channel->caller_profile->caller_id_number);
-				channel->caller_profile->caller_id_number = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_number);
-			}
-			channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
-			switch_mutex_unlock(channel->profile_mutex);
+			switch_channel_flip_cid(channel);
 		}
 
 		return;
@@ -2539,6 +2556,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 
 		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
+			switch_channel_presence(channel, "unknown", "cancelled", NULL);
 			switch_channel_set_variable(channel, "presence_call_info", NULL);
 		}
 

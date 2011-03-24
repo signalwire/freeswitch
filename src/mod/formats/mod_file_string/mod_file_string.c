@@ -101,7 +101,6 @@ static int next_file(switch_file_handle_t *handle)
 	handle->seekable = context->fh.seekable;
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
-	handle->flags = context->fh.flags;
 
 	if (context->index == 0) {
 		context->samples = (handle->samplerate / 1000) * 250;

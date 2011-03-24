@@ -91,6 +91,8 @@ typedef enum {
  */
 static struct {
 	uint32_t codec_ms;
+	uint32_t rxqueue_size;
+	uint32_t txqueue_size;
 	uint32_t wink_ms;
 	uint32_t flash_ms;
 	uint32_t ring_on_ms;
@@ -406,6 +408,20 @@ static FIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			} else {
 				wp_globals.codec_ms = num;
 			}
+		} else if (!strcasecmp(var, "rxqueue_size")) {
+			num = atoi(val);
+			if (num < 1 || num > 1000) {
+				ftdm_log(FTDM_LOG_WARNING, "invalid rx queue size at line %d\n", lineno);
+			} else {
+				wp_globals.rxqueue_size = num;
+			}
+		} else if (!strcasecmp(var, "txqueue_size")) {
+			num = atoi(val);
+			if (num < 1 || num > 1000) {
+				ftdm_log(FTDM_LOG_WARNING, "invalid tx queue size at line %d\n", lineno);
+			} else {
+				wp_globals.txqueue_size = num;
+			}
 		} else if (!strcasecmp(var, "wink_ms")) {
 			num = atoi(val);
 			if (num < 50 || num > 3000) {
@@ -544,6 +560,13 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 		ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
 		ftdmchan->effective_interval = ftdmchan->native_interval = wp_globals.codec_ms;
 		ftdmchan->packet_len = ftdmchan->native_interval * 8;
+
+		if (wp_globals.txqueue_size > 0) {
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &wp_globals.txqueue_size);
+		}
+		if (wp_globals.rxqueue_size > 0) {
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &wp_globals.rxqueue_size);
+		}
 	}
 
 	return FTDM_SUCCESS;
@@ -1315,14 +1338,12 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 				status = FTDM_BREAK;
 			} else {
 				ftdm_status_t status;
-				wanpipe_tdm_api_t onhook_tdm_api;
-				memset(&onhook_tdm_api, 0, sizeof(onhook_tdm_api));
-				status = sangoma_tdm_txsig_onhook(fchan->sockfd, &onhook_tdm_api);
+				status = sangoma_tdm_txsig_onhook(fchan->sockfd, tdm_api);
 				if (status) {
 					snprintf(fchan->last_error, sizeof(fchan->last_error), "ONHOOK Failed");
 					return FTDM_FAIL;
 				}
-				*event_id = onhook_tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;	
+				*event_id = tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? FTDM_OOB_ONHOOK : FTDM_OOB_NOOP;
 			}
 		}
 		break;
@@ -1575,6 +1596,9 @@ static FIO_IO_LOAD_FUNCTION(wanpipe_init)
 	wp_globals.flash_ms = 750;
 	wp_globals.ring_on_ms = 2000;
 	wp_globals.ring_off_ms = 4000;
+	/* 0 for queue size will leave driver defaults */
+	wp_globals.txqueue_size = 0;
+	wp_globals.rxqueue_size = 0;
 	wanpipe_interface.name = "wanpipe";
 	wanpipe_interface.configure_span = wanpipe_configure_span;
 	wanpipe_interface.configure = wanpipe_configure;

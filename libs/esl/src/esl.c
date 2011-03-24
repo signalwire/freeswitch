@@ -934,7 +934,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		goto fail;
 	}
 
-	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_ievent);
 	
 	if (check_q && handle->race_event) {
@@ -1053,6 +1052,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		*save_event = revent;
 		revent = NULL;
 	} else {
+		esl_event_safe_destroy(&handle->last_event);
 		handle->last_event = revent;
 	}
 	

@@ -244,6 +244,7 @@ static struct {
 	ftdm_caller_data_t *call_ids[MAX_CALLIDS+1];
 	ftdm_mutex_t *call_id_mutex;
 	uint32_t last_call_id;
+	char dtmfdebug_directory[1024];
 } globals;
 
 enum ftdm_enum_cpu_alarm_action_flags
@@ -2310,7 +2311,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING);
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+	if (indication != FTDM_CHANNEL_INDICATE_FACILITY &&
+	    ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_EINVAL;
@@ -2525,20 +2528,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *fchan, ftd
 
 	ftdm_channel_lock(fchan);
 
-	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status of an alarmed channel\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
-	if (sigstatus == FTDM_SIG_STATE_DOWN) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
 	res = fchan->span->set_channel_sig_status(fchan, sigstatus);
-done:
 
 	ftdm_channel_unlock(fchan);
 
@@ -3469,7 +3459,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	if (!ftdmchan->dtmfdbg.file) {
 		struct tm currtime;
 		time_t currsec;
-		char dfile[512];
+		char dfile[1024];
 
 		currsec = time(NULL);
 
@@ -3480,10 +3470,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 		localtime_r(&currsec, &currtime);
 #endif
 
-		snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
-				ftdmchan->span_id, ftdmchan->chan_id, 
-				currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
-				currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		if (ftdm_strlen_zero(globals.dtmfdebug_directory)) {
+			snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+					ftdmchan->span_id, ftdmchan->chan_id, 
+					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		} else {
+			snprintf(dfile, sizeof(dfile), "%s/dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+					globals.dtmfdebug_directory,
+					ftdmchan->span_id, ftdmchan->chan_id, 
+					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		}
 		ftdmchan->dtmfdbg.file = fopen(dfile, "wb");	
 		if (!ftdmchan->dtmfdbg.file) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to open debug dtmf file %s\n", dfile);
@@ -4697,6 +4695,9 @@ static ftdm_status_t load_config(void)
 						globals.cpu_monitor.alarm_action_flags |= FTDM_CPU_ALARM_ACTION_WARN;
 					}
 				}
+			} else if (!strncasecmp(var, "debugdtmf_directory", sizeof("debugdtmf_directory")-1)) {
+				ftdm_set_string(globals.dtmfdebug_directory, val);
+				ftdm_log(FTDM_LOG_DEBUG, "Debug DTMF directory set to '%s'\n", globals.dtmfdebug_directory);
 			} else if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
 				if (atoi(val) > 0) {
 					globals.cpu_monitor.interval = atoi(val);
@@ -6057,9 +6058,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_get_raw_data_detached(ftdm_sigmsg_t *sigms
 	if (!sigmsg || !sigmsg->raw.len) {
 		return FTDM_FAIL;
 	}
-	
+
 	*data = sigmsg->raw.data;
-	*datalen = sigmsg->raw.len;		
+	*datalen = sigmsg->raw.len;
+
+	sigmsg->raw.data = NULL;
+	sigmsg->raw.len = 0;
 	return FTDM_SUCCESS;
 }
 

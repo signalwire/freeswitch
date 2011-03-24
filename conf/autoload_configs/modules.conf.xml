@@ -64,6 +64,9 @@
     <!-- SNOM Module -->
     <!--<load module="mod_snom"/>-->
 
+    <!-- This one only works on Linux for now -->
+    <!--<load module="mod_ladspa"/>-->
+
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
     <load module="mod_dialplan_xml"/>
@@ -92,6 +95,7 @@
     <load module="mod_file_string"/>
 
     <!-- Timers -->
+    <!-- <load module="mod_timerfd"/> -->
 
     <!-- Languages -->
     <load module="mod_spidermonkey"/>

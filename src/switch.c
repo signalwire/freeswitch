@@ -841,6 +841,8 @@ int main(int argc, char *argv[])
 
 	if (high_prio) {
 		set_high_priority();
+	} else {
+		set_normal_priority();
 	}
 
 	switch_core_setrlimits();

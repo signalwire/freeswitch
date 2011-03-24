@@ -34,6 +34,9 @@
 #include <switch.h>
 #include <stdio.h>
 #include "private/switch_core_pvt.h"
+#ifdef HAVE_TIMERFD_CREATE
+#include <sys/timerfd.h>
+#endif
 
 //#if defined(DARWIN)
 #define DISABLE_1MS_COND
@@ -58,6 +61,13 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+#if defined(HAVE_TIMERFD_CREATE)
+// We'll default this to 1 after we have had some positive feedback that it works well
+static int TFD = 0;
+#else
+static int TFD = 0;
+#endif
+
 static int NANO = 0;
 
 static int OFFSET = 0;
@@ -72,18 +82,10 @@ static DWORD win32_last_get_time_tick = 0;
 CRITICAL_SECTION  timer_section;
 #endif
 
-#define ONEMS
-#ifdef ONEMS
 static int STEP_MS = 1;
 static int STEP_MIC = 1000;
 static uint32_t TICK_PER_SEC = 1000;
 static int MS_PER_TICK = 10;
-#else
-static int STEP_MS = 10;
-static int STEP_MIC = 10000;
-static uint32_t TICK_PER_SEC = 1000;
-static int MS_PER_TICK = 10;
-#endif
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -208,9 +210,6 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	}
 	
 	if (res > 1500) {
-		STEP_MS = res / 1000;
-		STEP_MIC = res;
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
 						  "Do you have your kernel timer frequency set to lower than 1,000Hz? "
@@ -313,8 +312,23 @@ SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 	MONO = enable ? 1 : 0;
 	switch_time_sync();
+#else
+	MONO = 0;
+#endif
+}
+
+
+SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable)
+{
+#if defined(HAVE_TIMERFD_CREATE)
+	TFD = enable ? 1 : 0;
+	switch_time_sync();
+#else
+	TFD = 0;
+#endif
 }
 
 
@@ -490,9 +504,6 @@ static switch_status_t timer_init(switch_timer_t *timer)
 
 		if (timer->interval > 0 && timer->interval < MS_PER_TICK) {
 			MS_PER_TICK = timer->interval;
-			STEP_MS = 1;
-			STEP_MIC = 1000;
-			TICK_PER_SEC = 10000;
 			switch_time_sync();
 		}
 
@@ -665,6 +676,29 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
+	int tfd = -1;
+
+#ifdef HAVE_TIMERFD_CREATE
+	struct itimerspec spec = { { 0 } };
+
+	if (MONO && TFD) {
+		tfd = timerfd_create(CLOCK_MONOTONIC, 0);
+
+		if (tfd > -1) {
+			spec.it_interval.tv_sec = 0;
+			spec.it_interval.tv_nsec = 1000000;
+			spec.it_value.tv_sec = spec.it_interval.tv_sec;
+			spec.it_value.tv_nsec = spec.it_interval.tv_nsec;
+		
+			if (timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL)) {
+				close(tfd);
+				tfd = -1;
+			}
+		}
+	}
+#else
+	tfd = -1;
+#endif
 
 	runtime.profile_timer = switch_new_profile_timer();
 	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
@@ -743,7 +777,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			if (globals.timer_count >= runtime.tipping_point) {
 				os_yield();
 			} else {
-				do_sleep(1000);
+				if (tfd > -1 && globals.RUNNING == 1) {
+					uint64_t exp;
+					int r;
+					r = read(tfd, &exp, sizeof(exp));
+				} else {
+					do_sleep(1000);
+				}
 			}
 
 			last = ts;
@@ -839,6 +879,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
 			switch_mutex_unlock(TIMER_MATRIX[x].mutex);
 		}
+	}
+
+	if (tfd > -1) {
+		close(tfd);
+		tfd = -1;
 	}
 
 

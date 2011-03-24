@@ -18,6 +18,7 @@ FreeSWITCH Logger Utility
 
 USAGE:
 -h --help                   This help
+-H --host                   Choose host
 -p --port <port>            Choose port
 -P -pass  <pass>            Choose password
 -f --file <file>            Output file
@@ -42,12 +43,12 @@ sub parse(\$\$$) {
 }
 
 for($i = 0; $i < $argc; $i++) {
-    if ($ARGV[$i] =~ /^\-help$|^\-\-help$/) {
+    if ($ARGV[$i] =~ /^\-h$|^\-\-help$/) {
 	print $USAGE;
 	exit;
     }
 
-    if (! (parse($i, $host, '^-h$|^--host$') ||
+    if (! (parse($i, $host, '^-H$|^--host$') ||
 	   parse($i, $port, '^-p$|^--port$') ||
 	   parse($i, $pass, '^-P$|^--pass$') ||
 	   parse($i, $file, '^-f$|^--file$') ||

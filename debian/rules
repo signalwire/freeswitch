@@ -30,7 +30,9 @@ export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
 export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
 export XML_INT_MODULES=xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr
-export MYMODULES= $(PASSTHRU_CODEC_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(ENDPOINTS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(XML_INT_MODULES)
+export TIMER_MODULES=timers/mod_timerfd
+
+export MYMODULES= $(PASSTHRU_CODEC_MODULES) $(APPLICATIONS_MODULES) $(ASR_TTS_MODULES) $(CODECS_MODULES) $(DIALPLANS_MODULES) $(ENDPOINTS_MODULES) $(EVENT_HANDLERS_MODULES) $(FORMATS_MODULES) $(LANGUAGES_MODULES) $(LOGGERS_MODULES) $(SAY_MODULES) $(XML_INT_MODULES) $(TIMER_MODULES)
 export MODULES=$(MYMODULES)
 
 
@@ -187,7 +189,7 @@ build-stamp:  config.status
 	dh_testdir
 
 	$(MAKE)
-
+	cd libs/esl && $(MAKE) pymod && cd -
 	touch $@
 
 clean:  # .pc/applied-patches
@@ -208,6 +210,7 @@ install: build
 	dh_installdirs -A
 
 	VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	cd libs/esl && VERBOSE=1 $(MAKE) DESTDIR=$(CURDIR)/debian/tmp pymod-install && cd -
 
 
 # Build architecture-independent files here.

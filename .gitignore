@@ -42,6 +42,12 @@ configure.lineno
 config.log
 config.status
 core.*
+*.2010.log
+*.Build.CppClean.log
+*.tlog
+*.unsuccessfulbuild
+*.cache
+*.lastbuildstate
 
 /w32/Library/lastversion
 /w32/Library/tmpVersion.Bat
@@ -83,6 +89,7 @@ core.*
 /build/config/missing
 /build/freeswitch.pc
 /build/getlib.sh
+/build/getg729.sh
 /build/getsounds.sh
 /build/Makefile
 /build/Makefile.in
@@ -104,6 +111,7 @@ core.*
 /libs/freetdm/testtones
 /libs/fsg729-*-installer
 /libs/g729/
+/libs/libcodec2/compile
 /libs/libcodec2/config.guess
 /libs/libcodec2/config.sub
 /libs/libcodec2/configure
@@ -118,6 +126,7 @@ core.*
 /libs/libcodec2/src/Makefile.in
 /libs/libcodec2/unittest/Makefile
 /libs/libcodec2/unittest/Makefile.in
+/libs/mpg123-1.13.2/
 
 /scripts/fsxs
 /scripts/gentls_cert
@@ -147,3 +156,17 @@ core.*
 /src/mod/say/mod_say_th/Makefile
 /src/mod/say/mod_say_zh/Makefile
 
+BuildLog.htm
+/w32/Console/Debug/
+/w32/Console/Release/
+/w32/Library/Debug/
+/w32/Library/Release/
+
+Freeswitch.2010.sdf
+
+/Win32/
+/x64/
+
+src/mod/codecs/mod_celt/*/*/mod_celt.log
+src/mod/endpoints/mod_skinny/*/*/mod_skinny_2010.log
+src/mod/formats/mod_shout/*/*/mod_shout.log

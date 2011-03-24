@@ -943,12 +943,12 @@ static int on_proceeding(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 
 	if (chan) {
 		/* Open channel if inband information is available */
-		if ((pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
-			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+		if (pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, B-Channel %d:%d\n",
 				ftdm_channel_get_span_id(chan),
 				ftdm_channel_get_id(chan));
 
-			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN) && (ftdm_channel_open_chan(chan) != FTDM_SUCCESS)) {
 				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
@@ -985,12 +985,12 @@ static int on_progress(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 
 	if (chan) {
 		/* Open channel if inband information is available */
-		if ((pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
-			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+		if (pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, B-Channel %d:%d\n",
 				ftdm_channel_get_span_id(chan),
 				ftdm_channel_get_id(chan));
 
-			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN) && (ftdm_channel_open_chan(chan) != FTDM_SUCCESS)) {
 				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
@@ -1028,8 +1028,6 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ringing.channel);
 
 	if (chan) {
-		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d\n", ftdm_span_get_id(span), pevent->ringing.channel);
-
 		/* we may get on_ringing even when we're already in FTDM_CHANNEL_STATE_PROGRESS_MEDIA */
 //		if (ftdm_channel_get_state(chan) == FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
 //			/* dont try to move to STATE_PROGRESS to avoid annoying veto warning */
@@ -1037,12 +1035,12 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 //		}
 
 		/* Open channel if inband information is available */
-		if ((pevent->ringing.progressmask & PRI_PROG_INBAND_AVAILABLE) && !ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
-			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+		if ((pevent->ringing.progressmask & PRI_PROG_INBAND_AVAILABLE)) {
+			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, B-Channel %d:%d\n",
 				ftdm_channel_get_span_id(chan),
 				ftdm_channel_get_id(chan));
 
-			if (ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN) && (ftdm_channel_open_chan(chan) != FTDM_SUCCESS)) {
 				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 				ftdm_log(FTDM_LOG_ERROR, "-- Error opening channel %d:%d\n",
@@ -1053,9 +1051,13 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
 				goto out;
 			}
+			ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d with media\n", ftdm_span_get_id(span), pevent->proceeding.channel);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS_MEDIA);
+		} else {
+//			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
+			ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d\n", ftdm_span_get_id(span), pevent->proceeding.channel);
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RINGING);
 		}
-//		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_PROGRESS);
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RINGING);
 	} else {
 		ftdm_log(FTDM_LOG_DEBUG, "-- Ringing on channel %d:%d but it's not in the span?\n",
 			ftdm_span_get_id(span), pevent->ringing.channel);

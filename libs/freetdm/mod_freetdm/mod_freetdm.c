@@ -3621,8 +3621,9 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 "ftdm trace <path> <span_id|span_name> [<chan_id>]\n" \
 "ftdm notrace <span_id|span_name> [<chan_id>]\n" \
 "ftdm q931_pcap <span_id> on|off [pcapfilename without suffix]\n" \
-"ftdm gains <txgain> <rxgain> <span_id> [<chan_id>]\n" \
+"ftdm gains <rxgain> <txgain> <span_id> [<chan_id>]\n" \
 "ftdm dtmf on|off <span_id> [<chan_id>]\n" \
+"ftdm queuesize <rxsize> <txsize> <span_id> [<chan_id>]\n" \
 "--------------------------------------------------------------------------------\n"
 SWITCH_STANDARD_API(ft_function)
 {
@@ -4059,7 +4060,7 @@ SWITCH_STANDARD_API(ft_function)
 		ftdm_channel_t *chan;
 		ftdm_span_t *span = NULL;
 		if (argc < 4) {
-			stream->write_function(stream, "-ERR Usage: ft gains <txgain> <rxgain> <span_id> [<chan_id>]\n");
+			stream->write_function(stream, "-ERR Usage: ftdm gains <rxgain> <txgain> <span_id> [<chan_id>]\n");
 			goto end;
 		} 
 		ftdm_span_find_by_name(argv[3], &span);
@@ -4094,6 +4095,50 @@ SWITCH_STANDARD_API(ft_function)
 			}
 		}
 		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
+	} else if (!strcasecmp(argv[0], "queuesize")) {
+		unsigned int i = 0;
+		uint32_t rxsize = 10;
+		uint32_t txsize = 10;
+		uint32_t chan_id = 0;
+		uint32_t ccount = 0;
+		ftdm_channel_t *chan;
+		ftdm_span_t *span = NULL;
+		if (argc < 4) {
+			stream->write_function(stream, "-ERR Usage: ftdm queuesize <rxsize> <txsize> <span_id> [<chan_id>]\n");
+			goto end;
+		} 
+		ftdm_span_find_by_name(argv[3], &span);
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+			goto end;
+		}
+		if (argc > 4) {
+			chan_id = atoi(argv[4]);
+			if (chan_id > ftdm_span_get_chan_count(span)) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
+		}
+		i = sscanf(argv[1], "%u", &rxsize);
+		i += sscanf(argv[2], "%u", &txsize);
+		if (i != 2) {
+			stream->write_function(stream, "-ERR invalid queue sizes provided\n");
+			goto end;
+		}
+
+		if (chan_id) {
+			chan = ftdm_span_get_channel(span, chan_id);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &rxsize);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txsize);
+		} else {
+			ccount = ftdm_span_get_chan_count(span);
+			for (i = 1; i < ccount; i++) {
+				chan = ftdm_span_get_channel(span, i);
+				ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &rxsize);
+				ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txsize);
+			}
+		}
+		stream->write_function(stream, "+OK queue sizes set to Rx %d and Tx %d\n", rxsize, txsize);
 	} else if (!strcasecmp(argv[0], "restart")) {
 		uint32_t chan_id = 0;
 		ftdm_channel_t *chan;
@@ -4243,6 +4288,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	switch_console_set_complete("add ftdm notrace");
 	switch_console_set_complete("add ftdm q931_pcap");
 	switch_console_set_complete("add ftdm gains");
+	switch_console_set_complete("add ftdm queuesize");
 	switch_console_set_complete("add ftdm dtmf on");
 	switch_console_set_complete("add ftdm dtmf off");
 	switch_console_set_complete("add ftdm core state");

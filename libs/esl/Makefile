@@ -92,6 +92,9 @@ javamod: $(MYLIB)
 managedmod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C managed
 
+perlmod-install: perlmod
+	$(MAKE) -C perl install
+
 phpmod-install: phpmod
 	$(MAKE) -C php install
 

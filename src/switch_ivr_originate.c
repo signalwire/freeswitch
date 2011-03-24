@@ -1423,8 +1423,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		}
 	}
 
-	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ent_originate_aleg_uuid", switch_core_session_get_uuid(session));
-
+	if (session) {
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ent_originate_aleg_uuid", switch_core_session_get_uuid(session));
+	}
+	
 	if (channel) {
 		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 	}
@@ -3262,6 +3264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 							switch_core_session_rwunlock(holding_session);
 						}
+						switch_channel_set_flag(peer_channel, CF_LAZY_ATTENDED_TRANSFER);
 						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
 						holding = NULL;
 						oglobals.idx = IDX_NADA;
@@ -3333,6 +3336,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 								switch_core_session_rwunlock(holding_session);
 							}
+							switch_channel_set_flag(originate_status[i].peer_channel, CF_LAZY_ATTENDED_TRANSFER);
 							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
 						} else {
@@ -3609,6 +3613,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (*bleg) {
+		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
+
 		if (session && caller_channel) {
 			switch_caller_profile_t *cloned_profile, *peer_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(*bleg));
 
@@ -3618,6 +3624,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 		}
+		
+
+		while(switch_channel_state_change_pending(bchan)) {
+			switch_cond_next();
+		}
+
 
 		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
 	}

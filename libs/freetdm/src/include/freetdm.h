@@ -1463,11 +1463,6 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter);
  */
 FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter);
 
-/*! \brief Clears all the temporary data attached to this call
- *  \note Clears caller_data->variables and caller_data->raw_data.
- * */
-FT_DECLARE(void) ftdm_call_clear_data(ftdm_caller_data_t *caller_data);
-		
 /*! \brief Get the span pointer associated to the channel */
 FT_DECLARE(ftdm_span_t *) ftdm_channel_get_span(const ftdm_channel_t *ftdmchan);
 

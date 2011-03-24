@@ -2492,6 +2492,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	if (copy) {
 		switch_file_copy(path, file_path, SWITCH_FPROT_FILE_SOURCE_PERMS, pool);
 	} else {
+		switch_safe_free(file_path);
 		file_path = (char *) path;
 	}
 

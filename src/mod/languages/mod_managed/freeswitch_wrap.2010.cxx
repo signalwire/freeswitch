@@ -9315,6 +9315,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_set_high_priority() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_set_normal_priority() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)set_normal_priority();
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_change_user_group(char * jarg1, char * jarg2) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -9635,6 +9645,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_monotonic(int jarg1) {
   
   arg1 = (switch_bool_t)jarg1; 
   switch_time_set_monotonic(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_timerfd(int jarg1) {
+  switch_bool_t arg1 ;
+  
+  arg1 = (switch_bool_t)jarg1; 
+  switch_time_set_timerfd(arg1);
 }
 
 
@@ -23125,6 +23143,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_caller_extension(void * ja
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_caller_extension_t *)jarg2; 
   switch_channel_set_caller_extension(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_flip_cid(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_flip_cid(arg1);
 }
 
 

@@ -240,7 +240,6 @@ void Session::unsetInputCallback(void)
         cb_arg = NULL;
     }
 	
-	switch_channel_set_private(channel, "CoreSession", NULL);
 	args.input_callback = NULL;
 	ap = NULL;
 	

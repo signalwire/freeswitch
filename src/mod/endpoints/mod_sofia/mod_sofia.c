@@ -1373,6 +1373,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					
 					if ((len = atoi(msg->string_arg))) {
 						qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
+						if (qlen < 1) {
+							qlen = 3;
+						}
 					}
 					
 					if (qlen) {
@@ -1393,6 +1396,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 
 				if (qlen) {
+					if (maxqlen < qlen) {
+						maxqlen = qlen * 5;
+					}
 					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 														  tech_pvt->read_impl.samples_per_packet, 
 														  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
@@ -1444,69 +1450,97 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
-			const char *var = switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_during_bridge");			
-
 			sofia_glue_tech_track(tech_pvt->profile, session);
 			
 			sofia_glue_tech_simplify(tech_pvt);
 			
-			if (switch_false(var) && switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;
 				int ok = 0;
 				
-				if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(tech_pvt->channel, CC_FS_RTP)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-									  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(channel));					
-					switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+				if (!(val = switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_during_bridge")) || switch_false(val)) {
+					if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(tech_pvt->channel, CC_FS_RTP)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+										  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(channel));					
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+						sofia_set_flag(tech_pvt, TFLAG_JB_PAUSED);
+					}
 				}
-
+				
 				if (sofia_test_flag(tech_pvt, TFLAG_PASS_RFC2833) && switch_channel_test_flag_partner(channel, CF_FS_RTP)) {
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%s activate passthru 2833 mode.\n", switch_channel_get_name(channel));
 				}
 
-				if ((val = switch_channel_get_variable(channel, "rtp_autoflush_during_bridge"))) {
+
+				if ((val = switch_channel_get_variable(channel, "rtp_notimer_during_bridge"))) {
 					ok = switch_true(val);
 				} else {
-					ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+					ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
+				}
+
+				if (ok && !switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+					ok = 0;
+				}
+
+				if (ok) {
+					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+					sofia_set_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
+				}
+
+				if (ok && sofia_test_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE)) {
+					/* these are not compat */
+					ok = 0;
+				} else {
+					if ((val = switch_channel_get_variable(channel, "rtp_autoflush_during_bridge"))) {
+						ok = switch_true(val);
+					} else {
+						ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+					}
 				}
 				
 				if (ok) {
 					rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+					sofia_set_flag(tech_pvt, TFLAG_AUTOFLUSH_DURING_BRIDGE);
 				} else {
 					rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 				}
+				
 			}
 		}
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			const char *val;
-			int ok = 0;
 			
 			sofia_glue_tech_track(tech_pvt->profile, session);
 
-			if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-								  "%s RESUME Jitterbuffer\n", switch_channel_get_name(channel));					
-				switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+			if (sofia_test_flag(tech_pvt, TFLAG_JB_PAUSED)) {
+				sofia_clear_flag(tech_pvt, TFLAG_JB_PAUSED);
+				if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "%s RESUME Jitterbuffer\n", switch_channel_get_name(channel));					
+					switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+				}
 			}
+			
 
 			if (switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s deactivate passthru 2833 mode.\n",
 								  switch_channel_get_name(channel));
 				switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
 			}
-
-			if ((val = switch_channel_get_variable(channel, "rtp_autoflush_during_bridge"))) {
-				ok = switch_true(val);
-			} else {
-				ok = sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+			
+			if (sofia_test_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE)) {
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 			}
 
-			if (ok) {
+			if (sofia_test_flag(tech_pvt, TFLAG_AUTOFLUSH_DURING_BRIDGE)) {
 				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+				sofia_clear_flag(tech_pvt, TFLAG_AUTOFLUSH_DURING_BRIDGE);
 			} else {
 				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 			}
@@ -1849,6 +1883,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 						if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
 							snprintf(message, sizeof(message), "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", name, number);
+
+							if (switch_channel_test_flag(tech_pvt->channel, CF_LAZY_ATTENDED_TRANSFER)) {
+								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-FS-Lazy-Attended-Transfer: true\n");
+								switch_channel_clear_flag(tech_pvt->channel, CF_LAZY_ATTENDED_TRANSFER);
+								switch_channel_clear_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER);
+							}
+
+							if (switch_channel_test_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER)) {
+								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-FS-Attended-Transfer: true\n");
+								switch_channel_clear_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER);
+							}
 
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/update_display"),
 									 TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),

@@ -143,7 +143,13 @@ sub sendmsg($$$) {
   }
   $self->output("\n");
 
-  return $self->readhash($to);
+  for(;;) {
+    $e = $self->readhash(undef);
+    last if $e->{socketerror} or $e->{'content-type'} eq 'command/reply';
+    push @{$self->{events}}, $e;
+  }
+
+  return $e;
 }
 
 sub command($$) {

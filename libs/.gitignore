@@ -1104,3 +1104,25 @@
 /tiff-3.8.2/a.out.dSYM/
 /tiff-3.8.2/tiff-Makefile.tgz
 /unimrcp/a.out.dSYM/
+/esl/fs_cli.dSYM/
+/esl/ivrd.dSYM/
+/esl/testclient.dSYM/
+/esl/testserver.dSYM/
+
+/openssl-1.0.0a/
+/esl/Debug/
+/esl/Release/
+/freetdm/msvc/Release/
+/freetdm/msvc/Debug/
+
+/spandsp/src/msvc/All/BuildLog make_at_dictionary.htm
+/spandsp/src/msvc/All/BuildLog make_modem_filter.htm
+
+BuildLog*.htm
+/win32/tmp*.bat
+
+/speex/win32/VS2008/libspeex/*/*/libspeex.log
+/speex/win32/VS2008/libspeexdsp/*/*/libspeexdsp.log
+/win32/celt/*/*/libcelt.log
+/win32/libg722_1/*/*/libg722_1.log
+/win32/libshout/*/*/libshout.log

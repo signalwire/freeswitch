@@ -10,6 +10,7 @@ example #1a - Making an outbound call:
 
 To make an outbound call:
 	ftdm_usrmsg_t usrmsg;
+	memset(&usrmsg, 0, sizeof(usrmsg));
 
 	/* Attach variable to usrmsg */
 	ftdm_usrmsg_add_var(&usrmsg, "isdn.prog_ind.descr", "inband-info-available");
@@ -22,6 +23,7 @@ When using ftmod_sangoma_isdn, user want to specify progress indicator inside PR
 
 
 	ftdm_usrmsg_t usrmsg;
+	memset(&usrmsg, 0, sizeof(usrmsg));
 
 	/* Attach variable to usrmsg */
 	ftdm_usrmsg_add_var(&usrmsg, "isdn.prog_ind.descr", "inband-info-available");
@@ -40,6 +42,8 @@ When using ftmod_sangoma_isdn, user wants to transmit a custom Facility IE, insi
 	uint8_t *my_facility_ie = ftdm_calloc(1, 200); /*memory has to be allocated using ftdm_calloc !! */
 	unsigned my_facility_ie_len = 0;
 
+	memset(&usrmsg, 0, sizeof(usrmsg));
+
 	/* Fill my_facility_ie with custom data here */
 	my_facility_ie[my_facility_ie_len++] = 0x1C; /* Q.931 Facility IE ID */
 	my_facility_ie[my_facility_ie_len++] = 0x03; /* Length of facility IE */
@@ -49,7 +53,7 @@ When using ftmod_sangoma_isdn, user wants to transmit a custom Facility IE, insi
 
 	ftdm_usrmsg_set_raw_data(&usrmsg, my_facility_ie, my_facility_ie_len);
 	
-	ftdm_channel_call_indicate(ftdmchan, FTDM_CHANNEL_INDICATE_FACILITY, &usrmsg);
+	ftdm_channel_call_indicate_ex(ftdmchan, FTDM_CHANNEL_INDICATE_FACILITY, &usrmsg);
 
 	/* FreeTDM will automatically free my_facility_ie */
 

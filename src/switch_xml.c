@@ -96,13 +96,6 @@ int glob(const char *, int, int (*)(const char *, int), glob_t *);
 void globfree(glob_t *);
 
 #endif
-#undef HAVE_MMAP
-#ifdef HAVE_MMAP
-#include <sys/mman.h>
-#ifdef __sun
-extern int madvise(caddr_t, size_t, int);
-#endif
-#endif
 
 #define SWITCH_XML_WS   "\t\r\n "	/* whitespace */
 #define SWITCH_XML_ERRL 128		/* maximum error string length */
@@ -114,7 +107,7 @@ struct switch_xml_root {		/* additional data for the root tag */
 	struct switch_xml xml;		/* is a super-struct built on top of switch_xml struct */
 	switch_xml_t cur;			/* current xml tree insertion point */
 	char *m;					/* original xml string */
-	switch_size_t len;			/* length of allocated memory for mmap */
+	switch_size_t len;			/* length of allocated memory */
 	uint8_t dynamic;			/* Free the original string when calling switch_xml_free */
 	char *u;					/* UTF-8 conversion of string if original was UTF-16 */
 	char *s;					/* start of work area */
@@ -124,6 +117,11 @@ struct switch_xml_root {		/* additional data for the root tag */
 	char ***pi;					/* processing instructions */
 	short standalone;			/* non-zero if <?xml standalone="yes"?> */
 	char err[SWITCH_XML_ERRL];	/* error string */
+	/*! is_main_xml_root */
+	switch_bool_t is_main_xml_root;	
+	/*! rwlock */
+	switch_thread_rwlock_t *rwlock;
+
 };
 
 char *SWITCH_XML_NIL[] = { NULL };	/* empty, null terminated array of strings */
@@ -139,11 +137,11 @@ struct switch_xml_binding {
 static switch_xml_binding_t *BINDINGS = NULL;
 static switch_xml_t MAIN_XML_ROOT = NULL;
 static switch_memory_pool_t *XML_MEMORY_POOL = NULL;
-static switch_thread_rwlock_t *RWLOCK = NULL;
 static switch_thread_rwlock_t *B_RWLOCK = NULL;
-static switch_mutex_t *XML_LOCK = NULL;
+static switch_thread_rwlock_t *XML_RWLOCK = NULL;
 static switch_mutex_t *XML_GEN_LOCK = NULL;
-
+static switch_mutex_t *XML_FREE_LOCK = NULL;
+static switch_mutex_t *XML_RWFILE_LOCK = NULL;
 
 struct xml_section_t {
 	const char *name;
@@ -1161,28 +1159,16 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 		return NULL;
 	}
 
-#ifdef HAVE_MMAP
-	l = (st.st_size + sysconf(_SC_PAGESIZE) - 1) & ~(sysconf(_SC_PAGESIZE) - 1);
-	if ((m = mmap(NULL, l, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
-		madvise(m, l, MADV_SEQUENTIAL);	/* optimize for sequential access */
-		if (!(root = (switch_xml_root_t) switch_xml_parse_str(m, st.st_size))) {
-			munmap(m, l);
-		}
-		madvise(m, root->len = l, MADV_NORMAL);	/* put it back to normal */
-	} else {					/* mmap failed, read file into memory */
-#endif /* HAVE_MMAP */
-		m = malloc(st.st_size);
-		if (!m)
-			return NULL;
-		l = read(fd, m, st.st_size);
-		if (!l || !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
-			free(m);
-			return NULL;
-		}
-		root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
-#ifdef HAVE_MMAP
+	m = malloc(st.st_size);
+	if (!m)
+		return NULL;
+	l = read(fd, m, st.st_size);
+	if (!l || !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
+		free(m);
+		return NULL;
 	}
-#endif /* HAVE_MMAP */
+	root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
+
 	return &root->xml;
 }
 
@@ -1542,9 +1528,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	} else {
 		abs = file;
 	}
+	/* Protection against running this code twice on the same filename */
+	switch_mutex_lock(XML_RWFILE_LOCK);
 
 	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
-		return NULL;
+		goto done;
 	}
 
 	if ((write_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
@@ -1571,6 +1559,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	if (fd > -1) {
 		close(fd);
 	}
+	switch_mutex_unlock(XML_RWFILE_LOCK);
 	switch_safe_free(new_file);
 	return xml;
 }
@@ -1933,8 +1922,16 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 {
-	switch_thread_rwlock_rdlock(RWLOCK);
-	return MAIN_XML_ROOT;
+	switch_xml_root_t root = NULL;
+
+	switch_thread_rwlock_rdlock(XML_RWLOCK);
+	if (MAIN_XML_ROOT) {
+		root = (switch_xml_root_t) MAIN_XML_ROOT;
+		switch_thread_rwlock_rdlock(root->rwlock);
+	}
+	switch_thread_rwlock_unlock(XML_RWLOCK);
+
+	return (switch_xml_t) root;
 }
 
 struct destroy_xml {
@@ -1978,15 +1975,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 {
 	char path_buf[1024];
 	uint8_t errcnt = 0;
-	switch_xml_t new_main, r = NULL;
+	switch_xml_t r = NULL, new_main;
 
-	switch_mutex_lock(XML_LOCK);
+	if (!reload) {
+		r = switch_xml_root();
+	}
 
-	if (MAIN_XML_ROOT) {
-		if (!reload) {
-			r = switch_xml_root();
-			goto done;
-		}
+	if (r) {
+		goto done;
 	}
 
 	switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
@@ -1999,18 +1995,27 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			new_main = NULL;
 			errcnt++;
 		} else {
-			switch_xml_t old_root;
+			switch_xml_t old_root = NULL;
+			switch_xml_root_t new_main_root = (switch_xml_root_t) new_main;
+
+			new_main_root->is_main_xml_root = SWITCH_TRUE;
+
 			*err = "Success";
 
-			switch_thread_rwlock_wrlock(RWLOCK);
+			old_root = switch_xml_root();
 
-			old_root = MAIN_XML_ROOT;
+			switch_set_flag(new_main, SWITCH_XML_ROOT);
+
+			switch_thread_rwlock_wrlock(XML_RWLOCK);
 			MAIN_XML_ROOT = new_main;
-			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+			switch_thread_rwlock_unlock(XML_RWLOCK);
 
-			switch_thread_rwlock_unlock(RWLOCK);
+			if (old_root) { 
+				switch_clear_flag(old_root, SWITCH_XML_ROOT);
+			}
 
 			switch_xml_free(old_root);
+
 			/* switch_xml_free_in_thread(old_root); */
 		}
 	} else {
@@ -2029,8 +2034,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	}
 
   done:
-
-	switch_mutex_unlock(XML_LOCK);
 
 	return r;
 }
@@ -2053,10 +2056,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	XML_MEMORY_POOL = pool;
 	*err = "Success";
 
-	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
-	switch_thread_rwlock_create(&RWLOCK, XML_MEMORY_POOL);
+	switch_mutex_init(&XML_FREE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	switch_mutex_init(&XML_RWFILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
+	switch_thread_rwlock_create(&XML_RWLOCK, XML_MEMORY_POOL);
 
 	assert(pool != NULL);
 
@@ -2071,7 +2075,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_mutex_lock(XML_LOCK);
+	switch_thread_rwlock_wrlock(XML_RWLOCK);
 
 	if (MAIN_XML_ROOT) {
 		switch_xml_t xml = MAIN_XML_ROOT;
@@ -2080,7 +2084,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_mutex_unlock(XML_LOCK);
+	switch_thread_rwlock_unlock(XML_RWLOCK);
 
 	return status;
 }
@@ -2367,14 +2371,34 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	char **a, *s;
 	switch_xml_t orig_xml;
 
-  tailrecurse:
 	root = (switch_xml_root_t) xml;
 	if (!xml) {
 		return;
 	}
 
-	if (xml == MAIN_XML_ROOT) {
-		switch_thread_rwlock_unlock(RWLOCK);
+	/* If xml is currenly the MAIN_XML_ROOT, dont even bother to check to empty it */
+	if (switch_test_flag(xml, SWITCH_XML_ROOT)) {
+		switch_thread_rwlock_unlock(root->rwlock);
+		return;
+	}
+
+	/* This is a trick to find if the struct is still in use or not */
+	switch_mutex_lock(XML_FREE_LOCK);
+	if (xml->is_switch_xml_root_t == SWITCH_TRUE && root->is_main_xml_root == SWITCH_TRUE) {
+		switch_thread_rwlock_unlock(root->rwlock);
+		if (switch_thread_rwlock_trywrlock(root->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* XML Struct is still in used, person who free it will clean it */
+			switch_mutex_unlock(XML_FREE_LOCK);
+			return;
+		}
+		switch_thread_rwlock_unlock(root->rwlock);
+		switch_thread_rwlock_destroy(root->rwlock);
+	}
+	switch_mutex_unlock(XML_FREE_LOCK);
+
+ tailrecurse:
+	root = (switch_xml_root_t) xml;
+	if (!xml) {
 		return;
 	}
 
@@ -2418,15 +2442,12 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 
 		if (root->dynamic == 1)
 			free(root->m);		/* malloced xml data */
-#ifdef HAVE_MMAP
-		else if (root->len)
-			munmap(root->m, root->len);	/* mem mapped xml data */
-#endif /* HAVE_MMAP */
 		if (root->u)
 			free(root->u);		/* utf8 conversion */
 	}
 
 	switch_xml_free_attr(xml->attr);	/* tag attributes */
+
 	if ((xml->flags & SWITCH_XML_TXTM))
 		free(xml->txt);			/* character content */
 	if ((xml->flags & SWITCH_XML_NAMEM))
@@ -2464,6 +2485,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	root->ent = (char **) memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
 	root->xml.is_switch_xml_root_t = SWITCH_TRUE;
+	root->is_main_xml_root = SWITCH_FALSE;
+	switch_thread_rwlock_create(&root->rwlock, XML_MEMORY_POOL);
 	return &root->xml;
 }
 

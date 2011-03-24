@@ -578,7 +578,7 @@ static int usage(char *name){
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
 	printf("  -u, --user=user@domain          user@domain\n");
 	printf("  -p, --password=password         Password\n");
-	printf("  -i, --interrupt                 Allow Control-c to interrupt");
+	printf("  -i, --interrupt                 Allow Control-c to interrupt\n");
 	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -l, --loglevel=command          Log Level\n");
 	printf("  -q, --quiet                     Disable logging\n");

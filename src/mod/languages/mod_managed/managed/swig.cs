@@ -2124,6 +2124,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static int set_normal_priority() {
+    int ret = freeswitchPINVOKE.set_normal_priority();
+    return ret;
+  }
+
   public static int change_user_group(string user, string group) {
     int ret = freeswitchPINVOKE.change_user_group(user, group);
     return ret;
@@ -2263,6 +2268,10 @@ public class freeswitch {
 
   public static void switch_time_set_monotonic(switch_bool_t enable) {
     freeswitchPINVOKE.switch_time_set_monotonic((int)enable);
+  }
+
+  public static void switch_time_set_timerfd(switch_bool_t enable) {
+    freeswitchPINVOKE.switch_time_set_timerfd((int)enable);
   }
 
   public static void switch_time_set_nanosleep(switch_bool_t enable) {
@@ -3403,6 +3412,10 @@ public class freeswitch {
 
   public static void switch_channel_set_caller_extension(SWIGTYPE_p_switch_channel channel, switch_caller_extension caller_extension) {
     freeswitchPINVOKE.switch_channel_set_caller_extension(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_extension.getCPtr(caller_extension));
+  }
+
+  public static void switch_channel_flip_cid(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_flip_cid(SWIGTYPE_p_switch_channel.getCPtr(channel));
   }
 
   public static void switch_channel_sort_cid(SWIGTYPE_p_switch_channel channel, switch_bool_t arg1) {
@@ -8054,6 +8067,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_set_high_priority")]
   public static extern int set_high_priority();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_set_normal_priority")]
+  public static extern int set_normal_priority();
+
   [DllImport("mod_managed", EntryPoint="CSharp_change_user_group")]
   public static extern int change_user_group(string jarg1, string jarg2);
 
@@ -8140,6 +8156,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_monotonic")]
   public static extern void switch_time_set_monotonic(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_timerfd")]
+  public static extern void switch_time_set_timerfd(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_time_set_nanosleep")]
   public static extern void switch_time_set_nanosleep(int jarg1);
@@ -11485,6 +11504,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_caller_extension")]
   public static extern void switch_channel_set_caller_extension(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_flip_cid")]
+  public static extern void switch_channel_flip_cid(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_sort_cid")]
   public static extern void switch_channel_sort_cid(HandleRef jarg1, int jarg2);
@@ -21664,6 +21686,8 @@ public enum switch_channel_flag_t {
   CF_DIALPLAN,
   CF_BLOCK_BROADCAST_UNTIL_MEDIA,
   CF_CNG_PLC,
+  CF_ATTENDED_TRANSFER,
+  CF_LAZY_ATTENDED_TRANSFER,
   CF_FLAG_MAX
 }
 
@@ -28627,7 +28651,7 @@ namespace FreeSWITCH.Native {
   SWITCH_RTP_FLAG_BREAK = (1 << 10),
   SWITCH_RTP_FLAG_UDPTL = (1 << 11),
   SWITCH_RTP_FLAG_DATAWAIT = (1 << 12),
-  SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 13),
+  SWITCH_RTP_FLAG_BYTESWAP = (1 << 13),
   SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 14),
   SWITCH_RTP_FLAG_AUTO_CNG = (1 << 15),
   SWITCH_RTP_FLAG_SECURE_SEND_RESET = (1 << 16),

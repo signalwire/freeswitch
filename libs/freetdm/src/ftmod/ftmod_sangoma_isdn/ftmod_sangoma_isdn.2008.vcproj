@@ -118,7 +118,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\sangoma\sng_isdn\include&quot;;../../include;&quot;C:\Program Files\Sangoma\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"

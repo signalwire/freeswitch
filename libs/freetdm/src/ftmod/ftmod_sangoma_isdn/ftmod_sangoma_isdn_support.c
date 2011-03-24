@@ -370,7 +370,7 @@ ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8
 		my_data[1] = data_len;
 		memcpy(&my_data[2], data, data_len);
 
-		sngisdn_add_raw_data((sngisdn_chan_data_t*)ftdmchan->call_data, data, data_len+2);
+		sngisdn_add_raw_data((sngisdn_chan_data_t*)ftdmchan->call_data, my_data, data_len+2);
 		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Raw Facility IE copied available\n");
 	} else {

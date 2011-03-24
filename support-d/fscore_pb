@@ -82,20 +82,25 @@ echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post
 
 echo "LSB RELEASE:" >> $post_file
 echo $line >> $post_file
-lsb_release -a >> $post_file
+if [ -f /etc/redhat-release ] ; then
+    cat /etc/redhat-release  >> $post_file
+else
+    lsb_release -a >> $post_file
+fi
 
 echo "CPU INFO:" >> $post_file
 echo $line >> $post_file
 cat /proc/cpuinfo >> $post_file
 
-echo "SVN INFO:" >> $post_file
+echo "GIT INFO:" >> $post_file
 echo $line >> $post_file
 echo -n "Revision: " >> $post_file
-if [ -d ".svn" ] ; then
-    svnversion . >> $post_file
-    svn stat | grep -v \? >> $post_file
+if [ -d ".git" ] ; then
+    git log -1 | cat  >> $post_file
+    printf "\n\n\n" >> $post_file
+    git status >> $post_file
 else
-    echo "Not run from an svn managed directory." >> $post_file
+    echo "Not run from an git managed directory." >> $post_file
 fi
 
 echo "GDB BACKTRACE:" >> $post_file

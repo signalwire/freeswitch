@@ -428,6 +428,7 @@
 
       <!-- The following phrases still need to be recorded -->
 	  <prompt phrase="You are caller number one. Of course, *every* caller is number one in our book so you may be waiting a while." filename="ivr-youre_number_one.wav"/>
+	  <prompt phrase="...has called emergency services" filename="ivr-has_called_emergency_services.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
