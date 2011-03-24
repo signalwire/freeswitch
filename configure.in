@@ -1024,6 +1024,7 @@ AC_CONFIG_SUBDIRS([libs/broadvoice])
 AC_CONFIG_SUBDIRS([libs/libg722_1])
 AC_CONFIG_SUBDIRS([libs/silk])
 AC_CONFIG_SUBDIRS([libs/libcodec2])
+AC_CONFIG_SUBDIRS([libs/ldns])
 
 case $host in
    *-openbsd*)
