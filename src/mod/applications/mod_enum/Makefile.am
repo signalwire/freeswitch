@@ -1,13 +1,45 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_enum
 
-UDNS_DIR=$(switch_srcdir)/libs/udns
-mod_enum_la_CFLAGS = -I$(UDNS_DIR) -DHAVE_POLL $(AM_CFLAGS)
+LDNS_DIR=$(switch_srcdir)/libs/ldns
+mod_enum_la_CFLAGS = -I$(LDNS_DIR) -I$(LDNS_DIR)/include -DHAVE_POLL $(AM_CFLAGS) 
 
 mod_LTLIBRARIES = mod_enum.la
-mod_enum_la_SOURCES  = mod_enum.c 
-mod_enum_la_SOURCES += $(UDNS_DIR)/udns_dn.c $(UDNS_DIR)/udns_dntosp.c $(UDNS_DIR)/udns_parse.c $(UDNS_DIR)/udns_misc.c
-mod_enum_la_SOURCES += $(UDNS_DIR)/udns_rr_a.c $(UDNS_DIR)/udns_rr_ptr.c $(UDNS_DIR)/udns_rr_mx.c $(UDNS_DIR)/udns_rr_txt.c $(UDNS_DIR)/udns_bl.c
-mod_enum_la_SOURCES += $(UDNS_DIR)/udns_rr_srv.c $(UDNS_DIR)/udns_rr_naptr.c $(UDNS_DIR)/udns_codes.c $(UDNS_DIR)/udns_resolver.c
+mod_enum_la_SOURCES  = mod_enum.c
+
+mod_enum_la_SOURCES += $(LDNS_DIR)/buffer.c\
+$(LDNS_DIR)/dname.c\
+$(LDNS_DIR)/dnssec.c\
+$(LDNS_DIR)/dnssec_sign.c\
+$(LDNS_DIR)/dnssec_verify.c\
+$(LDNS_DIR)/dnssec_zone.c\
+$(LDNS_DIR)/error.c\
+$(LDNS_DIR)/higher.c\
+$(LDNS_DIR)/host2str.c\
+$(LDNS_DIR)/host2wire.c\
+$(LDNS_DIR)/keys.c\
+$(LDNS_DIR)/linktest.c\
+$(LDNS_DIR)/net.c\
+$(LDNS_DIR)/packet.c\
+$(LDNS_DIR)/parse.c\
+$(LDNS_DIR)/rbtree.c\
+$(LDNS_DIR)/rdata.c\
+$(LDNS_DIR)/resolver.c\
+$(LDNS_DIR)/rr.c\
+$(LDNS_DIR)/rr_functions.c\
+$(LDNS_DIR)/sha1.c\
+$(LDNS_DIR)/sha2.c\
+$(LDNS_DIR)/str2host.c\
+$(LDNS_DIR)/tsig.c\
+$(LDNS_DIR)/update.c\
+$(LDNS_DIR)/util.c\
+$(LDNS_DIR)/wire2host.c\
+$(LDNS_DIR)/compat/strlcpy.c\
+$(LDNS_DIR)/compat/b64_pton.c\
+$(LDNS_DIR)/compat/b32_pton.c\
+$(LDNS_DIR)/compat/b64_ntop.c\
+$(LDNS_DIR)/compat/b32_ntop.c\
+$(LDNS_DIR)/zone.c
+
 mod_enum_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_enum_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
