@@ -25,7 +25,7 @@ $(LDNS_DIR)/Makefile.in:
 
 $(LDNS_BUILDDIR)/Makefile: $(LDNS_DIR)/Makefile.in
 	mkdir -p $(LDNS_BUILDDIR)
-	cd $(LDNS_BUILDDIR) && $(DEFAULT_VARS) $(LDNS_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDNS_DIR) --disable-gost
+	cd $(LDNS_BUILDDIR) && $(DEFAULT_VARS) $(LDNS_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDNS_DIR) --disable-gost --without-ssl --disable-sha2
 	$(TOUCH_TARGET)
 
 $(LDNS_LA): $(LDNS_BUILDDIR)/Makefile
