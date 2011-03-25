@@ -830,10 +830,6 @@ ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
 		return FTDM_SUCCESS;
 	}
 
-	if (ftdm_test_flag(sngisdn_info, FLAG_SENT_CHAN_ID)) {
-		/* Indicate channel ID only in first response */
-		return FTDM_SUCCESS;
-	}
 	ftdm_set_flag(sngisdn_info, FLAG_SENT_CHAN_ID);
 	
 	chanId->eh.pres = PRSNT_NODEF;
