@@ -13,7 +13,11 @@
 #include <ldns/config.h>
 
 #include <ldns/ldns.h>
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 
 /* Access function for reading
  * and setting the different Resolver

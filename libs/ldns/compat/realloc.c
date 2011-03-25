@@ -8,8 +8,10 @@
 
 #include <sys/types.h>
 
+#ifndef _MSC_VER
 void *realloc (void*, size_t);
 void *malloc (size_t);
+#endif
 
 /* Changes allocation to new sizes, copies over old data.
  * if oldptr is NULL, does a malloc.

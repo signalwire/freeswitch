@@ -11,7 +11,11 @@
 
 #include <ldns/ldns.h>
 
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 
 #ifdef HAVE_SSL
 #include <openssl/hmac.h>

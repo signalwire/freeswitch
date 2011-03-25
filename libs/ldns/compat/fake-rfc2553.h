@@ -40,8 +40,12 @@
 #define _FAKE_RFC2553_H
 
 #include <sys/types.h>
+#ifdef _MSC_VER
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
 #include <netdb.h>
+#endif
 #include <limits.h>
 
 #ifdef __cplusplus

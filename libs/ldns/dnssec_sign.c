@@ -5,7 +5,11 @@
 #include <ldns/dnssec.h>
 #include <ldns/dnssec_sign.h>
 
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 #include <time.h>
 
 #ifdef HAVE_SSL

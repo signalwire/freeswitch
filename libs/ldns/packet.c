@@ -14,7 +14,11 @@
 
 #include <ldns/ldns.h>
 
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 #include <limits.h>
 
 #ifdef HAVE_SSL

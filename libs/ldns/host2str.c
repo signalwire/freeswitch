@@ -26,7 +26,9 @@
 #include <netdb.h>
 #endif
 #include <time.h>
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16

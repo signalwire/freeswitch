@@ -19,7 +19,11 @@
 
 #include <ldns/config.h>
 #include <ldns/ldns.h>
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 

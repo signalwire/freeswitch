@@ -11,7 +11,11 @@
 #include <ldns/ldns.h>
 
 #include <limits.h>
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 
 ldns_lookup_table ldns_directive_types[] = {
         { LDNS_DIR_TTL, "$TTL" },

@@ -38,7 +38,9 @@
 
 #include <ldns/config.h>
 #include <ldns/common.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

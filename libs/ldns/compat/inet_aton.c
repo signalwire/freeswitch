@@ -55,7 +55,9 @@
 #if !defined(HAVE_INET_ATON)
 
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <sys/param.h>
+#endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif

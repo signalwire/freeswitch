@@ -19,7 +19,11 @@
 #include <ldns/ldns.h>
 /*#include <ldns/wire2host.h>*/
 
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 #include <limits.h>
 
 

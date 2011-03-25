@@ -21,7 +21,9 @@
 
 #ifndef HAVE_INET_NTOP
 
+#ifndef _MSC_VER
 #include <sys/param.h>
+#endif
 #include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>

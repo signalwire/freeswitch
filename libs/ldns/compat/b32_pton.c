@@ -42,7 +42,9 @@
 #include <ldns/config.h>
 
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <sys/param.h>
+#endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif

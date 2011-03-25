@@ -9,6 +9,7 @@
 #include <ldns/config.h>
 #include <stdlib.h>
 
+#ifndef _MSC_VER
 void *memmove(void *dest, const void *src, size_t n);
 
 void *memmove(void *dest, const void *src, size_t n)
@@ -41,3 +42,4 @@ void *memmove(void *dest, const void *src, size_t n)
 	memcpy(dest, src, n);
 	return dest;
 }
+#endif
