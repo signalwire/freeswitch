@@ -1,17 +1,6 @@
-# LDNS=ldns-1.6.9
-# BASE=../../../..
-
-# LDNS_DIR=$(switch_srcdir)/libs/$(LDNS)
-# LDNS_BUILDDIR=$(switch_builddir)/libs/$(LDNS)
-# LDNSLA=$(LDNS_BUILDDIR)/libldns.la
-
-# include $(BASE)/build/modmake.rules
-# LOCAL_LIBADD=$(LDNSLA)
-
-
 BASE=../../../..
 
-LDNS=ldns-1.6.9
+LDNS=ldns
 
 LDNS_DIR=$(switch_srcdir)/libs/$(LDNS)
 LDNS_BUILDDIR=$(switch_builddir)/libs/$(LDNS)
@@ -19,11 +8,6 @@ LOCAL_CFLAGS=-I$(LDNS_DIR) -I$(LDNS_DIR)/include
 LDNS_LA=$(LDNS_BUILDDIR)/libldns.la
 LOCAL_LIBADD=$(LDNS_LA)
 include $(BASE)/build/modmake.rules
-
-$(LDNS_DIR)/Makefile.in:
-	$(GETLIB) $(LDNS).tar.gz
-	cp ldns.diff $(LDNS_BUILDDIR)
-	cd $(LDNS_BUILDDIR) && patch -p1 -i ldns.diff
 
 $(LDNS_BUILDDIR)/Makefile: $(LDNS_DIR)/Makefile.in
 	mkdir -p $(LDNS_BUILDDIR)
