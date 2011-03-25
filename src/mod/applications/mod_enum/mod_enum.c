@@ -30,6 +30,9 @@
  */
 
 #include <switch.h>
+#ifdef _MSC_VER
+#define ssize_t int
+#endif
 #include <ldns/ldns.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load);
