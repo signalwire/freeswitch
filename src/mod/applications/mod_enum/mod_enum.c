@@ -380,9 +380,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 		goto end;
 	}
 	
-	domain = ldns_dname_new_frm_str(name);
-
-	if (!domain) {
+	if (!(domain = ldns_dname_new_frm_str(name))) {
 		goto end;
 	}
 
@@ -403,12 +401,6 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 		goto end;
 	}
 
-	/* use the resolver to send a query for the naptr 
-	 * records of the domain given on the command line
-	 */
-
-
-
 	if ((p = ldns_resolver_query(res,
 								 domain,
 								 LDNS_RR_TYPE_NAPTR,
@@ -417,7 +409,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 		/* retrieve the NAPTR records from the answer section of that
 		 * packet
 		 */
-		
+
 		if ((naptr = ldns_pkt_rr_list_by_type(p, LDNS_RR_TYPE_NAPTR, LDNS_SECTION_ANSWER))) {
 			size_t i;
 
@@ -472,11 +464,10 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 		root = globals.root;
 	}
 
-#if 0
+
 	if (!(server = switch_core_get_variable("enum-server"))) {
 		server = globals.server;
 	}
-#endif
 
 	ldns_lookup(mnum, root, server, results);
 

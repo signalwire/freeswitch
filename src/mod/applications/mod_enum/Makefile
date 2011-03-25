@@ -22,6 +22,8 @@ include $(BASE)/build/modmake.rules
 
 $(LDNS_DIR)/Makefile.in:
 	$(GETLIB) $(LDNS).tar.gz
+	cp ldns.diff $(LDNS_BUILDDIR)
+	cd $(LDNS_BUILDDIR) && patch -p1 -i ldns.diff
 
 $(LDNS_BUILDDIR)/Makefile: $(LDNS_DIR)/Makefile.in
 	mkdir -p $(LDNS_BUILDDIR)
