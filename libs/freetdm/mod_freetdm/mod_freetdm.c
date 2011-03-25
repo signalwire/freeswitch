@@ -3615,7 +3615,7 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 "--------------------------------------------------------------------------------\n" \
 "ftdm list\n" \
 "ftdm start|stop <span_name|span_id>\n" \
-"ftdm restart <span_id|span_name> <chan_id>\n" \
+"ftdm restart <span_id|span_name> [<chan_id>]\n" \
 "ftdm dump <span_id|span_name> [<chan_id>]\n" \
 "ftdm sigstatus get|set [<span_id|span_name>] [<channel>] [<sigstatus>]\n" \
 "ftdm trace <path> <span_id|span_name> [<chan_id>]\n" \
@@ -4141,10 +4141,11 @@ SWITCH_STANDARD_API(ft_function)
 		stream->write_function(stream, "+OK queue sizes set to Rx %d and Tx %d\n", rxsize, txsize);
 	} else if (!strcasecmp(argv[0], "restart")) {
 		uint32_t chan_id = 0;
+		uint32_t ccount = 0;
 		ftdm_channel_t *chan;
 		ftdm_span_t *span = NULL;
-		if (argc < 3) {
-			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> <chan_id>\n");
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> [<chan_id>]\n");
 			goto end;
 		}
 		ftdm_span_find_by_name(argv[1], &span);
@@ -4152,15 +4153,32 @@ SWITCH_STANDARD_API(ft_function)
 			stream->write_function(stream, "-ERR invalid span\n");
 			goto end;
 		}
-		
-		chan_id = atoi(argv[2]);
-		chan = ftdm_span_get_channel(span, chan_id);
-		if (!chan) {
-			stream->write_function(stream, "-ERR Could not find chan\n");
-			goto end;
+
+		if (argc > 2) {
+			chan_id = atoi(argv[2]);
+			if (chan_id > ftdm_span_get_chan_count(span)) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
 		}
-		stream->write_function(stream, "Resetting channel %s:%s\n", argv[2], argv[3]);
-		ftdm_channel_reset(chan);
+		if (chan_id) {
+			chan = ftdm_span_get_channel(span, chan_id);
+			if (!chan) {
+				stream->write_function(stream, "-ERR Could not find chan\n");
+				goto end;
+			}
+			stream->write_function(stream, "Resetting channel %s:%s\n", argv[1], argv[2]);
+			ftdm_channel_reset(chan);
+		} else {
+			uint32_t i = 0;
+			ccount = ftdm_span_get_chan_count(span);
+			for (i = 1; i < ccount; i++) {
+				chan = ftdm_span_get_channel(span, i);
+				stream->write_function(stream, "Resetting channel %s:%d\n", argv[1], i);
+				ftdm_channel_reset(chan);
+			}
+		}
+
 	} else {
 
 		char *rply = ftdm_api_execute(cmd);
