@@ -60,7 +60,7 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	}
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Outgoing call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
-	set_chan_id_ie(ftdmchan, &conEvnt.chanId);
+	set_chan_id_ie(ftdmchan, &conEvnt.chanId);	
 	set_bear_cap_ie(ftdmchan, &conEvnt.bearCap[0]);
 	set_called_num(ftdmchan, &conEvnt.cdPtyNmb);
 	set_calling_num(ftdmchan, &conEvnt.cgPtyNmb);
@@ -125,8 +125,11 @@ void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan)
 	}
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
-	
-	set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+
+	/* Indicate channel ID only in first response */
+	if (!ftdm_test_flag(sngisdn_info, FLAG_SENT_CHAN_ID)) {
+		set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+	}
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT COMPL (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
@@ -152,7 +155,10 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_i
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
-	set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+	/* Indicate channel ID only in first response */
+	if (!ftdm_test_flag(sngisdn_info, FLAG_SENT_CHAN_ID)) {
+		set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+	}
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 	
@@ -238,7 +244,10 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
-	set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+	/* Indicate channel ID only in first response */
+	if (!ftdm_test_flag(sngisdn_info, FLAG_SENT_CHAN_ID)) {
+		set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
+	}
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
