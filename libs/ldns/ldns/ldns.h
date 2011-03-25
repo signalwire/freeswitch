@@ -148,6 +148,16 @@ extern ldns_lookup_table ldns_opcodes[];
 /** EDNS flags */
 extern ldns_lookup_table ldns_edns_flags[];
 
+
+#ifdef USE_WINSOCK
+#define SOCK_INVALID INVALID_SOCKET
+#define close_socket(_s) if (_s > SOCK_INVALID) {closesocket(_s); _s = SOCK_INVALID;}
+#else
+#define SOCK_INVALID -1
+#define close_socket(_s) if (_s > SOCK_INVALID) {close(_s); _s = SOCK_INVALID;}
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

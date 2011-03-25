@@ -627,9 +627,7 @@ ldns_resolver_new(void)
 	r->_timeout.tv_sec = LDNS_DEFAULT_TIMEOUT_SEC;
 	r->_timeout.tv_usec = LDNS_DEFAULT_TIMEOUT_USEC;
 
-	/* TODO: fd=0 is actually a valid socket (stdin),
-           replace with -1 */
-	r->_socket = 0;
+	r->_socket = -1;
 	r->_axfr_soa_count = 0;
 	r->_axfr_i = 0;
 	r->_cur_axfr_pkt = NULL;
@@ -903,6 +901,8 @@ ldns_resolver_deep_free(ldns_resolver *res)
 	size_t i;
 
 	if (res) {
+		close_socket(res->_socket);
+
 		if (res->_searchlist) {
 			for (i = 0; i < ldns_resolver_searchlist_count(res); i++) {
 				ldns_rdf_deep_free(res->_searchlist[i]);
@@ -1198,7 +1198,7 @@ ldns_axfr_next(ldns_resolver *resolver)
 	ldns_status status;
 
 	/* check if start() has been called */
-	if (!resolver || resolver->_socket == 0) {
+	if (!resolver || resolver->_socket == -1) {
 		return NULL;
 	}
 
@@ -1215,12 +1215,9 @@ ldns_axfr_next(ldns_resolver *resolver)
 		if (ldns_rr_get_type(cur_rr) == LDNS_RR_TYPE_SOA) {
 			resolver->_axfr_soa_count++;
 			if (resolver->_axfr_soa_count >= 2) {
-#ifndef USE_WINSOCK
-				close(resolver->_socket);
-#else
-				closesocket(resolver->_socket);
-#endif
-				resolver->_socket = 0;
+
+				close_socket(resolver->_socket);
+
 				ldns_pkt_free(resolver->_cur_axfr_pkt);
 				resolver->_cur_axfr_pkt = NULL;
 			}
@@ -1243,12 +1240,8 @@ ldns_axfr_next(ldns_resolver *resolver)
 			/* RoRi: we must now also close the socket, otherwise subsequent uses of the
 			   same resolver structure will fail because the link is still open or
 			   in an undefined state */
-#ifndef USE_WINSOCK
-			close(resolver->_socket);
-#else
-			closesocket(resolver->_socket);
-#endif
-			resolver->_socket = 0;
+
+			close_socket(resolver->_socket);
 
 			return NULL;
 		} else if (ldns_pkt_get_rcode(resolver->_cur_axfr_pkt) != 0) {
@@ -1258,12 +1251,8 @@ ldns_axfr_next(ldns_resolver *resolver)
 			/* RoRi: we must now also close the socket, otherwise subsequent uses of the
 			   same resolver structure will fail because the link is still open or
 			   in an undefined state */
-#ifndef USE_WINSOCK
-			close(resolver->_socket);
-#else
-			closesocket(resolver->_socket);
-#endif
-			resolver->_socket = 0;
+
+			close_socket(resolver->_socket);
 
 			return NULL;
 		} else {
